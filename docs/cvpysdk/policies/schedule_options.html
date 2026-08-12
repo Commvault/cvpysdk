@@ -28,7 +28,8 @@
 <p>ScheduleOptions: Class for getting Schedule Options for Schedule and Schedule Policies</p>
 <p>BackupOptions: Class for Backup Options for Schedule and Schedule Policies</p>
 <p>AuxCopyOptions: Class for AuxCopy Options for Schedule and Schedule Policies</p>
-<h2 id="scheduleoptions">Scheduleoptions</h2>
+<p>Scheduleoptions
+-----=</p>
 <p><strong>new</strong>()
 &ndash; Returns the respective class object based on the option_type</p>
 <p><strong>init</strong>()
@@ -37,14 +38,16 @@ initialises ScheduleOptions for Schedule and Schedule Policies</p>
 <p>options_json()
 &ndash;
 Returns the options json for the new options provided</p>
-<h2 id="backupoptions">Backupoptions</h2>
+<p>Backupoptions
+-----=</p>
 <p><strong>init</strong>()
 &ndash;
 initialises BackupOptions for Schedule and Schedule Policies</p>
 <p>options_json()
 &ndash;
 Returns the options json for the new backup options provided</p>
-<h2 id="auxcopyoptions">Auxcopyoptions</h2>
+<p>Auxcopyoptions
+-----=</p>
 <p><strong>init</strong>()
 &ndash;
 initialises AuxCopyOptions for Schedule and Schedule Policies</p>
@@ -54,7 +57,7 @@ Returns the options json for the new AuxCopy options provided</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/policies/schedule_options.py#L1-L224" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/policies/schedule_options.py#L1-L294" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
@@ -105,52 +108,67 @@ AuxCopyOptions:
 &#34;&#34;&#34;
 
 from abc import ABCMeta, abstractmethod
+from typing import Optional, Dict, Any
+
 
 class ScheduleOptions:
-    &#34;&#34;&#34;Class for getting Schedule Options for Schedule and Schedule Policies.&#34;&#34;&#34;
+    &#34;&#34;&#34;Class for getting Schedule Options for Schedule and Schedule Policies.
+
+    Attributes:
+        policy_to_options_map (dict): A mapping of policy types to option names.
+
+    Usage:
+        # Example of accessing the policy_to_options_map attribute
+        options_map = ScheduleOptions.policy_to_options_map
+    &#34;&#34;&#34;
 
     __metaclass__ = ABCMeta
 
-    #This map has to be updated with the subdict option_name for every new option class added
+    # This map has to be updated with the subdict option_name for every new option class added
     policy_to_options_map = {
-
         &#39;Data Protection&#39;: &#39;backupOpts&#39;,
         &#39;Auxiliary Copy&#39;: &#39;auxcopyJobOption&#39;
     }
 
-    def __new__(cls, options_type, current_options=None):
-        &#34;&#34;&#34;
-        Returns the respective class object based on the option_type
+    def __new__(cls, options_type: str, current_options: Optional[Dict[str, Any]] = None) -&gt; &#39;ScheduleOptions&#39;:
+        &#34;&#34;&#34;Returns the respective class object based on the option_type.
 
         Args:
-            options_type (str) -- option type as per ScheduleOptions.options dict.
-            current_options (dict) -- current options set for the schedule if any.
+            options_type (str): option type as per ScheduleOptions.options dict.
+            current_options (dict, optional): current options set for the schedule if any. Defaults to None.
 
-        Returns (obj) -- Return the class object based on the option_type
+        Returns:
+            ScheduleOptions: Return the class object based on the option_type
 
+        Usage:
+            # Example of creating a BackupOptions object
+            backup_options = ScheduleOptions(&#39;backupOpts&#39;)
+
+            # Example of creating an AuxCopyOptions object with current options
+            current_options = {&#39;maxNumberOfStreams&#39;: 10}
+            aux_copy_options = ScheduleOptions(&#39;auxcopyJobOption&#39;, current_options)
         &#34;&#34;&#34;
-
-        #This dict has to be update with the option_name and corresponding Option class created
+        # This dict has to be update with the option_name and corresponding Option class created
         options = {
-
             &#39;backupOpts&#39;: BackupOptions,
             &#39;auxcopyJobOption&#39;: AuxCopyOptions
-
         }
-        #subclass inherit __new__ method so we need this if check to initialize parent.
-        if cls is not __class__:
+        # subclass inherit __new__ method so we need this if check to initialize parent.
+        if cls is not ScheduleOptions:
             return super().__new__(cls)
-        return options[options_type](current_options)
+        return options[options_type](options_type, current_options)
 
+    def __init__(self, options_type: str, current_options: Optional[Dict[str, Any]] = None) -&gt; None:
+        &#34;&#34;&#34;Initialises Schedule Options class.
 
-
-
-    def __init__(self, options_type, current_options=None):
-        &#34;&#34;&#34;
-        Initialises Schedule Options class
         Args:
-            options_type (str) -- option type as per ScheduleOptions.options dict.
-            current_options (dict) -- current options set for the schedule if any.
+            options_type (str): option type as per ScheduleOptions.options dict.
+            current_options (dict, optional): current options set for the schedule if any. Defaults to None.
+
+        Usage:
+            # Example of initializing ScheduleOptions with current options
+            current_options = {&#39;backupLevel&#39;: &#39;Full&#39;}
+            schedule_options = ScheduleOptions(&#39;backupOpts&#39;, current_options)
         &#34;&#34;&#34;
         if current_options:
             self.current_options = current_options
@@ -158,44 +176,68 @@ class ScheduleOptions:
             self.current_options = {}
 
     @abstractmethod
-    def options_json(self, new_options=None):
-        &#34;&#34;&#34;
-        Returns the options json for the new options provided
+    def options_json(self, new_options: Optional[Dict[str, Any]] = None) -&gt; Dict[str, Any]:
+        &#34;&#34;&#34;Returns the options json for the new options provided.
+
         Args:
-            new_options: options_json based on the type of scheduler option
+            new_options (dict, optional): options_json based on the type of scheduler option. Defaults to None.
 
-        Returns (dict) -- new options
+        Returns:
+            dict: new options
 
+        Usage:
+            # This is an abstract method and needs to be implemented in subclasses.
+            pass
         &#34;&#34;&#34;
+        pass
 
 
 class BackupOptions(ScheduleOptions):
-    &#34;&#34;&#34;Class for getting Backup Schedule Options for Schedule and Schedule Policies.&#34;&#34;&#34;
-    def __init__(self, options_type, current_options=None):
-        &#34;&#34;&#34;
-        Initialises the BackupOptions class
+    &#34;&#34;&#34;Class for getting Backup Schedule Options for Schedule and Schedule Policies.
+
+    Usage:
+        # Example of creating a BackupOptions object
+        backup_options = BackupOptions(&#39;backupOpts&#39;)
+    &#34;&#34;&#34;
+
+    def __init__(self, options_type: str, current_options: Optional[Dict[str, Any]] = None) -&gt; None:
+        &#34;&#34;&#34;Initialises the BackupOptions class.
+
         Args:
-            options_type (str) -- should be &#39;backupOpts&#39;
-            current_options (dict) -- current backup options set for the schedule if any.
+            options_type (str): should be &#39;backupOpts&#39;
+            current_options (dict, optional): current backup options set for the schedule if any. Defaults to None.
+
+        Usage:
+            # Example of initializing BackupOptions with current options
+            current_options = {&#39;backupLevel&#39;: &#39;Full&#39;}
+            backup_options = BackupOptions(&#39;backupOpts&#39;, current_options)
         &#34;&#34;&#34;
         super().__init__(options_type, current_options)
 
-    def options_json(self, new_options=None):
-        &#34;&#34;&#34;
-
-        Returns the backup options json for the new options provided
+    def options_json(self, new_options: Optional[Dict[str, Any]] = None) -&gt; Dict[str, Any]:
+        &#34;&#34;&#34;Returns the backup options json for the new options provided.
 
         Args:
-             new_options (dict) -- options which need to be set for the schedule
-                                    Example:
-                                     {
-                                        &#34;backupLevel&#34;: backup_level(Full / Incremental / Differential / Synthetic_full),
-                                        &#34;incLevel&#34;: incremental_level(BEFORE_SYNTH / AFTER_SYNTH),
-                                        &#34;runIncrementalBackup&#34;: incremental_backup
-                                    }
-        Returns (dict) -- new options
+             new_options (dict, optional): options which need to be set for the schedule. Defaults to None.
 
+        Returns:
+            dict: new options
 
+        Usage:
+            # Example of setting new backup options
+            new_options = {
+                &#34;backupLevel&#34;: &#34;Full&#34;,
+                &#34;incLevel&#34;: 0,
+                &#34;runIncrementalBackup&#34;: True
+            }
+            backup_options = BackupOptions(&#39;backupOpts&#39;)
+            options_json = backup_options.options_json(new_options)
+
+            # Example of setting new backup options with current options
+            current_options = {&#34;backupLevel&#34;: &#34;Incremental&#34;, &#34;incLevel&#34;: 1, &#34;runIncrementalBackup&#34;: False}
+            new_options = {&#34;backupLevel&#34;: &#34;Full&#34;}
+            backup_options = BackupOptions(&#39;backupOpts&#39;, current_options)
+            options_json = backup_options.options_json(new_options)
         &#34;&#34;&#34;
         if not new_options:
             new_options = {}
@@ -215,34 +257,65 @@ class BackupOptions(ScheduleOptions):
 
 
 class AuxCopyOptions(ScheduleOptions):
-    &#34;&#34;&#34;Class for getting AuxCopy Schedule Options for Schedule and Schedule Policies.&#34;&#34;&#34;
-    def __init__(self, options_type, current_options=None):
-        &#34;&#34;&#34;
-        Initialises the AuxCopyOptions class
+    &#34;&#34;&#34;Class for getting AuxCopy Schedule Options for Schedule and Schedule Policies.
+
+    Usage:
+        # Example of creating an AuxCopyOptions object
+        aux_copy_options = AuxCopyOptions(&#39;auxcopyJobOption&#39;)
+    &#34;&#34;&#34;
+
+    def __init__(self, options_type: str, current_options: Optional[Dict[str, Any]] = None) -&gt; None:
+        &#34;&#34;&#34;Initialises the AuxCopyOptions class.
+
         Args:
-            options_type (str) -- should be &#39;auxcopyJobOption&#39;
-            current_options (dict) -- current AuxCopy options set for the schedule if any.
+            options_type (str): should be &#39;auxcopyJobOption&#39;
+            current_options (dict, optional): current AuxCopy options set for the schedule if any. Defaults to None.
+
+        Usage:
+            # Example of initializing AuxCopyOptions with current options
+            current_options = {&#39;maxNumberOfStreams&#39;: 10}
+            aux_copy_options = AuxCopyOptions(&#39;auxcopyJobOption&#39;, current_options)
         &#34;&#34;&#34;
         super().__init__(options_type, current_options)
 
-    def options_json(self, new_options=None):
-        &#34;&#34;&#34;
-
-        Returns the AuxCopy options json for the new options provided
+    def options_json(self, new_options: Optional[Dict[str, Any]] = None) -&gt; Dict[str, Any]:
+        &#34;&#34;&#34;Returns the AuxCopy options json for the new options provided.
 
         Args:
-             new_options (dict) -- options which need to be set for the schedule
-                                    Example:
-                                    {
-                                        &#34;maxNumberOfStreams&#34;: 0,
-                                        &#34;useMaximumStreams&#34;: True,
-                                        &#34;useScallableResourceManagement&#34;: True,
-                                        &#34;totalJobsToProcess&#34;: 1000,
-                                        &#34;allCopies&#34;: True,
-                                        &#34;mediaAgent&#34;: {
-                                            &#34;mediaAgentName&#34;: &#34;&lt;ANY MEDIAAGENT&gt;&#34;
-                                        }
-                                    }
+             new_options (dict, optional): options which need to be set for the schedule. Defaults to None.
+
+        Returns:
+            dict: The aux copy options json.
+
+        Usage:
+            # Example of setting new aux copy options
+            new_options = {
+                &#34;maxNumberOfStreams&#34;: 10,
+                &#34;useMaximumStreams&#34;: False,
+                &#34;useScallableResourceManagement&#34;: False,
+                &#34;totalJobsToProcess&#34;: 500,
+                &#34;allCopies&#34;: False,
+                &#34;mediaAgent&#34;: {
+                    &#34;mediaAgentName&#34;: &#34;MediaAgent001&#34;
+                }
+            }
+            aux_copy_options = AuxCopyOptions(&#39;auxcopyJobOption&#39;)
+            options_json = aux_copy_options.options_json(new_options)
+
+            # Example of setting new aux copy options with current options
+            current_options = {
+                &#34;maxNumberOfStreams&#34;: 0,
+                &#34;useMaximumStreams&#34;: True,
+                &#34;useScallableResourceManagement&#34;: True,
+                &#34;totalJobsToProcess&#34;: 1000,
+                &#34;allCopies&#34;: True,
+                &#34;mediaAgent&#34;: {
+                    &#34;mediaAgentName&#34;: &#34;&lt;ANY MEDIAAGENT&gt;&#34;
+                }
+            }
+            new_options = {&#34;maxNumberOfStreams&#34;: 10}
+            aux_copy_options = AuxCopyOptions(&#39;auxcopyJobOption&#39;, current_options)
+            options_json = aux_copy_options.options_json(new_options)
         &#34;&#34;&#34;
         if not new_options:
             new_options = {}
@@ -279,7 +352,7 @@ class AuxCopyOptions(ScheduleOptions):
                         &#39;auxcopyJobOption&#39;: new_options
                     }
             }
-            }</code></pre>
+        }</code></pre>
 </details>
 </section>
 <section>
@@ -293,48 +366,93 @@ class AuxCopyOptions(ScheduleOptions):
 <dl>
 <dt id="cvpysdk.policies.schedule_options.AuxCopyOptions"><code class="flex name class">
 <span>class <span class="ident">AuxCopyOptions</span></span>
-<span>(</span><span>options_type, current_options=None)</span>
+<span>(</span><span>options_type: str, current_options: Optional[Dict[str, Any]] = None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Class for getting AuxCopy Schedule Options for Schedule and Schedule Policies.</p>
-<p>Initialises the AuxCopyOptions class</p>
-<h2 id="args">Args</h2>
-<p>options_type (str) &ndash; should be 'auxcopyJobOption'
-current_options (dict) &ndash; current AuxCopy options set for the schedule if any.</p></div>
+<p>Usage
+-----=</p>
+<h1 id="example-of-creating-an-auxcopyoptions-object">Example of creating an AuxCopyOptions object</h1>
+<p>aux_copy_options = AuxCopyOptions('auxcopyJobOption')</p>
+<p>Initialises the AuxCopyOptions class.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>options_type</code></strong> :&ensp;<code>str</code></dt>
+<dd>should be 'auxcopyJobOption'</dd>
+<dt><strong><code>current_options</code></strong> :&ensp;<code>dict</code>, optional</dt>
+<dd>current AuxCopy options set for the schedule if any. Defaults to None.</dd>
+</dl>
+<p>Usage
+-----=</p>
+<h1 id="example-of-initializing-auxcopyoptions-with-current-options">Example of initializing AuxCopyOptions with current options</h1>
+<p>current_options = {'maxNumberOfStreams': 10}
+aux_copy_options = AuxCopyOptions('auxcopyJobOption', current_options)</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/policies/schedule_options.py#L159-L224" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/policies/schedule_options.py#L198-L294" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class AuxCopyOptions(ScheduleOptions):
-    &#34;&#34;&#34;Class for getting AuxCopy Schedule Options for Schedule and Schedule Policies.&#34;&#34;&#34;
-    def __init__(self, options_type, current_options=None):
-        &#34;&#34;&#34;
-        Initialises the AuxCopyOptions class
+    &#34;&#34;&#34;Class for getting AuxCopy Schedule Options for Schedule and Schedule Policies.
+
+    Usage:
+        # Example of creating an AuxCopyOptions object
+        aux_copy_options = AuxCopyOptions(&#39;auxcopyJobOption&#39;)
+    &#34;&#34;&#34;
+
+    def __init__(self, options_type: str, current_options: Optional[Dict[str, Any]] = None) -&gt; None:
+        &#34;&#34;&#34;Initialises the AuxCopyOptions class.
+
         Args:
-            options_type (str) -- should be &#39;auxcopyJobOption&#39;
-            current_options (dict) -- current AuxCopy options set for the schedule if any.
+            options_type (str): should be &#39;auxcopyJobOption&#39;
+            current_options (dict, optional): current AuxCopy options set for the schedule if any. Defaults to None.
+
+        Usage:
+            # Example of initializing AuxCopyOptions with current options
+            current_options = {&#39;maxNumberOfStreams&#39;: 10}
+            aux_copy_options = AuxCopyOptions(&#39;auxcopyJobOption&#39;, current_options)
         &#34;&#34;&#34;
         super().__init__(options_type, current_options)
 
-    def options_json(self, new_options=None):
-        &#34;&#34;&#34;
-
-        Returns the AuxCopy options json for the new options provided
+    def options_json(self, new_options: Optional[Dict[str, Any]] = None) -&gt; Dict[str, Any]:
+        &#34;&#34;&#34;Returns the AuxCopy options json for the new options provided.
 
         Args:
-             new_options (dict) -- options which need to be set for the schedule
-                                    Example:
-                                    {
-                                        &#34;maxNumberOfStreams&#34;: 0,
-                                        &#34;useMaximumStreams&#34;: True,
-                                        &#34;useScallableResourceManagement&#34;: True,
-                                        &#34;totalJobsToProcess&#34;: 1000,
-                                        &#34;allCopies&#34;: True,
-                                        &#34;mediaAgent&#34;: {
-                                            &#34;mediaAgentName&#34;: &#34;&lt;ANY MEDIAAGENT&gt;&#34;
-                                        }
-                                    }
+             new_options (dict, optional): options which need to be set for the schedule. Defaults to None.
+
+        Returns:
+            dict: The aux copy options json.
+
+        Usage:
+            # Example of setting new aux copy options
+            new_options = {
+                &#34;maxNumberOfStreams&#34;: 10,
+                &#34;useMaximumStreams&#34;: False,
+                &#34;useScallableResourceManagement&#34;: False,
+                &#34;totalJobsToProcess&#34;: 500,
+                &#34;allCopies&#34;: False,
+                &#34;mediaAgent&#34;: {
+                    &#34;mediaAgentName&#34;: &#34;MediaAgent001&#34;
+                }
+            }
+            aux_copy_options = AuxCopyOptions(&#39;auxcopyJobOption&#39;)
+            options_json = aux_copy_options.options_json(new_options)
+
+            # Example of setting new aux copy options with current options
+            current_options = {
+                &#34;maxNumberOfStreams&#34;: 0,
+                &#34;useMaximumStreams&#34;: True,
+                &#34;useScallableResourceManagement&#34;: True,
+                &#34;totalJobsToProcess&#34;: 1000,
+                &#34;allCopies&#34;: True,
+                &#34;mediaAgent&#34;: {
+                    &#34;mediaAgentName&#34;: &#34;&lt;ANY MEDIAAGENT&gt;&#34;
+                }
+            }
+            new_options = {&#34;maxNumberOfStreams&#34;: 10}
+            aux_copy_options = AuxCopyOptions(&#39;auxcopyJobOption&#39;, current_options)
+            options_json = aux_copy_options.options_json(new_options)
         &#34;&#34;&#34;
         if not new_options:
             new_options = {}
@@ -371,7 +489,7 @@ current_options (dict) &ndash; current AuxCopy options set for the schedule if a
                         &#39;auxcopyJobOption&#39;: new_options
                     }
             }
-            }</code></pre>
+        }</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -380,14 +498,37 @@ current_options (dict) &ndash; current AuxCopy options set for the schedule if a
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.policies.schedule_options.AuxCopyOptions.options_json"><code class="name flex">
-<span>def <span class="ident">options_json</span></span>(<span>self, new_options=None)</span>
+<span>def <span class="ident">options_json</span></span>(<span>self, new_options: Optional[Dict[str, Any]] = None) ‑> Dict[str, Any]</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Returns the AuxCopy options json for the new options provided</p>
-<h2 id="args">Args</h2>
-<p>new_options (dict) &ndash; options which need to be set for the schedule
-Example:
-{
+<div class="desc"><p>Returns the AuxCopy options json for the new options provided.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>new_options</code></strong> :&ensp;<code>dict</code>, optional</dt>
+<dd>options which need to be set for the schedule. Defaults to None.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>The aux copy options json.</dd>
+</dl>
+<p>Usage
+-----=</p>
+<h1 id="example-of-setting-new-aux-copy-options">Example of setting new aux copy options</h1>
+<p>new_options = {
+"maxNumberOfStreams": 10,
+"useMaximumStreams": False,
+"useScallableResourceManagement": False,
+"totalJobsToProcess": 500,
+"allCopies": False,
+"mediaAgent": {
+"mediaAgentName": "MediaAgent001"
+}
+}
+aux_copy_options = AuxCopyOptions('auxcopyJobOption')
+options_json = aux_copy_options.options_json(new_options)</p>
+<h1 id="example-of-setting-new-aux-copy-options-with-current-options">Example of setting new aux copy options with current options</h1>
+<p>current_options = {
 "maxNumberOfStreams": 0,
 "useMaximumStreams": True,
 "useScallableResourceManagement": True,
@@ -396,30 +537,53 @@ Example:
 "mediaAgent": {
 "mediaAgentName": "<ANY MEDIAAGENT>"
 }
-}</p></div>
+}
+new_options = {"maxNumberOfStreams": 10}
+aux_copy_options = AuxCopyOptions('auxcopyJobOption', current_options)
+options_json = aux_copy_options.options_json(new_options)</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/policies/schedule_options.py#L170-L224" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/policies/schedule_options.py#L220-L294" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def options_json(self, new_options=None):
-    &#34;&#34;&#34;
-
-    Returns the AuxCopy options json for the new options provided
+<pre><code class="python">def options_json(self, new_options: Optional[Dict[str, Any]] = None) -&gt; Dict[str, Any]:
+    &#34;&#34;&#34;Returns the AuxCopy options json for the new options provided.
 
     Args:
-         new_options (dict) -- options which need to be set for the schedule
-                                Example:
-                                {
-                                    &#34;maxNumberOfStreams&#34;: 0,
-                                    &#34;useMaximumStreams&#34;: True,
-                                    &#34;useScallableResourceManagement&#34;: True,
-                                    &#34;totalJobsToProcess&#34;: 1000,
-                                    &#34;allCopies&#34;: True,
-                                    &#34;mediaAgent&#34;: {
-                                        &#34;mediaAgentName&#34;: &#34;&lt;ANY MEDIAAGENT&gt;&#34;
-                                    }
-                                }
+         new_options (dict, optional): options which need to be set for the schedule. Defaults to None.
+
+    Returns:
+        dict: The aux copy options json.
+
+    Usage:
+        # Example of setting new aux copy options
+        new_options = {
+            &#34;maxNumberOfStreams&#34;: 10,
+            &#34;useMaximumStreams&#34;: False,
+            &#34;useScallableResourceManagement&#34;: False,
+            &#34;totalJobsToProcess&#34;: 500,
+            &#34;allCopies&#34;: False,
+            &#34;mediaAgent&#34;: {
+                &#34;mediaAgentName&#34;: &#34;MediaAgent001&#34;
+            }
+        }
+        aux_copy_options = AuxCopyOptions(&#39;auxcopyJobOption&#39;)
+        options_json = aux_copy_options.options_json(new_options)
+
+        # Example of setting new aux copy options with current options
+        current_options = {
+            &#34;maxNumberOfStreams&#34;: 0,
+            &#34;useMaximumStreams&#34;: True,
+            &#34;useScallableResourceManagement&#34;: True,
+            &#34;totalJobsToProcess&#34;: 1000,
+            &#34;allCopies&#34;: True,
+            &#34;mediaAgent&#34;: {
+                &#34;mediaAgentName&#34;: &#34;&lt;ANY MEDIAAGENT&gt;&#34;
+            }
+        }
+        new_options = {&#34;maxNumberOfStreams&#34;: 10}
+        aux_copy_options = AuxCopyOptions(&#39;auxcopyJobOption&#39;, current_options)
+        options_json = aux_copy_options.options_json(new_options)
     &#34;&#34;&#34;
     if not new_options:
         new_options = {}
@@ -456,53 +620,94 @@ Example:
                     &#39;auxcopyJobOption&#39;: new_options
                 }
         }
-        }</code></pre>
+    }</code></pre>
 </details>
 </dd>
 </dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="cvpysdk.policies.schedule_options.ScheduleOptions" href="#cvpysdk.policies.schedule_options.ScheduleOptions">ScheduleOptions</a></b></code>:
+<ul class="hlist">
+<li><code><a title="cvpysdk.policies.schedule_options.ScheduleOptions.policy_to_options_map" href="#cvpysdk.policies.schedule_options.ScheduleOptions.policy_to_options_map">policy_to_options_map</a></code></li>
+</ul>
+</li>
+</ul>
 </dd>
 <dt id="cvpysdk.policies.schedule_options.BackupOptions"><code class="flex name class">
 <span>class <span class="ident">BackupOptions</span></span>
-<span>(</span><span>options_type, current_options=None)</span>
+<span>(</span><span>options_type: str, current_options: Optional[Dict[str, Any]] = None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Class for getting Backup Schedule Options for Schedule and Schedule Policies.</p>
-<p>Initialises the BackupOptions class</p>
-<h2 id="args">Args</h2>
-<p>options_type (str) &ndash; should be 'backupOpts'
-current_options (dict) &ndash; current backup options set for the schedule if any.</p></div>
+<p>Usage
+-----=</p>
+<h1 id="example-of-creating-a-backupoptions-object">Example of creating a BackupOptions object</h1>
+<p>backup_options = BackupOptions('backupOpts')</p>
+<p>Initialises the BackupOptions class.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>options_type</code></strong> :&ensp;<code>str</code></dt>
+<dd>should be 'backupOpts'</dd>
+<dt><strong><code>current_options</code></strong> :&ensp;<code>dict</code>, optional</dt>
+<dd>current backup options set for the schedule if any. Defaults to None.</dd>
+</dl>
+<p>Usage
+-----=</p>
+<h1 id="example-of-initializing-backupoptions-with-current-options">Example of initializing BackupOptions with current options</h1>
+<p>current_options = {'backupLevel': 'Full'}
+backup_options = BackupOptions('backupOpts', current_options)</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/policies/schedule_options.py#L114-L156" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/policies/schedule_options.py#L134-L195" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class BackupOptions(ScheduleOptions):
-    &#34;&#34;&#34;Class for getting Backup Schedule Options for Schedule and Schedule Policies.&#34;&#34;&#34;
-    def __init__(self, options_type, current_options=None):
-        &#34;&#34;&#34;
-        Initialises the BackupOptions class
+    &#34;&#34;&#34;Class for getting Backup Schedule Options for Schedule and Schedule Policies.
+
+    Usage:
+        # Example of creating a BackupOptions object
+        backup_options = BackupOptions(&#39;backupOpts&#39;)
+    &#34;&#34;&#34;
+
+    def __init__(self, options_type: str, current_options: Optional[Dict[str, Any]] = None) -&gt; None:
+        &#34;&#34;&#34;Initialises the BackupOptions class.
+
         Args:
-            options_type (str) -- should be &#39;backupOpts&#39;
-            current_options (dict) -- current backup options set for the schedule if any.
+            options_type (str): should be &#39;backupOpts&#39;
+            current_options (dict, optional): current backup options set for the schedule if any. Defaults to None.
+
+        Usage:
+            # Example of initializing BackupOptions with current options
+            current_options = {&#39;backupLevel&#39;: &#39;Full&#39;}
+            backup_options = BackupOptions(&#39;backupOpts&#39;, current_options)
         &#34;&#34;&#34;
         super().__init__(options_type, current_options)
 
-    def options_json(self, new_options=None):
-        &#34;&#34;&#34;
-
-        Returns the backup options json for the new options provided
+    def options_json(self, new_options: Optional[Dict[str, Any]] = None) -&gt; Dict[str, Any]:
+        &#34;&#34;&#34;Returns the backup options json for the new options provided.
 
         Args:
-             new_options (dict) -- options which need to be set for the schedule
-                                    Example:
-                                     {
-                                        &#34;backupLevel&#34;: backup_level(Full / Incremental / Differential / Synthetic_full),
-                                        &#34;incLevel&#34;: incremental_level(BEFORE_SYNTH / AFTER_SYNTH),
-                                        &#34;runIncrementalBackup&#34;: incremental_backup
-                                    }
-        Returns (dict) -- new options
+             new_options (dict, optional): options which need to be set for the schedule. Defaults to None.
 
+        Returns:
+            dict: new options
 
+        Usage:
+            # Example of setting new backup options
+            new_options = {
+                &#34;backupLevel&#34;: &#34;Full&#34;,
+                &#34;incLevel&#34;: 0,
+                &#34;runIncrementalBackup&#34;: True
+            }
+            backup_options = BackupOptions(&#39;backupOpts&#39;)
+            options_json = backup_options.options_json(new_options)
+
+            # Example of setting new backup options with current options
+            current_options = {&#34;backupLevel&#34;: &#34;Incremental&#34;, &#34;incLevel&#34;: 1, &#34;runIncrementalBackup&#34;: False}
+            new_options = {&#34;backupLevel&#34;: &#34;Full&#34;}
+            backup_options = BackupOptions(&#39;backupOpts&#39;, current_options)
+            options_json = backup_options.options_json(new_options)
         &#34;&#34;&#34;
         if not new_options:
             new_options = {}
@@ -527,40 +732,64 @@ current_options (dict) &ndash; current backup options set for the schedule if an
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.policies.schedule_options.BackupOptions.options_json"><code class="name flex">
-<span>def <span class="ident">options_json</span></span>(<span>self, new_options=None)</span>
+<span>def <span class="ident">options_json</span></span>(<span>self, new_options: Optional[Dict[str, Any]] = None) ‑> Dict[str, Any]</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Returns the backup options json for the new options provided</p>
-<h2 id="args">Args</h2>
-<p>new_options (dict) &ndash; options which need to be set for the schedule
-Example:
-{
-"backupLevel": backup_level(Full / Incremental / Differential / Synthetic_full),
-"incLevel": incremental_level(BEFORE_SYNTH / AFTER_SYNTH),
-"runIncrementalBackup": incremental_backup
+<div class="desc"><p>Returns the backup options json for the new options provided.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>new_options</code></strong> :&ensp;<code>dict</code>, optional</dt>
+<dd>options which need to be set for the schedule. Defaults to None.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>new options</dd>
+</dl>
+<p>Usage
+-----=</p>
+<h1 id="example-of-setting-new-backup-options">Example of setting new backup options</h1>
+<p>new_options = {
+"backupLevel": "Full",
+"incLevel": 0,
+"runIncrementalBackup": True
 }
-Returns (dict) &ndash; new options</p></div>
+backup_options = BackupOptions('backupOpts')
+options_json = backup_options.options_json(new_options)</p>
+<h1 id="example-of-setting-new-backup-options-with-current-options">Example of setting new backup options with current options</h1>
+<p>current_options = {"backupLevel": "Incremental", "incLevel": 1, "runIncrementalBackup": False}
+new_options = {"backupLevel": "Full"}
+backup_options = BackupOptions('backupOpts', current_options)
+options_json = backup_options.options_json(new_options)</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/policies/schedule_options.py#L125-L156" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/policies/schedule_options.py#L156-L195" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def options_json(self, new_options=None):
-    &#34;&#34;&#34;
-
-    Returns the backup options json for the new options provided
+<pre><code class="python">def options_json(self, new_options: Optional[Dict[str, Any]] = None) -&gt; Dict[str, Any]:
+    &#34;&#34;&#34;Returns the backup options json for the new options provided.
 
     Args:
-         new_options (dict) -- options which need to be set for the schedule
-                                Example:
-                                 {
-                                    &#34;backupLevel&#34;: backup_level(Full / Incremental / Differential / Synthetic_full),
-                                    &#34;incLevel&#34;: incremental_level(BEFORE_SYNTH / AFTER_SYNTH),
-                                    &#34;runIncrementalBackup&#34;: incremental_backup
-                                }
-    Returns (dict) -- new options
+         new_options (dict, optional): options which need to be set for the schedule. Defaults to None.
 
+    Returns:
+        dict: new options
 
+    Usage:
+        # Example of setting new backup options
+        new_options = {
+            &#34;backupLevel&#34;: &#34;Full&#34;,
+            &#34;incLevel&#34;: 0,
+            &#34;runIncrementalBackup&#34;: True
+        }
+        backup_options = BackupOptions(&#39;backupOpts&#39;)
+        options_json = backup_options.options_json(new_options)
+
+        # Example of setting new backup options with current options
+        current_options = {&#34;backupLevel&#34;: &#34;Incremental&#34;, &#34;incLevel&#34;: 1, &#34;runIncrementalBackup&#34;: False}
+        new_options = {&#34;backupLevel&#34;: &#34;Full&#34;}
+        backup_options = BackupOptions(&#39;backupOpts&#39;, current_options)
+        options_json = backup_options.options_json(new_options)
     &#34;&#34;&#34;
     if not new_options:
         new_options = {}
@@ -580,67 +809,108 @@ Returns (dict) &ndash; new options</p></div>
 </details>
 </dd>
 </dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="cvpysdk.policies.schedule_options.ScheduleOptions" href="#cvpysdk.policies.schedule_options.ScheduleOptions">ScheduleOptions</a></b></code>:
+<ul class="hlist">
+<li><code><a title="cvpysdk.policies.schedule_options.ScheduleOptions.policy_to_options_map" href="#cvpysdk.policies.schedule_options.ScheduleOptions.policy_to_options_map">policy_to_options_map</a></code></li>
+</ul>
+</li>
+</ul>
 </dd>
 <dt id="cvpysdk.policies.schedule_options.ScheduleOptions"><code class="flex name class">
 <span>class <span class="ident">ScheduleOptions</span></span>
-<span>(</span><span>options_type, current_options=None)</span>
+<span>(</span><span>options_type: str, current_options: Optional[Dict[str, Any]] = None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Class for getting Schedule Options for Schedule and Schedule Policies.</p>
-<p>Initialises Schedule Options class</p>
-<h2 id="args">Args</h2>
-<p>options_type (str) &ndash; option type as per ScheduleOptions.options dict.
-current_options (dict) &ndash; current options set for the schedule if any.</p></div>
+<dl>
+<dt>Attributes</dt>
+<dt>-----=</dt>
+<dt><strong><code>policy_to_options_map</code></strong> :&ensp;<code>dict</code></dt>
+<dd>A mapping of policy types to option names.</dd>
+</dl>
+<p>Usage
+-----=</p>
+<h1 id="example-of-accessing-the-policy_to_options_map-attribute">Example of accessing the policy_to_options_map attribute</h1>
+<p>options_map = ScheduleOptions.policy_to_options_map</p>
+<p>Initialises Schedule Options class.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>options_type</code></strong> :&ensp;<code>str</code></dt>
+<dd>option type as per ScheduleOptions.options dict.</dd>
+<dt><strong><code>current_options</code></strong> :&ensp;<code>dict</code>, optional</dt>
+<dd>current options set for the schedule if any. Defaults to None.</dd>
+</dl>
+<p>Usage
+-----=</p>
+<h1 id="example-of-initializing-scheduleoptions-with-current-options">Example of initializing ScheduleOptions with current options</h1>
+<p>current_options = {'backupLevel': 'Full'}
+schedule_options = ScheduleOptions('backupOpts', current_options)</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/policies/schedule_options.py#L51-L111" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/policies/schedule_options.py#L53-L131" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ScheduleOptions:
-    &#34;&#34;&#34;Class for getting Schedule Options for Schedule and Schedule Policies.&#34;&#34;&#34;
+    &#34;&#34;&#34;Class for getting Schedule Options for Schedule and Schedule Policies.
+
+    Attributes:
+        policy_to_options_map (dict): A mapping of policy types to option names.
+
+    Usage:
+        # Example of accessing the policy_to_options_map attribute
+        options_map = ScheduleOptions.policy_to_options_map
+    &#34;&#34;&#34;
 
     __metaclass__ = ABCMeta
 
-    #This map has to be updated with the subdict option_name for every new option class added
+    # This map has to be updated with the subdict option_name for every new option class added
     policy_to_options_map = {
-
         &#39;Data Protection&#39;: &#39;backupOpts&#39;,
         &#39;Auxiliary Copy&#39;: &#39;auxcopyJobOption&#39;
     }
 
-    def __new__(cls, options_type, current_options=None):
-        &#34;&#34;&#34;
-        Returns the respective class object based on the option_type
+    def __new__(cls, options_type: str, current_options: Optional[Dict[str, Any]] = None) -&gt; &#39;ScheduleOptions&#39;:
+        &#34;&#34;&#34;Returns the respective class object based on the option_type.
 
         Args:
-            options_type (str) -- option type as per ScheduleOptions.options dict.
-            current_options (dict) -- current options set for the schedule if any.
+            options_type (str): option type as per ScheduleOptions.options dict.
+            current_options (dict, optional): current options set for the schedule if any. Defaults to None.
 
-        Returns (obj) -- Return the class object based on the option_type
+        Returns:
+            ScheduleOptions: Return the class object based on the option_type
 
+        Usage:
+            # Example of creating a BackupOptions object
+            backup_options = ScheduleOptions(&#39;backupOpts&#39;)
+
+            # Example of creating an AuxCopyOptions object with current options
+            current_options = {&#39;maxNumberOfStreams&#39;: 10}
+            aux_copy_options = ScheduleOptions(&#39;auxcopyJobOption&#39;, current_options)
         &#34;&#34;&#34;
-
-        #This dict has to be update with the option_name and corresponding Option class created
+        # This dict has to be update with the option_name and corresponding Option class created
         options = {
-
             &#39;backupOpts&#39;: BackupOptions,
             &#39;auxcopyJobOption&#39;: AuxCopyOptions
-
         }
-        #subclass inherit __new__ method so we need this if check to initialize parent.
-        if cls is not __class__:
+        # subclass inherit __new__ method so we need this if check to initialize parent.
+        if cls is not ScheduleOptions:
             return super().__new__(cls)
-        return options[options_type](current_options)
+        return options[options_type](options_type, current_options)
 
+    def __init__(self, options_type: str, current_options: Optional[Dict[str, Any]] = None) -&gt; None:
+        &#34;&#34;&#34;Initialises Schedule Options class.
 
-
-
-    def __init__(self, options_type, current_options=None):
-        &#34;&#34;&#34;
-        Initialises Schedule Options class
         Args:
-            options_type (str) -- option type as per ScheduleOptions.options dict.
-            current_options (dict) -- current options set for the schedule if any.
+            options_type (str): option type as per ScheduleOptions.options dict.
+            current_options (dict, optional): current options set for the schedule if any. Defaults to None.
+
+        Usage:
+            # Example of initializing ScheduleOptions with current options
+            current_options = {&#39;backupLevel&#39;: &#39;Full&#39;}
+            schedule_options = ScheduleOptions(&#39;backupOpts&#39;, current_options)
         &#34;&#34;&#34;
         if current_options:
             self.current_options = current_options
@@ -648,15 +918,20 @@ current_options (dict) &ndash; current options set for the schedule if any.</p><
             self.current_options = {}
 
     @abstractmethod
-    def options_json(self, new_options=None):
-        &#34;&#34;&#34;
-        Returns the options json for the new options provided
+    def options_json(self, new_options: Optional[Dict[str, Any]] = None) -&gt; Dict[str, Any]:
+        &#34;&#34;&#34;Returns the options json for the new options provided.
+
         Args:
-            new_options: options_json based on the type of scheduler option
+            new_options (dict, optional): options_json based on the type of scheduler option. Defaults to None.
 
-        Returns (dict) -- new options
+        Returns:
+            dict: new options
 
-        &#34;&#34;&#34;</code></pre>
+        Usage:
+            # This is an abstract method and needs to be implemented in subclasses.
+            pass
+        &#34;&#34;&#34;
+        pass</code></pre>
 </details>
 <h3>Subclasses</h3>
 <ul class="hlist">
@@ -667,37 +942,50 @@ current_options (dict) &ndash; current options set for the schedule if any.</p><
 <dl>
 <dt id="cvpysdk.policies.schedule_options.ScheduleOptions.policy_to_options_map"><code class="name">var <span class="ident">policy_to_options_map</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 </dl>
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.policies.schedule_options.ScheduleOptions.options_json"><code class="name flex">
-<span>def <span class="ident">options_json</span></span>(<span>self, new_options=None)</span>
+<span>def <span class="ident">options_json</span></span>(<span>self, new_options: Optional[Dict[str, Any]] = None) ‑> Dict[str, Any]</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Returns the options json for the new options provided</p>
-<h2 id="args">Args</h2>
+<div class="desc"><p>Returns the options json for the new options provided.</p>
 <dl>
-<dt><strong><code>new_options</code></strong></dt>
-<dd>options_json based on the type of scheduler option</dd>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>new_options</code></strong> :&ensp;<code>dict</code>, optional</dt>
+<dd>options_json based on the type of scheduler option. Defaults to None.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>new options</dd>
 </dl>
-<p>Returns (dict) &ndash; new options</p></div>
+<p>Usage
+-----=</p>
+<h1 id="this-is-an-abstract-method-and-needs-to-be-implemented-in-subclasses">This is an abstract method and needs to be implemented in subclasses.</h1>
+<p>pass</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/policies/schedule_options.py#L102-L111" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/policies/schedule_options.py#L117-L131" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@abstractmethod
-def options_json(self, new_options=None):
-    &#34;&#34;&#34;
-    Returns the options json for the new options provided
+def options_json(self, new_options: Optional[Dict[str, Any]] = None) -&gt; Dict[str, Any]:
+    &#34;&#34;&#34;Returns the options json for the new options provided.
+
     Args:
-        new_options: options_json based on the type of scheduler option
+        new_options (dict, optional): options_json based on the type of scheduler option. Defaults to None.
 
-    Returns (dict) -- new options
+    Returns:
+        dict: new options
 
-    &#34;&#34;&#34;</code></pre>
+    Usage:
+        # This is an abstract method and needs to be implemented in subclasses.
+        pass
+    &#34;&#34;&#34;
+    pass</code></pre>
 </details>
 </dd>
 </dl>

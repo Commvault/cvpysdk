@@ -24,10 +24,11 @@
 </header>
 <section id="section-intro">
 <p>File for operating on a Virtual Server Instance.</p>
-<p>VirualServerInstance is the only class defined in this file.</p>
+<p>VirtualServerInstance is the only class defined in this file.</p>
 <p>VirtualServerInstance: Derived class from Instance Base class, representing a
 virtual server instance, and to perform operations on that instance</p>
-<h2 id="virtualserverinstance">Virtualserverinstance</h2>
+<p>Virtualserverinstance
+-----=</p>
 <p><strong>new</strong>
 &ndash;
 Decides which instance object needs to be created</p>
@@ -52,15 +53,13 @@ setter or getter for the FREL client</p>
 <p>The new module which is created has to named in the following manner:
 1. Name the module with the name of the Virtual Server without special characters
 2.Spaces alone must be replaced with underscores('_')</p>
-<p>For eg:</p>
-<pre><code>The Virtual Server 'Red Hat Virtualization' is named as 'red_hat_virtualization.py'
-
-The Virtual Server 'Hyper-V' is named as 'hyperv.py'
-</code></pre>
+<p>For eg:
+The Virtual Server 'Red Hat Virtualization' is named as 'red_hat_virtualization.py'
+The Virtual Server 'Hyper-V' is named as 'hyperv.py'</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/vsinstance.py#L1-L359" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/vsinstance.py#L1-L423" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -82,7 +81,7 @@ The Virtual Server 'Hyper-V' is named as 'hyperv.py'
 
 &#34;&#34;&#34;File for operating on a Virtual Server Instance.
 
-VirualServerInstance is the only class defined in this file.
+VirtualServerInstance is the only class defined in this file.
 
 VirtualServerInstance: Derived class from Instance Base class, representing a
                             virtual server instance, and to perform operations on that instance
@@ -105,34 +104,66 @@ VirtualServerInstance:
 
 To add a new Virtual Instance, create a class in a new module under virtualserver sub package
 
-
 The new module which is created has to named in the following manner:
 1. Name the module with the name of the Virtual Server without special characters
 2.Spaces alone must be replaced with underscores(&#39;_&#39;)
 
 For eg:
-
     The Virtual Server &#39;Red Hat Virtualization&#39; is named as &#39;red_hat_virtualization.py&#39;
-
     The Virtual Server &#39;Hyper-V&#39; is named as &#39;hyperv.py&#39;
 &#34;&#34;&#34;
 
 from __future__ import unicode_literals
 
 import re
+
 from importlib import import_module
-from inspect import getmembers, isclass, isabstract
+from inspect import getmembers, isabstract, isclass
 
 from ..instance import Instance
 from ..constants import VsInstanceType
 from ..exception import SDKException
 
+from typing import TYPE_CHECKING, List, Union
+if TYPE_CHECKING:
+    from ..agent import Agent
+
 
 class VirtualServerInstance(Instance):
-    &#34;&#34;&#34;Class for representing an Instance of the Virtual Server agent.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents an instance of the Virtual Server agent.
 
-    def __new__(cls, agent_object, instance_name, instance_id=None):
-        &#34;&#34;&#34;Decides which instance object needs to be created&#34;&#34;&#34;
+    This class provides a comprehensive interface for managing and interacting with
+    virtual server instances. It includes methods for retrieving and updating instance
+    properties, managing associated clients, handling application-specific properties,
+    and updating hypervisor credentials. The class also exposes several properties
+    for accessing key instance attributes such as server name, coordinator, and FREL (File Recovery Enabler for Linux).
+
+    Key Features:
+        - Creation of virtual server instance objects
+        - Retrieval of instance properties and proxies
+        - Access to application-specific properties
+        - Management of associated clients
+        - Update of hypervisor credentials using JSON input
+        - Properties for server name, coordinator, FREL, and associated clients
+
+    &#34;&#34;&#34;
+
+    def __new__(cls, agent_object: &#39;Agent&#39;, instance_name: str, instance_id: int = None) -&gt; &#39;VirtualServerInstance&#39;:
+        &#34;&#34;&#34;Create and return an appropriate VirtualServerInstance object.
+
+        This method determines and instantiates the correct subclass of VirtualServerInstance
+        based on the provided agent object, instance name, and optional instance ID.
+
+        Args:
+            agent_object: The agent object associated with the virtual server instance.
+            instance_name: The name of the virtual server instance.
+            instance_id: Optional; the unique identifier for the instance.
+
+        Returns:
+            An instance of VirtualServerInstance or its appropriate subclass.
+
+        &#34;&#34;&#34;
 
         try:
             instance_name = VsInstanceType.VSINSTANCE_TYPE[agent_object.instances._vs_instance_type_dict[instance_id]]
@@ -150,29 +181,40 @@ class VirtualServerInstance(Instance):
             if issubclass(_class, VirtualServerInstance) and _class.__module__.rsplit(&#34;.&#34;, 1)[-1] == instance_name:
                 return object.__new__(_class)
 
-    def _get_instance_properties(self):
-        &#34;&#34;&#34;Gets the properties of this instance.
+    def _get_instance_properties(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve and update the properties of this virtual server instance.
 
-            Raises:
-                SDKException:
-                    if response is empty
-                    if response is not success
+        This method fetches the latest properties for the current virtual server instance
+        and updates the instance&#39;s internal state accordingly.
+
+        Raises:
+            SDKException: If the response from the server is empty or indicates a failure.
+
         &#34;&#34;&#34;
         super(VirtualServerInstance, self)._get_instance_properties()
 
         self._vsinstancetype = None
         self._asscociatedclients = None
+
         if &#39;virtualServerInstance&#39; in self._properties:
             self._virtualserverinstance = self._properties[&#34;virtualServerInstance&#34;]
             self._vsinstancetype = self._virtualserverinstance[&#39;vsInstanceType&#39;]
             self._asscociatedclients = self._virtualserverinstance[&#39;associatedClients&#39;]
+        if &#39;credentialEntity&#39; in self._properties:
+            self._credential = self._properties[&#39;credentialEntity&#39;]
+            if self._credential.get(&#39;credentialName&#39;, None):
+                try:
+                    credential_obj = self._commcell_object.credentials.get(self._credential[&#39;credentialName&#39;])
+                    self._credential[&#39;userName&#39;] = credential_obj.credential_user_name
+                except SDKException:
+                    self._credential[&#39;userName&#39;] = &#39;&#39;
 
-    def _get_instance_proxies(self):
-        &#34;&#34;&#34;
-                get the list of all the proxies on a selected instance
+    def _get_instance_proxies(self) -&gt; list:
+        &#34;&#34;&#34;Retrieve the list of all proxies associated with the selected virtual server instance.
 
-                Returns:
-                    instance_proxies   (List)  --  returns the proxies list
+        Returns:
+            list: A list containing the proxies configured for this instance.
+
         &#34;&#34;&#34;
         instance_members = self.associated_clients
         instance_proxies = []
@@ -187,14 +229,18 @@ class VirtualServerInstance(Instance):
 
         return list(dict.fromkeys(instance_proxies))
 
-    def _get_application_properties(self):
-        &#34;&#34;&#34;Gets the application properties of this instance.
+    def _get_application_properties(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve the application properties for this virtual server instance.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        This method fetches the configuration and settings specific to the application
+        associated with the current virtual server instance.
 
-                    if response is not success
+        Returns:
+            None
+
+        Raises:
+            SDKException: If the response is empty or if the response indicates a failure.
+
         &#34;&#34;&#34;
         self._APPLICATION = self._services[&#39;APPLICATION_INSTANCE&#39;] % (self._instance_id)
         self._application_properties = None
@@ -206,25 +252,23 @@ class VirtualServerInstance(Instance):
             if flag:
                 if response.json() and &#34;virtualServerInfo&#34; in response.json():
                     self._application_properties = response.json()[&#34;virtualServerInfo&#34;]
-
                 else:
                     raise SDKException(&#39;Response&#39;, &#39;102&#39;)
             else:
                 raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
+    def _update_hypervisor_credentials(self, credential_json: dict) -&gt; None:
+        &#34;&#34;&#34;Update the hypervisor credentials for this virtual server instance.
 
-    def _update_hypervisor_credentials(self, credential_json):
-        &#34;&#34;&#34;updates the credential for   this instance.
+        Args:
+            credential_json: A dictionary containing the credential information to update in the hypervisor.
+                Expected keys include:
+                    - &#39;credentialid&#39; (int): The credential ID to update.
+                    - &#39;credentialname&#39; (str): The credential name to update.
 
-             Args:
-                credentialid (int)  --  Credential ID to update in hypervisor
-                credentialname(str) -- Credential name to update in hypervisor
+        Raises:
+            SDKException: If the response from the update operation is empty or indicates failure.
 
-            Raises:
-                SDKException:
-                    if response is empty
-
-                    if response is not success
         &#34;&#34;&#34;
         self._credential_service = self._services[&#39;INSTANCE_CREDENTIALS&#39;] % int(
                                                                 self._agent_object._client_object.client_id)
@@ -253,41 +297,47 @@ class VirtualServerInstance(Instance):
                 raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
     @property
-    def server_name(self):
-        &#34;&#34;&#34;returns the PseudoClient Name of the associated isntance&#34;&#34;&#34;
+    def server_name(self) -&gt; str:
+        &#34;&#34;&#34;Get the PseudoClient name associated with this virtual server instance.
+
+        Returns:
+            The name of the PseudoClient as a string.
+
+        &#34;&#34;&#34;
         return self._agent_object._client_object.client_name
 
     @property
-    def associated_clients(self):
-        &#34;&#34;&#34;Treats the clients associated to this instance as a read-only attribute.&#34;&#34;&#34;
+    def associated_clients(self) -&gt; List[str]:
+        &#34;&#34;&#34;Get the list of clients associated with this virtual server instance as a read-only property.
+
+        Returns:
+            List of client names (as strings) associated with the virtual server instance.
+
+        &#34;&#34;&#34;
         self._associated_clients = []
         if &#34;memberServers&#34; in self._asscociatedclients:
             for client in self._asscociatedclients[&#34;memberServers&#34;]:
                 if &#39;clientName&#39; in client[&#39;client&#39;]:
                     self._associated_clients.append(client[&#34;client&#34;][&#34;clientName&#34;])
                 elif &#39;clientGroupName&#39; in client[&#39;client&#39;]:
-
                     self._associated_clients.append(client[&#34;client&#34;][&#34;clientGroupName&#34;])
                 else:
                     raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#34;No Client Name or Client Group Name in JSON &#34;)
             return self._associated_clients
 
     @associated_clients.setter
-    def associated_clients(self, clients_list):
-        &#34;&#34;&#34;sets the associated clients with Client Dict Provided as input
+    def associated_clients(self, clients_list: Union[List[str], str]) -&gt; None:
+        &#34;&#34;&#34;Set the associated clients for the Virtual Server Instance.
 
-            it replaces the list of proxies in the GUI
+        This method replaces the current list of proxies in the GUI with the provided clients or client groups.
 
         Args:
-                clients_list:    (list/str)       --- list of clients or client groups
+            clients_list: A list of client names or client group names, or a single client/group name as a string.
 
         Raises:
-            SDKException:
-                if response is not success
+            SDKException: If the response is not successful, if the input is not a string or list of strings,
+                or if the input does not correspond to a valid client of the CommServe.
 
-                if input is not string or list of strings
-
-                if input is not client of CS
         &#34;&#34;&#34;
         if not isinstance(clients_list, list):
             clients_list = [clients_list]
@@ -326,8 +376,7 @@ class VirtualServerInstance(Instance):
                     &#39;entity&#39;: [{
                         &#39;instanceId&#39;: self.instance_id,
                         &#39;_type&#39;: 5
-                    }
-                    ]
+                    }]
                 }
             }
         }
@@ -335,8 +384,16 @@ class VirtualServerInstance(Instance):
         self.refresh()
 
     @property
-    def co_ordinator(self):
-        &#34;&#34;&#34;Returns the Co_ordinator of this instance it is read-only attribute&#34;&#34;&#34;
+    def co_ordinator(self) -&gt; str:
+        &#34;&#34;&#34;Get the coordinator of this virtual server instance.
+
+        This property provides the name or identifier of the coordinator associated with the instance.
+        The coordinator is a read-only attribute and cannot be modified directly.
+
+        Returns:
+            str: The coordinator of the virtual server instance.
+
+        &#34;&#34;&#34;
         if self.associated_clients is not None:
             _associated_clients = self.associated_clients
             associated_client = _associated_clients[0]
@@ -347,44 +404,38 @@ class VirtualServerInstance(Instance):
                 return associated_client_group._associated_clients[0]
 
     @property
-    def frel(self):
-        &#34;&#34;&#34;
-        Returns the FREL associated at the instance level
-            Returns:
-                string : frel client name
+    def frel(self) -&gt; str:
+        &#34;&#34;&#34;Get the FREL (File Recovery Enabler for Linux) client name associated at the instance level.
 
-            Raises:
-                SDKException:
-                    if failed to fetch properties
+        Returns:
+            The name of the FREL client as a string.
 
-                    if response is empty
+        Raises:
+            SDKException: If fetching the FREL properties fails, the response is empty, or the response is not successful.
 
-                    if response is not success
         &#34;&#34;&#34;
         _application_instance = self._services[&#39;APPLICATION_INSTANCE&#39;] % self._instance_id
         flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, _application_instance)
         if flag:
             if response.json():
-                return response.json().get(&#39;virtualServerInfo&#39;, {}).get(&#39;defaultFBRUnixMediaAgent&#39;, {}).get(
-                    &#39;mediaAgentName&#39;)
+                return response.json().get(&#39;virtualServerInfo&#39;, {}).get(
+                    &#39;defaultFBRUnixMediaAgent&#39;, {}).get(&#39;mediaAgentName&#39;)
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
     @frel.setter
-    def frel(self, frel_client):
-        &#34;&#34;&#34;sets the FREL in the instance provided as input
+    def frel(self, frel_client: str) -&gt; None:
+        &#34;&#34;&#34;Set the File Recovery Enabler for Linux (FREL) client for this virtual server instance.
+
         Args:
-                frel_client:    (string)       --- FREL client to be set as FREL
+            frel_client: The name of the FREL client to be set for the instance.
 
         Raises:
-            SDKException:
-                if response is not success
+            SDKException: If the response is not successful, if the input is not a string,
+                or if the input is not a valid client of the CommServe.
 
-                if input is not string
-
-                if input is not client of CS
         &#34;&#34;&#34;
         recovery_enablers = self._services[&#39;RECOVERY_ENABLERS&#39;]
         flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, recovery_enablers)
@@ -437,10 +488,23 @@ class VirtualServerInstance(Instance):
 <span>(</span><span>agent_object, instance_name, instance_id=None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for representing an Instance of the Virtual Server agent.</p>
+<div class="desc"><p>Represents an instance of the Virtual Server agent.</p>
+<p>This class provides a comprehensive interface for managing and interacting with
+virtual server instances. It includes methods for retrieving and updating instance
+properties, managing associated clients, handling application-specific properties,
+and updating hypervisor credentials. The class also exposes several properties
+for accessing key instance attributes such as server name, coordinator, and FREL (File Recovery Enabler for Linux).</p>
+<p>Key Features:
+- Creation of virtual server instance objects
+- Retrieval of instance properties and proxies
+- Access to application-specific properties
+- Management of associated clients
+- Update of hypervisor credentials using JSON input
+- Properties for server name, coordinator, FREL, and associated clients</p>
 <p>Initialise the instance object.</p>
-<h2 id="args">Args</h2>
-<p>agent_object
+<p>Args
+-----=
+agent_object
 (object)
 &ndash;
 instance of the Agent class</p>
@@ -453,18 +517,49 @@ name of the instance</p>
 &ndash;
 id of the instance
 default: None</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Instance class</p></div>
+<p>Returns
+-----=
+object - instance of the Instance class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/vsinstance.py#L67-L359" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/vsinstance.py#L69-L423" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class VirtualServerInstance(Instance):
-    &#34;&#34;&#34;Class for representing an Instance of the Virtual Server agent.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents an instance of the Virtual Server agent.
 
-    def __new__(cls, agent_object, instance_name, instance_id=None):
-        &#34;&#34;&#34;Decides which instance object needs to be created&#34;&#34;&#34;
+    This class provides a comprehensive interface for managing and interacting with
+    virtual server instances. It includes methods for retrieving and updating instance
+    properties, managing associated clients, handling application-specific properties,
+    and updating hypervisor credentials. The class also exposes several properties
+    for accessing key instance attributes such as server name, coordinator, and FREL (File Recovery Enabler for Linux).
+
+    Key Features:
+        - Creation of virtual server instance objects
+        - Retrieval of instance properties and proxies
+        - Access to application-specific properties
+        - Management of associated clients
+        - Update of hypervisor credentials using JSON input
+        - Properties for server name, coordinator, FREL, and associated clients
+
+    &#34;&#34;&#34;
+
+    def __new__(cls, agent_object: &#39;Agent&#39;, instance_name: str, instance_id: int = None) -&gt; &#39;VirtualServerInstance&#39;:
+        &#34;&#34;&#34;Create and return an appropriate VirtualServerInstance object.
+
+        This method determines and instantiates the correct subclass of VirtualServerInstance
+        based on the provided agent object, instance name, and optional instance ID.
+
+        Args:
+            agent_object: The agent object associated with the virtual server instance.
+            instance_name: The name of the virtual server instance.
+            instance_id: Optional; the unique identifier for the instance.
+
+        Returns:
+            An instance of VirtualServerInstance or its appropriate subclass.
+
+        &#34;&#34;&#34;
 
         try:
             instance_name = VsInstanceType.VSINSTANCE_TYPE[agent_object.instances._vs_instance_type_dict[instance_id]]
@@ -482,29 +577,40 @@ default: None</p>
             if issubclass(_class, VirtualServerInstance) and _class.__module__.rsplit(&#34;.&#34;, 1)[-1] == instance_name:
                 return object.__new__(_class)
 
-    def _get_instance_properties(self):
-        &#34;&#34;&#34;Gets the properties of this instance.
+    def _get_instance_properties(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve and update the properties of this virtual server instance.
 
-            Raises:
-                SDKException:
-                    if response is empty
-                    if response is not success
+        This method fetches the latest properties for the current virtual server instance
+        and updates the instance&#39;s internal state accordingly.
+
+        Raises:
+            SDKException: If the response from the server is empty or indicates a failure.
+
         &#34;&#34;&#34;
         super(VirtualServerInstance, self)._get_instance_properties()
 
         self._vsinstancetype = None
         self._asscociatedclients = None
+
         if &#39;virtualServerInstance&#39; in self._properties:
             self._virtualserverinstance = self._properties[&#34;virtualServerInstance&#34;]
             self._vsinstancetype = self._virtualserverinstance[&#39;vsInstanceType&#39;]
             self._asscociatedclients = self._virtualserverinstance[&#39;associatedClients&#39;]
+        if &#39;credentialEntity&#39; in self._properties:
+            self._credential = self._properties[&#39;credentialEntity&#39;]
+            if self._credential.get(&#39;credentialName&#39;, None):
+                try:
+                    credential_obj = self._commcell_object.credentials.get(self._credential[&#39;credentialName&#39;])
+                    self._credential[&#39;userName&#39;] = credential_obj.credential_user_name
+                except SDKException:
+                    self._credential[&#39;userName&#39;] = &#39;&#39;
 
-    def _get_instance_proxies(self):
-        &#34;&#34;&#34;
-                get the list of all the proxies on a selected instance
+    def _get_instance_proxies(self) -&gt; list:
+        &#34;&#34;&#34;Retrieve the list of all proxies associated with the selected virtual server instance.
 
-                Returns:
-                    instance_proxies   (List)  --  returns the proxies list
+        Returns:
+            list: A list containing the proxies configured for this instance.
+
         &#34;&#34;&#34;
         instance_members = self.associated_clients
         instance_proxies = []
@@ -519,14 +625,18 @@ default: None</p>
 
         return list(dict.fromkeys(instance_proxies))
 
-    def _get_application_properties(self):
-        &#34;&#34;&#34;Gets the application properties of this instance.
+    def _get_application_properties(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve the application properties for this virtual server instance.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        This method fetches the configuration and settings specific to the application
+        associated with the current virtual server instance.
 
-                    if response is not success
+        Returns:
+            None
+
+        Raises:
+            SDKException: If the response is empty or if the response indicates a failure.
+
         &#34;&#34;&#34;
         self._APPLICATION = self._services[&#39;APPLICATION_INSTANCE&#39;] % (self._instance_id)
         self._application_properties = None
@@ -538,25 +648,23 @@ default: None</p>
             if flag:
                 if response.json() and &#34;virtualServerInfo&#34; in response.json():
                     self._application_properties = response.json()[&#34;virtualServerInfo&#34;]
-
                 else:
                     raise SDKException(&#39;Response&#39;, &#39;102&#39;)
             else:
                 raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
+    def _update_hypervisor_credentials(self, credential_json: dict) -&gt; None:
+        &#34;&#34;&#34;Update the hypervisor credentials for this virtual server instance.
 
-    def _update_hypervisor_credentials(self, credential_json):
-        &#34;&#34;&#34;updates the credential for   this instance.
+        Args:
+            credential_json: A dictionary containing the credential information to update in the hypervisor.
+                Expected keys include:
+                    - &#39;credentialid&#39; (int): The credential ID to update.
+                    - &#39;credentialname&#39; (str): The credential name to update.
 
-             Args:
-                credentialid (int)  --  Credential ID to update in hypervisor
-                credentialname(str) -- Credential name to update in hypervisor
+        Raises:
+            SDKException: If the response from the update operation is empty or indicates failure.
 
-            Raises:
-                SDKException:
-                    if response is empty
-
-                    if response is not success
         &#34;&#34;&#34;
         self._credential_service = self._services[&#39;INSTANCE_CREDENTIALS&#39;] % int(
                                                                 self._agent_object._client_object.client_id)
@@ -585,41 +693,47 @@ default: None</p>
                 raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
     @property
-    def server_name(self):
-        &#34;&#34;&#34;returns the PseudoClient Name of the associated isntance&#34;&#34;&#34;
+    def server_name(self) -&gt; str:
+        &#34;&#34;&#34;Get the PseudoClient name associated with this virtual server instance.
+
+        Returns:
+            The name of the PseudoClient as a string.
+
+        &#34;&#34;&#34;
         return self._agent_object._client_object.client_name
 
     @property
-    def associated_clients(self):
-        &#34;&#34;&#34;Treats the clients associated to this instance as a read-only attribute.&#34;&#34;&#34;
+    def associated_clients(self) -&gt; List[str]:
+        &#34;&#34;&#34;Get the list of clients associated with this virtual server instance as a read-only property.
+
+        Returns:
+            List of client names (as strings) associated with the virtual server instance.
+
+        &#34;&#34;&#34;
         self._associated_clients = []
         if &#34;memberServers&#34; in self._asscociatedclients:
             for client in self._asscociatedclients[&#34;memberServers&#34;]:
                 if &#39;clientName&#39; in client[&#39;client&#39;]:
                     self._associated_clients.append(client[&#34;client&#34;][&#34;clientName&#34;])
                 elif &#39;clientGroupName&#39; in client[&#39;client&#39;]:
-
                     self._associated_clients.append(client[&#34;client&#34;][&#34;clientGroupName&#34;])
                 else:
                     raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#34;No Client Name or Client Group Name in JSON &#34;)
             return self._associated_clients
 
     @associated_clients.setter
-    def associated_clients(self, clients_list):
-        &#34;&#34;&#34;sets the associated clients with Client Dict Provided as input
+    def associated_clients(self, clients_list: Union[List[str], str]) -&gt; None:
+        &#34;&#34;&#34;Set the associated clients for the Virtual Server Instance.
 
-            it replaces the list of proxies in the GUI
+        This method replaces the current list of proxies in the GUI with the provided clients or client groups.
 
         Args:
-                clients_list:    (list/str)       --- list of clients or client groups
+            clients_list: A list of client names or client group names, or a single client/group name as a string.
 
         Raises:
-            SDKException:
-                if response is not success
+            SDKException: If the response is not successful, if the input is not a string or list of strings,
+                or if the input does not correspond to a valid client of the CommServe.
 
-                if input is not string or list of strings
-
-                if input is not client of CS
         &#34;&#34;&#34;
         if not isinstance(clients_list, list):
             clients_list = [clients_list]
@@ -658,8 +772,7 @@ default: None</p>
                     &#39;entity&#39;: [{
                         &#39;instanceId&#39;: self.instance_id,
                         &#39;_type&#39;: 5
-                    }
-                    ]
+                    }]
                 }
             }
         }
@@ -667,8 +780,16 @@ default: None</p>
         self.refresh()
 
     @property
-    def co_ordinator(self):
-        &#34;&#34;&#34;Returns the Co_ordinator of this instance it is read-only attribute&#34;&#34;&#34;
+    def co_ordinator(self) -&gt; str:
+        &#34;&#34;&#34;Get the coordinator of this virtual server instance.
+
+        This property provides the name or identifier of the coordinator associated with the instance.
+        The coordinator is a read-only attribute and cannot be modified directly.
+
+        Returns:
+            str: The coordinator of the virtual server instance.
+
+        &#34;&#34;&#34;
         if self.associated_clients is not None:
             _associated_clients = self.associated_clients
             associated_client = _associated_clients[0]
@@ -679,44 +800,38 @@ default: None</p>
                 return associated_client_group._associated_clients[0]
 
     @property
-    def frel(self):
-        &#34;&#34;&#34;
-        Returns the FREL associated at the instance level
-            Returns:
-                string : frel client name
+    def frel(self) -&gt; str:
+        &#34;&#34;&#34;Get the FREL (File Recovery Enabler for Linux) client name associated at the instance level.
 
-            Raises:
-                SDKException:
-                    if failed to fetch properties
+        Returns:
+            The name of the FREL client as a string.
 
-                    if response is empty
+        Raises:
+            SDKException: If fetching the FREL properties fails, the response is empty, or the response is not successful.
 
-                    if response is not success
         &#34;&#34;&#34;
         _application_instance = self._services[&#39;APPLICATION_INSTANCE&#39;] % self._instance_id
         flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, _application_instance)
         if flag:
             if response.json():
-                return response.json().get(&#39;virtualServerInfo&#39;, {}).get(&#39;defaultFBRUnixMediaAgent&#39;, {}).get(
-                    &#39;mediaAgentName&#39;)
+                return response.json().get(&#39;virtualServerInfo&#39;, {}).get(
+                    &#39;defaultFBRUnixMediaAgent&#39;, {}).get(&#39;mediaAgentName&#39;)
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
     @frel.setter
-    def frel(self, frel_client):
-        &#34;&#34;&#34;sets the FREL in the instance provided as input
+    def frel(self, frel_client: str) -&gt; None:
+        &#34;&#34;&#34;Set the File Recovery Enabler for Linux (FREL) client for this virtual server instance.
+
         Args:
-                frel_client:    (string)       --- FREL client to be set as FREL
+            frel_client: The name of the FREL client to be set for the instance.
 
         Raises:
-            SDKException:
-                if response is not success
+            SDKException: If the response is not successful, if the input is not a string,
+                or if the input is not a valid client of the CommServe.
 
-                if input is not string
-
-                if input is not client of CS
         &#34;&#34;&#34;
         recovery_enablers = self._services[&#39;RECOVERY_ENABLERS&#39;]
         flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, recovery_enablers)
@@ -769,6 +884,7 @@ default: None</p>
 <li><a title="cvpysdk.instances.virtualserver.google_cloud_platform.GoogleCloudInstance" href="virtualserver/google_cloud_platform.html#cvpysdk.instances.virtualserver.google_cloud_platform.GoogleCloudInstance">GoogleCloudInstance</a></li>
 <li><a title="cvpysdk.instances.virtualserver.hyperv.HyperVInstance" href="virtualserver/hyperv.html#cvpysdk.instances.virtualserver.hyperv.HyperVInstance">HyperVInstance</a></li>
 <li><a title="cvpysdk.instances.virtualserver.kubernetes.KubernetesInstance" href="virtualserver/kubernetes.html#cvpysdk.instances.virtualserver.kubernetes.KubernetesInstance">KubernetesInstance</a></li>
+<li><a title="cvpysdk.instances.virtualserver.morpheus_data.MorpheusInstance" href="virtualserver/morpheus_data.html#cvpysdk.instances.virtualserver.morpheus_data.MorpheusInstance">MorpheusInstance</a></li>
 <li><a title="cvpysdk.instances.virtualserver.null.NullSubclient" href="virtualserver/null.html#cvpysdk.instances.virtualserver.null.NullSubclient">NullSubclient</a></li>
 <li><a title="cvpysdk.instances.virtualserver.nutanix_ahv.nutanixinstance" href="virtualserver/nutanix_ahv.html#cvpysdk.instances.virtualserver.nutanix_ahv.nutanixinstance">nutanixinstance</a></li>
 <li><a title="cvpysdk.instances.virtualserver.openstack.OpenStackInstance" href="virtualserver/openstack.html#cvpysdk.instances.virtualserver.openstack.OpenStackInstance">OpenStackInstance</a></li>
@@ -779,45 +895,69 @@ default: None</p>
 <li><a title="cvpysdk.instances.virtualserver.red_hat_virtualization.RhevInstance" href="virtualserver/red_hat_virtualization.html#cvpysdk.instances.virtualserver.red_hat_virtualization.RhevInstance">RhevInstance</a></li>
 <li><a title="cvpysdk.instances.virtualserver.vcloud_director.vcloudInstance" href="virtualserver/vcloud_director.html#cvpysdk.instances.virtualserver.vcloud_director.vcloudInstance">vcloudInstance</a></li>
 <li><a title="cvpysdk.instances.virtualserver.vmware.VMwareInstance" href="virtualserver/vmware.html#cvpysdk.instances.virtualserver.vmware.VMwareInstance">VMwareInstance</a></li>
+<li><a title="cvpysdk.instances.virtualserver.vmware_cloud_foundation_automation.VMwareCloudFoundationAutomationInstance" href="virtualserver/vmware_cloud_foundation_automation.html#cvpysdk.instances.virtualserver.vmware_cloud_foundation_automation.VMwareCloudFoundationAutomationInstance">VMwareCloudFoundationAutomationInstance</a></li>
 <li><a title="cvpysdk.instances.virtualserver.xen.Xen" href="virtualserver/xen.html#cvpysdk.instances.virtualserver.xen.Xen">Xen</a></li>
 </ul>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.instances.vsinstance.VirtualServerInstance.associated_clients"><code class="name">var <span class="ident">associated_clients</span></code></dt>
+<dt id="cvpysdk.instances.vsinstance.VirtualServerInstance.associated_clients"><code class="name">var <span class="ident">associated_clients</span> : List[str]</code></dt>
 <dd>
-<div class="desc"><p>Treats the clients associated to this instance as a read-only attribute.</p></div>
+<div class="desc"><p>Get the list of clients associated with this virtual server instance as a read-only property.</p>
+<p>Returns
+-----=
+List of client names (as strings) associated with the virtual server instance.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/vsinstance.py#L196-L209" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/vsinstance.py#L253-L271" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def associated_clients(self):
-    &#34;&#34;&#34;Treats the clients associated to this instance as a read-only attribute.&#34;&#34;&#34;
+def associated_clients(self) -&gt; List[str]:
+    &#34;&#34;&#34;Get the list of clients associated with this virtual server instance as a read-only property.
+
+    Returns:
+        List of client names (as strings) associated with the virtual server instance.
+
+    &#34;&#34;&#34;
     self._associated_clients = []
     if &#34;memberServers&#34; in self._asscociatedclients:
         for client in self._asscociatedclients[&#34;memberServers&#34;]:
             if &#39;clientName&#39; in client[&#39;client&#39;]:
                 self._associated_clients.append(client[&#34;client&#34;][&#34;clientName&#34;])
             elif &#39;clientGroupName&#39; in client[&#39;client&#39;]:
-
                 self._associated_clients.append(client[&#34;client&#34;][&#34;clientGroupName&#34;])
             else:
                 raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#34;No Client Name or Client Group Name in JSON &#34;)
         return self._associated_clients</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.vsinstance.VirtualServerInstance.co_ordinator"><code class="name">var <span class="ident">co_ordinator</span></code></dt>
+<dt id="cvpysdk.instances.vsinstance.VirtualServerInstance.co_ordinator"><code class="name">var <span class="ident">co_ordinator</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the Co_ordinator of this instance it is read-only attribute</p></div>
+<div class="desc"><p>Get the coordinator of this virtual server instance.</p>
+<p>This property provides the name or identifier of the coordinator associated with the instance.
+The coordinator is a read-only attribute and cannot be modified directly.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>str</code></dt>
+<dd>The coordinator of the virtual server instance.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/vsinstance.py#L273-L283" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/vsinstance.py#L332-L351" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def co_ordinator(self):
-    &#34;&#34;&#34;Returns the Co_ordinator of this instance it is read-only attribute&#34;&#34;&#34;
+def co_ordinator(self) -&gt; str:
+    &#34;&#34;&#34;Get the coordinator of this virtual server instance.
+
+    This property provides the name or identifier of the coordinator associated with the instance.
+    The coordinator is a read-only attribute and cannot be modified directly.
+
+    Returns:
+        str: The coordinator of the virtual server instance.
+
+    &#34;&#34;&#34;
     if self.associated_clients is not None:
         _associated_clients = self.associated_clients
         associated_client = _associated_clients[0]
@@ -828,62 +968,65 @@ def co_ordinator(self):
             return associated_client_group._associated_clients[0]</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.vsinstance.VirtualServerInstance.frel"><code class="name">var <span class="ident">frel</span></code></dt>
+<dt id="cvpysdk.instances.vsinstance.VirtualServerInstance.frel"><code class="name">var <span class="ident">frel</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the FREL associated at the instance level
-Returns:
-string : frel client name</p>
-<pre><code>Raises:
-    SDKException:
-        if failed to fetch properties
-
-        if response is empty
-
-        if response is not success
-</code></pre></div>
+<div class="desc"><p>Get the FREL (File Recovery Enabler for Linux) client name associated at the instance level.</p>
+<p>Returns
+-----=
+The name of the FREL client as a string.</p>
+<dl>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If fetching the FREL properties fails, the response is empty, or the response is not successful.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/vsinstance.py#L285-L309" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/vsinstance.py#L353-L374" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def frel(self):
-    &#34;&#34;&#34;
-    Returns the FREL associated at the instance level
-        Returns:
-            string : frel client name
+def frel(self) -&gt; str:
+    &#34;&#34;&#34;Get the FREL (File Recovery Enabler for Linux) client name associated at the instance level.
 
-        Raises:
-            SDKException:
-                if failed to fetch properties
+    Returns:
+        The name of the FREL client as a string.
 
-                if response is empty
+    Raises:
+        SDKException: If fetching the FREL properties fails, the response is empty, or the response is not successful.
 
-                if response is not success
     &#34;&#34;&#34;
     _application_instance = self._services[&#39;APPLICATION_INSTANCE&#39;] % self._instance_id
     flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, _application_instance)
     if flag:
         if response.json():
-            return response.json().get(&#39;virtualServerInfo&#39;, {}).get(&#39;defaultFBRUnixMediaAgent&#39;, {}).get(
-                &#39;mediaAgentName&#39;)
+            return response.json().get(&#39;virtualServerInfo&#39;, {}).get(
+                &#39;defaultFBRUnixMediaAgent&#39;, {}).get(&#39;mediaAgentName&#39;)
         else:
             raise SDKException(&#39;Response&#39;, &#39;102&#39;)
     else:
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.vsinstance.VirtualServerInstance.server_name"><code class="name">var <span class="ident">server_name</span></code></dt>
+<dt id="cvpysdk.instances.vsinstance.VirtualServerInstance.server_name"><code class="name">var <span class="ident">server_name</span> : str</code></dt>
 <dd>
-<div class="desc"><p>returns the PseudoClient Name of the associated isntance</p></div>
+<div class="desc"><p>Get the PseudoClient name associated with this virtual server instance.</p>
+<p>Returns
+-----=
+The name of the PseudoClient as a string.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/vsinstance.py#L191-L194" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/vsinstance.py#L242-L251" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def server_name(self):
-    &#34;&#34;&#34;returns the PseudoClient Name of the associated isntance&#34;&#34;&#34;
+def server_name(self) -&gt; str:
+    &#34;&#34;&#34;Get the PseudoClient name associated with this virtual server instance.
+
+    Returns:
+        The name of the PseudoClient as a string.
+
+    &#34;&#34;&#34;
     return self._agent_object._client_object.client_name</code></pre>
 </details>
 </dd>

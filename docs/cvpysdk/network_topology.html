@@ -28,8 +28,9 @@
 <p>NetworkTopologies: Class for representing all the network topologies in
 the commcell</p>
 <p>NetworkTopology: class for a single topology in commcell</p>
-<h2 id="networktopologies">Networktopologies</h2>
-<p><strong>init</strong>(class_object)
+<p>Networktopologies
+-----=
+<strong>init</strong>(class_object)
 &ndash;
 initialize object of NetworkTopologies
 class associated with the commcell</p>
@@ -57,7 +58,8 @@ from the commcell</p>
 <p>refresh()
 &ndash; refresh the network topologies associated
 with the commcell</p>
-<h2 id="networktopology">Networktopology</h2>
+<p>Networktopology
+-----=</p>
 <p><strong>init</strong>(commcell_object,
 network_topology_name,
 network_topology_id=None)
@@ -90,7 +92,7 @@ network topology</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network_topology.py#L1-L938" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network_topology.py#L1-L1179" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -180,20 +182,52 @@ NetworkTopology:
 
 from __future__ import absolute_import
 from __future__ import unicode_literals
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
+
 from .exception import SDKException
 
+if TYPE_CHECKING:
+    from .clientgroup import ClientGroup
+    from .commcell import Commcell
 
 class NetworkTopologies(object):
-    &#34;&#34;&#34;Class for getting all the network topologies associated with client groups in commcell.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Manages network topologies associated with client groups in a CommCell environment.
 
-    def __init__(self, commcell_object):
-        &#34;&#34;&#34;Initialize the NetworkTopologies object.
+    This class provides a comprehensive interface for retrieving, managing, and manipulating
+    network topologies linked to client groups. It allows users to query, add, delete, and
+    verify network topologies, as well as manage firewall groups and smart topology groups.
 
-            Args:
-                commcell_object    (object)    --  instance of the Commcell class
+    Key Features:
+        - Retrieve all network topologies associated with client groups
+        - Access all network topologies via a property
+        - Check for the existence of a specific network topology
+        - Verify smart topology groups with mnemonic counts
+        - Create firewall groups lists for specified client groups
+        - Add new network topologies and associate them with client groups
+        - Get details of a specific network topology
+        - Delete existing network topologies
+        - Refresh the network topology data
+        - Obtain the number of network topologies
+        - String representation for easy inspection
 
-            Returns:
-                object  -   instance of the NetworkTopologies class
+    Args:
+        commcell_object: The CommCell object used for network topology operations.
+
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_object: &#39;Commcell&#39;) -&gt; None:
+        &#34;&#34;&#34;Initialize a NetworkTopologies object with the given Commcell connection.
+
+        Args:
+            commcell_object: An instance of the Commcell class representing the active Commcell connection.
+
+        Example:
+            &gt;&gt;&gt; from cvpysdk.commcell import Commcell
+            &gt;&gt;&gt; commcell = Commcell(&#39;commcell_host&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; network_topologies = NetworkTopologies(commcell)
+            &gt;&gt;&gt; print(type(network_topologies))
+            &lt;class &#39;NetworkTopologies&#39;&gt;
 
         &#34;&#34;&#34;
 
@@ -204,26 +238,42 @@ class NetworkTopologies(object):
         self._network_topologies = None
         self.refresh()
 
-    def __repr__(self):
-        &#34;&#34;&#34;Representation string for the instance of NetworkTopologies class.&#34;&#34;&#34;
+    def __repr__(self) -&gt; str:
+        &#34;&#34;&#34;Return the string representation of the NetworkTopologies instance.
+
+        This method provides a developer-friendly string that identifies the NetworkTopologies object,
+        which can be useful for debugging and logging purposes.
+
+        Returns:
+            A string representation of the NetworkTopologies instance.
+
+        Example:
+            &gt;&gt;&gt; topologies = NetworkTopologies()
+            &gt;&gt;&gt; print(repr(topologies))
+            &lt;NetworkTopologies object at 0x7f8b2c1d2e80&gt;
+        &#34;&#34;&#34;
 
         return &#34;NetworkTopologies class instance for Commcell&#34;
 
-    def _get_network_topologies(self):
-        &#34;&#34;&#34;Gets all the network topologies associated with the commcell
+    def _get_network_topologies(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve all network topologies associated with the Commcell.
 
-            Returns:
-                dict - consists of all network topologies of the commcell
+        Returns:
+            dict: A dictionary mapping network topology names to their corresponding IDs.
+                Example:
                     {
-                         &#34;network_topology_name1&#34;: network_topology_id1,
-                         &#34;network_topology_name2&#34;: network_topology_id2
+                        &#34;network_topology_name1&#34;: network_topology_id1,
+                        &#34;network_topology_name2&#34;: network_topology_id2
                     }
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException: If the response is empty or the request is not successful.
 
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; topologies = network_topologies._get_network_topologies()
+            &gt;&gt;&gt; print(topologies)
+            {&#39;DMZ_Topology&#39;: 101, &#39;Internal_Topology&#39;: 102}
+
         &#34;&#34;&#34;
 
         flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._NETWORK_TOPOLOGIES)
@@ -254,36 +304,56 @@ class NetworkTopologies(object):
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
     @property
-    def all_network_topologies(self):
-        &#34;&#34;&#34;Returns dict of all the network topologies associated with the commcell
+    def all_network_topologies(self) -&gt; Dict[str, int]:
+        &#34;&#34;&#34;Get a dictionary of all network topologies associated with the Commcell.
 
-            dict - consists of all network topologies of the commcell
-                    {
-                         &#34;network_topology_name&#34;: network_topology_id,
+        Returns:
+            Dict[str, int]: A dictionary mapping network topology names to their corresponding IDs.
 
-                         &#34;network_topology_name&#34;: network_topology_id
-                    }
+        Example:
+            &gt;&gt;&gt; topologies = network_topologies.all_network_topologies
+            &gt;&gt;&gt; print(topologies)
+            {&#39;DMZ_Topology&#39;: 101, &#39;Internal_Network&#39;: 102}
+            &gt;&gt;&gt; # Access a specific topology ID by name
+            &gt;&gt;&gt; dmz_id = topologies.get(&#39;DMZ_Topology&#39;)
+            &gt;&gt;&gt; print(f&#34;DMZ Topology ID: {dmz_id}&#34;)
+
         &#34;&#34;&#34;
 
         return self._network_topologies
 
-    def __len__(self):
-        &#34;&#34;&#34;Returns the number of network topologies associated to the Commcell.&#34;&#34;&#34;
+    def __len__(self) -&gt; int:
+        &#34;&#34;&#34;Return the number of network topologies associated with the Commcell.
+
+        Returns:
+            The total count of network topologies managed by this object.
+
+        Example:
+            &gt;&gt;&gt; topologies = NetworkTopologies(commcell_object)
+            &gt;&gt;&gt; count = len(topologies)
+            &gt;&gt;&gt; print(f&#34;Number of network topologies: {count}&#34;)
+        &#34;&#34;&#34;
 
         return len(self.all_network_topologies)
 
-    def has_network_topology(self, network_topology_name):
-        &#34;&#34;&#34;Checks if a network topology exists in the commcell with the input network topology name.
+    def has_network_topology(self, network_topology_name: str) -&gt; bool:
+        &#34;&#34;&#34;Check if a network topology with the specified name exists in the Commcell.
 
-            Args:
-                network_topology_name (str)  --  name of network topology
+        Args:
+            network_topology_name: The name of the network topology to check.
 
-            Returns:
-                bool - boolean output whether the network topology exists in the commcell or not
+        Returns:
+            True if the network topology exists in the Commcell, False otherwise.
 
-            Raises:
-                SDKException:
-                    if type of the network topology name argument is not string
+        Raises:
+            SDKException: If the type of the network_topology_name argument is not a string.
+
+        Example:
+            &gt;&gt;&gt; topologies = NetworkTopologies(commcell_object)
+            &gt;&gt;&gt; exists = topologies.has_network_topology(&#34;Production_Network&#34;)
+            &gt;&gt;&gt; print(f&#34;Network topology exists: {exists}&#34;)
+            # Output: Network topology exists: True
+
         &#34;&#34;&#34;
 
         if not isinstance(network_topology_name, str):
@@ -293,16 +363,23 @@ class NetworkTopologies(object):
                 network_topology_name.lower() in self._network_topologies)
 
     @staticmethod
-    def verify_smart_topology_groups(is_smartTopology, count_mnemonic):
-        &#34;&#34;&#34; Helper function to verify client groups while creating a smart topology
+    def verify_smart_topology_groups(is_smartTopology: bool, count_mnemonic: int) -&gt; None:
+        &#34;&#34;&#34;Verify client groups when creating a smart topology.
+
+        This helper function checks the validity of client group configurations 
+        during the creation of a smart topology. It ensures that the provided 
+        parameters for smart topology and mnemonic group count are appropriate.
 
         Args:
-            is_smartTopology(bool) - If the type of topology is a smart topology
-
-            count_mneomic(int) - The number of mnemonic groups within the input
+            is_smartTopology: Indicates whether the topology being created is a smart topology.
+            count_mnemonic: The number of mnemonic groups specified for the topology.
 
         Raises:
-            SDKException
+            SDKException: If the client group configuration is invalid for a smart topology.
+
+        Example:
+            &gt;&gt;&gt; NetworkTopologies.verify_smart_topology_groups(True, 3)
+            &gt;&gt;&gt; # If the configuration is invalid, an SDKException will be raised
 
         &#34;&#34;&#34;
 
@@ -320,19 +397,41 @@ class NetworkTopologies(object):
                                )
 
     @staticmethod
-    def create_firewall_groups_list(client_groups):
-        &#34;&#34;&#34; Is a helper function which is used to create firewall groups list and count the number of mnemonic groups
+    def create_firewall_groups_list(client_groups: list[dict]) -&gt; tuple[list[dict], int]:
+        &#34;&#34;&#34;Create a list of firewall groups and count the number of mnemonic groups.
+
+        This helper function processes a list of client group dictionaries, each containing
+        information about group type, group name, and whether the group is mnemonic. It returns
+        a tuple with the processed firewall groups list and the count of mnemonic groups.
 
         Args:
-            client_groups(list of dict) - client group names and client group types
+            client_groups: A list of dictionaries, where each dictionary represents a client group
+                with keys:
+                    - &#39;group_type&#39; (int): The type of the group.
+                    - &#39;group_name&#39; (str): The name of the group.
+                    - &#39;is_mnemonic&#39; (bool): Whether the group is mnemonic.
 
-                example:
-                    [{&#39;group_type&#39;:2, &#39;group_name&#39;: &#34;test1&#34;, &#39;is_mnemonic&#39;: False },
-                    {&#39;group_type&#39;:1, &#39;group_name&#39;: &#34;test2&#34;, &#39;is_mnemonic&#39;: False },
-                    {&#39;group_type&#39;:3, &#39;group_name&#39;: &#34;test3&#34;, &#39;is_mnemonic&#39;: False }]
+                Example:
+                    [
+                        {&#39;group_type&#39;: 2, &#39;group_name&#39;: &#34;test1&#34;, &#39;is_mnemonic&#39;: False},
+                        {&#39;group_type&#39;: 1, &#39;group_name&#39;: &#34;test2&#34;, &#39;is_mnemonic&#39;: False},
+                        {&#39;group_type&#39;: 3, &#39;group_name&#39;: &#34;test3&#34;, &#39;is_mnemonic&#39;: False}
+                    ]
 
         Returns:
-            Tuple - A tuple consisting of firewall_groups_list and number of mnemonic groups
+            A tuple containing:
+                - firewall_groups_list (list of dict): The processed list of firewall group dictionaries.
+                - mnemonic_groups_count (int): The number of mnemonic groups in the input list.
+
+        Example:
+            &gt;&gt;&gt; client_groups = [
+            ...     {&#39;group_type&#39;: 2, &#39;group_name&#39;: &#34;test1&#34;, &#39;is_mnemonic&#39;: False},
+            ...     {&#39;group_type&#39;: 1, &#39;group_name&#39;: &#34;test2&#34;, &#39;is_mnemonic&#39;: True},
+            ...     {&#39;group_type&#39;: 3, &#39;group_name&#39;: &#34;test3&#34;, &#39;is_mnemonic&#39;: False}
+            ... ]
+            &gt;&gt;&gt; firewall_groups, mnemonic_count = NetworkTopologies.create_firewall_groups_list(client_groups)
+            &gt;&gt;&gt; print(firewall_groups)
+            &gt;&gt;&gt; print(f&#34;Number of mnemonic groups: {mnemonic_count}&#34;)
 
         &#34;&#34;&#34;
         count_mnemonic = 0
@@ -365,102 +464,66 @@ class NetworkTopologies(object):
 
         return (firewall_groups_list, count_mnemonic)
 
-    def add(self, network_topology_name, client_groups=None, **kwargs):
-        &#34;&#34;&#34;Adds a new Network Topology to the Commcell.
+    def add(self, network_topology_name: str, client_groups: Optional[List[Dict[str, Any]]] = None, **kwargs: Any) -&gt; &#39;NetworkTopology&#39;:
+        &#34;&#34;&#34;Add a new Network Topology to the Commcell.
 
-            Args:
-                network_topology_name        (str)        --  name of the new network
-                                                              topology to add
+        This method creates a new network topology with the specified name and client groups.
+        Additional configuration options can be provided as keyword arguments.
 
-                client_groups               (list of dict) -- client group names and
-                                                              client group types
-                Example for Gateway topology
-                [{&#39;group_type&#39;:2, &#39;group_name&#39;: &#34;test1&#34;, &#39;is_mnemonic&#39;: False },
-                {&#39;group_type&#39;:1, &#39;group_name&#39;: &#34;test2&#34;, &#39;is_mnemonic&#39;: False },
-                {&#39;group_type&#39;:3, &#39;group_name&#39;: &#34;test3&#34;, &#39;is_mnemonic&#39;: False }]
+        Args:
+            network_topology_name: The name of the new network topology to add.
+            client_groups: Optional list of dictionaries specifying client group details.
+                Each dictionary should contain:
+                    - group_type (int): Type of the group (1: Infrastructure, 2: Servers, 3: Server Gateways, 4: DMZ Gateways)
+                    - group_name (str): Name of the client group
+                    - is_mnemonic (bool): True if the group is a mnemonic, False if it is a client group
 
+                Example for Gateway topology:
+                    [
+                        {&#39;group_type&#39;: 2, &#39;group_name&#39;: &#34;test1&#34;, &#39;is_mnemonic&#39;: False},
+                        {&#39;group_type&#39;: 1, &#39;group_name&#39;: &#34;test2&#34;, &#39;is_mnemonic&#39;: False},
+                        {&#39;group_type&#39;: 3, &#39;group_name&#39;: &#34;test3&#34;, &#39;is_mnemonic&#39;: False}
+                    ]
 
-                Example for Cascading topology
-                [{&#39;group_type&#39;:2, &#39;group_name&#39;: &#34;test1&#34;, &#39;is_mnemonic&#39;: False },
-                {&#39;group_type&#39;:1, &#39;group_name&#39;: &#34;test2&#34;, &#39;is_mnemonic&#39;: False },
-                {&#39;group_type&#39;:3, &#39;group_name&#39;: &#34;test3&#34;, &#39;is_mnemonic&#39;: False },
-                {&#39;group_type&#39;:4, &#39;group_name&#39;: &#34;test33&#34;, &#39;is_mnemonic&#39;: False }]
+                Example for Cascading topology:
+                    [
+                        {&#39;group_type&#39;: 2, &#39;group_name&#39;: &#34;test1&#34;, &#39;is_mnemonic&#39;: False},
+                        {&#39;group_type&#39;: 1, &#39;group_name&#39;: &#34;test2&#34;, &#39;is_mnemonic&#39;: False},
+                        {&#39;group_type&#39;: 3, &#39;group_name&#39;: &#34;test3&#34;, &#39;is_mnemonic&#39;: False},
+                        {&#39;group_type&#39;: 4, &#39;group_name&#39;: &#34;test33&#34;, &#39;is_mnemonic&#39;: False}
+                    ]
+            **kwargs: Additional keyword arguments for topology configuration. Supported keys include:
+                - use_wildcard (bool): Use wildcard proxy for proxy type topology (default: False)
+                - is_smart_topology (bool): Set to True for smart topology if a mnemonic group is present (default: False)
+                - topology_type (int): Type of network topology (1: Gateway, 2: One-way, 3: Two-way, 4: Cascading, etc.)
+                - topology_description (str): Description of the topology
+                - display_type (int): Display type for firewall extended properties (0: servers, 1: laptops; default: 0)
+                - encrypt_traffic (int): Whether to encrypt traffic (default: 0)
+                - number_of_streams (int): Number of streams (default: 1)
+                - region_id (int): Region ID (default: 0)
+                - connection_protocol (int): Protocols to use (default: 2)
 
+        Returns:
+            NetworkTopology: An instance of the created NetworkTopology.
 
-                ** kwargs               (dict)       -- Key value pairs for supported
-                                                        arguments
+        Raises:
+            SDKException: If topology creation fails, if a topology with the same name already exists,
+                or if a specified client group is already part of another topology.
 
-                Supported argument values:
-
-                use_wildcard   (boolean)  --   option to use wildcard proxy for proxy type
-                                                 topology
-                                                 Default value: False
-
-                is_smart_topology   (boolean)  --   specified as true for smart topology must be set if one mnemonic group is present
-                                                 Default value: False
-
-                topology_type        (int)     --   to specify type of network topology (Please scroll down for input values)
-
-                topology_description (str)     --   to specify topology description
-
-                display_type         (int)     --   to specify display type for firewall extended properties
-                                                    Default value: 0
-
-                encrypt_traffic      (int)     --   to specify whether encrypt traffic or not
-                                                    Default vaule: 0
-
-                number_of_streams     (int)     --   to specify number of streams
-                                                    Default vaule: 1
-
-                region_id            (int)     --   to sspecify region id
-                                                    Default value: 0
-
-                connection_protocol  (int)     --   to specify the protocols
-                                                    Default vaule: 2
-
-                Possible input values:
-
-                topology_type :
-                1 --- for Network Gateway topology
-                2 --- for one-way topology
-                3 --- for two-way topology
-                4 --- Cascading Gateway&#39;s topology
-                5 --- One-way forwarding topology
-                6 --- Tri Cascading topology. 
-                7 --- Quad Cascading topology. 
-
-                display_type:
-                0 --- servers
-                1 --- laptops
-
-                group_type for client_groups:
-                1: for Infrastructure machines
-                2: for Servers
-                3: for Server Gateways
-                4: for DMZ Gateways
-
-                Types of groups required for each topology:
-                Type 1: Servers, Infrastructure machines and Server gateways
-                Type 2: Infrastructure machines and Servers
-                Type 3: Infrastructure machines and Servers
-                Type 4: Servers, Infrastructure machines, Server gateways and DMZ Gateways
-                Type 5: Servers, Infrastructure machines and Server gateways
-
-                is_mnemonic for client_groups:
-                True: if the specified group is a mnemonic
-                False: if the specified group is a client group
-
-
-            Returns:
-                object - instance of the NetworkTopology class created by this method
-
-            Raises:
-                SDKException:
-                    if topology creation fails
-
-                    if topology with same name already exists
-
-                    if client group specified is already a part of some topology
+        Example:
+            &gt;&gt;&gt; client_groups = [
+            ...     {&#39;group_type&#39;: 2, &#39;group_name&#39;: &#34;ServersGroup&#34;, &#39;is_mnemonic&#39;: False},
+            ...     {&#39;group_type&#39;: 1, &#39;group_name&#39;: &#34;InfraGroup&#34;, &#39;is_mnemonic&#39;: False},
+            ...     {&#39;group_type&#39;: 3, &#39;group_name&#39;: &#34;GatewayGroup&#34;, &#39;is_mnemonic&#39;: False}
+            ... ]
+            &gt;&gt;&gt; topology = network_topologies.add(
+            ...     network_topology_name=&#34;MyGatewayTopology&#34;,
+            ...     client_groups=client_groups,
+            ...     topology_type=1,
+            ...     topology_description=&#34;Main gateway topology&#34;,
+            ...     encrypt_traffic=1
+            ... )
+            &gt;&gt;&gt; print(f&#34;Created topology: {topology}&#34;)
 
         &#34;&#34;&#34;
 
@@ -535,20 +598,22 @@ class NetworkTopologies(object):
                                &#39;Network Topology &#34;{0}&#34; already exists.&#39;.
                                format(network_topology_name))
 
-    def get(self, network_topology_name):
-        &#34;&#34;&#34;Returns the network topology object of the specified network topology name.
+    def get(self, network_topology_name: str) -&gt; &#39;NetworkTopology&#39;:
+        &#34;&#34;&#34;Retrieve the network topology object for the specified network topology name.
 
-            Args:
-                network_topology_name (str)  --  name of the network topology
+        Args:
+            network_topology_name: The name of the network topology to retrieve.
 
-            Returns:
-                object - instance of the NetworkTopology class for the given network topology name
+        Returns:
+            NetworkTopology: An instance of the NetworkTopology class corresponding to the given name.
 
-            Raises:
-                SDKException:
-                    if type of the network topology name argument is not string
+        Raises:
+            SDKException: If the network_topology_name is not a string, or if no network topology exists with the given name.
 
-                    if no network topology exists with the given name
+        Example:
+            &gt;&gt;&gt; topologies = NetworkTopologies(commcell_object)
+            &gt;&gt;&gt; topology = topologies.get(&#34;Production_Network&#34;)
+            &gt;&gt;&gt; print(f&#34;Retrieved topology: {topology}&#34;)
 
         &#34;&#34;&#34;
         if not isinstance(network_topology_name, str):
@@ -565,19 +630,24 @@ class NetworkTopologies(object):
                                &#39;No Network Topology exists with name: {0}&#39;.
                                format(network_topology_name))
 
-    def delete(self, network_topology_name):
-        &#34;&#34;&#34;Deletes the Network Topology from the commcell.
+    def delete(self, network_topology_name: str) -&gt; None:
+        &#34;&#34;&#34;Delete a network topology from the Commcell.
 
-            Args:
-                network_topology_name (str)  --  name of the network topology
+        Removes the specified network topology by name. If the topology does not exist,
+        or if deletion fails, an SDKException is raised.
 
-            Raises:
-                SDKException:
-                    if type of the network topology name argument is not string
+        Args:
+            network_topology_name: The name of the network topology to delete.
 
-                    if failed to delete the network topology
+        Raises:
+            SDKException: If the network topology name is not a string,
+                if deletion fails, or if no topology exists with the given name.
 
-                    if no network topology exists with the given name
+        Example:
+            &gt;&gt;&gt; topologies = NetworkTopologies(commcell_object)
+            &gt;&gt;&gt; topologies.delete(&#34;OfficeNetwork&#34;)
+            &gt;&gt;&gt; print(&#34;Network topology &#39;OfficeNetwork&#39; deleted successfully.&#34;)
+
         &#34;&#34;&#34;
 
         if not isinstance(network_topology_name, str):
@@ -620,28 +690,56 @@ class NetworkTopologies(object):
                     &#39;No Network Topology exists with name: &#34;{0}&#34;&#39;.format(network_topology_name)
                 )
 
-    def refresh(self):
-        &#34;&#34;&#34;Refresh the network topologies associated with the Commcell.&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Reload the network topologies associated with the Commcell.
+
+        This method clears any cached network topology data, ensuring that subsequent accesses
+        retrieve the most up-to-date information from the Commcell.
+
+        Example:
+            &gt;&gt;&gt; network_topologies = NetworkTopologies(commcell_object)
+            &gt;&gt;&gt; network_topologies.refresh()  # Refreshes the network topology cache
+            &gt;&gt;&gt; print(&#34;Network topologies refreshed successfully&#34;)
+
+        &#34;&#34;&#34;
 
         self._network_topologies = self._get_network_topologies()
 
 
 class NetworkTopology(object):
-    &#34;&#34;&#34;Class for performing operations for a specific network topology.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Class for managing and performing operations on a specific network topology.
 
-    def __init__(self, commcell_object, network_topology_name, network_topology_id=None):
-        &#34;&#34;&#34;Initialize the NetworkTopology class instance.
+    This class provides an interface to interact with network topology objects, allowing
+    users to retrieve and update topology properties, manage firewall groups, and push
+    network configurations. It supports property accessors for key attributes such as
+    topology ID, name, type, description, extended properties, firewall groups, and wildcard proxy.
+    The class also includes methods for refreshing topology data and updating firewall group settings.
 
-            Args:
-                commcell_object     (object)        --  instance of the Commcell class
+    Key Features:
+        - Initialization with commcell object, topology name, and ID
+        - Property accessors for topology ID, name, type, description, extended properties, firewall groups, and wildcard proxy
+        - Update firewall groups associated with the topology
+        - Push network configuration changes
+        - Refresh topology properties from the source
+        - Internal methods for topology ID retrieval and property initialization
+        - String representation for easy identification
 
-                network_topology_name    (str)      --  name of the network topology
+    &#34;&#34;&#34;
 
-                network_topology_id   (str)         --  id of the network topology
-                    default: None
+    def __init__(self, commcell_object: &#39;Commcell&#39;, network_topology_name: str, network_topology_id: str = None) -&gt; None:
+        &#34;&#34;&#34;Initialize a new instance of the NetworkTopology class.
 
-            Returns:
-                object - instance of the NetworkTopology class
+        Args:
+            commcell_object: An instance of the Commcell class representing the active Commcell connection.
+            network_topology_name: The name of the network topology to manage.
+            network_topology_id: Optional; the unique identifier of the network topology. If not provided, it will be determined automatically.
+
+        Example:
+            &gt;&gt;&gt; commcell = Commcell(&#39;hostname&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; topology = NetworkTopology(commcell, &#39;Corporate_Network&#39;)
+            &gt;&gt;&gt; # Optionally, provide a topology ID
+            &gt;&gt;&gt; topology_with_id = NetworkTopology(commcell, &#39;Corporate_Network&#39;, &#39;12345&#39;)
 
         &#34;&#34;&#34;
 
@@ -672,11 +770,19 @@ class NetworkTopology(object):
 
         self.refresh()
 
-    def __repr__(self):
-        &#34;&#34;&#34;String representation of the instance of this class.
+    def __repr__(self) -&gt; str:
+        &#34;&#34;&#34;Return a string representation of the NetworkTopology instance.
 
-            Returns:
-                str - string containing the details of this NetworkTopology
+        This method provides a human-readable string that describes the current
+        NetworkTopology object, which can be useful for debugging or logging.
+
+        Returns:
+            A string containing details about this NetworkTopology instance.
+
+        Example:
+            &gt;&gt;&gt; topology = NetworkTopology()
+            &gt;&gt;&gt; print(repr(topology))
+            &lt;NetworkTopology: ...&gt;
 
         &#34;&#34;&#34;
 
@@ -684,11 +790,16 @@ class NetworkTopology(object):
 
         return representation_string.format(self.network_topology_name)
 
-    def _get_network_topology_id(self):
-        &#34;&#34;&#34;Gets the network topology id associated with network topology.
+    def _get_network_topology_id(self) -&gt; str:
+        &#34;&#34;&#34;Retrieve the unique identifier associated with the network topology.
 
-            Returns:
-                str - id associated with network topology
+        Returns:
+            The network topology ID as a string.
+
+        Example:
+            &gt;&gt;&gt; topology = NetworkTopology()
+            &gt;&gt;&gt; topology_id = topology._get_network_topology_id()
+            &gt;&gt;&gt; print(f&#34;Network Topology ID: {topology_id}&#34;)
 
         &#34;&#34;&#34;
 
@@ -696,19 +807,21 @@ class NetworkTopology(object):
 
         return network_topologies.get(self.network_topology_name).network_topology_id
 
-    def _initialize_network_topology_properties(self):
-        &#34;&#34;&#34;Gets the network topology properties of network topology and
-        initializes the common properties for the network topology
+    def _initialize_network_topology_properties(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve and initialize the network topology properties for this NetworkTopology instance.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        This method fetches the network topology details and sets up the common properties
+        required for further operations. It ensures that essential information such as topology
+        name and type are present in the response.
 
-                    if response is not success
+        Raises:
+            SDKException: If the response is empty, unsuccessful, missing the topology name,
+                or missing the topology type.
 
-                    if topology name is not specified in the response
-
-                    if topology type is missing in the response
+        Example:
+            &gt;&gt;&gt; topology = NetworkTopology()
+            &gt;&gt;&gt; topology._initialize_network_topology_properties()
+            &gt;&gt;&gt; # The topology properties are now initialized and ready for use
 
         &#34;&#34;&#34;
 
@@ -747,66 +860,52 @@ class NetworkTopology(object):
 
         self._firewall_groups = network_topology_props.get(&#39;firewallGroups&#39;)
 
-    def update(self, firewall_groups=None, **kwargs):
-        &#34;&#34;&#34;Update the network topology properties of network topology.
+    def update(self, firewall_groups: Optional[list[dict]] = None, **kwargs: Any) -&gt; None:
+        &#34;&#34;&#34;Update the network topology properties for this network topology.
 
-            Args:
+        This method allows you to modify various properties of the network topology, such as client group associations,
+        topology name, description, type, and advanced options like encryption and protocol settings.
 
-                firewall_groups(list of dict)  --   client group names and client
-                                                    group types
+        Args:
+            firewall_groups: Optional list of dictionaries specifying client group details. Each dictionary should contain:
+                - group_type (int): The type of client group (1, 2, or 3).
+                - group_name (str): The name of the client group.
+                - is_mnemonic (bool): True if the group is a mnemonic, False if it is a client group.
+                Example:
+                    [
+                        {&#39;group_type&#39;: 2, &#39;group_name&#39;: &#34;test1&#34;, &#39;is_mnemonic&#39;: False},
+                        {&#39;group_type&#39;: 1, &#39;group_name&#39;: &#34;test2&#34;, &#39;is_mnemonic&#39;: False},
+                        {&#39;group_type&#39;: 3, &#39;group_name&#39;: &#34;test3&#34;, &#39;is_mnemonic&#39;: False}
+                    ]
+            **kwargs: Additional keyword arguments for supported network topology properties:
+                - network_topology_name (str): New name for the network topology.
+                - description (str): Description for the network topology.
+                - topology_type (int): Type of topology (1: proxy, 2: one-way, 3: two-way).
+                - wildcard_proxy (bool): Whether to use wildcard proxy for proxy type topology.
+                - is_smart_topology (bool): Set to True for smart topology.
+                - encrypt_traffic (int): Specify whether to encrypt traffic (default: 0).
+                - number_of_streams (int): Number of streams (default: 1).
+                - region_id (int): Region ID (default: 0).
+                - connection_protocol (int): Protocols to use (default: 2).
 
-                [{&#39;group_type&#39;:2, &#39;group_name&#39;: &#34;test1&#34;, &#39;is_mnemonic&#39;: False },
-                {&#39;group_type&#39;:1, &#39;group_name&#39;: &#34;test2&#34;, &#39;is_mnemonic&#39;: False },
-                {&#39;group_type&#39;:3, &#39;group_name&#39;: &#34;test3&#34;, &#39;is_mnemonic&#39;: False }]
+        Raises:
+            SDKException: If the response is empty or the update operation is not successful.
 
-                **kwargs             (dict)  -- Key value pairs for supported arguments
-
-                Supported arguments:
-
-                network_topology_name   (str)       --  new name of the network topology
-
-                description             (str)       --  description for the network topology
-
-                topology_type           (int)       -- network topology type
-
-                wildcard_proxy          (boolean)   -- option to use wildcard proxy for
-                                                     proxy type topology
-
-                is_smart_topology       (boolean)   -- specified as true for smart topology
-                
-                encrypt_traffic      (int)     --   to specify whether encrypt traffic or not
-                                                    Default vaule: 0
-
-                number_of_streams     (int)     --   to specify number of streams
-                                                    Default vaule: 1
-
-                region_id            (int)     --   to sspecify region id
-                                                    Default value: 0
-
-                connection_protocol  (int)     --   to specify the protocols
-                                                    Default vaule: 2
-
-                Possible input values:
-
-                topology_type :
-                1 --- for proxy topology
-                2 --- for one-way topology
-                3 --- for two-way topology
-
-                group_type for client_groups:
-                2: first client group in GUI screen
-                1: second client group in GUI screen
-                3: third client group in GUI screen
-
-                is_mnemonic for client_groups:
-                True: if the specified group is a mnemonic
-                False: if the specified group is a client group
-
-            Raises:
-                SDKException:
-                    if response is empty
-
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; topology = NetworkTopology()
+            &gt;&gt;&gt; firewall_groups = [
+            ...     {&#39;group_type&#39;: 2, &#39;group_name&#39;: &#34;GroupA&#34;, &#39;is_mnemonic&#39;: False},
+            ...     {&#39;group_type&#39;: 1, &#39;group_name&#39;: &#34;GroupB&#34;, &#39;is_mnemonic&#39;: True}
+            ... ]
+            &gt;&gt;&gt; topology.update(
+            ...     firewall_groups=firewall_groups,
+            ...     network_topology_name=&#34;NewTopologyName&#34;,
+            ...     description=&#34;Updated topology for new region&#34;,
+            ...     topology_type=2,
+            ...     encrypt_traffic=1,
+            ...     number_of_streams=4
+            ... )
+            &gt;&gt;&gt; print(&#34;Network topology updated successfully.&#34;)
 
         &#34;&#34;&#34;
 
@@ -880,104 +979,186 @@ class NetworkTopology(object):
         self.refresh()
 
     @property
-    def network_topology_id(self):
-        &#34;&#34;&#34;Treats the network topology id as a read-only attribute.&#34;&#34;&#34;
+    def network_topology_id(self) -&gt; str:
+        &#34;&#34;&#34;Get the unique identifier for the network topology.
+
+        This property provides read-only access to the network topology&#39;s unique ID.
+
+        Returns:
+            The network topology ID as a string.
+
+        Example:
+            &gt;&gt;&gt; topology = NetworkTopology()
+            &gt;&gt;&gt; topology_id = topology.network_topology_id  # Access the property
+            &gt;&gt;&gt; print(f&#34;Network Topology ID: {topology_id}&#34;)
+
+        &#34;&#34;&#34;
 
         return self._network_topology_id
 
     @property
-    def network_topology_name(self):
-        &#34;&#34;&#34;Treats the network topology name as a read-only attribute.&#34;&#34;&#34;
+    def network_topology_name(self) -&gt; str:
+        &#34;&#34;&#34;Get the name of the network topology as a read-only property.
+
+        Returns:
+            The name of the network topology as a string.
+
+        Example:
+            &gt;&gt;&gt; topology = NetworkTopology()
+            &gt;&gt;&gt; name = topology.network_topology_name  # Access the property
+            &gt;&gt;&gt; print(f&#34;Network topology name: {name}&#34;)
+
+        &#34;&#34;&#34;
 
         return self._network_topology_name
 
     @network_topology_name.setter
-    def network_topology_name(self, val):
-        &#34;&#34;&#34;Sets the value for network topology name
+    def network_topology_name(self, val: str) -&gt; None:
+        &#34;&#34;&#34;Set the name of the network topology.
 
-            args:
+        Args:
+            val: The new name to assign to the network topology.
 
-                val(string)  --  new name for network topology
-
+        Example:
+            &gt;&gt;&gt; topology = NetworkTopology()
+            &gt;&gt;&gt; topology.network_topology_name = &#34;CorporateNetwork&#34;  # Use assignment for property setter
+            &gt;&gt;&gt; # The network topology name is now set to &#34;CorporateNetwork&#34;
         &#34;&#34;&#34;
 
         self.update(**{&#39;network_topology_name&#39;: val})
 
     @property
-    def description(self):
-        &#34;&#34;&#34;Treats the network topology description as a read-only attribute.&#34;&#34;&#34;
+    def description(self) -&gt; str:
+        &#34;&#34;&#34;Get the description of the network topology as a read-only property.
+
+        Returns:
+            The description string of the network topology.
+
+        Example:
+            &gt;&gt;&gt; topology = NetworkTopology()
+            &gt;&gt;&gt; desc = topology.description  # Access the description property
+            &gt;&gt;&gt; print(f&#34;Topology description: {desc}&#34;)
+
+        &#34;&#34;&#34;
 
         return self._description
 
     @description.setter
-    def description(self, val):
-        &#34;&#34;&#34;Sets the description for network topology
+    def description(self, val: str) -&gt; None:
+        &#34;&#34;&#34;Set the description for the network topology.
 
-            args:
+        Args:
+            val: The description text to assign to the network topology.
 
-                val(string)  --  network topology description
+        Example:
+            &gt;&gt;&gt; topology = NetworkTopology()
+            &gt;&gt;&gt; topology.description = &#34;Corporate WAN topology for Q2 2024&#34;
+            &gt;&gt;&gt; # The description is now set for the network topology
 
         &#34;&#34;&#34;
         self.update(**{&#39;description&#39;: val})
 
     @property
-    def network_topology_type(self):
-        &#34;&#34;&#34;Treats the network topology type as read-only attribute&#34;&#34;&#34;
+    def network_topology_type(self) -&gt; int:
+        &#34;&#34;&#34;Get the network topology type as a read-only attribute.
+
+        Returns:
+            The type of the network topology as an integer.
+
+        Example:
+            &gt;&gt;&gt; topology = NetworkTopology()
+            &gt;&gt;&gt; topology_type = topology.network_topology_type  # Access as a property
+            &gt;&gt;&gt; print(f&#34;Network topology type: {topology_type}&#34;)
+
+        &#34;&#34;&#34;
 
         return self._network_topology_type
 
     @network_topology_type.setter
-    def network_topology_type(self, val):
-        &#34;&#34;&#34;Sets the value for network topology type
+    def network_topology_type(self, val: int) -&gt; None:
+        &#34;&#34;&#34;Set the network topology type for the NetworkTopology instance.
 
-            args:
+        Args:
+            val: An integer representing the network topology type.
+                - 1: Proxy topology
+                - 2: One-way topology
+                - 3: Two-way topology
 
-                val(int)  --  network topology type
-
-                topology_type :
-                1 --- for proxy topology
-                2 --- for one-way topology
-                3 --- for two-way topology
+        Example:
+            &gt;&gt;&gt; topology = NetworkTopology()
+            &gt;&gt;&gt; topology.network_topology_type = 2  # Set to one-way topology
+            &gt;&gt;&gt; # The network topology type is now set to one-way
 
         &#34;&#34;&#34;
         self.update(**{&#39;topology_type&#39;: val})
 
     @property
-    def extended_properties(self):
-        &#34;&#34;&#34;Treats the extended properties as read-only attribute&#34;&#34;&#34;
+    def extended_properties(self) -&gt; dict:
+        &#34;&#34;&#34;Get the extended properties of the network topology as a read-only attribute.
+
+        Returns:
+            dict: A dictionary containing the extended properties associated with the network topology.
+
+        Example:
+            &gt;&gt;&gt; topology = NetworkTopology()
+            &gt;&gt;&gt; properties = topology.extended_properties
+            &gt;&gt;&gt; print(properties)
+            {&#39;property1&#39;: &#39;value1&#39;, &#39;property2&#39;: &#39;value2&#39;}
+
+        &#34;&#34;&#34;
 
         return self._extended_properties
 
     @property
-    def firewall_groups(self):
-        &#34;&#34;&#34;Treats the associated client groups as read only attribute&#34;&#34;&#34;
+    def firewall_groups(self) -&gt; List[&#39;ClientGroup&#39;]:
+        &#34;&#34;&#34;Get the list of firewall client groups associated with the network topology as a read-only attribute.
+
+        Returns:
+            List of ClientGroup objects representing the firewall groups linked to this network topology.
+
+        Example:
+            &gt;&gt;&gt; topology = NetworkTopology()
+            &gt;&gt;&gt; groups = topology.firewall_groups  # Access as a property
+            &gt;&gt;&gt; for group in groups:
+            ...     print(f&#34;Firewall group: {group.name}&#34;)
+        &#34;&#34;&#34;
 
         return self._firewall_groups
 
     @firewall_groups.setter
-    def firewall_groups(self, val):
-        &#34;&#34;&#34;Sets the value for associated client groups
+    def firewall_groups(self, val: list[dict]) -&gt; None:
+        &#34;&#34;&#34;Set the associated client groups for the network topology firewall.
 
-            Args:
+        Args:
+            val: A list of dictionaries, each specifying a client group and its type. 
+                Each dictionary should have the following keys:
+                    - &#39;group_type&#39; (int): The type of the client group.
+                        2: first client group in GUI screen
+                        1: second client group in GUI screen
+                        3: third client group in GUI screen
+                    - &#39;group_name&#39; (str): The name of the client group.
+                    - &#39;is_mnemonic&#39; (bool): 
+                        True if the group is a mnemonic, 
+                        False if it is a client group.
 
-                val(list of dict)  --   client group names and client group types
+                Example input:
+                    [
+                        {&#39;group_type&#39;: 2, &#39;group_name&#39;: &#34;test1&#34;, &#39;is_mnemonic&#39;: False},
+                        {&#39;group_type&#39;: 1, &#39;group_name&#39;: &#34;test2&#34;, &#39;is_mnemonic&#39;: False},
+                        {&#39;group_type&#39;: 3, &#39;group_name&#39;: &#34;test3&#34;, &#39;is_mnemonic&#39;: False}
+                    ]
 
-                [{&#39;group_type&#39;:2, &#39;group_name&#39;: &#34;test1&#34;, &#39;is_mnemonic&#39;: False },
-                {&#39;group_type&#39;:1, &#39;group_name&#39;: &#34;test2&#34;, &#39;is_mnemonic&#39;: False },
-                {&#39;group_type&#39;:3, &#39;group_name&#39;: &#34;test3&#34;, &#39;is_mnemonic&#39;: False }]
+        Raises:
+            SDKException: If the input value is not a list.
 
-                group_type for client_groups:
-                2: first client group in GUI screen
-                1: second client group in GUI screen
-                3: third client group in GUI screen
-
-                is_mnemonic for client_groups:
-                True: if the specified group is a mnemonic
-                False: if the specified group is a client group
-
-            Raises:
-                SDKException:
-                    if input value is not a list
+        Example:
+            &gt;&gt;&gt; topology = NetworkTopology()
+            &gt;&gt;&gt; topology.firewall_groups = [
+            ...     {&#39;group_type&#39;: 2, &#39;group_name&#39;: &#34;test1&#34;, &#39;is_mnemonic&#39;: False},
+            ...     {&#39;group_type&#39;: 1, &#39;group_name&#39;: &#34;test2&#34;, &#39;is_mnemonic&#39;: False},
+            ...     {&#39;group_type&#39;: 3, &#39;group_name&#39;: &#34;test3&#34;, &#39;is_mnemonic&#39;: False}
+            ... ]
+            &gt;&gt;&gt; # The firewall groups are now set for the topology
 
         &#34;&#34;&#34;
         if not isinstance(val, list):
@@ -988,20 +1169,39 @@ class NetworkTopology(object):
         self.update(val)
 
     @property
-    def wildcard_proxy(self):
-        &#34;&#34;&#34;Treats the use wildcard proxy option as read only attribute&#34;&#34;&#34;
+    def wildcard_proxy(self) -&gt; bool:
+        &#34;&#34;&#34;Indicate whether the wildcard proxy option is enabled for the network topology.
+
+        This property provides read-only access to the status of the wildcard proxy setting.
+
+        Returns:
+            bool: True if the wildcard proxy option is enabled, False otherwise.
+
+        Example:
+            &gt;&gt;&gt; topology = NetworkTopology()
+            &gt;&gt;&gt; if topology.wildcard_proxy:
+            ...     print(&#34;Wildcard proxy is enabled.&#34;)
+            &gt;&gt;&gt; else:
+            ...     print(&#34;Wildcard proxy is disabled.&#34;)
+
+        &#34;&#34;&#34;
 
         return self._properties.get(&#39;useWildcardProxy&#39;, False)
 
-    def push_network_config(self):
-        &#34;&#34;&#34;Performs a push network configuration on network topology
+    def push_network_config(self) -&gt; None:
+        &#34;&#34;&#34;Push the network configuration to the network topology.
 
-            Raises:
-                SDKException:
+        This method initiates a push operation to apply the current network configuration
+        to the network topology. It is typically used to synchronize or update the network
+        settings across the managed environment.
 
-                    if failed to push configuration on network topology
+        Raises:
+            SDKException: If the push operation fails or if the response indicates an unsuccessful attempt.
 
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; topology = NetworkTopology()
+            &gt;&gt;&gt; topology.push_network_config()
+            &gt;&gt;&gt; print(&#34;Network configuration pushed successfully.&#34;)
 
         &#34;&#34;&#34;
 
@@ -1026,8 +1226,19 @@ class NetworkTopology(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def refresh(self):
-        &#34;&#34;&#34;Refresh the properties of Network Topology&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Reload the properties and state of the NetworkTopology object.
+
+        This method updates the NetworkTopology instance to reflect the latest network configuration
+        and topology information. Use this method to ensure that the object contains current data
+        after changes have been made to the network.
+
+        Example:
+            &gt;&gt;&gt; topology = NetworkTopology()
+            &gt;&gt;&gt; topology.refresh()  # Refreshes the network topology properties
+            &gt;&gt;&gt; print(&#34;Network topology updated successfully&#34;)
+
+        &#34;&#34;&#34;
 
         self._initialize_network_topology_properties()</code></pre>
 </details>
@@ -1043,36 +1254,89 @@ class NetworkTopology(object):
 <dl>
 <dt id="cvpysdk.network_topology.NetworkTopologies"><code class="flex name class">
 <span>class <span class="ident">NetworkTopologies</span></span>
-<span>(</span><span>commcell_object)</span>
+<span>(</span><span>commcell_object: Commcell)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for getting all the network topologies associated with client groups in commcell.</p>
-<p>Initialize the NetworkTopologies object.</p>
-<h2 id="args">Args</h2>
-<p>commcell_object
-(object)
-&ndash;
-instance of the Commcell class</p>
-<h2 id="returns">Returns</h2>
-<p>object
--
-instance of the NetworkTopologies class</p></div>
+<div class="desc"><p>Manages network topologies associated with client groups in a CommCell environment.</p>
+<p>This class provides a comprehensive interface for retrieving, managing, and manipulating
+network topologies linked to client groups. It allows users to query, add, delete, and
+verify network topologies, as well as manage firewall groups and smart topology groups.</p>
+<p>Key Features:
+- Retrieve all network topologies associated with client groups
+- Access all network topologies via a property
+- Check for the existence of a specific network topology
+- Verify smart topology groups with mnemonic counts
+- Create firewall groups lists for specified client groups
+- Add new network topologies and associate them with client groups
+- Get details of a specific network topology
+- Delete existing network topologies
+- Refresh the network topology data
+- Obtain the number of network topologies
+- String representation for easy inspection</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>commcell_object</code></strong></dt>
+<dd>The CommCell object used for network topology operations.</dd>
+</dl>
+<p>Initialize a NetworkTopologies object with the given Commcell connection.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>commcell_object</code></strong></dt>
+<dd>An instance of the Commcell class representing the active Commcell connection.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; from cvpysdk.commcell import Commcell
+&gt;&gt;&gt; commcell = Commcell('commcell_host', 'username', 'password')
+&gt;&gt;&gt; network_topologies = NetworkTopologies(commcell)
+&gt;&gt;&gt; print(type(network_topologies))
+&lt;class 'NetworkTopologies'&gt;
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network_topology.py#L92-L532" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network_topology.py#L97-L623" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class NetworkTopologies(object):
-    &#34;&#34;&#34;Class for getting all the network topologies associated with client groups in commcell.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Manages network topologies associated with client groups in a CommCell environment.
 
-    def __init__(self, commcell_object):
-        &#34;&#34;&#34;Initialize the NetworkTopologies object.
+    This class provides a comprehensive interface for retrieving, managing, and manipulating
+    network topologies linked to client groups. It allows users to query, add, delete, and
+    verify network topologies, as well as manage firewall groups and smart topology groups.
 
-            Args:
-                commcell_object    (object)    --  instance of the Commcell class
+    Key Features:
+        - Retrieve all network topologies associated with client groups
+        - Access all network topologies via a property
+        - Check for the existence of a specific network topology
+        - Verify smart topology groups with mnemonic counts
+        - Create firewall groups lists for specified client groups
+        - Add new network topologies and associate them with client groups
+        - Get details of a specific network topology
+        - Delete existing network topologies
+        - Refresh the network topology data
+        - Obtain the number of network topologies
+        - String representation for easy inspection
 
-            Returns:
-                object  -   instance of the NetworkTopologies class
+    Args:
+        commcell_object: The CommCell object used for network topology operations.
+
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_object: &#39;Commcell&#39;) -&gt; None:
+        &#34;&#34;&#34;Initialize a NetworkTopologies object with the given Commcell connection.
+
+        Args:
+            commcell_object: An instance of the Commcell class representing the active Commcell connection.
+
+        Example:
+            &gt;&gt;&gt; from cvpysdk.commcell import Commcell
+            &gt;&gt;&gt; commcell = Commcell(&#39;commcell_host&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; network_topologies = NetworkTopologies(commcell)
+            &gt;&gt;&gt; print(type(network_topologies))
+            &lt;class &#39;NetworkTopologies&#39;&gt;
 
         &#34;&#34;&#34;
 
@@ -1083,26 +1347,42 @@ instance of the NetworkTopologies class</p></div>
         self._network_topologies = None
         self.refresh()
 
-    def __repr__(self):
-        &#34;&#34;&#34;Representation string for the instance of NetworkTopologies class.&#34;&#34;&#34;
+    def __repr__(self) -&gt; str:
+        &#34;&#34;&#34;Return the string representation of the NetworkTopologies instance.
+
+        This method provides a developer-friendly string that identifies the NetworkTopologies object,
+        which can be useful for debugging and logging purposes.
+
+        Returns:
+            A string representation of the NetworkTopologies instance.
+
+        Example:
+            &gt;&gt;&gt; topologies = NetworkTopologies()
+            &gt;&gt;&gt; print(repr(topologies))
+            &lt;NetworkTopologies object at 0x7f8b2c1d2e80&gt;
+        &#34;&#34;&#34;
 
         return &#34;NetworkTopologies class instance for Commcell&#34;
 
-    def _get_network_topologies(self):
-        &#34;&#34;&#34;Gets all the network topologies associated with the commcell
+    def _get_network_topologies(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve all network topologies associated with the Commcell.
 
-            Returns:
-                dict - consists of all network topologies of the commcell
+        Returns:
+            dict: A dictionary mapping network topology names to their corresponding IDs.
+                Example:
                     {
-                         &#34;network_topology_name1&#34;: network_topology_id1,
-                         &#34;network_topology_name2&#34;: network_topology_id2
+                        &#34;network_topology_name1&#34;: network_topology_id1,
+                        &#34;network_topology_name2&#34;: network_topology_id2
                     }
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException: If the response is empty or the request is not successful.
 
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; topologies = network_topologies._get_network_topologies()
+            &gt;&gt;&gt; print(topologies)
+            {&#39;DMZ_Topology&#39;: 101, &#39;Internal_Topology&#39;: 102}
+
         &#34;&#34;&#34;
 
         flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._NETWORK_TOPOLOGIES)
@@ -1133,36 +1413,56 @@ instance of the NetworkTopologies class</p></div>
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
     @property
-    def all_network_topologies(self):
-        &#34;&#34;&#34;Returns dict of all the network topologies associated with the commcell
+    def all_network_topologies(self) -&gt; Dict[str, int]:
+        &#34;&#34;&#34;Get a dictionary of all network topologies associated with the Commcell.
 
-            dict - consists of all network topologies of the commcell
-                    {
-                         &#34;network_topology_name&#34;: network_topology_id,
+        Returns:
+            Dict[str, int]: A dictionary mapping network topology names to their corresponding IDs.
 
-                         &#34;network_topology_name&#34;: network_topology_id
-                    }
+        Example:
+            &gt;&gt;&gt; topologies = network_topologies.all_network_topologies
+            &gt;&gt;&gt; print(topologies)
+            {&#39;DMZ_Topology&#39;: 101, &#39;Internal_Network&#39;: 102}
+            &gt;&gt;&gt; # Access a specific topology ID by name
+            &gt;&gt;&gt; dmz_id = topologies.get(&#39;DMZ_Topology&#39;)
+            &gt;&gt;&gt; print(f&#34;DMZ Topology ID: {dmz_id}&#34;)
+
         &#34;&#34;&#34;
 
         return self._network_topologies
 
-    def __len__(self):
-        &#34;&#34;&#34;Returns the number of network topologies associated to the Commcell.&#34;&#34;&#34;
+    def __len__(self) -&gt; int:
+        &#34;&#34;&#34;Return the number of network topologies associated with the Commcell.
+
+        Returns:
+            The total count of network topologies managed by this object.
+
+        Example:
+            &gt;&gt;&gt; topologies = NetworkTopologies(commcell_object)
+            &gt;&gt;&gt; count = len(topologies)
+            &gt;&gt;&gt; print(f&#34;Number of network topologies: {count}&#34;)
+        &#34;&#34;&#34;
 
         return len(self.all_network_topologies)
 
-    def has_network_topology(self, network_topology_name):
-        &#34;&#34;&#34;Checks if a network topology exists in the commcell with the input network topology name.
+    def has_network_topology(self, network_topology_name: str) -&gt; bool:
+        &#34;&#34;&#34;Check if a network topology with the specified name exists in the Commcell.
 
-            Args:
-                network_topology_name (str)  --  name of network topology
+        Args:
+            network_topology_name: The name of the network topology to check.
 
-            Returns:
-                bool - boolean output whether the network topology exists in the commcell or not
+        Returns:
+            True if the network topology exists in the Commcell, False otherwise.
 
-            Raises:
-                SDKException:
-                    if type of the network topology name argument is not string
+        Raises:
+            SDKException: If the type of the network_topology_name argument is not a string.
+
+        Example:
+            &gt;&gt;&gt; topologies = NetworkTopologies(commcell_object)
+            &gt;&gt;&gt; exists = topologies.has_network_topology(&#34;Production_Network&#34;)
+            &gt;&gt;&gt; print(f&#34;Network topology exists: {exists}&#34;)
+            # Output: Network topology exists: True
+
         &#34;&#34;&#34;
 
         if not isinstance(network_topology_name, str):
@@ -1172,16 +1472,23 @@ instance of the NetworkTopologies class</p></div>
                 network_topology_name.lower() in self._network_topologies)
 
     @staticmethod
-    def verify_smart_topology_groups(is_smartTopology, count_mnemonic):
-        &#34;&#34;&#34; Helper function to verify client groups while creating a smart topology
+    def verify_smart_topology_groups(is_smartTopology: bool, count_mnemonic: int) -&gt; None:
+        &#34;&#34;&#34;Verify client groups when creating a smart topology.
+
+        This helper function checks the validity of client group configurations 
+        during the creation of a smart topology. It ensures that the provided 
+        parameters for smart topology and mnemonic group count are appropriate.
 
         Args:
-            is_smartTopology(bool) - If the type of topology is a smart topology
-
-            count_mneomic(int) - The number of mnemonic groups within the input
+            is_smartTopology: Indicates whether the topology being created is a smart topology.
+            count_mnemonic: The number of mnemonic groups specified for the topology.
 
         Raises:
-            SDKException
+            SDKException: If the client group configuration is invalid for a smart topology.
+
+        Example:
+            &gt;&gt;&gt; NetworkTopologies.verify_smart_topology_groups(True, 3)
+            &gt;&gt;&gt; # If the configuration is invalid, an SDKException will be raised
 
         &#34;&#34;&#34;
 
@@ -1199,19 +1506,41 @@ instance of the NetworkTopologies class</p></div>
                                )
 
     @staticmethod
-    def create_firewall_groups_list(client_groups):
-        &#34;&#34;&#34; Is a helper function which is used to create firewall groups list and count the number of mnemonic groups
+    def create_firewall_groups_list(client_groups: list[dict]) -&gt; tuple[list[dict], int]:
+        &#34;&#34;&#34;Create a list of firewall groups and count the number of mnemonic groups.
+
+        This helper function processes a list of client group dictionaries, each containing
+        information about group type, group name, and whether the group is mnemonic. It returns
+        a tuple with the processed firewall groups list and the count of mnemonic groups.
 
         Args:
-            client_groups(list of dict) - client group names and client group types
+            client_groups: A list of dictionaries, where each dictionary represents a client group
+                with keys:
+                    - &#39;group_type&#39; (int): The type of the group.
+                    - &#39;group_name&#39; (str): The name of the group.
+                    - &#39;is_mnemonic&#39; (bool): Whether the group is mnemonic.
 
-                example:
-                    [{&#39;group_type&#39;:2, &#39;group_name&#39;: &#34;test1&#34;, &#39;is_mnemonic&#39;: False },
-                    {&#39;group_type&#39;:1, &#39;group_name&#39;: &#34;test2&#34;, &#39;is_mnemonic&#39;: False },
-                    {&#39;group_type&#39;:3, &#39;group_name&#39;: &#34;test3&#34;, &#39;is_mnemonic&#39;: False }]
+                Example:
+                    [
+                        {&#39;group_type&#39;: 2, &#39;group_name&#39;: &#34;test1&#34;, &#39;is_mnemonic&#39;: False},
+                        {&#39;group_type&#39;: 1, &#39;group_name&#39;: &#34;test2&#34;, &#39;is_mnemonic&#39;: False},
+                        {&#39;group_type&#39;: 3, &#39;group_name&#39;: &#34;test3&#34;, &#39;is_mnemonic&#39;: False}
+                    ]
 
         Returns:
-            Tuple - A tuple consisting of firewall_groups_list and number of mnemonic groups
+            A tuple containing:
+                - firewall_groups_list (list of dict): The processed list of firewall group dictionaries.
+                - mnemonic_groups_count (int): The number of mnemonic groups in the input list.
+
+        Example:
+            &gt;&gt;&gt; client_groups = [
+            ...     {&#39;group_type&#39;: 2, &#39;group_name&#39;: &#34;test1&#34;, &#39;is_mnemonic&#39;: False},
+            ...     {&#39;group_type&#39;: 1, &#39;group_name&#39;: &#34;test2&#34;, &#39;is_mnemonic&#39;: True},
+            ...     {&#39;group_type&#39;: 3, &#39;group_name&#39;: &#34;test3&#34;, &#39;is_mnemonic&#39;: False}
+            ... ]
+            &gt;&gt;&gt; firewall_groups, mnemonic_count = NetworkTopologies.create_firewall_groups_list(client_groups)
+            &gt;&gt;&gt; print(firewall_groups)
+            &gt;&gt;&gt; print(f&#34;Number of mnemonic groups: {mnemonic_count}&#34;)
 
         &#34;&#34;&#34;
         count_mnemonic = 0
@@ -1244,102 +1573,66 @@ instance of the NetworkTopologies class</p></div>
 
         return (firewall_groups_list, count_mnemonic)
 
-    def add(self, network_topology_name, client_groups=None, **kwargs):
-        &#34;&#34;&#34;Adds a new Network Topology to the Commcell.
+    def add(self, network_topology_name: str, client_groups: Optional[List[Dict[str, Any]]] = None, **kwargs: Any) -&gt; &#39;NetworkTopology&#39;:
+        &#34;&#34;&#34;Add a new Network Topology to the Commcell.
 
-            Args:
-                network_topology_name        (str)        --  name of the new network
-                                                              topology to add
+        This method creates a new network topology with the specified name and client groups.
+        Additional configuration options can be provided as keyword arguments.
 
-                client_groups               (list of dict) -- client group names and
-                                                              client group types
-                Example for Gateway topology
-                [{&#39;group_type&#39;:2, &#39;group_name&#39;: &#34;test1&#34;, &#39;is_mnemonic&#39;: False },
-                {&#39;group_type&#39;:1, &#39;group_name&#39;: &#34;test2&#34;, &#39;is_mnemonic&#39;: False },
-                {&#39;group_type&#39;:3, &#39;group_name&#39;: &#34;test3&#34;, &#39;is_mnemonic&#39;: False }]
+        Args:
+            network_topology_name: The name of the new network topology to add.
+            client_groups: Optional list of dictionaries specifying client group details.
+                Each dictionary should contain:
+                    - group_type (int): Type of the group (1: Infrastructure, 2: Servers, 3: Server Gateways, 4: DMZ Gateways)
+                    - group_name (str): Name of the client group
+                    - is_mnemonic (bool): True if the group is a mnemonic, False if it is a client group
 
+                Example for Gateway topology:
+                    [
+                        {&#39;group_type&#39;: 2, &#39;group_name&#39;: &#34;test1&#34;, &#39;is_mnemonic&#39;: False},
+                        {&#39;group_type&#39;: 1, &#39;group_name&#39;: &#34;test2&#34;, &#39;is_mnemonic&#39;: False},
+                        {&#39;group_type&#39;: 3, &#39;group_name&#39;: &#34;test3&#34;, &#39;is_mnemonic&#39;: False}
+                    ]
 
-                Example for Cascading topology
-                [{&#39;group_type&#39;:2, &#39;group_name&#39;: &#34;test1&#34;, &#39;is_mnemonic&#39;: False },
-                {&#39;group_type&#39;:1, &#39;group_name&#39;: &#34;test2&#34;, &#39;is_mnemonic&#39;: False },
-                {&#39;group_type&#39;:3, &#39;group_name&#39;: &#34;test3&#34;, &#39;is_mnemonic&#39;: False },
-                {&#39;group_type&#39;:4, &#39;group_name&#39;: &#34;test33&#34;, &#39;is_mnemonic&#39;: False }]
+                Example for Cascading topology:
+                    [
+                        {&#39;group_type&#39;: 2, &#39;group_name&#39;: &#34;test1&#34;, &#39;is_mnemonic&#39;: False},
+                        {&#39;group_type&#39;: 1, &#39;group_name&#39;: &#34;test2&#34;, &#39;is_mnemonic&#39;: False},
+                        {&#39;group_type&#39;: 3, &#39;group_name&#39;: &#34;test3&#34;, &#39;is_mnemonic&#39;: False},
+                        {&#39;group_type&#39;: 4, &#39;group_name&#39;: &#34;test33&#34;, &#39;is_mnemonic&#39;: False}
+                    ]
+            **kwargs: Additional keyword arguments for topology configuration. Supported keys include:
+                - use_wildcard (bool): Use wildcard proxy for proxy type topology (default: False)
+                - is_smart_topology (bool): Set to True for smart topology if a mnemonic group is present (default: False)
+                - topology_type (int): Type of network topology (1: Gateway, 2: One-way, 3: Two-way, 4: Cascading, etc.)
+                - topology_description (str): Description of the topology
+                - display_type (int): Display type for firewall extended properties (0: servers, 1: laptops; default: 0)
+                - encrypt_traffic (int): Whether to encrypt traffic (default: 0)
+                - number_of_streams (int): Number of streams (default: 1)
+                - region_id (int): Region ID (default: 0)
+                - connection_protocol (int): Protocols to use (default: 2)
 
+        Returns:
+            NetworkTopology: An instance of the created NetworkTopology.
 
-                ** kwargs               (dict)       -- Key value pairs for supported
-                                                        arguments
+        Raises:
+            SDKException: If topology creation fails, if a topology with the same name already exists,
+                or if a specified client group is already part of another topology.
 
-                Supported argument values:
-
-                use_wildcard   (boolean)  --   option to use wildcard proxy for proxy type
-                                                 topology
-                                                 Default value: False
-
-                is_smart_topology   (boolean)  --   specified as true for smart topology must be set if one mnemonic group is present
-                                                 Default value: False
-
-                topology_type        (int)     --   to specify type of network topology (Please scroll down for input values)
-
-                topology_description (str)     --   to specify topology description
-
-                display_type         (int)     --   to specify display type for firewall extended properties
-                                                    Default value: 0
-
-                encrypt_traffic      (int)     --   to specify whether encrypt traffic or not
-                                                    Default vaule: 0
-
-                number_of_streams     (int)     --   to specify number of streams
-                                                    Default vaule: 1
-
-                region_id            (int)     --   to sspecify region id
-                                                    Default value: 0
-
-                connection_protocol  (int)     --   to specify the protocols
-                                                    Default vaule: 2
-
-                Possible input values:
-
-                topology_type :
-                1 --- for Network Gateway topology
-                2 --- for one-way topology
-                3 --- for two-way topology
-                4 --- Cascading Gateway&#39;s topology
-                5 --- One-way forwarding topology
-                6 --- Tri Cascading topology. 
-                7 --- Quad Cascading topology. 
-
-                display_type:
-                0 --- servers
-                1 --- laptops
-
-                group_type for client_groups:
-                1: for Infrastructure machines
-                2: for Servers
-                3: for Server Gateways
-                4: for DMZ Gateways
-
-                Types of groups required for each topology:
-                Type 1: Servers, Infrastructure machines and Server gateways
-                Type 2: Infrastructure machines and Servers
-                Type 3: Infrastructure machines and Servers
-                Type 4: Servers, Infrastructure machines, Server gateways and DMZ Gateways
-                Type 5: Servers, Infrastructure machines and Server gateways
-
-                is_mnemonic for client_groups:
-                True: if the specified group is a mnemonic
-                False: if the specified group is a client group
-
-
-            Returns:
-                object - instance of the NetworkTopology class created by this method
-
-            Raises:
-                SDKException:
-                    if topology creation fails
-
-                    if topology with same name already exists
-
-                    if client group specified is already a part of some topology
+        Example:
+            &gt;&gt;&gt; client_groups = [
+            ...     {&#39;group_type&#39;: 2, &#39;group_name&#39;: &#34;ServersGroup&#34;, &#39;is_mnemonic&#39;: False},
+            ...     {&#39;group_type&#39;: 1, &#39;group_name&#39;: &#34;InfraGroup&#34;, &#39;is_mnemonic&#39;: False},
+            ...     {&#39;group_type&#39;: 3, &#39;group_name&#39;: &#34;GatewayGroup&#34;, &#39;is_mnemonic&#39;: False}
+            ... ]
+            &gt;&gt;&gt; topology = network_topologies.add(
+            ...     network_topology_name=&#34;MyGatewayTopology&#34;,
+            ...     client_groups=client_groups,
+            ...     topology_type=1,
+            ...     topology_description=&#34;Main gateway topology&#34;,
+            ...     encrypt_traffic=1
+            ... )
+            &gt;&gt;&gt; print(f&#34;Created topology: {topology}&#34;)
 
         &#34;&#34;&#34;
 
@@ -1414,20 +1707,22 @@ instance of the NetworkTopologies class</p></div>
                                &#39;Network Topology &#34;{0}&#34; already exists.&#39;.
                                format(network_topology_name))
 
-    def get(self, network_topology_name):
-        &#34;&#34;&#34;Returns the network topology object of the specified network topology name.
+    def get(self, network_topology_name: str) -&gt; &#39;NetworkTopology&#39;:
+        &#34;&#34;&#34;Retrieve the network topology object for the specified network topology name.
 
-            Args:
-                network_topology_name (str)  --  name of the network topology
+        Args:
+            network_topology_name: The name of the network topology to retrieve.
 
-            Returns:
-                object - instance of the NetworkTopology class for the given network topology name
+        Returns:
+            NetworkTopology: An instance of the NetworkTopology class corresponding to the given name.
 
-            Raises:
-                SDKException:
-                    if type of the network topology name argument is not string
+        Raises:
+            SDKException: If the network_topology_name is not a string, or if no network topology exists with the given name.
 
-                    if no network topology exists with the given name
+        Example:
+            &gt;&gt;&gt; topologies = NetworkTopologies(commcell_object)
+            &gt;&gt;&gt; topology = topologies.get(&#34;Production_Network&#34;)
+            &gt;&gt;&gt; print(f&#34;Retrieved topology: {topology}&#34;)
 
         &#34;&#34;&#34;
         if not isinstance(network_topology_name, str):
@@ -1444,19 +1739,24 @@ instance of the NetworkTopologies class</p></div>
                                &#39;No Network Topology exists with name: {0}&#39;.
                                format(network_topology_name))
 
-    def delete(self, network_topology_name):
-        &#34;&#34;&#34;Deletes the Network Topology from the commcell.
+    def delete(self, network_topology_name: str) -&gt; None:
+        &#34;&#34;&#34;Delete a network topology from the Commcell.
 
-            Args:
-                network_topology_name (str)  --  name of the network topology
+        Removes the specified network topology by name. If the topology does not exist,
+        or if deletion fails, an SDKException is raised.
 
-            Raises:
-                SDKException:
-                    if type of the network topology name argument is not string
+        Args:
+            network_topology_name: The name of the network topology to delete.
 
-                    if failed to delete the network topology
+        Raises:
+            SDKException: If the network topology name is not a string,
+                if deletion fails, or if no topology exists with the given name.
 
-                    if no network topology exists with the given name
+        Example:
+            &gt;&gt;&gt; topologies = NetworkTopologies(commcell_object)
+            &gt;&gt;&gt; topologies.delete(&#34;OfficeNetwork&#34;)
+            &gt;&gt;&gt; print(&#34;Network topology &#39;OfficeNetwork&#39; deleted successfully.&#34;)
+
         &#34;&#34;&#34;
 
         if not isinstance(network_topology_name, str):
@@ -1499,46 +1799,106 @@ instance of the NetworkTopologies class</p></div>
                     &#39;No Network Topology exists with name: &#34;{0}&#34;&#39;.format(network_topology_name)
                 )
 
-    def refresh(self):
-        &#34;&#34;&#34;Refresh the network topologies associated with the Commcell.&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Reload the network topologies associated with the Commcell.
+
+        This method clears any cached network topology data, ensuring that subsequent accesses
+        retrieve the most up-to-date information from the Commcell.
+
+        Example:
+            &gt;&gt;&gt; network_topologies = NetworkTopologies(commcell_object)
+            &gt;&gt;&gt; network_topologies.refresh()  # Refreshes the network topology cache
+            &gt;&gt;&gt; print(&#34;Network topologies refreshed successfully&#34;)
+
+        &#34;&#34;&#34;
 
         self._network_topologies = self._get_network_topologies()</code></pre>
 </details>
 <h3>Static methods</h3>
 <dl>
 <dt id="cvpysdk.network_topology.NetworkTopologies.create_firewall_groups_list"><code class="name flex">
-<span>def <span class="ident">create_firewall_groups_list</span></span>(<span>client_groups)</span>
+<span>def <span class="ident">create_firewall_groups_list</span></span>(<span>client_groups: list[dict]) ‑> tuple[list[dict], int]</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Is a helper function which is used to create firewall groups list and count the number of mnemonic groups</p>
-<h2 id="args">Args</h2>
-<p>client_groups(list of dict) - client group names and client group types</p>
-<pre><code>example:
-    [{'group_type':2, 'group_name': "test1", 'is_mnemonic': False },
-    {'group_type':1, 'group_name': "test2", 'is_mnemonic': False },
-    {'group_type':3, 'group_name': "test3", 'is_mnemonic': False }]
-</code></pre>
-<h2 id="returns">Returns</h2>
-<p>Tuple - A tuple consisting of firewall_groups_list and number of mnemonic groups</p></div>
+<div class="desc"><p>Create a list of firewall groups and count the number of mnemonic groups.</p>
+<p>This helper function processes a list of client group dictionaries, each containing
+information about group type, group name, and whether the group is mnemonic. It returns
+a tuple with the processed firewall groups list and the count of mnemonic groups.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>client_groups</code></strong></dt>
+<dd>
+<p>A list of dictionaries, where each dictionary represents a client group
+with keys:
+- 'group_type' (int): The type of the group.
+- 'group_name' (str): The name of the group.
+- 'is_mnemonic' (bool): Whether the group is mnemonic.</p>
+<p>Example:
+[
+{'group_type': 2, 'group_name': "test1", 'is_mnemonic': False},
+{'group_type': 1, 'group_name': "test2", 'is_mnemonic': False},
+{'group_type': 3, 'group_name': "test3", 'is_mnemonic': False}
+]</p>
+</dd>
+</dl>
+<p>Returns
+-----=
+A tuple containing:
+- firewall_groups_list (list of dict): The processed list of firewall group dictionaries.
+- mnemonic_groups_count (int): The number of mnemonic groups in the input list.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; client_groups = [
+...     {'group_type': 2, 'group_name': &quot;test1&quot;, 'is_mnemonic': False},
+...     {'group_type': 1, 'group_name': &quot;test2&quot;, 'is_mnemonic': True},
+...     {'group_type': 3, 'group_name': &quot;test3&quot;, 'is_mnemonic': False}
+... ]
+&gt;&gt;&gt; firewall_groups, mnemonic_count = NetworkTopologies.create_firewall_groups_list(client_groups)
+&gt;&gt;&gt; print(firewall_groups)
+&gt;&gt;&gt; print(f&quot;Number of mnemonic groups: {mnemonic_count}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network_topology.py#L228-L272" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network_topology.py#L311-L378" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@staticmethod
-def create_firewall_groups_list(client_groups):
-    &#34;&#34;&#34; Is a helper function which is used to create firewall groups list and count the number of mnemonic groups
+def create_firewall_groups_list(client_groups: list[dict]) -&gt; tuple[list[dict], int]:
+    &#34;&#34;&#34;Create a list of firewall groups and count the number of mnemonic groups.
+
+    This helper function processes a list of client group dictionaries, each containing
+    information about group type, group name, and whether the group is mnemonic. It returns
+    a tuple with the processed firewall groups list and the count of mnemonic groups.
 
     Args:
-        client_groups(list of dict) - client group names and client group types
+        client_groups: A list of dictionaries, where each dictionary represents a client group
+            with keys:
+                - &#39;group_type&#39; (int): The type of the group.
+                - &#39;group_name&#39; (str): The name of the group.
+                - &#39;is_mnemonic&#39; (bool): Whether the group is mnemonic.
 
-            example:
-                [{&#39;group_type&#39;:2, &#39;group_name&#39;: &#34;test1&#34;, &#39;is_mnemonic&#39;: False },
-                {&#39;group_type&#39;:1, &#39;group_name&#39;: &#34;test2&#34;, &#39;is_mnemonic&#39;: False },
-                {&#39;group_type&#39;:3, &#39;group_name&#39;: &#34;test3&#34;, &#39;is_mnemonic&#39;: False }]
+            Example:
+                [
+                    {&#39;group_type&#39;: 2, &#39;group_name&#39;: &#34;test1&#34;, &#39;is_mnemonic&#39;: False},
+                    {&#39;group_type&#39;: 1, &#39;group_name&#39;: &#34;test2&#34;, &#39;is_mnemonic&#39;: False},
+                    {&#39;group_type&#39;: 3, &#39;group_name&#39;: &#34;test3&#34;, &#39;is_mnemonic&#39;: False}
+                ]
 
     Returns:
-        Tuple - A tuple consisting of firewall_groups_list and number of mnemonic groups
+        A tuple containing:
+            - firewall_groups_list (list of dict): The processed list of firewall group dictionaries.
+            - mnemonic_groups_count (int): The number of mnemonic groups in the input list.
+
+    Example:
+        &gt;&gt;&gt; client_groups = [
+        ...     {&#39;group_type&#39;: 2, &#39;group_name&#39;: &#34;test1&#34;, &#39;is_mnemonic&#39;: False},
+        ...     {&#39;group_type&#39;: 1, &#39;group_name&#39;: &#34;test2&#34;, &#39;is_mnemonic&#39;: True},
+        ...     {&#39;group_type&#39;: 3, &#39;group_name&#39;: &#34;test3&#34;, &#39;is_mnemonic&#39;: False}
+        ... ]
+        &gt;&gt;&gt; firewall_groups, mnemonic_count = NetworkTopologies.create_firewall_groups_list(client_groups)
+        &gt;&gt;&gt; print(firewall_groups)
+        &gt;&gt;&gt; print(f&#34;Number of mnemonic groups: {mnemonic_count}&#34;)
 
     &#34;&#34;&#34;
     count_mnemonic = 0
@@ -1573,31 +1933,53 @@ def create_firewall_groups_list(client_groups):
 </details>
 </dd>
 <dt id="cvpysdk.network_topology.NetworkTopologies.verify_smart_topology_groups"><code class="name flex">
-<span>def <span class="ident">verify_smart_topology_groups</span></span>(<span>is_smartTopology, count_mnemonic)</span>
+<span>def <span class="ident">verify_smart_topology_groups</span></span>(<span>is_smartTopology: bool, count_mnemonic: int) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Helper function to verify client groups while creating a smart topology</p>
-<h2 id="args">Args</h2>
-<p>is_smartTopology(bool) - If the type of topology is a smart topology</p>
-<p>count_mneomic(int) - The number of mnemonic groups within the input</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException</p></div>
+<div class="desc"><p>Verify client groups when creating a smart topology.</p>
+<p>This helper function checks the validity of client group configurations
+during the creation of a smart topology. It ensures that the provided
+parameters for smart topology and mnemonic group count are appropriate.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>is_smartTopology</code></strong></dt>
+<dd>Indicates whether the topology being created is a smart topology.</dd>
+<dt><strong><code>count_mnemonic</code></strong></dt>
+<dd>The number of mnemonic groups specified for the topology.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the client group configuration is invalid for a smart topology.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; NetworkTopologies.verify_smart_topology_groups(True, 3)
+&gt;&gt;&gt; # If the configuration is invalid, an SDKException will be raised
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network_topology.py#L201-L226" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network_topology.py#L276-L309" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@staticmethod
-def verify_smart_topology_groups(is_smartTopology, count_mnemonic):
-    &#34;&#34;&#34; Helper function to verify client groups while creating a smart topology
+def verify_smart_topology_groups(is_smartTopology: bool, count_mnemonic: int) -&gt; None:
+    &#34;&#34;&#34;Verify client groups when creating a smart topology.
+
+    This helper function checks the validity of client group configurations 
+    during the creation of a smart topology. It ensures that the provided 
+    parameters for smart topology and mnemonic group count are appropriate.
 
     Args:
-        is_smartTopology(bool) - If the type of topology is a smart topology
-
-        count_mneomic(int) - The number of mnemonic groups within the input
+        is_smartTopology: Indicates whether the topology being created is a smart topology.
+        count_mnemonic: The number of mnemonic groups specified for the topology.
 
     Raises:
-        SDKException
+        SDKException: If the client group configuration is invalid for a smart topology.
+
+    Example:
+        &gt;&gt;&gt; NetworkTopologies.verify_smart_topology_groups(True, 3)
+        &gt;&gt;&gt; # If the configuration is invalid, an SDKException will be raised
 
     &#34;&#34;&#34;
 
@@ -1618,30 +2000,44 @@ def verify_smart_topology_groups(is_smartTopology, count_mnemonic):
 </dl>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.network_topology.NetworkTopologies.all_network_topologies"><code class="name">var <span class="ident">all_network_topologies</span></code></dt>
+<dt id="cvpysdk.network_topology.NetworkTopologies.all_network_topologies"><code class="name">var <span class="ident">all_network_topologies</span> : Dict[str, int]</code></dt>
 <dd>
-<div class="desc"><p>Returns dict of all the network topologies associated with the commcell</p>
-<p>dict - consists of all network topologies of the commcell
-{
-"network_topology_name": network_topology_id,</p>
-<pre><code>         "network_topology_name": network_topology_id
-    }
+<div class="desc"><p>Get a dictionary of all network topologies associated with the Commcell.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Dict[str, int]</code></dt>
+<dd>A dictionary mapping network topology names to their corresponding IDs.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; topologies = network_topologies.all_network_topologies
+&gt;&gt;&gt; print(topologies)
+{'DMZ_Topology': 101, 'Internal_Network': 102}
+&gt;&gt;&gt; # Access a specific topology ID by name
+&gt;&gt;&gt; dmz_id = topologies.get('DMZ_Topology')
+&gt;&gt;&gt; print(f&quot;DMZ Topology ID: {dmz_id}&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network_topology.py#L162-L174" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network_topology.py#L214-L232" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def all_network_topologies(self):
-    &#34;&#34;&#34;Returns dict of all the network topologies associated with the commcell
+def all_network_topologies(self) -&gt; Dict[str, int]:
+    &#34;&#34;&#34;Get a dictionary of all network topologies associated with the Commcell.
 
-        dict - consists of all network topologies of the commcell
-                {
-                     &#34;network_topology_name&#34;: network_topology_id,
+    Returns:
+        Dict[str, int]: A dictionary mapping network topology names to their corresponding IDs.
 
-                     &#34;network_topology_name&#34;: network_topology_id
-                }
+    Example:
+        &gt;&gt;&gt; topologies = network_topologies.all_network_topologies
+        &gt;&gt;&gt; print(topologies)
+        {&#39;DMZ_Topology&#39;: 101, &#39;Internal_Network&#39;: 102}
+        &gt;&gt;&gt; # Access a specific topology ID by name
+        &gt;&gt;&gt; dmz_id = topologies.get(&#39;DMZ_Topology&#39;)
+        &gt;&gt;&gt; print(f&#34;DMZ Topology ID: {dmz_id}&#34;)
+
     &#34;&#34;&#34;
 
     return self._network_topologies</code></pre>
@@ -1651,222 +2047,140 @@ def all_network_topologies(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.network_topology.NetworkTopologies.add"><code class="name flex">
-<span>def <span class="ident">add</span></span>(<span>self, network_topology_name, client_groups=None, **kwargs)</span>
+<span>def <span class="ident">add</span></span>(<span>self, network_topology_name: str, client_groups: Optional[List[Dict[str, Any]]] = None, **kwargs: Any) ‑> <a title="cvpysdk.network_topology.NetworkTopology" href="#cvpysdk.network_topology.NetworkTopology">NetworkTopology</a></span>
 </code></dt>
 <dd>
-<div class="desc"><p>Adds a new Network Topology to the Commcell.</p>
-<h2 id="args">Args</h2>
-<p>network_topology_name
-(str)
-&ndash;
-name of the new network
-topology to add</p>
-<p>client_groups
-(list of dict) &ndash; client group names and
-client group types
-Example for Gateway topology
-[{'group_type':2, 'group_name': "test1", 'is_mnemonic': False },
-{'group_type':1, 'group_name': "test2", 'is_mnemonic': False },
-{'group_type':3, 'group_name': "test3", 'is_mnemonic': False }]</p>
-<p>Example for Cascading topology
-[{'group_type':2, 'group_name': "test1", 'is_mnemonic': False },
-{'group_type':1, 'group_name': "test2", 'is_mnemonic': False },
-{'group_type':3, 'group_name': "test3", 'is_mnemonic': False },
-{'group_type':4, 'group_name': "test33", 'is_mnemonic': False }]</p>
-<p>** kwargs
-(dict)
-&ndash; Key value pairs for supported
-arguments</p>
-<p>Supported argument values:</p>
-<p>use_wildcard
-(boolean)
-&ndash;
-option to use wildcard proxy for proxy type
-topology
-Default value: False</p>
-<p>is_smart_topology
-(boolean)
-&ndash;
-specified as true for smart topology must be set if one mnemonic group is present
-Default value: False</p>
-<p>topology_type
-(int)
-&ndash;
-to specify type of network topology (Please scroll down for input values)</p>
-<p>topology_description (str)
-&ndash;
-to specify topology description</p>
-<p>display_type
-(int)
-&ndash;
-to specify display type for firewall extended properties
-Default value: 0</p>
-<p>encrypt_traffic
-(int)
-&ndash;
-to specify whether encrypt traffic or not
-Default vaule: 0</p>
-<p>number_of_streams
-(int)
-&ndash;
-to specify number of streams
-Default vaule: 1</p>
-<p>region_id
-(int)
-&ndash;
-to sspecify region id
-Default value: 0</p>
-<p>connection_protocol
-(int)
-&ndash;
-to specify the protocols
-Default vaule: 2</p>
-<p>Possible input values:</p>
-<p>topology_type :
-1 &mdash; for Network Gateway topology
-2 &mdash; for one-way topology
-3 &mdash; for two-way topology
-4 &mdash; Cascading Gateway's topology
-5 &mdash; One-way forwarding topology
-6 &mdash; Tri Cascading topology.
-7 &mdash; Quad Cascading topology. </p>
-<p>display_type:
-0 &mdash; servers
-1 &mdash; laptops</p>
+<div class="desc"><p>Add a new Network Topology to the Commcell.</p>
+<p>This method creates a new network topology with the specified name and client groups.
+Additional configuration options can be provided as keyword arguments.</p>
 <dl>
-<dt>group_type for client_groups:</dt>
-<dt><strong><code>1</code></strong></dt>
-<dd>for Infrastructure machines</dd>
-<dt><strong><code>2</code></strong></dt>
-<dd>for Servers</dd>
-<dt><strong><code>3</code></strong></dt>
-<dd>for Server Gateways</dd>
-<dt><strong><code>4</code></strong></dt>
-<dd>for DMZ Gateways</dd>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>network_topology_name</code></strong></dt>
+<dd>The name of the new network topology to add.</dd>
+<dt><strong><code>client_groups</code></strong></dt>
+<dd>
+<p>Optional list of dictionaries specifying client group details.
+Each dictionary should contain:
+- group_type (int): Type of the group (1: Infrastructure, 2: Servers, 3: Server Gateways, 4: DMZ Gateways)
+- group_name (str): Name of the client group
+- is_mnemonic (bool): True if the group is a mnemonic, False if it is a client group</p>
+<p>Example for Gateway topology:
+[
+{'group_type': 2, 'group_name': "test1", 'is_mnemonic': False},
+{'group_type': 1, 'group_name': "test2", 'is_mnemonic': False},
+{'group_type': 3, 'group_name': "test3", 'is_mnemonic': False}
+]</p>
+<p>Example for Cascading topology:
+[
+{'group_type': 2, 'group_name': "test1", 'is_mnemonic': False},
+{'group_type': 1, 'group_name': "test2", 'is_mnemonic': False},
+{'group_type': 3, 'group_name': "test3", 'is_mnemonic': False},
+{'group_type': 4, 'group_name': "test33", 'is_mnemonic': False}
+]</p>
+</dd>
+<dt><strong><code>**kwargs</code></strong></dt>
+<dd>Additional keyword arguments for topology configuration. Supported keys include:
+- use_wildcard (bool): Use wildcard proxy for proxy type topology (default: False)
+- is_smart_topology (bool): Set to True for smart topology if a mnemonic group is present (default: False)
+- topology_type (int): Type of network topology (1: Gateway, 2: One-way, 3: Two-way, 4: Cascading, etc.)
+- topology_description (str): Description of the topology
+- display_type (int): Display type for firewall extended properties (0: servers, 1: laptops; default: 0)
+- encrypt_traffic (int): Whether to encrypt traffic (default: 0)
+- number_of_streams (int): Number of streams (default: 1)
+- region_id (int): Region ID (default: 0)
+- connection_protocol (int): Protocols to use (default: 2)</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code><a title="cvpysdk.network_topology.NetworkTopology" href="#cvpysdk.network_topology.NetworkTopology">NetworkTopology</a></code></dt>
+<dd>An instance of the created NetworkTopology.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If topology creation fails, if a topology with the same name already exists,
+or if a specified client group is already part of another topology.</dd>
 </dl>
-<p>Types of groups required for each topology:
-Type 1: Servers, Infrastructure machines and Server gateways
-Type 2: Infrastructure machines and Servers
-Type 3: Infrastructure machines and Servers
-Type 4: Servers, Infrastructure machines, Server gateways and DMZ Gateways
-Type 5: Servers, Infrastructure machines and Server gateways</p>
-<dl>
-<dt>is_mnemonic for client_groups:</dt>
-<dt><strong><code>True</code></strong></dt>
-<dd>if the specified group is a mnemonic</dd>
-<dt><strong><code>False</code></strong></dt>
-<dd>if the specified group is a client group</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the NetworkTopology class created by this method</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if topology creation fails</p>
-<pre><code>if topology with same name already exists
-
-if client group specified is already a part of some topology
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; client_groups = [
+...     {'group_type': 2, 'group_name': &quot;ServersGroup&quot;, 'is_mnemonic': False},
+...     {'group_type': 1, 'group_name': &quot;InfraGroup&quot;, 'is_mnemonic': False},
+...     {'group_type': 3, 'group_name': &quot;GatewayGroup&quot;, 'is_mnemonic': False}
+... ]
+&gt;&gt;&gt; topology = network_topologies.add(
+...     network_topology_name=&quot;MyGatewayTopology&quot;,
+...     client_groups=client_groups,
+...     topology_type=1,
+...     topology_description=&quot;Main gateway topology&quot;,
+...     encrypt_traffic=1
+... )
+&gt;&gt;&gt; print(f&quot;Created topology: {topology}&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network_topology.py#L274-L442" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network_topology.py#L380-L513" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def add(self, network_topology_name, client_groups=None, **kwargs):
-    &#34;&#34;&#34;Adds a new Network Topology to the Commcell.
+<pre><code class="python">def add(self, network_topology_name: str, client_groups: Optional[List[Dict[str, Any]]] = None, **kwargs: Any) -&gt; &#39;NetworkTopology&#39;:
+    &#34;&#34;&#34;Add a new Network Topology to the Commcell.
 
-        Args:
-            network_topology_name        (str)        --  name of the new network
-                                                          topology to add
+    This method creates a new network topology with the specified name and client groups.
+    Additional configuration options can be provided as keyword arguments.
 
-            client_groups               (list of dict) -- client group names and
-                                                          client group types
-            Example for Gateway topology
-            [{&#39;group_type&#39;:2, &#39;group_name&#39;: &#34;test1&#34;, &#39;is_mnemonic&#39;: False },
-            {&#39;group_type&#39;:1, &#39;group_name&#39;: &#34;test2&#34;, &#39;is_mnemonic&#39;: False },
-            {&#39;group_type&#39;:3, &#39;group_name&#39;: &#34;test3&#34;, &#39;is_mnemonic&#39;: False }]
+    Args:
+        network_topology_name: The name of the new network topology to add.
+        client_groups: Optional list of dictionaries specifying client group details.
+            Each dictionary should contain:
+                - group_type (int): Type of the group (1: Infrastructure, 2: Servers, 3: Server Gateways, 4: DMZ Gateways)
+                - group_name (str): Name of the client group
+                - is_mnemonic (bool): True if the group is a mnemonic, False if it is a client group
 
+            Example for Gateway topology:
+                [
+                    {&#39;group_type&#39;: 2, &#39;group_name&#39;: &#34;test1&#34;, &#39;is_mnemonic&#39;: False},
+                    {&#39;group_type&#39;: 1, &#39;group_name&#39;: &#34;test2&#34;, &#39;is_mnemonic&#39;: False},
+                    {&#39;group_type&#39;: 3, &#39;group_name&#39;: &#34;test3&#34;, &#39;is_mnemonic&#39;: False}
+                ]
 
-            Example for Cascading topology
-            [{&#39;group_type&#39;:2, &#39;group_name&#39;: &#34;test1&#34;, &#39;is_mnemonic&#39;: False },
-            {&#39;group_type&#39;:1, &#39;group_name&#39;: &#34;test2&#34;, &#39;is_mnemonic&#39;: False },
-            {&#39;group_type&#39;:3, &#39;group_name&#39;: &#34;test3&#34;, &#39;is_mnemonic&#39;: False },
-            {&#39;group_type&#39;:4, &#39;group_name&#39;: &#34;test33&#34;, &#39;is_mnemonic&#39;: False }]
+            Example for Cascading topology:
+                [
+                    {&#39;group_type&#39;: 2, &#39;group_name&#39;: &#34;test1&#34;, &#39;is_mnemonic&#39;: False},
+                    {&#39;group_type&#39;: 1, &#39;group_name&#39;: &#34;test2&#34;, &#39;is_mnemonic&#39;: False},
+                    {&#39;group_type&#39;: 3, &#39;group_name&#39;: &#34;test3&#34;, &#39;is_mnemonic&#39;: False},
+                    {&#39;group_type&#39;: 4, &#39;group_name&#39;: &#34;test33&#34;, &#39;is_mnemonic&#39;: False}
+                ]
+        **kwargs: Additional keyword arguments for topology configuration. Supported keys include:
+            - use_wildcard (bool): Use wildcard proxy for proxy type topology (default: False)
+            - is_smart_topology (bool): Set to True for smart topology if a mnemonic group is present (default: False)
+            - topology_type (int): Type of network topology (1: Gateway, 2: One-way, 3: Two-way, 4: Cascading, etc.)
+            - topology_description (str): Description of the topology
+            - display_type (int): Display type for firewall extended properties (0: servers, 1: laptops; default: 0)
+            - encrypt_traffic (int): Whether to encrypt traffic (default: 0)
+            - number_of_streams (int): Number of streams (default: 1)
+            - region_id (int): Region ID (default: 0)
+            - connection_protocol (int): Protocols to use (default: 2)
 
+    Returns:
+        NetworkTopology: An instance of the created NetworkTopology.
 
-            ** kwargs               (dict)       -- Key value pairs for supported
-                                                    arguments
+    Raises:
+        SDKException: If topology creation fails, if a topology with the same name already exists,
+            or if a specified client group is already part of another topology.
 
-            Supported argument values:
-
-            use_wildcard   (boolean)  --   option to use wildcard proxy for proxy type
-                                             topology
-                                             Default value: False
-
-            is_smart_topology   (boolean)  --   specified as true for smart topology must be set if one mnemonic group is present
-                                             Default value: False
-
-            topology_type        (int)     --   to specify type of network topology (Please scroll down for input values)
-
-            topology_description (str)     --   to specify topology description
-
-            display_type         (int)     --   to specify display type for firewall extended properties
-                                                Default value: 0
-
-            encrypt_traffic      (int)     --   to specify whether encrypt traffic or not
-                                                Default vaule: 0
-
-            number_of_streams     (int)     --   to specify number of streams
-                                                Default vaule: 1
-
-            region_id            (int)     --   to sspecify region id
-                                                Default value: 0
-
-            connection_protocol  (int)     --   to specify the protocols
-                                                Default vaule: 2
-
-            Possible input values:
-
-            topology_type :
-            1 --- for Network Gateway topology
-            2 --- for one-way topology
-            3 --- for two-way topology
-            4 --- Cascading Gateway&#39;s topology
-            5 --- One-way forwarding topology
-            6 --- Tri Cascading topology. 
-            7 --- Quad Cascading topology. 
-
-            display_type:
-            0 --- servers
-            1 --- laptops
-
-            group_type for client_groups:
-            1: for Infrastructure machines
-            2: for Servers
-            3: for Server Gateways
-            4: for DMZ Gateways
-
-            Types of groups required for each topology:
-            Type 1: Servers, Infrastructure machines and Server gateways
-            Type 2: Infrastructure machines and Servers
-            Type 3: Infrastructure machines and Servers
-            Type 4: Servers, Infrastructure machines, Server gateways and DMZ Gateways
-            Type 5: Servers, Infrastructure machines and Server gateways
-
-            is_mnemonic for client_groups:
-            True: if the specified group is a mnemonic
-            False: if the specified group is a client group
-
-
-        Returns:
-            object - instance of the NetworkTopology class created by this method
-
-        Raises:
-            SDKException:
-                if topology creation fails
-
-                if topology with same name already exists
-
-                if client group specified is already a part of some topology
+    Example:
+        &gt;&gt;&gt; client_groups = [
+        ...     {&#39;group_type&#39;: 2, &#39;group_name&#39;: &#34;ServersGroup&#34;, &#39;is_mnemonic&#39;: False},
+        ...     {&#39;group_type&#39;: 1, &#39;group_name&#39;: &#34;InfraGroup&#34;, &#39;is_mnemonic&#39;: False},
+        ...     {&#39;group_type&#39;: 3, &#39;group_name&#39;: &#34;GatewayGroup&#34;, &#39;is_mnemonic&#39;: False}
+        ... ]
+        &gt;&gt;&gt; topology = network_topologies.add(
+        ...     network_topology_name=&#34;MyGatewayTopology&#34;,
+        ...     client_groups=client_groups,
+        ...     topology_type=1,
+        ...     topology_description=&#34;Main gateway topology&#34;,
+        ...     encrypt_traffic=1
+        ... )
+        &gt;&gt;&gt; print(f&#34;Created topology: {topology}&#34;)
 
     &#34;&#34;&#34;
 
@@ -1943,39 +2257,52 @@ if client group specified is already a part of some topology
 </details>
 </dd>
 <dt id="cvpysdk.network_topology.NetworkTopologies.delete"><code class="name flex">
-<span>def <span class="ident">delete</span></span>(<span>self, network_topology_name)</span>
+<span>def <span class="ident">delete</span></span>(<span>self, network_topology_name: str) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Deletes the Network Topology from the commcell.</p>
-<h2 id="args">Args</h2>
-<p>network_topology_name (str)
-&ndash;
-name of the network topology</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if type of the network topology name argument is not string</p>
-<pre><code>if failed to delete the network topology
-
-if no network topology exists with the given name
+<div class="desc"><p>Delete a network topology from the Commcell.</p>
+<p>Removes the specified network topology by name. If the topology does not exist,
+or if deletion fails, an SDKException is raised.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>network_topology_name</code></strong></dt>
+<dd>The name of the network topology to delete.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the network topology name is not a string,
+if deletion fails, or if no topology exists with the given name.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; topologies = NetworkTopologies(commcell_object)
+&gt;&gt;&gt; topologies.delete(&quot;OfficeNetwork&quot;)
+&gt;&gt;&gt; print(&quot;Network topology 'OfficeNetwork' deleted successfully.&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network_topology.py#L474-L527" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network_topology.py#L548-L607" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def delete(self, network_topology_name):
-    &#34;&#34;&#34;Deletes the Network Topology from the commcell.
+<pre><code class="python">def delete(self, network_topology_name: str) -&gt; None:
+    &#34;&#34;&#34;Delete a network topology from the Commcell.
 
-        Args:
-            network_topology_name (str)  --  name of the network topology
+    Removes the specified network topology by name. If the topology does not exist,
+    or if deletion fails, an SDKException is raised.
 
-        Raises:
-            SDKException:
-                if type of the network topology name argument is not string
+    Args:
+        network_topology_name: The name of the network topology to delete.
 
-                if failed to delete the network topology
+    Raises:
+        SDKException: If the network topology name is not a string,
+            if deletion fails, or if no topology exists with the given name.
 
-                if no network topology exists with the given name
+    Example:
+        &gt;&gt;&gt; topologies = NetworkTopologies(commcell_object)
+        &gt;&gt;&gt; topologies.delete(&#34;OfficeNetwork&#34;)
+        &gt;&gt;&gt; print(&#34;Network topology &#39;OfficeNetwork&#39; deleted successfully.&#34;)
+
     &#34;&#34;&#34;
 
     if not isinstance(network_topology_name, str):
@@ -2020,40 +2347,51 @@ if no network topology exists with the given name
 </details>
 </dd>
 <dt id="cvpysdk.network_topology.NetworkTopologies.get"><code class="name flex">
-<span>def <span class="ident">get</span></span>(<span>self, network_topology_name)</span>
+<span>def <span class="ident">get</span></span>(<span>self, network_topology_name: str) ‑> <a title="cvpysdk.network_topology.NetworkTopology" href="#cvpysdk.network_topology.NetworkTopology">NetworkTopology</a></span>
 </code></dt>
 <dd>
-<div class="desc"><p>Returns the network topology object of the specified network topology name.</p>
-<h2 id="args">Args</h2>
-<p>network_topology_name (str)
-&ndash;
-name of the network topology</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the NetworkTopology class for the given network topology name</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if type of the network topology name argument is not string</p>
-<pre><code>if no network topology exists with the given name
+<div class="desc"><p>Retrieve the network topology object for the specified network topology name.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>network_topology_name</code></strong></dt>
+<dd>The name of the network topology to retrieve.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code><a title="cvpysdk.network_topology.NetworkTopology" href="#cvpysdk.network_topology.NetworkTopology">NetworkTopology</a></code></dt>
+<dd>An instance of the NetworkTopology class corresponding to the given name.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the network_topology_name is not a string, or if no network topology exists with the given name.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; topologies = NetworkTopologies(commcell_object)
+&gt;&gt;&gt; topology = topologies.get(&quot;Production_Network&quot;)
+&gt;&gt;&gt; print(f&quot;Retrieved topology: {topology}&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network_topology.py#L444-L472" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network_topology.py#L515-L546" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def get(self, network_topology_name):
-    &#34;&#34;&#34;Returns the network topology object of the specified network topology name.
+<pre><code class="python">def get(self, network_topology_name: str) -&gt; &#39;NetworkTopology&#39;:
+    &#34;&#34;&#34;Retrieve the network topology object for the specified network topology name.
 
-        Args:
-            network_topology_name (str)  --  name of the network topology
+    Args:
+        network_topology_name: The name of the network topology to retrieve.
 
-        Returns:
-            object - instance of the NetworkTopology class for the given network topology name
+    Returns:
+        NetworkTopology: An instance of the NetworkTopology class corresponding to the given name.
 
-        Raises:
-            SDKException:
-                if type of the network topology name argument is not string
+    Raises:
+        SDKException: If the network_topology_name is not a string, or if no network topology exists with the given name.
 
-                if no network topology exists with the given name
+    Example:
+        &gt;&gt;&gt; topologies = NetworkTopologies(commcell_object)
+        &gt;&gt;&gt; topology = topologies.get(&#34;Production_Network&#34;)
+        &gt;&gt;&gt; print(f&#34;Retrieved topology: {topology}&#34;)
 
     &#34;&#34;&#34;
     if not isinstance(network_topology_name, str):
@@ -2072,36 +2410,55 @@ if type of the network topology name argument is not string</p>
 </details>
 </dd>
 <dt id="cvpysdk.network_topology.NetworkTopologies.has_network_topology"><code class="name flex">
-<span>def <span class="ident">has_network_topology</span></span>(<span>self, network_topology_name)</span>
+<span>def <span class="ident">has_network_topology</span></span>(<span>self, network_topology_name: str) ‑> bool</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Checks if a network topology exists in the commcell with the input network topology name.</p>
-<h2 id="args">Args</h2>
-<p>network_topology_name (str)
-&ndash;
-name of network topology</p>
-<h2 id="returns">Returns</h2>
-<p>bool - boolean output whether the network topology exists in the commcell or not</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if type of the network topology name argument is not string</p></div>
+<div class="desc"><p>Check if a network topology with the specified name exists in the Commcell.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>network_topology_name</code></strong></dt>
+<dd>The name of the network topology to check.</dd>
+</dl>
+<p>Returns
+-----=
+True if the network topology exists in the Commcell, False otherwise.</p>
+<dl>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the type of the network_topology_name argument is not a string.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; topologies = NetworkTopologies(commcell_object)
+&gt;&gt;&gt; exists = topologies.has_network_topology(&quot;Production_Network&quot;)
+&gt;&gt;&gt; print(f&quot;Network topology exists: {exists}&quot;)
+# Output: Network topology exists: True
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network_topology.py#L181-L199" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network_topology.py#L249-L274" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def has_network_topology(self, network_topology_name):
-    &#34;&#34;&#34;Checks if a network topology exists in the commcell with the input network topology name.
+<pre><code class="python">def has_network_topology(self, network_topology_name: str) -&gt; bool:
+    &#34;&#34;&#34;Check if a network topology with the specified name exists in the Commcell.
 
-        Args:
-            network_topology_name (str)  --  name of network topology
+    Args:
+        network_topology_name: The name of the network topology to check.
 
-        Returns:
-            bool - boolean output whether the network topology exists in the commcell or not
+    Returns:
+        True if the network topology exists in the Commcell, False otherwise.
 
-        Raises:
-            SDKException:
-                if type of the network topology name argument is not string
+    Raises:
+        SDKException: If the type of the network_topology_name argument is not a string.
+
+    Example:
+        &gt;&gt;&gt; topologies = NetworkTopologies(commcell_object)
+        &gt;&gt;&gt; exists = topologies.has_network_topology(&#34;Production_Network&#34;)
+        &gt;&gt;&gt; print(f&#34;Network topology exists: {exists}&#34;)
+        # Output: Network topology exists: True
+
     &#34;&#34;&#34;
 
     if not isinstance(network_topology_name, str):
@@ -2112,17 +2469,35 @@ if type of the network topology name argument is not string</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.network_topology.NetworkTopologies.refresh"><code class="name flex">
-<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+<span>def <span class="ident">refresh</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Refresh the network topologies associated with the Commcell.</p></div>
+<div class="desc"><p>Reload the network topologies associated with the Commcell.</p>
+<p>This method clears any cached network topology data, ensuring that subsequent accesses
+retrieve the most up-to-date information from the Commcell.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; network_topologies = NetworkTopologies(commcell_object)
+&gt;&gt;&gt; network_topologies.refresh()  # Refreshes the network topology cache
+&gt;&gt;&gt; print(&quot;Network topologies refreshed successfully&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network_topology.py#L529-L532" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network_topology.py#L609-L623" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def refresh(self):
-    &#34;&#34;&#34;Refresh the network topologies associated with the Commcell.&#34;&#34;&#34;
+<pre><code class="python">def refresh(self) -&gt; None:
+    &#34;&#34;&#34;Reload the network topologies associated with the Commcell.
+
+    This method clears any cached network topology data, ensuring that subsequent accesses
+    retrieve the most up-to-date information from the Commcell.
+
+    Example:
+        &gt;&gt;&gt; network_topologies = NetworkTopologies(commcell_object)
+        &gt;&gt;&gt; network_topologies.refresh()  # Refreshes the network topology cache
+        &gt;&gt;&gt; print(&#34;Network topologies refreshed successfully&#34;)
+
+    &#34;&#34;&#34;
 
     self._network_topologies = self._get_network_topologies()</code></pre>
 </details>
@@ -2131,48 +2506,80 @@ if type of the network topology name argument is not string</p></div>
 </dd>
 <dt id="cvpysdk.network_topology.NetworkTopology"><code class="flex name class">
 <span>class <span class="ident">NetworkTopology</span></span>
-<span>(</span><span>commcell_object, network_topology_name, network_topology_id=None)</span>
+<span>(</span><span>commcell_object: Commcell, network_topology_name: str, network_topology_id: str = None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for performing operations for a specific network topology.</p>
-<p>Initialize the NetworkTopology class instance.</p>
-<h2 id="args">Args</h2>
-<p>commcell_object
-(object)
-&ndash;
-instance of the Commcell class</p>
-<p>network_topology_name
-(str)
-&ndash;
-name of the network topology</p>
-<p>network_topology_id
-(str)
-&ndash;
-id of the network topology
-default: None</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the NetworkTopology class</p></div>
+<div class="desc"><p>Class for managing and performing operations on a specific network topology.</p>
+<p>This class provides an interface to interact with network topology objects, allowing
+users to retrieve and update topology properties, manage firewall groups, and push
+network configurations. It supports property accessors for key attributes such as
+topology ID, name, type, description, extended properties, firewall groups, and wildcard proxy.
+The class also includes methods for refreshing topology data and updating firewall group settings.</p>
+<p>Key Features:
+- Initialization with commcell object, topology name, and ID
+- Property accessors for topology ID, name, type, description, extended properties, firewall groups, and wildcard proxy
+- Update firewall groups associated with the topology
+- Push network configuration changes
+- Refresh topology properties from the source
+- Internal methods for topology ID retrieval and property initialization
+- String representation for easy identification</p>
+<p>Initialize a new instance of the NetworkTopology class.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>commcell_object</code></strong></dt>
+<dd>An instance of the Commcell class representing the active Commcell connection.</dd>
+<dt><strong><code>network_topology_name</code></strong></dt>
+<dd>The name of the network topology to manage.</dd>
+<dt><strong><code>network_topology_id</code></strong></dt>
+<dd>Optional; the unique identifier of the network topology. If not provided, it will be determined automatically.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; commcell = Commcell('hostname', 'username', 'password')
+&gt;&gt;&gt; topology = NetworkTopology(commcell, 'Corporate_Network')
+&gt;&gt;&gt; # Optionally, provide a topology ID
+&gt;&gt;&gt; topology_with_id = NetworkTopology(commcell, 'Corporate_Network', '12345')
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network_topology.py#L535-L938" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network_topology.py#L626-L1179" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class NetworkTopology(object):
-    &#34;&#34;&#34;Class for performing operations for a specific network topology.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Class for managing and performing operations on a specific network topology.
 
-    def __init__(self, commcell_object, network_topology_name, network_topology_id=None):
-        &#34;&#34;&#34;Initialize the NetworkTopology class instance.
+    This class provides an interface to interact with network topology objects, allowing
+    users to retrieve and update topology properties, manage firewall groups, and push
+    network configurations. It supports property accessors for key attributes such as
+    topology ID, name, type, description, extended properties, firewall groups, and wildcard proxy.
+    The class also includes methods for refreshing topology data and updating firewall group settings.
 
-            Args:
-                commcell_object     (object)        --  instance of the Commcell class
+    Key Features:
+        - Initialization with commcell object, topology name, and ID
+        - Property accessors for topology ID, name, type, description, extended properties, firewall groups, and wildcard proxy
+        - Update firewall groups associated with the topology
+        - Push network configuration changes
+        - Refresh topology properties from the source
+        - Internal methods for topology ID retrieval and property initialization
+        - String representation for easy identification
 
-                network_topology_name    (str)      --  name of the network topology
+    &#34;&#34;&#34;
 
-                network_topology_id   (str)         --  id of the network topology
-                    default: None
+    def __init__(self, commcell_object: &#39;Commcell&#39;, network_topology_name: str, network_topology_id: str = None) -&gt; None:
+        &#34;&#34;&#34;Initialize a new instance of the NetworkTopology class.
 
-            Returns:
-                object - instance of the NetworkTopology class
+        Args:
+            commcell_object: An instance of the Commcell class representing the active Commcell connection.
+            network_topology_name: The name of the network topology to manage.
+            network_topology_id: Optional; the unique identifier of the network topology. If not provided, it will be determined automatically.
+
+        Example:
+            &gt;&gt;&gt; commcell = Commcell(&#39;hostname&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; topology = NetworkTopology(commcell, &#39;Corporate_Network&#39;)
+            &gt;&gt;&gt; # Optionally, provide a topology ID
+            &gt;&gt;&gt; topology_with_id = NetworkTopology(commcell, &#39;Corporate_Network&#39;, &#39;12345&#39;)
 
         &#34;&#34;&#34;
 
@@ -2203,11 +2610,19 @@ default: None</p>
 
         self.refresh()
 
-    def __repr__(self):
-        &#34;&#34;&#34;String representation of the instance of this class.
+    def __repr__(self) -&gt; str:
+        &#34;&#34;&#34;Return a string representation of the NetworkTopology instance.
 
-            Returns:
-                str - string containing the details of this NetworkTopology
+        This method provides a human-readable string that describes the current
+        NetworkTopology object, which can be useful for debugging or logging.
+
+        Returns:
+            A string containing details about this NetworkTopology instance.
+
+        Example:
+            &gt;&gt;&gt; topology = NetworkTopology()
+            &gt;&gt;&gt; print(repr(topology))
+            &lt;NetworkTopology: ...&gt;
 
         &#34;&#34;&#34;
 
@@ -2215,11 +2630,16 @@ default: None</p>
 
         return representation_string.format(self.network_topology_name)
 
-    def _get_network_topology_id(self):
-        &#34;&#34;&#34;Gets the network topology id associated with network topology.
+    def _get_network_topology_id(self) -&gt; str:
+        &#34;&#34;&#34;Retrieve the unique identifier associated with the network topology.
 
-            Returns:
-                str - id associated with network topology
+        Returns:
+            The network topology ID as a string.
+
+        Example:
+            &gt;&gt;&gt; topology = NetworkTopology()
+            &gt;&gt;&gt; topology_id = topology._get_network_topology_id()
+            &gt;&gt;&gt; print(f&#34;Network Topology ID: {topology_id}&#34;)
 
         &#34;&#34;&#34;
 
@@ -2227,19 +2647,21 @@ default: None</p>
 
         return network_topologies.get(self.network_topology_name).network_topology_id
 
-    def _initialize_network_topology_properties(self):
-        &#34;&#34;&#34;Gets the network topology properties of network topology and
-        initializes the common properties for the network topology
+    def _initialize_network_topology_properties(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve and initialize the network topology properties for this NetworkTopology instance.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        This method fetches the network topology details and sets up the common properties
+        required for further operations. It ensures that essential information such as topology
+        name and type are present in the response.
 
-                    if response is not success
+        Raises:
+            SDKException: If the response is empty, unsuccessful, missing the topology name,
+                or missing the topology type.
 
-                    if topology name is not specified in the response
-
-                    if topology type is missing in the response
+        Example:
+            &gt;&gt;&gt; topology = NetworkTopology()
+            &gt;&gt;&gt; topology._initialize_network_topology_properties()
+            &gt;&gt;&gt; # The topology properties are now initialized and ready for use
 
         &#34;&#34;&#34;
 
@@ -2278,66 +2700,52 @@ default: None</p>
 
         self._firewall_groups = network_topology_props.get(&#39;firewallGroups&#39;)
 
-    def update(self, firewall_groups=None, **kwargs):
-        &#34;&#34;&#34;Update the network topology properties of network topology.
+    def update(self, firewall_groups: Optional[list[dict]] = None, **kwargs: Any) -&gt; None:
+        &#34;&#34;&#34;Update the network topology properties for this network topology.
 
-            Args:
+        This method allows you to modify various properties of the network topology, such as client group associations,
+        topology name, description, type, and advanced options like encryption and protocol settings.
 
-                firewall_groups(list of dict)  --   client group names and client
-                                                    group types
+        Args:
+            firewall_groups: Optional list of dictionaries specifying client group details. Each dictionary should contain:
+                - group_type (int): The type of client group (1, 2, or 3).
+                - group_name (str): The name of the client group.
+                - is_mnemonic (bool): True if the group is a mnemonic, False if it is a client group.
+                Example:
+                    [
+                        {&#39;group_type&#39;: 2, &#39;group_name&#39;: &#34;test1&#34;, &#39;is_mnemonic&#39;: False},
+                        {&#39;group_type&#39;: 1, &#39;group_name&#39;: &#34;test2&#34;, &#39;is_mnemonic&#39;: False},
+                        {&#39;group_type&#39;: 3, &#39;group_name&#39;: &#34;test3&#34;, &#39;is_mnemonic&#39;: False}
+                    ]
+            **kwargs: Additional keyword arguments for supported network topology properties:
+                - network_topology_name (str): New name for the network topology.
+                - description (str): Description for the network topology.
+                - topology_type (int): Type of topology (1: proxy, 2: one-way, 3: two-way).
+                - wildcard_proxy (bool): Whether to use wildcard proxy for proxy type topology.
+                - is_smart_topology (bool): Set to True for smart topology.
+                - encrypt_traffic (int): Specify whether to encrypt traffic (default: 0).
+                - number_of_streams (int): Number of streams (default: 1).
+                - region_id (int): Region ID (default: 0).
+                - connection_protocol (int): Protocols to use (default: 2).
 
-                [{&#39;group_type&#39;:2, &#39;group_name&#39;: &#34;test1&#34;, &#39;is_mnemonic&#39;: False },
-                {&#39;group_type&#39;:1, &#39;group_name&#39;: &#34;test2&#34;, &#39;is_mnemonic&#39;: False },
-                {&#39;group_type&#39;:3, &#39;group_name&#39;: &#34;test3&#34;, &#39;is_mnemonic&#39;: False }]
+        Raises:
+            SDKException: If the response is empty or the update operation is not successful.
 
-                **kwargs             (dict)  -- Key value pairs for supported arguments
-
-                Supported arguments:
-
-                network_topology_name   (str)       --  new name of the network topology
-
-                description             (str)       --  description for the network topology
-
-                topology_type           (int)       -- network topology type
-
-                wildcard_proxy          (boolean)   -- option to use wildcard proxy for
-                                                     proxy type topology
-
-                is_smart_topology       (boolean)   -- specified as true for smart topology
-                
-                encrypt_traffic      (int)     --   to specify whether encrypt traffic or not
-                                                    Default vaule: 0
-
-                number_of_streams     (int)     --   to specify number of streams
-                                                    Default vaule: 1
-
-                region_id            (int)     --   to sspecify region id
-                                                    Default value: 0
-
-                connection_protocol  (int)     --   to specify the protocols
-                                                    Default vaule: 2
-
-                Possible input values:
-
-                topology_type :
-                1 --- for proxy topology
-                2 --- for one-way topology
-                3 --- for two-way topology
-
-                group_type for client_groups:
-                2: first client group in GUI screen
-                1: second client group in GUI screen
-                3: third client group in GUI screen
-
-                is_mnemonic for client_groups:
-                True: if the specified group is a mnemonic
-                False: if the specified group is a client group
-
-            Raises:
-                SDKException:
-                    if response is empty
-
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; topology = NetworkTopology()
+            &gt;&gt;&gt; firewall_groups = [
+            ...     {&#39;group_type&#39;: 2, &#39;group_name&#39;: &#34;GroupA&#34;, &#39;is_mnemonic&#39;: False},
+            ...     {&#39;group_type&#39;: 1, &#39;group_name&#39;: &#34;GroupB&#34;, &#39;is_mnemonic&#39;: True}
+            ... ]
+            &gt;&gt;&gt; topology.update(
+            ...     firewall_groups=firewall_groups,
+            ...     network_topology_name=&#34;NewTopologyName&#34;,
+            ...     description=&#34;Updated topology for new region&#34;,
+            ...     topology_type=2,
+            ...     encrypt_traffic=1,
+            ...     number_of_streams=4
+            ... )
+            &gt;&gt;&gt; print(&#34;Network topology updated successfully.&#34;)
 
         &#34;&#34;&#34;
 
@@ -2411,104 +2819,186 @@ default: None</p>
         self.refresh()
 
     @property
-    def network_topology_id(self):
-        &#34;&#34;&#34;Treats the network topology id as a read-only attribute.&#34;&#34;&#34;
+    def network_topology_id(self) -&gt; str:
+        &#34;&#34;&#34;Get the unique identifier for the network topology.
+
+        This property provides read-only access to the network topology&#39;s unique ID.
+
+        Returns:
+            The network topology ID as a string.
+
+        Example:
+            &gt;&gt;&gt; topology = NetworkTopology()
+            &gt;&gt;&gt; topology_id = topology.network_topology_id  # Access the property
+            &gt;&gt;&gt; print(f&#34;Network Topology ID: {topology_id}&#34;)
+
+        &#34;&#34;&#34;
 
         return self._network_topology_id
 
     @property
-    def network_topology_name(self):
-        &#34;&#34;&#34;Treats the network topology name as a read-only attribute.&#34;&#34;&#34;
+    def network_topology_name(self) -&gt; str:
+        &#34;&#34;&#34;Get the name of the network topology as a read-only property.
+
+        Returns:
+            The name of the network topology as a string.
+
+        Example:
+            &gt;&gt;&gt; topology = NetworkTopology()
+            &gt;&gt;&gt; name = topology.network_topology_name  # Access the property
+            &gt;&gt;&gt; print(f&#34;Network topology name: {name}&#34;)
+
+        &#34;&#34;&#34;
 
         return self._network_topology_name
 
     @network_topology_name.setter
-    def network_topology_name(self, val):
-        &#34;&#34;&#34;Sets the value for network topology name
+    def network_topology_name(self, val: str) -&gt; None:
+        &#34;&#34;&#34;Set the name of the network topology.
 
-            args:
+        Args:
+            val: The new name to assign to the network topology.
 
-                val(string)  --  new name for network topology
-
+        Example:
+            &gt;&gt;&gt; topology = NetworkTopology()
+            &gt;&gt;&gt; topology.network_topology_name = &#34;CorporateNetwork&#34;  # Use assignment for property setter
+            &gt;&gt;&gt; # The network topology name is now set to &#34;CorporateNetwork&#34;
         &#34;&#34;&#34;
 
         self.update(**{&#39;network_topology_name&#39;: val})
 
     @property
-    def description(self):
-        &#34;&#34;&#34;Treats the network topology description as a read-only attribute.&#34;&#34;&#34;
+    def description(self) -&gt; str:
+        &#34;&#34;&#34;Get the description of the network topology as a read-only property.
+
+        Returns:
+            The description string of the network topology.
+
+        Example:
+            &gt;&gt;&gt; topology = NetworkTopology()
+            &gt;&gt;&gt; desc = topology.description  # Access the description property
+            &gt;&gt;&gt; print(f&#34;Topology description: {desc}&#34;)
+
+        &#34;&#34;&#34;
 
         return self._description
 
     @description.setter
-    def description(self, val):
-        &#34;&#34;&#34;Sets the description for network topology
+    def description(self, val: str) -&gt; None:
+        &#34;&#34;&#34;Set the description for the network topology.
 
-            args:
+        Args:
+            val: The description text to assign to the network topology.
 
-                val(string)  --  network topology description
+        Example:
+            &gt;&gt;&gt; topology = NetworkTopology()
+            &gt;&gt;&gt; topology.description = &#34;Corporate WAN topology for Q2 2024&#34;
+            &gt;&gt;&gt; # The description is now set for the network topology
 
         &#34;&#34;&#34;
         self.update(**{&#39;description&#39;: val})
 
     @property
-    def network_topology_type(self):
-        &#34;&#34;&#34;Treats the network topology type as read-only attribute&#34;&#34;&#34;
+    def network_topology_type(self) -&gt; int:
+        &#34;&#34;&#34;Get the network topology type as a read-only attribute.
+
+        Returns:
+            The type of the network topology as an integer.
+
+        Example:
+            &gt;&gt;&gt; topology = NetworkTopology()
+            &gt;&gt;&gt; topology_type = topology.network_topology_type  # Access as a property
+            &gt;&gt;&gt; print(f&#34;Network topology type: {topology_type}&#34;)
+
+        &#34;&#34;&#34;
 
         return self._network_topology_type
 
     @network_topology_type.setter
-    def network_topology_type(self, val):
-        &#34;&#34;&#34;Sets the value for network topology type
+    def network_topology_type(self, val: int) -&gt; None:
+        &#34;&#34;&#34;Set the network topology type for the NetworkTopology instance.
 
-            args:
+        Args:
+            val: An integer representing the network topology type.
+                - 1: Proxy topology
+                - 2: One-way topology
+                - 3: Two-way topology
 
-                val(int)  --  network topology type
-
-                topology_type :
-                1 --- for proxy topology
-                2 --- for one-way topology
-                3 --- for two-way topology
+        Example:
+            &gt;&gt;&gt; topology = NetworkTopology()
+            &gt;&gt;&gt; topology.network_topology_type = 2  # Set to one-way topology
+            &gt;&gt;&gt; # The network topology type is now set to one-way
 
         &#34;&#34;&#34;
         self.update(**{&#39;topology_type&#39;: val})
 
     @property
-    def extended_properties(self):
-        &#34;&#34;&#34;Treats the extended properties as read-only attribute&#34;&#34;&#34;
+    def extended_properties(self) -&gt; dict:
+        &#34;&#34;&#34;Get the extended properties of the network topology as a read-only attribute.
+
+        Returns:
+            dict: A dictionary containing the extended properties associated with the network topology.
+
+        Example:
+            &gt;&gt;&gt; topology = NetworkTopology()
+            &gt;&gt;&gt; properties = topology.extended_properties
+            &gt;&gt;&gt; print(properties)
+            {&#39;property1&#39;: &#39;value1&#39;, &#39;property2&#39;: &#39;value2&#39;}
+
+        &#34;&#34;&#34;
 
         return self._extended_properties
 
     @property
-    def firewall_groups(self):
-        &#34;&#34;&#34;Treats the associated client groups as read only attribute&#34;&#34;&#34;
+    def firewall_groups(self) -&gt; List[&#39;ClientGroup&#39;]:
+        &#34;&#34;&#34;Get the list of firewall client groups associated with the network topology as a read-only attribute.
+
+        Returns:
+            List of ClientGroup objects representing the firewall groups linked to this network topology.
+
+        Example:
+            &gt;&gt;&gt; topology = NetworkTopology()
+            &gt;&gt;&gt; groups = topology.firewall_groups  # Access as a property
+            &gt;&gt;&gt; for group in groups:
+            ...     print(f&#34;Firewall group: {group.name}&#34;)
+        &#34;&#34;&#34;
 
         return self._firewall_groups
 
     @firewall_groups.setter
-    def firewall_groups(self, val):
-        &#34;&#34;&#34;Sets the value for associated client groups
+    def firewall_groups(self, val: list[dict]) -&gt; None:
+        &#34;&#34;&#34;Set the associated client groups for the network topology firewall.
 
-            Args:
+        Args:
+            val: A list of dictionaries, each specifying a client group and its type. 
+                Each dictionary should have the following keys:
+                    - &#39;group_type&#39; (int): The type of the client group.
+                        2: first client group in GUI screen
+                        1: second client group in GUI screen
+                        3: third client group in GUI screen
+                    - &#39;group_name&#39; (str): The name of the client group.
+                    - &#39;is_mnemonic&#39; (bool): 
+                        True if the group is a mnemonic, 
+                        False if it is a client group.
 
-                val(list of dict)  --   client group names and client group types
+                Example input:
+                    [
+                        {&#39;group_type&#39;: 2, &#39;group_name&#39;: &#34;test1&#34;, &#39;is_mnemonic&#39;: False},
+                        {&#39;group_type&#39;: 1, &#39;group_name&#39;: &#34;test2&#34;, &#39;is_mnemonic&#39;: False},
+                        {&#39;group_type&#39;: 3, &#39;group_name&#39;: &#34;test3&#34;, &#39;is_mnemonic&#39;: False}
+                    ]
 
-                [{&#39;group_type&#39;:2, &#39;group_name&#39;: &#34;test1&#34;, &#39;is_mnemonic&#39;: False },
-                {&#39;group_type&#39;:1, &#39;group_name&#39;: &#34;test2&#34;, &#39;is_mnemonic&#39;: False },
-                {&#39;group_type&#39;:3, &#39;group_name&#39;: &#34;test3&#34;, &#39;is_mnemonic&#39;: False }]
+        Raises:
+            SDKException: If the input value is not a list.
 
-                group_type for client_groups:
-                2: first client group in GUI screen
-                1: second client group in GUI screen
-                3: third client group in GUI screen
-
-                is_mnemonic for client_groups:
-                True: if the specified group is a mnemonic
-                False: if the specified group is a client group
-
-            Raises:
-                SDKException:
-                    if input value is not a list
+        Example:
+            &gt;&gt;&gt; topology = NetworkTopology()
+            &gt;&gt;&gt; topology.firewall_groups = [
+            ...     {&#39;group_type&#39;: 2, &#39;group_name&#39;: &#34;test1&#34;, &#39;is_mnemonic&#39;: False},
+            ...     {&#39;group_type&#39;: 1, &#39;group_name&#39;: &#34;test2&#34;, &#39;is_mnemonic&#39;: False},
+            ...     {&#39;group_type&#39;: 3, &#39;group_name&#39;: &#34;test3&#34;, &#39;is_mnemonic&#39;: False}
+            ... ]
+            &gt;&gt;&gt; # The firewall groups are now set for the topology
 
         &#34;&#34;&#34;
         if not isinstance(val, list):
@@ -2519,20 +3009,39 @@ default: None</p>
         self.update(val)
 
     @property
-    def wildcard_proxy(self):
-        &#34;&#34;&#34;Treats the use wildcard proxy option as read only attribute&#34;&#34;&#34;
+    def wildcard_proxy(self) -&gt; bool:
+        &#34;&#34;&#34;Indicate whether the wildcard proxy option is enabled for the network topology.
+
+        This property provides read-only access to the status of the wildcard proxy setting.
+
+        Returns:
+            bool: True if the wildcard proxy option is enabled, False otherwise.
+
+        Example:
+            &gt;&gt;&gt; topology = NetworkTopology()
+            &gt;&gt;&gt; if topology.wildcard_proxy:
+            ...     print(&#34;Wildcard proxy is enabled.&#34;)
+            &gt;&gt;&gt; else:
+            ...     print(&#34;Wildcard proxy is disabled.&#34;)
+
+        &#34;&#34;&#34;
 
         return self._properties.get(&#39;useWildcardProxy&#39;, False)
 
-    def push_network_config(self):
-        &#34;&#34;&#34;Performs a push network configuration on network topology
+    def push_network_config(self) -&gt; None:
+        &#34;&#34;&#34;Push the network configuration to the network topology.
 
-            Raises:
-                SDKException:
+        This method initiates a push operation to apply the current network configuration
+        to the network topology. It is typically used to synchronize or update the network
+        settings across the managed environment.
 
-                    if failed to push configuration on network topology
+        Raises:
+            SDKException: If the push operation fails or if the response indicates an unsuccessful attempt.
 
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; topology = NetworkTopology()
+            &gt;&gt;&gt; topology.push_network_config()
+            &gt;&gt;&gt; print(&#34;Network configuration pushed successfully.&#34;)
 
         &#34;&#34;&#34;
 
@@ -2557,114 +3066,277 @@ default: None</p>
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def refresh(self):
-        &#34;&#34;&#34;Refresh the properties of Network Topology&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Reload the properties and state of the NetworkTopology object.
+
+        This method updates the NetworkTopology instance to reflect the latest network configuration
+        and topology information. Use this method to ensure that the object contains current data
+        after changes have been made to the network.
+
+        Example:
+            &gt;&gt;&gt; topology = NetworkTopology()
+            &gt;&gt;&gt; topology.refresh()  # Refreshes the network topology properties
+            &gt;&gt;&gt; print(&#34;Network topology updated successfully&#34;)
+
+        &#34;&#34;&#34;
 
         self._initialize_network_topology_properties()</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.network_topology.NetworkTopology.description"><code class="name">var <span class="ident">description</span></code></dt>
+<dt id="cvpysdk.network_topology.NetworkTopology.description"><code class="name">var <span class="ident">description</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Treats the network topology description as a read-only attribute.</p></div>
+<div class="desc"><p>Get the description of the network topology as a read-only property.</p>
+<p>Returns
+-----=
+The description string of the network topology.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; topology = NetworkTopology()
+&gt;&gt;&gt; desc = topology.description  # Access the description property
+&gt;&gt;&gt; print(f&quot;Topology description: {desc}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network_topology.py#L812-L816" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network_topology.py#L956-L971" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def description(self):
-    &#34;&#34;&#34;Treats the network topology description as a read-only attribute.&#34;&#34;&#34;
+def description(self) -&gt; str:
+    &#34;&#34;&#34;Get the description of the network topology as a read-only property.
+
+    Returns:
+        The description string of the network topology.
+
+    Example:
+        &gt;&gt;&gt; topology = NetworkTopology()
+        &gt;&gt;&gt; desc = topology.description  # Access the description property
+        &gt;&gt;&gt; print(f&#34;Topology description: {desc}&#34;)
+
+    &#34;&#34;&#34;
 
     return self._description</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.network_topology.NetworkTopology.extended_properties"><code class="name">var <span class="ident">extended_properties</span></code></dt>
+<dt id="cvpysdk.network_topology.NetworkTopology.extended_properties"><code class="name">var <span class="ident">extended_properties</span> : dict</code></dt>
 <dd>
-<div class="desc"><p>Treats the extended properties as read-only attribute</p></div>
+<div class="desc"><p>Get the extended properties of the network topology as a read-only attribute.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>A dictionary containing the extended properties associated with the network topology.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; topology = NetworkTopology()
+&gt;&gt;&gt; properties = topology.extended_properties
+&gt;&gt;&gt; print(properties)
+{'property1': 'value1', 'property2': 'value2'}
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network_topology.py#L851-L855" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network_topology.py#L1025-L1041" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def extended_properties(self):
-    &#34;&#34;&#34;Treats the extended properties as read-only attribute&#34;&#34;&#34;
+def extended_properties(self) -&gt; dict:
+    &#34;&#34;&#34;Get the extended properties of the network topology as a read-only attribute.
+
+    Returns:
+        dict: A dictionary containing the extended properties associated with the network topology.
+
+    Example:
+        &gt;&gt;&gt; topology = NetworkTopology()
+        &gt;&gt;&gt; properties = topology.extended_properties
+        &gt;&gt;&gt; print(properties)
+        {&#39;property1&#39;: &#39;value1&#39;, &#39;property2&#39;: &#39;value2&#39;}
+
+    &#34;&#34;&#34;
 
     return self._extended_properties</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.network_topology.NetworkTopology.firewall_groups"><code class="name">var <span class="ident">firewall_groups</span></code></dt>
+<dt id="cvpysdk.network_topology.NetworkTopology.firewall_groups"><code class="name">var <span class="ident">firewall_groups</span> : List[ClientGroup]</code></dt>
 <dd>
-<div class="desc"><p>Treats the associated client groups as read only attribute</p></div>
+<div class="desc"><p>Get the list of firewall client groups associated with the network topology as a read-only attribute.</p>
+<p>Returns
+-----=
+List of ClientGroup objects representing the firewall groups linked to this network topology.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; topology = NetworkTopology()
+&gt;&gt;&gt; groups = topology.firewall_groups  # Access as a property
+&gt;&gt;&gt; for group in groups:
+...     print(f&quot;Firewall group: {group.name}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network_topology.py#L857-L861" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network_topology.py#L1043-L1058" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def firewall_groups(self):
-    &#34;&#34;&#34;Treats the associated client groups as read only attribute&#34;&#34;&#34;
+def firewall_groups(self) -&gt; List[&#39;ClientGroup&#39;]:
+    &#34;&#34;&#34;Get the list of firewall client groups associated with the network topology as a read-only attribute.
+
+    Returns:
+        List of ClientGroup objects representing the firewall groups linked to this network topology.
+
+    Example:
+        &gt;&gt;&gt; topology = NetworkTopology()
+        &gt;&gt;&gt; groups = topology.firewall_groups  # Access as a property
+        &gt;&gt;&gt; for group in groups:
+        ...     print(f&#34;Firewall group: {group.name}&#34;)
+    &#34;&#34;&#34;
 
     return self._firewall_groups</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.network_topology.NetworkTopology.network_topology_id"><code class="name">var <span class="ident">network_topology_id</span></code></dt>
+<dt id="cvpysdk.network_topology.NetworkTopology.network_topology_id"><code class="name">var <span class="ident">network_topology_id</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Treats the network topology id as a read-only attribute.</p></div>
+<div class="desc"><p>Get the unique identifier for the network topology.</p>
+<p>This property provides read-only access to the network topology's unique ID.</p>
+<p>Returns
+-----=
+The network topology ID as a string.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; topology = NetworkTopology()
+&gt;&gt;&gt; topology_id = topology.network_topology_id  # Access the property
+&gt;&gt;&gt; print(f&quot;Network Topology ID: {topology_id}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network_topology.py#L788-L792" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network_topology.py#L904-L921" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def network_topology_id(self):
-    &#34;&#34;&#34;Treats the network topology id as a read-only attribute.&#34;&#34;&#34;
+def network_topology_id(self) -&gt; str:
+    &#34;&#34;&#34;Get the unique identifier for the network topology.
+
+    This property provides read-only access to the network topology&#39;s unique ID.
+
+    Returns:
+        The network topology ID as a string.
+
+    Example:
+        &gt;&gt;&gt; topology = NetworkTopology()
+        &gt;&gt;&gt; topology_id = topology.network_topology_id  # Access the property
+        &gt;&gt;&gt; print(f&#34;Network Topology ID: {topology_id}&#34;)
+
+    &#34;&#34;&#34;
 
     return self._network_topology_id</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.network_topology.NetworkTopology.network_topology_name"><code class="name">var <span class="ident">network_topology_name</span></code></dt>
+<dt id="cvpysdk.network_topology.NetworkTopology.network_topology_name"><code class="name">var <span class="ident">network_topology_name</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Treats the network topology name as a read-only attribute.</p></div>
+<div class="desc"><p>Get the name of the network topology as a read-only property.</p>
+<p>Returns
+-----=
+The name of the network topology as a string.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; topology = NetworkTopology()
+&gt;&gt;&gt; name = topology.network_topology_name  # Access the property
+&gt;&gt;&gt; print(f&quot;Network topology name: {name}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network_topology.py#L794-L798" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network_topology.py#L923-L938" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def network_topology_name(self):
-    &#34;&#34;&#34;Treats the network topology name as a read-only attribute.&#34;&#34;&#34;
+def network_topology_name(self) -&gt; str:
+    &#34;&#34;&#34;Get the name of the network topology as a read-only property.
+
+    Returns:
+        The name of the network topology as a string.
+
+    Example:
+        &gt;&gt;&gt; topology = NetworkTopology()
+        &gt;&gt;&gt; name = topology.network_topology_name  # Access the property
+        &gt;&gt;&gt; print(f&#34;Network topology name: {name}&#34;)
+
+    &#34;&#34;&#34;
 
     return self._network_topology_name</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.network_topology.NetworkTopology.network_topology_type"><code class="name">var <span class="ident">network_topology_type</span></code></dt>
+<dt id="cvpysdk.network_topology.NetworkTopology.network_topology_type"><code class="name">var <span class="ident">network_topology_type</span> : int</code></dt>
 <dd>
-<div class="desc"><p>Treats the network topology type as read-only attribute</p></div>
+<div class="desc"><p>Get the network topology type as a read-only attribute.</p>
+<p>Returns
+-----=
+The type of the network topology as an integer.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; topology = NetworkTopology()
+&gt;&gt;&gt; topology_type = topology.network_topology_type  # Access as a property
+&gt;&gt;&gt; print(f&quot;Network topology type: {topology_type}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network_topology.py#L829-L833" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network_topology.py#L989-L1004" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def network_topology_type(self):
-    &#34;&#34;&#34;Treats the network topology type as read-only attribute&#34;&#34;&#34;
+def network_topology_type(self) -&gt; int:
+    &#34;&#34;&#34;Get the network topology type as a read-only attribute.
+
+    Returns:
+        The type of the network topology as an integer.
+
+    Example:
+        &gt;&gt;&gt; topology = NetworkTopology()
+        &gt;&gt;&gt; topology_type = topology.network_topology_type  # Access as a property
+        &gt;&gt;&gt; print(f&#34;Network topology type: {topology_type}&#34;)
+
+    &#34;&#34;&#34;
 
     return self._network_topology_type</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.network_topology.NetworkTopology.wildcard_proxy"><code class="name">var <span class="ident">wildcard_proxy</span></code></dt>
+<dt id="cvpysdk.network_topology.NetworkTopology.wildcard_proxy"><code class="name">var <span class="ident">wildcard_proxy</span> : bool</code></dt>
 <dd>
-<div class="desc"><p>Treats the use wildcard proxy option as read only attribute</p></div>
+<div class="desc"><p>Indicate whether the wildcard proxy option is enabled for the network topology.</p>
+<p>This property provides read-only access to the status of the wildcard proxy setting.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>bool</code></dt>
+<dd>True if the wildcard proxy option is enabled, False otherwise.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; topology = NetworkTopology()
+&gt;&gt;&gt; if topology.wildcard_proxy:
+...     print(&quot;Wildcard proxy is enabled.&quot;)
+&gt;&gt;&gt; else:
+...     print(&quot;Wildcard proxy is disabled.&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network_topology.py#L896-L900" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network_topology.py#L1104-L1123" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def wildcard_proxy(self):
-    &#34;&#34;&#34;Treats the use wildcard proxy option as read only attribute&#34;&#34;&#34;
+def wildcard_proxy(self) -&gt; bool:
+    &#34;&#34;&#34;Indicate whether the wildcard proxy option is enabled for the network topology.
+
+    This property provides read-only access to the status of the wildcard proxy setting.
+
+    Returns:
+        bool: True if the wildcard proxy option is enabled, False otherwise.
+
+    Example:
+        &gt;&gt;&gt; topology = NetworkTopology()
+        &gt;&gt;&gt; if topology.wildcard_proxy:
+        ...     print(&#34;Wildcard proxy is enabled.&#34;)
+        &gt;&gt;&gt; else:
+        ...     print(&#34;Wildcard proxy is disabled.&#34;)
+
+    &#34;&#34;&#34;
 
     return self._properties.get(&#39;useWildcardProxy&#39;, False)</code></pre>
 </details>
@@ -2673,30 +3345,44 @@ def wildcard_proxy(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.network_topology.NetworkTopology.push_network_config"><code class="name flex">
-<span>def <span class="ident">push_network_config</span></span>(<span>self)</span>
+<span>def <span class="ident">push_network_config</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Performs a push network configuration on network topology</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
-<pre><code>if failed to push configuration on network topology
-
-if response is not success
+<div class="desc"><p>Push the network configuration to the network topology.</p>
+<p>This method initiates a push operation to apply the current network configuration
+to the network topology. It is typically used to synchronize or update the network
+settings across the managed environment.</p>
+<dl>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the push operation fails or if the response indicates an unsuccessful attempt.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; topology = NetworkTopology()
+&gt;&gt;&gt; topology.push_network_config()
+&gt;&gt;&gt; print(&quot;Network configuration pushed successfully.&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network_topology.py#L902-L933" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network_topology.py#L1125-L1162" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def push_network_config(self):
-    &#34;&#34;&#34;Performs a push network configuration on network topology
+<pre><code class="python">def push_network_config(self) -&gt; None:
+    &#34;&#34;&#34;Push the network configuration to the network topology.
 
-        Raises:
-            SDKException:
+    This method initiates a push operation to apply the current network configuration
+    to the network topology. It is typically used to synchronize or update the network
+    settings across the managed environment.
 
-                if failed to push configuration on network topology
+    Raises:
+        SDKException: If the push operation fails or if the response indicates an unsuccessful attempt.
 
-                if response is not success
+    Example:
+        &gt;&gt;&gt; topology = NetworkTopology()
+        &gt;&gt;&gt; topology.push_network_config()
+        &gt;&gt;&gt; print(&#34;Network configuration pushed successfully.&#34;)
 
     &#34;&#34;&#34;
 
@@ -2723,165 +3409,146 @@ if response is not success
 </details>
 </dd>
 <dt id="cvpysdk.network_topology.NetworkTopology.refresh"><code class="name flex">
-<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+<span>def <span class="ident">refresh</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Refresh the properties of Network Topology</p></div>
+<div class="desc"><p>Reload the properties and state of the NetworkTopology object.</p>
+<p>This method updates the NetworkTopology instance to reflect the latest network configuration
+and topology information. Use this method to ensure that the object contains current data
+after changes have been made to the network.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; topology = NetworkTopology()
+&gt;&gt;&gt; topology.refresh()  # Refreshes the network topology properties
+&gt;&gt;&gt; print(&quot;Network topology updated successfully&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network_topology.py#L935-L938" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network_topology.py#L1164-L1179" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def refresh(self):
-    &#34;&#34;&#34;Refresh the properties of Network Topology&#34;&#34;&#34;
+<pre><code class="python">def refresh(self) -&gt; None:
+    &#34;&#34;&#34;Reload the properties and state of the NetworkTopology object.
+
+    This method updates the NetworkTopology instance to reflect the latest network configuration
+    and topology information. Use this method to ensure that the object contains current data
+    after changes have been made to the network.
+
+    Example:
+        &gt;&gt;&gt; topology = NetworkTopology()
+        &gt;&gt;&gt; topology.refresh()  # Refreshes the network topology properties
+        &gt;&gt;&gt; print(&#34;Network topology updated successfully&#34;)
+
+    &#34;&#34;&#34;
 
     self._initialize_network_topology_properties()</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.network_topology.NetworkTopology.update"><code class="name flex">
-<span>def <span class="ident">update</span></span>(<span>self, firewall_groups=None, **kwargs)</span>
+<span>def <span class="ident">update</span></span>(<span>self, firewall_groups: Optional[list[dict]] = None, **kwargs: Any) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Update the network topology properties of network topology.</p>
-<h2 id="args">Args</h2>
-<p>firewall_groups(list of dict)
-&ndash;
-client group names and client
-group types</p>
-<p>[{'group_type':2, 'group_name': "test1", 'is_mnemonic': False },
-{'group_type':1, 'group_name': "test2", 'is_mnemonic': False },
-{'group_type':3, 'group_name': "test3", 'is_mnemonic': False }]</p>
-<p>**kwargs
-(dict)
-&ndash; Key value pairs for supported arguments</p>
-<p>Supported arguments:</p>
-<p>network_topology_name
-(str)
-&ndash;
-new name of the network topology</p>
-<p>description
-(str)
-&ndash;
-description for the network topology</p>
-<p>topology_type
-(int)
-&ndash; network topology type</p>
-<p>wildcard_proxy
-(boolean)
-&ndash; option to use wildcard proxy for
-proxy type topology</p>
-<p>is_smart_topology
-(boolean)
-&ndash; specified as true for smart topology</p>
-<p>encrypt_traffic
-(int)
-&ndash;
-to specify whether encrypt traffic or not
-Default vaule: 0</p>
-<p>number_of_streams
-(int)
-&ndash;
-to specify number of streams
-Default vaule: 1</p>
-<p>region_id
-(int)
-&ndash;
-to sspecify region id
-Default value: 0</p>
-<p>connection_protocol
-(int)
-&ndash;
-to specify the protocols
-Default vaule: 2</p>
-<p>Possible input values:</p>
-<p>topology_type :
-1 &mdash; for proxy topology
-2 &mdash; for one-way topology
-3 &mdash; for two-way topology</p>
+<div class="desc"><p>Update the network topology properties for this network topology.</p>
+<p>This method allows you to modify various properties of the network topology, such as client group associations,
+topology name, description, type, and advanced options like encryption and protocol settings.</p>
 <dl>
-<dt>group_type for client_groups:</dt>
-<dt><strong><code>2</code></strong></dt>
-<dd>first client group in GUI screen</dd>
-<dt><strong><code>1</code></strong></dt>
-<dd>second client group in GUI screen</dd>
-<dt><strong><code>3</code></strong></dt>
-<dd>third client group in GUI screen</dd>
-<dt>is_mnemonic for client_groups:</dt>
-<dt><strong><code>True</code></strong></dt>
-<dd>if the specified group is a mnemonic</dd>
-<dt><strong><code>False</code></strong></dt>
-<dd>if the specified group is a client group</dd>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>firewall_groups</code></strong></dt>
+<dd>Optional list of dictionaries specifying client group details. Each dictionary should contain:
+- group_type (int): The type of client group (1, 2, or 3).
+- group_name (str): The name of the client group.
+- is_mnemonic (bool): True if the group is a mnemonic, False if it is a client group.
+Example:
+[
+{'group_type': 2, 'group_name': "test1", 'is_mnemonic': False},
+{'group_type': 1, 'group_name': "test2", 'is_mnemonic': False},
+{'group_type': 3, 'group_name': "test3", 'is_mnemonic': False}
+]</dd>
+<dt><strong><code>**kwargs</code></strong></dt>
+<dd>Additional keyword arguments for supported network topology properties:
+- network_topology_name (str): New name for the network topology.
+- description (str): Description for the network topology.
+- topology_type (int): Type of topology (1: proxy, 2: one-way, 3: two-way).
+- wildcard_proxy (bool): Whether to use wildcard proxy for proxy type topology.
+- is_smart_topology (bool): Set to True for smart topology.
+- encrypt_traffic (int): Specify whether to encrypt traffic (default: 0).
+- number_of_streams (int): Number of streams (default: 1).
+- region_id (int): Region ID (default: 0).
+- connection_protocol (int): Protocols to use (default: 2).</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the response is empty or the update operation is not successful.</dd>
 </dl>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if response is empty</p>
-<pre><code>if response is not success
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; topology = NetworkTopology()
+&gt;&gt;&gt; firewall_groups = [
+...     {'group_type': 2, 'group_name': &quot;GroupA&quot;, 'is_mnemonic': False},
+...     {'group_type': 1, 'group_name': &quot;GroupB&quot;, 'is_mnemonic': True}
+... ]
+&gt;&gt;&gt; topology.update(
+...     firewall_groups=firewall_groups,
+...     network_topology_name=&quot;NewTopologyName&quot;,
+...     description=&quot;Updated topology for new region&quot;,
+...     topology_type=2,
+...     encrypt_traffic=1,
+...     number_of_streams=4
+... )
+&gt;&gt;&gt; print(&quot;Network topology updated successfully.&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network_topology.py#L656-L786" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network_topology.py#L785-L902" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def update(self, firewall_groups=None, **kwargs):
-    &#34;&#34;&#34;Update the network topology properties of network topology.
+<pre><code class="python">def update(self, firewall_groups: Optional[list[dict]] = None, **kwargs: Any) -&gt; None:
+    &#34;&#34;&#34;Update the network topology properties for this network topology.
 
-        Args:
+    This method allows you to modify various properties of the network topology, such as client group associations,
+    topology name, description, type, and advanced options like encryption and protocol settings.
 
-            firewall_groups(list of dict)  --   client group names and client
-                                                group types
+    Args:
+        firewall_groups: Optional list of dictionaries specifying client group details. Each dictionary should contain:
+            - group_type (int): The type of client group (1, 2, or 3).
+            - group_name (str): The name of the client group.
+            - is_mnemonic (bool): True if the group is a mnemonic, False if it is a client group.
+            Example:
+                [
+                    {&#39;group_type&#39;: 2, &#39;group_name&#39;: &#34;test1&#34;, &#39;is_mnemonic&#39;: False},
+                    {&#39;group_type&#39;: 1, &#39;group_name&#39;: &#34;test2&#34;, &#39;is_mnemonic&#39;: False},
+                    {&#39;group_type&#39;: 3, &#39;group_name&#39;: &#34;test3&#34;, &#39;is_mnemonic&#39;: False}
+                ]
+        **kwargs: Additional keyword arguments for supported network topology properties:
+            - network_topology_name (str): New name for the network topology.
+            - description (str): Description for the network topology.
+            - topology_type (int): Type of topology (1: proxy, 2: one-way, 3: two-way).
+            - wildcard_proxy (bool): Whether to use wildcard proxy for proxy type topology.
+            - is_smart_topology (bool): Set to True for smart topology.
+            - encrypt_traffic (int): Specify whether to encrypt traffic (default: 0).
+            - number_of_streams (int): Number of streams (default: 1).
+            - region_id (int): Region ID (default: 0).
+            - connection_protocol (int): Protocols to use (default: 2).
 
-            [{&#39;group_type&#39;:2, &#39;group_name&#39;: &#34;test1&#34;, &#39;is_mnemonic&#39;: False },
-            {&#39;group_type&#39;:1, &#39;group_name&#39;: &#34;test2&#34;, &#39;is_mnemonic&#39;: False },
-            {&#39;group_type&#39;:3, &#39;group_name&#39;: &#34;test3&#34;, &#39;is_mnemonic&#39;: False }]
+    Raises:
+        SDKException: If the response is empty or the update operation is not successful.
 
-            **kwargs             (dict)  -- Key value pairs for supported arguments
-
-            Supported arguments:
-
-            network_topology_name   (str)       --  new name of the network topology
-
-            description             (str)       --  description for the network topology
-
-            topology_type           (int)       -- network topology type
-
-            wildcard_proxy          (boolean)   -- option to use wildcard proxy for
-                                                 proxy type topology
-
-            is_smart_topology       (boolean)   -- specified as true for smart topology
-            
-            encrypt_traffic      (int)     --   to specify whether encrypt traffic or not
-                                                Default vaule: 0
-
-            number_of_streams     (int)     --   to specify number of streams
-                                                Default vaule: 1
-
-            region_id            (int)     --   to sspecify region id
-                                                Default value: 0
-
-            connection_protocol  (int)     --   to specify the protocols
-                                                Default vaule: 2
-
-            Possible input values:
-
-            topology_type :
-            1 --- for proxy topology
-            2 --- for one-way topology
-            3 --- for two-way topology
-
-            group_type for client_groups:
-            2: first client group in GUI screen
-            1: second client group in GUI screen
-            3: third client group in GUI screen
-
-            is_mnemonic for client_groups:
-            True: if the specified group is a mnemonic
-            False: if the specified group is a client group
-
-        Raises:
-            SDKException:
-                if response is empty
-
-                if response is not success
+    Example:
+        &gt;&gt;&gt; topology = NetworkTopology()
+        &gt;&gt;&gt; firewall_groups = [
+        ...     {&#39;group_type&#39;: 2, &#39;group_name&#39;: &#34;GroupA&#34;, &#39;is_mnemonic&#39;: False},
+        ...     {&#39;group_type&#39;: 1, &#39;group_name&#39;: &#34;GroupB&#34;, &#39;is_mnemonic&#39;: True}
+        ... ]
+        &gt;&gt;&gt; topology.update(
+        ...     firewall_groups=firewall_groups,
+        ...     network_topology_name=&#34;NewTopologyName&#34;,
+        ...     description=&#34;Updated topology for new region&#34;,
+        ...     topology_type=2,
+        ...     encrypt_traffic=1,
+        ...     number_of_streams=4
+        ... )
+        &gt;&gt;&gt; print(&#34;Network topology updated successfully.&#34;)
 
     &#34;&#34;&#34;
 

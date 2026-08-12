@@ -27,8 +27,9 @@
 <p>HyperVInstance is the only class defined in this file.</p>
 <p>HyperVInstance: Derived class from VirtualServer
 Base class, representing a
-Hypeer-V instance, and to perform operations on that instance</p>
-<h2 id="hypervinstance">Hypervinstance</h2>
+Hyper-V instance, and to perform operations on that instance</p>
+<p>Hypervinstance
+-----=</p>
 <p><strong>init</strong>(agent_object,instance_name,instance_id)
 &ndash;
 initialize object of hyper-v Instance
@@ -47,7 +48,7 @@ set Hyper-V Specific instance properties</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/hyperv.py#L1-L117" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/hyperv.py#L1-L162" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -72,7 +73,7 @@ set Hyper-V Specific instance properties</p>
 HyperVInstance is the only class defined in this file.
 
 HyperVInstance: Derived class from VirtualServer  Base class, representing a
-                           Hypeer-V instance, and to perform operations on that instance
+                           Hyper-V instance, and to perform operations on that instance
 
 HyperVInstance:
 
@@ -94,32 +95,51 @@ HyperVInstance:
 
 from ..vsinstance import VirtualServerInstance
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ...agent import Agent
+
+
 class HyperVInstance(VirtualServerInstance):
-    &#34;&#34;&#34;Class for representing an Hyper-V of the Virtual Server agent.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents a Hyper-V instance managed by the Virtual Server agent.
 
-    def __init__(self, agent, instance_name, instance_id=None):
-        &#34;&#34;&#34;Initialize the Instance object for the given Virtual Server instance.
+    This class encapsulates the properties and behaviors specific to a Hyper-V
+    virtual server instance, providing mechanisms to initialize the instance,
+    retrieve its properties, and access key server information.
 
-            Args:
-                class_object (agent_object,instance_name,instance_id)  --  instance of the
-                                                                                Agent class,
-                                                                                instance name,
-                                                                                instance id
+    Key Features:
+        - Initialization with agent, instance name, and instance ID
+        - Retrieval of instance properties and their JSON representation
+        - Access to server name and server host name via properties
+
+    &#34;&#34;&#34;
+
+    def __init__(self, agent: &#39;Agent&#39;, instance_name: str, instance_id: str = None) -&gt; None:
+        &#34;&#34;&#34;Initialize a HyperVInstance object for the specified Virtual Server instance.
+
+        Args:
+            agent: An instance of the Agent class representing the associated agent.
+            instance_name: The name of the virtual server instance.
+            instance_id: Optional; the unique identifier for the instance. If not provided, a default may be used.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(client_object, &#39;VirtualServer&#39;)
+            &gt;&gt;&gt; hyperv_instance = HyperVInstance(agent, &#39;HyperV_Instance1&#39;, &#39;12345&#39;)
+            &gt;&gt;&gt; print(f&#34;Instance created: {hyperv_instance}&#34;)
 
         &#34;&#34;&#34;
         super(HyperVInstance, self).__init__(agent, instance_name, instance_id)
         self._vendor_id = 2
 
+    def _get_instance_properties(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve and update the properties of this HyperV instance.
 
+        This method fetches the current properties for the HyperV instance and updates the instance&#39;s internal state accordingly.
 
-    def  _get_instance_properties(self):
-        &#34;&#34;&#34;
-        Get the properties of this instance
+        Raises:
+            SDKException: If the response is not empty or the response indicates failure.
 
-        Raise:
-            SDK Exception:
-                if response is not empty
-                if response is not success
         &#34;&#34;&#34;
 
         super(HyperVInstance, self)._get_instance_properties()
@@ -133,12 +153,11 @@ class HyperVInstance(VirtualServerInstance):
                 if &#39;clientName&#39; in client.keys():
                     self._server_name.append(str(client[&#39;clientName&#39;]))
 
+    def _get_instance_properties_json(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve all instance-related properties for this subclient as a dictionary.
 
-    def _get_instance_properties_json(self):
-        &#34;&#34;&#34;get the all instance related properties of this subclient.
-
-          Returns:
-               dict - all instance properties put inside a dict
+        Returns:
+            dict: A dictionary containing all properties associated with this instance.
 
         &#34;&#34;&#34;
         instance_json = {
@@ -156,13 +175,36 @@ class HyperVInstance(VirtualServerInstance):
         return instance_json
 
     @property
-    def server_name(self):
-        &#34;&#34;&#34;getter for the domain name in the Hyper-V json&#34;&#34;&#34;
+    def server_name(self) -&gt; list:
+        &#34;&#34;&#34;Get the domain name of the Hyper-V server from the instance configuration.
+
+        Returns:
+            The domain name of the Hyper-V server as a list.
+
+        Example:
+            &gt;&gt;&gt; instance = HyperVInstance(agent_object, instance_name)
+            &gt;&gt;&gt; domain = instance.server_name
+            &gt;&gt;&gt; print(f&#34;Hyper-V server domain: {domain}&#34;)
+
+        &#34;&#34;&#34;
         return self._server_name
 
     @property
-    def server_host_name(self):
-        &#34;&#34;&#34;getter for the domain name in the vmware vendor json&#34;&#34;&#34;
+    def server_host_name(self) -&gt; list:
+        &#34;&#34;&#34;Get the server host name associated with the HyperV instance.
+
+        This property retrieves the domain name or host name from the vendor-specific configuration
+        for the HyperV instance.
+
+        Returns:
+            The server host name as a list.
+
+        Example:
+            &gt;&gt;&gt; instance = HyperVInstance()
+            &gt;&gt;&gt; host_name = instance.server_host_name
+            &gt;&gt;&gt; print(f&#34;HyperV server host: {host_name}&#34;)
+
+        &#34;&#34;&#34;
         return self._server_name</code></pre>
 </details>
 </section>
@@ -177,49 +219,79 @@ class HyperVInstance(VirtualServerInstance):
 <dl>
 <dt id="cvpysdk.instances.virtualserver.hyperv.HyperVInstance"><code class="flex name class">
 <span>class <span class="ident">HyperVInstance</span></span>
-<span>(</span><span>agent, instance_name, instance_id=None)</span>
+<span>(</span><span>agent: Agent, instance_name: str, instance_id: str = None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for representing an Hyper-V of the Virtual Server agent.</p>
-<p>Initialize the Instance object for the given Virtual Server instance.</p>
-<h2 id="args">Args</h2>
-<p>class_object (agent_object,instance_name,instance_id)
-&ndash;
-instance of the
-Agent class,
-instance name,
-instance id</p></div>
+<div class="desc"><p>Represents a Hyper-V instance managed by the Virtual Server agent.</p>
+<p>This class encapsulates the properties and behaviors specific to a Hyper-V
+virtual server instance, providing mechanisms to initialize the instance,
+retrieve its properties, and access key server information.</p>
+<p>Key Features:
+- Initialization with agent, instance name, and instance ID
+- Retrieval of instance properties and their JSON representation
+- Access to server name and server host name via properties</p>
+<p>Initialize a HyperVInstance object for the specified Virtual Server instance.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>agent</code></strong></dt>
+<dd>An instance of the Agent class representing the associated agent.</dd>
+<dt><strong><code>instance_name</code></strong></dt>
+<dd>The name of the virtual server instance.</dd>
+<dt><strong><code>instance_id</code></strong></dt>
+<dd>Optional; the unique identifier for the instance. If not provided, a default may be used.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; agent = Agent(client_object, 'VirtualServer')
+&gt;&gt;&gt; hyperv_instance = HyperVInstance(agent, 'HyperV_Instance1', '12345')
+&gt;&gt;&gt; print(f&quot;Instance created: {hyperv_instance}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/hyperv.py#L46-L115" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/hyperv.py#L51-L162" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class HyperVInstance(VirtualServerInstance):
-    &#34;&#34;&#34;Class for representing an Hyper-V of the Virtual Server agent.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents a Hyper-V instance managed by the Virtual Server agent.
 
-    def __init__(self, agent, instance_name, instance_id=None):
-        &#34;&#34;&#34;Initialize the Instance object for the given Virtual Server instance.
+    This class encapsulates the properties and behaviors specific to a Hyper-V
+    virtual server instance, providing mechanisms to initialize the instance,
+    retrieve its properties, and access key server information.
 
-            Args:
-                class_object (agent_object,instance_name,instance_id)  --  instance of the
-                                                                                Agent class,
-                                                                                instance name,
-                                                                                instance id
+    Key Features:
+        - Initialization with agent, instance name, and instance ID
+        - Retrieval of instance properties and their JSON representation
+        - Access to server name and server host name via properties
+
+    &#34;&#34;&#34;
+
+    def __init__(self, agent: &#39;Agent&#39;, instance_name: str, instance_id: str = None) -&gt; None:
+        &#34;&#34;&#34;Initialize a HyperVInstance object for the specified Virtual Server instance.
+
+        Args:
+            agent: An instance of the Agent class representing the associated agent.
+            instance_name: The name of the virtual server instance.
+            instance_id: Optional; the unique identifier for the instance. If not provided, a default may be used.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(client_object, &#39;VirtualServer&#39;)
+            &gt;&gt;&gt; hyperv_instance = HyperVInstance(agent, &#39;HyperV_Instance1&#39;, &#39;12345&#39;)
+            &gt;&gt;&gt; print(f&#34;Instance created: {hyperv_instance}&#34;)
 
         &#34;&#34;&#34;
         super(HyperVInstance, self).__init__(agent, instance_name, instance_id)
         self._vendor_id = 2
 
+    def _get_instance_properties(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve and update the properties of this HyperV instance.
 
+        This method fetches the current properties for the HyperV instance and updates the instance&#39;s internal state accordingly.
 
-    def  _get_instance_properties(self):
-        &#34;&#34;&#34;
-        Get the properties of this instance
+        Raises:
+            SDKException: If the response is not empty or the response indicates failure.
 
-        Raise:
-            SDK Exception:
-                if response is not empty
-                if response is not success
         &#34;&#34;&#34;
 
         super(HyperVInstance, self)._get_instance_properties()
@@ -233,12 +305,11 @@ instance id</p></div>
                 if &#39;clientName&#39; in client.keys():
                     self._server_name.append(str(client[&#39;clientName&#39;]))
 
+    def _get_instance_properties_json(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve all instance-related properties for this subclient as a dictionary.
 
-    def _get_instance_properties_json(self):
-        &#34;&#34;&#34;get the all instance related properties of this subclient.
-
-          Returns:
-               dict - all instance properties put inside a dict
+        Returns:
+            dict: A dictionary containing all properties associated with this instance.
 
         &#34;&#34;&#34;
         instance_json = {
@@ -256,13 +327,36 @@ instance id</p></div>
         return instance_json
 
     @property
-    def server_name(self):
-        &#34;&#34;&#34;getter for the domain name in the Hyper-V json&#34;&#34;&#34;
+    def server_name(self) -&gt; list:
+        &#34;&#34;&#34;Get the domain name of the Hyper-V server from the instance configuration.
+
+        Returns:
+            The domain name of the Hyper-V server as a list.
+
+        Example:
+            &gt;&gt;&gt; instance = HyperVInstance(agent_object, instance_name)
+            &gt;&gt;&gt; domain = instance.server_name
+            &gt;&gt;&gt; print(f&#34;Hyper-V server domain: {domain}&#34;)
+
+        &#34;&#34;&#34;
         return self._server_name
 
     @property
-    def server_host_name(self):
-        &#34;&#34;&#34;getter for the domain name in the vmware vendor json&#34;&#34;&#34;
+    def server_host_name(self) -&gt; list:
+        &#34;&#34;&#34;Get the server host name associated with the HyperV instance.
+
+        This property retrieves the domain name or host name from the vendor-specific configuration
+        for the HyperV instance.
+
+        Returns:
+            The server host name as a list.
+
+        Example:
+            &gt;&gt;&gt; instance = HyperVInstance()
+            &gt;&gt;&gt; host_name = instance.server_host_name
+            &gt;&gt;&gt; print(f&#34;HyperV server host: {host_name}&#34;)
+
+        &#34;&#34;&#34;
         return self._server_name</code></pre>
 </details>
 <h3>Ancestors</h3>
@@ -272,31 +366,74 @@ instance id</p></div>
 </ul>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.instances.virtualserver.hyperv.HyperVInstance.server_host_name"><code class="name">var <span class="ident">server_host_name</span></code></dt>
+<dt id="cvpysdk.instances.virtualserver.hyperv.HyperVInstance.server_host_name"><code class="name">var <span class="ident">server_host_name</span> : list</code></dt>
 <dd>
-<div class="desc"><p>getter for the domain name in the vmware vendor json</p></div>
+<div class="desc"><p>Get the server host name associated with the HyperV instance.</p>
+<p>This property retrieves the domain name or host name from the vendor-specific configuration
+for the HyperV instance.</p>
+<p>Returns
+-----=
+The server host name as a list.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; instance = HyperVInstance()
+&gt;&gt;&gt; host_name = instance.server_host_name
+&gt;&gt;&gt; print(f&quot;HyperV server host: {host_name}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/hyperv.py#L112-L115" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/hyperv.py#L145-L162" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def server_host_name(self):
-    &#34;&#34;&#34;getter for the domain name in the vmware vendor json&#34;&#34;&#34;
+def server_host_name(self) -&gt; list:
+    &#34;&#34;&#34;Get the server host name associated with the HyperV instance.
+
+    This property retrieves the domain name or host name from the vendor-specific configuration
+    for the HyperV instance.
+
+    Returns:
+        The server host name as a list.
+
+    Example:
+        &gt;&gt;&gt; instance = HyperVInstance()
+        &gt;&gt;&gt; host_name = instance.server_host_name
+        &gt;&gt;&gt; print(f&#34;HyperV server host: {host_name}&#34;)
+
+    &#34;&#34;&#34;
     return self._server_name</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.virtualserver.hyperv.HyperVInstance.server_name"><code class="name">var <span class="ident">server_name</span></code></dt>
+<dt id="cvpysdk.instances.virtualserver.hyperv.HyperVInstance.server_name"><code class="name">var <span class="ident">server_name</span> : list</code></dt>
 <dd>
-<div class="desc"><p>getter for the domain name in the Hyper-V json</p></div>
+<div class="desc"><p>Get the domain name of the Hyper-V server from the instance configuration.</p>
+<p>Returns
+-----=
+The domain name of the Hyper-V server as a list.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; instance = HyperVInstance(agent_object, instance_name)
+&gt;&gt;&gt; domain = instance.server_name
+&gt;&gt;&gt; print(f&quot;Hyper-V server domain: {domain}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/hyperv.py#L107-L110" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/hyperv.py#L129-L143" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def server_name(self):
-    &#34;&#34;&#34;getter for the domain name in the Hyper-V json&#34;&#34;&#34;
+def server_name(self) -&gt; list:
+    &#34;&#34;&#34;Get the domain name of the Hyper-V server from the instance configuration.
+
+    Returns:
+        The domain name of the Hyper-V server as a list.
+
+    Example:
+        &gt;&gt;&gt; instance = HyperVInstance(agent_object, instance_name)
+        &gt;&gt;&gt; domain = instance.server_name
+        &gt;&gt;&gt; print(f&#34;Hyper-V server domain: {domain}&#34;)
+
+    &#34;&#34;&#34;
     return self._server_name</code></pre>
 </details>
 </dd>

@@ -35,7 +35,7 @@ sync_remote_cache()                   --  syncs remote cache
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/deployment/download.py#L1-L585" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/deployment/download.py#L1-L680" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -73,19 +73,37 @@ from ..job import Job
 from ..exception import SDKException
 from .deploymentconstants import DownloadOptions
 from cvpysdk.schedules import Schedules, SchedulePattern
+from typing import Optional, List, Dict, Any, Union, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..commcell import Commcell
 
 
 class Download(object):
-    &#34;&#34;&#34;&#34;class for downloading software packages&#34;&#34;&#34;
+    &#34;&#34;&#34;class for downloading software packages
 
-    def __init__(self, commcell_object):
+    Description:
+        This class provides methods to download and copy software packages within the Commcell environment.
+
+    Attributes:
+        commcell_object (object): Instance of the Commcell class.
+        _services (dict): Dictionary of Commcell services.
+        _cvpysdkcommcell_object (object): Instance of the cvpysdk of Commcell object.
+        update_option (dict): Dictionary to store update options.
+
+    Usage:
+        &gt;&gt;&gt; # Initialize the Download class with a Commcell object
+        &gt;&gt;&gt; download_obj = Download(commcell_object)
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_object: &#39;Commcell&#39;) -&gt; None:
         &#34;&#34;&#34;Initialize commcell_object of the Download class.
 
-            Args:
-                commcell_object (object)  --  instance of the Commcell class
+        Args:
+            commcell_object (object): instance of the Commcell class
 
-            Returns:
-                object - instance of the Download class
+        Returns:
+            None
 
         &#34;&#34;&#34;
 
@@ -93,52 +111,42 @@ class Download(object):
         self._services = commcell_object._services
         self._cvpysdkcommcell_object = commcell_object._cvpysdk_object
         self.update_option = {}
+        self._update_response_ = commcell_object._update_response_
 
     def download_software(
             self,
-            options=None,
-            os_list=None,
-            service_pack=None,
-            cu_number=0,
-            sync_cache=True,
-            sync_cache_list=None,
-            schedule_pattern=None):
+            options: Optional[str] = None,
+            os_list: Optional[List[str]] = None,
+            service_pack: Optional[int] = None,
+            cu_number: int = 0,
+            sync_cache: bool = True,
+            sync_cache_list: Optional[List[str]] = None,
+            schedule_pattern: Optional[Dict] = None) -&gt; Union[Job, Schedules]:
         &#34;&#34;&#34;Downloads the os packages on the commcell
 
-            Args:
+        Args:
+            options          (str, optional):  Download option to download software.
+            os_list          (list, optional): list of windows/unix packages to be downloaded.
+            service_pack     (int, optional):  service pack to be downloaded.
+            cu_number        (int):             maintenance release number.
+            sync_cache       (bool):            True if download and sync, False only download.
+            sync_cache_list  (list, optional): list of names of remote caches to sync, use None to sync all caches.
+            schedule_pattern (dict, optional): pattern for schedule task.
 
-                options      (enum)            --  Download option to download software
+        Returns:
+            Job or Schedules: instance of the Job class or Schedules class for this copy software job
 
-                os_list      (list of enum)    --  list of windows/unix packages to be downloaded
+        Raises:
+            SDKException:
+                if Download job failed
 
-                service_pack (int)             --  service pack to be downloaded
+                if response is empty
 
-                cu_number (int)                --  maintenance release number
+                if response is not success
 
-                sync_cache (bool)              --  True if download and sync
-                                                   False only download
-                
-                sync_cache_list (list)         --  list of names of remote caches to sync
-                                                   use None to sync all caches
+                if another download job is running
 
-                schedule_pattern (dict)        --  pattern for schedule task
-                                                   
-
-            Returns:
-                object - instance of the Job class for this download job
-
-            Raises:
-                SDKException:
-                    if Download job failed
-
-                    if response is empty
-
-                    if response is not success
-
-                    if another download job is running
-
-            Usage:
-
+        Usage:
             -   if download_software is not given any parameters it takes default value of latest
                 service pack for options and downloads WINDOWS_64 package
 
@@ -148,38 +156,39 @@ class Download(object):
                 download software method, it can be imported by
 
                 &gt;&gt;&gt; from cvpysdk.deployment.deploymentconstants import DownloadOptions
-                    from cvpysdk.deployment.deploymentconstants import DownloadPackages
+                &gt;&gt;&gt; from cvpysdk.deployment.deploymentconstants import DownloadPackages
 
             -   sample method calls for different options, for latest service pack
 
                 &gt;&gt;&gt; commcell_obj.download_software(
-                        options=DownloadOptions.lATEST_SERVICEPACK.value,
-                        os_list=[DownloadPackages.WINDOWS_64.value]
-                        )
+                ...     options=DownloadOptions.LATEST_SERVICEPACK.value,
+                ...     os_list=[DownloadPackages.WINDOWS_64.value]
+                ... )
 
             -   For Latest hotfixes for the installed service pack
 
                 &gt;&gt;&gt; commcell_obj.download_software(
-                        options=&#39;DownloadOptions.LATEST_HOTFIXES.value&#39;,
-                        os_list=[DownloadPackages.WINDOWS_64.value,
-                                DownloadPackages.UNIX_LINUX64.value]
-                        )
+                ...     options=DownloadOptions.LATEST_HOTFIXES.value,
+                ...     os_list=[DownloadPackages.WINDOWS_64.value,
+                ...              DownloadPackages.UNIX_LINUX64.value]
+                ... )
 
             -   For service pack and hotfixes
 
                 &gt;&gt;&gt; commcell_obj.download_software(
-                        options=&#39;DownloadOptions.SERVICEPACK_AND_HOTFIXES.value&#39;,
-                        os_list=[DownloadPackages.UNIX_MAC.value],
-                        service_pack=13,
-                        cu_number=42
-                        )
+                ...     options=DownloadOptions.SERVICEPACK_AND_HOTFIXES.value,
+                ...     os_list=[DownloadPackages.UNIX_MAC.value],
+                ...     service_pack=13,
+                ...     cu_number=42
+                ... )
 
-                    **NOTE:** service_pack parameter must be specified for third option
+                **NOTE:** service_pack parameter must be specified for third option
 
         &#34;&#34;&#34;
 
         # To set the default value if option is none
         version = self.commcell_object.commserv_version
+        direct_download = version &gt;= 36 and not schedule_pattern
         if options is None:
             options = &#39;latest service pack&#39;
 
@@ -227,20 +236,20 @@ class Download(object):
                                       &#34;id&#34;: self.commcell_object.clients.get(cache).client_id
                                       }) if version &gt;= 36 else client_groups.append({&#34;clientName&#34;: cache})
         elif sync_cache and not sync_cache_list:
-            if version &lt; 36:
-                client_groups = [{&#34;_type_&#34;: 2}]
-            else:
-                flag_1, response_1 = self._cvpysdkcommcell_object.make_request(&#39;GET&#39;, self._services[&#39;CREATE_RC&#39;])
+            if direct_download:
+                flag_1, response_1 = self._cvpysdkcommcell_object.make_request(&#39;GET&#39;, self._services[&#39;SOFTWARE_CACHE&#39;])
                 cache_list = []
-                for obj in response_1.json()[&#39;softwareCacheDetailList&#39;]:
+                for obj in response_1.json().get(&#39;softwareCacheDetailList&#39;, []):
                     if obj[&#39;cache&#39;][&#39;id&#39;] != 2:
                         cache_list.append(obj[&#39;cache&#39;][&#39;name&#39;])
                 for client in cache_list:
                     client_groups.append({&#34;type&#34;: &#34;CLIENT_ENTITY&#34;,
                                           &#34;clientName&#34;: client,
                                           &#34;id&#34;: int(self.commcell_object.clients.all_clients[client][&#39;id&#39;])})
+            else:
+                client_groups = [{&#34;_type_&#34;: 2}]
 
-        if version &gt;= 36:
+        if direct_download:
             win_os_list = []
             unix_os_list = []
             temp_win = [&#39;WINDOWS_X64&#39;, &#39;WINDOWS_X32&#39;, &#39;WINDOWS_ARM64&#39;]
@@ -336,8 +345,8 @@ class Download(object):
         if schedule_pattern:
             request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
 
-        method = &#39;PUT&#39; if version &gt;= 36 else &#39;POST&#39;
-        url = self._services[&#39;DOWNLOAD_SOFTWARE&#39;] if version &gt;= 36 else self._services[&#39;CREATE_TASK&#39;]
+        method = &#39;PUT&#39; if direct_download else &#39;POST&#39;
+        url = self._services[&#39;DOWNLOAD_SOFTWARE&#39;] if direct_download else self._services[&#39;CREATE_TASK&#39;]
 
         flag, response = self._cvpysdkcommcell_object.make_request(
             method, url, request_json
@@ -353,60 +362,52 @@ class Download(object):
                     return Schedules(self.commcell_object).get(task_id=response.json()[&#39;taskId&#39;])
 
                 else:
-                    raise SDKException(&#39;Download&#39;, &#39;101&#39;)
+                    raise SDKException(&#39;Download&#39;, &#39;101&#39;, self._update_response_(response.text))
 
             else:
-                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;, self._update_response_(response.text))
         else:
-            raise SDKException(&#39;Response&#39;, &#39;101&#39;)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
-    def copy_software(self, media_loc, username=None, password=None, sync_cache=True, sync_cache_list=None, schedule_pattern=None):
+    def copy_software(self, media_loc: str, username: Optional[str] = None, password: Optional[str] = None,
+                      sync_cache: bool = True, sync_cache_list: Optional[List[str]] = None,
+                      schedule_pattern: Optional[Dict] = None) -&gt; Union[Job, Schedules]:
         &#34;&#34;&#34;copies media from the specified location on the commcell
 
-                    Args:
+        Args:
+            media_loc        (str):           Media Location to be used for copy software.
+            username         (str, optional): username to authenticate to external location.
+            password         (str, optional): password to authenticate to external location.
+            sync_cache       (bool):          True if download and sync, False only download.
+            sync_cache_list  (list, optional): list of names of remote caches to sync, use None to sync all caches.
+            schedule_pattern (dict, optional): pattern for schedule task.
 
-                        media_loc      (str)           --  Media Location to be used for copy software
+        Returns:
+            Job or Schedules: instance of the Job class or Schedules class for this copy software job
 
-                        username       (str)           --  username to authenticate to external location
+        Raises:
+            SDKException:
+                if Download job failed
 
-                        password       (str)           --  password to authenticate to external location
+                if response is empty
 
-                        sync_cache (bool)              --  True if download and sync
-                                                           False only download
+                if response is not success
 
-                        sync_cache_list (list)         --  list of names of remote caches to sync
-                                                            use None to sync all caches
+                if another download job is running
+        Usage:
+            -   if media_location directory is local to the machine - username and password is not needed
 
-                        schedule_pattern(dict)         --  pattern for schedule task
+                &gt;&gt;&gt; commcell_obj.copy_software(media_loc = &#34;C:\\Downloads\\Media&#34;)
 
+            -   if Media_location directory is remote- username and passsword(base 64 encoded) are needed
+                to authenticate the cache
 
-                    Returns:
-                        object - instance of the Job class for this copy software job
-
-                    Raises:
-                        SDKException:
-                            if Download job failed
-
-                            if response is empty
-
-                            if response is not success
-
-                            if another download job is running
-                    Usage:
-
-                        -   if media_location directory is local to the machine - username and password is not needed
-
-                            &gt;&gt;&gt; commcell_obj.copy_software(media_loc = &#34;C:\\Downloads\\Media&#34;)
-
-                        -   if Media_location directory is remote- username and passsword(base 64 encoded) are needed
-                            to authenticate the cache
-
-                            &gt;&gt;&gt; commcell_obj.copy_software(
-                            media_loc = &#34;\\\\subdomain.company.com\\Media&#34;,
-                            username = &#34;domainone\\userone&#34;,
-                            password = &#34;base64encoded password&#34;
-                            )
-                &#34;&#34;&#34;
+                &gt;&gt;&gt; commcell_obj.copy_software(
+                ...     media_loc = &#34;\\\\subdomain.company.com\\Media&#34;,
+                ...     username = &#34;domainone\\userone&#34;,
+                ...     password = &#34;base64encoded password&#34;
+                ... )
+        &#34;&#34;&#34;
         version = self.commcell_object.commserv_version
         client_auth = {}
         if username:
@@ -427,15 +428,15 @@ class Download(object):
                                               &#34;id&#34;: self.commcell_object.clients.get(cache).client_id
                                               })
                 else:
-                    flag_1, response_1 = self._cvpysdkcommcell_object.make_request(&#39;GET&#39;, self._services[&#39;CREATE_RC&#39;])
+                    flag_1, response_1 = self._cvpysdkcommcell_object.make_request(&#39;GET&#39;, self._services[&#39;SOFTWARE_CACHE&#39;])
                     cache_list = []
-                    for obj in response_1.json()[&#39;softwareCacheDetailList&#39;]:
+                    for obj in response_1.json().get(&#39;softwareCacheDetailList&#39;, []):
                         if obj[&#39;cache&#39;][&#39;id&#39;] != 2:
                             cache_list.append(obj[&#39;cache&#39;][&#39;name&#39;])
                     for client in cache_list:
                         client_groups.append({&#34;type&#34;: &#34;CLIENT_ENTITY&#34;,
                                               &#34;clientName&#34;: client,
-                                              &#34;id&#34;: int(self.commcell_object.clients.all_clients[client][&#39;id&#39;])})
+                                              &#34;id&#34;: int(self.commcell_object.clients.all_clients[client.lower()][&#39;id&#39;])})
             request_json = {
                 &#34;copyConfiguration&#34;: {
                     &#34;downloadPath&#34;: media_loc
@@ -519,28 +520,33 @@ class Download(object):
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;)
 
-    def sync_remote_cache(self, client_list=None, schedule_pattern=None):
+    def sync_remote_cache(self, client_list: Optional[list] = None,
+                          schedule_pattern: Optional[dict] = None) -&gt; Union[Job, Schedules]:
         &#34;&#34;&#34;Syncs remote cache
 
-            Args:
+        Args:
+            client_list (list, optional): List of client names. Defaults to None.
+            By default all remote cache clients are synced.
+            schedule_pattern (dict, optional): Pattern to schedule Sync Job. Defaults to None.
 
-                client_list  --  list of client names
-                Default is None. By default all remote cache clients are synced
+        Returns:
+            Job or Schedules: instance of the Job class or Schedules for sync job
 
-                schedule_pattern (dict)        --  Pattern to schedule Sync Job
+        Raises:
+            SDKException:
+                if sync job failed
 
-            Returns:
-                object - instance of the Job class for sync job
+                if response is empty
 
-            Raises:
-                SDKException:
-                    if sync job failed
+                if response is not success
 
-                    if response is empty
+                if another sync job is running with the given client
 
-                    if response is not success
-
-                    if another sync job is running with the given client
+        Usage:
+            Download().sync_remote_cache()
+            Download().sync_remote_cache(client_list=[&#39;client1&#39;, &#39;client2&#39;])
+            Download().sync_remote_cache(schedule_pattern={&#39;frequency&#39;: &#39;daily&#39;, &#39;start_time&#39;: &#39;08:00&#39;})
+            Download().sync_remote_cache(client_list=[&#39;client1&#39;], schedule_pattern={&#39;frequency&#39;: &#39;weekly&#39;, &#39;day&#39;: &#39;Sunday&#39;})
 
         &#34;&#34;&#34;
 
@@ -616,12 +622,99 @@ class Download(object):
                     return Schedules(self.commcell_object).get(task_id=response.json()[&#39;taskId&#39;])
 
                 else:
-                    raise SDKException(&#39;Download&#39;, &#39;101&#39;)
+                    raise SDKException(&#39;Download&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;, self._update_response_(response.text))
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def get_packages(self) -&gt; list:
+        &#34;&#34;&#34;
+        To get the list of custom packages that are available to download
+
+        Returns:
+            list: List of dictionaries containing package details (e.g- fileName, platform, filesize, downloadURL, checksum)
+        Raises:
+        SDKException:
+            - Failed to execute the API.
+            - Response is incorrect.
+            - if response is empty.
+        Usage:
+            &gt;&gt;&gt; Download.get_packages()
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdkcommcell_object.make_request(
+            &#39;GET&#39;, self._services[&#39;AVAILABLE_PACKAGES&#39;]
+        )
+        if flag:
+            if response.json():
+                if &#34;pkgList&#34; in response.json():
+                    return response.json()[&#39;pkgList&#39;]
+                else:
+                    raise SDKException(&#39;Packages&#39;, &#39;101&#39;)
 
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
-            raise SDKException(&#39;Response&#39;, &#39;101&#39;)</code></pre>
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def refresh_updates(self) -&gt; Optional[str]:
+        &#34;&#34;&#34;
+        Perform check for any latest updates.
+    
+        Returns:
+            Optional[str]: Error string if available, None otherwise.
+    
+        Raises:
+            SDKException:
+                if response is empty
+                if response is not success
+    
+        Example:
+            &gt;&gt;&gt; download_obj = Download(commcell_object)
+            &gt;&gt;&gt; result = download_obj.refresh_updates()
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdkcommcell_object.make_request(
+            &#39;POST&#39;, self._services[&#39;REFRESH_UPDATES&#39;]
+        )
+        if flag:
+            if response.json():
+                if &#39;errorCode&#39; in response.json() and response.json()[&#39;errorCode&#39;] != 0:
+                    raise SDKException(&#39;Download&#39;, response.json()[&#39;errorString&#39;])
+                if response.json()[&#39;errorCode&#39;] == 0:
+                    return response.json()[&#39;errorString&#39;]
+                else:
+                    raise SDKException(&#39;Response&#39;, &#39;102&#39;, self._update_response_(response.text))
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;, self._update_response_(response.text))
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def cu_packs_available(self, release: str = &#39;11.0.0&#39;) -&gt; Dict[str, Any]:
+        &#34;&#34;&#34;
+        Get available CU packs info from FTP server.
+    
+        Args:
+            release: Release version string. Defaults to &#39;11.0.0&#39;.
+    
+        Returns:
+            Dict containing CU pack information.
+    
+        Raises:
+            SDKException:
+                if response is empty
+                    if response is not success
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdkcommcell_object.make_request(
+            &#39;GET&#39;, self._services[&#39;FTPServicePack&#39;] % release
+        )
+        if flag:
+            if response.status_code == 200 and response.json():
+                return response.json()
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))</code></pre>
 </details>
 </section>
 <section>
@@ -635,33 +728,70 @@ class Download(object):
 <dl>
 <dt id="cvpysdk.deployment.download.Download"><code class="flex name class">
 <span>class <span class="ident">Download</span></span>
-<span>(</span><span>commcell_object)</span>
+<span>(</span><span>commcell_object: Commcell)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>"class for downloading software packages</p>
+<div class="desc"><p>class for downloading software packages</p>
+<p>Description
+-----=
+This class provides methods to download and copy software packages within the Commcell environment.</p>
+<dl>
+<dt>Attributes</dt>
+<dt>-----=</dt>
+<dt><strong><code>commcell_object</code></strong> :&ensp;<code>object</code></dt>
+<dd>Instance of the Commcell class.</dd>
+<dt><strong><code>_services</code></strong> :&ensp;<code>dict</code></dt>
+<dd>Dictionary of Commcell services.</dd>
+<dt><strong><code>_cvpysdkcommcell_object</code></strong> :&ensp;<code>object</code></dt>
+<dd>Instance of the cvpysdk of Commcell object.</dd>
+<dt><strong><code>update_option</code></strong> :&ensp;<code>dict</code></dt>
+<dd>Dictionary to store update options.</dd>
+</dl>
+<p>Usage
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; # Initialize the Download class with a Commcell object
+&gt;&gt;&gt; download_obj = Download(commcell_object)
+</code></pre>
 <p>Initialize commcell_object of the Download class.</p>
-<h2 id="args">Args</h2>
-<p>commcell_object (object)
-&ndash;
-instance of the Commcell class</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Download class</p></div>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>commcell_object</code></strong> :&ensp;<code>object</code></dt>
+<dd>instance of the Commcell class</dd>
+</dl>
+<p>Returns
+-----=
+None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/deployment/download.py#L39-L585" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/deployment/download.py#L43-L678" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Download(object):
-    &#34;&#34;&#34;&#34;class for downloading software packages&#34;&#34;&#34;
+    &#34;&#34;&#34;class for downloading software packages
 
-    def __init__(self, commcell_object):
+    Description:
+        This class provides methods to download and copy software packages within the Commcell environment.
+
+    Attributes:
+        commcell_object (object): Instance of the Commcell class.
+        _services (dict): Dictionary of Commcell services.
+        _cvpysdkcommcell_object (object): Instance of the cvpysdk of Commcell object.
+        update_option (dict): Dictionary to store update options.
+
+    Usage:
+        &gt;&gt;&gt; # Initialize the Download class with a Commcell object
+        &gt;&gt;&gt; download_obj = Download(commcell_object)
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_object: &#39;Commcell&#39;) -&gt; None:
         &#34;&#34;&#34;Initialize commcell_object of the Download class.
 
-            Args:
-                commcell_object (object)  --  instance of the Commcell class
+        Args:
+            commcell_object (object): instance of the Commcell class
 
-            Returns:
-                object - instance of the Download class
+        Returns:
+            None
 
         &#34;&#34;&#34;
 
@@ -669,52 +799,42 @@ instance of the Commcell class</p>
         self._services = commcell_object._services
         self._cvpysdkcommcell_object = commcell_object._cvpysdk_object
         self.update_option = {}
+        self._update_response_ = commcell_object._update_response_
 
     def download_software(
             self,
-            options=None,
-            os_list=None,
-            service_pack=None,
-            cu_number=0,
-            sync_cache=True,
-            sync_cache_list=None,
-            schedule_pattern=None):
+            options: Optional[str] = None,
+            os_list: Optional[List[str]] = None,
+            service_pack: Optional[int] = None,
+            cu_number: int = 0,
+            sync_cache: bool = True,
+            sync_cache_list: Optional[List[str]] = None,
+            schedule_pattern: Optional[Dict] = None) -&gt; Union[Job, Schedules]:
         &#34;&#34;&#34;Downloads the os packages on the commcell
 
-            Args:
+        Args:
+            options          (str, optional):  Download option to download software.
+            os_list          (list, optional): list of windows/unix packages to be downloaded.
+            service_pack     (int, optional):  service pack to be downloaded.
+            cu_number        (int):             maintenance release number.
+            sync_cache       (bool):            True if download and sync, False only download.
+            sync_cache_list  (list, optional): list of names of remote caches to sync, use None to sync all caches.
+            schedule_pattern (dict, optional): pattern for schedule task.
 
-                options      (enum)            --  Download option to download software
+        Returns:
+            Job or Schedules: instance of the Job class or Schedules class for this copy software job
 
-                os_list      (list of enum)    --  list of windows/unix packages to be downloaded
+        Raises:
+            SDKException:
+                if Download job failed
 
-                service_pack (int)             --  service pack to be downloaded
+                if response is empty
 
-                cu_number (int)                --  maintenance release number
+                if response is not success
 
-                sync_cache (bool)              --  True if download and sync
-                                                   False only download
-                
-                sync_cache_list (list)         --  list of names of remote caches to sync
-                                                   use None to sync all caches
+                if another download job is running
 
-                schedule_pattern (dict)        --  pattern for schedule task
-                                                   
-
-            Returns:
-                object - instance of the Job class for this download job
-
-            Raises:
-                SDKException:
-                    if Download job failed
-
-                    if response is empty
-
-                    if response is not success
-
-                    if another download job is running
-
-            Usage:
-
+        Usage:
             -   if download_software is not given any parameters it takes default value of latest
                 service pack for options and downloads WINDOWS_64 package
 
@@ -724,38 +844,39 @@ instance of the Commcell class</p>
                 download software method, it can be imported by
 
                 &gt;&gt;&gt; from cvpysdk.deployment.deploymentconstants import DownloadOptions
-                    from cvpysdk.deployment.deploymentconstants import DownloadPackages
+                &gt;&gt;&gt; from cvpysdk.deployment.deploymentconstants import DownloadPackages
 
             -   sample method calls for different options, for latest service pack
 
                 &gt;&gt;&gt; commcell_obj.download_software(
-                        options=DownloadOptions.lATEST_SERVICEPACK.value,
-                        os_list=[DownloadPackages.WINDOWS_64.value]
-                        )
+                ...     options=DownloadOptions.LATEST_SERVICEPACK.value,
+                ...     os_list=[DownloadPackages.WINDOWS_64.value]
+                ... )
 
             -   For Latest hotfixes for the installed service pack
 
                 &gt;&gt;&gt; commcell_obj.download_software(
-                        options=&#39;DownloadOptions.LATEST_HOTFIXES.value&#39;,
-                        os_list=[DownloadPackages.WINDOWS_64.value,
-                                DownloadPackages.UNIX_LINUX64.value]
-                        )
+                ...     options=DownloadOptions.LATEST_HOTFIXES.value,
+                ...     os_list=[DownloadPackages.WINDOWS_64.value,
+                ...              DownloadPackages.UNIX_LINUX64.value]
+                ... )
 
             -   For service pack and hotfixes
 
                 &gt;&gt;&gt; commcell_obj.download_software(
-                        options=&#39;DownloadOptions.SERVICEPACK_AND_HOTFIXES.value&#39;,
-                        os_list=[DownloadPackages.UNIX_MAC.value],
-                        service_pack=13,
-                        cu_number=42
-                        )
+                ...     options=DownloadOptions.SERVICEPACK_AND_HOTFIXES.value,
+                ...     os_list=[DownloadPackages.UNIX_MAC.value],
+                ...     service_pack=13,
+                ...     cu_number=42
+                ... )
 
-                    **NOTE:** service_pack parameter must be specified for third option
+                **NOTE:** service_pack parameter must be specified for third option
 
         &#34;&#34;&#34;
 
         # To set the default value if option is none
         version = self.commcell_object.commserv_version
+        direct_download = version &gt;= 36 and not schedule_pattern
         if options is None:
             options = &#39;latest service pack&#39;
 
@@ -803,20 +924,20 @@ instance of the Commcell class</p>
                                       &#34;id&#34;: self.commcell_object.clients.get(cache).client_id
                                       }) if version &gt;= 36 else client_groups.append({&#34;clientName&#34;: cache})
         elif sync_cache and not sync_cache_list:
-            if version &lt; 36:
-                client_groups = [{&#34;_type_&#34;: 2}]
-            else:
-                flag_1, response_1 = self._cvpysdkcommcell_object.make_request(&#39;GET&#39;, self._services[&#39;CREATE_RC&#39;])
+            if direct_download:
+                flag_1, response_1 = self._cvpysdkcommcell_object.make_request(&#39;GET&#39;, self._services[&#39;SOFTWARE_CACHE&#39;])
                 cache_list = []
-                for obj in response_1.json()[&#39;softwareCacheDetailList&#39;]:
+                for obj in response_1.json().get(&#39;softwareCacheDetailList&#39;, []):
                     if obj[&#39;cache&#39;][&#39;id&#39;] != 2:
                         cache_list.append(obj[&#39;cache&#39;][&#39;name&#39;])
                 for client in cache_list:
                     client_groups.append({&#34;type&#34;: &#34;CLIENT_ENTITY&#34;,
                                           &#34;clientName&#34;: client,
                                           &#34;id&#34;: int(self.commcell_object.clients.all_clients[client][&#39;id&#39;])})
+            else:
+                client_groups = [{&#34;_type_&#34;: 2}]
 
-        if version &gt;= 36:
+        if direct_download:
             win_os_list = []
             unix_os_list = []
             temp_win = [&#39;WINDOWS_X64&#39;, &#39;WINDOWS_X32&#39;, &#39;WINDOWS_ARM64&#39;]
@@ -912,8 +1033,8 @@ instance of the Commcell class</p>
         if schedule_pattern:
             request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
 
-        method = &#39;PUT&#39; if version &gt;= 36 else &#39;POST&#39;
-        url = self._services[&#39;DOWNLOAD_SOFTWARE&#39;] if version &gt;= 36 else self._services[&#39;CREATE_TASK&#39;]
+        method = &#39;PUT&#39; if direct_download else &#39;POST&#39;
+        url = self._services[&#39;DOWNLOAD_SOFTWARE&#39;] if direct_download else self._services[&#39;CREATE_TASK&#39;]
 
         flag, response = self._cvpysdkcommcell_object.make_request(
             method, url, request_json
@@ -929,60 +1050,52 @@ instance of the Commcell class</p>
                     return Schedules(self.commcell_object).get(task_id=response.json()[&#39;taskId&#39;])
 
                 else:
-                    raise SDKException(&#39;Download&#39;, &#39;101&#39;)
+                    raise SDKException(&#39;Download&#39;, &#39;101&#39;, self._update_response_(response.text))
 
             else:
-                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;, self._update_response_(response.text))
         else:
-            raise SDKException(&#39;Response&#39;, &#39;101&#39;)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
-    def copy_software(self, media_loc, username=None, password=None, sync_cache=True, sync_cache_list=None, schedule_pattern=None):
+    def copy_software(self, media_loc: str, username: Optional[str] = None, password: Optional[str] = None,
+                      sync_cache: bool = True, sync_cache_list: Optional[List[str]] = None,
+                      schedule_pattern: Optional[Dict] = None) -&gt; Union[Job, Schedules]:
         &#34;&#34;&#34;copies media from the specified location on the commcell
 
-                    Args:
+        Args:
+            media_loc        (str):           Media Location to be used for copy software.
+            username         (str, optional): username to authenticate to external location.
+            password         (str, optional): password to authenticate to external location.
+            sync_cache       (bool):          True if download and sync, False only download.
+            sync_cache_list  (list, optional): list of names of remote caches to sync, use None to sync all caches.
+            schedule_pattern (dict, optional): pattern for schedule task.
 
-                        media_loc      (str)           --  Media Location to be used for copy software
+        Returns:
+            Job or Schedules: instance of the Job class or Schedules class for this copy software job
 
-                        username       (str)           --  username to authenticate to external location
+        Raises:
+            SDKException:
+                if Download job failed
 
-                        password       (str)           --  password to authenticate to external location
+                if response is empty
 
-                        sync_cache (bool)              --  True if download and sync
-                                                           False only download
+                if response is not success
 
-                        sync_cache_list (list)         --  list of names of remote caches to sync
-                                                            use None to sync all caches
+                if another download job is running
+        Usage:
+            -   if media_location directory is local to the machine - username and password is not needed
 
-                        schedule_pattern(dict)         --  pattern for schedule task
+                &gt;&gt;&gt; commcell_obj.copy_software(media_loc = &#34;C:\\Downloads\\Media&#34;)
 
+            -   if Media_location directory is remote- username and passsword(base 64 encoded) are needed
+                to authenticate the cache
 
-                    Returns:
-                        object - instance of the Job class for this copy software job
-
-                    Raises:
-                        SDKException:
-                            if Download job failed
-
-                            if response is empty
-
-                            if response is not success
-
-                            if another download job is running
-                    Usage:
-
-                        -   if media_location directory is local to the machine - username and password is not needed
-
-                            &gt;&gt;&gt; commcell_obj.copy_software(media_loc = &#34;C:\\Downloads\\Media&#34;)
-
-                        -   if Media_location directory is remote- username and passsword(base 64 encoded) are needed
-                            to authenticate the cache
-
-                            &gt;&gt;&gt; commcell_obj.copy_software(
-                            media_loc = &#34;\\\\subdomain.company.com\\Media&#34;,
-                            username = &#34;domainone\\userone&#34;,
-                            password = &#34;base64encoded password&#34;
-                            )
-                &#34;&#34;&#34;
+                &gt;&gt;&gt; commcell_obj.copy_software(
+                ...     media_loc = &#34;\\\\subdomain.company.com\\Media&#34;,
+                ...     username = &#34;domainone\\userone&#34;,
+                ...     password = &#34;base64encoded password&#34;
+                ... )
+        &#34;&#34;&#34;
         version = self.commcell_object.commserv_version
         client_auth = {}
         if username:
@@ -1003,15 +1116,15 @@ instance of the Commcell class</p>
                                               &#34;id&#34;: self.commcell_object.clients.get(cache).client_id
                                               })
                 else:
-                    flag_1, response_1 = self._cvpysdkcommcell_object.make_request(&#39;GET&#39;, self._services[&#39;CREATE_RC&#39;])
+                    flag_1, response_1 = self._cvpysdkcommcell_object.make_request(&#39;GET&#39;, self._services[&#39;SOFTWARE_CACHE&#39;])
                     cache_list = []
-                    for obj in response_1.json()[&#39;softwareCacheDetailList&#39;]:
+                    for obj in response_1.json().get(&#39;softwareCacheDetailList&#39;, []):
                         if obj[&#39;cache&#39;][&#39;id&#39;] != 2:
                             cache_list.append(obj[&#39;cache&#39;][&#39;name&#39;])
                     for client in cache_list:
                         client_groups.append({&#34;type&#34;: &#34;CLIENT_ENTITY&#34;,
                                               &#34;clientName&#34;: client,
-                                              &#34;id&#34;: int(self.commcell_object.clients.all_clients[client][&#39;id&#39;])})
+                                              &#34;id&#34;: int(self.commcell_object.clients.all_clients[client.lower()][&#39;id&#39;])})
             request_json = {
                 &#34;copyConfiguration&#34;: {
                     &#34;downloadPath&#34;: media_loc
@@ -1095,28 +1208,33 @@ instance of the Commcell class</p>
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;)
 
-    def sync_remote_cache(self, client_list=None, schedule_pattern=None):
+    def sync_remote_cache(self, client_list: Optional[list] = None,
+                          schedule_pattern: Optional[dict] = None) -&gt; Union[Job, Schedules]:
         &#34;&#34;&#34;Syncs remote cache
 
-            Args:
+        Args:
+            client_list (list, optional): List of client names. Defaults to None.
+            By default all remote cache clients are synced.
+            schedule_pattern (dict, optional): Pattern to schedule Sync Job. Defaults to None.
 
-                client_list  --  list of client names
-                Default is None. By default all remote cache clients are synced
+        Returns:
+            Job or Schedules: instance of the Job class or Schedules for sync job
 
-                schedule_pattern (dict)        --  Pattern to schedule Sync Job
+        Raises:
+            SDKException:
+                if sync job failed
 
-            Returns:
-                object - instance of the Job class for sync job
+                if response is empty
 
-            Raises:
-                SDKException:
-                    if sync job failed
+                if response is not success
 
-                    if response is empty
+                if another sync job is running with the given client
 
-                    if response is not success
-
-                    if another sync job is running with the given client
+        Usage:
+            Download().sync_remote_cache()
+            Download().sync_remote_cache(client_list=[&#39;client1&#39;, &#39;client2&#39;])
+            Download().sync_remote_cache(schedule_pattern={&#39;frequency&#39;: &#39;daily&#39;, &#39;start_time&#39;: &#39;08:00&#39;})
+            Download().sync_remote_cache(client_list=[&#39;client1&#39;], schedule_pattern={&#39;frequency&#39;: &#39;weekly&#39;, &#39;day&#39;: &#39;Sunday&#39;})
 
         &#34;&#34;&#34;
 
@@ -1192,48 +1310,132 @@ instance of the Commcell class</p>
                     return Schedules(self.commcell_object).get(task_id=response.json()[&#39;taskId&#39;])
 
                 else:
-                    raise SDKException(&#39;Download&#39;, &#39;101&#39;)
+                    raise SDKException(&#39;Download&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;, self._update_response_(response.text))
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def get_packages(self) -&gt; list:
+        &#34;&#34;&#34;
+        To get the list of custom packages that are available to download
+
+        Returns:
+            list: List of dictionaries containing package details (e.g- fileName, platform, filesize, downloadURL, checksum)
+        Raises:
+        SDKException:
+            - Failed to execute the API.
+            - Response is incorrect.
+            - if response is empty.
+        Usage:
+            &gt;&gt;&gt; Download.get_packages()
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdkcommcell_object.make_request(
+            &#39;GET&#39;, self._services[&#39;AVAILABLE_PACKAGES&#39;]
+        )
+        if flag:
+            if response.json():
+                if &#34;pkgList&#34; in response.json():
+                    return response.json()[&#39;pkgList&#39;]
+                else:
+                    raise SDKException(&#39;Packages&#39;, &#39;101&#39;)
 
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
-            raise SDKException(&#39;Response&#39;, &#39;101&#39;)</code></pre>
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def refresh_updates(self) -&gt; Optional[str]:
+        &#34;&#34;&#34;
+        Perform check for any latest updates.
+    
+        Returns:
+            Optional[str]: Error string if available, None otherwise.
+    
+        Raises:
+            SDKException:
+                if response is empty
+                if response is not success
+    
+        Example:
+            &gt;&gt;&gt; download_obj = Download(commcell_object)
+            &gt;&gt;&gt; result = download_obj.refresh_updates()
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdkcommcell_object.make_request(
+            &#39;POST&#39;, self._services[&#39;REFRESH_UPDATES&#39;]
+        )
+        if flag:
+            if response.json():
+                if &#39;errorCode&#39; in response.json() and response.json()[&#39;errorCode&#39;] != 0:
+                    raise SDKException(&#39;Download&#39;, response.json()[&#39;errorString&#39;])
+                if response.json()[&#39;errorCode&#39;] == 0:
+                    return response.json()[&#39;errorString&#39;]
+                else:
+                    raise SDKException(&#39;Response&#39;, &#39;102&#39;, self._update_response_(response.text))
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;, self._update_response_(response.text))
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+    def cu_packs_available(self, release: str = &#39;11.0.0&#39;) -&gt; Dict[str, Any]:
+        &#34;&#34;&#34;
+        Get available CU packs info from FTP server.
+    
+        Args:
+            release: Release version string. Defaults to &#39;11.0.0&#39;.
+    
+        Returns:
+            Dict containing CU pack information.
+    
+        Raises:
+            SDKException:
+                if response is empty
+                    if response is not success
+        &#34;&#34;&#34;
+        flag, response = self._cvpysdkcommcell_object.make_request(
+            &#39;GET&#39;, self._services[&#39;FTPServicePack&#39;] % release
+        )
+        if flag:
+            if response.status_code == 200 and response.json():
+                return response.json()
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))</code></pre>
 </details>
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.deployment.download.Download.copy_software"><code class="name flex">
-<span>def <span class="ident">copy_software</span></span>(<span>self, media_loc, username=None, password=None, sync_cache=True, sync_cache_list=None, schedule_pattern=None)</span>
+<span>def <span class="ident">copy_software</span></span>(<span>self, media_loc: str, username: Optional[str] = None, password: Optional[str] = None, sync_cache: bool = True, sync_cache_list: Optional[List[str]] = None, schedule_pattern: Optional[Dict] = None) ‑> Union[<a title="cvpysdk.job.Job" href="../job.html#cvpysdk.job.Job">Job</a>, <a title="cvpysdk.schedules.Schedules" href="../schedules.html#cvpysdk.schedules.Schedules">Schedules</a>]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>copies media from the specified location on the commcell</p>
-<h2 id="args">Args</h2>
-<p>media_loc
-(str)
-&ndash;
-Media Location to be used for copy software</p>
-<p>username
-(str)
-&ndash;
-username to authenticate to external location</p>
-<p>password
-(str)
-&ndash;
-password to authenticate to external location</p>
-<p>sync_cache (bool)
-&ndash;
-True if download and sync
-False only download</p>
-<p>sync_cache_list (list)
-&ndash;
-list of names of remote caches to sync
-use None to sync all caches</p>
-<p>schedule_pattern(dict)
-&ndash;
-pattern for schedule task</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this copy software job</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt>media_loc
+(str):
+Media Location to be used for copy software.</dt>
+<dt>username
+(str, optional): username to authenticate to external location.</dt>
+<dt>password
+(str, optional): password to authenticate to external location.</dt>
+<dt>sync_cache
+(bool):
+True if download and sync, False only download.</dt>
+<dt>sync_cache_list
+(list, optional): list of names of remote caches to sync, use None to sync all caches.</dt>
+<dt><strong><code>schedule_pattern</code></strong> :&ensp;<code>dict</code>, optional</dt>
+<dd>pattern for schedule task.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Job</code> or <code>Schedules</code></dt>
+<dd>instance of the Job class or Schedules class for this copy software job</dd>
+</dl>
+<p>Raises
+-----=
+SDKException:
 if Download job failed</p>
 <pre><code>if response is empty
 
@@ -1241,18 +1443,13 @@ if response is not success
 
 if another download job is running
 </code></pre>
-<h2 id="usage">Usage</h2>
+<p>Usage
+-----=
+-
+if media_location directory is local to the machine - username and password is not needed</p>
+<pre><code>&gt;&gt;&gt; commcell_obj.copy_software(media_loc = "C:\Downloads\Media")
+</code></pre>
 <ul>
-<li>
-<p>if media_location directory is local to the machine - username and password is not needed</p>
-<blockquote>
-<blockquote>
-<blockquote>
-<p>commcell_obj.copy_software(media_loc = "C:\Downloads\Media")</p>
-</blockquote>
-</blockquote>
-</blockquote>
-</li>
 <li>
 <p>if Media_location directory is remote- username and passsword(base 64 encoded) are needed
 to authenticate the cache</p>
@@ -1260,10 +1457,13 @@ to authenticate the cache</p>
 <blockquote>
 <blockquote>
 <p>commcell_obj.copy_software(
+&hellip;
 media_loc = "\subdomain.company.com\Media",
+&hellip;
 username = "domainone\userone",
+&hellip;
 password = "base64encoded password"
-)</p>
+&hellip; )</p>
 </blockquote>
 </blockquote>
 </blockquote>
@@ -1272,55 +1472,47 @@ password = "base64encoded password"
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/deployment/download.py#L324-L481" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/deployment/download.py#L333-L482" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def copy_software(self, media_loc, username=None, password=None, sync_cache=True, sync_cache_list=None, schedule_pattern=None):
+<pre><code class="python">def copy_software(self, media_loc: str, username: Optional[str] = None, password: Optional[str] = None,
+                  sync_cache: bool = True, sync_cache_list: Optional[List[str]] = None,
+                  schedule_pattern: Optional[Dict] = None) -&gt; Union[Job, Schedules]:
     &#34;&#34;&#34;copies media from the specified location on the commcell
 
-                Args:
+    Args:
+        media_loc        (str):           Media Location to be used for copy software.
+        username         (str, optional): username to authenticate to external location.
+        password         (str, optional): password to authenticate to external location.
+        sync_cache       (bool):          True if download and sync, False only download.
+        sync_cache_list  (list, optional): list of names of remote caches to sync, use None to sync all caches.
+        schedule_pattern (dict, optional): pattern for schedule task.
 
-                    media_loc      (str)           --  Media Location to be used for copy software
+    Returns:
+        Job or Schedules: instance of the Job class or Schedules class for this copy software job
 
-                    username       (str)           --  username to authenticate to external location
+    Raises:
+        SDKException:
+            if Download job failed
 
-                    password       (str)           --  password to authenticate to external location
+            if response is empty
 
-                    sync_cache (bool)              --  True if download and sync
-                                                       False only download
+            if response is not success
 
-                    sync_cache_list (list)         --  list of names of remote caches to sync
-                                                        use None to sync all caches
+            if another download job is running
+    Usage:
+        -   if media_location directory is local to the machine - username and password is not needed
 
-                    schedule_pattern(dict)         --  pattern for schedule task
+            &gt;&gt;&gt; commcell_obj.copy_software(media_loc = &#34;C:\\Downloads\\Media&#34;)
 
+        -   if Media_location directory is remote- username and passsword(base 64 encoded) are needed
+            to authenticate the cache
 
-                Returns:
-                    object - instance of the Job class for this copy software job
-
-                Raises:
-                    SDKException:
-                        if Download job failed
-
-                        if response is empty
-
-                        if response is not success
-
-                        if another download job is running
-                Usage:
-
-                    -   if media_location directory is local to the machine - username and password is not needed
-
-                        &gt;&gt;&gt; commcell_obj.copy_software(media_loc = &#34;C:\\Downloads\\Media&#34;)
-
-                    -   if Media_location directory is remote- username and passsword(base 64 encoded) are needed
-                        to authenticate the cache
-
-                        &gt;&gt;&gt; commcell_obj.copy_software(
-                        media_loc = &#34;\\\\subdomain.company.com\\Media&#34;,
-                        username = &#34;domainone\\userone&#34;,
-                        password = &#34;base64encoded password&#34;
-                        )
-            &#34;&#34;&#34;
+            &gt;&gt;&gt; commcell_obj.copy_software(
+            ...     media_loc = &#34;\\\\subdomain.company.com\\Media&#34;,
+            ...     username = &#34;domainone\\userone&#34;,
+            ...     password = &#34;base64encoded password&#34;
+            ... )
+    &#34;&#34;&#34;
     version = self.commcell_object.commserv_version
     client_auth = {}
     if username:
@@ -1341,15 +1533,15 @@ password = "base64encoded password"
                                           &#34;id&#34;: self.commcell_object.clients.get(cache).client_id
                                           })
             else:
-                flag_1, response_1 = self._cvpysdkcommcell_object.make_request(&#39;GET&#39;, self._services[&#39;CREATE_RC&#39;])
+                flag_1, response_1 = self._cvpysdkcommcell_object.make_request(&#39;GET&#39;, self._services[&#39;SOFTWARE_CACHE&#39;])
                 cache_list = []
-                for obj in response_1.json()[&#39;softwareCacheDetailList&#39;]:
+                for obj in response_1.json().get(&#39;softwareCacheDetailList&#39;, []):
                     if obj[&#39;cache&#39;][&#39;id&#39;] != 2:
                         cache_list.append(obj[&#39;cache&#39;][&#39;name&#39;])
                 for client in cache_list:
                     client_groups.append({&#34;type&#34;: &#34;CLIENT_ENTITY&#34;,
                                           &#34;clientName&#34;: client,
-                                          &#34;id&#34;: int(self.commcell_object.clients.all_clients[client][&#39;id&#39;])})
+                                          &#34;id&#34;: int(self.commcell_object.clients.all_clients[client.lower()][&#39;id&#39;])})
         request_json = {
             &#34;copyConfiguration&#34;: {
                 &#34;downloadPath&#34;: media_loc
@@ -1434,41 +1626,91 @@ password = "base64encoded password"
         raise SDKException(&#39;Response&#39;, &#39;101&#39;)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.deployment.download.Download.cu_packs_available"><code class="name flex">
+<span>def <span class="ident">cu_packs_available</span></span>(<span>self, release: str = '11.0.0') ‑> Dict[str, Any]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get available CU packs info from FTP server.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>release</code></strong></dt>
+<dd>Release version string. Defaults to '11.0.0'.</dd>
+</dl>
+<p>Returns
+-----=
+Dict containing CU pack information.</p>
+<p>Raises
+-----=
+SDKException:
+if response is empty
+if response is not success</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/deployment/download.py#L654-L678" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def cu_packs_available(self, release: str = &#39;11.0.0&#39;) -&gt; Dict[str, Any]:
+    &#34;&#34;&#34;
+    Get available CU packs info from FTP server.
+
+    Args:
+        release: Release version string. Defaults to &#39;11.0.0&#39;.
+
+    Returns:
+        Dict containing CU pack information.
+
+    Raises:
+        SDKException:
+            if response is empty
+                if response is not success
+    &#34;&#34;&#34;
+    flag, response = self._cvpysdkcommcell_object.make_request(
+        &#39;GET&#39;, self._services[&#39;FTPServicePack&#39;] % release
+    )
+    if flag:
+        if response.status_code == 200 and response.json():
+            return response.json()
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.deployment.download.Download.download_software"><code class="name flex">
-<span>def <span class="ident">download_software</span></span>(<span>self, options=None, os_list=None, service_pack=None, cu_number=0, sync_cache=True, sync_cache_list=None, schedule_pattern=None)</span>
+<span>def <span class="ident">download_software</span></span>(<span>self, options: Optional[str] = None, os_list: Optional[List[str]] = None, service_pack: Optional[int] = None, cu_number: int = 0, sync_cache: bool = True, sync_cache_list: Optional[List[str]] = None, schedule_pattern: Optional[Dict] = None) ‑> Union[<a title="cvpysdk.job.Job" href="../job.html#cvpysdk.job.Job">Job</a>, <a title="cvpysdk.schedules.Schedules" href="../schedules.html#cvpysdk.schedules.Schedules">Schedules</a>]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Downloads the os packages on the commcell</p>
-<h2 id="args">Args</h2>
-<p>options
-(enum)
-&ndash;
-Download option to download software</p>
-<p>os_list
-(list of enum)
-&ndash;
-list of windows/unix packages to be downloaded</p>
-<p>service_pack (int)
-&ndash;
-service pack to be downloaded</p>
-<p>cu_number (int)
-&ndash;
-maintenance release number</p>
-<p>sync_cache (bool)
-&ndash;
-True if download and sync
-False only download</p>
-<p>sync_cache_list (list)
-&ndash;
-list of names of remote caches to sync
-use None to sync all caches</p>
-<p>schedule_pattern (dict)
-&ndash;
-pattern for schedule task</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this download job</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt>options
+(str, optional):
+Download option to download software.</dt>
+<dt>os_list
+(list, optional): list of windows/unix packages to be downloaded.</dt>
+<dt>service_pack
+(int, optional):
+service pack to be downloaded.</dt>
+<dt>cu_number
+(int):
+maintenance release number.</dt>
+<dt>sync_cache
+(bool):
+True if download and sync, False only download.</dt>
+<dt>sync_cache_list
+(list, optional): list of names of remote caches to sync, use None to sync all caches.</dt>
+<dt><strong><code>schedule_pattern</code></strong> :&ensp;<code>dict</code>, optional</dt>
+<dd>pattern for schedule task.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Job</code> or <code>Schedules</code></dt>
+<dd>instance of the Job class or Schedules class for this copy software job</dd>
+</dl>
+<p>Raises
+-----=
+SDKException:
 if Download job failed</p>
 <pre><code>if response is empty
 
@@ -1476,19 +1718,14 @@ if response is not success
 
 if another download job is running
 </code></pre>
-<p>Usage:</p>
-<ul>
-<li>
-<p>if download_software is not given any parameters it takes default value of latest
+<p>Usage
+-----=
+-
+if download_software is not given any parameters it takes default value of latest
 service pack for options and downloads WINDOWS_64 package</p>
-<blockquote>
-<blockquote>
-<blockquote>
-<p>commcell_obj.download_software()</p>
-</blockquote>
-</blockquote>
-</blockquote>
-</li>
+<pre><code>&gt;&gt;&gt; commcell_obj.download_software()
+</code></pre>
+<ul>
 <li>
 <p>DownloadOptions and DownloadPackages enum is used for providing input to the
 download software method, it can be imported by</p>
@@ -1507,9 +1744,11 @@ from cvpysdk.deployment.deploymentconstants import DownloadPackages</p>
 <blockquote>
 <blockquote>
 <p>commcell_obj.download_software(
-options=DownloadOptions.lATEST_SERVICEPACK.value,
+&hellip;
+options=DownloadOptions.LATEST_SERVICEPACK.value,
+&hellip;
 os_list=[DownloadPackages.WINDOWS_64.value]
-)</p>
+&hellip; )</p>
 </blockquote>
 </blockquote>
 </blockquote>
@@ -1520,10 +1759,13 @@ os_list=[DownloadPackages.WINDOWS_64.value]
 <blockquote>
 <blockquote>
 <p>commcell_obj.download_software(
-options='DownloadOptions.LATEST_HOTFIXES.value',
+&hellip;
+options=DownloadOptions.LATEST_HOTFIXES.value,
+&hellip;
 os_list=[DownloadPackages.WINDOWS_64.value,
+&hellip;
 DownloadPackages.UNIX_LINUX64.value]
-)</p>
+&hellip; )</p>
 </blockquote>
 </blockquote>
 </blockquote>
@@ -1534,68 +1776,60 @@ DownloadPackages.UNIX_LINUX64.value]
 <blockquote>
 <blockquote>
 <p>commcell_obj.download_software(
-options='DownloadOptions.SERVICEPACK_AND_HOTFIXES.value',
+&hellip;
+options=DownloadOptions.SERVICEPACK_AND_HOTFIXES.value,
+&hellip;
 os_list=[DownloadPackages.UNIX_MAC.value],
+&hellip;
 service_pack=13,
+&hellip;
 cu_number=42
-)</p>
+&hellip; )</p>
 </blockquote>
 </blockquote>
 </blockquote>
-<pre><code>**NOTE:** service_pack parameter must be specified for third option
-</code></pre>
+<p><strong>NOTE:</strong> service_pack parameter must be specified for third option</p>
 </li>
 </ul></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/deployment/download.py#L58-L322" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/deployment/download.py#L77-L331" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def download_software(
         self,
-        options=None,
-        os_list=None,
-        service_pack=None,
-        cu_number=0,
-        sync_cache=True,
-        sync_cache_list=None,
-        schedule_pattern=None):
+        options: Optional[str] = None,
+        os_list: Optional[List[str]] = None,
+        service_pack: Optional[int] = None,
+        cu_number: int = 0,
+        sync_cache: bool = True,
+        sync_cache_list: Optional[List[str]] = None,
+        schedule_pattern: Optional[Dict] = None) -&gt; Union[Job, Schedules]:
     &#34;&#34;&#34;Downloads the os packages on the commcell
 
-        Args:
+    Args:
+        options          (str, optional):  Download option to download software.
+        os_list          (list, optional): list of windows/unix packages to be downloaded.
+        service_pack     (int, optional):  service pack to be downloaded.
+        cu_number        (int):             maintenance release number.
+        sync_cache       (bool):            True if download and sync, False only download.
+        sync_cache_list  (list, optional): list of names of remote caches to sync, use None to sync all caches.
+        schedule_pattern (dict, optional): pattern for schedule task.
 
-            options      (enum)            --  Download option to download software
+    Returns:
+        Job or Schedules: instance of the Job class or Schedules class for this copy software job
 
-            os_list      (list of enum)    --  list of windows/unix packages to be downloaded
+    Raises:
+        SDKException:
+            if Download job failed
 
-            service_pack (int)             --  service pack to be downloaded
+            if response is empty
 
-            cu_number (int)                --  maintenance release number
+            if response is not success
 
-            sync_cache (bool)              --  True if download and sync
-                                               False only download
-            
-            sync_cache_list (list)         --  list of names of remote caches to sync
-                                               use None to sync all caches
+            if another download job is running
 
-            schedule_pattern (dict)        --  pattern for schedule task
-                                               
-
-        Returns:
-            object - instance of the Job class for this download job
-
-        Raises:
-            SDKException:
-                if Download job failed
-
-                if response is empty
-
-                if response is not success
-
-                if another download job is running
-
-        Usage:
-
+    Usage:
         -   if download_software is not given any parameters it takes default value of latest
             service pack for options and downloads WINDOWS_64 package
 
@@ -1605,38 +1839,39 @@ cu_number=42
             download software method, it can be imported by
 
             &gt;&gt;&gt; from cvpysdk.deployment.deploymentconstants import DownloadOptions
-                from cvpysdk.deployment.deploymentconstants import DownloadPackages
+            &gt;&gt;&gt; from cvpysdk.deployment.deploymentconstants import DownloadPackages
 
         -   sample method calls for different options, for latest service pack
 
             &gt;&gt;&gt; commcell_obj.download_software(
-                    options=DownloadOptions.lATEST_SERVICEPACK.value,
-                    os_list=[DownloadPackages.WINDOWS_64.value]
-                    )
+            ...     options=DownloadOptions.LATEST_SERVICEPACK.value,
+            ...     os_list=[DownloadPackages.WINDOWS_64.value]
+            ... )
 
         -   For Latest hotfixes for the installed service pack
 
             &gt;&gt;&gt; commcell_obj.download_software(
-                    options=&#39;DownloadOptions.LATEST_HOTFIXES.value&#39;,
-                    os_list=[DownloadPackages.WINDOWS_64.value,
-                            DownloadPackages.UNIX_LINUX64.value]
-                    )
+            ...     options=DownloadOptions.LATEST_HOTFIXES.value,
+            ...     os_list=[DownloadPackages.WINDOWS_64.value,
+            ...              DownloadPackages.UNIX_LINUX64.value]
+            ... )
 
         -   For service pack and hotfixes
 
             &gt;&gt;&gt; commcell_obj.download_software(
-                    options=&#39;DownloadOptions.SERVICEPACK_AND_HOTFIXES.value&#39;,
-                    os_list=[DownloadPackages.UNIX_MAC.value],
-                    service_pack=13,
-                    cu_number=42
-                    )
+            ...     options=DownloadOptions.SERVICEPACK_AND_HOTFIXES.value,
+            ...     os_list=[DownloadPackages.UNIX_MAC.value],
+            ...     service_pack=13,
+            ...     cu_number=42
+            ... )
 
-                **NOTE:** service_pack parameter must be specified for third option
+            **NOTE:** service_pack parameter must be specified for third option
 
     &#34;&#34;&#34;
 
     # To set the default value if option is none
     version = self.commcell_object.commserv_version
+    direct_download = version &gt;= 36 and not schedule_pattern
     if options is None:
         options = &#39;latest service pack&#39;
 
@@ -1684,20 +1919,20 @@ cu_number=42
                                   &#34;id&#34;: self.commcell_object.clients.get(cache).client_id
                                   }) if version &gt;= 36 else client_groups.append({&#34;clientName&#34;: cache})
     elif sync_cache and not sync_cache_list:
-        if version &lt; 36:
-            client_groups = [{&#34;_type_&#34;: 2}]
-        else:
-            flag_1, response_1 = self._cvpysdkcommcell_object.make_request(&#39;GET&#39;, self._services[&#39;CREATE_RC&#39;])
+        if direct_download:
+            flag_1, response_1 = self._cvpysdkcommcell_object.make_request(&#39;GET&#39;, self._services[&#39;SOFTWARE_CACHE&#39;])
             cache_list = []
-            for obj in response_1.json()[&#39;softwareCacheDetailList&#39;]:
+            for obj in response_1.json().get(&#39;softwareCacheDetailList&#39;, []):
                 if obj[&#39;cache&#39;][&#39;id&#39;] != 2:
                     cache_list.append(obj[&#39;cache&#39;][&#39;name&#39;])
             for client in cache_list:
                 client_groups.append({&#34;type&#34;: &#34;CLIENT_ENTITY&#34;,
                                       &#34;clientName&#34;: client,
                                       &#34;id&#34;: int(self.commcell_object.clients.all_clients[client][&#39;id&#39;])})
+        else:
+            client_groups = [{&#34;_type_&#34;: 2}]
 
-    if version &gt;= 36:
+    if direct_download:
         win_os_list = []
         unix_os_list = []
         temp_win = [&#39;WINDOWS_X64&#39;, &#39;WINDOWS_X32&#39;, &#39;WINDOWS_ARM64&#39;]
@@ -1793,8 +2028,8 @@ cu_number=42
     if schedule_pattern:
         request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
 
-    method = &#39;PUT&#39; if version &gt;= 36 else &#39;POST&#39;
-    url = self._services[&#39;DOWNLOAD_SOFTWARE&#39;] if version &gt;= 36 else self._services[&#39;CREATE_TASK&#39;]
+    method = &#39;PUT&#39; if direct_download else &#39;POST&#39;
+    url = self._services[&#39;DOWNLOAD_SOFTWARE&#39;] if direct_download else self._services[&#39;CREATE_TASK&#39;]
 
     flag, response = self._cvpysdkcommcell_object.make_request(
         method, url, request_json
@@ -1810,65 +2045,195 @@ cu_number=42
                 return Schedules(self.commcell_object).get(task_id=response.json()[&#39;taskId&#39;])
 
             else:
-                raise SDKException(&#39;Download&#39;, &#39;101&#39;)
+                raise SDKException(&#39;Download&#39;, &#39;101&#39;, self._update_response_(response.text))
+
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;, self._update_response_(response.text))
+    else:
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.deployment.download.Download.get_packages"><code class="name flex">
+<span>def <span class="ident">get_packages</span></span>(<span>self) ‑> list</span>
+</code></dt>
+<dd>
+<div class="desc"><p>To get the list of custom packages that are available to download</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>list</code></dt>
+<dd>List of dictionaries containing package details (e.g- fileName, platform, filesize, downloadURL, checksum)</dd>
+</dl>
+<p>Raises:</p>
+<p>Sdkexception
+-----=
+- Failed to execute the API.
+- Response is incorrect.
+- if response is empty.</p>
+<p>Usage
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; Download.get_packages()
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/deployment/download.py#L593-L620" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get_packages(self) -&gt; list:
+    &#34;&#34;&#34;
+    To get the list of custom packages that are available to download
+
+    Returns:
+        list: List of dictionaries containing package details (e.g- fileName, platform, filesize, downloadURL, checksum)
+    Raises:
+    SDKException:
+        - Failed to execute the API.
+        - Response is incorrect.
+        - if response is empty.
+    Usage:
+        &gt;&gt;&gt; Download.get_packages()
+    &#34;&#34;&#34;
+    flag, response = self._cvpysdkcommcell_object.make_request(
+        &#39;GET&#39;, self._services[&#39;AVAILABLE_PACKAGES&#39;]
+    )
+    if flag:
+        if response.json():
+            if &#34;pkgList&#34; in response.json():
+                return response.json()[&#39;pkgList&#39;]
+            else:
+                raise SDKException(&#39;Packages&#39;, &#39;101&#39;)
 
         else:
             raise SDKException(&#39;Response&#39;, &#39;102&#39;)
     else:
-        raise SDKException(&#39;Response&#39;, &#39;101&#39;)</code></pre>
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.deployment.download.Download.refresh_updates"><code class="name flex">
+<span>def <span class="ident">refresh_updates</span></span>(<span>self) ‑> Optional[str]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Perform check for any latest updates.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Optional[str]</code></dt>
+<dd>Error string if available, None otherwise.</dd>
+</dl>
+<p>Raises
+-----=
+SDKException:
+if response is empty
+if response is not success</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; download_obj = Download(commcell_object)
+&gt;&gt;&gt; result = download_obj.refresh_updates()
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/deployment/download.py#L622-L652" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def refresh_updates(self) -&gt; Optional[str]:
+    &#34;&#34;&#34;
+    Perform check for any latest updates.
+
+    Returns:
+        Optional[str]: Error string if available, None otherwise.
+
+    Raises:
+        SDKException:
+            if response is empty
+            if response is not success
+
+    Example:
+        &gt;&gt;&gt; download_obj = Download(commcell_object)
+        &gt;&gt;&gt; result = download_obj.refresh_updates()
+    &#34;&#34;&#34;
+    flag, response = self._cvpysdkcommcell_object.make_request(
+        &#39;POST&#39;, self._services[&#39;REFRESH_UPDATES&#39;]
+    )
+    if flag:
+        if response.json():
+            if &#39;errorCode&#39; in response.json() and response.json()[&#39;errorCode&#39;] != 0:
+                raise SDKException(&#39;Download&#39;, response.json()[&#39;errorString&#39;])
+            if response.json()[&#39;errorCode&#39;] == 0:
+                return response.json()[&#39;errorString&#39;]
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;, self._update_response_(response.text))
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;, self._update_response_(response.text))
+    else:
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.deployment.download.Download.sync_remote_cache"><code class="name flex">
-<span>def <span class="ident">sync_remote_cache</span></span>(<span>self, client_list=None, schedule_pattern=None)</span>
+<span>def <span class="ident">sync_remote_cache</span></span>(<span>self, client_list: Optional[list] = None, schedule_pattern: Optional[dict] = None) ‑> Union[<a title="cvpysdk.job.Job" href="../job.html#cvpysdk.job.Job">Job</a>, <a title="cvpysdk.schedules.Schedules" href="../schedules.html#cvpysdk.schedules.Schedules">Schedules</a>]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Syncs remote cache</p>
-<h2 id="args">Args</h2>
-<p>client_list
-&ndash;
-list of client names
-Default is None. By default all remote cache clients are synced</p>
-<p>schedule_pattern (dict)
-&ndash;
-Pattern to schedule Sync Job</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for sync job</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>client_list</code></strong> :&ensp;<code>list</code>, optional</dt>
+<dd>List of client names. Defaults to None.</dd>
+<dt>By default all remote cache clients are synced.</dt>
+<dt><strong><code>schedule_pattern</code></strong> :&ensp;<code>dict</code>, optional</dt>
+<dd>Pattern to schedule Sync Job. Defaults to None.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Job</code> or <code>Schedules</code></dt>
+<dd>instance of the Job class or Schedules for sync job</dd>
+</dl>
+<p>Raises
+-----=
+SDKException:
 if sync job failed</p>
 <pre><code>if response is empty
 
 if response is not success
 
 if another sync job is running with the given client
-</code></pre></div>
+</code></pre>
+<p>Usage
+-----=
+Download().sync_remote_cache()
+Download().sync_remote_cache(client_list=['client1', 'client2'])
+Download().sync_remote_cache(schedule_pattern={'frequency': 'daily', 'start_time': '08:00'})
+Download().sync_remote_cache(client_list=['client1'], schedule_pattern={'frequency': 'weekly', 'day': 'Sunday'})</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/deployment/download.py#L483-L585" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/deployment/download.py#L484-L591" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def sync_remote_cache(self, client_list=None, schedule_pattern=None):
+<pre><code class="python">def sync_remote_cache(self, client_list: Optional[list] = None,
+                      schedule_pattern: Optional[dict] = None) -&gt; Union[Job, Schedules]:
     &#34;&#34;&#34;Syncs remote cache
 
-        Args:
+    Args:
+        client_list (list, optional): List of client names. Defaults to None.
+        By default all remote cache clients are synced.
+        schedule_pattern (dict, optional): Pattern to schedule Sync Job. Defaults to None.
 
-            client_list  --  list of client names
-            Default is None. By default all remote cache clients are synced
+    Returns:
+        Job or Schedules: instance of the Job class or Schedules for sync job
 
-            schedule_pattern (dict)        --  Pattern to schedule Sync Job
+    Raises:
+        SDKException:
+            if sync job failed
 
-        Returns:
-            object - instance of the Job class for sync job
+            if response is empty
 
-        Raises:
-            SDKException:
-                if sync job failed
+            if response is not success
 
-                if response is empty
+            if another sync job is running with the given client
 
-                if response is not success
-
-                if another sync job is running with the given client
+    Usage:
+        Download().sync_remote_cache()
+        Download().sync_remote_cache(client_list=[&#39;client1&#39;, &#39;client2&#39;])
+        Download().sync_remote_cache(schedule_pattern={&#39;frequency&#39;: &#39;daily&#39;, &#39;start_time&#39;: &#39;08:00&#39;})
+        Download().sync_remote_cache(client_list=[&#39;client1&#39;], schedule_pattern={&#39;frequency&#39;: &#39;weekly&#39;, &#39;day&#39;: &#39;Sunday&#39;})
 
     &#34;&#34;&#34;
 
@@ -1944,12 +2309,12 @@ if another sync job is running with the given client
                 return Schedules(self.commcell_object).get(task_id=response.json()[&#39;taskId&#39;])
 
             else:
-                raise SDKException(&#39;Download&#39;, &#39;101&#39;)
+                raise SDKException(&#39;Download&#39;, &#39;101&#39;, self._update_response_(response.text))
 
         else:
-            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;, self._update_response_(response.text))
     else:
-        raise SDKException(&#39;Response&#39;, &#39;101&#39;)</code></pre>
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))</code></pre>
 </details>
 </dd>
 </dl>
@@ -2026,9 +2391,12 @@ setTimeout(() => input.focus(), 100);
 <ul>
 <li>
 <h4><code><a title="cvpysdk.deployment.download.Download" href="#cvpysdk.deployment.download.Download">Download</a></code></h4>
-<ul class="">
+<ul class="two-column">
 <li><code><a title="cvpysdk.deployment.download.Download.copy_software" href="#cvpysdk.deployment.download.Download.copy_software">copy_software</a></code></li>
+<li><code><a title="cvpysdk.deployment.download.Download.cu_packs_available" href="#cvpysdk.deployment.download.Download.cu_packs_available">cu_packs_available</a></code></li>
 <li><code><a title="cvpysdk.deployment.download.Download.download_software" href="#cvpysdk.deployment.download.Download.download_software">download_software</a></code></li>
+<li><code><a title="cvpysdk.deployment.download.Download.get_packages" href="#cvpysdk.deployment.download.Download.get_packages">get_packages</a></code></li>
+<li><code><a title="cvpysdk.deployment.download.Download.refresh_updates" href="#cvpysdk.deployment.download.Download.refresh_updates">refresh_updates</a></code></li>
 <li><code><a title="cvpysdk.deployment.download.Download.sync_remote_cache" href="#cvpysdk.deployment.download.Download.sync_remote_cache">sync_remote_cache</a></code></li>
 </ul>
 </li>

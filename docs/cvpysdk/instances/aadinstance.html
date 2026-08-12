@@ -29,13 +29,14 @@
 Derived class from Instance
 Base class, representing a
 Azure Ad Instance, and to perform operations on that instance</p>
-<h2 id="azureadinstance">Azureadinstance</h2>
-<p>_restore_in_palce
+<p>Azureadinstance
+-----=
+_restore_in_place
 overwrite common in place restore function</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/aadinstance.py#L1-L68" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/aadinstance.py#L1-L92" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 # --------------------------------------------------------------------------
@@ -62,26 +63,47 @@ AzureAdInstance:     Derived class from Instance  Base class, representing a
                     Azure Ad Instance, and to perform operations on that instance
 
 AzureAdInstance:
-    _restore_in_palce     overwrite common in place restore function
+    _restore_in_place     overwrite common in place restore function
 &#34;&#34;&#34;
 
-from cvpysdk.exception import SDKException
+from ..exception import SDKException
 from ..instance import Instance
+
+from typing import Union, TYPE_CHECKING
+if TYPE_CHECKING:
+    from ..job import Job
+    from ..schedules import Schedules
+
 
 class AzureAdInstance(Instance):
     &#34;&#34;&#34;
-    Class for Azure Ad instance
+    Represents an Azure Active Directory (AD) instance.
+
+    This class provides functionality specific to managing Azure AD instances,
+    including operations such as restoring data in place. It extends the base
+    Instance class to support Azure AD-specific workflows and recovery actions.
+
+    Key Features:
+        - In-place restoration of Azure AD instance data
+        - Integration with base instance management functionality
+
     &#34;&#34;&#34;
 
-    def _restore_in_place(self, **kwargs):
-        &#34;&#34;&#34;Restore azure ad objects
-            Args:
-                kwargs    dict    additional dict passed for restore,
-                                    passed from subclient instance
-            Return:
-                request_json    json    restore json file
-            Raise:
-                102    restore option is not valid
+    def _restore_in_place(self, **kwargs) -&gt; Union[&#39;Job&#39;, &#39;Schedules&#39;]:
+        &#34;&#34;&#34;Restore Azure AD objects in place using the provided restore options.
+
+        This method initiates an in-place restore operation for Azure Active Directory objects.
+        Additional restore options can be specified as keyword arguments, typically passed from a subclient instance.
+
+        Args:
+            **kwargs: Additional restore options as key-value pairs. These options customize the restore behavior.
+
+        Returns:
+            Job or Schedules: The Job or Schedules object
+
+        Raises:
+            Exception: If a restore option is not valid (error code 102).
+
         &#34;&#34;&#34;
 
         request_json = self._restore_json(**kwargs)
@@ -104,6 +126,7 @@ class AzureAdInstance(Instance):
             kwargs[&#39;restore_option&#39;][&#39;azureADOption&#39;]
         else:
             raise SDKException(&#39;Instance&#39;, &#34;102&#34;, &#34;AzureAD option is not valid&#34;)
+
         return self._process_restore_response(request_json)</code></pre>
 </details>
 </section>
@@ -121,10 +144,17 @@ class AzureAdInstance(Instance):
 <span>(</span><span>agent_object, instance_name, instance_id=None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for Azure Ad instance</p>
+<div class="desc"><p>Represents an Azure Active Directory (AD) instance.</p>
+<p>This class provides functionality specific to managing Azure AD instances,
+including operations such as restoring data in place. It extends the base
+Instance class to support Azure AD-specific workflows and recovery actions.</p>
+<p>Key Features:
+- In-place restoration of Azure AD instance data
+- Integration with base instance management functionality</p>
 <p>Initialise the instance object.</p>
-<h2 id="args">Args</h2>
-<p>agent_object
+<p>Args
+-----=
+agent_object
 (object)
 &ndash;
 instance of the Agent class</p>
@@ -137,27 +167,43 @@ name of the instance</p>
 &ndash;
 id of the instance
 default: None</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Instance class</p></div>
+<p>Returns
+-----=
+object - instance of the Instance class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/aadinstance.py#L32-L68" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/aadinstance.py#L38-L92" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class AzureAdInstance(Instance):
     &#34;&#34;&#34;
-    Class for Azure Ad instance
+    Represents an Azure Active Directory (AD) instance.
+
+    This class provides functionality specific to managing Azure AD instances,
+    including operations such as restoring data in place. It extends the base
+    Instance class to support Azure AD-specific workflows and recovery actions.
+
+    Key Features:
+        - In-place restoration of Azure AD instance data
+        - Integration with base instance management functionality
+
     &#34;&#34;&#34;
 
-    def _restore_in_place(self, **kwargs):
-        &#34;&#34;&#34;Restore azure ad objects
-            Args:
-                kwargs    dict    additional dict passed for restore,
-                                    passed from subclient instance
-            Return:
-                request_json    json    restore json file
-            Raise:
-                102    restore option is not valid
+    def _restore_in_place(self, **kwargs) -&gt; Union[&#39;Job&#39;, &#39;Schedules&#39;]:
+        &#34;&#34;&#34;Restore Azure AD objects in place using the provided restore options.
+
+        This method initiates an in-place restore operation for Azure Active Directory objects.
+        Additional restore options can be specified as keyword arguments, typically passed from a subclient instance.
+
+        Args:
+            **kwargs: Additional restore options as key-value pairs. These options customize the restore behavior.
+
+        Returns:
+            Job or Schedules: The Job or Schedules object
+
+        Raises:
+            Exception: If a restore option is not valid (error code 102).
+
         &#34;&#34;&#34;
 
         request_json = self._restore_json(**kwargs)
@@ -180,6 +226,7 @@ default: None</p>
             kwargs[&#39;restore_option&#39;][&#39;azureADOption&#39;]
         else:
             raise SDKException(&#39;Instance&#39;, &#34;102&#34;, &#34;AzureAD option is not valid&#34;)
+
         return self._process_restore_response(request_json)</code></pre>
 </details>
 <h3>Ancestors</h3>

@@ -27,20 +27,17 @@
 <p>VMInstance is the only class defined in this file.</p>
 <p>VMInstance:
 Derived class from Instance
-Base class, representing a
-VMInstance, and to perform operations on that instance</p>
-<h2 id="vminstance">Vminstance</h2>
-<p><strong>init</strong>(
-agent_object,
-instance_name,
-instance_id)
+Base class, representing a VMInstance,
+and to perform operations on that instance</p>
+<p>Vminstance
+-----=
+<strong>init</strong>()
 &ndash;
-initialize object of VMInstance object
-associated with the Instance Instance</p>
+initialize object of VMInstance object associated with the Instance</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/vminstance.py#L1-L55" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/vminstance.py#L1-L63" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">#!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -65,35 +62,41 @@ associated with the Instance Instance</p>
 
 VMInstance is the only class defined in this file.
 
-VMInstance:     Derived class from Instance  Base class, representing a
-                        VMInstance, and to perform operations on that instance
-
+VMInstance:     Derived class from Instance  Base class, representing a VMInstance,
+                and to perform operations on that instance
 
 VMInstance:
-
-    __init__(
-        agent_object,
-        instance_name,
-        instance_id)                    --  initialize object of VMInstance object
-                                                associated with the Instance Instance
+    __init__()                    --  initialize object of VMInstance object associated with the Instance
 &#34;&#34;&#34;
 from ..instance import Instance
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ..agent import Agent
 
 
 class VMInstance(Instance):
     &#34;&#34;&#34;
-    Class for representing VMWare instance of the Virtual Server agent.
+    Represents a VMWare instance managed by the Virtual Server agent.
+
+    This class encapsulates the details and management of a VMWare instance,
+    providing an interface for initializing and handling VMWare-specific
+    virtual server instances within the broader backup or virtualization
+    management framework.
+
+    Key Features:
+        - Initialization with agent object, instance name, and instance ID
+        - Specialized for VMWare virtual server environments
+        - Inherits core functionality from the base Instance class
+
     &#34;&#34;&#34;
-    def __init__(self, agent_object, instance_name, instance_id=None):
-        &#34;&#34;&#34;
-        Initialize the Instance object for the given Virtual Server instance.
+    def __init__(self, agent_object: &#39;Agent&#39;, instance_name: str, instance_id: int = None) -&gt; None:
+        &#34;&#34;&#34;Initialize a VMInstance object for the specified Virtual Server instance.
 
-                   Args:
-                       agent_object    (object)    --  instance of the Agent class
-
-                       instance_name   (str)       --  instance name
-
-                       instance_id     (int)       --  instance id
+        Args:
+            agent_object: An instance of the Agent class representing the associated agent.
+            instance_name: The name of the virtual server instance.
+            instance_id: Optional; the unique identifier for the instance. If not provided, it may be determined automatically.
 
         &#34;&#34;&#34;
         super(VMInstance, self).__init__(agent_object, instance_name, instance_id)</code></pre>
@@ -110,37 +113,56 @@ class VMInstance(Instance):
 <dl>
 <dt id="cvpysdk.instances.vminstance.VMInstance"><code class="flex name class">
 <span>class <span class="ident">VMInstance</span></span>
-<span>(</span><span>agent_object, instance_name, instance_id=None)</span>
+<span>(</span><span>agent_object: Agent, instance_name: str, instance_id: int = None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for representing VMWare instance of the Virtual Server agent.</p>
-<p>Initialize the Instance object for the given Virtual Server instance.</p>
-<pre><code>       Args:
-           agent_object    (object)    --  instance of the Agent class
-
-           instance_name   (str)       --  instance name
-
-           instance_id     (int)       --  instance id
-</code></pre></div>
+<div class="desc"><p>Represents a VMWare instance managed by the Virtual Server agent.</p>
+<p>This class encapsulates the details and management of a VMWare instance,
+providing an interface for initializing and handling VMWare-specific
+virtual server instances within the broader backup or virtualization
+management framework.</p>
+<p>Key Features:
+- Initialization with agent object, instance name, and instance ID
+- Specialized for VMWare virtual server environments
+- Inherits core functionality from the base Instance class</p>
+<p>Initialize a VMInstance object for the specified Virtual Server instance.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>agent_object</code></strong></dt>
+<dd>An instance of the Agent class representing the associated agent.</dd>
+<dt><strong><code>instance_name</code></strong></dt>
+<dd>The name of the virtual server instance.</dd>
+<dt><strong><code>instance_id</code></strong></dt>
+<dd>Optional; the unique identifier for the instance. If not provided, it may be determined automatically.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/vminstance.py#L39-L55" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/vminstance.py#L37-L63" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class VMInstance(Instance):
     &#34;&#34;&#34;
-    Class for representing VMWare instance of the Virtual Server agent.
+    Represents a VMWare instance managed by the Virtual Server agent.
+
+    This class encapsulates the details and management of a VMWare instance,
+    providing an interface for initializing and handling VMWare-specific
+    virtual server instances within the broader backup or virtualization
+    management framework.
+
+    Key Features:
+        - Initialization with agent object, instance name, and instance ID
+        - Specialized for VMWare virtual server environments
+        - Inherits core functionality from the base Instance class
+
     &#34;&#34;&#34;
-    def __init__(self, agent_object, instance_name, instance_id=None):
-        &#34;&#34;&#34;
-        Initialize the Instance object for the given Virtual Server instance.
+    def __init__(self, agent_object: &#39;Agent&#39;, instance_name: str, instance_id: int = None) -&gt; None:
+        &#34;&#34;&#34;Initialize a VMInstance object for the specified Virtual Server instance.
 
-                   Args:
-                       agent_object    (object)    --  instance of the Agent class
-
-                       instance_name   (str)       --  instance name
-
-                       instance_id     (int)       --  instance id
+        Args:
+            agent_object: An instance of the Agent class representing the associated agent.
+            instance_name: The name of the virtual server instance.
+            instance_id: Optional; the unique identifier for the instance. If not provided, it may be determined automatically.
 
         &#34;&#34;&#34;
         super(VMInstance, self).__init__(agent_object, instance_name, instance_id)</code></pre>

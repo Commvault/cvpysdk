@@ -43,7 +43,7 @@
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activate.py#L1-L199" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activate.py#L1-L304" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -87,6 +87,10 @@ Activate instance Attributes
 
 &#34;&#34;&#34;
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from .commcell import Commcell
+
 from .exception import SDKException
 
 from .activateapps.file_storage_optimization import FsoTypes, FsoServers, FsoServerGroups
@@ -97,28 +101,49 @@ from .activateapps.inventory_manager import Inventories
 
 from .activateapps.request_manager import Requests
 
-from .activateapps.entity_manager import EntityManagerTypes, ActivateEntities, Tags, Classifiers
+from .activateapps.entity_manager import EntityManagerTypes, ActivateEntities, Tags, Classifiers, YaraRules, HashFeeds
 
 from .activateapps.compliance_utils import ComplianceSearchUtils
 
-
 class Activate(object):
-    &#34;&#34;&#34;Class for representing activate apps in the commcell.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Class for managing and interacting with Activate apps within the Commcell environment.
 
-    def __init__(self, commcell_object):
-        &#34;&#34;&#34;Initializes an instance of the Activate class.
+    The Activate class provides a unified interface to access and control various Activate applications
+    in the Commcell, enabling users to perform compliance searches, manage inventory, handle requests,
+    optimize file storage, govern sensitive data, and manage entities. It is designed to facilitate
+    seamless integration and operation of Activate functionalities for data governance and management.
 
-            Args:
-                commcell_object     (object)    --  instance of the commcell class
+    Key Features:
+        - Initialize with a Commcell object for context-aware operations
+        - Perform compliance searches across data sources
+        - Access and manage inventory using the inventory manager
+        - Handle requests through the request manager
+        - Optimize file storage with support for different FSO types
+        - Govern sensitive data for regulatory and security compliance
+        - Manage entities with support for various entity types
 
-            Returns:
-                object  -   instance of the Activate class
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_object: &#39;Commcell&#39;) -&gt; None:
+        &#34;&#34;&#34;Initialize an instance of the Activate class with a Commcell connection.
+
+        Args:
+            commcell_object: Instance of the Commcell class used for Activate operations.
+
+        Example:
+            &gt;&gt;&gt; from cvpysdk.commcell import Commcell
+            &gt;&gt;&gt; commcell = Commcell(command_center_hostname, username, password)
+            &gt;&gt;&gt; activate = Activate(commcell)
+            &gt;&gt;&gt; # The Activate object is now initialized and ready for use
 
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
         self._entity = None
         self._tags = None
         self._classifiers = None
+        self._yara_rules = None
+        self._hash_feeds = None
         self._inventories = None
         self._fso_servers = None
         self._fso_server_groups = None
@@ -126,53 +151,105 @@ class Activate(object):
         self._req_mgr = None
         self._compliance_search = None
 
-    def __del__(self):
-        &#34;&#34;&#34;Destructor method to delete all instances of apps referenced by this class&#34;&#34;&#34;
+    def __del__(self) -&gt; None:
+        &#34;&#34;&#34;Destructor method to clean up resources associated with the Activate instance.
+
+        This method deletes all internal references to app-related entities, tags, classifiers, inventories,
+        FSO servers, FSO server groups, SDG projects, and request managers to help with resource cleanup
+        when the object is destroyed.
+
+        Example:
+            &gt;&gt;&gt; activate = Activate(...)
+            &gt;&gt;&gt; del activate  # Triggers resource cleanup for all referenced apps
+
+        &#34;&#34;&#34;
         del self._entity
         del self._tags
         del self._classifiers
+        del self._yara_rules
+        del self._hash_feeds
         del self._inventories
         del self._fso_servers
         del self._fso_server_groups
         del self._sdg_projects
         del self._req_mgr
 
-    def compliance_search(self):
-        &#34;&#34;&#34;Returns the Compliance Search utility class object from activate apps&#34;&#34;&#34;
+    def compliance_search(self) -&gt; &#39;ComplianceSearchUtils&#39;:
+        &#34;&#34;&#34;Get the ComplianceSearchUtils instance for compliance search operations in Activate apps.
+
+        Returns:
+            ComplianceSearchUtils: An instance for performing compliance searches.
+
+        Example:
+            &gt;&gt;&gt; activate = Activate(commcell_object)
+            &gt;&gt;&gt; compliance_utils = activate.compliance_search()
+            &gt;&gt;&gt; print(f&#34;Compliance search utility: {compliance_utils}&#34;)
+            &gt;&gt;&gt; # Use the returned ComplianceSearchUtils object for compliance-related tasks
+
+        &#34;&#34;&#34;
         if self._compliance_search is None:
             self._compliance_search = ComplianceSearchUtils(self._commcell_object)
         return self._compliance_search
 
-    def inventory_manager(self):
-        &#34;&#34;&#34;Returns the Inventories class object from inventory manager app from activate apps&#34;&#34;&#34;
+    def inventory_manager(self) -&gt; &#39;Inventories&#39;:
+        &#34;&#34;&#34;Get the Inventories instance from the inventory manager app in Activate.
+
+        Returns:
+            Inventories: An instance for managing inventory data within the Activate application.
+
+        Example:
+            &gt;&gt;&gt; activate = Activate(commcell_object)
+            &gt;&gt;&gt; inventories = activate.inventory_manager  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Inventories object: {inventories}&#34;)
+            &gt;&gt;&gt; # The returned Inventories object can be used for inventory operations
+
+        &#34;&#34;&#34;
         if self._inventories is None:
             self._inventories = Inventories(self._commcell_object)
         return self._inventories
 
-    def request_manager(self):
-        &#34;&#34;&#34;Returns the Requests class object from request manager app from activate apps&#34;&#34;&#34;
+    def request_manager(self) -&gt; &#39;Requests&#39;:
+        &#34;&#34;&#34;Get the Requests object from the request manager app in Activate.
+
+        Returns:
+            Requests: An instance of the Requests class for managing requests within the Activate apps.
+
+        Example:
+            &gt;&gt;&gt; activate = Activate(commcell_object)
+            &gt;&gt;&gt; requests = activate.request_manager
+            &gt;&gt;&gt; print(f&#34;Requests object: {requests}&#34;)
+            &gt;&gt;&gt; # The returned Requests object can be used to interact with request manager features
+
+        &#34;&#34;&#34;
         if self._req_mgr is None:
             self._req_mgr = Requests(self._commcell_object)
         return self._req_mgr
 
-    def file_storage_optimization(self, fso_type=FsoTypes.SERVERS):
-        &#34;&#34;&#34;returns object of FsoServers/FsoServerGroups/Projects based on FSO type
+    def file_storage_optimization(self, fso_type: &#39;FsoTypes&#39; = FsoTypes.SERVERS):
+        &#34;&#34;&#34;Retrieve the file storage optimization object based on the specified FSO type.
 
-                Args:
+        Depending on the provided FsoTypes enum value, this method returns an instance of
+        FsoServers or FsoServerGroups. If the type is unsupported or invalid, an SDKException is raised.
 
-                    fso_type        (enum)      --  FsoTypes enum (Default : FsoServers)
+        Args:
+            fso_type: FsoTypes enum value specifying the type of file storage optimization object to retrieve.
+                      Default is FsoTypes.SERVERS.
 
-                Returns:
+        Returns:
+            Instance of FsoServers or FsoServerGroups corresponding to the specified FSO type.
 
-                    obj --  Instance of FsoServers/FsoServerGroups/Projects based on type
+        Raises:
+            SDKException: If the input data is not valid or the entity type is not supported.
 
-                Raises:
-
-                SDKException:
-
-                        if input data is not valid
-
-                        if entity type is not supported
+        Example:
+            &gt;&gt;&gt; activate = Activate(commcell_object)
+            &gt;&gt;&gt; # Retrieve FsoServers object
+            &gt;&gt;&gt; fso_servers = activate.file_storage_optimization(FsoTypes.SERVERS)
+            &gt;&gt;&gt; print(f&#34;FSO Servers object: {fso_servers}&#34;)
+            &gt;&gt;&gt;
+            &gt;&gt;&gt; # Retrieve FsoServerGroups object
+            &gt;&gt;&gt; fso_server_groups = activate.file_storage_optimization(FsoTypes.SERVER_GROUPS)
+            &gt;&gt;&gt; print(f&#34;FSO Server Groups object: {fso_server_groups}&#34;)
 
         &#34;&#34;&#34;
         if not isinstance(fso_type, FsoTypes):
@@ -187,46 +264,57 @@ class Activate(object):
             return self._fso_server_groups
         raise SDKException(&#39;FileStorageOptimization&#39;, &#39;102&#39;, &#39;Unsupported FSO type specified&#39;)
 
-    def sensitive_data_governance(self):
-        &#34;&#34;&#34;returns object of Sensitive data governance - Projects class
+    def sensitive_data_governance(self) -&gt; &#39;Projects&#39;:
+        &#34;&#34;&#34;Get the Projects instance for Sensitive Data Governance.
 
-                Args:
+        Returns:
+            Projects: An instance of the Projects class from Sensitive Data Governance.
 
-                    None
-
-                Returns:
-
-                    obj --  Instance of Projects class from sensitive data governance
-
-                Raises:
-
-                    None
+        Example:
+            &gt;&gt;&gt; activate = Activate(commcell_object)
+            &gt;&gt;&gt; sdg_projects = activate.sensitive_data_governance
+            &gt;&gt;&gt; print(f&#34;Sensitive Data Governance Projects: {sdg_projects}&#34;)
+            &gt;&gt;&gt; # The returned Projects object can be used for project management tasks
 
         &#34;&#34;&#34;
         if self._sdg_projects is None:
             self._sdg_projects = Projects(self._commcell_object)
         return self._sdg_projects
 
-    def entity_manager(self, entity_type=EntityManagerTypes.ENTITIES):
-        &#34;&#34;&#34;Returns the ActivateEntities or Classifiers or Tagsets object in entity manager based on input type
+    def entity_manager(self, entity_type: &#39;EntityManagerTypes&#39; = EntityManagerTypes.ENTITIES) -&gt; object:
+        &#34;&#34;&#34;Retrieve the appropriate entity manager object based on the specified entity type.
 
-            Args:
+        Depending on the provided entity_type, this method returns an instance of ActivateEntities,
+        Classifiers, Tags, YaraRules, or HashFeeds for managing entities, classifiers, tagsets, YARA rules,
+        or hash feeds within Activate.
 
-                entity_type     (enum)      --  EntityManagerTypes enum
+        Args:
+            entity_type: An EntityManagerTypes enum value specifying which entity manager to retrieve.
+                - EntityManagerTypes.ENTITIES: Returns ActivateEntities instance.
+                - EntityManagerTypes.TAGS: Returns Tags instance.
+                - EntityManagerTypes.CLASSIFIERS: Returns Classifiers instance.
+                - EntityManagerTypes.YARA_RULES: Returns YaraRules instance.
+                - EntityManagerTypes.HASH_FEEDS: Returns HashFeeds instance.
+                Default is EntityManagerTypes.ENTITIES.
 
-                                            Default : ENTITIES
+        Returns:
+            An instance of ActivateEntities, Classifiers, Tags, YaraRules, or HashFeeds corresponding to the entity_type.
 
-            Returns:
+        Raises:
+            SDKException: If the input data is not valid or the entity type is not supported.
 
-                object      --  Instance of ActivateEntities or Classifiers or Tags class based on entity_type
-
-            Raises:
-
-                SDKException:
-
-                        if input data is not valid
-
-                        if entity type is not supported
+        Example:
+            &gt;&gt;&gt; activate = Activate(commcell_object)
+            &gt;&gt;&gt; entities = activate.entity_manager(EntityManagerTypes.ENTITIES)
+            &gt;&gt;&gt; print(f&#34;Entities manager: {entities}&#34;)
+            &gt;&gt;&gt; tags = activate.entity_manager(EntityManagerTypes.TAGS)
+            &gt;&gt;&gt; print(f&#34;Tags manager: {tags}&#34;)
+            &gt;&gt;&gt; classifiers = activate.entity_manager(EntityManagerTypes.CLASSIFIERS)
+            &gt;&gt;&gt; print(f&#34;Classifiers manager: {classifiers}&#34;)
+            &gt;&gt;&gt; yara_rules = activate.entity_manager(EntityManagerTypes.YARA_RULES)
+            &gt;&gt;&gt; print(f&#34;YARA Rules manager: {yara_rules}&#34;)
+            &gt;&gt;&gt; hash_feeds = activate.entity_manager(EntityManagerTypes.HASH_FEEDS)
+            &gt;&gt;&gt; print(f&#34;Hash Feeds manager: {hash_feeds}&#34;)
 
         &#34;&#34;&#34;
         if not isinstance(entity_type, EntityManagerTypes):
@@ -243,6 +331,14 @@ class Activate(object):
             if self._classifiers is None:
                 self._classifiers = Classifiers(self._commcell_object)
             return self._classifiers
+        elif entity_type.value == EntityManagerTypes.YARA_RULES.value:            
+            if self._yara_rules is None:
+                self._yara_rules = YaraRules(self._commcell_object)
+            return self._yara_rules
+        elif entity_type.value == EntityManagerTypes.HASH_FEEDS.value:            
+            if self._hash_feeds is None:
+                self._hash_feeds = HashFeeds(self._commcell_object)
+            return self._hash_feeds
         raise SDKException(&#39;EntityManager&#39;, &#39;102&#39;, &#39;Unsupported entity type specified&#39;)</code></pre>
 </details>
 </section>
@@ -257,42 +353,80 @@ class Activate(object):
 <dl>
 <dt id="cvpysdk.activate.Activate"><code class="flex name class">
 <span>class <span class="ident">Activate</span></span>
-<span>(</span><span>commcell_object)</span>
+<span>(</span><span>commcell_object: Commcell)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for representing activate apps in the commcell.</p>
-<p>Initializes an instance of the Activate class.</p>
-<h2 id="args">Args</h2>
-<p>commcell_object
-(object)
-&ndash;
-instance of the commcell class</p>
-<h2 id="returns">Returns</h2>
-<p>object
--
-instance of the Activate class</p></div>
+<div class="desc"><p>Class for managing and interacting with Activate apps within the Commcell environment.</p>
+<p>The Activate class provides a unified interface to access and control various Activate applications
+in the Commcell, enabling users to perform compliance searches, manage inventory, handle requests,
+optimize file storage, govern sensitive data, and manage entities. It is designed to facilitate
+seamless integration and operation of Activate functionalities for data governance and management.</p>
+<p>Key Features:
+- Initialize with a Commcell object for context-aware operations
+- Perform compliance searches across data sources
+- Access and manage inventory using the inventory manager
+- Handle requests through the request manager
+- Optimize file storage with support for different FSO types
+- Govern sensitive data for regulatory and security compliance
+- Manage entities with support for various entity types</p>
+<p>Initialize an instance of the Activate class with a Commcell connection.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>commcell_object</code></strong></dt>
+<dd>Instance of the Commcell class used for Activate operations.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; from cvpysdk.commcell import Commcell
+&gt;&gt;&gt; commcell = Commcell(command_center_hostname, username, password)
+&gt;&gt;&gt; activate = Activate(commcell)
+&gt;&gt;&gt; # The Activate object is now initialized and ready for use
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activate.py#L58-L199" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activate.py#L61-L304" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Activate(object):
-    &#34;&#34;&#34;Class for representing activate apps in the commcell.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Class for managing and interacting with Activate apps within the Commcell environment.
 
-    def __init__(self, commcell_object):
-        &#34;&#34;&#34;Initializes an instance of the Activate class.
+    The Activate class provides a unified interface to access and control various Activate applications
+    in the Commcell, enabling users to perform compliance searches, manage inventory, handle requests,
+    optimize file storage, govern sensitive data, and manage entities. It is designed to facilitate
+    seamless integration and operation of Activate functionalities for data governance and management.
 
-            Args:
-                commcell_object     (object)    --  instance of the commcell class
+    Key Features:
+        - Initialize with a Commcell object for context-aware operations
+        - Perform compliance searches across data sources
+        - Access and manage inventory using the inventory manager
+        - Handle requests through the request manager
+        - Optimize file storage with support for different FSO types
+        - Govern sensitive data for regulatory and security compliance
+        - Manage entities with support for various entity types
 
-            Returns:
-                object  -   instance of the Activate class
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_object: &#39;Commcell&#39;) -&gt; None:
+        &#34;&#34;&#34;Initialize an instance of the Activate class with a Commcell connection.
+
+        Args:
+            commcell_object: Instance of the Commcell class used for Activate operations.
+
+        Example:
+            &gt;&gt;&gt; from cvpysdk.commcell import Commcell
+            &gt;&gt;&gt; commcell = Commcell(command_center_hostname, username, password)
+            &gt;&gt;&gt; activate = Activate(commcell)
+            &gt;&gt;&gt; # The Activate object is now initialized and ready for use
 
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
         self._entity = None
         self._tags = None
         self._classifiers = None
+        self._yara_rules = None
+        self._hash_feeds = None
         self._inventories = None
         self._fso_servers = None
         self._fso_server_groups = None
@@ -300,53 +434,105 @@ instance of the Activate class</p></div>
         self._req_mgr = None
         self._compliance_search = None
 
-    def __del__(self):
-        &#34;&#34;&#34;Destructor method to delete all instances of apps referenced by this class&#34;&#34;&#34;
+    def __del__(self) -&gt; None:
+        &#34;&#34;&#34;Destructor method to clean up resources associated with the Activate instance.
+
+        This method deletes all internal references to app-related entities, tags, classifiers, inventories,
+        FSO servers, FSO server groups, SDG projects, and request managers to help with resource cleanup
+        when the object is destroyed.
+
+        Example:
+            &gt;&gt;&gt; activate = Activate(...)
+            &gt;&gt;&gt; del activate  # Triggers resource cleanup for all referenced apps
+
+        &#34;&#34;&#34;
         del self._entity
         del self._tags
         del self._classifiers
+        del self._yara_rules
+        del self._hash_feeds
         del self._inventories
         del self._fso_servers
         del self._fso_server_groups
         del self._sdg_projects
         del self._req_mgr
 
-    def compliance_search(self):
-        &#34;&#34;&#34;Returns the Compliance Search utility class object from activate apps&#34;&#34;&#34;
+    def compliance_search(self) -&gt; &#39;ComplianceSearchUtils&#39;:
+        &#34;&#34;&#34;Get the ComplianceSearchUtils instance for compliance search operations in Activate apps.
+
+        Returns:
+            ComplianceSearchUtils: An instance for performing compliance searches.
+
+        Example:
+            &gt;&gt;&gt; activate = Activate(commcell_object)
+            &gt;&gt;&gt; compliance_utils = activate.compliance_search()
+            &gt;&gt;&gt; print(f&#34;Compliance search utility: {compliance_utils}&#34;)
+            &gt;&gt;&gt; # Use the returned ComplianceSearchUtils object for compliance-related tasks
+
+        &#34;&#34;&#34;
         if self._compliance_search is None:
             self._compliance_search = ComplianceSearchUtils(self._commcell_object)
         return self._compliance_search
 
-    def inventory_manager(self):
-        &#34;&#34;&#34;Returns the Inventories class object from inventory manager app from activate apps&#34;&#34;&#34;
+    def inventory_manager(self) -&gt; &#39;Inventories&#39;:
+        &#34;&#34;&#34;Get the Inventories instance from the inventory manager app in Activate.
+
+        Returns:
+            Inventories: An instance for managing inventory data within the Activate application.
+
+        Example:
+            &gt;&gt;&gt; activate = Activate(commcell_object)
+            &gt;&gt;&gt; inventories = activate.inventory_manager  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Inventories object: {inventories}&#34;)
+            &gt;&gt;&gt; # The returned Inventories object can be used for inventory operations
+
+        &#34;&#34;&#34;
         if self._inventories is None:
             self._inventories = Inventories(self._commcell_object)
         return self._inventories
 
-    def request_manager(self):
-        &#34;&#34;&#34;Returns the Requests class object from request manager app from activate apps&#34;&#34;&#34;
+    def request_manager(self) -&gt; &#39;Requests&#39;:
+        &#34;&#34;&#34;Get the Requests object from the request manager app in Activate.
+
+        Returns:
+            Requests: An instance of the Requests class for managing requests within the Activate apps.
+
+        Example:
+            &gt;&gt;&gt; activate = Activate(commcell_object)
+            &gt;&gt;&gt; requests = activate.request_manager
+            &gt;&gt;&gt; print(f&#34;Requests object: {requests}&#34;)
+            &gt;&gt;&gt; # The returned Requests object can be used to interact with request manager features
+
+        &#34;&#34;&#34;
         if self._req_mgr is None:
             self._req_mgr = Requests(self._commcell_object)
         return self._req_mgr
 
-    def file_storage_optimization(self, fso_type=FsoTypes.SERVERS):
-        &#34;&#34;&#34;returns object of FsoServers/FsoServerGroups/Projects based on FSO type
+    def file_storage_optimization(self, fso_type: &#39;FsoTypes&#39; = FsoTypes.SERVERS):
+        &#34;&#34;&#34;Retrieve the file storage optimization object based on the specified FSO type.
 
-                Args:
+        Depending on the provided FsoTypes enum value, this method returns an instance of
+        FsoServers or FsoServerGroups. If the type is unsupported or invalid, an SDKException is raised.
 
-                    fso_type        (enum)      --  FsoTypes enum (Default : FsoServers)
+        Args:
+            fso_type: FsoTypes enum value specifying the type of file storage optimization object to retrieve.
+                      Default is FsoTypes.SERVERS.
 
-                Returns:
+        Returns:
+            Instance of FsoServers or FsoServerGroups corresponding to the specified FSO type.
 
-                    obj --  Instance of FsoServers/FsoServerGroups/Projects based on type
+        Raises:
+            SDKException: If the input data is not valid or the entity type is not supported.
 
-                Raises:
-
-                SDKException:
-
-                        if input data is not valid
-
-                        if entity type is not supported
+        Example:
+            &gt;&gt;&gt; activate = Activate(commcell_object)
+            &gt;&gt;&gt; # Retrieve FsoServers object
+            &gt;&gt;&gt; fso_servers = activate.file_storage_optimization(FsoTypes.SERVERS)
+            &gt;&gt;&gt; print(f&#34;FSO Servers object: {fso_servers}&#34;)
+            &gt;&gt;&gt;
+            &gt;&gt;&gt; # Retrieve FsoServerGroups object
+            &gt;&gt;&gt; fso_server_groups = activate.file_storage_optimization(FsoTypes.SERVER_GROUPS)
+            &gt;&gt;&gt; print(f&#34;FSO Server Groups object: {fso_server_groups}&#34;)
 
         &#34;&#34;&#34;
         if not isinstance(fso_type, FsoTypes):
@@ -361,46 +547,57 @@ instance of the Activate class</p></div>
             return self._fso_server_groups
         raise SDKException(&#39;FileStorageOptimization&#39;, &#39;102&#39;, &#39;Unsupported FSO type specified&#39;)
 
-    def sensitive_data_governance(self):
-        &#34;&#34;&#34;returns object of Sensitive data governance - Projects class
+    def sensitive_data_governance(self) -&gt; &#39;Projects&#39;:
+        &#34;&#34;&#34;Get the Projects instance for Sensitive Data Governance.
 
-                Args:
+        Returns:
+            Projects: An instance of the Projects class from Sensitive Data Governance.
 
-                    None
-
-                Returns:
-
-                    obj --  Instance of Projects class from sensitive data governance
-
-                Raises:
-
-                    None
+        Example:
+            &gt;&gt;&gt; activate = Activate(commcell_object)
+            &gt;&gt;&gt; sdg_projects = activate.sensitive_data_governance
+            &gt;&gt;&gt; print(f&#34;Sensitive Data Governance Projects: {sdg_projects}&#34;)
+            &gt;&gt;&gt; # The returned Projects object can be used for project management tasks
 
         &#34;&#34;&#34;
         if self._sdg_projects is None:
             self._sdg_projects = Projects(self._commcell_object)
         return self._sdg_projects
 
-    def entity_manager(self, entity_type=EntityManagerTypes.ENTITIES):
-        &#34;&#34;&#34;Returns the ActivateEntities or Classifiers or Tagsets object in entity manager based on input type
+    def entity_manager(self, entity_type: &#39;EntityManagerTypes&#39; = EntityManagerTypes.ENTITIES) -&gt; object:
+        &#34;&#34;&#34;Retrieve the appropriate entity manager object based on the specified entity type.
 
-            Args:
+        Depending on the provided entity_type, this method returns an instance of ActivateEntities,
+        Classifiers, Tags, YaraRules, or HashFeeds for managing entities, classifiers, tagsets, YARA rules,
+        or hash feeds within Activate.
 
-                entity_type     (enum)      --  EntityManagerTypes enum
+        Args:
+            entity_type: An EntityManagerTypes enum value specifying which entity manager to retrieve.
+                - EntityManagerTypes.ENTITIES: Returns ActivateEntities instance.
+                - EntityManagerTypes.TAGS: Returns Tags instance.
+                - EntityManagerTypes.CLASSIFIERS: Returns Classifiers instance.
+                - EntityManagerTypes.YARA_RULES: Returns YaraRules instance.
+                - EntityManagerTypes.HASH_FEEDS: Returns HashFeeds instance.
+                Default is EntityManagerTypes.ENTITIES.
 
-                                            Default : ENTITIES
+        Returns:
+            An instance of ActivateEntities, Classifiers, Tags, YaraRules, or HashFeeds corresponding to the entity_type.
 
-            Returns:
+        Raises:
+            SDKException: If the input data is not valid or the entity type is not supported.
 
-                object      --  Instance of ActivateEntities or Classifiers or Tags class based on entity_type
-
-            Raises:
-
-                SDKException:
-
-                        if input data is not valid
-
-                        if entity type is not supported
+        Example:
+            &gt;&gt;&gt; activate = Activate(commcell_object)
+            &gt;&gt;&gt; entities = activate.entity_manager(EntityManagerTypes.ENTITIES)
+            &gt;&gt;&gt; print(f&#34;Entities manager: {entities}&#34;)
+            &gt;&gt;&gt; tags = activate.entity_manager(EntityManagerTypes.TAGS)
+            &gt;&gt;&gt; print(f&#34;Tags manager: {tags}&#34;)
+            &gt;&gt;&gt; classifiers = activate.entity_manager(EntityManagerTypes.CLASSIFIERS)
+            &gt;&gt;&gt; print(f&#34;Classifiers manager: {classifiers}&#34;)
+            &gt;&gt;&gt; yara_rules = activate.entity_manager(EntityManagerTypes.YARA_RULES)
+            &gt;&gt;&gt; print(f&#34;YARA Rules manager: {yara_rules}&#34;)
+            &gt;&gt;&gt; hash_feeds = activate.entity_manager(EntityManagerTypes.HASH_FEEDS)
+            &gt;&gt;&gt; print(f&#34;Hash Feeds manager: {hash_feeds}&#34;)
 
         &#34;&#34;&#34;
         if not isinstance(entity_type, EntityManagerTypes):
@@ -417,74 +614,141 @@ instance of the Activate class</p></div>
             if self._classifiers is None:
                 self._classifiers = Classifiers(self._commcell_object)
             return self._classifiers
+        elif entity_type.value == EntityManagerTypes.YARA_RULES.value:            
+            if self._yara_rules is None:
+                self._yara_rules = YaraRules(self._commcell_object)
+            return self._yara_rules
+        elif entity_type.value == EntityManagerTypes.HASH_FEEDS.value:            
+            if self._hash_feeds is None:
+                self._hash_feeds = HashFeeds(self._commcell_object)
+            return self._hash_feeds
         raise SDKException(&#39;EntityManager&#39;, &#39;102&#39;, &#39;Unsupported entity type specified&#39;)</code></pre>
 </details>
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.activate.Activate.compliance_search"><code class="name flex">
-<span>def <span class="ident">compliance_search</span></span>(<span>self)</span>
+<span>def <span class="ident">compliance_search</span></span>(<span>self) ‑> <a title="cvpysdk.activateapps.compliance_utils.ComplianceSearchUtils" href="activateapps/compliance_utils.html#cvpysdk.activateapps.compliance_utils.ComplianceSearchUtils">ComplianceSearchUtils</a></span>
 </code></dt>
 <dd>
-<div class="desc"><p>Returns the Compliance Search utility class object from activate apps</p></div>
+<div class="desc"><p>Get the ComplianceSearchUtils instance for compliance search operations in Activate apps.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>ComplianceSearchUtils</code></dt>
+<dd>An instance for performing compliance searches.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; activate = Activate(commcell_object)
+&gt;&gt;&gt; compliance_utils = activate.compliance_search()
+&gt;&gt;&gt; print(f&quot;Compliance search utility: {compliance_utils}&quot;)
+&gt;&gt;&gt; # Use the returned ComplianceSearchUtils object for compliance-related tasks
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activate.py#L93-L97" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activate.py#L133-L149" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def compliance_search(self):
-    &#34;&#34;&#34;Returns the Compliance Search utility class object from activate apps&#34;&#34;&#34;
+<pre><code class="python">def compliance_search(self) -&gt; &#39;ComplianceSearchUtils&#39;:
+    &#34;&#34;&#34;Get the ComplianceSearchUtils instance for compliance search operations in Activate apps.
+
+    Returns:
+        ComplianceSearchUtils: An instance for performing compliance searches.
+
+    Example:
+        &gt;&gt;&gt; activate = Activate(commcell_object)
+        &gt;&gt;&gt; compliance_utils = activate.compliance_search()
+        &gt;&gt;&gt; print(f&#34;Compliance search utility: {compliance_utils}&#34;)
+        &gt;&gt;&gt; # Use the returned ComplianceSearchUtils object for compliance-related tasks
+
+    &#34;&#34;&#34;
     if self._compliance_search is None:
         self._compliance_search = ComplianceSearchUtils(self._commcell_object)
     return self._compliance_search</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.activate.Activate.entity_manager"><code class="name flex">
-<span>def <span class="ident">entity_manager</span></span>(<span>self, entity_type=EntityManagerTypes.ENTITIES)</span>
+<span>def <span class="ident">entity_manager</span></span>(<span>self, entity_type: EntityManagerTypes = EntityManagerTypes.ENTITIES) ‑> object</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Returns the ActivateEntities or Classifiers or Tagsets object in entity manager based on input type</p>
-<h2 id="args">Args</h2>
-<p>entity_type
-(enum)
-&ndash;
-EntityManagerTypes enum</p>
-<pre><code>                        Default : ENTITIES
-</code></pre>
-<h2 id="returns">Returns</h2>
-<p>object
-&ndash;
-Instance of ActivateEntities or Classifiers or Tags class based on entity_type</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
-<pre><code>    if input data is not valid
-
-    if entity type is not supported
+<div class="desc"><p>Retrieve the appropriate entity manager object based on the specified entity type.</p>
+<p>Depending on the provided entity_type, this method returns an instance of ActivateEntities,
+Classifiers, Tags, YaraRules, or HashFeeds for managing entities, classifiers, tagsets, YARA rules,
+or hash feeds within Activate.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>entity_type</code></strong></dt>
+<dd>An EntityManagerTypes enum value specifying which entity manager to retrieve.
+- EntityManagerTypes.ENTITIES: Returns ActivateEntities instance.
+- EntityManagerTypes.TAGS: Returns Tags instance.
+- EntityManagerTypes.CLASSIFIERS: Returns Classifiers instance.
+- EntityManagerTypes.YARA_RULES: Returns YaraRules instance.
+- EntityManagerTypes.HASH_FEEDS: Returns HashFeeds instance.
+Default is EntityManagerTypes.ENTITIES.</dd>
+</dl>
+<p>Returns
+-----=
+An instance of ActivateEntities, Classifiers, Tags, YaraRules, or HashFeeds corresponding to the entity_type.</p>
+<dl>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the input data is not valid or the entity type is not supported.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; activate = Activate(commcell_object)
+&gt;&gt;&gt; entities = activate.entity_manager(EntityManagerTypes.ENTITIES)
+&gt;&gt;&gt; print(f&quot;Entities manager: {entities}&quot;)
+&gt;&gt;&gt; tags = activate.entity_manager(EntityManagerTypes.TAGS)
+&gt;&gt;&gt; print(f&quot;Tags manager: {tags}&quot;)
+&gt;&gt;&gt; classifiers = activate.entity_manager(EntityManagerTypes.CLASSIFIERS)
+&gt;&gt;&gt; print(f&quot;Classifiers manager: {classifiers}&quot;)
+&gt;&gt;&gt; yara_rules = activate.entity_manager(EntityManagerTypes.YARA_RULES)
+&gt;&gt;&gt; print(f&quot;YARA Rules manager: {yara_rules}&quot;)
+&gt;&gt;&gt; hash_feeds = activate.entity_manager(EntityManagerTypes.HASH_FEEDS)
+&gt;&gt;&gt; print(f&quot;Hash Feeds manager: {hash_feeds}&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activate.py#L163-L199" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activate.py#L245-L304" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def entity_manager(self, entity_type=EntityManagerTypes.ENTITIES):
-    &#34;&#34;&#34;Returns the ActivateEntities or Classifiers or Tagsets object in entity manager based on input type
+<pre><code class="python">def entity_manager(self, entity_type: &#39;EntityManagerTypes&#39; = EntityManagerTypes.ENTITIES) -&gt; object:
+    &#34;&#34;&#34;Retrieve the appropriate entity manager object based on the specified entity type.
 
-        Args:
+    Depending on the provided entity_type, this method returns an instance of ActivateEntities,
+    Classifiers, Tags, YaraRules, or HashFeeds for managing entities, classifiers, tagsets, YARA rules,
+    or hash feeds within Activate.
 
-            entity_type     (enum)      --  EntityManagerTypes enum
+    Args:
+        entity_type: An EntityManagerTypes enum value specifying which entity manager to retrieve.
+            - EntityManagerTypes.ENTITIES: Returns ActivateEntities instance.
+            - EntityManagerTypes.TAGS: Returns Tags instance.
+            - EntityManagerTypes.CLASSIFIERS: Returns Classifiers instance.
+            - EntityManagerTypes.YARA_RULES: Returns YaraRules instance.
+            - EntityManagerTypes.HASH_FEEDS: Returns HashFeeds instance.
+            Default is EntityManagerTypes.ENTITIES.
 
-                                        Default : ENTITIES
+    Returns:
+        An instance of ActivateEntities, Classifiers, Tags, YaraRules, or HashFeeds corresponding to the entity_type.
 
-        Returns:
+    Raises:
+        SDKException: If the input data is not valid or the entity type is not supported.
 
-            object      --  Instance of ActivateEntities or Classifiers or Tags class based on entity_type
-
-        Raises:
-
-            SDKException:
-
-                    if input data is not valid
-
-                    if entity type is not supported
+    Example:
+        &gt;&gt;&gt; activate = Activate(commcell_object)
+        &gt;&gt;&gt; entities = activate.entity_manager(EntityManagerTypes.ENTITIES)
+        &gt;&gt;&gt; print(f&#34;Entities manager: {entities}&#34;)
+        &gt;&gt;&gt; tags = activate.entity_manager(EntityManagerTypes.TAGS)
+        &gt;&gt;&gt; print(f&#34;Tags manager: {tags}&#34;)
+        &gt;&gt;&gt; classifiers = activate.entity_manager(EntityManagerTypes.CLASSIFIERS)
+        &gt;&gt;&gt; print(f&#34;Classifiers manager: {classifiers}&#34;)
+        &gt;&gt;&gt; yara_rules = activate.entity_manager(EntityManagerTypes.YARA_RULES)
+        &gt;&gt;&gt; print(f&#34;YARA Rules manager: {yara_rules}&#34;)
+        &gt;&gt;&gt; hash_feeds = activate.entity_manager(EntityManagerTypes.HASH_FEEDS)
+        &gt;&gt;&gt; print(f&#34;Hash Feeds manager: {hash_feeds}&#34;)
 
     &#34;&#34;&#34;
     if not isinstance(entity_type, EntityManagerTypes):
@@ -501,49 +765,81 @@ Instance of ActivateEntities or Classifiers or Tags class based on entity_type</
         if self._classifiers is None:
             self._classifiers = Classifiers(self._commcell_object)
         return self._classifiers
+    elif entity_type.value == EntityManagerTypes.YARA_RULES.value:            
+        if self._yara_rules is None:
+            self._yara_rules = YaraRules(self._commcell_object)
+        return self._yara_rules
+    elif entity_type.value == EntityManagerTypes.HASH_FEEDS.value:            
+        if self._hash_feeds is None:
+            self._hash_feeds = HashFeeds(self._commcell_object)
+        return self._hash_feeds
     raise SDKException(&#39;EntityManager&#39;, &#39;102&#39;, &#39;Unsupported entity type specified&#39;)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.activate.Activate.file_storage_optimization"><code class="name flex">
-<span>def <span class="ident">file_storage_optimization</span></span>(<span>self, fso_type=FsoTypes.SERVERS)</span>
+<span>def <span class="ident">file_storage_optimization</span></span>(<span>self, fso_type: FsoTypes = FsoTypes.SERVERS)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>returns object of FsoServers/FsoServerGroups/Projects based on FSO type</p>
-<h2 id="args">Args</h2>
-<p>fso_type
-(enum)
-&ndash;
-FsoTypes enum (Default : FsoServers)</p>
-<h2 id="returns">Returns</h2>
-<p>obj &ndash;
-Instance of FsoServers/FsoServerGroups/Projects based on type
-Raises:</p>
-<h2 id="sdkexception">Sdkexception</h2>
-<p>if input data is not valid</p>
-<p>if entity type is not supported</p></div>
+<div class="desc"><p>Retrieve the file storage optimization object based on the specified FSO type.</p>
+<p>Depending on the provided FsoTypes enum value, this method returns an instance of
+FsoServers or FsoServerGroups. If the type is unsupported or invalid, an SDKException is raised.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>fso_type</code></strong></dt>
+<dd>FsoTypes enum value specifying the type of file storage optimization object to retrieve.
+Default is FsoTypes.SERVERS.</dd>
+</dl>
+<p>Returns
+-----=
+Instance of FsoServers or FsoServerGroups corresponding to the specified FSO type.</p>
+<dl>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the input data is not valid or the entity type is not supported.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; activate = Activate(commcell_object)
+&gt;&gt;&gt; # Retrieve FsoServers object
+&gt;&gt;&gt; fso_servers = activate.file_storage_optimization(FsoTypes.SERVERS)
+&gt;&gt;&gt; print(f&quot;FSO Servers object: {fso_servers}&quot;)
+&gt;&gt;&gt;
+&gt;&gt;&gt; # Retrieve FsoServerGroups object
+&gt;&gt;&gt; fso_server_groups = activate.file_storage_optimization(FsoTypes.SERVER_GROUPS)
+&gt;&gt;&gt; print(f&quot;FSO Server Groups object: {fso_server_groups}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activate.py#L111-L141" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activate.py#L187-L225" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def file_storage_optimization(self, fso_type=FsoTypes.SERVERS):
-    &#34;&#34;&#34;returns object of FsoServers/FsoServerGroups/Projects based on FSO type
+<pre><code class="python">def file_storage_optimization(self, fso_type: &#39;FsoTypes&#39; = FsoTypes.SERVERS):
+    &#34;&#34;&#34;Retrieve the file storage optimization object based on the specified FSO type.
 
-            Args:
+    Depending on the provided FsoTypes enum value, this method returns an instance of
+    FsoServers or FsoServerGroups. If the type is unsupported or invalid, an SDKException is raised.
 
-                fso_type        (enum)      --  FsoTypes enum (Default : FsoServers)
+    Args:
+        fso_type: FsoTypes enum value specifying the type of file storage optimization object to retrieve.
+                  Default is FsoTypes.SERVERS.
 
-            Returns:
+    Returns:
+        Instance of FsoServers or FsoServerGroups corresponding to the specified FSO type.
 
-                obj --  Instance of FsoServers/FsoServerGroups/Projects based on type
+    Raises:
+        SDKException: If the input data is not valid or the entity type is not supported.
 
-            Raises:
-
-            SDKException:
-
-                    if input data is not valid
-
-                    if entity type is not supported
+    Example:
+        &gt;&gt;&gt; activate = Activate(commcell_object)
+        &gt;&gt;&gt; # Retrieve FsoServers object
+        &gt;&gt;&gt; fso_servers = activate.file_storage_optimization(FsoTypes.SERVERS)
+        &gt;&gt;&gt; print(f&#34;FSO Servers object: {fso_servers}&#34;)
+        &gt;&gt;&gt;
+        &gt;&gt;&gt; # Retrieve FsoServerGroups object
+        &gt;&gt;&gt; fso_server_groups = activate.file_storage_optimization(FsoTypes.SERVER_GROUPS)
+        &gt;&gt;&gt; print(f&#34;FSO Server Groups object: {fso_server_groups}&#34;)
 
     &#34;&#34;&#34;
     if not isinstance(fso_type, FsoTypes):
@@ -560,70 +856,121 @@ Raises:</p>
 </details>
 </dd>
 <dt id="cvpysdk.activate.Activate.inventory_manager"><code class="name flex">
-<span>def <span class="ident">inventory_manager</span></span>(<span>self)</span>
+<span>def <span class="ident">inventory_manager</span></span>(<span>self) ‑> <a title="cvpysdk.activateapps.inventory_manager.Inventories" href="activateapps/inventory_manager.html#cvpysdk.activateapps.inventory_manager.Inventories">Inventories</a></span>
 </code></dt>
 <dd>
-<div class="desc"><p>Returns the Inventories class object from inventory manager app from activate apps</p></div>
+<div class="desc"><p>Get the Inventories instance from the inventory manager app in Activate.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Inventories</code></dt>
+<dd>An instance for managing inventory data within the Activate application.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; activate = Activate(commcell_object)
+&gt;&gt;&gt; inventories = activate.inventory_manager  # Use dot notation for property access
+&gt;&gt;&gt; print(f&quot;Inventories object: {inventories}&quot;)
+&gt;&gt;&gt; # The returned Inventories object can be used for inventory operations
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activate.py#L99-L103" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activate.py#L151-L167" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def inventory_manager(self):
-    &#34;&#34;&#34;Returns the Inventories class object from inventory manager app from activate apps&#34;&#34;&#34;
+<pre><code class="python">def inventory_manager(self) -&gt; &#39;Inventories&#39;:
+    &#34;&#34;&#34;Get the Inventories instance from the inventory manager app in Activate.
+
+    Returns:
+        Inventories: An instance for managing inventory data within the Activate application.
+
+    Example:
+        &gt;&gt;&gt; activate = Activate(commcell_object)
+        &gt;&gt;&gt; inventories = activate.inventory_manager  # Use dot notation for property access
+        &gt;&gt;&gt; print(f&#34;Inventories object: {inventories}&#34;)
+        &gt;&gt;&gt; # The returned Inventories object can be used for inventory operations
+
+    &#34;&#34;&#34;
     if self._inventories is None:
         self._inventories = Inventories(self._commcell_object)
     return self._inventories</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.activate.Activate.request_manager"><code class="name flex">
-<span>def <span class="ident">request_manager</span></span>(<span>self)</span>
+<span>def <span class="ident">request_manager</span></span>(<span>self) ‑> <a title="cvpysdk.activateapps.request_manager.Requests" href="activateapps/request_manager.html#cvpysdk.activateapps.request_manager.Requests">Requests</a></span>
 </code></dt>
 <dd>
-<div class="desc"><p>Returns the Requests class object from request manager app from activate apps</p></div>
+<div class="desc"><p>Get the Requests object from the request manager app in Activate.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Requests</code></dt>
+<dd>An instance of the Requests class for managing requests within the Activate apps.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; activate = Activate(commcell_object)
+&gt;&gt;&gt; requests = activate.request_manager
+&gt;&gt;&gt; print(f&quot;Requests object: {requests}&quot;)
+&gt;&gt;&gt; # The returned Requests object can be used to interact with request manager features
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activate.py#L105-L109" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activate.py#L169-L185" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def request_manager(self):
-    &#34;&#34;&#34;Returns the Requests class object from request manager app from activate apps&#34;&#34;&#34;
+<pre><code class="python">def request_manager(self) -&gt; &#39;Requests&#39;:
+    &#34;&#34;&#34;Get the Requests object from the request manager app in Activate.
+
+    Returns:
+        Requests: An instance of the Requests class for managing requests within the Activate apps.
+
+    Example:
+        &gt;&gt;&gt; activate = Activate(commcell_object)
+        &gt;&gt;&gt; requests = activate.request_manager
+        &gt;&gt;&gt; print(f&#34;Requests object: {requests}&#34;)
+        &gt;&gt;&gt; # The returned Requests object can be used to interact with request manager features
+
+    &#34;&#34;&#34;
     if self._req_mgr is None:
         self._req_mgr = Requests(self._commcell_object)
     return self._req_mgr</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.activate.Activate.sensitive_data_governance"><code class="name flex">
-<span>def <span class="ident">sensitive_data_governance</span></span>(<span>self)</span>
+<span>def <span class="ident">sensitive_data_governance</span></span>(<span>self) ‑> <a title="cvpysdk.activateapps.sensitive_data_governance.Projects" href="activateapps/sensitive_data_governance.html#cvpysdk.activateapps.sensitive_data_governance.Projects">Projects</a></span>
 </code></dt>
 <dd>
-<div class="desc"><p>returns object of Sensitive data governance - Projects class</p>
-<h2 id="args">Args</h2>
-<p>None</p>
-<h2 id="returns">Returns</h2>
-<p>obj &ndash;
-Instance of Projects class from sensitive data governance</p>
-<h2 id="raises">Raises</h2>
-<p>None</p></div>
+<div class="desc"><p>Get the Projects instance for Sensitive Data Governance.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Projects</code></dt>
+<dd>An instance of the Projects class from Sensitive Data Governance.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; activate = Activate(commcell_object)
+&gt;&gt;&gt; sdg_projects = activate.sensitive_data_governance
+&gt;&gt;&gt; print(f&quot;Sensitive Data Governance Projects: {sdg_projects}&quot;)
+&gt;&gt;&gt; # The returned Projects object can be used for project management tasks
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activate.py#L143-L161" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activate.py#L227-L243" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def sensitive_data_governance(self):
-    &#34;&#34;&#34;returns object of Sensitive data governance - Projects class
+<pre><code class="python">def sensitive_data_governance(self) -&gt; &#39;Projects&#39;:
+    &#34;&#34;&#34;Get the Projects instance for Sensitive Data Governance.
 
-            Args:
+    Returns:
+        Projects: An instance of the Projects class from Sensitive Data Governance.
 
-                None
-
-            Returns:
-
-                obj --  Instance of Projects class from sensitive data governance
-
-            Raises:
-
-                None
+    Example:
+        &gt;&gt;&gt; activate = Activate(commcell_object)
+        &gt;&gt;&gt; sdg_projects = activate.sensitive_data_governance
+        &gt;&gt;&gt; print(f&#34;Sensitive Data Governance Projects: {sdg_projects}&#34;)
+        &gt;&gt;&gt; # The returned Projects object can be used for project management tasks
 
     &#34;&#34;&#34;
     if self._sdg_projects is None:

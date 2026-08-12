@@ -34,7 +34,7 @@ and to perform operations on that subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/backupsets/sharepointbackupset.py#L1-L87" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/backupsets/sharepointbackupset.py#L1-L135" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -71,24 +71,56 @@ SPBackupset:
 from __future__ import unicode_literals
 
 from ..backupset import Backupset
-
+from typing import Optional, Dict, Any
 
 class SharepointBackupset(Backupset):
-    &#34;&#34;&#34;Derived class from Backupset Base class, representing a sharepoint backupset,
-        and to perform operations on that backupset.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents a SharePoint backupset, extending the Backupset base class.
+
+    This class is designed to manage and perform operations specific to SharePoint backupsets,
+    including support for both SharePoint Online and integration with Azure storage accounts.
+    It provides properties to determine the type of SharePoint instance and to access Azure storage details,
+    as well as methods to handle Azure storage account information.
+
+    Key Features:
+        - Identification of SharePoint Online instances
+        - Access to Azure storage account details
+        - Management of Azure storage account information for backup operations
+
+    &#34;&#34;&#34;
 
     @property
-    def is_sharepoint_online_instance(self):
-        &#34;&#34;&#34;getter for SharePoint online instance check&#34;&#34;&#34;
+    def is_sharepoint_online_instance(self) -&gt; bool:
+        &#34;&#34;&#34;Check if the backupset is a SharePoint Online instance.
+
+        Returns:
+            True if the backupset name corresponds to a SharePoint Online instance, False otherwise.
+
+        Example:
+            &gt;&gt;&gt; backupset = SharepointBackupset(...)
+            &gt;&gt;&gt; if backupset.is_sharepoint_online_instance:
+            ...     print(&#34;This is a SharePoint Online backupset.&#34;)
+            ... else:
+            ...     print(&#34;This is not a SharePoint Online backupset.&#34;)
+
+        &#34;&#34;&#34;
         return self.backupset_name == &#34;sharepoint online&#34;
 
     @property
-    def azure_storage_details(self):
-        &#34;&#34;&#34;
-        Returns azure storage details associated with backupset
+    def azure_storage_details(self) -&gt; Optional[Dict[str, Any]]:
+        &#34;&#34;&#34;Get the Azure storage account details associated with this SharePoint backupset.
 
         Returns:
-            azure_storage_account_information  (dict)  -- dictionary of azure storage account details
+            Optional[Dict[str, Any]]: Dictionary containing Azure storage account information if available,
+            otherwise None.
+
+        Example:
+            &gt;&gt;&gt; backupset = SharepointBackupset(...)
+            &gt;&gt;&gt; azure_details = backupset.azure_storage_details  # Use dot notation for property access
+            &gt;&gt;&gt; if azure_details:
+            ...     print(f&#34;Azure Storage Account: {azure_details.get(&#39;accountName&#39;)}&#34;)
+            ... else:
+            ...     print(&#34;No Azure storage account details found for this backupset.&#34;)
 
         &#34;&#34;&#34;
         backupset_properties = self.properties
@@ -101,19 +133,31 @@ class SharepointBackupset(Backupset):
         return azure_storage_account_information
 
     @azure_storage_details.setter
-    def azure_storage_details(self, azure_storage_account_information):
-        &#34;&#34;&#34;Updates azure storage details in sharepoint backupset properties
+    def azure_storage_details(self, azure_storage_account_information: Dict[str, Any]) -&gt; None:
+        &#34;&#34;&#34;Update Azure storage account details in the SharePoint backupset properties.
 
-            Args:
+        Args:
+            azure_storage_account_information: Dictionary containing Azure account information.
+                Example format:
+                    {
+                        &#34;serviceType&#34;: 52,
+                        &#34;userAccount&#34;: {
+                            &#34;password&#34;: azure_secret,
+                            &#34;userName&#34;: azure_username
+                        }
+                    }
 
-                    azure_storage_account_information (dict)--  information of azure account
-                                                        azure_storage_account_information : {
-                                                            &#34;serviceType&#34;: 52,
-                                                            &#34;userAccount&#34;: {
-                                                                &#34;password&#34;: azure_secret,
-                                                                &#34;userName&#34;: azure_username
-                                                            }
-                                                        }
+        Example:
+            &gt;&gt;&gt; azure_info = {
+            ...     &#34;serviceType&#34;: 52,
+            ...     &#34;userAccount&#34;: {
+            ...         &#34;password&#34;: &#34;my_azure_secret&#34;,
+            ...         &#34;userName&#34;: &#34;my_azure_username&#34;
+            ...     }
+            ... }
+            &gt;&gt;&gt; backupset = SharepointBackupset(...)
+            &gt;&gt;&gt; backupset.azure_storage_details = azure_info  # Use assignment for property setter
+            &gt;&gt;&gt; # Azure storage details are now updated in the backupset properties
 
         &#34;&#34;&#34;
         backupset_properties = self.properties
@@ -136,49 +180,88 @@ class SharepointBackupset(Backupset):
 <dl>
 <dt id="cvpysdk.backupsets.sharepointbackupset.SharepointBackupset"><code class="flex name class">
 <span>class <span class="ident">SharepointBackupset</span></span>
-<span>(</span><span>instance_object, backupset_name, backupset_id=None)</span>
+<span>(</span><span>instance_object: object, backupset_name: str, backupset_id: str = None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Derived class from Backupset Base class, representing a sharepoint backupset,
-and to perform operations on that backupset.</p>
-<p>Initialise the backupset object.</p>
-<h2 id="args">Args</h2>
-<p>instance_object
-(object)
-&ndash;
-instance of the Instance class</p>
-<p>backupset_name
-(str)
-&ndash;
-name of the backupset</p>
-<p>backupset_id
-(str)
-&ndash;
-id of the backupset
-default: None</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Backupset class</p></div>
+<div class="desc"><p>Represents a SharePoint backupset, extending the Backupset base class.</p>
+<p>This class is designed to manage and perform operations specific to SharePoint backupsets,
+including support for both SharePoint Online and integration with Azure storage accounts.
+It provides properties to determine the type of SharePoint instance and to access Azure storage details,
+as well as methods to handle Azure storage account information.</p>
+<p>Key Features:
+- Identification of SharePoint Online instances
+- Access to Azure storage account details
+- Management of Azure storage account information for backup operations</p>
+<p>Initialize a Backupset object.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>instance_object</code></strong></dt>
+<dd>An instance of the Instance class to which this backupset belongs.</dd>
+<dt><strong><code>backupset_name</code></strong></dt>
+<dd>The name of the backupset.</dd>
+<dt><strong><code>backupset_id</code></strong></dt>
+<dd>The unique identifier for the backupset. If not provided, it will be determined automatically.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; instance = Instance(commcell_object, &quot;FileSystem&quot;)
+&gt;&gt;&gt; backupset = Backupset(instance, &quot;defaultBackupSet&quot;)
+&gt;&gt;&gt; print(f&quot;Backupset created: {backupset}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/backupsets/sharepointbackupset.py#L38-L87" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/backupsets/sharepointbackupset.py#L38-L135" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class SharepointBackupset(Backupset):
-    &#34;&#34;&#34;Derived class from Backupset Base class, representing a sharepoint backupset,
-        and to perform operations on that backupset.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents a SharePoint backupset, extending the Backupset base class.
+
+    This class is designed to manage and perform operations specific to SharePoint backupsets,
+    including support for both SharePoint Online and integration with Azure storage accounts.
+    It provides properties to determine the type of SharePoint instance and to access Azure storage details,
+    as well as methods to handle Azure storage account information.
+
+    Key Features:
+        - Identification of SharePoint Online instances
+        - Access to Azure storage account details
+        - Management of Azure storage account information for backup operations
+
+    &#34;&#34;&#34;
 
     @property
-    def is_sharepoint_online_instance(self):
-        &#34;&#34;&#34;getter for SharePoint online instance check&#34;&#34;&#34;
+    def is_sharepoint_online_instance(self) -&gt; bool:
+        &#34;&#34;&#34;Check if the backupset is a SharePoint Online instance.
+
+        Returns:
+            True if the backupset name corresponds to a SharePoint Online instance, False otherwise.
+
+        Example:
+            &gt;&gt;&gt; backupset = SharepointBackupset(...)
+            &gt;&gt;&gt; if backupset.is_sharepoint_online_instance:
+            ...     print(&#34;This is a SharePoint Online backupset.&#34;)
+            ... else:
+            ...     print(&#34;This is not a SharePoint Online backupset.&#34;)
+
+        &#34;&#34;&#34;
         return self.backupset_name == &#34;sharepoint online&#34;
 
     @property
-    def azure_storage_details(self):
-        &#34;&#34;&#34;
-        Returns azure storage details associated with backupset
+    def azure_storage_details(self) -&gt; Optional[Dict[str, Any]]:
+        &#34;&#34;&#34;Get the Azure storage account details associated with this SharePoint backupset.
 
         Returns:
-            azure_storage_account_information  (dict)  -- dictionary of azure storage account details
+            Optional[Dict[str, Any]]: Dictionary containing Azure storage account information if available,
+            otherwise None.
+
+        Example:
+            &gt;&gt;&gt; backupset = SharepointBackupset(...)
+            &gt;&gt;&gt; azure_details = backupset.azure_storage_details  # Use dot notation for property access
+            &gt;&gt;&gt; if azure_details:
+            ...     print(f&#34;Azure Storage Account: {azure_details.get(&#39;accountName&#39;)}&#34;)
+            ... else:
+            ...     print(&#34;No Azure storage account details found for this backupset.&#34;)
 
         &#34;&#34;&#34;
         backupset_properties = self.properties
@@ -191,19 +274,31 @@ default: None</p>
         return azure_storage_account_information
 
     @azure_storage_details.setter
-    def azure_storage_details(self, azure_storage_account_information):
-        &#34;&#34;&#34;Updates azure storage details in sharepoint backupset properties
+    def azure_storage_details(self, azure_storage_account_information: Dict[str, Any]) -&gt; None:
+        &#34;&#34;&#34;Update Azure storage account details in the SharePoint backupset properties.
 
-            Args:
+        Args:
+            azure_storage_account_information: Dictionary containing Azure account information.
+                Example format:
+                    {
+                        &#34;serviceType&#34;: 52,
+                        &#34;userAccount&#34;: {
+                            &#34;password&#34;: azure_secret,
+                            &#34;userName&#34;: azure_username
+                        }
+                    }
 
-                    azure_storage_account_information (dict)--  information of azure account
-                                                        azure_storage_account_information : {
-                                                            &#34;serviceType&#34;: 52,
-                                                            &#34;userAccount&#34;: {
-                                                                &#34;password&#34;: azure_secret,
-                                                                &#34;userName&#34;: azure_username
-                                                            }
-                                                        }
+        Example:
+            &gt;&gt;&gt; azure_info = {
+            ...     &#34;serviceType&#34;: 52,
+            ...     &#34;userAccount&#34;: {
+            ...         &#34;password&#34;: &#34;my_azure_secret&#34;,
+            ...         &#34;userName&#34;: &#34;my_azure_username&#34;
+            ...     }
+            ... }
+            &gt;&gt;&gt; backupset = SharepointBackupset(...)
+            &gt;&gt;&gt; backupset.azure_storage_details = azure_info  # Use assignment for property setter
+            &gt;&gt;&gt; # Azure storage details are now updated in the backupset properties
 
         &#34;&#34;&#34;
         backupset_properties = self.properties
@@ -220,25 +315,45 @@ default: None</p>
 </ul>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.backupsets.sharepointbackupset.SharepointBackupset.azure_storage_details"><code class="name">var <span class="ident">azure_storage_details</span></code></dt>
+<dt id="cvpysdk.backupsets.sharepointbackupset.SharepointBackupset.azure_storage_details"><code class="name">var <span class="ident">azure_storage_details</span> : Optional[Dict[str, Any]]</code></dt>
 <dd>
-<div class="desc"><p>Returns azure storage details associated with backupset</p>
-<h2 id="returns">Returns</h2>
-<p>azure_storage_account_information
-(dict)
-&ndash; dictionary of azure storage account details</p></div>
+<div class="desc"><p>Get the Azure storage account details associated with this SharePoint backupset.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Optional[Dict[str, Any]]</code></dt>
+<dd>Dictionary containing Azure storage account information if available,</dd>
+</dl>
+<p>otherwise None.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; backupset = SharepointBackupset(...)
+&gt;&gt;&gt; azure_details = backupset.azure_storage_details  # Use dot notation for property access
+&gt;&gt;&gt; if azure_details:
+...     print(f&quot;Azure Storage Account: {azure_details.get('accountName')}&quot;)
+... else:
+...     print(&quot;No Azure storage account details found for this backupset.&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/backupsets/sharepointbackupset.py#L47-L63" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/backupsets/sharepointbackupset.py#L73-L98" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def azure_storage_details(self):
-    &#34;&#34;&#34;
-    Returns azure storage details associated with backupset
+def azure_storage_details(self) -&gt; Optional[Dict[str, Any]]:
+    &#34;&#34;&#34;Get the Azure storage account details associated with this SharePoint backupset.
 
     Returns:
-        azure_storage_account_information  (dict)  -- dictionary of azure storage account details
+        Optional[Dict[str, Any]]: Dictionary containing Azure storage account information if available,
+        otherwise None.
+
+    Example:
+        &gt;&gt;&gt; backupset = SharepointBackupset(...)
+        &gt;&gt;&gt; azure_details = backupset.azure_storage_details  # Use dot notation for property access
+        &gt;&gt;&gt; if azure_details:
+        ...     print(f&#34;Azure Storage Account: {azure_details.get(&#39;accountName&#39;)}&#34;)
+        ... else:
+        ...     print(&#34;No Azure storage account details found for this backupset.&#34;)
 
     &#34;&#34;&#34;
     backupset_properties = self.properties
@@ -251,17 +366,40 @@ def azure_storage_details(self):
     return azure_storage_account_information</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.backupsets.sharepointbackupset.SharepointBackupset.is_sharepoint_online_instance"><code class="name">var <span class="ident">is_sharepoint_online_instance</span></code></dt>
+<dt id="cvpysdk.backupsets.sharepointbackupset.SharepointBackupset.is_sharepoint_online_instance"><code class="name">var <span class="ident">is_sharepoint_online_instance</span> : bool</code></dt>
 <dd>
-<div class="desc"><p>getter for SharePoint online instance check</p></div>
+<div class="desc"><p>Check if the backupset is a SharePoint Online instance.</p>
+<p>Returns
+-----=
+True if the backupset name corresponds to a SharePoint Online instance, False otherwise.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; backupset = SharepointBackupset(...)
+&gt;&gt;&gt; if backupset.is_sharepoint_online_instance:
+...     print(&quot;This is a SharePoint Online backupset.&quot;)
+... else:
+...     print(&quot;This is not a SharePoint Online backupset.&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/backupsets/sharepointbackupset.py#L42-L45" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/backupsets/sharepointbackupset.py#L55-L71" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def is_sharepoint_online_instance(self):
-    &#34;&#34;&#34;getter for SharePoint online instance check&#34;&#34;&#34;
+def is_sharepoint_online_instance(self) -&gt; bool:
+    &#34;&#34;&#34;Check if the backupset is a SharePoint Online instance.
+
+    Returns:
+        True if the backupset name corresponds to a SharePoint Online instance, False otherwise.
+
+    Example:
+        &gt;&gt;&gt; backupset = SharepointBackupset(...)
+        &gt;&gt;&gt; if backupset.is_sharepoint_online_instance:
+        ...     print(&#34;This is a SharePoint Online backupset.&#34;)
+        ... else:
+        ...     print(&#34;This is not a SharePoint Online backupset.&#34;)
+
+    &#34;&#34;&#34;
     return self.backupset_name == &#34;sharepoint online&#34;</code></pre>
 </details>
 </dd>

@@ -28,7 +28,8 @@
 <p>ProxmoxVEInstance: Derived class from VirtualServer
 Base class, representing a
 Proxmox Server instance, and to perform operations on that instance</p>
-<h2 id="proxmoxveinstance">Proxmoxveinstance</h2>
+<p>Proxmoxveinstance
+-----=</p>
 <p><strong>init</strong>(agent_object,instance_name,instance_id)
 &ndash; initialize object of FusionCompute
 Instance object associated with the
@@ -45,7 +46,7 @@ to set Proxmox Specific instance properties</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/proxmox_ve.py#L1-L121" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/proxmox_ve.py#L1-L171" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -91,48 +92,67 @@ ProxmoxVEInstance:
 
 from ..vsinstance import VirtualServerInstance
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ...agent import Agent
+
 
 class ProxmoxVEInstance(VirtualServerInstance):
     &#34;&#34;&#34;
-    Class for representing an Proxmox VE instance of the Virtual Server agent.
+    Represents a Proxmox VE instance managed by the Virtual Server agent.
+
+    This class encapsulates the properties and behaviors specific to a Proxmox VE
+    virtual server instance. It provides mechanisms to initialize the instance with
+    relevant identifiers, retrieve instance properties in both standard and JSON formats,
+    and manage server host and server name attributes.
+
+    Key Features:
+        - Initialization with agent, instance name, and instance ID
+        - Retrieval of instance properties
+        - Retrieval of instance properties in JSON format
+        - Access and modification of server host name via property
+        - Access to server name via property
 
     &#34;&#34;&#34;
 
-    def __init__(self, agent, instance_name, instance_id=None):
-        &#34;&#34;&#34;
-        Initialize the Instance object for the given Virtual Server instance.
+    def __init__(self, agent: &#39;Agent&#39;, instance_name: str, instance_id: str = None) -&gt; None:
+        &#34;&#34;&#34;Initialize a ProxmoxVEInstance object for the specified Virtual Server instance.
 
-            Args:
-                class_object (agent_object,instance_name,instance_id)  --  instance of the
-                                                                            Agent class,
-                                                                            instance name,
-                                                                            instance id
+        Args:
+            agent: An instance of the Agent class representing the associated agent.
+            instance_name: The name of the Proxmox VE instance.
+            instance_id: Optional; the unique identifier for the instance. If not provided, a default or auto-generated ID may be used.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(client_object, &#34;Virtual Server&#34;)
+            &gt;&gt;&gt; proxmox_instance = ProxmoxVEInstance(agent, &#34;Proxmox_Instance_01&#34;, &#34;12345&#34;)
+            &gt;&gt;&gt; # The ProxmoxVEInstance object is now initialized and ready for use
 
         &#34;&#34;&#34;
         super(ProxmoxVEInstance, self).__init__(agent, instance_name, instance_id)
         self._vendor_id = 23 
         self._server_name = [self._virtualserverinstance[&#39;associatedClients&#39;][&#39;memberServers&#39;][0][&#39;client&#39;].get(&#39;clientName&#39;)]
-        self._server_host_name = [self._virtualserverinstance[&#39;associatedClients&#39;][&#39;memberServers&#39;][0][&#39;client&#39;].get(&#39;hostName&#39;)]
+        self._server_host_name = [self._virtualserverinstance[&#39;vmwareVendor&#39;][&#39;virtualCenter&#39;][&#39;domainName&#39;]]
 
+    def _get_instance_properties(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve and update the properties of this Proxmox VE instance.
 
-    def _get_instance_properties(self):
-        &#34;&#34;&#34;
-        Get the properties of this instance
+        This method fetches the current properties of the Proxmox VE instance and updates
+        the internal state accordingly. It raises an exception if the response is empty
+        or if the response indicates a failure.
 
-        Raise:
-            SDK Exception:
-                if response is not empty
-                if response is not success
+        Raises:
+            SDKException: If the response is empty or the request is unsuccessful.
+
         &#34;&#34;&#34;
 
         super(ProxmoxVEInstance, self)._get_instance_properties()
 
-    def _get_instance_properties_json(self):
-        &#34;&#34;&#34;
-        Get the all instance related properties of this subclient.
+    def _get_instance_properties_json(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve all instance-related properties for this subclient.
 
-          Returns:
-               dict - all instance properties put inside a dict
+        Returns:
+            dict: A dictionary containing all properties associated with this instance.
 
         &#34;&#34;&#34;
         instance_json = {
@@ -149,23 +169,47 @@ class ProxmoxVEInstance(VirtualServerInstance):
         return instance_json
 
     @property
-    def server_host_name(self):
-        &#34;&#34;&#34;
-        Getter for server_host_name property
+    def server_host_name(self) -&gt; list:
+        &#34;&#34;&#34;Get the host name of the Proxmox VE server associated with this instance.
+
+        Returns:
+            The server host name as a string.
+
+        Example:
+            &gt;&gt;&gt; proxmox_instance = ProxmoxVEInstance()
+            &gt;&gt;&gt; host_name = proxmox_instance.server_host_name
+            &gt;&gt;&gt; print(f&#34;Proxmox server host: {host_name}&#34;)
+
         &#34;&#34;&#34;
         return self._server_host_name
 
     @server_host_name.setter
-    def server_host_name(self, value):
-        &#34;&#34;&#34;
-        Setter for server_host_name property
+    def server_host_name(self, value: str) -&gt; None:
+        &#34;&#34;&#34;Set the server host name for the ProxmoxVEInstance.
+
+        Args:
+            value: The new host name to assign to the server.
+
+        Example:
+            &gt;&gt;&gt; instance = ProxmoxVEInstance()
+            &gt;&gt;&gt; instance.server_host_name = &#34;proxmox01.example.com&#34;  # Use assignment for property setter
+            &gt;&gt;&gt; # The server host name is now set to &#34;proxmox01.example.com&#34;
+
         &#34;&#34;&#34;
         self._server_host_name = value
 
     @property
-    def server_name(self):
-        &#34;&#34;&#34;
-        Getter for the server_name property
+    def server_name(self) -&gt; list:
+        &#34;&#34;&#34;Get the name of the Proxmox VE server associated with this instance.
+
+        Returns:
+            The server name as a list.
+
+        Example:
+            &gt;&gt;&gt; instance = ProxmoxVEInstance()
+            &gt;&gt;&gt; name = instance.server_name  # Access the server name property
+            &gt;&gt;&gt; print(f&#34;Proxmox VE server name: {name}&#34;)
+
         &#34;&#34;&#34;
         return self._server_name</code></pre>
 </details>
@@ -181,63 +225,98 @@ class ProxmoxVEInstance(VirtualServerInstance):
 <dl>
 <dt id="cvpysdk.instances.virtualserver.proxmox_ve.ProxmoxVEInstance"><code class="flex name class">
 <span>class <span class="ident">ProxmoxVEInstance</span></span>
-<span>(</span><span>agent, instance_name, instance_id=None)</span>
+<span>(</span><span>agent: Agent, instance_name: str, instance_id: str = None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for representing an Proxmox VE instance of the Virtual Server agent.</p>
-<p>Initialize the Instance object for the given Virtual Server instance.</p>
-<pre><code>Args:
-    class_object (agent_object,instance_name,instance_id)  --  instance of the
-                                                                Agent class,
-                                                                instance name,
-                                                                instance id
+<div class="desc"><p>Represents a Proxmox VE instance managed by the Virtual Server agent.</p>
+<p>This class encapsulates the properties and behaviors specific to a Proxmox VE
+virtual server instance. It provides mechanisms to initialize the instance with
+relevant identifiers, retrieve instance properties in both standard and JSON formats,
+and manage server host and server name attributes.</p>
+<p>Key Features:
+- Initialization with agent, instance name, and instance ID
+- Retrieval of instance properties
+- Retrieval of instance properties in JSON format
+- Access and modification of server host name via property
+- Access to server name via property</p>
+<p>Initialize a ProxmoxVEInstance object for the specified Virtual Server instance.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>agent</code></strong></dt>
+<dd>An instance of the Agent class representing the associated agent.</dd>
+<dt><strong><code>instance_name</code></strong></dt>
+<dd>The name of the Proxmox VE instance.</dd>
+<dt><strong><code>instance_id</code></strong></dt>
+<dd>Optional; the unique identifier for the instance. If not provided, a default or auto-generated ID may be used.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; agent = Agent(client_object, &quot;Virtual Server&quot;)
+&gt;&gt;&gt; proxmox_instance = ProxmoxVEInstance(agent, &quot;Proxmox_Instance_01&quot;, &quot;12345&quot;)
+&gt;&gt;&gt; # The ProxmoxVEInstance object is now initialized and ready for use
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/proxmox_ve.py#L46-L121" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/proxmox_ve.py#L50-L171" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ProxmoxVEInstance(VirtualServerInstance):
     &#34;&#34;&#34;
-    Class for representing an Proxmox VE instance of the Virtual Server agent.
+    Represents a Proxmox VE instance managed by the Virtual Server agent.
+
+    This class encapsulates the properties and behaviors specific to a Proxmox VE
+    virtual server instance. It provides mechanisms to initialize the instance with
+    relevant identifiers, retrieve instance properties in both standard and JSON formats,
+    and manage server host and server name attributes.
+
+    Key Features:
+        - Initialization with agent, instance name, and instance ID
+        - Retrieval of instance properties
+        - Retrieval of instance properties in JSON format
+        - Access and modification of server host name via property
+        - Access to server name via property
 
     &#34;&#34;&#34;
 
-    def __init__(self, agent, instance_name, instance_id=None):
-        &#34;&#34;&#34;
-        Initialize the Instance object for the given Virtual Server instance.
+    def __init__(self, agent: &#39;Agent&#39;, instance_name: str, instance_id: str = None) -&gt; None:
+        &#34;&#34;&#34;Initialize a ProxmoxVEInstance object for the specified Virtual Server instance.
 
-            Args:
-                class_object (agent_object,instance_name,instance_id)  --  instance of the
-                                                                            Agent class,
-                                                                            instance name,
-                                                                            instance id
+        Args:
+            agent: An instance of the Agent class representing the associated agent.
+            instance_name: The name of the Proxmox VE instance.
+            instance_id: Optional; the unique identifier for the instance. If not provided, a default or auto-generated ID may be used.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(client_object, &#34;Virtual Server&#34;)
+            &gt;&gt;&gt; proxmox_instance = ProxmoxVEInstance(agent, &#34;Proxmox_Instance_01&#34;, &#34;12345&#34;)
+            &gt;&gt;&gt; # The ProxmoxVEInstance object is now initialized and ready for use
 
         &#34;&#34;&#34;
         super(ProxmoxVEInstance, self).__init__(agent, instance_name, instance_id)
         self._vendor_id = 23 
         self._server_name = [self._virtualserverinstance[&#39;associatedClients&#39;][&#39;memberServers&#39;][0][&#39;client&#39;].get(&#39;clientName&#39;)]
-        self._server_host_name = [self._virtualserverinstance[&#39;associatedClients&#39;][&#39;memberServers&#39;][0][&#39;client&#39;].get(&#39;hostName&#39;)]
+        self._server_host_name = [self._virtualserverinstance[&#39;vmwareVendor&#39;][&#39;virtualCenter&#39;][&#39;domainName&#39;]]
 
+    def _get_instance_properties(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve and update the properties of this Proxmox VE instance.
 
-    def _get_instance_properties(self):
-        &#34;&#34;&#34;
-        Get the properties of this instance
+        This method fetches the current properties of the Proxmox VE instance and updates
+        the internal state accordingly. It raises an exception if the response is empty
+        or if the response indicates a failure.
 
-        Raise:
-            SDK Exception:
-                if response is not empty
-                if response is not success
+        Raises:
+            SDKException: If the response is empty or the request is unsuccessful.
+
         &#34;&#34;&#34;
 
         super(ProxmoxVEInstance, self)._get_instance_properties()
 
-    def _get_instance_properties_json(self):
-        &#34;&#34;&#34;
-        Get the all instance related properties of this subclient.
+    def _get_instance_properties_json(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve all instance-related properties for this subclient.
 
-          Returns:
-               dict - all instance properties put inside a dict
+        Returns:
+            dict: A dictionary containing all properties associated with this instance.
 
         &#34;&#34;&#34;
         instance_json = {
@@ -254,23 +333,47 @@ class ProxmoxVEInstance(VirtualServerInstance):
         return instance_json
 
     @property
-    def server_host_name(self):
-        &#34;&#34;&#34;
-        Getter for server_host_name property
+    def server_host_name(self) -&gt; list:
+        &#34;&#34;&#34;Get the host name of the Proxmox VE server associated with this instance.
+
+        Returns:
+            The server host name as a string.
+
+        Example:
+            &gt;&gt;&gt; proxmox_instance = ProxmoxVEInstance()
+            &gt;&gt;&gt; host_name = proxmox_instance.server_host_name
+            &gt;&gt;&gt; print(f&#34;Proxmox server host: {host_name}&#34;)
+
         &#34;&#34;&#34;
         return self._server_host_name
 
     @server_host_name.setter
-    def server_host_name(self, value):
-        &#34;&#34;&#34;
-        Setter for server_host_name property
+    def server_host_name(self, value: str) -&gt; None:
+        &#34;&#34;&#34;Set the server host name for the ProxmoxVEInstance.
+
+        Args:
+            value: The new host name to assign to the server.
+
+        Example:
+            &gt;&gt;&gt; instance = ProxmoxVEInstance()
+            &gt;&gt;&gt; instance.server_host_name = &#34;proxmox01.example.com&#34;  # Use assignment for property setter
+            &gt;&gt;&gt; # The server host name is now set to &#34;proxmox01.example.com&#34;
+
         &#34;&#34;&#34;
         self._server_host_name = value
 
     @property
-    def server_name(self):
-        &#34;&#34;&#34;
-        Getter for the server_name property
+    def server_name(self) -&gt; list:
+        &#34;&#34;&#34;Get the name of the Proxmox VE server associated with this instance.
+
+        Returns:
+            The server name as a list.
+
+        Example:
+            &gt;&gt;&gt; instance = ProxmoxVEInstance()
+            &gt;&gt;&gt; name = instance.server_name  # Access the server name property
+            &gt;&gt;&gt; print(f&#34;Proxmox VE server name: {name}&#34;)
+
         &#34;&#34;&#34;
         return self._server_name</code></pre>
 </details>
@@ -281,34 +384,68 @@ class ProxmoxVEInstance(VirtualServerInstance):
 </ul>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.instances.virtualserver.proxmox_ve.ProxmoxVEInstance.server_host_name"><code class="name">var <span class="ident">server_host_name</span></code></dt>
+<dt id="cvpysdk.instances.virtualserver.proxmox_ve.ProxmoxVEInstance.server_host_name"><code class="name">var <span class="ident">server_host_name</span> : list</code></dt>
 <dd>
-<div class="desc"><p>Getter for server_host_name property</p></div>
+<div class="desc"><p>Get the host name of the Proxmox VE server associated with this instance.</p>
+<p>Returns
+-----=
+The server host name as a string.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; proxmox_instance = ProxmoxVEInstance()
+&gt;&gt;&gt; host_name = proxmox_instance.server_host_name
+&gt;&gt;&gt; print(f&quot;Proxmox server host: {host_name}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/proxmox_ve.py#L102-L107" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/proxmox_ve.py#L125-L139" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def server_host_name(self):
-    &#34;&#34;&#34;
-    Getter for server_host_name property
+def server_host_name(self) -&gt; list:
+    &#34;&#34;&#34;Get the host name of the Proxmox VE server associated with this instance.
+
+    Returns:
+        The server host name as a string.
+
+    Example:
+        &gt;&gt;&gt; proxmox_instance = ProxmoxVEInstance()
+        &gt;&gt;&gt; host_name = proxmox_instance.server_host_name
+        &gt;&gt;&gt; print(f&#34;Proxmox server host: {host_name}&#34;)
+
     &#34;&#34;&#34;
     return self._server_host_name</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.virtualserver.proxmox_ve.ProxmoxVEInstance.server_name"><code class="name">var <span class="ident">server_name</span></code></dt>
+<dt id="cvpysdk.instances.virtualserver.proxmox_ve.ProxmoxVEInstance.server_name"><code class="name">var <span class="ident">server_name</span> : list</code></dt>
 <dd>
-<div class="desc"><p>Getter for the server_name property</p></div>
+<div class="desc"><p>Get the name of the Proxmox VE server associated with this instance.</p>
+<p>Returns
+-----=
+The server name as a list.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; instance = ProxmoxVEInstance()
+&gt;&gt;&gt; name = instance.server_name  # Access the server name property
+&gt;&gt;&gt; print(f&quot;Proxmox VE server name: {name}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/proxmox_ve.py#L116-L121" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/proxmox_ve.py#L157-L171" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def server_name(self):
-    &#34;&#34;&#34;
-    Getter for the server_name property
+def server_name(self) -&gt; list:
+    &#34;&#34;&#34;Get the name of the Proxmox VE server associated with this instance.
+
+    Returns:
+        The server name as a list.
+
+    Example:
+        &gt;&gt;&gt; instance = ProxmoxVEInstance()
+        &gt;&gt;&gt; name = instance.server_name  # Access the server name property
+        &gt;&gt;&gt; print(f&#34;Proxmox VE server name: {name}&#34;)
+
     &#34;&#34;&#34;
     return self._server_name</code></pre>
 </details>

@@ -25,7 +25,8 @@
 <section id="section-intro">
 <p>File for operating on an AD agent Backupset.</p>
 <p>adbackupset is the only class defined in this file.</p>
-<h2 id="class">Class</h2>
+<p>Class
+-----=</p>
 <p>ADBackupset:
 Derived class from Backuset Base class, representing a
 AD agent backupset, and to perform operations on that backupset</p>
@@ -38,7 +39,7 @@ AD agent backupset, and to perform operations on that backupset</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/backupsets/adbackupset.py#L1-L92" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/backupsets/adbackupset.py#L1-L118" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -82,36 +83,60 @@ from __future__ import unicode_literals
 
 from ..backupset import Backupset
 from ..exception import SDKException
+from typing import Any, Optional, List
 
 
 class ADBackupset(Backupset):
-    &#34;&#34;&#34; AD agent backupset class &#34;&#34;&#34;
+    &#34;&#34;&#34;
+    AD agent backupset class for managing Active Directory backupsets.
+
+    This class provides specialized functionality for handling backupsets
+    related to Active Directory agents. It includes methods to verify and
+    manage subclients within a backupset, ensuring that subclient configurations
+    such as name, storage policy, and content are properly set up or updated.
+    The class also supports deletion of existing subclients as needed.
+
+    Key Features:
+        - Verification and management of subclients within an AD backupset
+        - Configuration of subclient properties including name, storage policy, and content
+        - Support for deletion of existing subclients during setup
+        - Inherits core backupset management capabilities
+
+    &#34;&#34;&#34;
 
     def check_subclient(self,
-                        backupset_ins,
-                        subclientname,
-                        storagepolicy=None,
-                        subclientcontent=None,
-                        deleteexist=False):
-        &#34;&#34;&#34;check if the subclient exsit, will create new one if not found
+                        backupset_ins: Any,
+                        subclientname: str,
+                        storagepolicy: Optional[str] = None,
+                        subclientcontent: Optional[List[str]] = None,
+                        deleteexist: bool = False) -&gt; Any:
+        &#34;&#34;&#34;Check if the specified subclient exists, and create a new one if not found.
+
+        This method verifies the existence of a subclient within the provided backupset instance.
+        If the subclient does not exist, it creates a new subclient with the specified storage policy
+        and content. Optionally, it can delete the existing subclient if requested.
 
         Args:
+            backupset_ins: The backupset instance containing subclients.
+            subclientname: Name of the subclient to check or create.
+            storagepolicy: Optional name of the storage policy to assign to the new subclient.
+            subclientcontent: Optional list of content paths for the subclient. Each element should be a path string.
+            deleteexist: If True, deletes the existing subclient before creating a new one.
 
-            backupset_ins        (instance)       inherite backupset instance
+        Returns:
+            The Subclient instance corresponding to the specified subclient name.
 
-            subclientname        (string)        subclient name
+        Example:
+            &gt;&gt;&gt; backupset = Backupset(...)
+            &gt;&gt;&gt; subclient = ad_backupset.check_subclient(
+            ...     backupset_ins=backupset,
+            ...     subclientname=&#34;AD_Subclient&#34;,
+            ...     storagepolicy=&#34;DefaultPolicy&#34;,
+            ...     subclientcontent=[&#34;/AD/Users&#34;, &#34;/AD/Groups&#34;],
+            ...     deleteexist=True
+            ... )
+            &gt;&gt;&gt; print(f&#34;Subclient created: {subclient}&#34;)
 
-            storagepolicy        (string)        storage policy name
-
-            subclinetconet        (list)        Ad subclinet content, each element start with path:
-
-            deleteexist            (bool)        if subclient exist, delete or keep existing one
-
-        Return:
-            object     Subclient instance
-
-        Raise:
-            None
         &#34;&#34;&#34;
         # add detail for the parameters
         subclients = backupset_ins.subclients
@@ -145,60 +170,93 @@ class ADBackupset(Backupset):
 <dl>
 <dt id="cvpysdk.backupsets.adbackupset.ADBackupset"><code class="flex name class">
 <span>class <span class="ident">ADBackupset</span></span>
-<span>(</span><span>instance_object, backupset_name, backupset_id=None)</span>
+<span>(</span><span>instance_object: object, backupset_name: str, backupset_id: str = None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>AD agent backupset class </p>
-<p>Initialise the backupset object.</p>
-<h2 id="args">Args</h2>
-<p>instance_object
-(object)
-&ndash;
-instance of the Instance class</p>
-<p>backupset_name
-(str)
-&ndash;
-name of the backupset</p>
-<p>backupset_id
-(str)
-&ndash;
-id of the backupset
-default: None</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Backupset class</p></div>
+<div class="desc"><p>AD agent backupset class for managing Active Directory backupsets.</p>
+<p>This class provides specialized functionality for handling backupsets
+related to Active Directory agents. It includes methods to verify and
+manage subclients within a backupset, ensuring that subclient configurations
+such as name, storage policy, and content are properly set up or updated.
+The class also supports deletion of existing subclients as needed.</p>
+<p>Key Features:
+- Verification and management of subclients within an AD backupset
+- Configuration of subclient properties including name, storage policy, and content
+- Support for deletion of existing subclients during setup
+- Inherits core backupset management capabilities</p>
+<p>Initialize a Backupset object.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>instance_object</code></strong></dt>
+<dd>An instance of the Instance class to which this backupset belongs.</dd>
+<dt><strong><code>backupset_name</code></strong></dt>
+<dd>The name of the backupset.</dd>
+<dt><strong><code>backupset_id</code></strong></dt>
+<dd>The unique identifier for the backupset. If not provided, it will be determined automatically.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; instance = Instance(commcell_object, &quot;FileSystem&quot;)
+&gt;&gt;&gt; backupset = Backupset(instance, &quot;defaultBackupSet&quot;)
+&gt;&gt;&gt; print(f&quot;Backupset created: {backupset}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/backupsets/adbackupset.py#L45-L92" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/backupsets/adbackupset.py#L46-L118" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ADBackupset(Backupset):
-    &#34;&#34;&#34; AD agent backupset class &#34;&#34;&#34;
+    &#34;&#34;&#34;
+    AD agent backupset class for managing Active Directory backupsets.
+
+    This class provides specialized functionality for handling backupsets
+    related to Active Directory agents. It includes methods to verify and
+    manage subclients within a backupset, ensuring that subclient configurations
+    such as name, storage policy, and content are properly set up or updated.
+    The class also supports deletion of existing subclients as needed.
+
+    Key Features:
+        - Verification and management of subclients within an AD backupset
+        - Configuration of subclient properties including name, storage policy, and content
+        - Support for deletion of existing subclients during setup
+        - Inherits core backupset management capabilities
+
+    &#34;&#34;&#34;
 
     def check_subclient(self,
-                        backupset_ins,
-                        subclientname,
-                        storagepolicy=None,
-                        subclientcontent=None,
-                        deleteexist=False):
-        &#34;&#34;&#34;check if the subclient exsit, will create new one if not found
+                        backupset_ins: Any,
+                        subclientname: str,
+                        storagepolicy: Optional[str] = None,
+                        subclientcontent: Optional[List[str]] = None,
+                        deleteexist: bool = False) -&gt; Any:
+        &#34;&#34;&#34;Check if the specified subclient exists, and create a new one if not found.
+
+        This method verifies the existence of a subclient within the provided backupset instance.
+        If the subclient does not exist, it creates a new subclient with the specified storage policy
+        and content. Optionally, it can delete the existing subclient if requested.
 
         Args:
+            backupset_ins: The backupset instance containing subclients.
+            subclientname: Name of the subclient to check or create.
+            storagepolicy: Optional name of the storage policy to assign to the new subclient.
+            subclientcontent: Optional list of content paths for the subclient. Each element should be a path string.
+            deleteexist: If True, deletes the existing subclient before creating a new one.
 
-            backupset_ins        (instance)       inherite backupset instance
+        Returns:
+            The Subclient instance corresponding to the specified subclient name.
 
-            subclientname        (string)        subclient name
+        Example:
+            &gt;&gt;&gt; backupset = Backupset(...)
+            &gt;&gt;&gt; subclient = ad_backupset.check_subclient(
+            ...     backupset_ins=backupset,
+            ...     subclientname=&#34;AD_Subclient&#34;,
+            ...     storagepolicy=&#34;DefaultPolicy&#34;,
+            ...     subclientcontent=[&#34;/AD/Users&#34;, &#34;/AD/Groups&#34;],
+            ...     deleteexist=True
+            ... )
+            &gt;&gt;&gt; print(f&#34;Subclient created: {subclient}&#34;)
 
-            storagepolicy        (string)        storage policy name
-
-            subclinetconet        (list)        Ad subclinet content, each element start with path:
-
-            deleteexist            (bool)        if subclient exist, delete or keep existing one
-
-        Return:
-            object     Subclient instance
-
-        Raise:
-            None
         &#34;&#34;&#34;
         # add detail for the parameters
         subclients = backupset_ins.subclients
@@ -227,61 +285,80 @@ default: None</p>
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.backupsets.adbackupset.ADBackupset.check_subclient"><code class="name flex">
-<span>def <span class="ident">check_subclient</span></span>(<span>self, backupset_ins, subclientname, storagepolicy=None, subclientcontent=None, deleteexist=False)</span>
+<span>def <span class="ident">check_subclient</span></span>(<span>self, backupset_ins: Any, subclientname: str, storagepolicy: Optional[str] = None, subclientcontent: Optional[List[str]] = None, deleteexist: bool = False) ‑> Any</span>
 </code></dt>
 <dd>
-<div class="desc"><p>check if the subclient exsit, will create new one if not found</p>
-<h2 id="args">Args</h2>
-<p>backupset_ins
-(instance)
-inherite backupset instance</p>
-<p>subclientname
-(string)
-subclient name</p>
-<p>storagepolicy
-(string)
-storage policy name</p>
-<p>subclinetconet
-(list)
-Ad subclinet content, each element start with path:</p>
-<p>deleteexist
-(bool)
-if subclient exist, delete or keep existing one</p>
-<h2 id="return">Return</h2>
-<p>object
-Subclient instance</p>
-<h2 id="raise">Raise</h2>
-<p>None</p></div>
+<div class="desc"><p>Check if the specified subclient exists, and create a new one if not found.</p>
+<p>This method verifies the existence of a subclient within the provided backupset instance.
+If the subclient does not exist, it creates a new subclient with the specified storage policy
+and content. Optionally, it can delete the existing subclient if requested.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>backupset_ins</code></strong></dt>
+<dd>The backupset instance containing subclients.</dd>
+<dt><strong><code>subclientname</code></strong></dt>
+<dd>Name of the subclient to check or create.</dd>
+<dt><strong><code>storagepolicy</code></strong></dt>
+<dd>Optional name of the storage policy to assign to the new subclient.</dd>
+<dt><strong><code>subclientcontent</code></strong></dt>
+<dd>Optional list of content paths for the subclient. Each element should be a path string.</dd>
+<dt><strong><code>deleteexist</code></strong></dt>
+<dd>If True, deletes the existing subclient before creating a new one.</dd>
+</dl>
+<p>Returns
+-----=
+The Subclient instance corresponding to the specified subclient name.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; backupset = Backupset(...)
+&gt;&gt;&gt; subclient = ad_backupset.check_subclient(
+...     backupset_ins=backupset,
+...     subclientname=&quot;AD_Subclient&quot;,
+...     storagepolicy=&quot;DefaultPolicy&quot;,
+...     subclientcontent=[&quot;/AD/Users&quot;, &quot;/AD/Groups&quot;],
+...     deleteexist=True
+... )
+&gt;&gt;&gt; print(f&quot;Subclient created: {subclient}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/backupsets/adbackupset.py#L48-L92" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/backupsets/adbackupset.py#L65-L118" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def check_subclient(self,
-                    backupset_ins,
-                    subclientname,
-                    storagepolicy=None,
-                    subclientcontent=None,
-                    deleteexist=False):
-    &#34;&#34;&#34;check if the subclient exsit, will create new one if not found
+                    backupset_ins: Any,
+                    subclientname: str,
+                    storagepolicy: Optional[str] = None,
+                    subclientcontent: Optional[List[str]] = None,
+                    deleteexist: bool = False) -&gt; Any:
+    &#34;&#34;&#34;Check if the specified subclient exists, and create a new one if not found.
+
+    This method verifies the existence of a subclient within the provided backupset instance.
+    If the subclient does not exist, it creates a new subclient with the specified storage policy
+    and content. Optionally, it can delete the existing subclient if requested.
 
     Args:
+        backupset_ins: The backupset instance containing subclients.
+        subclientname: Name of the subclient to check or create.
+        storagepolicy: Optional name of the storage policy to assign to the new subclient.
+        subclientcontent: Optional list of content paths for the subclient. Each element should be a path string.
+        deleteexist: If True, deletes the existing subclient before creating a new one.
 
-        backupset_ins        (instance)       inherite backupset instance
+    Returns:
+        The Subclient instance corresponding to the specified subclient name.
 
-        subclientname        (string)        subclient name
+    Example:
+        &gt;&gt;&gt; backupset = Backupset(...)
+        &gt;&gt;&gt; subclient = ad_backupset.check_subclient(
+        ...     backupset_ins=backupset,
+        ...     subclientname=&#34;AD_Subclient&#34;,
+        ...     storagepolicy=&#34;DefaultPolicy&#34;,
+        ...     subclientcontent=[&#34;/AD/Users&#34;, &#34;/AD/Groups&#34;],
+        ...     deleteexist=True
+        ... )
+        &gt;&gt;&gt; print(f&#34;Subclient created: {subclient}&#34;)
 
-        storagepolicy        (string)        storage policy name
-
-        subclinetconet        (list)        Ad subclinet content, each element start with path:
-
-        deleteexist            (bool)        if subclient exist, delete or keep existing one
-
-    Return:
-        object     Subclient instance
-
-    Raise:
-        None
     &#34;&#34;&#34;
     # add detail for the parameters
     subclients = backupset_ins.subclients

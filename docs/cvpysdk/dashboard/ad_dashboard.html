@@ -27,8 +27,9 @@
 <p>AdDashboard class is defined in this file.</p>
 <p>AdDashboard:
 Class for performing Ad agent dashboard operation.</p>
-<h2 id="class">Class</h2>
-<p>AdDashboard :</p>
+<p>Class
+-----=
+AdDashboard :</p>
 <pre><code>__init__(self,commcell_object)         --    initialize object of AdDashboard class associated with the commcell.
 
 get_ad_dashboard_details               --    get the dashboard details from Dashboard API.
@@ -59,7 +60,7 @@ _get_application_panel                      --    return application panel detai
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/dashboard/ad_dashboard.py#L1-L362" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/dashboard/ad_dashboard.py#L1-L498" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 # pylint: disable=R1705, R0205
@@ -122,17 +123,38 @@ from cvpysdk.exception import SDKException
 
 class AdDashboard(object):
     &#34;&#34;&#34;
-    Class for AD Dashboard Details
+    AD Dashboard management class for monitoring and retrieving Active Directory details.
+
+    This class provides an interface to access and manage various aspects of the AD Dashboard,
+    including dashboard details, application details, configuration status, domain and tenant information,
+    backup health, data distribution, and application panel data. It is designed to work with a CommCell
+    object for integration with the underlying infrastructure.
+
+    Key Features:
+        - Retrieve AD dashboard details
+        - Access AD applications details
+        - Check if the dashboard is configured
+        - Get domains and tenants information
+        - Monitor backup health status
+        - Analyze data distribution across AD entities
+        - View application panel information
+        - Properties for easy access to configuration, domains/tenants, backup health, data distribution, and application panel
+
     &#34;&#34;&#34;
 
-    def __init__(self,commcell_object):
-        &#34;&#34;&#34;Initialize object of the Clients class.
+    def __init__(self, commcell_object: object) -&gt; None:
+        &#34;&#34;&#34;Initialize an instance of the AdDashboard class.
 
-            Args:
-                commcell_object (object)  --  instance of the Commcell class
+        Args:
+            commcell_object: An instance of the Commcell class used to establish a connection 
+                and interact with the Commcell environment.
 
-            Returns:
-                object - instance of the Clients class
+        Example:
+            &gt;&gt;&gt; from cvpysdk.commcell import Commcell
+            &gt;&gt;&gt; commcell = Commcell(&#39;commcell_host&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; ad_dashboard = AdDashboard(commcell)
+            &gt;&gt;&gt; print(&#34;AdDashboard instance created successfully&#34;)
+
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
         self._cvpysdk_object = commcell_object._cvpysdk_object
@@ -142,15 +164,24 @@ class AdDashboard(object):
         self.apps_response = None
         self.apps_totalentities = None
 
-    def get_ad_dashboard_details(self):
-        &#34;&#34;&#34;
-        REST API call to get AD Dashboard details in the commcell
+    def get_ad_dashboard_details(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve Active Directory (AD) Dashboard details from the Commcell via REST API.
+
+        This method makes a REST API call to fetch the AD Dashboard details associated with the Commcell.
+        It raises an SDKException if the response is empty or if the API call is unsuccessful.
+
+        Returns:
+            dict: A dictionary containing the AD Dashboard details.
+
         Raises:
-            SDKException:
+            SDKException: If the API response is empty or indicates a failure.
 
-                if response is empty
+        Example:
+            &gt;&gt;&gt; ad_dashboard = AdDashboard(commcell_object)
+            &gt;&gt;&gt; details = ad_dashboard.get_ad_dashboard_details()
+            &gt;&gt;&gt; print(details)
+            &gt;&gt;&gt; # The &#39;details&#39; dictionary contains information about the AD Dashboard
 
-                if response is not success
         &#34;&#34;&#34;
         configured = self._services[&#39;ADDASHBOARD&#39;] + &#39;?slaNumberOfDays=1&#39;
         flag, response = self._cvpysdk_object.make_request(method=&#39;GET&#39;, url=configured)
@@ -161,15 +192,26 @@ class AdDashboard(object):
         else:
             raise SDKException(&#39;Response&#39;, &#39;102&#39;, self._commcell_object._update_response_(response.text))
 
-    def get_ad_apps_details(self):
-        &#34;&#34;&#34;
-        REST API call to get AD APP Listing details in the commcell
+    def get_ad_apps_details(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the Active Directory (AD) application listing details from the Commcell.
+
+        This method performs a REST API call to fetch details about all AD applications configured
+        in the Commcell environment.
+
+        Returns:
+            dict: A dictionary containing details of the AD applications.
+
         Raises:
-            SDKException:
+            SDKException: If the API response is empty or indicates a failure.
 
-                if response is empty
+        Example:
+            &gt;&gt;&gt; ad_dashboard = AdDashboard()
+            &gt;&gt;&gt; ad_apps = ad_dashboard.get_ad_apps_details()
+            &gt;&gt;&gt; print(f&#34;Number of AD applications: {len(ad_apps)}&#34;)
+            &gt;&gt;&gt; # Access details of a specific AD application
+            &gt;&gt;&gt; for app_id, app_info in ad_apps.items():
+            ...     print(f&#34;App ID: {app_id}, Name: {app_info.get(&#39;name&#39;)}&#34;)
 
-                if response is not success
         &#34;&#34;&#34;
         configured = self._services[&#39;ADAPPS&#39;]
         flag, response = self._cvpysdk_object.make_request(method=&#39;GET&#39;, url=configured)
@@ -181,11 +223,21 @@ class AdDashboard(object):
         else:
             raise SDKException(&#39;Response&#39;, &#39;102&#39;, self._commcell_object._update_response_(response.text))
 
-    def _configured(self):
-        &#34;&#34;&#34;
-        Function check both AD and Azure AD are configured
+    def _configured(self) -&gt; dict:
+        &#34;&#34;&#34;Check if both Active Directory (AD) and Azure AD are configured.
+
+        This method verifies the configuration status of both AD and Azure AD by retrieving
+        their configuration values from the Dashboard API and Apps Listing API.
+
         Returns:
-            configure_dict    --  Configuration value of AD and Azure AD from Dashboard API and Apps Listing API as dict
+            dict: A dictionary containing the configuration values of AD and Azure AD.
+
+        Example:
+            &gt;&gt;&gt; dashboard = AdDashboard()
+            &gt;&gt;&gt; config_status = dashboard._configured()
+            &gt;&gt;&gt; print(config_status)
+            {&#39;AD&#39;: True, &#39;AzureAD&#39;: False}
+
         &#34;&#34;&#34;
         configure_dict = {&#34;adconfigure&#34;: self.dashboard_response.get(&#39;agentSummary&#39;, [{}])[0].get(&#39;isConfigured&#39;, None),
                           &#34;aadconfigure&#34;: self.dashboard_response.get(&#39;agentSummary&#39;, [{}])[1].get(&#39;isConfigured&#39;,None),
@@ -206,19 +258,37 @@ class AdDashboard(object):
         return configure_dict
 
     @property
-    def is_configured(self):
-        &#34;&#34;&#34;
+    def is_configured(self) -&gt; dict:
+        &#34;&#34;&#34;Get the configuration values of AD and Azure AD from the Dashboard API and Apps Listing API.
+
         Returns:
-            configure_dict    --  Configuration value of AD and Azure AD from Dashboard API and Apps Listing API as dict
+            dict: A dictionary containing the configuration status and details for Active Directory (AD) and Azure AD.
+
+        Example:
+            &gt;&gt;&gt; dashboard = AdDashboard()
+            &gt;&gt;&gt; config = dashboard.is_configured
+            &gt;&gt;&gt; print(config)
+            {&#39;AD&#39;: {&#39;configured&#39;: True}, &#39;AzureAD&#39;: {&#39;configured&#39;: False}}
+
         &#34;&#34;&#34;
         configure_dict=self._configured()
         return configure_dict
 
-    def _get_domains_and_tenants(self):
-        &#34;&#34;&#34;
-        Function to get number of domains and tenants
+    def _get_domains_and_tenants(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the number of domain controllers and tenants.
+
+        This method fetches information from the Dashboard API and Apps Listing API,
+        returning a dictionary containing the counts of domain controllers and tenants.
+
         Returns:
-            domains_and_tenants_dict    --  Number of domain controllers and tenants from Dashboard API and Apps Listing API as dict
+            dict: A dictionary with the number of domain controllers and tenants.
+
+        Example:
+            &gt;&gt;&gt; ad_dashboard = AdDashboard()
+            &gt;&gt;&gt; result = ad_dashboard._get_domains_and_tenants()
+            &gt;&gt;&gt; print(result)
+            {&#39;domain_controllers&#39;: 5, &#39;tenants&#39;: 3}
+
         &#34;&#34;&#34;
         domains_and_tenants_dict = {
             &#34;total_entities&#34;: self.dashboard_response.get(&#39;solutionSummary&#39;, {}).get(&#39;slaSummary&#39;, {}).get(
@@ -242,18 +312,33 @@ class AdDashboard(object):
         return domains_and_tenants_dict
 
     @property
-    def domains_and_tenants(self):
-        &#34;&#34;&#34;
+    def domains_and_tenants(self) -&gt; dict:
+        &#34;&#34;&#34;Get the number of domain controllers and tenants from the Dashboard API and Apps Listing API.
+
         Returns:
-            domains_and_tenants_dict    --  Number of domain controllers and tenants from Dashboard API and Apps Listing API as dict
+            dict: A dictionary containing the count of domain controllers and tenants as retrieved from the Dashboard API and Apps Listing API.
+
+        Example:
+            &gt;&gt;&gt; ad_dashboard = AdDashboard()
+            &gt;&gt;&gt; result = ad_dashboard.domains_and_tenants
+            &gt;&gt;&gt; print(result)
+            {&#39;domain_controllers&#39;: 5, &#39;tenants&#39;: 3}
+
         &#34;&#34;&#34;
         return self._get_domains_and_tenants()
 
-    def _get_backup_health(self):
-        &#34;&#34;&#34;
-        Function to get backup health panel details
+    def _get_backup_health(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the backup health panel details.
+
         Returns:
-            backup_health_dict    --  Backup health panel details as dict
+            dict: A dictionary containing details about the backup health panel.
+
+        Example:
+            &gt;&gt;&gt; dashboard = AdDashboard()
+            &gt;&gt;&gt; health_info = dashboard._get_backup_health()
+            &gt;&gt;&gt; print(health_info)
+            &gt;&gt;&gt; # Output will be a dictionary with backup health metrics
+
         &#34;&#34;&#34;
         backup_health_dict = {
             &#34;recently_backedup&#34;: self.dashboard_response.get(&#39;solutionSummary&#39;, {}).get(&#39;slaSummary&#39;, {}).get(
@@ -301,19 +386,34 @@ class AdDashboard(object):
         return backup_health_dict
 
     @property
-    def backup_health(self):
-        &#34;&#34;&#34;
+    def backup_health(self) -&gt; dict:
+        &#34;&#34;&#34;Get the backup health panel details as a dictionary.
+
         Returns:
-            backup_health_dict    --  Backup health panel details as dict
+            dict: A dictionary containing details about the backup health panel.
+
+        Example:
+            &gt;&gt;&gt; dashboard = AdDashboard()
+            &gt;&gt;&gt; health_info = dashboard.backup_health
+            &gt;&gt;&gt; print(health_info)
+            &gt;&gt;&gt; # Output will be a dictionary with backup health details
+
         &#34;&#34;&#34;
         return self._get_backup_health()
 
 
-    def _get_data_distribution(self):
-        &#34;&#34;&#34;
-        Function to get data distribution panel details
+    def _get_data_distribution(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the data distribution panel details.
+
         Returns:
-            data_distribution_dict    --  Data distribution details data as dict
+            dict: A dictionary containing data distribution details for the dashboard.
+
+        Example:
+            &gt;&gt;&gt; dashboard = AdDashboard()
+            &gt;&gt;&gt; data_distribution = dashboard._get_data_distribution()
+            &gt;&gt;&gt; print(data_distribution)
+            &gt;&gt;&gt; # Output will be a dictionary with data distribution information
+
         &#34;&#34;&#34;
         data_distribution_dict = {&#34;backup_size&#34;: round((((self.dashboard_response.get(&#39;agentSummary&#39;, [{}])[0].get(&#39;applicationSize&#39;, 0) +
                                                           self.dashboard_response.get(&#39;agentSummary&#39;, [{}])[1].get(&#39;applicationSize&#39;,0))
@@ -336,18 +436,33 @@ class AdDashboard(object):
         return data_distribution_dict
 
     @property
-    def data_distribution(self):
-        &#34;&#34;&#34;
+    def data_distribution(self) -&gt; dict:
+        &#34;&#34;&#34;Get the data distribution details as a dictionary.
+
         Returns:
-            data_distribution_dict    --  Data distribution details data as dict
+            dict: A dictionary containing data distribution details.
+
+        Example:
+            &gt;&gt;&gt; dashboard = AdDashboard()
+            &gt;&gt;&gt; distribution = dashboard.data_distribution
+            &gt;&gt;&gt; print(distribution)
+            {&#39;region1&#39;: 120, &#39;region2&#39;: 340, &#39;region3&#39;: 210}
+
         &#34;&#34;&#34;
         return self._get_data_distribution()
 
-    def _get_application_panel(self):
-        &#34;&#34;&#34;
-        Function to get application panel details
+    def _get_application_panel(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the application panel details for the dashboard.
+
         Returns:
-            application_panel_dict    --  Application panel details as dict
+            dict: A dictionary containing the details of the application panel.
+
+        Example:
+            &gt;&gt;&gt; dashboard = AdDashboard()
+            &gt;&gt;&gt; panel_details = dashboard._get_application_panel()
+            &gt;&gt;&gt; print(panel_details)
+            &gt;&gt;&gt; # Output will be a dictionary with application panel information
+
         &#34;&#34;&#34;
         application_panel_dict = {
             &#34;aad_tenant&#34;: self.dashboard_response.get(&#39;agentSummary&#39;, [{}])[1].get(&#39;slaSummary&#39;, {}).get(&#39;totalEntities&#39;),
@@ -417,10 +532,18 @@ class AdDashboard(object):
         return application_panel_dict
 
     @property
-    def application_panel(self):
-        &#34;&#34;&#34;
+    def application_panel(self) -&gt; dict:
+        &#34;&#34;&#34;Get the application panel details as a dictionary.
+
         Returns:
-            application_panel_dict    --  Application panel details as dict
+            dict: A dictionary containing details of the application panel.
+
+        Example:
+            &gt;&gt;&gt; dashboard = AdDashboard()
+            &gt;&gt;&gt; panel_details = dashboard.application_panel
+            &gt;&gt;&gt; print(panel_details)
+            &gt;&gt;&gt; # Output will be a dictionary with application panel information
+
         &#34;&#34;&#34;
         return self._get_application_panel()</code></pre>
 </details>
@@ -436,35 +559,77 @@ class AdDashboard(object):
 <dl>
 <dt id="cvpysdk.dashboard.ad_dashboard.AdDashboard"><code class="flex name class">
 <span>class <span class="ident">AdDashboard</span></span>
-<span>(</span><span>commcell_object)</span>
+<span>(</span><span>commcell_object: object)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for AD Dashboard Details</p>
-<p>Initialize object of the Clients class.</p>
-<h2 id="args">Args</h2>
-<p>commcell_object (object)
-&ndash;
-instance of the Commcell class</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Clients class</p></div>
+<div class="desc"><p>AD Dashboard management class for monitoring and retrieving Active Directory details.</p>
+<p>This class provides an interface to access and manage various aspects of the AD Dashboard,
+including dashboard details, application details, configuration status, domain and tenant information,
+backup health, data distribution, and application panel data. It is designed to work with a CommCell
+object for integration with the underlying infrastructure.</p>
+<p>Key Features:
+- Retrieve AD dashboard details
+- Access AD applications details
+- Check if the dashboard is configured
+- Get domains and tenants information
+- Monitor backup health status
+- Analyze data distribution across AD entities
+- View application panel information
+- Properties for easy access to configuration, domains/tenants, backup health, data distribution, and application panel</p>
+<p>Initialize an instance of the AdDashboard class.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>commcell_object</code></strong></dt>
+<dd>An instance of the Commcell class used to establish a connection
+and interact with the Commcell environment.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; from cvpysdk.commcell import Commcell
+&gt;&gt;&gt; commcell = Commcell('commcell_host', 'username', 'password')
+&gt;&gt;&gt; ad_dashboard = AdDashboard(commcell)
+&gt;&gt;&gt; print(&quot;AdDashboard instance created successfully&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/dashboard/ad_dashboard.py#L60-L362" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/dashboard/ad_dashboard.py#L60-L498" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class AdDashboard(object):
     &#34;&#34;&#34;
-    Class for AD Dashboard Details
+    AD Dashboard management class for monitoring and retrieving Active Directory details.
+
+    This class provides an interface to access and manage various aspects of the AD Dashboard,
+    including dashboard details, application details, configuration status, domain and tenant information,
+    backup health, data distribution, and application panel data. It is designed to work with a CommCell
+    object for integration with the underlying infrastructure.
+
+    Key Features:
+        - Retrieve AD dashboard details
+        - Access AD applications details
+        - Check if the dashboard is configured
+        - Get domains and tenants information
+        - Monitor backup health status
+        - Analyze data distribution across AD entities
+        - View application panel information
+        - Properties for easy access to configuration, domains/tenants, backup health, data distribution, and application panel
+
     &#34;&#34;&#34;
 
-    def __init__(self,commcell_object):
-        &#34;&#34;&#34;Initialize object of the Clients class.
+    def __init__(self, commcell_object: object) -&gt; None:
+        &#34;&#34;&#34;Initialize an instance of the AdDashboard class.
 
-            Args:
-                commcell_object (object)  --  instance of the Commcell class
+        Args:
+            commcell_object: An instance of the Commcell class used to establish a connection 
+                and interact with the Commcell environment.
 
-            Returns:
-                object - instance of the Clients class
+        Example:
+            &gt;&gt;&gt; from cvpysdk.commcell import Commcell
+            &gt;&gt;&gt; commcell = Commcell(&#39;commcell_host&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; ad_dashboard = AdDashboard(commcell)
+            &gt;&gt;&gt; print(&#34;AdDashboard instance created successfully&#34;)
+
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
         self._cvpysdk_object = commcell_object._cvpysdk_object
@@ -474,15 +639,24 @@ instance of the Commcell class</p>
         self.apps_response = None
         self.apps_totalentities = None
 
-    def get_ad_dashboard_details(self):
-        &#34;&#34;&#34;
-        REST API call to get AD Dashboard details in the commcell
+    def get_ad_dashboard_details(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve Active Directory (AD) Dashboard details from the Commcell via REST API.
+
+        This method makes a REST API call to fetch the AD Dashboard details associated with the Commcell.
+        It raises an SDKException if the response is empty or if the API call is unsuccessful.
+
+        Returns:
+            dict: A dictionary containing the AD Dashboard details.
+
         Raises:
-            SDKException:
+            SDKException: If the API response is empty or indicates a failure.
 
-                if response is empty
+        Example:
+            &gt;&gt;&gt; ad_dashboard = AdDashboard(commcell_object)
+            &gt;&gt;&gt; details = ad_dashboard.get_ad_dashboard_details()
+            &gt;&gt;&gt; print(details)
+            &gt;&gt;&gt; # The &#39;details&#39; dictionary contains information about the AD Dashboard
 
-                if response is not success
         &#34;&#34;&#34;
         configured = self._services[&#39;ADDASHBOARD&#39;] + &#39;?slaNumberOfDays=1&#39;
         flag, response = self._cvpysdk_object.make_request(method=&#39;GET&#39;, url=configured)
@@ -493,15 +667,26 @@ instance of the Commcell class</p>
         else:
             raise SDKException(&#39;Response&#39;, &#39;102&#39;, self._commcell_object._update_response_(response.text))
 
-    def get_ad_apps_details(self):
-        &#34;&#34;&#34;
-        REST API call to get AD APP Listing details in the commcell
+    def get_ad_apps_details(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the Active Directory (AD) application listing details from the Commcell.
+
+        This method performs a REST API call to fetch details about all AD applications configured
+        in the Commcell environment.
+
+        Returns:
+            dict: A dictionary containing details of the AD applications.
+
         Raises:
-            SDKException:
+            SDKException: If the API response is empty or indicates a failure.
 
-                if response is empty
+        Example:
+            &gt;&gt;&gt; ad_dashboard = AdDashboard()
+            &gt;&gt;&gt; ad_apps = ad_dashboard.get_ad_apps_details()
+            &gt;&gt;&gt; print(f&#34;Number of AD applications: {len(ad_apps)}&#34;)
+            &gt;&gt;&gt; # Access details of a specific AD application
+            &gt;&gt;&gt; for app_id, app_info in ad_apps.items():
+            ...     print(f&#34;App ID: {app_id}, Name: {app_info.get(&#39;name&#39;)}&#34;)
 
-                if response is not success
         &#34;&#34;&#34;
         configured = self._services[&#39;ADAPPS&#39;]
         flag, response = self._cvpysdk_object.make_request(method=&#39;GET&#39;, url=configured)
@@ -513,11 +698,21 @@ instance of the Commcell class</p>
         else:
             raise SDKException(&#39;Response&#39;, &#39;102&#39;, self._commcell_object._update_response_(response.text))
 
-    def _configured(self):
-        &#34;&#34;&#34;
-        Function check both AD and Azure AD are configured
+    def _configured(self) -&gt; dict:
+        &#34;&#34;&#34;Check if both Active Directory (AD) and Azure AD are configured.
+
+        This method verifies the configuration status of both AD and Azure AD by retrieving
+        their configuration values from the Dashboard API and Apps Listing API.
+
         Returns:
-            configure_dict    --  Configuration value of AD and Azure AD from Dashboard API and Apps Listing API as dict
+            dict: A dictionary containing the configuration values of AD and Azure AD.
+
+        Example:
+            &gt;&gt;&gt; dashboard = AdDashboard()
+            &gt;&gt;&gt; config_status = dashboard._configured()
+            &gt;&gt;&gt; print(config_status)
+            {&#39;AD&#39;: True, &#39;AzureAD&#39;: False}
+
         &#34;&#34;&#34;
         configure_dict = {&#34;adconfigure&#34;: self.dashboard_response.get(&#39;agentSummary&#39;, [{}])[0].get(&#39;isConfigured&#39;, None),
                           &#34;aadconfigure&#34;: self.dashboard_response.get(&#39;agentSummary&#39;, [{}])[1].get(&#39;isConfigured&#39;,None),
@@ -538,19 +733,37 @@ instance of the Commcell class</p>
         return configure_dict
 
     @property
-    def is_configured(self):
-        &#34;&#34;&#34;
+    def is_configured(self) -&gt; dict:
+        &#34;&#34;&#34;Get the configuration values of AD and Azure AD from the Dashboard API and Apps Listing API.
+
         Returns:
-            configure_dict    --  Configuration value of AD and Azure AD from Dashboard API and Apps Listing API as dict
+            dict: A dictionary containing the configuration status and details for Active Directory (AD) and Azure AD.
+
+        Example:
+            &gt;&gt;&gt; dashboard = AdDashboard()
+            &gt;&gt;&gt; config = dashboard.is_configured
+            &gt;&gt;&gt; print(config)
+            {&#39;AD&#39;: {&#39;configured&#39;: True}, &#39;AzureAD&#39;: {&#39;configured&#39;: False}}
+
         &#34;&#34;&#34;
         configure_dict=self._configured()
         return configure_dict
 
-    def _get_domains_and_tenants(self):
-        &#34;&#34;&#34;
-        Function to get number of domains and tenants
+    def _get_domains_and_tenants(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the number of domain controllers and tenants.
+
+        This method fetches information from the Dashboard API and Apps Listing API,
+        returning a dictionary containing the counts of domain controllers and tenants.
+
         Returns:
-            domains_and_tenants_dict    --  Number of domain controllers and tenants from Dashboard API and Apps Listing API as dict
+            dict: A dictionary with the number of domain controllers and tenants.
+
+        Example:
+            &gt;&gt;&gt; ad_dashboard = AdDashboard()
+            &gt;&gt;&gt; result = ad_dashboard._get_domains_and_tenants()
+            &gt;&gt;&gt; print(result)
+            {&#39;domain_controllers&#39;: 5, &#39;tenants&#39;: 3}
+
         &#34;&#34;&#34;
         domains_and_tenants_dict = {
             &#34;total_entities&#34;: self.dashboard_response.get(&#39;solutionSummary&#39;, {}).get(&#39;slaSummary&#39;, {}).get(
@@ -574,18 +787,33 @@ instance of the Commcell class</p>
         return domains_and_tenants_dict
 
     @property
-    def domains_and_tenants(self):
-        &#34;&#34;&#34;
+    def domains_and_tenants(self) -&gt; dict:
+        &#34;&#34;&#34;Get the number of domain controllers and tenants from the Dashboard API and Apps Listing API.
+
         Returns:
-            domains_and_tenants_dict    --  Number of domain controllers and tenants from Dashboard API and Apps Listing API as dict
+            dict: A dictionary containing the count of domain controllers and tenants as retrieved from the Dashboard API and Apps Listing API.
+
+        Example:
+            &gt;&gt;&gt; ad_dashboard = AdDashboard()
+            &gt;&gt;&gt; result = ad_dashboard.domains_and_tenants
+            &gt;&gt;&gt; print(result)
+            {&#39;domain_controllers&#39;: 5, &#39;tenants&#39;: 3}
+
         &#34;&#34;&#34;
         return self._get_domains_and_tenants()
 
-    def _get_backup_health(self):
-        &#34;&#34;&#34;
-        Function to get backup health panel details
+    def _get_backup_health(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the backup health panel details.
+
         Returns:
-            backup_health_dict    --  Backup health panel details as dict
+            dict: A dictionary containing details about the backup health panel.
+
+        Example:
+            &gt;&gt;&gt; dashboard = AdDashboard()
+            &gt;&gt;&gt; health_info = dashboard._get_backup_health()
+            &gt;&gt;&gt; print(health_info)
+            &gt;&gt;&gt; # Output will be a dictionary with backup health metrics
+
         &#34;&#34;&#34;
         backup_health_dict = {
             &#34;recently_backedup&#34;: self.dashboard_response.get(&#39;solutionSummary&#39;, {}).get(&#39;slaSummary&#39;, {}).get(
@@ -633,19 +861,34 @@ instance of the Commcell class</p>
         return backup_health_dict
 
     @property
-    def backup_health(self):
-        &#34;&#34;&#34;
+    def backup_health(self) -&gt; dict:
+        &#34;&#34;&#34;Get the backup health panel details as a dictionary.
+
         Returns:
-            backup_health_dict    --  Backup health panel details as dict
+            dict: A dictionary containing details about the backup health panel.
+
+        Example:
+            &gt;&gt;&gt; dashboard = AdDashboard()
+            &gt;&gt;&gt; health_info = dashboard.backup_health
+            &gt;&gt;&gt; print(health_info)
+            &gt;&gt;&gt; # Output will be a dictionary with backup health details
+
         &#34;&#34;&#34;
         return self._get_backup_health()
 
 
-    def _get_data_distribution(self):
-        &#34;&#34;&#34;
-        Function to get data distribution panel details
+    def _get_data_distribution(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the data distribution panel details.
+
         Returns:
-            data_distribution_dict    --  Data distribution details data as dict
+            dict: A dictionary containing data distribution details for the dashboard.
+
+        Example:
+            &gt;&gt;&gt; dashboard = AdDashboard()
+            &gt;&gt;&gt; data_distribution = dashboard._get_data_distribution()
+            &gt;&gt;&gt; print(data_distribution)
+            &gt;&gt;&gt; # Output will be a dictionary with data distribution information
+
         &#34;&#34;&#34;
         data_distribution_dict = {&#34;backup_size&#34;: round((((self.dashboard_response.get(&#39;agentSummary&#39;, [{}])[0].get(&#39;applicationSize&#39;, 0) +
                                                           self.dashboard_response.get(&#39;agentSummary&#39;, [{}])[1].get(&#39;applicationSize&#39;,0))
@@ -668,18 +911,33 @@ instance of the Commcell class</p>
         return data_distribution_dict
 
     @property
-    def data_distribution(self):
-        &#34;&#34;&#34;
+    def data_distribution(self) -&gt; dict:
+        &#34;&#34;&#34;Get the data distribution details as a dictionary.
+
         Returns:
-            data_distribution_dict    --  Data distribution details data as dict
+            dict: A dictionary containing data distribution details.
+
+        Example:
+            &gt;&gt;&gt; dashboard = AdDashboard()
+            &gt;&gt;&gt; distribution = dashboard.data_distribution
+            &gt;&gt;&gt; print(distribution)
+            {&#39;region1&#39;: 120, &#39;region2&#39;: 340, &#39;region3&#39;: 210}
+
         &#34;&#34;&#34;
         return self._get_data_distribution()
 
-    def _get_application_panel(self):
-        &#34;&#34;&#34;
-        Function to get application panel details
+    def _get_application_panel(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the application panel details for the dashboard.
+
         Returns:
-            application_panel_dict    --  Application panel details as dict
+            dict: A dictionary containing the details of the application panel.
+
+        Example:
+            &gt;&gt;&gt; dashboard = AdDashboard()
+            &gt;&gt;&gt; panel_details = dashboard._get_application_panel()
+            &gt;&gt;&gt; print(panel_details)
+            &gt;&gt;&gt; # Output will be a dictionary with application panel information
+
         &#34;&#34;&#34;
         application_panel_dict = {
             &#34;aad_tenant&#34;: self.dashboard_response.get(&#39;agentSummary&#39;, [{}])[1].get(&#39;slaSummary&#39;, {}).get(&#39;totalEntities&#39;),
@@ -749,111 +1007,209 @@ instance of the Commcell class</p>
         return application_panel_dict
 
     @property
-    def application_panel(self):
-        &#34;&#34;&#34;
+    def application_panel(self) -&gt; dict:
+        &#34;&#34;&#34;Get the application panel details as a dictionary.
+
         Returns:
-            application_panel_dict    --  Application panel details as dict
+            dict: A dictionary containing details of the application panel.
+
+        Example:
+            &gt;&gt;&gt; dashboard = AdDashboard()
+            &gt;&gt;&gt; panel_details = dashboard.application_panel
+            &gt;&gt;&gt; print(panel_details)
+            &gt;&gt;&gt; # Output will be a dictionary with application panel information
+
         &#34;&#34;&#34;
         return self._get_application_panel()</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.dashboard.ad_dashboard.AdDashboard.application_panel"><code class="name">var <span class="ident">application_panel</span></code></dt>
+<dt id="cvpysdk.dashboard.ad_dashboard.AdDashboard.application_panel"><code class="name">var <span class="ident">application_panel</span> : dict</code></dt>
 <dd>
-<div class="desc"><h2 id="returns">Returns</h2>
-<p>application_panel_dict
-&ndash;
-Application panel details as dict</p></div>
+<div class="desc"><p>Get the application panel details as a dictionary.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>A dictionary containing details of the application panel.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; dashboard = AdDashboard()
+&gt;&gt;&gt; panel_details = dashboard.application_panel
+&gt;&gt;&gt; print(panel_details)
+&gt;&gt;&gt; # Output will be a dictionary with application panel information
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/dashboard/ad_dashboard.py#L356-L362" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/dashboard/ad_dashboard.py#L483-L498" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def application_panel(self):
-    &#34;&#34;&#34;
+def application_panel(self) -&gt; dict:
+    &#34;&#34;&#34;Get the application panel details as a dictionary.
+
     Returns:
-        application_panel_dict    --  Application panel details as dict
+        dict: A dictionary containing details of the application panel.
+
+    Example:
+        &gt;&gt;&gt; dashboard = AdDashboard()
+        &gt;&gt;&gt; panel_details = dashboard.application_panel
+        &gt;&gt;&gt; print(panel_details)
+        &gt;&gt;&gt; # Output will be a dictionary with application panel information
+
     &#34;&#34;&#34;
     return self._get_application_panel()</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.dashboard.ad_dashboard.AdDashboard.backup_health"><code class="name">var <span class="ident">backup_health</span></code></dt>
+<dt id="cvpysdk.dashboard.ad_dashboard.AdDashboard.backup_health"><code class="name">var <span class="ident">backup_health</span> : dict</code></dt>
 <dd>
-<div class="desc"><h2 id="returns">Returns</h2>
-<p>backup_health_dict
-&ndash;
-Backup health panel details as dict</p></div>
+<div class="desc"><p>Get the backup health panel details as a dictionary.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>A dictionary containing details about the backup health panel.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; dashboard = AdDashboard()
+&gt;&gt;&gt; health_info = dashboard.backup_health
+&gt;&gt;&gt; print(health_info)
+&gt;&gt;&gt; # Output will be a dictionary with backup health details
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/dashboard/ad_dashboard.py#L240-L246" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/dashboard/ad_dashboard.py#L333-L348" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def backup_health(self):
-    &#34;&#34;&#34;
+def backup_health(self) -&gt; dict:
+    &#34;&#34;&#34;Get the backup health panel details as a dictionary.
+
     Returns:
-        backup_health_dict    --  Backup health panel details as dict
+        dict: A dictionary containing details about the backup health panel.
+
+    Example:
+        &gt;&gt;&gt; dashboard = AdDashboard()
+        &gt;&gt;&gt; health_info = dashboard.backup_health
+        &gt;&gt;&gt; print(health_info)
+        &gt;&gt;&gt; # Output will be a dictionary with backup health details
+
     &#34;&#34;&#34;
     return self._get_backup_health()</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.dashboard.ad_dashboard.AdDashboard.data_distribution"><code class="name">var <span class="ident">data_distribution</span></code></dt>
+<dt id="cvpysdk.dashboard.ad_dashboard.AdDashboard.data_distribution"><code class="name">var <span class="ident">data_distribution</span> : dict</code></dt>
 <dd>
-<div class="desc"><h2 id="returns">Returns</h2>
-<p>data_distribution_dict
-&ndash;
-Data distribution details data as dict</p></div>
+<div class="desc"><p>Get the data distribution details as a dictionary.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>A dictionary containing data distribution details.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; dashboard = AdDashboard()
+&gt;&gt;&gt; distribution = dashboard.data_distribution
+&gt;&gt;&gt; print(distribution)
+{'region1': 120, 'region2': 340, 'region3': 210}
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/dashboard/ad_dashboard.py#L275-L281" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/dashboard/ad_dashboard.py#L385-L400" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def data_distribution(self):
-    &#34;&#34;&#34;
+def data_distribution(self) -&gt; dict:
+    &#34;&#34;&#34;Get the data distribution details as a dictionary.
+
     Returns:
-        data_distribution_dict    --  Data distribution details data as dict
+        dict: A dictionary containing data distribution details.
+
+    Example:
+        &gt;&gt;&gt; dashboard = AdDashboard()
+        &gt;&gt;&gt; distribution = dashboard.data_distribution
+        &gt;&gt;&gt; print(distribution)
+        {&#39;region1&#39;: 120, &#39;region2&#39;: 340, &#39;region3&#39;: 210}
+
     &#34;&#34;&#34;
     return self._get_data_distribution()</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.dashboard.ad_dashboard.AdDashboard.domains_and_tenants"><code class="name">var <span class="ident">domains_and_tenants</span></code></dt>
+<dt id="cvpysdk.dashboard.ad_dashboard.AdDashboard.domains_and_tenants"><code class="name">var <span class="ident">domains_and_tenants</span> : dict</code></dt>
 <dd>
-<div class="desc"><h2 id="returns">Returns</h2>
-<p>domains_and_tenants_dict
-&ndash;
-Number of domain controllers and tenants from Dashboard API and Apps Listing API as dict</p></div>
+<div class="desc"><p>Get the number of domain controllers and tenants from the Dashboard API and Apps Listing API.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>A dictionary containing the count of domain controllers and tenants as retrieved from the Dashboard API and Apps Listing API.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; ad_dashboard = AdDashboard()
+&gt;&gt;&gt; result = ad_dashboard.domains_and_tenants
+&gt;&gt;&gt; print(result)
+{'domain_controllers': 5, 'tenants': 3}
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/dashboard/ad_dashboard.py#L181-L187" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/dashboard/ad_dashboard.py#L257-L272" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def domains_and_tenants(self):
-    &#34;&#34;&#34;
+def domains_and_tenants(self) -&gt; dict:
+    &#34;&#34;&#34;Get the number of domain controllers and tenants from the Dashboard API and Apps Listing API.
+
     Returns:
-        domains_and_tenants_dict    --  Number of domain controllers and tenants from Dashboard API and Apps Listing API as dict
+        dict: A dictionary containing the count of domain controllers and tenants as retrieved from the Dashboard API and Apps Listing API.
+
+    Example:
+        &gt;&gt;&gt; ad_dashboard = AdDashboard()
+        &gt;&gt;&gt; result = ad_dashboard.domains_and_tenants
+        &gt;&gt;&gt; print(result)
+        {&#39;domain_controllers&#39;: 5, &#39;tenants&#39;: 3}
+
     &#34;&#34;&#34;
     return self._get_domains_and_tenants()</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.dashboard.ad_dashboard.AdDashboard.is_configured"><code class="name">var <span class="ident">is_configured</span></code></dt>
+<dt id="cvpysdk.dashboard.ad_dashboard.AdDashboard.is_configured"><code class="name">var <span class="ident">is_configured</span> : dict</code></dt>
 <dd>
-<div class="desc"><h2 id="returns">Returns</h2>
-<p>configure_dict
-&ndash;
-Configuration value of AD and Azure AD from Dashboard API and Apps Listing API as dict</p></div>
+<div class="desc"><p>Get the configuration values of AD and Azure AD from the Dashboard API and Apps Listing API.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>A dictionary containing the configuration status and details for Active Directory (AD) and Azure AD.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; dashboard = AdDashboard()
+&gt;&gt;&gt; config = dashboard.is_configured
+&gt;&gt;&gt; print(config)
+{'AD': {'configured': True}, 'AzureAD': {'configured': False}}
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/dashboard/ad_dashboard.py#L145-L152" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/dashboard/ad_dashboard.py#L201-L217" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def is_configured(self):
-    &#34;&#34;&#34;
+def is_configured(self) -&gt; dict:
+    &#34;&#34;&#34;Get the configuration values of AD and Azure AD from the Dashboard API and Apps Listing API.
+
     Returns:
-        configure_dict    --  Configuration value of AD and Azure AD from Dashboard API and Apps Listing API as dict
+        dict: A dictionary containing the configuration status and details for Active Directory (AD) and Azure AD.
+
+    Example:
+        &gt;&gt;&gt; dashboard = AdDashboard()
+        &gt;&gt;&gt; config = dashboard.is_configured
+        &gt;&gt;&gt; print(config)
+        {&#39;AD&#39;: {&#39;configured&#39;: True}, &#39;AzureAD&#39;: {&#39;configured&#39;: False}}
+
     &#34;&#34;&#34;
     configure_dict=self._configured()
     return configure_dict</code></pre>
@@ -863,30 +1219,56 @@ def is_configured(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.dashboard.ad_dashboard.AdDashboard.get_ad_apps_details"><code class="name flex">
-<span>def <span class="ident">get_ad_apps_details</span></span>(<span>self)</span>
+<span>def <span class="ident">get_ad_apps_details</span></span>(<span>self) ‑> dict</span>
 </code></dt>
 <dd>
-<div class="desc"><p>REST API call to get AD APP Listing details in the commcell</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
-<pre><code>if response is empty
-
-if response is not success
+<div class="desc"><p>Retrieve the Active Directory (AD) application listing details from the Commcell.</p>
+<p>This method performs a REST API call to fetch details about all AD applications configured
+in the Commcell environment.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>A dictionary containing details of the AD applications.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the API response is empty or indicates a failure.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; ad_dashboard = AdDashboard()
+&gt;&gt;&gt; ad_apps = ad_dashboard.get_ad_apps_details()
+&gt;&gt;&gt; print(f&quot;Number of AD applications: {len(ad_apps)}&quot;)
+&gt;&gt;&gt; # Access details of a specific AD application
+&gt;&gt;&gt; for app_id, app_info in ad_apps.items():
+...     print(f&quot;App ID: {app_id}, Name: {app_info.get('name')}&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/dashboard/ad_dashboard.py#L101-L119" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/dashboard/ad_dashboard.py#L134-L164" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def get_ad_apps_details(self):
-    &#34;&#34;&#34;
-    REST API call to get AD APP Listing details in the commcell
+<pre><code class="python">def get_ad_apps_details(self) -&gt; dict:
+    &#34;&#34;&#34;Retrieve the Active Directory (AD) application listing details from the Commcell.
+
+    This method performs a REST API call to fetch details about all AD applications configured
+    in the Commcell environment.
+
+    Returns:
+        dict: A dictionary containing details of the AD applications.
+
     Raises:
-        SDKException:
+        SDKException: If the API response is empty or indicates a failure.
 
-            if response is empty
+    Example:
+        &gt;&gt;&gt; ad_dashboard = AdDashboard()
+        &gt;&gt;&gt; ad_apps = ad_dashboard.get_ad_apps_details()
+        &gt;&gt;&gt; print(f&#34;Number of AD applications: {len(ad_apps)}&#34;)
+        &gt;&gt;&gt; # Access details of a specific AD application
+        &gt;&gt;&gt; for app_id, app_info in ad_apps.items():
+        ...     print(f&#34;App ID: {app_id}, Name: {app_info.get(&#39;name&#39;)}&#34;)
 
-            if response is not success
     &#34;&#34;&#34;
     configured = self._services[&#39;ADAPPS&#39;]
     flag, response = self._cvpysdk_object.make_request(method=&#39;GET&#39;, url=configured)
@@ -900,30 +1282,52 @@ if response is not success
 </details>
 </dd>
 <dt id="cvpysdk.dashboard.ad_dashboard.AdDashboard.get_ad_dashboard_details"><code class="name flex">
-<span>def <span class="ident">get_ad_dashboard_details</span></span>(<span>self)</span>
+<span>def <span class="ident">get_ad_dashboard_details</span></span>(<span>self) ‑> dict</span>
 </code></dt>
 <dd>
-<div class="desc"><p>REST API call to get AD Dashboard details in the commcell</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
-<pre><code>if response is empty
-
-if response is not success
+<div class="desc"><p>Retrieve Active Directory (AD) Dashboard details from the Commcell via REST API.</p>
+<p>This method makes a REST API call to fetch the AD Dashboard details associated with the Commcell.
+It raises an SDKException if the response is empty or if the API call is unsuccessful.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>A dictionary containing the AD Dashboard details.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the API response is empty or indicates a failure.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; ad_dashboard = AdDashboard(commcell_object)
+&gt;&gt;&gt; details = ad_dashboard.get_ad_dashboard_details()
+&gt;&gt;&gt; print(details)
+&gt;&gt;&gt; # The 'details' dictionary contains information about the AD Dashboard
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/dashboard/ad_dashboard.py#L82-L99" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/dashboard/ad_dashboard.py#L105-L132" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def get_ad_dashboard_details(self):
-    &#34;&#34;&#34;
-    REST API call to get AD Dashboard details in the commcell
+<pre><code class="python">def get_ad_dashboard_details(self) -&gt; dict:
+    &#34;&#34;&#34;Retrieve Active Directory (AD) Dashboard details from the Commcell via REST API.
+
+    This method makes a REST API call to fetch the AD Dashboard details associated with the Commcell.
+    It raises an SDKException if the response is empty or if the API call is unsuccessful.
+
+    Returns:
+        dict: A dictionary containing the AD Dashboard details.
+
     Raises:
-        SDKException:
+        SDKException: If the API response is empty or indicates a failure.
 
-            if response is empty
+    Example:
+        &gt;&gt;&gt; ad_dashboard = AdDashboard(commcell_object)
+        &gt;&gt;&gt; details = ad_dashboard.get_ad_dashboard_details()
+        &gt;&gt;&gt; print(details)
+        &gt;&gt;&gt; # The &#39;details&#39; dictionary contains information about the AD Dashboard
 
-            if response is not success
     &#34;&#34;&#34;
     configured = self._services[&#39;ADDASHBOARD&#39;] + &#39;?slaNumberOfDays=1&#39;
     flag, response = self._cvpysdk_object.make_request(method=&#39;GET&#39;, url=configured)

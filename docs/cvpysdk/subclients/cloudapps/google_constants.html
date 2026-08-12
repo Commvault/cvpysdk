@@ -27,7 +27,7 @@
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/google_constants.py#L1-L28" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/google_constants.py#L1-L165" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -56,7 +56,144 @@ GDRIVE_INDEX_APP_TYPE=200137
 
 GMAIL_DISCOVERY_TYPE=22
 
-GDRIVE_DISCOVERY_TYPE=24</code></pre>
+GDRIVE_DISCOVERY_TYPE=24
+
+BROWSE_FIELD_FILTER_PAYLOAD = {
+                &#34;field&#34;: &#34;&#34;,
+                &#34;fieldValues&#34;: {
+                  &#34;values&#34;: []
+                }
+              }
+
+GMAIL_BROWSE_FIELD_RESPONSE_FIELD_PARAMS = (&#34;COMMCELLNO,AFILEID,AFILEOFFSET,BACKUPTIME,SIZEINKB,MODIFIEDTIME,CONTENTID,LINKS,&#34;
+                                      &#34;EMAIL_SUBJECT,FROM_DISPLAY,TO_DISPLAY,FOLDER,EMAIL_IMPORTANCE,CUSTODIAN,OWNER,&#34;
+                                      &#34;DATA_TYPE,PARENT_GUID,CISTATE,EMAIL_ATTACHMENTS,HAS_ATTACHMENT,EMAIL_MODIFIED_TIME,&#34;
+                                      &#34;IS_VISIBLE,CV_OBJECT_GUID,EMAIL_SMTPTO,EMAIL_SMTPFROM,GMAILV2_LABEL_ID&#34;)
+
+GDRIVE_BROWSE_FIELD_RESPONSE_FIELD_PARAMS = (&#34;FAST_URL,BACKUPTIME,SIZEINKB,MODIFIEDTIME,CONTENTID,CV_TURBO_GUID,AFILEID,&#34;
+                                             &#34;AFILEOFFSET,COMMCELLNO,FILE_NAME,EXT_NAME,FILE_FOLDER,CVSTUB,DATA_TYPE,&#34;
+                                             &#34;CISTATE,DATE_DELETED,CV_OBJECT_GUID,PARENT_GUID,CUSTODIAN,OWNER,&#34;
+                                             &#34;GOOGLEDRIVE_SOURCE_TYPE,GOOGLEDRIVE_NODE_TYPE,ObjectType&#34;)
+
+WEB_SEARCH_PAYLOAD = {
+    &#34;mode&#34;: 4,
+    &#34;advSearchGrp&#34;: {
+      &#34;emailFilter&#34;: [
+        {
+          &#34;filter&#34;: {
+            &#34;interFilterOP&#34;: 2,
+            &#34;filters&#34;: [
+              {
+                &#34;field&#34;: &#34;IS_VISIBLE&#34;,
+                &#34;intraFieldOp&#34;: 0,
+                &#34;fieldValues&#34;: {
+                  &#34;values&#34;: [
+                    &#34;true&#34;
+                  ]
+                }
+              },
+              {
+                &#34;field&#34;: &#34;DATA_TYPE&#34;,
+                &#34;intraFieldOp&#34;: 0,
+                &#34;fieldValues&#34;: {
+                  &#34;values&#34;: []
+                }
+              }
+            ]
+          }
+        }
+      ],
+      &#34;galaxyFilter&#34;: [
+        {
+          &#34;appIdList&#34;: []
+        }
+      ]
+    },
+    &#34;searchProcessingInfo&#34;: {
+      &#34;resultOffset&#34;: 0,
+      &#34;pageSize&#34;: 0,
+      &#34;queryParams&#34;: [
+        {
+          &#34;param&#34;: &#34;ENABLE_MIXEDVIEW&#34;,
+          &#34;value&#34;: &#34;true&#34;
+        },
+        {
+          &#34;param&#34;: &#34;RESPONSE_FIELD_LIST&#34;
+        }
+      ]
+    }
+  }
+
+GDRIVE_FOLDER_DOCUMENT_TYPE = 1
+GMAIL_FOLDER_DOCUMENT_TYPE = 4
+GMAIL_MAIL_DOCUMENT_TYPE = 2
+
+GDRIVE_WEB_SEARCH_PAYLOAD = {
+    &#34;mode&#34;: 4,
+    &#34;advSearchGrp&#34;: {
+        &#34;commonFilter&#34;: [
+            {
+                &#34;filter&#34;: {
+                    &#34;interFilterOP&#34;: 2,
+                    &#34;filters&#34;: [
+                        {
+                            &#34;field&#34;: &#34;CISTATE&#34;,
+                            &#34;fieldValues&#34;: {
+                                &#34;values&#34;: [
+                                    &#34;1&#34;
+                                ]
+                            },
+                            &#34;intraFieldOp&#34;: 0
+                        },
+                        {
+                            &#34;field&#34;: &#34;IS_VISIBLE&#34;,
+                            &#34;fieldValues&#34;: {
+                                &#34;values&#34;: [
+                                    &#34;true&#34;
+                                ]
+                            },
+                            &#34;intraFieldOp&#34;: 0
+                        }
+                    ]
+                }
+            }
+        ],
+        &#34;fileFilter&#34;: [
+            {
+                &#34;interGroupOP&#34;: 2,
+                &#34;filter&#34;: {
+                    &#34;interFilterOP&#34;: 2,
+                    &#34;filters&#34;: []
+                }
+            }
+        ],
+        &#34;emailFilter&#34;: [],
+        &#34;galaxyFilter&#34;: [
+            {
+                &#34;appIdList&#34;: []
+            }
+        ]
+    },
+    &#34;searchProcessingInfo&#34;: {
+        &#34;resultOffset&#34;: 0,
+        &#34;pageSize&#34;: 15,
+        &#34;queryParams&#34;: [{
+            &#34;param&#34;: &#34;ENABLE_MIXEDVIEW&#34;,
+            &#34;value&#34;: &#34;true&#34;
+        },
+            {
+                &#34;param&#34;: &#34;ENABLE_NAVIGATION&#34;,
+                &#34;value&#34;: &#34;on&#34;
+            },
+            {
+                &#34;param&#34;: &#34;RESPONSE_FIELD_LIST&#34;,
+                &#34;value&#34;: &#34;FAST_URL,BACKUPTIME,SIZEINKB,MODIFIEDTIME,CONTENTID,CV_TURBO_GUID,AFILEID,AFILEOFFSET,COMMCELLNO,FILE_NAME,EXT_NAME,FILE_FOLDER,CVSTUB,DATA_TYPE,CISTATE,DATE_DELETED,CV_OBJECT_GUID,PARENT_GUID,CUSTODIAN,OWNER,GOOGLEDRIVE_SOURCE_TYPE,GOOGLEDRIVE_NODE_TYPE,ObjectType&#34;
+            }]
+    },
+    &#34;facetRequests&#34;: {
+        &#34;facetRequest&#34;: []
+    }
+}</code></pre>
 </details>
 </section>
 <section>

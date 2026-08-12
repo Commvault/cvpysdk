@@ -29,7 +29,7 @@ Class for representing all types of Policies associated with the Commcell</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/policy.py#L1-L84" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/policy.py#L1-L137" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -56,61 +56,114 @@ Policies:   Class for representing all types of Policies associated with the Com
 &#34;&#34;&#34;
 
 from __future__ import unicode_literals
-
-from .exception import SDKException
+from typing import TYPE_CHECKING
 
 from .policies.configuration_policies import ConfigurationPolicies
 from .policies.storage_policies import StoragePolicies
 from .policies.schedule_policies import SchedulePolicies
 
+if TYPE_CHECKING:
+    from .commcell import Commcell
+
 
 class Policies:
-    &#34;&#34;&#34;Class for getting all the all the policies associated with the commcell.&#34;&#34;&#34;
+    &#34;&#34;&#34;Class for getting all the policies associated with the commcell.
 
-    def __init__(self, commcell_object):
+    Description:
+        This class provides access to different types of policies associated with the Commcell,
+        such as configuration policies, storage policies, and schedule policies.
+
+    Attributes:
+        _commcell_object (object): Instance of the Commcell class.
+        _configuration_policies (ConfigurationPolicies): Instance of ConfigurationPolicies class.
+        _storage_policies (StoragePolicies): Instance of StoragePolicies class.
+        _schedule_policies (SchedulePolicies): Instance of SchedulePolicies class.
+
+    Usage:
+        &gt;&gt;&gt; policies = Policies(commcell_object)
+
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_object: &#39;Commcell&#39;) -&gt; None:
         &#34;&#34;&#34;Initialize object of the Policies class.
 
-            Args:
-                commcell_object     (object)    --  instance of the Commcell class
+        Args:
+            commcell_object (object): Instance of the Commcell class.
 
-            Returns:
-                object  -   instance of the Policies class
+        Returns:
+            None
 
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
+        self._configuration_policies = None
+        self._storage_policies = None
+        self._schedule_policies = None
         self.refresh()
 
-    def __repr__(self):
-        &#34;&#34;&#34;Representation string for the instance of the Policies class.&#34;&#34;&#34;
+    def __repr__(self) -&gt; str:
+        &#34;&#34;&#34;Representation string for the instance of the Policies class.
+
+        Returns:
+            str: String representation of the Policies class instance.
+
+        &#34;&#34;&#34;
         return &#34;Policies class instance for Commcell&#34;
 
-    def refresh(self):
-        &#34;&#34;&#34;Refresh all the Policies associated with the Commcell.&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Refresh all the Policies associated with the Commcell.
+
+        Returns:
+            None
+
+        &#34;&#34;&#34;
         self._configuration_policies = None
         self._storage_policies = None
         self._schedule_policies = None
 
     @property
-    def configuration_policies(self):
-        &#34;&#34;&#34;Returns the instance of the ConfigurationPolicies class.&#34;&#34;&#34;
+    def configuration_policies(self) -&gt; ConfigurationPolicies:
+        &#34;&#34;&#34;Returns the instance of the ConfigurationPolicies class.
+
+        Returns:
+            ConfigurationPolicies: Instance of the ConfigurationPolicies class.
+
+        Usage:
+            &gt;&gt;&gt; config_policies = policies.configuration_policies
+
+        &#34;&#34;&#34;
         if self._configuration_policies is None:
-            self._configuration_policies = ConfigurationPolicies(self._commcell_object)
+            self._configuration_policies = ConfigurationPolicies(
+                self._commcell_object)
 
         return self._configuration_policies
 
-
     @property
-    def storage_policies(self):
-        &#34;&#34;&#34;Returns the instance of the StoragePolicies class.&#34;&#34;&#34;
+    def storage_policies(self) -&gt; StoragePolicies:
+        &#34;&#34;&#34;Returns the instance of the StoragePolicies class.
+
+        Returns:
+            StoragePolicies: Instance of the StoragePolicies class.
+
+        Usage:
+            &gt;&gt;&gt; storage_policies = policies.storage_policies
+
+        &#34;&#34;&#34;
         if self._storage_policies is None:
             self._storage_policies = StoragePolicies(self._commcell_object)
 
         return self._storage_policies
 
-
     @property
-    def schedule_policies(self):
-        &#34;&#34;&#34;Returns the instance of the SchedulePolicies class.&#34;&#34;&#34;
+    def schedule_policies(self) -&gt; SchedulePolicies:
+        &#34;&#34;&#34;Returns the instance of the SchedulePolicies class.
+
+        Returns:
+            SchedulePolicies: Instance of the SchedulePolicies class.
+
+        Usage:
+            &gt;&gt;&gt; schedule_policies = policies.schedule_policies
+
+        &#34;&#34;&#34;
         if self._schedule_policies is None:
             self._schedule_policies = SchedulePolicies(self._commcell_object)
 
@@ -128,72 +181,143 @@ class Policies:
 <dl>
 <dt id="cvpysdk.policy.Policies"><code class="flex name class">
 <span>class <span class="ident">Policies</span></span>
-<span>(</span><span>commcell_object)</span>
+<span>(</span><span>commcell_object: Commcell)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for getting all the all the policies associated with the commcell.</p>
+<div class="desc"><p>Class for getting all the policies associated with the commcell.</p>
+<p>Description
+-----=
+This class provides access to different types of policies associated with the Commcell,
+such as configuration policies, storage policies, and schedule policies.</p>
+<dl>
+<dt>Attributes</dt>
+<dt>-----=</dt>
+<dt><strong><code>_commcell_object</code></strong> :&ensp;<code>object</code></dt>
+<dd>Instance of the Commcell class.</dd>
+<dt><strong><code>_configuration_policies</code></strong> :&ensp;<code>ConfigurationPolicies</code></dt>
+<dd>Instance of ConfigurationPolicies class.</dd>
+<dt><strong><code>_storage_policies</code></strong> :&ensp;<code>StoragePolicies</code></dt>
+<dd>Instance of StoragePolicies class.</dd>
+<dt><strong><code>_schedule_policies</code></strong> :&ensp;<code>SchedulePolicies</code></dt>
+<dd>Instance of SchedulePolicies class.</dd>
+</dl>
+<p>Usage
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; policies = Policies(commcell_object)
+</code></pre>
 <p>Initialize object of the Policies class.</p>
-<h2 id="args">Args</h2>
-<p>commcell_object
-(object)
-&ndash;
-instance of the Commcell class</p>
-<h2 id="returns">Returns</h2>
-<p>object
--
-instance of the Policies class</p></div>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>commcell_object</code></strong> :&ensp;<code>object</code></dt>
+<dd>Instance of the Commcell class.</dd>
+</dl>
+<p>Returns
+-----=
+None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/policy.py#L34-L84" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/policy.py#L36-L137" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Policies:
-    &#34;&#34;&#34;Class for getting all the all the policies associated with the commcell.&#34;&#34;&#34;
+    &#34;&#34;&#34;Class for getting all the policies associated with the commcell.
 
-    def __init__(self, commcell_object):
+    Description:
+        This class provides access to different types of policies associated with the Commcell,
+        such as configuration policies, storage policies, and schedule policies.
+
+    Attributes:
+        _commcell_object (object): Instance of the Commcell class.
+        _configuration_policies (ConfigurationPolicies): Instance of ConfigurationPolicies class.
+        _storage_policies (StoragePolicies): Instance of StoragePolicies class.
+        _schedule_policies (SchedulePolicies): Instance of SchedulePolicies class.
+
+    Usage:
+        &gt;&gt;&gt; policies = Policies(commcell_object)
+
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_object: &#39;Commcell&#39;) -&gt; None:
         &#34;&#34;&#34;Initialize object of the Policies class.
 
-            Args:
-                commcell_object     (object)    --  instance of the Commcell class
+        Args:
+            commcell_object (object): Instance of the Commcell class.
 
-            Returns:
-                object  -   instance of the Policies class
+        Returns:
+            None
 
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
+        self._configuration_policies = None
+        self._storage_policies = None
+        self._schedule_policies = None
         self.refresh()
 
-    def __repr__(self):
-        &#34;&#34;&#34;Representation string for the instance of the Policies class.&#34;&#34;&#34;
+    def __repr__(self) -&gt; str:
+        &#34;&#34;&#34;Representation string for the instance of the Policies class.
+
+        Returns:
+            str: String representation of the Policies class instance.
+
+        &#34;&#34;&#34;
         return &#34;Policies class instance for Commcell&#34;
 
-    def refresh(self):
-        &#34;&#34;&#34;Refresh all the Policies associated with the Commcell.&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Refresh all the Policies associated with the Commcell.
+
+        Returns:
+            None
+
+        &#34;&#34;&#34;
         self._configuration_policies = None
         self._storage_policies = None
         self._schedule_policies = None
 
     @property
-    def configuration_policies(self):
-        &#34;&#34;&#34;Returns the instance of the ConfigurationPolicies class.&#34;&#34;&#34;
+    def configuration_policies(self) -&gt; ConfigurationPolicies:
+        &#34;&#34;&#34;Returns the instance of the ConfigurationPolicies class.
+
+        Returns:
+            ConfigurationPolicies: Instance of the ConfigurationPolicies class.
+
+        Usage:
+            &gt;&gt;&gt; config_policies = policies.configuration_policies
+
+        &#34;&#34;&#34;
         if self._configuration_policies is None:
-            self._configuration_policies = ConfigurationPolicies(self._commcell_object)
+            self._configuration_policies = ConfigurationPolicies(
+                self._commcell_object)
 
         return self._configuration_policies
 
-
     @property
-    def storage_policies(self):
-        &#34;&#34;&#34;Returns the instance of the StoragePolicies class.&#34;&#34;&#34;
+    def storage_policies(self) -&gt; StoragePolicies:
+        &#34;&#34;&#34;Returns the instance of the StoragePolicies class.
+
+        Returns:
+            StoragePolicies: Instance of the StoragePolicies class.
+
+        Usage:
+            &gt;&gt;&gt; storage_policies = policies.storage_policies
+
+        &#34;&#34;&#34;
         if self._storage_policies is None:
             self._storage_policies = StoragePolicies(self._commcell_object)
 
         return self._storage_policies
 
-
     @property
-    def schedule_policies(self):
-        &#34;&#34;&#34;Returns the instance of the SchedulePolicies class.&#34;&#34;&#34;
+    def schedule_policies(self) -&gt; SchedulePolicies:
+        &#34;&#34;&#34;Returns the instance of the SchedulePolicies class.
+
+        Returns:
+            SchedulePolicies: Instance of the SchedulePolicies class.
+
+        Usage:
+            &gt;&gt;&gt; schedule_policies = policies.schedule_policies
+
+        &#34;&#34;&#34;
         if self._schedule_policies is None:
             self._schedule_policies = SchedulePolicies(self._commcell_object)
 
@@ -201,51 +325,106 @@ instance of the Policies class</p></div>
 </details>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.policy.Policies.configuration_policies"><code class="name">var <span class="ident">configuration_policies</span></code></dt>
+<dt id="cvpysdk.policy.Policies.configuration_policies"><code class="name">var <span class="ident">configuration_policies</span> : <a title="cvpysdk.policies.configuration_policies.ConfigurationPolicies" href="policies/configuration_policies.html#cvpysdk.policies.configuration_policies.ConfigurationPolicies">ConfigurationPolicies</a></code></dt>
 <dd>
-<div class="desc"><p>Returns the instance of the ConfigurationPolicies class.</p></div>
+<div class="desc"><p>Returns the instance of the ConfigurationPolicies class.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>ConfigurationPolicies</code></dt>
+<dd>Instance of the ConfigurationPolicies class.</dd>
+</dl>
+<p>Usage
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; config_policies = policies.configuration_policies
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/policy.py#L60-L66" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/policy.py#L90-L105" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def configuration_policies(self):
-    &#34;&#34;&#34;Returns the instance of the ConfigurationPolicies class.&#34;&#34;&#34;
+def configuration_policies(self) -&gt; ConfigurationPolicies:
+    &#34;&#34;&#34;Returns the instance of the ConfigurationPolicies class.
+
+    Returns:
+        ConfigurationPolicies: Instance of the ConfigurationPolicies class.
+
+    Usage:
+        &gt;&gt;&gt; config_policies = policies.configuration_policies
+
+    &#34;&#34;&#34;
     if self._configuration_policies is None:
-        self._configuration_policies = ConfigurationPolicies(self._commcell_object)
+        self._configuration_policies = ConfigurationPolicies(
+            self._commcell_object)
 
     return self._configuration_policies</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.policy.Policies.schedule_policies"><code class="name">var <span class="ident">schedule_policies</span></code></dt>
+<dt id="cvpysdk.policy.Policies.schedule_policies"><code class="name">var <span class="ident">schedule_policies</span> : <a title="cvpysdk.policies.schedule_policies.SchedulePolicies" href="policies/schedule_policies.html#cvpysdk.policies.schedule_policies.SchedulePolicies">SchedulePolicies</a></code></dt>
 <dd>
-<div class="desc"><p>Returns the instance of the SchedulePolicies class.</p></div>
+<div class="desc"><p>Returns the instance of the SchedulePolicies class.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>SchedulePolicies</code></dt>
+<dd>Instance of the SchedulePolicies class.</dd>
+</dl>
+<p>Usage
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; schedule_policies = policies.schedule_policies
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/policy.py#L78-L84" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/policy.py#L123-L137" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def schedule_policies(self):
-    &#34;&#34;&#34;Returns the instance of the SchedulePolicies class.&#34;&#34;&#34;
+def schedule_policies(self) -&gt; SchedulePolicies:
+    &#34;&#34;&#34;Returns the instance of the SchedulePolicies class.
+
+    Returns:
+        SchedulePolicies: Instance of the SchedulePolicies class.
+
+    Usage:
+        &gt;&gt;&gt; schedule_policies = policies.schedule_policies
+
+    &#34;&#34;&#34;
     if self._schedule_policies is None:
         self._schedule_policies = SchedulePolicies(self._commcell_object)
 
     return self._schedule_policies</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.policy.Policies.storage_policies"><code class="name">var <span class="ident">storage_policies</span></code></dt>
+<dt id="cvpysdk.policy.Policies.storage_policies"><code class="name">var <span class="ident">storage_policies</span> : <a title="cvpysdk.policies.storage_policies.StoragePolicies" href="policies/storage_policies.html#cvpysdk.policies.storage_policies.StoragePolicies">StoragePolicies</a></code></dt>
 <dd>
-<div class="desc"><p>Returns the instance of the StoragePolicies class.</p></div>
+<div class="desc"><p>Returns the instance of the StoragePolicies class.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>StoragePolicies</code></dt>
+<dd>Instance of the StoragePolicies class.</dd>
+</dl>
+<p>Usage
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; storage_policies = policies.storage_policies
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/policy.py#L69-L75" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/policy.py#L107-L121" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def storage_policies(self):
-    &#34;&#34;&#34;Returns the instance of the StoragePolicies class.&#34;&#34;&#34;
+def storage_policies(self) -&gt; StoragePolicies:
+    &#34;&#34;&#34;Returns the instance of the StoragePolicies class.
+
+    Returns:
+        StoragePolicies: Instance of the StoragePolicies class.
+
+    Usage:
+        &gt;&gt;&gt; storage_policies = policies.storage_policies
+
+    &#34;&#34;&#34;
     if self._storage_policies is None:
         self._storage_policies = StoragePolicies(self._commcell_object)
 
@@ -256,17 +435,25 @@ def storage_policies(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.policy.Policies.refresh"><code class="name flex">
-<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+<span>def <span class="ident">refresh</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Refresh all the Policies associated with the Commcell.</p></div>
+<div class="desc"><p>Refresh all the Policies associated with the Commcell.</p>
+<p>Returns
+-----=
+None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/policy.py#L54-L58" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/policy.py#L79-L88" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def refresh(self):
-    &#34;&#34;&#34;Refresh all the Policies associated with the Commcell.&#34;&#34;&#34;
+<pre><code class="python">def refresh(self) -&gt; None:
+    &#34;&#34;&#34;Refresh all the Policies associated with the Commcell.
+
+    Returns:
+        None
+
+    &#34;&#34;&#34;
     self._configuration_policies = None
     self._storage_policies = None
     self._schedule_policies = None</code></pre>

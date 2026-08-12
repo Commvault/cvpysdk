@@ -28,7 +28,8 @@
 <p>OneDriveSubclient:
 Derived class from CloudAppsSubclient Base class, representing a
 OneDrive subclient, and to perform operations on that subclient</p>
-<h2 id="onedrivesubclient">Onedrivesubclient</h2>
+<p>Onedrivesubclient
+-----=</p>
 <p>content()
 &ndash;
 gets the content of the subclient</p>
@@ -128,10 +129,16 @@ Method to read the api call from the TrueUp and find the deleted files</p>
 <p>preview_backedup_file() &ndash; Get preview content for onedrive subclient</p>
 <p>run_backup_onedrive_for_business_client()
 &ndash; Runs client level backup</p>
+<p>restore_user_to_azure_blob()
+&ndash; Runs restore to azure blob for specified users on OneDrive for business client</p>
+<p>discover_onedrive_for_business_client()
+&ndash; Discover users and groups for OneDrive for Business client</p>
+<p>verify_subclient_content_onedrive_for_business_client()
+&ndash; Verifies the subclient content of OneDrive for Business client against the expected content</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L1-L2089" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L1-L2194" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -230,6 +237,12 @@ OneDriveSubclient:
     preview_backedup_file() -- Get preview content for onedrive subclient
 
     run_backup_onedrive_for_business_client()                           -- Runs client level backup
+
+    restore_user_to_azure_blob()                                        -- Runs restore to azure blob for specified users on OneDrive for business client
+
+    discover_onedrive_for_business_client()                             -- Discover users and groups for OneDrive for Business client
+    
+    verify_subclient_content_onedrive_for_business_client()             -- Verifies the subclient content of OneDrive for Business client against the expected content
 
 &#34;&#34;&#34;
 
@@ -779,6 +792,7 @@ class OneDriveSubclient(CloudAppsSubclient):
 
         groups = []
         group_response = self.search_for_group(group_id=value)
+        group_response = list(filter(lambda i : i[&#39;name&#39;]==value, group_response))
         display_name = group_response[0].get(&#39;name&#39;)
         group_id = group_response[0].get(&#39;id&#39;)
 
@@ -1086,6 +1100,24 @@ class OneDriveSubclient(CloudAppsSubclient):
         }
         restore_json = self._instance_object._prepare_restore_json_onedrive_for_business_client(
             source_user_list, **kwargs)
+        return self._process_restore_response(restore_json)
+
+    def restore_user_to_azure_blob(self, users, blob_name):
+        &#34;&#34;&#34;Runs restore to azure blob for specified users on OneDrive for business client
+            Args:
+                users (list) : list of SMTP addresses of users
+                blob_name (str) : Name of credential to which restore needs to be performed
+            Returns:
+                object - instance of the Job class for this restore job
+        &#34;&#34;&#34;
+        source_user_list = self._get_user_guids(users)
+        credential = self._commcell_object.credentials.get(blob_name)
+        if credential is None:
+            raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, f&#39;Credential &#34;{blob_name}&#34; not found&#39;)
+        restore_json = self._instance_object._prepare_restore_json_onedrive_for_business_client(source_user_list, **{
+            &#39;restore_to_blob&#39;: True,
+            &#39;blob_container_id&#39;: credential.credential_id
+        })
         return self._process_restore_response(restore_json)
 
     def out_of_place_restore_onedrive_for_business_client(self, users, destination_path, **kwargs):
@@ -1512,6 +1544,7 @@ class OneDriveSubclient(CloudAppsSubclient):
                 group (str) : SMTP address of group
         &#34;&#34;&#34;
         group_details = self.search_for_group(group)
+        group_details = list(filter(lambda i : i[&#39;name&#39;]==group, group_details))
         if len(group_details) != 0:
             return group_details
         else:
@@ -2221,7 +2254,86 @@ class OneDriveSubclient(CloudAppsSubclient):
 
                     if response is not success
         &#34;&#34;&#34;
-        return self._get_preview(file_path)</code></pre>
+        return self._get_preview(file_path)
+    
+    def discovery_onedrive_for_business_client(self, content_type):
+        &#34;&#34;&#34;Discovers the content for onedrive subclient.
+            
+            Params:
+                content_type (str) -- type of content to be discovered. Possible values are &#39;USERS&#39; and &#39;GROUPS&#39;
+            Returns:
+                dict:   A dictionary containing the discovered content details. The structure of the dictionary will depend on the content type.
+            Raises:
+                SDKException: No content discovered or API call failed
+        &#34;&#34;&#34;
+        
+        if content_type.upper() == &#39;USERS&#39;:
+            disc_type = 8
+        elif content_type.upper() == &#39;GROUPS&#39;:
+            disc_type = 5
+        
+        _get_users = self._services[&#39;GET_CLOUDAPPS_USERS&#39;] % (self._instance_object.instance_id,
+                                                              self._client_object.client_id,
+                                                              disc_type)
+
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, _get_users)
+        
+        if flag:
+                if response.json():
+                    return response.json()
+                else:
+                    raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+        
+        
+    def verify_subclient_content_onedrive_for_business_client(self, input_content: dict): 
+        &#34;&#34;&#34;Verifies the content for onedrive subclient with the given input content.
+            This method is used for complete content verification after discovery, not for partial verification.
+            
+        Params:
+            input_content (dict) -- dictionary containing the content details to be verified. It should have the following structure:
+            {
+                &#39;groups_dict&#39;: {
+                    group_name: {
+                        &#39;planName&#39;: plan_name,
+                        &#39;members_dict&#39;: {
+                            user_mail: planName
+                        }
+                    }
+                },
+                &#39;users_dict&#39;: {
+                    user_mail: planName
+                }
+            }
+            
+        Returns:
+            bool -- True if the content matches, False otherwise
+        &#34;&#34;&#34;
+        
+        groups_dict = input_content.get(&#39;groups_dict&#39;, {})
+        users_dict = input_content.get(&#39;users_dict&#39;, {})
+        
+        # dict compare = count, keys, key-values
+        # complete content verification (not partial)
+        if groups_dict: # group-name : { planName, members_dict:(mail:planName)}
+            content, count = self.browse_for_content(discovery_type=2)
+            
+            subclient_groups_dict = {group_name: details.get(&#39;planName&#39;, &#34;&#34;) for group_name, details in content.items()}
+            input_groups_dict = {group_name: details.get(&#39;planName&#39;, &#34;&#34;) for group_name, details in groups_dict.items()}
+            if subclient_groups_dict != input_groups_dict: return False
+            
+            for group_name, details in groups_dict.items():
+                members_dict = details.get(&#39;members_dict&#39;, {})
+                users_dict.update(members_dict)
+        
+        if users_dict: # user-mail(only users, not group-members) : planName  
+            content, count = self.browse_for_content(discovery_type=1)
+
+            subclient_users_dict = {user_mail: details.get(&#39;planName&#39;, &#34;&#34;) for user_mail, details in content.items()}
+            if subclient_users_dict != users_dict: return False
+            
+        return True</code></pre>
 </details>
 </section>
 <section>
@@ -2235,31 +2347,32 @@ class OneDriveSubclient(CloudAppsSubclient):
 <dl>
 <dt id="cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient"><code class="flex name class">
 <span>class <span class="ident">OneDriveSubclient</span></span>
-<span>(</span><span>backupset_object, subclient_name, subclient_id=None)</span>
+<span>(</span><span>backupset_object: object, subclient_name: str, subclient_id: str = None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Derived class from CloudAppsSubclient Base class, representing a OneDrive subclient,
 and to perform operations on that subclient.</p>
-<p>Initialise the Subclient object.</p>
-<h2 id="args">Args</h2>
-<p>backupset_object (object)
-&ndash;
-instance of the Backupset class</p>
-<p>subclient_name
-(str)
-&ndash;
-name of the subclient</p>
-<p>subclient_id
-(str)
-&ndash;
-id of the subclient
-default: None</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Subclient class</p></div>
+<p>Initialize a Subclient object.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>backupset_object</code></strong></dt>
+<dd>Instance of the Backupset class to which this subclient belongs.</dd>
+<dt><strong><code>subclient_name</code></strong></dt>
+<dd>Name of the subclient.</dd>
+<dt><strong><code>subclient_id</code></strong></dt>
+<dd>Optional; ID of the subclient. If not provided, it will be determined automatically.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; backupset = Backupset(client_object, 'defaultBackupSet')
+&gt;&gt;&gt; subclient = Subclient(backupset, 'default')
+&gt;&gt;&gt; print(f&quot;Subclient created: {subclient}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L113-L2089" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L119-L2194" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class OneDriveSubclient(CloudAppsSubclient):
     &#34;&#34;&#34;Derived class from CloudAppsSubclient Base class, representing a OneDrive subclient,
@@ -2795,6 +2908,7 @@ default: None</p>
 
         groups = []
         group_response = self.search_for_group(group_id=value)
+        group_response = list(filter(lambda i : i[&#39;name&#39;]==value, group_response))
         display_name = group_response[0].get(&#39;name&#39;)
         group_id = group_response[0].get(&#39;id&#39;)
 
@@ -3102,6 +3216,24 @@ default: None</p>
         }
         restore_json = self._instance_object._prepare_restore_json_onedrive_for_business_client(
             source_user_list, **kwargs)
+        return self._process_restore_response(restore_json)
+
+    def restore_user_to_azure_blob(self, users, blob_name):
+        &#34;&#34;&#34;Runs restore to azure blob for specified users on OneDrive for business client
+            Args:
+                users (list) : list of SMTP addresses of users
+                blob_name (str) : Name of credential to which restore needs to be performed
+            Returns:
+                object - instance of the Job class for this restore job
+        &#34;&#34;&#34;
+        source_user_list = self._get_user_guids(users)
+        credential = self._commcell_object.credentials.get(blob_name)
+        if credential is None:
+            raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, f&#39;Credential &#34;{blob_name}&#34; not found&#39;)
+        restore_json = self._instance_object._prepare_restore_json_onedrive_for_business_client(source_user_list, **{
+            &#39;restore_to_blob&#39;: True,
+            &#39;blob_container_id&#39;: credential.credential_id
+        })
         return self._process_restore_response(restore_json)
 
     def out_of_place_restore_onedrive_for_business_client(self, users, destination_path, **kwargs):
@@ -3528,6 +3660,7 @@ default: None</p>
                 group (str) : SMTP address of group
         &#34;&#34;&#34;
         group_details = self.search_for_group(group)
+        group_details = list(filter(lambda i : i[&#39;name&#39;]==group, group_details))
         if len(group_details) != 0:
             return group_details
         else:
@@ -4237,7 +4370,86 @@ default: None</p>
 
                     if response is not success
         &#34;&#34;&#34;
-        return self._get_preview(file_path)</code></pre>
+        return self._get_preview(file_path)
+    
+    def discovery_onedrive_for_business_client(self, content_type):
+        &#34;&#34;&#34;Discovers the content for onedrive subclient.
+            
+            Params:
+                content_type (str) -- type of content to be discovered. Possible values are &#39;USERS&#39; and &#39;GROUPS&#39;
+            Returns:
+                dict:   A dictionary containing the discovered content details. The structure of the dictionary will depend on the content type.
+            Raises:
+                SDKException: No content discovered or API call failed
+        &#34;&#34;&#34;
+        
+        if content_type.upper() == &#39;USERS&#39;:
+            disc_type = 8
+        elif content_type.upper() == &#39;GROUPS&#39;:
+            disc_type = 5
+        
+        _get_users = self._services[&#39;GET_CLOUDAPPS_USERS&#39;] % (self._instance_object.instance_id,
+                                                              self._client_object.client_id,
+                                                              disc_type)
+
+        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, _get_users)
+        
+        if flag:
+                if response.json():
+                    return response.json()
+                else:
+                    raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
+        
+        
+    def verify_subclient_content_onedrive_for_business_client(self, input_content: dict): 
+        &#34;&#34;&#34;Verifies the content for onedrive subclient with the given input content.
+            This method is used for complete content verification after discovery, not for partial verification.
+            
+        Params:
+            input_content (dict) -- dictionary containing the content details to be verified. It should have the following structure:
+            {
+                &#39;groups_dict&#39;: {
+                    group_name: {
+                        &#39;planName&#39;: plan_name,
+                        &#39;members_dict&#39;: {
+                            user_mail: planName
+                        }
+                    }
+                },
+                &#39;users_dict&#39;: {
+                    user_mail: planName
+                }
+            }
+            
+        Returns:
+            bool -- True if the content matches, False otherwise
+        &#34;&#34;&#34;
+        
+        groups_dict = input_content.get(&#39;groups_dict&#39;, {})
+        users_dict = input_content.get(&#39;users_dict&#39;, {})
+        
+        # dict compare = count, keys, key-values
+        # complete content verification (not partial)
+        if groups_dict: # group-name : { planName, members_dict:(mail:planName)}
+            content, count = self.browse_for_content(discovery_type=2)
+            
+            subclient_groups_dict = {group_name: details.get(&#39;planName&#39;, &#34;&#34;) for group_name, details in content.items()}
+            input_groups_dict = {group_name: details.get(&#39;planName&#39;, &#34;&#34;) for group_name, details in groups_dict.items()}
+            if subclient_groups_dict != input_groups_dict: return False
+            
+            for group_name, details in groups_dict.items():
+                members_dict = details.get(&#39;members_dict&#39;, {})
+                users_dict.update(members_dict)
+        
+        if users_dict: # user-mail(only users, not group-members) : planName  
+            content, count = self.browse_for_content(discovery_type=1)
+
+            subclient_users_dict = {user_mail: details.get(&#39;planName&#39;, &#34;&#34;) for user_mail, details in content.items()}
+            if subclient_users_dict != users_dict: return False
+            
+        return True</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -4252,7 +4464,7 @@ default: None</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L261-L264" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L267-L270" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def content(self):
@@ -4266,7 +4478,7 @@ def content(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L615-L618" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L621-L624" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def get_subclient_users(self):
@@ -4285,7 +4497,7 @@ Groups are assigned only if auto discovery is enabled for groups.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L266-L276" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L272-L282" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def groups(self):
@@ -4317,7 +4529,7 @@ List of user groups</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L504-L552" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L510-L558" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_AD_group(self, value):
     &#34;&#34;&#34;Adds the user group to the subclient if auto discovery type selected
@@ -4375,11 +4587,13 @@ List of user groups</p></div>
 </code></dt>
 <dd>
 <div class="desc"><p>Adds given OneDrive group to v2 client</p>
-<h2 id="args">Args</h2>
-<p>value (string) : Group name</p>
+<p>Args
+-----=
+value (string) : Group name</p>
 <p>plan_name (str) : O365 plan name to associate with users</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>if response is not success
 
 if response is returned with errors
@@ -4387,7 +4601,7 @@ if response is returned with errors
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L620-L687" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L626-L694" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_ad_group_onedrive_for_business_client(self, value, plan_name):
     &#34;&#34;&#34; Adds given OneDrive group to v2 client
@@ -4416,6 +4630,7 @@ if response is returned with errors
 
     groups = []
     group_response = self.search_for_group(group_id=value)
+    group_response = list(filter(lambda i : i[&#39;name&#39;]==value, group_response))
     display_name = group_response[0].get(&#39;name&#39;)
     group_id = group_response[0].get(&#39;id&#39;)
 
@@ -4464,15 +4679,16 @@ if response is returned with errors
 </code></dt>
 <dd>
 <div class="desc"><p>This method adds one drive user to the subclient</p>
-<h2 id="args">Args</h2>
-<p>user_name
+<p>Args
+-----=
+user_name
 (str)
 &ndash;
 Onedrive user name</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L554-L601" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L560-L607" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_user(self, user_name):
     &#34;&#34;&#34;This method adds one drive user to the subclient
@@ -4529,11 +4745,13 @@ Onedrive user name</p></div>
 </code></dt>
 <dd>
 <div class="desc"><p>Adds given OneDrive users to v2 client</p>
-<h2 id="args">Args</h2>
-<p>users (list) : List of user's SMTP address</p>
+<p>Args
+-----=
+users (list) : List of user's SMTP address</p>
 <p>plan_name (str) : O365 plan name to associate with users</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>if response is not success
 
 if response is returned with errors
@@ -4541,7 +4759,7 @@ if response is returned with errors
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L689-L773" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L696-L780" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_users_onedrive_for_business_client(self, users, plan_name):
     &#34;&#34;&#34; Adds given OneDrive users to v2 client
@@ -4635,8 +4853,9 @@ if response is returned with errors
 </code></dt>
 <dd>
 <div class="desc"><p>Returns the Onedrive client content i.e. users/ group information that is discovered in auto discovery phase</p>
-<h2 id="args">Args</h2>
-<p>discovery_type
+<p>Args
+-----=
+discovery_type
 (int)
 &ndash;
 type of discovery for content
@@ -4646,8 +4865,9 @@ For all Custom category groups = 31</p>
 <p>include_deleted
 (bool)
 &ndash; If True, deleted items will also be included</p>
-<h2 id="returns">Returns</h2>
-<p>user_dict
+<p>Returns
+-----=
+user_dict
 (dict)
 &ndash;
 dictionary of users properties</p>
@@ -4655,8 +4875,9 @@ dictionary of users properties</p>
 (int)
 &ndash;
 no of records</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>if response is empty
 
 if response is not success
@@ -4666,7 +4887,7 @@ if the method is called by Onedrive On-Premise Instance
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L1386-L1477" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L1412-L1503" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def browse_for_content(self, discovery_type, include_deleted=False):
     &#34;&#34;&#34;Returns the Onedrive client content i.e. users/ group information that is discovered in auto discovery phase
@@ -4767,8 +4988,9 @@ if the method is called by Onedrive On-Premise Instance
 </code></dt>
 <dd>
 <div class="desc"><p>This method discovers the users/groups on OneDrive</p>
-<h2 id="args">Args</h2>
-<p>discover_type (str)
+<p>Args
+-----=
+discover_type (str)
 &ndash;
 Type of discovery</p>
 <pre><code>Valid Values are
@@ -4778,19 +5000,21 @@ Type of discovery</p>
 
 Default: USERS
 </code></pre>
-<h2 id="returns">Returns</h2>
-<p>List (list)
+<p>Returns
+-----=
+List (list)
 &ndash;
 List of users on GSuite account</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
+<p>Raises
+-----=
+SDKException:
 if response is empty</p>
 <pre><code>if response is not success
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L397-L445" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L403-L451" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def discover(self, discover_type=&#39;USERS&#39;):
     &#34;&#34;&#34;This method discovers the users/groups on OneDrive
@@ -4843,23 +5067,79 @@ if response is empty</p>
                            self._update_response_(response.text))</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient.discovery_onedrive_for_business_client"><code class="name flex">
+<span>def <span class="ident">discovery_onedrive_for_business_client</span></span>(<span>self, content_type)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Discovers the content for onedrive subclient.</p>
+<p>Params
+-----=
+content_type (str) &ndash; type of content to be discovered. Possible values are 'USERS' and 'GROUPS'</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>A dictionary containing the discovered content details. The structure of the dictionary will depend on the content type.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>No content discovered or API call failed</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L2117-L2145" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def discovery_onedrive_for_business_client(self, content_type):
+    &#34;&#34;&#34;Discovers the content for onedrive subclient.
+        
+        Params:
+            content_type (str) -- type of content to be discovered. Possible values are &#39;USERS&#39; and &#39;GROUPS&#39;
+        Returns:
+            dict:   A dictionary containing the discovered content details. The structure of the dictionary will depend on the content type.
+        Raises:
+            SDKException: No content discovered or API call failed
+    &#34;&#34;&#34;
+    
+    if content_type.upper() == &#39;USERS&#39;:
+        disc_type = 8
+    elif content_type.upper() == &#39;GROUPS&#39;:
+        disc_type = 5
+    
+    _get_users = self._services[&#39;GET_CLOUDAPPS_USERS&#39;] % (self._instance_object.instance_id,
+                                                          self._client_object.client_id,
+                                                          disc_type)
+
+    flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, _get_users)
+    
+    if flag:
+            if response.json():
+                return response.json()
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient.disk_restore_onedrive_for_business_client"><code class="name flex">
 <span>def <span class="ident">disk_restore_onedrive_for_business_client</span></span>(<span>self, users, destination_client, destination_path, skip_file_permissions=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Runs an out-of-place restore job for specified users on OneDrive for business client
 By default restore skips the files already present in destination</p>
-<h2 id="args">Args</h2>
-<p>users (list) : list of SMTP addresses of users
+<p>Args
+-----=
+users (list) : list of SMTP addresses of users
 destination_client (str) : client where the users need to be restored
 destination_path (str) : Destination folder location
 skip_file_permissions (bool) : If True, restore of file permissions are skipped (default: False)</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this restore job</p></div>
+<p>Returns
+-----=
+object - instance of the Job class for this restore job</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L931-L954" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L938-L961" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disk_restore_onedrive_for_business_client(self, users, destination_client, destination_path, skip_file_permissions=False):
     &#34;&#34;&#34; Runs an out-of-place restore job for specified users on OneDrive for business client
@@ -4892,16 +5172,18 @@ skip_file_permissions (bool) : If True, restore of file permissions are skipped 
 </code></dt>
 <dd>
 <div class="desc"><p>Returns the client level stats for the client</p>
-<h2 id="args">Args</h2>
-<p>backupset_id(int)
+<p>Args
+-----=
+backupset_id(int)
 : backupset id of the client</p>
-<h2 id="retruns">Retruns</h2>
+<p>Retruns
+-----=</p>
 <p>response(json)
 : returns the client level stats as a json response</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L1910-L1938" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L1936-L1964" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_client_level_stats(self, backupset_id):
     &#34;&#34;&#34;
@@ -4940,23 +5222,26 @@ skip_file_permissions (bool) : If True, restore of file permissions are skipped 
 <dd>
 <div class="desc"><p>Runs an in-place restore job for specified users on OneDrive for business client
 By default restore skips the files already present in destination</p>
-<h2 id="args">Args</h2>
-<p>users (list) :
+<p>Args
+-----=
+users (list) :
 List of SMTP addresses of users
 **kwargs (dict) : Additional parameters
 overwrite (bool) : unconditional overwrite files during restore (default: False)
 restore_as_copy (bool) : restore files as copy during restore (default: False)
 skip_file_permissions (bool) : If True, restore of file permissions are skipped (default: False)</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this restore job</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Returns
+-----=
+object - instance of the Job class for this restore job</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>if overwrite and restore as copy file options are both selected
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L1064-L1102" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L1089-L1127" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def in_place_restore_onedrive_for_business_client(self, users, **kwargs):
     &#34;&#34;&#34; Runs an in-place restore job for specified users on OneDrive for business client
@@ -5004,18 +5289,21 @@ skip_file_permissions (bool) : If True, restore of file permissions are skipped 
 </code></dt>
 <dd>
 <div class="desc"><p>Runs an in-place restore job for specified users on Syntex OneDrive for business client</p>
-<h2 id="args">Args</h2>
-<p>users (list)
+<p>Args
+-----=
+users (list)
 :
 List of SMTP addresses of users
 fast_restore_point
 (booL)
 : Whether to use fast restore point or not
 default: False</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this restore job</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Returns
+-----=
+object - instance of the Job class for this restore job</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>if restore job failed
 
 if response is empty
@@ -5025,7 +5313,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L1000-L1062" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L1025-L1087" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def in_place_restore_onedrive_syntex(self, users, fast_restore_point=False):
     &#34;&#34;&#34; Runs an in-place restore job for specified users on Syntex OneDrive for business client
@@ -5097,8 +5385,9 @@ if response is not success
 </code></dt>
 <dd>
 <div class="desc"><p>Adds or Edits Custom category in the office 365 app.</p>
-<h2 id="args">Args</h2>
-<p>custom_dict (dict)
+<p>Args
+-----=
+custom_dict (dict)
 &ndash;
 dictionary of custom category name and rule details.
 Example:
@@ -5120,14 +5409,15 @@ plan (str)
 &ndash;
 Name of plan to be selected for adding category.
 //Default: None. Required for adding category.</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
+<p>Raises
+-----=
+SDKException:
 if response is not success
 if response is returned with errors</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L1605-L1774" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L1631-L1800" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def manage_custom_category(self, custom_dict, action, plan=None):
     &#34;&#34;&#34;
@@ -5307,23 +5597,26 @@ if response is returned with errors</p></div>
 <dd>
 <div class="desc"><p>Runs an out-of-place restore job for specified users on OneDrive for business client
 By default restore skips the files already present in destination</p>
-<h2 id="args">Args</h2>
-<p>users (list) : list of SMTP addresses of users
+<p>Args
+-----=
+users (list) : list of SMTP addresses of users
 destination_path (str) : SMTP address of destination user
 **kwargs (dict) : Additional parameters
 overwrite (bool) : unconditional overwrite files during restore (default: False)
 restore_as_copy (bool) : restore files as copy during restore (default: False)
 skip_file_permissions (bool) : If True, restore of file permissions are skipped (default: False)</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this restore job</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Returns
+-----=
+object - instance of the Job class for this restore job</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>if overwrite and restore as copy file options are both selected
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L956-L998" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L981-L1023" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def out_of_place_restore_onedrive_for_business_client(self, users, destination_path, **kwargs):
     &#34;&#34;&#34; Runs an out-of-place restore job for specified users on OneDrive for business client
@@ -5376,24 +5669,27 @@ skip_file_permissions (bool) : If True, restore of file permissions are skipped 
 <dd>
 <div class="desc"><p>Runs an in-place point in time restore job for specified users on OneDrive for business client
 By default restore skips the files already present in destination</p>
-<h2 id="args">Args</h2>
-<p>users (list) :
+<p>Args
+-----=
+users (list) :
 List of SMTP addresses of users
 end_time (int) : Backup job end time
 **kwargs (dict) : Additional parameters
 overwrite (bool) : unconditional overwrite files during restore (default: False)
 restore_as_copy (bool) : restore files as copy during restore (default: False)
 skip_file_permissions (bool) : If True, restore of file permissions are skipped (default: False)</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this restore job</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Returns
+-----=
+object - instance of the Job class for this restore job</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>if overwrite and restore as copy file options are both selected
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L1178-L1234" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L1203-L1259" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def point_in_time_in_place_restore_onedrive_for_business_client(self, users, end_time, **kwargs):
     &#34;&#34;&#34; Runs an in-place point in time restore job for specified users on OneDrive for business client
@@ -5460,24 +5756,27 @@ skip_file_permissions (bool) : If True, restore of file permissions are skipped 
 <dd>
 <div class="desc"><p>Runs an out-of-place point in time restore job for specified users on OneDrive for business client
 By default restore skips the files already present in destination</p>
-<h2 id="args">Args</h2>
-<p>users (list) : list of SMTP addresses of users
+<p>Args
+-----=
+users (list) : list of SMTP addresses of users
 end_time (int) : Backup job end time
 destination_path (str) : SMTP address of destination user
 **kwargs (dict) : Additional parameters
 overwrite (bool) : unconditional overwrite files during restore (default: False)
 restore_as_copy (bool) : restore files as copy during restore (default: False)
 skip_file_permissions (bool) : If True, restore of file permissions are skipped (default: False)</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this restore job</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Returns
+-----=
+object - instance of the Job class for this restore job</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>if overwrite and restore as copy file options are both selected
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L1236-L1294" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L1261-L1319" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def point_in_time_out_of_place_restore_onedrive_for_business_client(self, users, end_time, destination_path, **kwargs):
     &#34;&#34;&#34; Runs an out-of-place point in time restore job for specified users on OneDrive for business client
@@ -5545,15 +5844,18 @@ skip_file_permissions (bool) : If True, restore of file permissions are skipped 
 </code></dt>
 <dd>
 <div class="desc"><p>Gets the preview content for onedrive subclient.</p>
-<h2 id="params">Params</h2>
-<p>file_path (str) &ndash; file path of the file for which preview content is needed</p>
-<h2 id="returns">Returns</h2>
-<p>html
+<p>Params
+-----=
+file_path (str) &ndash; file path of the file for which preview content is needed</p>
+<p>Returns
+-----=
+html
 (str)
 &ndash;
 html content of the preview</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
+<p>Raises
+-----=
+SDKException:
 if file is not found</p>
 <pre><code>if response is empty
 
@@ -5562,7 +5864,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L2073-L2089" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L2099-L2115" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def preview_backedup_file(self, file_path):
     &#34;&#34;&#34;Gets the preview content for onedrive subclient.
@@ -5588,8 +5890,9 @@ if response is not success
 </code></dt>
 <dd>
 <div class="desc"><p>Makes API call to process index retention rules</p>
-<h2 id="args">Args</h2>
-<p>index_app_type_id
+<p>Args
+-----=
+index_app_type_id
 (int)
 &ndash;
 index app type id</p>
@@ -5597,8 +5900,9 @@ index app type id</p>
 (str)
 &ndash;
 client name of index server</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>if index server not found
 
 if response is empty
@@ -5608,7 +5912,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L1127-L1176" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L1152-L1201" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def process_index_retention_rules(self, index_app_type_id, index_server_client_name):
     &#34;&#34;&#34;
@@ -5667,14 +5971,16 @@ if response is not success
 </code></dt>
 <dd>
 <div class="desc"><p>Method to read the api call from the TrueUp and find the deleted files</p>
-<h2 id="args">Args</h2>
-<p>usersSMTPaddress (list) &ndash; of all the email addresses of the users for trueup</p>
-<h2 id="returns">Returns</h2>
-<p>all_deleted_files (list) &ndash; list of all the files that were captured by trueUp</p></div>
+<p>Args
+-----=
+usersSMTPaddress (list) &ndash; of all the email addresses of the users for trueup</p>
+<p>Returns
+-----=
+all_deleted_files (list) &ndash; list of all the files that were captured by trueUp</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L2056-L2071" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L2082-L2097" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def read_trueup_results_for_all_users(self, usersSMTPaddress):
     &#34;&#34;&#34;Method to read the api call from the TrueUp and find the deleted files
@@ -5702,16 +6008,18 @@ if response is not success
 <p>Args:
 userSMTPaddres
 (str) &ndash; the email address of the user for trueup</p>
-<h2 id="returns">Returns</h2>
-<p>File_names (list) &ndash; of file names that were captured in the trueup</p>
+<p>Returns
+-----=
+File_names (list) &ndash; of file names that were captured in the trueup</p>
 <p>['file1', 'file2', 'file3']</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
+<p>Raises
+-----=
+SDKException:
 if there is an error in TrueUp API call</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L2005-L2054" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L2031-L2080" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def read_trueup_results_for_single_user(self, userSMTPaddress):
     &#34;&#34;&#34;Reads the true up results for a single user
@@ -5770,13 +6078,14 @@ if there is an error in TrueUp API call</p></div>
 </code></dt>
 <dd>
 <div class="desc"><p>refresh the client level stats for the client</p>
-<h2 id="args">Args</h2>
-<p>subclient_id(int)
+<p>Args
+-----=
+subclient_id(int)
 : subclient id of the client</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L1879-L1908" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L1905-L1934" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh_client_level_stats(self, subclient_id):
     &#34;&#34;&#34;
@@ -5815,13 +6124,14 @@ if there is an error in TrueUp API call</p></div>
 </code></dt>
 <dd>
 <div class="desc"><p>refresh the retention stats for the client</p>
-<h2 id="args">Args</h2>
-<p>subclient_id(int)
+<p>Args
+-----=
+subclient_id(int)
 : subclient id of the client</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L1851-L1877" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L1877-L1903" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh_retention_stats(self, subclient_id):
     &#34;&#34;&#34;
@@ -5858,8 +6168,9 @@ if there is an error in TrueUp API call</p></div>
 <dd>
 <div class="desc"><p>Restores the files/folders specified in the input paths list to the input client,
 at the specified destionation location.</p>
-<h2 id="args">Args</h2>
-<p>client
+<p>Args
+-----=
+client
 (str/object) &ndash;
 either the name of the client or
 the instance of the Client</p>
@@ -5905,10 +6216,12 @@ format: YYYY-MM-DD HH:MM:SS</p>
 (bool)
 &ndash;
 If True, restore to disk will be performed</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this restore job</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
+<p>Returns
+-----=
+object - instance of the Job class for this restore job</p>
+<p>Raises
+-----=
+SDKException:
 if client is not a string or Client instance</p>
 <pre><code>if destination_path is not a string
 
@@ -5923,7 +6236,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L321-L395" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L327-L401" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_out_of_place(
         self,
@@ -6002,6 +6315,42 @@ if response is not success
     )</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient.restore_user_to_azure_blob"><code class="name flex">
+<span>def <span class="ident">restore_user_to_azure_blob</span></span>(<span>self, users, blob_name)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Runs restore to azure blob for specified users on OneDrive for business client</p>
+<p>Args
+-----=
+users (list) : list of SMTP addresses of users
+blob_name (str) : Name of credential to which restore needs to be performed</p>
+<p>Returns
+-----=
+object - instance of the Job class for this restore job</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L963-L979" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def restore_user_to_azure_blob(self, users, blob_name):
+    &#34;&#34;&#34;Runs restore to azure blob for specified users on OneDrive for business client
+        Args:
+            users (list) : list of SMTP addresses of users
+            blob_name (str) : Name of credential to which restore needs to be performed
+        Returns:
+            object - instance of the Job class for this restore job
+    &#34;&#34;&#34;
+    source_user_list = self._get_user_guids(users)
+    credential = self._commcell_object.credentials.get(blob_name)
+    if credential is None:
+        raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, f&#39;Credential &#34;{blob_name}&#34; not found&#39;)
+    restore_json = self._instance_object._prepare_restore_json_onedrive_for_business_client(source_user_list, **{
+        &#39;restore_to_blob&#39;: True,
+        &#39;blob_container_id&#39;: credential.credential_id
+    })
+    return self._process_restore_response(restore_json)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient.run_backup_onedrive_for_business_client"><code class="name flex">
 <span>def <span class="ident">run_backup_onedrive_for_business_client</span></span>(<span>self, **kwargs)</span>
 </code></dt>
@@ -6009,17 +6358,19 @@ if response is not success
 <div class="desc"><p>Runs the backup</p>
 <p>**kwargs (dict) : Additional parameters
 items_selection_option (str) : Item Selection Option</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this backup job</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
+<p>Returns
+-----=
+object - instance of the Job class for this backup job</p>
+<p>Raises
+-----=
+SDKException:
 if response is empty</p>
 <pre><code>if response is not success
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L1321-L1351" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L1346-L1376" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_backup_onedrive_for_business_client(self,**kwargs):
     &#34;&#34;&#34;
@@ -6062,7 +6413,7 @@ if response is empty</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L489-L502" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L495-L508" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_subclient_discovery(self):
     &#34;&#34;&#34;
@@ -6081,21 +6432,23 @@ if response is empty</p>
 </details>
 </dd>
 <dt id="cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient.run_trueup_for_single_user"><code class="name flex">
-<span>def <span class="ident">run_trueup_for_single_user</span></span>(<span>self, user, associated_plan, current_timestamp=1750148081)</span>
+<span>def <span class="ident">run_trueup_for_single_user</span></span>(<span>self, user, associated_plan, current_timestamp=1786526099)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Runs the true up for a single user</p>
-<h2 id="args">Args</h2>
-<p>user (str) &ndash; SMTP address of user
+<p>Args
+-----=
+user (str) &ndash; SMTP address of user
 current_timestamp (int) &ndash; Current timestamp, The time at which you want to run trueup, default current time
 associated_plan (str) &ndash; Name of the plan associated with the subclient</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
+<p>Raises
+-----=
+SDKException:
 if there is an error in TrueUp API call</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L1940-L2003" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L1966-L2029" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_trueup_for_single_user(self, user, associated_plan, current_timestamp=int(time.time())):
     &#34;&#34;&#34;Runs the true up for a single user
@@ -6168,20 +6521,23 @@ if there is an error in TrueUp API call</p></div>
 </code></dt>
 <dd>
 <div class="desc"><p>Runs the backup for the users in users list/ custom categories list</p>
-<h2 id="args">Args</h2>
-<p>users_list (list) : list of SMTP addresses of users
+<p>Args
+-----=
+users_list (list) : list of SMTP addresses of users
 custom_groups_list (lis) : list of custom categories</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this backup job</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
+<p>Returns
+-----=
+object - instance of the Job class for this backup job</p>
+<p>Raises
+-----=
+SDKException:
 if response is empty</p>
 <pre><code>if response is not success
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L1296-L1319" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L1321-L1344" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_user_level_backup_onedrive_for_business_client(self, users_list, custom_groups_list=[]):
     &#34;&#34;&#34;
@@ -6214,10 +6570,12 @@ if response is empty</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Searches for a specific group details from discovered list</p>
-<h2 id="args">Args</h2>
-<p>group_id (str) : group name</p>
-<h2 id="returns">Returns</h2>
+<p>Args
+-----=
+group_id (str) : group name</p>
 <dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
 <dt>groups (list): group details' list fetched from discovered content</dt>
 <dt><code>
 eg</code></dt>
@@ -6228,8 +6586,9 @@ eg</code></dt>
 }
 ]</dd>
 </dl>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>if discovery is not complete
 
 if invalid SMTP address is passed
@@ -6241,7 +6600,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L878-L929" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L885-L936" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def search_for_group(self, group_id):
     &#34;&#34;&#34; Searches for a specific group details from discovered list
@@ -6302,10 +6661,12 @@ if response is not success
 </code></dt>
 <dd>
 <div class="desc"><p>Searches for a specific user's details from discovered list</p>
-<h2 id="args">Args</h2>
-<p>user_id (str) : user's SMTP address</p>
-<h2 id="returns">Returns</h2>
+<p>Args
+-----=
+user_id (str) : user's SMTP address</p>
 <dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
 <dt>user_accounts (list): user details' list fetched from discovered content</dt>
 <dt><code>
 eg</code></dt>
@@ -6323,8 +6684,9 @@ eg</code></dt>
 }
 ]</dd>
 </dl>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>if discovery is not complete
 
 if invalid SMTP address is passed
@@ -6336,7 +6698,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L818-L876" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L825-L883" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def search_for_user(self, user_id):
     &#34;&#34;&#34; Searches for a specific user&#39;s details from discovered list
@@ -6413,7 +6775,7 @@ depending on the auto discovery type selected at instance level.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L447-L487" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L453-L493" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_auto_discovery(self, value):
     &#34;&#34;&#34;Sets the auto discovery value for subclient.
@@ -6484,7 +6846,7 @@ depending on the auto discovery type selected at instance level.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L1776-L1849" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L1802-L1875" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_custom_categories_association_properties(self, category_name, operation):
     &#34;&#34;&#34;
@@ -6567,8 +6929,9 @@ depending on the auto discovery type selected at instance level.</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Updates the association properties of user</p>
-<h2 id="args">Args</h2>
-<p>operation (int)
+<p>Args
+-----=
+operation (int)
 &ndash;
 type of operation to be performed
 Example: 1 - Associate
@@ -6587,8 +6950,9 @@ It has all information of groups</p>
 <p>plan_id (int)
 &ndash;
 id of Office 365 plan</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>if response is empty
 
 if response is not success
@@ -6598,7 +6962,7 @@ if the method is called by Onedrive On-Premise Instance
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L1512-L1603" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L1538-L1629" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def update_users_association_properties(self, operation, **kwargs):
     &#34;&#34;&#34;Updates the association properties of user
@@ -6699,14 +7063,16 @@ if the method is called by Onedrive On-Premise Instance
 </code></dt>
 <dd>
 <div class="desc"><p>Verifies that discovery is complete</p>
-<h2 id="returns">Returns</h2>
-<p>discovery_stats (tuple):</p>
+<p>Returns
+-----=
+discovery_stats (tuple):</p>
 <pre><code>discovery_status (bool): True if users are discovered else returns False
 
 total_records (int):     Number of users fetched, returns -1 if discovery is not complete
 </code></pre>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>   if response is not success
 
    if response received does not contain pagining info
@@ -6714,7 +7080,7 @@ total_records (int):     Number of users fetched, returns -1 if discovery is not
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L775-L816" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L782-L823" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def verify_discovery_onedrive_for_business_client(self):
     &#34;&#34;&#34; Verifies that discovery is complete
@@ -6760,14 +7126,95 @@ total_records (int):     Number of users fetched, returns -1 if discovery is not
                            self._update_response_(response.text))</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient.verify_subclient_content_onedrive_for_business_client"><code class="name flex">
+<span>def <span class="ident">verify_subclient_content_onedrive_for_business_client</span></span>(<span>self, input_content: dict)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Verifies the content for onedrive subclient with the given input content.
+This method is used for complete content verification after discovery, not for partial verification.</p>
+<p>Params
+-----=
+input_content (dict) &ndash; dictionary containing the content details to be verified. It should have the following structure:
+{
+'groups_dict': {
+group_name: {
+'planName': plan_name,
+'members_dict': {
+user_mail: planName
+}
+}
+},
+'users_dict': {
+user_mail: planName
+}
+}</p>
+<p>Returns
+-----=
+bool &ndash; True if the content matches, False otherwise</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/onedrive_subclient.py#L2148-L2194" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def verify_subclient_content_onedrive_for_business_client(self, input_content: dict): 
+    &#34;&#34;&#34;Verifies the content for onedrive subclient with the given input content.
+        This method is used for complete content verification after discovery, not for partial verification.
+        
+    Params:
+        input_content (dict) -- dictionary containing the content details to be verified. It should have the following structure:
+        {
+            &#39;groups_dict&#39;: {
+                group_name: {
+                    &#39;planName&#39;: plan_name,
+                    &#39;members_dict&#39;: {
+                        user_mail: planName
+                    }
+                }
+            },
+            &#39;users_dict&#39;: {
+                user_mail: planName
+            }
+        }
+        
+    Returns:
+        bool -- True if the content matches, False otherwise
+    &#34;&#34;&#34;
+    
+    groups_dict = input_content.get(&#39;groups_dict&#39;, {})
+    users_dict = input_content.get(&#39;users_dict&#39;, {})
+    
+    # dict compare = count, keys, key-values
+    # complete content verification (not partial)
+    if groups_dict: # group-name : { planName, members_dict:(mail:planName)}
+        content, count = self.browse_for_content(discovery_type=2)
+        
+        subclient_groups_dict = {group_name: details.get(&#39;planName&#39;, &#34;&#34;) for group_name, details in content.items()}
+        input_groups_dict = {group_name: details.get(&#39;planName&#39;, &#34;&#34;) for group_name, details in groups_dict.items()}
+        if subclient_groups_dict != input_groups_dict: return False
+        
+        for group_name, details in groups_dict.items():
+            members_dict = details.get(&#39;members_dict&#39;, {})
+            users_dict.update(members_dict)
+    
+    if users_dict: # user-mail(only users, not group-members) : planName  
+        content, count = self.browse_for_content(discovery_type=1)
+
+        subclient_users_dict = {user_mail: details.get(&#39;planName&#39;, &#34;&#34;) for user_mail, details in content.items()}
+        if subclient_users_dict != users_dict: return False
+        
+    return True</code></pre>
+</details>
+</dd>
 </dl>
 <h3>Inherited members</h3>
 <ul class="hlist">
 <li><code><b><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient" href="../casubclient.html#cvpysdk.subclients.casubclient.CloudAppsSubclient">CloudAppsSubclient</a></b></code>:
 <ul class="hlist">
+<li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.additional_settings" href="../../subclient.html#cvpysdk.subclient.Subclient.additional_settings">additional_settings</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.allow_multiple_readers" href="../../subclient.html#cvpysdk.subclient.Subclient.allow_multiple_readers">allow_multiple_readers</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.backup" href="../../subclient.html#cvpysdk.subclient.Subclient.backup">backup</a></code></li>
-<li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.browse" href="../../subclient.html#cvpysdk.subclient.Subclient.browse">browse</a></code></li>
+<li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.browse" href="../casubclient.html#cvpysdk.subclients.casubclient.CloudAppsSubclient.browse">browse</a></code></li>
+<li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.browse_Cosmos_Content" href="../../subclient.html#cvpysdk.subclient.Subclient.browse_Cosmos_Content">browse_Cosmos_Content</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.data_readers" href="../../subclient.html#cvpysdk.subclient.Subclient.data_readers">data_readers</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.deduplication_options" href="../../subclient.html#cvpysdk.subclient.Subclient.deduplication_options">deduplication_options</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.description" href="../../subclient.html#cvpysdk.subclient.Subclient.description">description</a></code></li>
@@ -6799,9 +7246,11 @@ total_records (int):     Number of users fetched, returns -1 if discovery is not
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.properties" href="../../subclient.html#cvpysdk.subclient.Subclient.properties">properties</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.read_buffer_size" href="../../subclient.html#cvpysdk.subclient.Subclient.read_buffer_size">read_buffer_size</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.refresh" href="../../subclient.html#cvpysdk.subclient.Subclient.refresh">refresh</a></code></li>
+<li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.restore" href="../casubclient.html#cvpysdk.subclients.casubclient.CloudAppsSubclient.restore">restore</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.restore_in_place" href="../../subclient.html#cvpysdk.subclient.Subclient.restore_in_place">restore_in_place</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.run_content_indexing" href="../../subclient.html#cvpysdk.subclient.Subclient.run_content_indexing">run_content_indexing</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.set_backup_nodes" href="../../subclient.html#cvpysdk.subclient.Subclient.set_backup_nodes">set_backup_nodes</a></code></li>
+<li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.set_proxy_for_backup_copy" href="../../subclient.html#cvpysdk.subclient.Subclient.set_proxy_for_backup_copy">set_proxy_for_backup_copy</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.set_proxy_for_snap" href="../../subclient.html#cvpysdk.subclient.Subclient.set_proxy_for_snap">set_proxy_for_snap</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.snapshot_engine_name" href="../../subclient.html#cvpysdk.subclient.Subclient.snapshot_engine_name">snapshot_engine_name</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.software_compression" href="../../subclient.html#cvpysdk.subclient.Subclient.software_compression">software_compression</a></code></li>
@@ -6811,7 +7260,9 @@ total_records (int):     Number of users fetched, returns -1 if discovery is not
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.subclient_guid" href="../../subclient.html#cvpysdk.subclient.Subclient.subclient_guid">subclient_guid</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.subclient_id" href="../../subclient.html#cvpysdk.subclient.Subclient.subclient_id">subclient_id</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.subclient_name" href="../../subclient.html#cvpysdk.subclient.Subclient.subclient_name">subclient_name</a></code></li>
+<li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.unset_proxy_for_backup_copy" href="../../subclient.html#cvpysdk.subclient.Subclient.unset_proxy_for_backup_copy">unset_proxy_for_backup_copy</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.unset_proxy_for_snap" href="../../subclient.html#cvpysdk.subclient.Subclient.unset_proxy_for_snap">unset_proxy_for_snap</a></code></li>
+<li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.update_atlas_instance" href="../../subclient.html#cvpysdk.subclient.Subclient.update_atlas_instance">update_atlas_instance</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.update_properties" href="../../subclient.html#cvpysdk.subclient.Subclient.update_properties">update_properties</a></code></li>
 </ul>
 </li>
@@ -6895,6 +7346,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient.browse_for_content" href="#cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient.browse_for_content">browse_for_content</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient.content" href="#cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient.content">content</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient.discover" href="#cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient.discover">discover</a></code></li>
+<li><code><a title="cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient.discovery_onedrive_for_business_client" href="#cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient.discovery_onedrive_for_business_client">discovery_onedrive_for_business_client</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient.disk_restore_onedrive_for_business_client" href="#cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient.disk_restore_onedrive_for_business_client">disk_restore_onedrive_for_business_client</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient.get_client_level_stats" href="#cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient.get_client_level_stats">get_client_level_stats</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient.get_subclient_users" href="#cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient.get_subclient_users">get_subclient_users</a></code></li>
@@ -6912,6 +7364,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient.refresh_client_level_stats" href="#cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient.refresh_client_level_stats">refresh_client_level_stats</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient.refresh_retention_stats" href="#cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient.refresh_retention_stats">refresh_retention_stats</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient.restore_out_of_place" href="#cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient.restore_out_of_place">restore_out_of_place</a></code></li>
+<li><code><a title="cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient.restore_user_to_azure_blob" href="#cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient.restore_user_to_azure_blob">restore_user_to_azure_blob</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient.run_backup_onedrive_for_business_client" href="#cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient.run_backup_onedrive_for_business_client">run_backup_onedrive_for_business_client</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient.run_subclient_discovery" href="#cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient.run_subclient_discovery">run_subclient_discovery</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient.run_trueup_for_single_user" href="#cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient.run_trueup_for_single_user">run_trueup_for_single_user</a></code></li>
@@ -6922,6 +7375,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient.update_custom_categories_association_properties" href="#cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient.update_custom_categories_association_properties">update_custom_categories_association_properties</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient.update_users_association_properties" href="#cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient.update_users_association_properties">update_users_association_properties</a></code></li>
 <li><code><a title="cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient.verify_discovery_onedrive_for_business_client" href="#cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient.verify_discovery_onedrive_for_business_client">verify_discovery_onedrive_for_business_client</a></code></li>
+<li><code><a title="cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient.verify_subclient_content_onedrive_for_business_client" href="#cvpysdk.subclients.cloudapps.onedrive_subclient.OneDriveSubclient.verify_subclient_content_onedrive_for_business_client">verify_subclient_content_onedrive_for_business_client</a></code></li>
 </ul>
 </li>
 </ul>

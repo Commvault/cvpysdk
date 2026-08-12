@@ -27,8 +27,9 @@
 <p>NASSubclient is the only class defined in this file.</p>
 <p>NASSubclient: Derived class from Subclient Base class, representing a nas subclient,
 and to perform operations on that subclient</p>
-<h2 id="nassubclient">Nassubclient</h2>
-<p>_get_subclient_properties()
+<p>Nassubclient
+-----=
+_get_subclient_properties()
 &ndash;
 gets the subclient
 related properties of NAS subclient.</p>
@@ -55,7 +56,7 @@ run a backup job for the subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/nassubclient.py#L1-L392" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/nassubclient.py#L1-L392" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">#!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -462,31 +463,32 @@ class NASSubclient(FileSystemSubclient):
 <dl>
 <dt id="cvpysdk.subclients.nassubclient.NASSubclient"><code class="flex name class">
 <span>class <span class="ident">NASSubclient</span></span>
-<span>(</span><span>backupset_object, subclient_name, subclient_id=None)</span>
+<span>(</span><span>backupset_object: object, subclient_name: str, subclient_id: str = None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Derived class from Subclient Base class, representing a nas subclient,
 and to perform operations on that subclient.</p>
-<p>Initialise the Subclient object.</p>
-<h2 id="args">Args</h2>
-<p>backupset_object (object)
-&ndash;
-instance of the Backupset class</p>
-<p>subclient_name
-(str)
-&ndash;
-name of the subclient</p>
-<p>subclient_id
-(str)
-&ndash;
-id of the subclient
-default: None</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Subclient class</p></div>
+<p>Initialize a Subclient object.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>backupset_object</code></strong></dt>
+<dd>Instance of the Backupset class to which this subclient belongs.</dd>
+<dt><strong><code>subclient_name</code></strong></dt>
+<dd>Name of the subclient.</dd>
+<dt><strong><code>subclient_id</code></strong></dt>
+<dd>Optional; ID of the subclient. If not provided, it will be determined automatically.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; backupset = Backupset(client_object, 'defaultBackupSet')
+&gt;&gt;&gt; subclient = Subclient(backupset, 'default')
+&gt;&gt;&gt; print(f&quot;Subclient created: {subclient}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/nassubclient.py#L52-L392" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/nassubclient.py#L52-L392" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class NASSubclient(FileSystemSubclient):
     &#34;&#34;&#34;Derived class from Subclient Base class, representing a nas subclient,
@@ -842,8 +844,9 @@ default: None</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Runs a backup job for the subclient of the level specified.</p>
-<h2 id="args">Args</h2>
-<p>backup_level
+<p>Args
+-----=
+backup_level
 (str)
 &ndash;
 level of backup the user wish to run
@@ -883,10 +886,12 @@ input for advanced NAS backup option backupOfflineData</p>
 (bool)
 &ndash;
 input for advanced NAS backup option volumeBasedBackup</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this backup job</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
+<p>Returns
+-----=
+object - instance of the Job class for this backup job</p>
+<p>Raises
+-----=
+SDKException:
 if backup level specified is not correct</p>
 <pre><code>if response is empty
 
@@ -895,7 +900,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/nassubclient.py#L57-L139" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/nassubclient.py#L57-L139" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def backup(
         self,
@@ -987,9 +992,12 @@ if response is not success
 </code></dt>
 <dd>
 <div class="desc"><p>Runs a restore job for the subclient .</p>
-<h2 id="args">Args</h2>
-<pre><code>        paths                   (list)  --  list of full paths of files/folders to restore
-</code></pre>
+<p>Args
+-----=
+paths
+(list)
+&ndash;
+list of full paths of files/folders to restore</p>
 <p>overwrite
 (bool)
 &ndash;
@@ -1054,11 +1062,13 @@ validate_only
 
         **Note** make use of TIMEZONES dict in constants.py to pass timezone
 </code></pre>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this restore job if its an immediate Job
+<p>Returns
+-----=
+object - instance of the Job class for this restore job if its an immediate Job
 instance of the Schedule class for this restore job if its a scheduled Job</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
+<p>Raises
+-----=
+SDKException:
 if paths is not a list</p>
 <pre><code>if failed to initialize job
 
@@ -1069,7 +1079,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/nassubclient.py#L141-L261" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/nassubclient.py#L141-L261" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_in_place(
         self,
@@ -1199,9 +1209,12 @@ if response is not success
 </code></dt>
 <dd>
 <div class="desc"><p>Runs a restore job for the subclient .</p>
-<h2 id="args">Args</h2>
-<pre><code>        paths                   (list)  --  list of full paths of files/folders to restore
-</code></pre>
+<p>Args
+-----=
+paths
+(list)
+&ndash;
+list of full paths of files/folders to restore</p>
 <p>overwrite
 (bool)
 &ndash;
@@ -1266,11 +1279,13 @@ validate_only
 
         **Note** make use of TIMEZONES dict in constants.py to pass timezone
 </code></pre>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this restore job if its an immediate Job
+<p>Returns
+-----=
+object - instance of the Job class for this restore job if its an immediate Job
 instance of the Schedule class for this restore job if its a scheduled Job</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
+<p>Raises
+-----=
+SDKException:
 if paths is not a list</p>
 <pre><code>if failed to initialize job
 
@@ -1281,7 +1296,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/nassubclient.py#L263-L392" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/nassubclient.py#L263-L392" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_out_of_place(
         self,
@@ -1421,6 +1436,7 @@ if response is not success
 <li><code><b><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient">FileSystemSubclient</a></b></code>:
 <ul class="hlist">
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.add_comparison" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.add_comparison">add_comparison</a></code></li>
+<li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.additional_settings" href="../subclient.html#cvpysdk.subclient.Subclient.additional_settings">additional_settings</a></code></li>
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.allow_multiple_readers" href="../subclient.html#cvpysdk.subclient.Subclient.allow_multiple_readers">allow_multiple_readers</a></code></li>
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.archiver_retention" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.archiver_retention">archiver_retention</a></code></li>
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.archiver_retention_days" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.archiver_retention_days">archiver_retention_days</a></code></li>
@@ -1435,6 +1451,7 @@ if response is not success
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.backup_using_multiple_drives" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.backup_using_multiple_drives">backup_using_multiple_drives</a></code></li>
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.block_level_backup_option" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.block_level_backup_option">block_level_backup_option</a></code></li>
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.browse" href="../subclient.html#cvpysdk.subclient.Subclient.browse">browse</a></code></li>
+<li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.browse_Cosmos_Content" href="../subclient.html#cvpysdk.subclient.Subclient.browse_Cosmos_Content">browse_Cosmos_Content</a></code></li>
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.catalog_acl" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.catalog_acl">catalog_acl</a></code></li>
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.content" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.content">content</a></code></li>
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.create_file_level_index_option" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.create_file_level_index_option">create_file_level_index_option</a></code></li>
@@ -1491,7 +1508,7 @@ if response is not success
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.onetouch_server_directory" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.onetouch_server_directory">onetouch_server_directory</a></code></li>
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.other_pending_changes" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.other_pending_changes">other_pending_changes</a></code></li>
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.pending_record_changes" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.pending_record_changes">pending_record_changes</a></code></li>
-<li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.plan" href="../subclient.html#cvpysdk.subclient.Subclient.plan">plan</a></code></li>
+<li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.plan" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.plan">plan</a></code></li>
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.pre_post_commands" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.pre_post_commands">pre_post_commands</a></code></li>
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.preview_backedup_file" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.preview_backedup_file">preview_backedup_file</a></code></li>
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.properties" href="../subclient.html#cvpysdk.subclient.Subclient.properties">properties</a></code></li>
@@ -1503,6 +1520,7 @@ if response is not success
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.save_while_active_option" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.save_while_active_option">save_while_active_option</a></code></li>
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.scan_type" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.scan_type">scan_type</a></code></li>
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.set_backup_nodes" href="../subclient.html#cvpysdk.subclient.Subclient.set_backup_nodes">set_backup_nodes</a></code></li>
+<li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.set_proxy_for_backup_copy" href="../subclient.html#cvpysdk.subclient.Subclient.set_proxy_for_backup_copy">set_proxy_for_backup_copy</a></code></li>
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.set_proxy_for_snap" href="../subclient.html#cvpysdk.subclient.Subclient.set_proxy_for_snap">set_proxy_for_snap</a></code></li>
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.snapshot_engine_name" href="../subclient.html#cvpysdk.subclient.Subclient.snapshot_engine_name">snapshot_engine_name</a></code></li>
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.software_compression" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.software_compression">software_compression</a></code></li>
@@ -1516,7 +1534,9 @@ if response is not success
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.target_release" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.target_release">target_release</a></code></li>
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.trueup_days" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.trueup_days">trueup_days</a></code></li>
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.trueup_option" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.trueup_option">trueup_option</a></code></li>
+<li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.unset_proxy_for_backup_copy" href="../subclient.html#cvpysdk.subclient.Subclient.unset_proxy_for_backup_copy">unset_proxy_for_backup_copy</a></code></li>
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.unset_proxy_for_snap" href="../subclient.html#cvpysdk.subclient.Subclient.unset_proxy_for_snap">unset_proxy_for_snap</a></code></li>
+<li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.update_atlas_instance" href="../subclient.html#cvpysdk.subclient.Subclient.update_atlas_instance">update_atlas_instance</a></code></li>
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.update_history" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.update_history">update_history</a></code></li>
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.update_properties" href="../subclient.html#cvpysdk.subclient.Subclient.update_properties">update_properties</a></code></li>
 <li><code><a title="cvpysdk.subclients.fssubclient.FileSystemSubclient.use_vss" href="fssubclient.html#cvpysdk.subclients.fssubclient.FileSystemSubclient.use_vss">use_vss</a></code></li>

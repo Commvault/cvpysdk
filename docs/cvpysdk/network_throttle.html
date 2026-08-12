@@ -24,7 +24,8 @@
 </header>
 <section id="section-intro">
 <p>Main file for performing network throttle related operations on a client/client group</p>
-<h2 id="networkthrottle">Networkthrottle</h2>
+<p>Networkthrottle
+-----=</p>
 <p><strong>init</strong>(class_object)
 &ndash;
 initialize object of the NetworkThrottle class</p>
@@ -55,7 +56,7 @@ provided</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network_throttle.py#L1-L393" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network_throttle.py#L1-L505" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -104,17 +105,39 @@ NetworkThrottle:
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
+from typing import Any, Dict, List
+
 from .exception import SDKException
 
-
 class NetworkThrottle(object):
-    &#34;&#34;&#34;Class for performing network throttle related operations on a client or client group&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Class for managing and configuring network throttling operations for clients and client groups.
 
-    def __init__(self, class_object):
-        &#34;&#34;&#34;Initialize the NetworkThrottle class object
+    This class provides an interface to control network bandwidth usage by enabling or disabling
+    network throttling, sharing bandwidth among clients, and managing remote clients and client groups.
+    It also supports the configuration of throttle schedules and rules to optimize network performance.
 
-            Args:
-                class_object (object)  --  instance of the client/client group class
+    Key Features:
+        - Initialization with a class object for context
+        - Retrieval of throttle properties
+        - Enable or disable network throttling via property
+        - Share bandwidth among clients or groups
+        - Manage remote clients and remote client groups
+        - Configure and manage throttle schedules and rules
+        - Internal configuration of network throttle settings
+
+    &#34;&#34;&#34;
+
+    def __init__(self, class_object: object) -&gt; None:
+        &#34;&#34;&#34;Initialize a NetworkThrottle instance for managing network throttling settings.
+
+        Args:
+            class_object: An instance of the client or client group class to which network throttling will be applied.
+
+        Example:
+            &gt;&gt;&gt; client = Client(&#39;client_name&#39;)
+            &gt;&gt;&gt; throttle = NetworkThrottle(client)
+            &gt;&gt;&gt; print(&#34;NetworkThrottle object initialized for client.&#34;)
 
         &#34;&#34;&#34;
         from .client import Client
@@ -141,10 +164,20 @@ class NetworkThrottle(object):
         self._remote_clients = []
         self._get_throttle_properties()
 
-    def _get_throttle_properties(self):
-        &#34;&#34;&#34;Get all the existing network throttle properties on a client/client group
-        and retain each of them
+    def _get_throttle_properties(self) -&gt; Dict[str, Any]:
+        &#34;&#34;&#34;Retrieve and store all existing network throttle properties for a client or client group.
 
+        This method fetches the current network throttle settings associated with the client or client group
+        and retains each property for further use or inspection.
+
+        Returns:
+            A dictionary containing the network throttle properties and their values.
+
+        Example:
+            &gt;&gt;&gt; throttle = NetworkThrottle()
+            &gt;&gt;&gt; properties = throttle._get_throttle_properties()
+            &gt;&gt;&gt; print(properties)
+            {&#39;max_bandwidth&#39;: 100, &#39;throttle_type&#39;: &#39;client&#39;, ...}
 
         &#34;&#34;&#34;
         if self.is_client:
@@ -168,18 +201,31 @@ class NetworkThrottle(object):
             self._remote_clients = (throttle_prop.get(&#39;networkThrottle&#39;).get(&#39;clientList&#39;, []))
 
     @property
-    def enable_network_throttle(self):
-        &#34;&#34;&#34;Gets the value for enable network throttling
+    def enable_network_throttle(self) -&gt; bool:
+        &#34;&#34;&#34;Get the current status of network throttling.
+
+        Returns:
+            bool: True if network throttling is enabled, False otherwise.
+
+        Example:
+            &gt;&gt;&gt; throttle = NetworkThrottle()
+            &gt;&gt;&gt; is_enabled = throttle.enable_network_throttle
+            &gt;&gt;&gt; print(f&#34;Network throttling enabled: {is_enabled}&#34;)
 
         &#34;&#34;&#34;
         return self._enable_network_throttling
 
     @enable_network_throttle.setter
-    def enable_network_throttle(self, val):
-        &#34;&#34;&#34;sets the value for enable network throttling
+    def enable_network_throttle(self, val: bool) -&gt; None:
+        &#34;&#34;&#34;Set the value to enable or disable network throttling.
 
-            Args:
-                val (boolean) --  value for enable network throttling
+        Args:
+            val: Boolean value indicating whether to enable (True) or disable (False) network throttling.
+
+        Example:
+            &gt;&gt;&gt; throttle = NetworkThrottle()
+            &gt;&gt;&gt; throttle.enable_network_throttle = True  # Enable network throttling
+            &gt;&gt;&gt; throttle.enable_network_throttle = False  # Disable network throttling
 
         &#34;&#34;&#34;
 
@@ -187,18 +233,31 @@ class NetworkThrottle(object):
         self._config_network_throttle()
 
     @property
-    def share_bandwidth(self):
-        &#34;&#34;&#34;Gets the value for share bandwidth
+    def share_bandwidth(self) -&gt; int:
+        &#34;&#34;&#34;Get the configured value for shared network bandwidth.
+
+        Returns:
+            The amount of bandwidth (in Mbps) allocated for sharing across network operations.
+
+        Example:
+            &gt;&gt;&gt; throttle = NetworkThrottle()
+            &gt;&gt;&gt; bandwidth = throttle.share_bandwidth
+            &gt;&gt;&gt; print(f&#34;Shared bandwidth: {bandwidth} Mbps&#34;)
 
         &#34;&#34;&#34;
         return self._share_bandwidth
 
     @share_bandwidth.setter
-    def share_bandwidth(self, val):
-        &#34;&#34;&#34;Sets the value for share bandwidth
+    def share_bandwidth(self, val: bool) -&gt; None:
+        &#34;&#34;&#34;Set the value for the share bandwidth property.
 
-            Args:
-                val (boolean) --  value for share bandwidth
+        Args:
+            val: Boolean value indicating whether to enable (True) or disable (False) bandwidth sharing.
+
+        Example:
+            &gt;&gt;&gt; throttle = NetworkThrottle()
+            &gt;&gt;&gt; throttle.share_bandwidth = True  # Enable bandwidth sharing
+            &gt;&gt;&gt; throttle.share_bandwidth = False  # Disable bandwidth sharing
 
         &#34;&#34;&#34;
 
@@ -206,8 +265,16 @@ class NetworkThrottle(object):
         self.enable_network_throttle = True
 
     @property
-    def remote_clients(self):
-        &#34;&#34;&#34;Gets the associated client towards which throttling is configured
+    def remote_clients(self) -&gt; List[str]:
+        &#34;&#34;&#34;Get the list of remote clients for which network throttling is configured.
+
+        Returns:
+            List of client names (as strings) that have network throttling settings applied.
+
+        Example:
+            &gt;&gt;&gt; throttle = NetworkThrottle()
+            &gt;&gt;&gt; clients = throttle.remote_clients
+            &gt;&gt;&gt; print(f&#34;Throttling is configured for: {clients}&#34;)
 
         &#34;&#34;&#34;
         clients = []
@@ -217,11 +284,16 @@ class NetworkThrottle(object):
         return clients
 
     @remote_clients.setter
-    def remote_clients(self, clients):
-        &#34;&#34;&#34;Sets the remote clients towards which throttling will be configured
+    def remote_clients(self, clients: list) -&gt; None:
+        &#34;&#34;&#34;Set the list of remote clients for which network throttling will be configured.
 
-            Args:
-                clients (list) --   list of clients
+        Args:
+            clients: A list of client names (as strings) to apply throttling settings to.
+
+        Example:
+            &gt;&gt;&gt; throttle = NetworkThrottle()
+            &gt;&gt;&gt; throttle.remote_clients = [&#39;client1&#39;, &#39;client2&#39;, &#39;client3&#39;]
+            &gt;&gt;&gt; # The specified clients will now have throttling configured
 
         &#34;&#34;&#34;
 
@@ -234,8 +306,16 @@ class NetworkThrottle(object):
         self.enable_network_throttle = True
 
     @property
-    def remote_client_groups(self):
-        &#34;&#34;&#34;Gets the associated client groups towards which throttling is configured
+    def remote_client_groups(self) -&gt; List[str]:
+        &#34;&#34;&#34;Get the list of client groups associated with network throttling.
+
+        Returns:
+            List of client group names (as strings) for which throttling is configured.
+
+        Example:
+            &gt;&gt;&gt; throttle = NetworkThrottle()
+            &gt;&gt;&gt; groups = throttle.remote_client_groups
+            &gt;&gt;&gt; print(f&#34;Throttled client groups: {groups}&#34;)
 
         &#34;&#34;&#34;
         client_groups = []
@@ -245,11 +325,16 @@ class NetworkThrottle(object):
         return client_groups
 
     @remote_client_groups.setter
-    def remote_client_groups(self, client_groups):
-        &#34;&#34;&#34;Sets the remote client groups towards which throttling will be configured
+    def remote_client_groups(self, client_groups: list) -&gt; None:
+        &#34;&#34;&#34;Set the remote client groups for which network throttling will be configured.
 
-            Args:
-                client_groups (list) -- list of client groups
+        Args:
+            client_groups: A list of client group names or identifiers to apply throttling settings to.
+
+        Example:
+            &gt;&gt;&gt; throttle = NetworkThrottle()
+            &gt;&gt;&gt; throttle.remote_client_groups = [&#39;GroupA&#39;, &#39;GroupB&#39;]
+            &gt;&gt;&gt; # Throttling will now be configured for the specified remote client groups
 
         &#34;&#34;&#34;
 
@@ -262,58 +347,69 @@ class NetworkThrottle(object):
         self.enable_network_throttle = True
 
     @property
-    def throttle_schedules(self):
-        &#34;&#34;&#34;Gets the throttle rules set on a client or client group
+    def throttle_schedules(self) -&gt; list:
+        &#34;&#34;&#34;Retrieve the throttle rules configured for a client or client group.
+
+        Returns:
+            list: A list of throttle rule configurations currently set on the client or client group.
+
+        Example:
+            &gt;&gt;&gt; network_throttle = NetworkThrottle()
+            &gt;&gt;&gt; schedules = network_throttle.throttle_schedules
+            &gt;&gt;&gt; print(f&#34;Number of throttle schedules: {len(schedules)}&#34;)
+            &gt;&gt;&gt; for rule in schedules:
+            ...     print(rule)
 
         &#34;&#34;&#34;
         return self._throttle_schedules
 
     @throttle_schedules.setter
-    def throttle_schedules(self, throttle_rules):
-        &#34;&#34;&#34;Sets different throttle schedules on a client/client group
+    def throttle_schedules(self, throttle_rules: list[dict]) -&gt; None:
+        &#34;&#34;&#34;Set throttle schedules for a client or client group.
 
-            Args:
-                throttle_rules (list of dict) --  list of throttle rules
+        This setter allows you to define multiple network throttle rules, specifying bandwidth limits and schedules
+        for sending and receiving data. Each rule is represented as a dictionary with supported keys such as
+        &#34;sendRate&#34;, &#34;recvRate&#34;, &#34;days&#34;, and others.
 
-            Supported keys:
+        Args:
+            throttle_rules: A list of dictionaries, each representing a throttle rule. Supported keys in each
+                dictionary include:
+                    - &#34;sendRate&#34;: (int) Maximum send rate in KBps.
+                    - &#34;sendEnabled&#34;: (bool) Whether sending is enabled.
+                    - &#34;receiveEnabled&#34;: (bool) Whether receiving is enabled.
+                    - &#34;recvRate&#34;: (int) Maximum receive rate in KBps.
+                    - &#34;days&#34;: (str) 7-character string representing days of the week (e.g., &#39;1010101&#39;).
+                    - &#34;isAbsolute&#34;: (bool) Whether the rate is absolute.
+                    - &#34;startTime&#34;: (int) Start time in seconds from midnight.
+                    - &#34;endTime&#34;: (int) End time in seconds from midnight.
+                    - &#34;sendRatePercent&#34;: (int) Send rate as a percentage.
+                    - &#34;recvRatePercent&#34;: (int) Receive rate as a percentage.
 
-                &#34;sendRate&#34;
-                &#34;sendEnabled&#34;
-                &#34;receiveEnabled&#34;
-                &#34;recvRate&#34;
-                &#34;days&#34;
-                &#34;isAbsolute&#34;
-                &#34;startTime&#34;
-                &#34;endTime&#34;
-                &#34;sendRatePercent&#34;
-                &#34;recvRatePercent&#34;
-
-
-            Example:
-             [
-                {
-                    &#34;sendRate&#34;: 1024,
-                    &#34;sendEnabled&#34;: true,
-                    &#34;receiveEnabled&#34;: true,
-                    &#34;recvRate&#34;: 1024,
-                    &#34;days&#34;: &#39;1010101&#39;,
-                    &#34;isAbsolute&#34;: true,
-                    &#34;startTime&#34;: 0,
-                    &#34;endTime&#34;: 0,
-                    &#34;sendRatePercent&#34;: 40,
-                    &#34;recvRatePercent&#34;: 40
-                },
-
-                {
-                    &#34;sendRate&#34;: 1024,
-                    &#34;sendEnabled&#34;: True,
-                    &#34;receiveEnabled&#34;: True,
-                    &#34;recvRate&#34;: 1024,
-                    &#34;days&#34;: &#39;1111111&#39;,
-                    &#34;isAbsolute&#34;: False
-
-                }
-            ]
+        Example:
+            &gt;&gt;&gt; throttle_rules = [
+            ...     {
+            ...         &#34;sendRate&#34;: 1024,
+            ...         &#34;sendEnabled&#34;: True,
+            ...         &#34;receiveEnabled&#34;: True,
+            ...         &#34;recvRate&#34;: 1024,
+            ...         &#34;days&#34;: &#39;1010101&#39;,
+            ...         &#34;isAbsolute&#34;: True,
+            ...         &#34;startTime&#34;: 0,
+            ...         &#34;endTime&#34;: 0,
+            ...         &#34;sendRatePercent&#34;: 40,
+            ...         &#34;recvRatePercent&#34;: 40
+            ...     },
+            ...     {
+            ...         &#34;sendRate&#34;: 1024,
+            ...         &#34;sendEnabled&#34;: True,
+            ...         &#34;receiveEnabled&#34;: True,
+            ...         &#34;recvRate&#34;: 1024,
+            ...         &#34;days&#34;: &#39;1111111&#39;,
+            ...         &#34;isAbsolute&#34;: False
+            ...     }
+            ... ]
+            &gt;&gt;&gt; network_throttle = NetworkThrottle()
+            &gt;&gt;&gt; network_throttle.throttle_schedules = throttle_rules  # Use assignment for property setter
 
         &#34;&#34;&#34;
 
@@ -336,17 +432,20 @@ class NetworkThrottle(object):
 
         self.enable_network_throttle = True
 
-    def _config_network_throttle(self):
-        &#34;&#34;&#34;Sets network throttle properties on the client/client group
+    def _config_network_throttle(self) -&gt; None:
+        &#34;&#34;&#34;Configure network throttle properties on the client or client group.
 
+        This method applies the network throttle settings to the associated client or client group.
+        It should be used to enforce bandwidth limitations or other network-related restrictions.
 
-                    Raises:
-                        SDKException:
-                            if  request was not successful
+        Raises:
+            SDKException: If the request was not successful, if invalid input was provided,
+                or if an empty response was received.
 
-                            if  invalid input was provided in the request
-
-                            if empty response was received
+        Example:
+            &gt;&gt;&gt; throttle = NetworkThrottle()
+            &gt;&gt;&gt; throttle._config_network_throttle()
+            &gt;&gt;&gt; print(&#34;Network throttle configuration applied successfully.&#34;)
 
         &#34;&#34;&#34;
 
@@ -463,28 +562,68 @@ class NetworkThrottle(object):
 <dl>
 <dt id="cvpysdk.network_throttle.NetworkThrottle"><code class="flex name class">
 <span>class <span class="ident">NetworkThrottle</span></span>
-<span>(</span><span>class_object)</span>
+<span>(</span><span>class_object: object)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for performing network throttle related operations on a client or client group</p>
-<p>Initialize the NetworkThrottle class object</p>
-<h2 id="args">Args</h2>
-<p>class_object (object)
-&ndash;
-instance of the client/client group class</p></div>
+<div class="desc"><p>Class for managing and configuring network throttling operations for clients and client groups.</p>
+<p>This class provides an interface to control network bandwidth usage by enabling or disabling
+network throttling, sharing bandwidth among clients, and managing remote clients and client groups.
+It also supports the configuration of throttle schedules and rules to optimize network performance.</p>
+<p>Key Features:
+- Initialization with a class object for context
+- Retrieval of throttle properties
+- Enable or disable network throttling via property
+- Share bandwidth among clients or groups
+- Manage remote clients and remote client groups
+- Configure and manage throttle schedules and rules
+- Internal configuration of network throttle settings</p>
+<p>Initialize a NetworkThrottle instance for managing network throttling settings.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>class_object</code></strong></dt>
+<dd>An instance of the client or client group class to which network throttling will be applied.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; client = Client('client_name')
+&gt;&gt;&gt; throttle = NetworkThrottle(client)
+&gt;&gt;&gt; print(&quot;NetworkThrottle object initialized for client.&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network_throttle.py#L51-L393" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network_throttle.py#L52-L505" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class NetworkThrottle(object):
-    &#34;&#34;&#34;Class for performing network throttle related operations on a client or client group&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Class for managing and configuring network throttling operations for clients and client groups.
 
-    def __init__(self, class_object):
-        &#34;&#34;&#34;Initialize the NetworkThrottle class object
+    This class provides an interface to control network bandwidth usage by enabling or disabling
+    network throttling, sharing bandwidth among clients, and managing remote clients and client groups.
+    It also supports the configuration of throttle schedules and rules to optimize network performance.
 
-            Args:
-                class_object (object)  --  instance of the client/client group class
+    Key Features:
+        - Initialization with a class object for context
+        - Retrieval of throttle properties
+        - Enable or disable network throttling via property
+        - Share bandwidth among clients or groups
+        - Manage remote clients and remote client groups
+        - Configure and manage throttle schedules and rules
+        - Internal configuration of network throttle settings
+
+    &#34;&#34;&#34;
+
+    def __init__(self, class_object: object) -&gt; None:
+        &#34;&#34;&#34;Initialize a NetworkThrottle instance for managing network throttling settings.
+
+        Args:
+            class_object: An instance of the client or client group class to which network throttling will be applied.
+
+        Example:
+            &gt;&gt;&gt; client = Client(&#39;client_name&#39;)
+            &gt;&gt;&gt; throttle = NetworkThrottle(client)
+            &gt;&gt;&gt; print(&#34;NetworkThrottle object initialized for client.&#34;)
 
         &#34;&#34;&#34;
         from .client import Client
@@ -511,10 +650,20 @@ instance of the client/client group class</p></div>
         self._remote_clients = []
         self._get_throttle_properties()
 
-    def _get_throttle_properties(self):
-        &#34;&#34;&#34;Get all the existing network throttle properties on a client/client group
-        and retain each of them
+    def _get_throttle_properties(self) -&gt; Dict[str, Any]:
+        &#34;&#34;&#34;Retrieve and store all existing network throttle properties for a client or client group.
 
+        This method fetches the current network throttle settings associated with the client or client group
+        and retains each property for further use or inspection.
+
+        Returns:
+            A dictionary containing the network throttle properties and their values.
+
+        Example:
+            &gt;&gt;&gt; throttle = NetworkThrottle()
+            &gt;&gt;&gt; properties = throttle._get_throttle_properties()
+            &gt;&gt;&gt; print(properties)
+            {&#39;max_bandwidth&#39;: 100, &#39;throttle_type&#39;: &#39;client&#39;, ...}
 
         &#34;&#34;&#34;
         if self.is_client:
@@ -538,18 +687,31 @@ instance of the client/client group class</p></div>
             self._remote_clients = (throttle_prop.get(&#39;networkThrottle&#39;).get(&#39;clientList&#39;, []))
 
     @property
-    def enable_network_throttle(self):
-        &#34;&#34;&#34;Gets the value for enable network throttling
+    def enable_network_throttle(self) -&gt; bool:
+        &#34;&#34;&#34;Get the current status of network throttling.
+
+        Returns:
+            bool: True if network throttling is enabled, False otherwise.
+
+        Example:
+            &gt;&gt;&gt; throttle = NetworkThrottle()
+            &gt;&gt;&gt; is_enabled = throttle.enable_network_throttle
+            &gt;&gt;&gt; print(f&#34;Network throttling enabled: {is_enabled}&#34;)
 
         &#34;&#34;&#34;
         return self._enable_network_throttling
 
     @enable_network_throttle.setter
-    def enable_network_throttle(self, val):
-        &#34;&#34;&#34;sets the value for enable network throttling
+    def enable_network_throttle(self, val: bool) -&gt; None:
+        &#34;&#34;&#34;Set the value to enable or disable network throttling.
 
-            Args:
-                val (boolean) --  value for enable network throttling
+        Args:
+            val: Boolean value indicating whether to enable (True) or disable (False) network throttling.
+
+        Example:
+            &gt;&gt;&gt; throttle = NetworkThrottle()
+            &gt;&gt;&gt; throttle.enable_network_throttle = True  # Enable network throttling
+            &gt;&gt;&gt; throttle.enable_network_throttle = False  # Disable network throttling
 
         &#34;&#34;&#34;
 
@@ -557,18 +719,31 @@ instance of the client/client group class</p></div>
         self._config_network_throttle()
 
     @property
-    def share_bandwidth(self):
-        &#34;&#34;&#34;Gets the value for share bandwidth
+    def share_bandwidth(self) -&gt; int:
+        &#34;&#34;&#34;Get the configured value for shared network bandwidth.
+
+        Returns:
+            The amount of bandwidth (in Mbps) allocated for sharing across network operations.
+
+        Example:
+            &gt;&gt;&gt; throttle = NetworkThrottle()
+            &gt;&gt;&gt; bandwidth = throttle.share_bandwidth
+            &gt;&gt;&gt; print(f&#34;Shared bandwidth: {bandwidth} Mbps&#34;)
 
         &#34;&#34;&#34;
         return self._share_bandwidth
 
     @share_bandwidth.setter
-    def share_bandwidth(self, val):
-        &#34;&#34;&#34;Sets the value for share bandwidth
+    def share_bandwidth(self, val: bool) -&gt; None:
+        &#34;&#34;&#34;Set the value for the share bandwidth property.
 
-            Args:
-                val (boolean) --  value for share bandwidth
+        Args:
+            val: Boolean value indicating whether to enable (True) or disable (False) bandwidth sharing.
+
+        Example:
+            &gt;&gt;&gt; throttle = NetworkThrottle()
+            &gt;&gt;&gt; throttle.share_bandwidth = True  # Enable bandwidth sharing
+            &gt;&gt;&gt; throttle.share_bandwidth = False  # Disable bandwidth sharing
 
         &#34;&#34;&#34;
 
@@ -576,8 +751,16 @@ instance of the client/client group class</p></div>
         self.enable_network_throttle = True
 
     @property
-    def remote_clients(self):
-        &#34;&#34;&#34;Gets the associated client towards which throttling is configured
+    def remote_clients(self) -&gt; List[str]:
+        &#34;&#34;&#34;Get the list of remote clients for which network throttling is configured.
+
+        Returns:
+            List of client names (as strings) that have network throttling settings applied.
+
+        Example:
+            &gt;&gt;&gt; throttle = NetworkThrottle()
+            &gt;&gt;&gt; clients = throttle.remote_clients
+            &gt;&gt;&gt; print(f&#34;Throttling is configured for: {clients}&#34;)
 
         &#34;&#34;&#34;
         clients = []
@@ -587,11 +770,16 @@ instance of the client/client group class</p></div>
         return clients
 
     @remote_clients.setter
-    def remote_clients(self, clients):
-        &#34;&#34;&#34;Sets the remote clients towards which throttling will be configured
+    def remote_clients(self, clients: list) -&gt; None:
+        &#34;&#34;&#34;Set the list of remote clients for which network throttling will be configured.
 
-            Args:
-                clients (list) --   list of clients
+        Args:
+            clients: A list of client names (as strings) to apply throttling settings to.
+
+        Example:
+            &gt;&gt;&gt; throttle = NetworkThrottle()
+            &gt;&gt;&gt; throttle.remote_clients = [&#39;client1&#39;, &#39;client2&#39;, &#39;client3&#39;]
+            &gt;&gt;&gt; # The specified clients will now have throttling configured
 
         &#34;&#34;&#34;
 
@@ -604,8 +792,16 @@ instance of the client/client group class</p></div>
         self.enable_network_throttle = True
 
     @property
-    def remote_client_groups(self):
-        &#34;&#34;&#34;Gets the associated client groups towards which throttling is configured
+    def remote_client_groups(self) -&gt; List[str]:
+        &#34;&#34;&#34;Get the list of client groups associated with network throttling.
+
+        Returns:
+            List of client group names (as strings) for which throttling is configured.
+
+        Example:
+            &gt;&gt;&gt; throttle = NetworkThrottle()
+            &gt;&gt;&gt; groups = throttle.remote_client_groups
+            &gt;&gt;&gt; print(f&#34;Throttled client groups: {groups}&#34;)
 
         &#34;&#34;&#34;
         client_groups = []
@@ -615,11 +811,16 @@ instance of the client/client group class</p></div>
         return client_groups
 
     @remote_client_groups.setter
-    def remote_client_groups(self, client_groups):
-        &#34;&#34;&#34;Sets the remote client groups towards which throttling will be configured
+    def remote_client_groups(self, client_groups: list) -&gt; None:
+        &#34;&#34;&#34;Set the remote client groups for which network throttling will be configured.
 
-            Args:
-                client_groups (list) -- list of client groups
+        Args:
+            client_groups: A list of client group names or identifiers to apply throttling settings to.
+
+        Example:
+            &gt;&gt;&gt; throttle = NetworkThrottle()
+            &gt;&gt;&gt; throttle.remote_client_groups = [&#39;GroupA&#39;, &#39;GroupB&#39;]
+            &gt;&gt;&gt; # Throttling will now be configured for the specified remote client groups
 
         &#34;&#34;&#34;
 
@@ -632,58 +833,69 @@ instance of the client/client group class</p></div>
         self.enable_network_throttle = True
 
     @property
-    def throttle_schedules(self):
-        &#34;&#34;&#34;Gets the throttle rules set on a client or client group
+    def throttle_schedules(self) -&gt; list:
+        &#34;&#34;&#34;Retrieve the throttle rules configured for a client or client group.
+
+        Returns:
+            list: A list of throttle rule configurations currently set on the client or client group.
+
+        Example:
+            &gt;&gt;&gt; network_throttle = NetworkThrottle()
+            &gt;&gt;&gt; schedules = network_throttle.throttle_schedules
+            &gt;&gt;&gt; print(f&#34;Number of throttle schedules: {len(schedules)}&#34;)
+            &gt;&gt;&gt; for rule in schedules:
+            ...     print(rule)
 
         &#34;&#34;&#34;
         return self._throttle_schedules
 
     @throttle_schedules.setter
-    def throttle_schedules(self, throttle_rules):
-        &#34;&#34;&#34;Sets different throttle schedules on a client/client group
+    def throttle_schedules(self, throttle_rules: list[dict]) -&gt; None:
+        &#34;&#34;&#34;Set throttle schedules for a client or client group.
 
-            Args:
-                throttle_rules (list of dict) --  list of throttle rules
+        This setter allows you to define multiple network throttle rules, specifying bandwidth limits and schedules
+        for sending and receiving data. Each rule is represented as a dictionary with supported keys such as
+        &#34;sendRate&#34;, &#34;recvRate&#34;, &#34;days&#34;, and others.
 
-            Supported keys:
+        Args:
+            throttle_rules: A list of dictionaries, each representing a throttle rule. Supported keys in each
+                dictionary include:
+                    - &#34;sendRate&#34;: (int) Maximum send rate in KBps.
+                    - &#34;sendEnabled&#34;: (bool) Whether sending is enabled.
+                    - &#34;receiveEnabled&#34;: (bool) Whether receiving is enabled.
+                    - &#34;recvRate&#34;: (int) Maximum receive rate in KBps.
+                    - &#34;days&#34;: (str) 7-character string representing days of the week (e.g., &#39;1010101&#39;).
+                    - &#34;isAbsolute&#34;: (bool) Whether the rate is absolute.
+                    - &#34;startTime&#34;: (int) Start time in seconds from midnight.
+                    - &#34;endTime&#34;: (int) End time in seconds from midnight.
+                    - &#34;sendRatePercent&#34;: (int) Send rate as a percentage.
+                    - &#34;recvRatePercent&#34;: (int) Receive rate as a percentage.
 
-                &#34;sendRate&#34;
-                &#34;sendEnabled&#34;
-                &#34;receiveEnabled&#34;
-                &#34;recvRate&#34;
-                &#34;days&#34;
-                &#34;isAbsolute&#34;
-                &#34;startTime&#34;
-                &#34;endTime&#34;
-                &#34;sendRatePercent&#34;
-                &#34;recvRatePercent&#34;
-
-
-            Example:
-             [
-                {
-                    &#34;sendRate&#34;: 1024,
-                    &#34;sendEnabled&#34;: true,
-                    &#34;receiveEnabled&#34;: true,
-                    &#34;recvRate&#34;: 1024,
-                    &#34;days&#34;: &#39;1010101&#39;,
-                    &#34;isAbsolute&#34;: true,
-                    &#34;startTime&#34;: 0,
-                    &#34;endTime&#34;: 0,
-                    &#34;sendRatePercent&#34;: 40,
-                    &#34;recvRatePercent&#34;: 40
-                },
-
-                {
-                    &#34;sendRate&#34;: 1024,
-                    &#34;sendEnabled&#34;: True,
-                    &#34;receiveEnabled&#34;: True,
-                    &#34;recvRate&#34;: 1024,
-                    &#34;days&#34;: &#39;1111111&#39;,
-                    &#34;isAbsolute&#34;: False
-
-                }
-            ]
+        Example:
+            &gt;&gt;&gt; throttle_rules = [
+            ...     {
+            ...         &#34;sendRate&#34;: 1024,
+            ...         &#34;sendEnabled&#34;: True,
+            ...         &#34;receiveEnabled&#34;: True,
+            ...         &#34;recvRate&#34;: 1024,
+            ...         &#34;days&#34;: &#39;1010101&#39;,
+            ...         &#34;isAbsolute&#34;: True,
+            ...         &#34;startTime&#34;: 0,
+            ...         &#34;endTime&#34;: 0,
+            ...         &#34;sendRatePercent&#34;: 40,
+            ...         &#34;recvRatePercent&#34;: 40
+            ...     },
+            ...     {
+            ...         &#34;sendRate&#34;: 1024,
+            ...         &#34;sendEnabled&#34;: True,
+            ...         &#34;receiveEnabled&#34;: True,
+            ...         &#34;recvRate&#34;: 1024,
+            ...         &#34;days&#34;: &#39;1111111&#39;,
+            ...         &#34;isAbsolute&#34;: False
+            ...     }
+            ... ]
+            &gt;&gt;&gt; network_throttle = NetworkThrottle()
+            &gt;&gt;&gt; network_throttle.throttle_schedules = throttle_rules  # Use assignment for property setter
 
         &#34;&#34;&#34;
 
@@ -706,17 +918,20 @@ instance of the client/client group class</p></div>
 
         self.enable_network_throttle = True
 
-    def _config_network_throttle(self):
-        &#34;&#34;&#34;Sets network throttle properties on the client/client group
+    def _config_network_throttle(self) -&gt; None:
+        &#34;&#34;&#34;Configure network throttle properties on the client or client group.
 
+        This method applies the network throttle settings to the associated client or client group.
+        It should be used to enforce bandwidth limitations or other network-related restrictions.
 
-                    Raises:
-                        SDKException:
-                            if  request was not successful
+        Raises:
+            SDKException: If the request was not successful, if invalid input was provided,
+                or if an empty response was received.
 
-                            if  invalid input was provided in the request
-
-                            if empty response was received
+        Example:
+            &gt;&gt;&gt; throttle = NetworkThrottle()
+            &gt;&gt;&gt; throttle._config_network_throttle()
+            &gt;&gt;&gt; print(&#34;Network throttle configuration applied successfully.&#34;)
 
         &#34;&#34;&#34;
 
@@ -823,33 +1038,70 @@ instance of the client/client group class</p></div>
 </details>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.network_throttle.NetworkThrottle.enable_network_throttle"><code class="name">var <span class="ident">enable_network_throttle</span></code></dt>
+<dt id="cvpysdk.network_throttle.NetworkThrottle.enable_network_throttle"><code class="name">var <span class="ident">enable_network_throttle</span> : bool</code></dt>
 <dd>
-<div class="desc"><p>Gets the value for enable network throttling</p></div>
+<div class="desc"><p>Get the current status of network throttling.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>bool</code></dt>
+<dd>True if network throttling is enabled, False otherwise.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; throttle = NetworkThrottle()
+&gt;&gt;&gt; is_enabled = throttle.enable_network_throttle
+&gt;&gt;&gt; print(f&quot;Network throttling enabled: {is_enabled}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network_throttle.py#L111-L116" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network_throttle.py#L146-L160" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def enable_network_throttle(self):
-    &#34;&#34;&#34;Gets the value for enable network throttling
+def enable_network_throttle(self) -&gt; bool:
+    &#34;&#34;&#34;Get the current status of network throttling.
+
+    Returns:
+        bool: True if network throttling is enabled, False otherwise.
+
+    Example:
+        &gt;&gt;&gt; throttle = NetworkThrottle()
+        &gt;&gt;&gt; is_enabled = throttle.enable_network_throttle
+        &gt;&gt;&gt; print(f&#34;Network throttling enabled: {is_enabled}&#34;)
 
     &#34;&#34;&#34;
     return self._enable_network_throttling</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.network_throttle.NetworkThrottle.remote_client_groups"><code class="name">var <span class="ident">remote_client_groups</span></code></dt>
+<dt id="cvpysdk.network_throttle.NetworkThrottle.remote_client_groups"><code class="name">var <span class="ident">remote_client_groups</span> : List[str]</code></dt>
 <dd>
-<div class="desc"><p>Gets the associated client groups towards which throttling is configured</p></div>
+<div class="desc"><p>Get the list of client groups associated with network throttling.</p>
+<p>Returns
+-----=
+List of client group names (as strings) for which throttling is configured.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; throttle = NetworkThrottle()
+&gt;&gt;&gt; groups = throttle.remote_client_groups
+&gt;&gt;&gt; print(f&quot;Throttled client groups: {groups}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network_throttle.py#L177-L186" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network_throttle.py#L257-L275" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def remote_client_groups(self):
-    &#34;&#34;&#34;Gets the associated client groups towards which throttling is configured
+def remote_client_groups(self) -&gt; List[str]:
+    &#34;&#34;&#34;Get the list of client groups associated with network throttling.
+
+    Returns:
+        List of client group names (as strings) for which throttling is configured.
+
+    Example:
+        &gt;&gt;&gt; throttle = NetworkThrottle()
+        &gt;&gt;&gt; groups = throttle.remote_client_groups
+        &gt;&gt;&gt; print(f&#34;Throttled client groups: {groups}&#34;)
 
     &#34;&#34;&#34;
     client_groups = []
@@ -859,17 +1111,34 @@ def remote_client_groups(self):
     return client_groups</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.network_throttle.NetworkThrottle.remote_clients"><code class="name">var <span class="ident">remote_clients</span></code></dt>
+<dt id="cvpysdk.network_throttle.NetworkThrottle.remote_clients"><code class="name">var <span class="ident">remote_clients</span> : List[str]</code></dt>
 <dd>
-<div class="desc"><p>Gets the associated client towards which throttling is configured</p></div>
+<div class="desc"><p>Get the list of remote clients for which network throttling is configured.</p>
+<p>Returns
+-----=
+List of client names (as strings) that have network throttling settings applied.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; throttle = NetworkThrottle()
+&gt;&gt;&gt; clients = throttle.remote_clients
+&gt;&gt;&gt; print(f&quot;Throttling is configured for: {clients}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network_throttle.py#L149-L158" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network_throttle.py#L214-L232" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def remote_clients(self):
-    &#34;&#34;&#34;Gets the associated client towards which throttling is configured
+def remote_clients(self) -&gt; List[str]:
+    &#34;&#34;&#34;Get the list of remote clients for which network throttling is configured.
+
+    Returns:
+        List of client names (as strings) that have network throttling settings applied.
+
+    Example:
+        &gt;&gt;&gt; throttle = NetworkThrottle()
+        &gt;&gt;&gt; clients = throttle.remote_clients
+        &gt;&gt;&gt; print(f&#34;Throttling is configured for: {clients}&#34;)
 
     &#34;&#34;&#34;
     clients = []
@@ -879,33 +1148,74 @@ def remote_clients(self):
     return clients</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.network_throttle.NetworkThrottle.share_bandwidth"><code class="name">var <span class="ident">share_bandwidth</span></code></dt>
+<dt id="cvpysdk.network_throttle.NetworkThrottle.share_bandwidth"><code class="name">var <span class="ident">share_bandwidth</span> : int</code></dt>
 <dd>
-<div class="desc"><p>Gets the value for share bandwidth</p></div>
+<div class="desc"><p>Get the configured value for shared network bandwidth.</p>
+<p>Returns
+-----=
+The amount of bandwidth (in Mbps) allocated for sharing across network operations.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; throttle = NetworkThrottle()
+&gt;&gt;&gt; bandwidth = throttle.share_bandwidth
+&gt;&gt;&gt; print(f&quot;Shared bandwidth: {bandwidth} Mbps&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network_throttle.py#L130-L135" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network_throttle.py#L180-L194" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def share_bandwidth(self):
-    &#34;&#34;&#34;Gets the value for share bandwidth
+def share_bandwidth(self) -&gt; int:
+    &#34;&#34;&#34;Get the configured value for shared network bandwidth.
+
+    Returns:
+        The amount of bandwidth (in Mbps) allocated for sharing across network operations.
+
+    Example:
+        &gt;&gt;&gt; throttle = NetworkThrottle()
+        &gt;&gt;&gt; bandwidth = throttle.share_bandwidth
+        &gt;&gt;&gt; print(f&#34;Shared bandwidth: {bandwidth} Mbps&#34;)
 
     &#34;&#34;&#34;
     return self._share_bandwidth</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.network_throttle.NetworkThrottle.throttle_schedules"><code class="name">var <span class="ident">throttle_schedules</span></code></dt>
+<dt id="cvpysdk.network_throttle.NetworkThrottle.throttle_schedules"><code class="name">var <span class="ident">throttle_schedules</span> : list</code></dt>
 <dd>
-<div class="desc"><p>Gets the throttle rules set on a client or client group</p></div>
+<div class="desc"><p>Retrieve the throttle rules configured for a client or client group.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>list</code></dt>
+<dd>A list of throttle rule configurations currently set on the client or client group.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; network_throttle = NetworkThrottle()
+&gt;&gt;&gt; schedules = network_throttle.throttle_schedules
+&gt;&gt;&gt; print(f&quot;Number of throttle schedules: {len(schedules)}&quot;)
+&gt;&gt;&gt; for rule in schedules:
+...     print(rule)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network_throttle.py#L205-L210" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network_throttle.py#L300-L316" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def throttle_schedules(self):
-    &#34;&#34;&#34;Gets the throttle rules set on a client or client group
+def throttle_schedules(self) -&gt; list:
+    &#34;&#34;&#34;Retrieve the throttle rules configured for a client or client group.
+
+    Returns:
+        list: A list of throttle rule configurations currently set on the client or client group.
+
+    Example:
+        &gt;&gt;&gt; network_throttle = NetworkThrottle()
+        &gt;&gt;&gt; schedules = network_throttle.throttle_schedules
+        &gt;&gt;&gt; print(f&#34;Number of throttle schedules: {len(schedules)}&#34;)
+        &gt;&gt;&gt; for rule in schedules:
+        ...     print(rule)
 
     &#34;&#34;&#34;
     return self._throttle_schedules</code></pre>

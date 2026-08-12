@@ -1,0 +1,1284 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>cvpysdk.cleanroom.runbook API documentation</title>
+<meta name="description" content="Main file for performing Cleanroom recovery operations …" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em;background-color:#f8f9fa}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}#lunr-search{width:100%;font-size:1em;padding:6px 9px 5px 9px;border:1px solid silver}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#FE496A;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#FD0131}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+<link rel="shortcut icon" type="image/x-icon" href="https://commvault.github.io/cvpysdk/favicon.ico">
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>cvpysdk.cleanroom.runbook</code></h1>
+</header>
+<section id="section-intro">
+<p>Main file for performing Cleanroom recovery operations</p>
+<p>Runbook:
+Class for creating a cleanroom recovery group and target using the new simplified runbook API</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/cleanroom/runbook.py#L1-L357" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python"># -*- coding: utf-8 -*-
+#
+# --------------------------------------------------------------------------
+# Copyright Commvault Systems, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the &#34;License&#34;);
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an &#34;AS IS&#34; BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# --------------------------------------------------------------------------
+#
+&#34;&#34;&#34;
+Main file for performing Cleanroom recovery operations
+
+Runbook:   Class for creating a cleanroom recovery group and target using the new simplified runbook API
+
+&#34;&#34;&#34;
+from json.decoder import JSONDecodeError
+from cvpysdk.exception import SDKException
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from cvpysdk.commcell import Commcell
+
+
+class Runbook:
+    &#34;&#34;&#34;
+    Class to perform actions on a cleanroom runbook.
+
+    This class provides an interface for managing and executing operations on a cleanroom runbook,
+    leveraging a commcell object for communication and orchestration. It supports creation of runbooks,
+    payload population for specific entities, and exposes recovery group identification.
+
+    Key Features:
+        - Initialization with a commcell object for backend operations
+        - Creation of runbooks using customizable payloads
+        - Property access to recovery group ID for identification and tracking
+        - Payload population for entities, targets, regions, and nodes to facilitate runbook execution
+
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_object: &#39;Commcell&#39;) -&gt; None:
+        &#34;&#34;&#34;Initialize a new instance of the Runbook class.
+
+        Args:
+            commcell_object: An instance of the Commcell class used to interact with the Commcell environment.
+
+        Example:
+            &gt;&gt;&gt; from cvpysdk.commcell import Commcell
+            &gt;&gt;&gt; commcell = Commcell(&#39;commcell_host&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; runbook = Runbook(commcell)
+            &gt;&gt;&gt; print(&#34;Runbook instance created successfully&#34;)
+
+        &#34;&#34;&#34;
+        self._commcell_object = commcell_object
+        self._cvpysdk_object = commcell_object._cvpysdk_object
+        self._recovery_group_id = None
+        self._RUNBOOK_URL = commcell_object._services[&#39;CREATE_CLEANROOM_RUNBOOK&#39;]    
+
+    def create(self, payload: dict = dict()) -&gt; dict:
+        &#34;&#34;&#34;Create a cleanroom runbook with the specified payload.
+
+        Args:
+            payload: Dictionary containing the parameters required to create the runbook.
+
+        Returns:
+            dict: The response from the API containing details of the created runbook.
+            Example response:
+                {
+                    &#34;recoveryGroup&#34;: {
+                        &#34;id&#34;: 1234567890,
+                        &#34;name&#34;: &#34;runbook_name&#34;
+                    }
+                }
+
+        Raises:
+            SDKException: If the payload is empty, the API response is empty, or the API response indicates failure.
+
+        Example:
+            &gt;&gt;&gt; runbook = Runbook()
+            &gt;&gt;&gt; payload = {
+            ...     &#34;recoveryGroup&#34;: {
+            ...         &#34;name&#34;: &#34;MyRunbook&#34;,
+            ...         &#34;description&#34;: &#34;Automated recovery workflow&#34;
+            ...     }
+            ... }
+            &gt;&gt;&gt; response = runbook.create(payload)
+            &gt;&gt;&gt; print(response[&#34;recoveryGroup&#34;][&#34;id&#34;])
+            1234567890
+
+        &#34;&#34;&#34;
+        if not payload:
+            raise SDKException(&#39;RecoveryGroup&#39;, &#39;101&#39;, &#39;Payload cannot be empty&#39;)
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._RUNBOOK_URL, payload=payload)
+        
+        if flag:
+            try:
+                response_json = response.json()
+                if not response_json:
+                    raise ValueError(&#39;Response&#39;, &#39;102&#39;, &#39;Empty response received from the server&#39;)
+                
+                if &#34;recoveryGroup&#34; in response_json and &#34;id&#34; in response_json[&#39;recoveryGroup&#39;]:
+                        self._recovery_group_id = response_json[&#39;recoveryGroup&#39;][&#39;id&#39;]
+                        return response_json
+                else:
+                    raise KeyError(&#39;Response&#39;, &#39;102&#39;, &#39;Recovery group ID not found in the response&#39;)
+            except JSONDecodeError:
+                raise ValueError(&#39;Response&#39;, &#39;102&#39;, &#39;Invalid response received from the server.&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
+            
+    @property
+    def recovery_group_id(self) -&gt; int:
+        &#34;&#34;&#34;Get the recovery group ID associated with this runbook.
+
+        The recovery group ID is initialized when the runbook is created and uniquely identifies
+        the recovery group for this runbook instance.
+
+        Returns:
+            The integer ID of the recovery group.
+
+        Example:
+            &gt;&gt;&gt; runbook = Runbook()
+            &gt;&gt;&gt; group_id = runbook.recovery_group_id
+            &gt;&gt;&gt; print(f&#34;Recovery Group ID: {group_id}&#34;)
+        &#34;&#34;&#34;
+        if self._recovery_group_id is not None:
+            return int(self._recovery_group_id)
+        return None
+
+    def populate_payload(self, entities: dict, target: dict, region: dict, node: dict = None) -&gt; dict:
+        &#34;&#34;&#34;Build the payload required for creating a runbook.
+
+        This method constructs and returns a payload dictionary containing the necessary fields for runbook creation,
+        based on the provided entities, target, region, and optionally, access node details.
+
+        Args:
+            entities: Dictionary containing the entities to be included in the runbook. This should include a &#34;name&#34; key
+                and an &#34;entities&#34; list, where each entity dictionary specifies details such as instance, client, backupset,
+                workload type, and execution order.
+            target: Dictionary specifying the target environment for the runbook. The format varies depending on whether
+                an existing target, a new target with an existing hypervisor, or a new target with credentials is used.
+            region: Dictionary containing region details, such as &#34;guid&#34; and &#34;name&#34;.
+            node: Optional dictionary specifying access node details, such as &#34;access_node_id&#34; and &#34;access_node_type&#34;.
+                This is required only when not using an existing target or hypervisor.
+
+        Returns:
+            dict: The fully populated payload dictionary ready for runbook creation.
+
+        Raises:
+            SDKException: If the entities input is empty, if an invalid workload type is provided, or if the target input is empty.
+
+        Example:
+            &gt;&gt;&gt; entities = {
+            ...     &#34;name&#34;: &#34;Runbook with existing target&#34;,
+            ...     &#34;entities&#34;: [
+            ...         {
+            ...             &#34;instance_id&#34;: 1,
+            ...             &#34;instance_name&#34;: &#34;DefaultInstanceName&#34;,
+            ...             &#34;client_id&#34;: 2,
+            ...             &#34;client_name&#34;: &#34;devcs3&#34;,
+            ...             &#34;backupset_id&#34;: 3,
+            ...             &#34;backupset_name&#34;: &#34;defaultBackupSet&#34;,
+            ...             &#34;subclient_id&#34;: 14,
+            ...             &#34;subclient_name&#34;: &#34;small file&#34;,
+            ...             &#34;workload&#34;: &#34;FILES&#34;,
+            ...             &#34;execution_order&#34;: 2
+            ...         },
+            ...         {
+            ...             &#34;instance_id&#34;: 6,
+            ...             &#34;instance_name&#34;: &#34;Amazon Web Services&#34;,
+            ...             &#34;client_id&#34;: 10,
+            ...             &#34;client_name&#34;: &#34;AWS&#34;,
+            ...             &#34;backupset_id&#34;: 14,
+            ...             &#34;backupset_name&#34;: &#34;defaultBackupSet&#34;,
+            ...             &#34;vm_group_id&#34;: 18,
+            ...             &#34;vm_guid&#34;: &#34;i-0d485455929da6c11&#34;,
+            ...             &#34;vm_name&#34;: &#34;WindowsTestVM1&#34;,
+            ...             &#34;source_vendor&#34;: &#34;AMAZON&#34;,
+            ...             &#34;workload&#34;: &#34;VM&#34;,
+            ...             &#34;execution_order&#34;: 1
+            ...         }
+            ...     ]
+            ... }
+            &gt;&gt;&gt; target = {
+            ...     &#34;target_id&#34;: 1234567890,
+            ...     &#34;target_name&#34;: &#34;Cleanroom_Target&#34;,
+            ...     &#34;target_vendor&#34;: &#34;AZURE_V2&#34;
+            ... }
+            &gt;&gt;&gt; region = {
+            ...     &#34;guid&#34;: &#34;eastus (Commcell)&#34;,
+            ...     &#34;name&#34;: &#34;US East&#34;
+            ... }
+            &gt;&gt;&gt; node = {
+            ...     &#34;access_node_id&#34;: 1234567890,
+            ...     &#34;access_node_type&#34;: 3
+            ... }
+            &gt;&gt;&gt; payload = runbook.populate_payload(entities, target, region, node)
+            &gt;&gt;&gt; print(payload)
+            # The returned payload can be used for runbook creation.
+
+        &#34;&#34;&#34;
+        if not isinstance(entities[&#39;name&#39;], str):
+            raise SDKException(&#39;RecoveryGroup&#39;, &#39;101&#39;, &#39;Missing or invalid Runbook name&#39;)
+        api_payload = {
+                        &#34;name&#34;: entities.get(&#39;name&#39;, &#39;cleanroom_runbook&#39;),
+                        &#34;target&#34;: {
+                            &#34;options&#34;: {
+                            &#34;region&#34;: region if region else {},
+                            &#34;accessNode&#34;: {}
+                            }
+                        },
+                        &#34;entities&#34;: [
+                        ],
+                        &#34;advancedOptions&#34;: {
+                            &#34;postRecoveryActions&#34;: [
+                            {
+                                &#34;scriptCredentials&#34;: {},
+                                &#34;guestCredentials&#34;: {}
+                            }
+                            ],
+                            &#34;delayBetweenPriorityMachines&#34;: 0,
+                            &#34;continueOnFailure&#34;: False,
+                            &#34;recoveryExpirationOptions&#34;: {
+                            &#34;enableExpirationOption&#34;: True,
+                            &#34;daysToExpire&#34;: 7,
+                            &#34;isRescuedCommServe&#34;: True,
+                            &#34;expirationTime&#34;: 0
+                            }
+                        }
+                    }
+
+        #Populate the payload with list of entities
+        if not entities or not entities.get(&#39;entities&#39;):
+            raise SDKException(&#39;RecoveryGroup&#39;, &#39;101&#39;, &#39;Payload cannot be empty&#39;)
+        else:
+            for item in entities[&#39;entities&#39;]:
+                workload = None
+                if item[&#39;workload&#39;] == &#39;VM&#39;:
+                    workload = 8
+                elif item[&#39;workload&#39;] == &#39;FILES&#39;:
+                    workload = 9
+                else:
+                    raise SDKException(&#39;RecoveryGroup&#39;, &#39;101&#39;, &#39;Invalid workload type provided in payload&#39;)
+                entity = {
+                    &#34;instance&#34;: {
+                        &#34;id&#34;: item.get(&#39;instance_id&#39;, 0),
+                        &#34;name&#34;: item.get(&#34;instance_name&#34;, &#34;string&#34;)
+                    },
+                    &#34;backupSet&#34;: {
+                        &#34;id&#34;: item.get(&#39;backupset_id&#39;, 0),
+                        &#34;name&#34;: item.get(&#34;backupset_name&#34;, &#34;string&#34;)
+                    },
+                    &#34;client&#34;: {
+                        &#34;id&#34;: item.get(&#39;hypervisor_id&#39;, 0) if item.get(&#39;hypervisor_id&#39;) else item.get(&#39;client_id&#39;, 0),
+                        &#34;name&#34;: item.get(&#34;hypervisor_name&#34;, &#34;string&#34;) if item.get(&#39;hypervisor_name&#39;) else item.get(&#39;client_name&#39;, &#34;string&#34;),
+                    },
+                    &#34;workload&#34;: workload,
+                    &#34;executionOrder&#34;: {
+                        &#34;priority&#34;: item.get(&#39;execution_order&#39;, 0)
+                    },
+                    &#34;recoveryPointDetails&#34;: {
+                        &#34;inheritedFrom&#34;: &#34;RECOVERY_GROUP&#34;,
+                        &#34;entityRecoveryPoint&#34;: 0,
+                        &#34;entityRecoveryPointCategory&#34;: &#34;LATEST&#34;
+                    }              
+                }
+                if workload == 8:  # VM workload
+                    vm_info = {
+                        &#34;vmGroup&#34;: {
+                            &#34;id&#34;: item.get(&#34;vm_group_id&#34;, 0)
+                        },
+                        &#34;virtualMachine&#34;: {
+                            &#34;GUID&#34;: item.get(&#34;vm_guid&#34;, &#34;&lt;vm_guid&gt;&#34;),
+                            &#34;name&#34;: item.get(&#34;vm_name&#34;, &#34;string&#34;)
+                        },
+                        &#34;sourceVendor&#34;: item.get(&#34;source_vendor&#34;, &#34;VMW&#34;)
+                    }
+                    entity.update(vm_info)
+                elif workload == 9:  # FILES workload
+                    file_info = {
+                        &#34;subclient&#34;: {
+                            &#34;id&#34;: item.get(&#34;subclient_id&#34;, 0),
+                            &#34;name&#34;: item.get(&#34;subclient_name&#34;, &#34;string&#34;)
+                        }
+                    }
+                    entity.update(file_info)
+                api_payload[&#39;entities&#39;].append(entity)
+        #Populate the payload with target details
+        #Populate the payload with access node details
+        if node.get(&#39;access_node_id&#39;) is not None:  #Using existing access node or access node group
+            access_node_entity = {
+                &#34;id&#34;: node.get(&#39;access_node_id&#39;, 0),
+                &#34;name&#34;: node.get(&#39;access_node_name&#39;, &#39;string&#39;),
+                &#34;type&#34;: node.get(&#39;access_node_type&#39;, 3)
+            }
+            api_payload[&#39;target&#39;][&#39;options&#39;][&#39;accessNode&#39;].update(access_node_entity)
+        if not target:
+            raise SDKException(&#39;RecoveryGroup&#39;, &#39;101&#39;, &#39;Target payload cannot be empty&#39;)
+        elif target.get(&#39;target_id&#39;) is not None and target.get(&#39;target_id&#39;) &gt; 0 :  #Using existing target
+            target_entity = {
+                &#34;entity&#34;: {
+                &#34;id&#34;: target.get(&#39;target_id&#39;, 0),
+                &#34;name&#34;: target.get(&#39;target_name&#39;, &#39;string&#39;)
+                }
+            }
+            api_payload[&#39;target&#39;].update(target_entity)
+        else:
+            options = {
+                        &#34;vendor&#34;: target.get(&#39;target_vendor&#39;, &#39;AZURE_V2&#39;)
+                    }
+            api_payload[&#39;target&#39;][&#39;options&#39;].update(options) 
+            if target.get(&#34;target_id&#34;) == 0 or target.get(&#34;target_id&#34;) == &#34;&#34;:
+                if target.get(&#34;hypervisor_id&#34;) is not None:  # Using existing hypervisor to create new target
+                    existing_hypervisor = {
+                        &#34;hypervisor&#34;: {
+                            &#34;entity&#34;: {
+                                &#34;id&#34;: target.get(&#39;hypervisor_id&#39;, 0),
+                                &#34;name&#34;: target.get(&#39;hypervisor_name&#39;, &#39;string&#39;)
+                            }
+                        }
+                    }
+                    access_node_entity = {
+                        &#34;id&#34;: 0,
+                        &#34;type&#34;: 28
+                    } 
+                    api_payload[&#39;target&#39;][&#39;options&#39;].update(existing_hypervisor)
+                    api_payload[&#39;target&#39;][&#39;options&#39;][&#39;accessNode&#39;].update(access_node_entity)
+                elif target.get(&#34;credentials_id&#34;) is not None:  #Using existing credentials to create new hypervisor for the target
+                    new_hypervisor = {
+                        &#34;hypervisor&#34;: {
+                            &#34;optionsAzure&#34;: {
+                                &#34;credentials&#34;: {
+                                    &#34;id&#34;: target.get(&#39;credentials_id&#39;, 0),
+                                    &#34;name&#34;: target.get(&#39;credentials_name&#39;, &#39;string&#39;)
+                                },
+                            &#34;skipCredentialValidation&#34;: False,
+                            &#34;subscriptionId&#34;: target.get(&#39;subscription_id&#39;, &#39;&lt;subscription_id&gt;&#39;),
+                            &#34;useManagedIdentity&#34;: False
+                            }
+                        }
+                    }
+                    options.update(new_hypervisor)
+                    api_payload[&#39;target&#39;][&#39;options&#39;].update(options)
+        return api_payload</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="cvpysdk.cleanroom.runbook.Runbook"><code class="flex name class">
+<span>class <span class="ident">Runbook</span></span>
+<span>(</span><span>commcell_object: Commcell)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class to perform actions on a cleanroom runbook.</p>
+<p>This class provides an interface for managing and executing operations on a cleanroom runbook,
+leveraging a commcell object for communication and orchestration. It supports creation of runbooks,
+payload population for specific entities, and exposes recovery group identification.</p>
+<p>Key Features:
+- Initialization with a commcell object for backend operations
+- Creation of runbooks using customizable payloads
+- Property access to recovery group ID for identification and tracking
+- Payload population for entities, targets, regions, and nodes to facilitate runbook execution</p>
+<p>Initialize a new instance of the Runbook class.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>commcell_object</code></strong></dt>
+<dd>An instance of the Commcell class used to interact with the Commcell environment.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; from cvpysdk.commcell import Commcell
+&gt;&gt;&gt; commcell = Commcell('commcell_host', 'username', 'password')
+&gt;&gt;&gt; runbook = Runbook(commcell)
+&gt;&gt;&gt; print(&quot;Runbook instance created successfully&quot;)
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/cleanroom/runbook.py#L33-L357" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class Runbook:
+    &#34;&#34;&#34;
+    Class to perform actions on a cleanroom runbook.
+
+    This class provides an interface for managing and executing operations on a cleanroom runbook,
+    leveraging a commcell object for communication and orchestration. It supports creation of runbooks,
+    payload population for specific entities, and exposes recovery group identification.
+
+    Key Features:
+        - Initialization with a commcell object for backend operations
+        - Creation of runbooks using customizable payloads
+        - Property access to recovery group ID for identification and tracking
+        - Payload population for entities, targets, regions, and nodes to facilitate runbook execution
+
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_object: &#39;Commcell&#39;) -&gt; None:
+        &#34;&#34;&#34;Initialize a new instance of the Runbook class.
+
+        Args:
+            commcell_object: An instance of the Commcell class used to interact with the Commcell environment.
+
+        Example:
+            &gt;&gt;&gt; from cvpysdk.commcell import Commcell
+            &gt;&gt;&gt; commcell = Commcell(&#39;commcell_host&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; runbook = Runbook(commcell)
+            &gt;&gt;&gt; print(&#34;Runbook instance created successfully&#34;)
+
+        &#34;&#34;&#34;
+        self._commcell_object = commcell_object
+        self._cvpysdk_object = commcell_object._cvpysdk_object
+        self._recovery_group_id = None
+        self._RUNBOOK_URL = commcell_object._services[&#39;CREATE_CLEANROOM_RUNBOOK&#39;]    
+
+    def create(self, payload: dict = dict()) -&gt; dict:
+        &#34;&#34;&#34;Create a cleanroom runbook with the specified payload.
+
+        Args:
+            payload: Dictionary containing the parameters required to create the runbook.
+
+        Returns:
+            dict: The response from the API containing details of the created runbook.
+            Example response:
+                {
+                    &#34;recoveryGroup&#34;: {
+                        &#34;id&#34;: 1234567890,
+                        &#34;name&#34;: &#34;runbook_name&#34;
+                    }
+                }
+
+        Raises:
+            SDKException: If the payload is empty, the API response is empty, or the API response indicates failure.
+
+        Example:
+            &gt;&gt;&gt; runbook = Runbook()
+            &gt;&gt;&gt; payload = {
+            ...     &#34;recoveryGroup&#34;: {
+            ...         &#34;name&#34;: &#34;MyRunbook&#34;,
+            ...         &#34;description&#34;: &#34;Automated recovery workflow&#34;
+            ...     }
+            ... }
+            &gt;&gt;&gt; response = runbook.create(payload)
+            &gt;&gt;&gt; print(response[&#34;recoveryGroup&#34;][&#34;id&#34;])
+            1234567890
+
+        &#34;&#34;&#34;
+        if not payload:
+            raise SDKException(&#39;RecoveryGroup&#39;, &#39;101&#39;, &#39;Payload cannot be empty&#39;)
+        flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._RUNBOOK_URL, payload=payload)
+        
+        if flag:
+            try:
+                response_json = response.json()
+                if not response_json:
+                    raise ValueError(&#39;Response&#39;, &#39;102&#39;, &#39;Empty response received from the server&#39;)
+                
+                if &#34;recoveryGroup&#34; in response_json and &#34;id&#34; in response_json[&#39;recoveryGroup&#39;]:
+                        self._recovery_group_id = response_json[&#39;recoveryGroup&#39;][&#39;id&#39;]
+                        return response_json
+                else:
+                    raise KeyError(&#39;Response&#39;, &#39;102&#39;, &#39;Recovery group ID not found in the response&#39;)
+            except JSONDecodeError:
+                raise ValueError(&#39;Response&#39;, &#39;102&#39;, &#39;Invalid response received from the server.&#39;)
+        else:
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
+            
+    @property
+    def recovery_group_id(self) -&gt; int:
+        &#34;&#34;&#34;Get the recovery group ID associated with this runbook.
+
+        The recovery group ID is initialized when the runbook is created and uniquely identifies
+        the recovery group for this runbook instance.
+
+        Returns:
+            The integer ID of the recovery group.
+
+        Example:
+            &gt;&gt;&gt; runbook = Runbook()
+            &gt;&gt;&gt; group_id = runbook.recovery_group_id
+            &gt;&gt;&gt; print(f&#34;Recovery Group ID: {group_id}&#34;)
+        &#34;&#34;&#34;
+        if self._recovery_group_id is not None:
+            return int(self._recovery_group_id)
+        return None
+
+    def populate_payload(self, entities: dict, target: dict, region: dict, node: dict = None) -&gt; dict:
+        &#34;&#34;&#34;Build the payload required for creating a runbook.
+
+        This method constructs and returns a payload dictionary containing the necessary fields for runbook creation,
+        based on the provided entities, target, region, and optionally, access node details.
+
+        Args:
+            entities: Dictionary containing the entities to be included in the runbook. This should include a &#34;name&#34; key
+                and an &#34;entities&#34; list, where each entity dictionary specifies details such as instance, client, backupset,
+                workload type, and execution order.
+            target: Dictionary specifying the target environment for the runbook. The format varies depending on whether
+                an existing target, a new target with an existing hypervisor, or a new target with credentials is used.
+            region: Dictionary containing region details, such as &#34;guid&#34; and &#34;name&#34;.
+            node: Optional dictionary specifying access node details, such as &#34;access_node_id&#34; and &#34;access_node_type&#34;.
+                This is required only when not using an existing target or hypervisor.
+
+        Returns:
+            dict: The fully populated payload dictionary ready for runbook creation.
+
+        Raises:
+            SDKException: If the entities input is empty, if an invalid workload type is provided, or if the target input is empty.
+
+        Example:
+            &gt;&gt;&gt; entities = {
+            ...     &#34;name&#34;: &#34;Runbook with existing target&#34;,
+            ...     &#34;entities&#34;: [
+            ...         {
+            ...             &#34;instance_id&#34;: 1,
+            ...             &#34;instance_name&#34;: &#34;DefaultInstanceName&#34;,
+            ...             &#34;client_id&#34;: 2,
+            ...             &#34;client_name&#34;: &#34;devcs3&#34;,
+            ...             &#34;backupset_id&#34;: 3,
+            ...             &#34;backupset_name&#34;: &#34;defaultBackupSet&#34;,
+            ...             &#34;subclient_id&#34;: 14,
+            ...             &#34;subclient_name&#34;: &#34;small file&#34;,
+            ...             &#34;workload&#34;: &#34;FILES&#34;,
+            ...             &#34;execution_order&#34;: 2
+            ...         },
+            ...         {
+            ...             &#34;instance_id&#34;: 6,
+            ...             &#34;instance_name&#34;: &#34;Amazon Web Services&#34;,
+            ...             &#34;client_id&#34;: 10,
+            ...             &#34;client_name&#34;: &#34;AWS&#34;,
+            ...             &#34;backupset_id&#34;: 14,
+            ...             &#34;backupset_name&#34;: &#34;defaultBackupSet&#34;,
+            ...             &#34;vm_group_id&#34;: 18,
+            ...             &#34;vm_guid&#34;: &#34;i-0d485455929da6c11&#34;,
+            ...             &#34;vm_name&#34;: &#34;WindowsTestVM1&#34;,
+            ...             &#34;source_vendor&#34;: &#34;AMAZON&#34;,
+            ...             &#34;workload&#34;: &#34;VM&#34;,
+            ...             &#34;execution_order&#34;: 1
+            ...         }
+            ...     ]
+            ... }
+            &gt;&gt;&gt; target = {
+            ...     &#34;target_id&#34;: 1234567890,
+            ...     &#34;target_name&#34;: &#34;Cleanroom_Target&#34;,
+            ...     &#34;target_vendor&#34;: &#34;AZURE_V2&#34;
+            ... }
+            &gt;&gt;&gt; region = {
+            ...     &#34;guid&#34;: &#34;eastus (Commcell)&#34;,
+            ...     &#34;name&#34;: &#34;US East&#34;
+            ... }
+            &gt;&gt;&gt; node = {
+            ...     &#34;access_node_id&#34;: 1234567890,
+            ...     &#34;access_node_type&#34;: 3
+            ... }
+            &gt;&gt;&gt; payload = runbook.populate_payload(entities, target, region, node)
+            &gt;&gt;&gt; print(payload)
+            # The returned payload can be used for runbook creation.
+
+        &#34;&#34;&#34;
+        if not isinstance(entities[&#39;name&#39;], str):
+            raise SDKException(&#39;RecoveryGroup&#39;, &#39;101&#39;, &#39;Missing or invalid Runbook name&#39;)
+        api_payload = {
+                        &#34;name&#34;: entities.get(&#39;name&#39;, &#39;cleanroom_runbook&#39;),
+                        &#34;target&#34;: {
+                            &#34;options&#34;: {
+                            &#34;region&#34;: region if region else {},
+                            &#34;accessNode&#34;: {}
+                            }
+                        },
+                        &#34;entities&#34;: [
+                        ],
+                        &#34;advancedOptions&#34;: {
+                            &#34;postRecoveryActions&#34;: [
+                            {
+                                &#34;scriptCredentials&#34;: {},
+                                &#34;guestCredentials&#34;: {}
+                            }
+                            ],
+                            &#34;delayBetweenPriorityMachines&#34;: 0,
+                            &#34;continueOnFailure&#34;: False,
+                            &#34;recoveryExpirationOptions&#34;: {
+                            &#34;enableExpirationOption&#34;: True,
+                            &#34;daysToExpire&#34;: 7,
+                            &#34;isRescuedCommServe&#34;: True,
+                            &#34;expirationTime&#34;: 0
+                            }
+                        }
+                    }
+
+        #Populate the payload with list of entities
+        if not entities or not entities.get(&#39;entities&#39;):
+            raise SDKException(&#39;RecoveryGroup&#39;, &#39;101&#39;, &#39;Payload cannot be empty&#39;)
+        else:
+            for item in entities[&#39;entities&#39;]:
+                workload = None
+                if item[&#39;workload&#39;] == &#39;VM&#39;:
+                    workload = 8
+                elif item[&#39;workload&#39;] == &#39;FILES&#39;:
+                    workload = 9
+                else:
+                    raise SDKException(&#39;RecoveryGroup&#39;, &#39;101&#39;, &#39;Invalid workload type provided in payload&#39;)
+                entity = {
+                    &#34;instance&#34;: {
+                        &#34;id&#34;: item.get(&#39;instance_id&#39;, 0),
+                        &#34;name&#34;: item.get(&#34;instance_name&#34;, &#34;string&#34;)
+                    },
+                    &#34;backupSet&#34;: {
+                        &#34;id&#34;: item.get(&#39;backupset_id&#39;, 0),
+                        &#34;name&#34;: item.get(&#34;backupset_name&#34;, &#34;string&#34;)
+                    },
+                    &#34;client&#34;: {
+                        &#34;id&#34;: item.get(&#39;hypervisor_id&#39;, 0) if item.get(&#39;hypervisor_id&#39;) else item.get(&#39;client_id&#39;, 0),
+                        &#34;name&#34;: item.get(&#34;hypervisor_name&#34;, &#34;string&#34;) if item.get(&#39;hypervisor_name&#39;) else item.get(&#39;client_name&#39;, &#34;string&#34;),
+                    },
+                    &#34;workload&#34;: workload,
+                    &#34;executionOrder&#34;: {
+                        &#34;priority&#34;: item.get(&#39;execution_order&#39;, 0)
+                    },
+                    &#34;recoveryPointDetails&#34;: {
+                        &#34;inheritedFrom&#34;: &#34;RECOVERY_GROUP&#34;,
+                        &#34;entityRecoveryPoint&#34;: 0,
+                        &#34;entityRecoveryPointCategory&#34;: &#34;LATEST&#34;
+                    }              
+                }
+                if workload == 8:  # VM workload
+                    vm_info = {
+                        &#34;vmGroup&#34;: {
+                            &#34;id&#34;: item.get(&#34;vm_group_id&#34;, 0)
+                        },
+                        &#34;virtualMachine&#34;: {
+                            &#34;GUID&#34;: item.get(&#34;vm_guid&#34;, &#34;&lt;vm_guid&gt;&#34;),
+                            &#34;name&#34;: item.get(&#34;vm_name&#34;, &#34;string&#34;)
+                        },
+                        &#34;sourceVendor&#34;: item.get(&#34;source_vendor&#34;, &#34;VMW&#34;)
+                    }
+                    entity.update(vm_info)
+                elif workload == 9:  # FILES workload
+                    file_info = {
+                        &#34;subclient&#34;: {
+                            &#34;id&#34;: item.get(&#34;subclient_id&#34;, 0),
+                            &#34;name&#34;: item.get(&#34;subclient_name&#34;, &#34;string&#34;)
+                        }
+                    }
+                    entity.update(file_info)
+                api_payload[&#39;entities&#39;].append(entity)
+        #Populate the payload with target details
+        #Populate the payload with access node details
+        if node.get(&#39;access_node_id&#39;) is not None:  #Using existing access node or access node group
+            access_node_entity = {
+                &#34;id&#34;: node.get(&#39;access_node_id&#39;, 0),
+                &#34;name&#34;: node.get(&#39;access_node_name&#39;, &#39;string&#39;),
+                &#34;type&#34;: node.get(&#39;access_node_type&#39;, 3)
+            }
+            api_payload[&#39;target&#39;][&#39;options&#39;][&#39;accessNode&#39;].update(access_node_entity)
+        if not target:
+            raise SDKException(&#39;RecoveryGroup&#39;, &#39;101&#39;, &#39;Target payload cannot be empty&#39;)
+        elif target.get(&#39;target_id&#39;) is not None and target.get(&#39;target_id&#39;) &gt; 0 :  #Using existing target
+            target_entity = {
+                &#34;entity&#34;: {
+                &#34;id&#34;: target.get(&#39;target_id&#39;, 0),
+                &#34;name&#34;: target.get(&#39;target_name&#39;, &#39;string&#39;)
+                }
+            }
+            api_payload[&#39;target&#39;].update(target_entity)
+        else:
+            options = {
+                        &#34;vendor&#34;: target.get(&#39;target_vendor&#39;, &#39;AZURE_V2&#39;)
+                    }
+            api_payload[&#39;target&#39;][&#39;options&#39;].update(options) 
+            if target.get(&#34;target_id&#34;) == 0 or target.get(&#34;target_id&#34;) == &#34;&#34;:
+                if target.get(&#34;hypervisor_id&#34;) is not None:  # Using existing hypervisor to create new target
+                    existing_hypervisor = {
+                        &#34;hypervisor&#34;: {
+                            &#34;entity&#34;: {
+                                &#34;id&#34;: target.get(&#39;hypervisor_id&#39;, 0),
+                                &#34;name&#34;: target.get(&#39;hypervisor_name&#39;, &#39;string&#39;)
+                            }
+                        }
+                    }
+                    access_node_entity = {
+                        &#34;id&#34;: 0,
+                        &#34;type&#34;: 28
+                    } 
+                    api_payload[&#39;target&#39;][&#39;options&#39;].update(existing_hypervisor)
+                    api_payload[&#39;target&#39;][&#39;options&#39;][&#39;accessNode&#39;].update(access_node_entity)
+                elif target.get(&#34;credentials_id&#34;) is not None:  #Using existing credentials to create new hypervisor for the target
+                    new_hypervisor = {
+                        &#34;hypervisor&#34;: {
+                            &#34;optionsAzure&#34;: {
+                                &#34;credentials&#34;: {
+                                    &#34;id&#34;: target.get(&#39;credentials_id&#39;, 0),
+                                    &#34;name&#34;: target.get(&#39;credentials_name&#39;, &#39;string&#39;)
+                                },
+                            &#34;skipCredentialValidation&#34;: False,
+                            &#34;subscriptionId&#34;: target.get(&#39;subscription_id&#39;, &#39;&lt;subscription_id&gt;&#39;),
+                            &#34;useManagedIdentity&#34;: False
+                            }
+                        }
+                    }
+                    options.update(new_hypervisor)
+                    api_payload[&#39;target&#39;][&#39;options&#39;].update(options)
+        return api_payload</code></pre>
+</details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="cvpysdk.cleanroom.runbook.Runbook.recovery_group_id"><code class="name">var <span class="ident">recovery_group_id</span> : int</code></dt>
+<dd>
+<div class="desc"><p>Get the recovery group ID associated with this runbook.</p>
+<p>The recovery group ID is initialized when the runbook is created and uniquely identifies
+the recovery group for this runbook instance.</p>
+<p>Returns
+-----=
+The integer ID of the recovery group.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; runbook = Runbook()
+&gt;&gt;&gt; group_id = runbook.recovery_group_id
+&gt;&gt;&gt; print(f&quot;Recovery Group ID: {group_id}&quot;)
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/cleanroom/runbook.py#L122-L140" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def recovery_group_id(self) -&gt; int:
+    &#34;&#34;&#34;Get the recovery group ID associated with this runbook.
+
+    The recovery group ID is initialized when the runbook is created and uniquely identifies
+    the recovery group for this runbook instance.
+
+    Returns:
+        The integer ID of the recovery group.
+
+    Example:
+        &gt;&gt;&gt; runbook = Runbook()
+        &gt;&gt;&gt; group_id = runbook.recovery_group_id
+        &gt;&gt;&gt; print(f&#34;Recovery Group ID: {group_id}&#34;)
+    &#34;&#34;&#34;
+    if self._recovery_group_id is not None:
+        return int(self._recovery_group_id)
+    return None</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="cvpysdk.cleanroom.runbook.Runbook.create"><code class="name flex">
+<span>def <span class="ident">create</span></span>(<span>self, payload: dict = {}) ‑> dict</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Create a cleanroom runbook with the specified payload.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>payload</code></strong></dt>
+<dd>Dictionary containing the parameters required to create the runbook.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>The response from the API containing details of the created runbook.</dd>
+</dl>
+<p>Example response:
+{
+"recoveryGroup": {
+"id": 1234567890,
+"name": "runbook_name"
+}
+}</p>
+<dl>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the payload is empty, the API response is empty, or the API response indicates failure.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; runbook = Runbook()
+&gt;&gt;&gt; payload = {
+...     &quot;recoveryGroup&quot;: {
+...         &quot;name&quot;: &quot;MyRunbook&quot;,
+...         &quot;description&quot;: &quot;Automated recovery workflow&quot;
+...     }
+... }
+&gt;&gt;&gt; response = runbook.create(payload)
+&gt;&gt;&gt; print(response[&quot;recoveryGroup&quot;][&quot;id&quot;])
+1234567890
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/cleanroom/runbook.py#L69-L120" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def create(self, payload: dict = dict()) -&gt; dict:
+    &#34;&#34;&#34;Create a cleanroom runbook with the specified payload.
+
+    Args:
+        payload: Dictionary containing the parameters required to create the runbook.
+
+    Returns:
+        dict: The response from the API containing details of the created runbook.
+        Example response:
+            {
+                &#34;recoveryGroup&#34;: {
+                    &#34;id&#34;: 1234567890,
+                    &#34;name&#34;: &#34;runbook_name&#34;
+                }
+            }
+
+    Raises:
+        SDKException: If the payload is empty, the API response is empty, or the API response indicates failure.
+
+    Example:
+        &gt;&gt;&gt; runbook = Runbook()
+        &gt;&gt;&gt; payload = {
+        ...     &#34;recoveryGroup&#34;: {
+        ...         &#34;name&#34;: &#34;MyRunbook&#34;,
+        ...         &#34;description&#34;: &#34;Automated recovery workflow&#34;
+        ...     }
+        ... }
+        &gt;&gt;&gt; response = runbook.create(payload)
+        &gt;&gt;&gt; print(response[&#34;recoveryGroup&#34;][&#34;id&#34;])
+        1234567890
+
+    &#34;&#34;&#34;
+    if not payload:
+        raise SDKException(&#39;RecoveryGroup&#39;, &#39;101&#39;, &#39;Payload cannot be empty&#39;)
+    flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._RUNBOOK_URL, payload=payload)
+    
+    if flag:
+        try:
+            response_json = response.json()
+            if not response_json:
+                raise ValueError(&#39;Response&#39;, &#39;102&#39;, &#39;Empty response received from the server&#39;)
+            
+            if &#34;recoveryGroup&#34; in response_json and &#34;id&#34; in response_json[&#39;recoveryGroup&#39;]:
+                    self._recovery_group_id = response_json[&#39;recoveryGroup&#39;][&#39;id&#39;]
+                    return response_json
+            else:
+                raise KeyError(&#39;Response&#39;, &#39;102&#39;, &#39;Recovery group ID not found in the response&#39;)
+        except JSONDecodeError:
+            raise ValueError(&#39;Response&#39;, &#39;102&#39;, &#39;Invalid response received from the server.&#39;)
+    else:
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.cleanroom.runbook.Runbook.populate_payload"><code class="name flex">
+<span>def <span class="ident">populate_payload</span></span>(<span>self, entities: dict, target: dict, region: dict, node: dict = None) ‑> dict</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Build the payload required for creating a runbook.</p>
+<p>This method constructs and returns a payload dictionary containing the necessary fields for runbook creation,
+based on the provided entities, target, region, and optionally, access node details.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>entities</code></strong></dt>
+<dd>Dictionary containing the entities to be included in the runbook. This should include a "name" key
+and an "entities" list, where each entity dictionary specifies details such as instance, client, backupset,
+workload type, and execution order.</dd>
+<dt><strong><code>target</code></strong></dt>
+<dd>Dictionary specifying the target environment for the runbook. The format varies depending on whether
+an existing target, a new target with an existing hypervisor, or a new target with credentials is used.</dd>
+<dt><strong><code>region</code></strong></dt>
+<dd>Dictionary containing region details, such as "guid" and "name".</dd>
+<dt><strong><code>node</code></strong></dt>
+<dd>Optional dictionary specifying access node details, such as "access_node_id" and "access_node_type".
+This is required only when not using an existing target or hypervisor.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>The fully populated payload dictionary ready for runbook creation.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the entities input is empty, if an invalid workload type is provided, or if the target input is empty.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; entities = {
+...     &quot;name&quot;: &quot;Runbook with existing target&quot;,
+...     &quot;entities&quot;: [
+...         {
+...             &quot;instance_id&quot;: 1,
+...             &quot;instance_name&quot;: &quot;DefaultInstanceName&quot;,
+...             &quot;client_id&quot;: 2,
+...             &quot;client_name&quot;: &quot;devcs3&quot;,
+...             &quot;backupset_id&quot;: 3,
+...             &quot;backupset_name&quot;: &quot;defaultBackupSet&quot;,
+...             &quot;subclient_id&quot;: 14,
+...             &quot;subclient_name&quot;: &quot;small file&quot;,
+...             &quot;workload&quot;: &quot;FILES&quot;,
+...             &quot;execution_order&quot;: 2
+...         },
+...         {
+...             &quot;instance_id&quot;: 6,
+...             &quot;instance_name&quot;: &quot;Amazon Web Services&quot;,
+...             &quot;client_id&quot;: 10,
+...             &quot;client_name&quot;: &quot;AWS&quot;,
+...             &quot;backupset_id&quot;: 14,
+...             &quot;backupset_name&quot;: &quot;defaultBackupSet&quot;,
+...             &quot;vm_group_id&quot;: 18,
+...             &quot;vm_guid&quot;: &quot;i-0d485455929da6c11&quot;,
+...             &quot;vm_name&quot;: &quot;WindowsTestVM1&quot;,
+...             &quot;source_vendor&quot;: &quot;AMAZON&quot;,
+...             &quot;workload&quot;: &quot;VM&quot;,
+...             &quot;execution_order&quot;: 1
+...         }
+...     ]
+... }
+&gt;&gt;&gt; target = {
+...     &quot;target_id&quot;: 1234567890,
+...     &quot;target_name&quot;: &quot;Cleanroom_Target&quot;,
+...     &quot;target_vendor&quot;: &quot;AZURE_V2&quot;
+... }
+&gt;&gt;&gt; region = {
+...     &quot;guid&quot;: &quot;eastus (Commcell)&quot;,
+...     &quot;name&quot;: &quot;US East&quot;
+... }
+&gt;&gt;&gt; node = {
+...     &quot;access_node_id&quot;: 1234567890,
+...     &quot;access_node_type&quot;: 3
+... }
+&gt;&gt;&gt; payload = runbook.populate_payload(entities, target, region, node)
+&gt;&gt;&gt; print(payload)
+# The returned payload can be used for runbook creation.
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/cleanroom/runbook.py#L142-L357" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def populate_payload(self, entities: dict, target: dict, region: dict, node: dict = None) -&gt; dict:
+    &#34;&#34;&#34;Build the payload required for creating a runbook.
+
+    This method constructs and returns a payload dictionary containing the necessary fields for runbook creation,
+    based on the provided entities, target, region, and optionally, access node details.
+
+    Args:
+        entities: Dictionary containing the entities to be included in the runbook. This should include a &#34;name&#34; key
+            and an &#34;entities&#34; list, where each entity dictionary specifies details such as instance, client, backupset,
+            workload type, and execution order.
+        target: Dictionary specifying the target environment for the runbook. The format varies depending on whether
+            an existing target, a new target with an existing hypervisor, or a new target with credentials is used.
+        region: Dictionary containing region details, such as &#34;guid&#34; and &#34;name&#34;.
+        node: Optional dictionary specifying access node details, such as &#34;access_node_id&#34; and &#34;access_node_type&#34;.
+            This is required only when not using an existing target or hypervisor.
+
+    Returns:
+        dict: The fully populated payload dictionary ready for runbook creation.
+
+    Raises:
+        SDKException: If the entities input is empty, if an invalid workload type is provided, or if the target input is empty.
+
+    Example:
+        &gt;&gt;&gt; entities = {
+        ...     &#34;name&#34;: &#34;Runbook with existing target&#34;,
+        ...     &#34;entities&#34;: [
+        ...         {
+        ...             &#34;instance_id&#34;: 1,
+        ...             &#34;instance_name&#34;: &#34;DefaultInstanceName&#34;,
+        ...             &#34;client_id&#34;: 2,
+        ...             &#34;client_name&#34;: &#34;devcs3&#34;,
+        ...             &#34;backupset_id&#34;: 3,
+        ...             &#34;backupset_name&#34;: &#34;defaultBackupSet&#34;,
+        ...             &#34;subclient_id&#34;: 14,
+        ...             &#34;subclient_name&#34;: &#34;small file&#34;,
+        ...             &#34;workload&#34;: &#34;FILES&#34;,
+        ...             &#34;execution_order&#34;: 2
+        ...         },
+        ...         {
+        ...             &#34;instance_id&#34;: 6,
+        ...             &#34;instance_name&#34;: &#34;Amazon Web Services&#34;,
+        ...             &#34;client_id&#34;: 10,
+        ...             &#34;client_name&#34;: &#34;AWS&#34;,
+        ...             &#34;backupset_id&#34;: 14,
+        ...             &#34;backupset_name&#34;: &#34;defaultBackupSet&#34;,
+        ...             &#34;vm_group_id&#34;: 18,
+        ...             &#34;vm_guid&#34;: &#34;i-0d485455929da6c11&#34;,
+        ...             &#34;vm_name&#34;: &#34;WindowsTestVM1&#34;,
+        ...             &#34;source_vendor&#34;: &#34;AMAZON&#34;,
+        ...             &#34;workload&#34;: &#34;VM&#34;,
+        ...             &#34;execution_order&#34;: 1
+        ...         }
+        ...     ]
+        ... }
+        &gt;&gt;&gt; target = {
+        ...     &#34;target_id&#34;: 1234567890,
+        ...     &#34;target_name&#34;: &#34;Cleanroom_Target&#34;,
+        ...     &#34;target_vendor&#34;: &#34;AZURE_V2&#34;
+        ... }
+        &gt;&gt;&gt; region = {
+        ...     &#34;guid&#34;: &#34;eastus (Commcell)&#34;,
+        ...     &#34;name&#34;: &#34;US East&#34;
+        ... }
+        &gt;&gt;&gt; node = {
+        ...     &#34;access_node_id&#34;: 1234567890,
+        ...     &#34;access_node_type&#34;: 3
+        ... }
+        &gt;&gt;&gt; payload = runbook.populate_payload(entities, target, region, node)
+        &gt;&gt;&gt; print(payload)
+        # The returned payload can be used for runbook creation.
+
+    &#34;&#34;&#34;
+    if not isinstance(entities[&#39;name&#39;], str):
+        raise SDKException(&#39;RecoveryGroup&#39;, &#39;101&#39;, &#39;Missing or invalid Runbook name&#39;)
+    api_payload = {
+                    &#34;name&#34;: entities.get(&#39;name&#39;, &#39;cleanroom_runbook&#39;),
+                    &#34;target&#34;: {
+                        &#34;options&#34;: {
+                        &#34;region&#34;: region if region else {},
+                        &#34;accessNode&#34;: {}
+                        }
+                    },
+                    &#34;entities&#34;: [
+                    ],
+                    &#34;advancedOptions&#34;: {
+                        &#34;postRecoveryActions&#34;: [
+                        {
+                            &#34;scriptCredentials&#34;: {},
+                            &#34;guestCredentials&#34;: {}
+                        }
+                        ],
+                        &#34;delayBetweenPriorityMachines&#34;: 0,
+                        &#34;continueOnFailure&#34;: False,
+                        &#34;recoveryExpirationOptions&#34;: {
+                        &#34;enableExpirationOption&#34;: True,
+                        &#34;daysToExpire&#34;: 7,
+                        &#34;isRescuedCommServe&#34;: True,
+                        &#34;expirationTime&#34;: 0
+                        }
+                    }
+                }
+
+    #Populate the payload with list of entities
+    if not entities or not entities.get(&#39;entities&#39;):
+        raise SDKException(&#39;RecoveryGroup&#39;, &#39;101&#39;, &#39;Payload cannot be empty&#39;)
+    else:
+        for item in entities[&#39;entities&#39;]:
+            workload = None
+            if item[&#39;workload&#39;] == &#39;VM&#39;:
+                workload = 8
+            elif item[&#39;workload&#39;] == &#39;FILES&#39;:
+                workload = 9
+            else:
+                raise SDKException(&#39;RecoveryGroup&#39;, &#39;101&#39;, &#39;Invalid workload type provided in payload&#39;)
+            entity = {
+                &#34;instance&#34;: {
+                    &#34;id&#34;: item.get(&#39;instance_id&#39;, 0),
+                    &#34;name&#34;: item.get(&#34;instance_name&#34;, &#34;string&#34;)
+                },
+                &#34;backupSet&#34;: {
+                    &#34;id&#34;: item.get(&#39;backupset_id&#39;, 0),
+                    &#34;name&#34;: item.get(&#34;backupset_name&#34;, &#34;string&#34;)
+                },
+                &#34;client&#34;: {
+                    &#34;id&#34;: item.get(&#39;hypervisor_id&#39;, 0) if item.get(&#39;hypervisor_id&#39;) else item.get(&#39;client_id&#39;, 0),
+                    &#34;name&#34;: item.get(&#34;hypervisor_name&#34;, &#34;string&#34;) if item.get(&#39;hypervisor_name&#39;) else item.get(&#39;client_name&#39;, &#34;string&#34;),
+                },
+                &#34;workload&#34;: workload,
+                &#34;executionOrder&#34;: {
+                    &#34;priority&#34;: item.get(&#39;execution_order&#39;, 0)
+                },
+                &#34;recoveryPointDetails&#34;: {
+                    &#34;inheritedFrom&#34;: &#34;RECOVERY_GROUP&#34;,
+                    &#34;entityRecoveryPoint&#34;: 0,
+                    &#34;entityRecoveryPointCategory&#34;: &#34;LATEST&#34;
+                }              
+            }
+            if workload == 8:  # VM workload
+                vm_info = {
+                    &#34;vmGroup&#34;: {
+                        &#34;id&#34;: item.get(&#34;vm_group_id&#34;, 0)
+                    },
+                    &#34;virtualMachine&#34;: {
+                        &#34;GUID&#34;: item.get(&#34;vm_guid&#34;, &#34;&lt;vm_guid&gt;&#34;),
+                        &#34;name&#34;: item.get(&#34;vm_name&#34;, &#34;string&#34;)
+                    },
+                    &#34;sourceVendor&#34;: item.get(&#34;source_vendor&#34;, &#34;VMW&#34;)
+                }
+                entity.update(vm_info)
+            elif workload == 9:  # FILES workload
+                file_info = {
+                    &#34;subclient&#34;: {
+                        &#34;id&#34;: item.get(&#34;subclient_id&#34;, 0),
+                        &#34;name&#34;: item.get(&#34;subclient_name&#34;, &#34;string&#34;)
+                    }
+                }
+                entity.update(file_info)
+            api_payload[&#39;entities&#39;].append(entity)
+    #Populate the payload with target details
+    #Populate the payload with access node details
+    if node.get(&#39;access_node_id&#39;) is not None:  #Using existing access node or access node group
+        access_node_entity = {
+            &#34;id&#34;: node.get(&#39;access_node_id&#39;, 0),
+            &#34;name&#34;: node.get(&#39;access_node_name&#39;, &#39;string&#39;),
+            &#34;type&#34;: node.get(&#39;access_node_type&#39;, 3)
+        }
+        api_payload[&#39;target&#39;][&#39;options&#39;][&#39;accessNode&#39;].update(access_node_entity)
+    if not target:
+        raise SDKException(&#39;RecoveryGroup&#39;, &#39;101&#39;, &#39;Target payload cannot be empty&#39;)
+    elif target.get(&#39;target_id&#39;) is not None and target.get(&#39;target_id&#39;) &gt; 0 :  #Using existing target
+        target_entity = {
+            &#34;entity&#34;: {
+            &#34;id&#34;: target.get(&#39;target_id&#39;, 0),
+            &#34;name&#34;: target.get(&#39;target_name&#39;, &#39;string&#39;)
+            }
+        }
+        api_payload[&#39;target&#39;].update(target_entity)
+    else:
+        options = {
+                    &#34;vendor&#34;: target.get(&#39;target_vendor&#39;, &#39;AZURE_V2&#39;)
+                }
+        api_payload[&#39;target&#39;][&#39;options&#39;].update(options) 
+        if target.get(&#34;target_id&#34;) == 0 or target.get(&#34;target_id&#34;) == &#34;&#34;:
+            if target.get(&#34;hypervisor_id&#34;) is not None:  # Using existing hypervisor to create new target
+                existing_hypervisor = {
+                    &#34;hypervisor&#34;: {
+                        &#34;entity&#34;: {
+                            &#34;id&#34;: target.get(&#39;hypervisor_id&#39;, 0),
+                            &#34;name&#34;: target.get(&#39;hypervisor_name&#39;, &#39;string&#39;)
+                        }
+                    }
+                }
+                access_node_entity = {
+                    &#34;id&#34;: 0,
+                    &#34;type&#34;: 28
+                } 
+                api_payload[&#39;target&#39;][&#39;options&#39;].update(existing_hypervisor)
+                api_payload[&#39;target&#39;][&#39;options&#39;][&#39;accessNode&#39;].update(access_node_entity)
+            elif target.get(&#34;credentials_id&#34;) is not None:  #Using existing credentials to create new hypervisor for the target
+                new_hypervisor = {
+                    &#34;hypervisor&#34;: {
+                        &#34;optionsAzure&#34;: {
+                            &#34;credentials&#34;: {
+                                &#34;id&#34;: target.get(&#39;credentials_id&#39;, 0),
+                                &#34;name&#34;: target.get(&#39;credentials_name&#39;, &#39;string&#39;)
+                            },
+                        &#34;skipCredentialValidation&#34;: False,
+                        &#34;subscriptionId&#34;: target.get(&#39;subscription_id&#39;, &#39;&lt;subscription_id&gt;&#39;),
+                        &#34;useManagedIdentity&#34;: False
+                        }
+                    }
+                }
+                options.update(new_hypervisor)
+                api_payload[&#39;target&#39;][&#39;options&#39;].update(options)
+    return api_payload</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<header>
+<a class="homelink" rel="home" title="GitHub home" href="https://github.com/Commvault/cvpysdk">
+<img src="https://commvault.github.io/cvpysdk/logo.png" alt="" width="100%"> Commvault Python SDK
+</a> <br>
+<a class="homelink" title="Go to Top Level" href="https://commvault.github.io/cvpysdk/cvpysdk/index.html"> Go to Top Level </a>
+</header>
+<form>
+<input id="lunr-search" name="q" placeholder="🔎 Search ..." aria-label="Search"
+disabled minlength="2">
+</form>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.css" integrity="sha512-j1u8eUJ4f23xPPxwOrLUPQaCD2dwzNqqmDDcWS4deWsMv2ohLqmXXuP3hU7g8TyzbMSakP/mMqoNBYWj8AEIFg==" crossorigin>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tingle/0.15.3/tingle.min.js" integrity="sha512-plGUER9JkeEWPPqQBE4sdLqBoQug5Ap+BCGMc7bJ8BXkm+VVj6QzkpBz5Yv2yPkkq+cqg9IpkBaGCas6uDbW8g==" crossorigin></script>
+<style>
+.modal-dialog iframe {
+width: 100vw;
+height: calc(100vh - 80px);
+}
+@media screen and (min-width: 700px) {
+.modal-dialog iframe {
+width: 70vw;
+height: 80vh;
+}
+}
+.modal-dialog .tingle-modal-box {width: auto;}
+.modal-dialog .tingle-modal-box__content {padding: 0;}
+</style>
+<script>
+const input = document.getElementById('lunr-search');
+input.disabled = false;
+input.form.addEventListener('submit', (ev) => {
+ev.preventDefault();
+const url = new URL(window.location);
+url.searchParams.set('q', input.value);
+history.replaceState({}, null, url.toString());
+search(input.value);
+});
+const query = new URL(window.location).searchParams.get('q');
+if (query)
+search(query);
+function search(query) {
+const url = '../../doc-search.html#' + encodeURIComponent(query);
+new tingle.modal({
+cssClass: ['modal-dialog'],
+onClose: () => {
+const url = new URL(window.location);
+url.searchParams.delete('q');
+history.replaceState({}, null, url.toString());
+setTimeout(() => input.focus(), 100);
+}
+}).setContent('<iframe src="' + url + '"></iframe>').open();
+}
+</script>
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="cvpysdk.cleanroom" href="index.html">cvpysdk.cleanroom</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="cvpysdk.cleanroom.runbook.Runbook" href="#cvpysdk.cleanroom.runbook.Runbook">Runbook</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.cleanroom.runbook.Runbook.create" href="#cvpysdk.cleanroom.runbook.Runbook.create">create</a></code></li>
+<li><code><a title="cvpysdk.cleanroom.runbook.Runbook.populate_payload" href="#cvpysdk.cleanroom.runbook.Runbook.populate_payload">populate_payload</a></code></li>
+<li><code><a title="cvpysdk.cleanroom.runbook.Runbook.recovery_group_id" href="#cvpysdk.cleanroom.runbook.Runbook.recovery_group_id">recovery_group_id</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>

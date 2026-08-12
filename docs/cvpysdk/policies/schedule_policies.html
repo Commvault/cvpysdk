@@ -27,8 +27,9 @@
 <p>This file has all the classes related to Schedule Policy operations.</p>
 <p>SchedulePolicies: Class for representing all the Schedule Policies associated to the commcell.</p>
 <p>SchedulePolicy: Class for representing Schedule Policy</p>
-<h2 id="schedulepolicies">Schedulepolicies</h2>
-<p><strong>init</strong>(commcell_object)
+<p>Schedulepolicies
+-----=
+<strong>init</strong>(commcell_object)
 &ndash;
 initialize the SchedulePolicies instance for the commcell</p>
 <p><strong>str</strong>()
@@ -65,7 +66,8 @@ deletes the specified schedule policy name</p>
 &ndash;
 refresh the schedule policies associated with the commcell</p>
 <p>_process_schedule_policy_response &ndash; processes the response received schedule policy creation request</p>
-<h2 id="schedulepolicy">Schedulepolicy</h2>
+<p>Schedulepolicy
+-----=</p>
 <p><strong>init</strong>(commcell_object)
 &ndash;
 Initialise the Schedule Policy class instance</p>
@@ -106,10 +108,14 @@ id or name</p>
 &ndash; Enables a schedule policy</p>
 <p>disable
 &ndash; Disables a schedule policy</p>
+<p>_perform_task_operation
+&ndash; Perform task operation request for schedule policy</p>
+<p>decouple_schedule_policy_from_subclient
+&ndash; Decouple the current schedule policy from subclient entities</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/policies/schedule_policies.py#L1-L1138" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/policies/schedule_policies.py#L1-L1294" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -204,30 +210,61 @@ SchedulePolicy:
     enable                          -- Enables a schedule policy
 
     disable                         -- Disables a schedule policy
+    
+    _perform_task_operation         -- Perform task operation request for schedule policy
 
+    decouple_schedule_policy_from_subclient  -- Decouple the current schedule policy from subclient entities
 
 
 &#34;&#34;&#34;
 
 from __future__ import absolute_import
 from __future__ import unicode_literals
+import xml.etree.ElementTree as ET
+from typing import TYPE_CHECKING
 
 from ..exception import SDKException
 from .schedule_options import ScheduleOptions
 from ..schedules import SchedulePattern
 
+if TYPE_CHECKING:
+    from ..commcell import Commcell
+
 class OperationType:
-    &#34;&#34;&#34;Operation Type for schedule policy associations and appGroups&#34;&#34;&#34;
+    &#34;&#34;&#34;Operation Type for schedule policy associations and appGroups
+
+    Attributes:
+        INCLUDE (str): Represents an inclusion operation.
+        EXCLUDE (str): Represents an exclusion operation.
+        DELETE (str): Represents a deletion operation.
+
+    Usage:
+        &gt;&gt;&gt; operation = OperationType.INCLUDE
+    &#34;&#34;&#34;
     INCLUDE = &#39;include&#39;
-    EXCLUDE = &#39;exclude&#39;,
+    EXCLUDE = &#39;exclude&#39;
     DELETE = &#39;deleted&#39;
 
+
 class SchedulePolicies:
-    &#34;&#34;&#34;Class for getting all the schedule policies associated with the commcell.&#34;&#34;&#34;
+    &#34;&#34;&#34;Class for getting all the schedule policies associated with the commcell.
+
+    Attributes:
+        policy_to_subtask_map (dict): Mapping of policy types to subtask types and operation types.
+        policy_types (dict): Mapping of policy names to policy IDs.
+        _commcell_object (object): Instance of the Commcell class.
+        _POLICY (str): Service name for schedule policy.
+        _CREATE_POLICY (str): Service name for creating/updating schedule policy.
+        _policies (dict): Dictionary of schedule policies.
+
+    Usage:
+        # Initialize SchedulePolicies object
+        schedule_policies = SchedulePolicies(commcell_object)
+    &#34;&#34;&#34;
 
     policy_to_subtask_map = {
 
-        &#39;Data Protection&#39;: [2, 2], #[subtaskType, OperationType]
+        &#39;Data Protection&#39;: [2, 2],  # [subtaskType, OperationType]
         &#39;Auxiliary Copy&#39;: [1, 4003]
     }
 
@@ -243,14 +280,14 @@ class SchedulePolicies:
         &#34;Network Throttle&#34;: 8,
     }
 
-    def __init__(self, commcell_object):
+    def __init__(self, commcell_object: &#39;Commcell&#39;) -&gt; None:
         &#34;&#34;&#34;Initialize object of the SchedulePolicies class.
 
-            Args:
-                commcell_object (object)  --  instance of the Commcell class
+        Args:
+            commcell_object (object): instance of the Commcell class
 
-            Returns:
-                object - instance of the SchedulePolicies class
+        Returns:
+            object: instance of the SchedulePolicies class
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
         self._POLICY = self._commcell_object._services[&#39;SCHEDULE_POLICY&#39;]
@@ -258,13 +295,14 @@ class SchedulePolicies:
         self._policies = None
         self.refresh()
 
-    def __str__(self):
+    def __str__(self) -&gt; str:
         &#34;&#34;&#34;Representation string consisting of all schedule policies of the commcell.
 
-            Returns:
-                str - string of all the schedule policies associated with the commcell
+        Returns:
+            str: string of all the schedule policies associated with the commcell
         &#34;&#34;&#34;
-        representation_string = &#39;{:^5}\t{:^20}\n\n&#39;.format(&#39;S. No.&#39;, &#39;Schedule Policy&#39;)
+        representation_string = &#39;{:^5}\t{:^20}\n\n&#39;.format(
+            &#39;S. No.&#39;, &#39;Schedule Policy&#39;)
 
         for index, policy in enumerate(self._policies):
             sub_str = &#39;{:^5}\t{:20}\n&#39;.format(index + 1, policy)
@@ -272,27 +310,28 @@ class SchedulePolicies:
 
         return representation_string.strip()
 
-    def __repr__(self):
+    def __repr__(self) -&gt; str:
         &#34;&#34;&#34;Representation string for the instance of the SchedulePolicies class.&#34;&#34;&#34;
         return &#34;SchedulePolicies class instance for Commcell&#34;
 
-    def _get_policies(self):
+    def _get_policies(self) -&gt; dict:
         &#34;&#34;&#34;Gets all the schedule policies associated to the commcell specified by commcell object.
 
-            Returns:
-                dict - consists of all schedule policies of the commcell
-                    {
-                         &#34;schedule_policy1_name&#34;: schedule_policy1_id,
-                         &#34;schedule_policy2_name&#34;: schedule_policy2_id
-                    }
+        Returns:
+            dict: consists of all schedule policies of the commcell
+                {
+                     &#34;schedule_policy1_name&#34;: schedule_policy1_id,
+                     &#34;schedule_policy2_name&#34;: schedule_policy2_id
+                }
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException:
+                if response is empty
 
-                    if response is not success
+                if response is not success
         &#34;&#34;&#34;
-        flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;GET&#39;, self._POLICY)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._POLICY)
 
         if flag:
             if response and response.json():
@@ -311,33 +350,35 @@ class SchedulePolicies:
             else:
                 return {}
         else:
-            response_string = self._commcell_object._update_response_(response.text)
+            response_string = self._commcell_object._update_response_(
+                response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
     @property
-    def all_schedule_policies(self):
+    def all_schedule_policies(self) -&gt; dict:
         &#34;&#34;&#34;Returns the schedule policies on this commcell
 
-            dict - consists of all schedule policies of the commcell
-                    {
-                         &#34;schedule_policy1_name&#34;: schedule_policy1_id,
-                         &#34;schedule_policy2_name&#34;: schedule_policy2_id
-                    }
+        Returns:
+            dict: consists of all schedule policies of the commcell
+                {
+                     &#34;schedule_policy1_name&#34;: schedule_policy1_id,
+                     &#34;schedule_policy2_name&#34;: schedule_policy2_id
+                }
         &#34;&#34;&#34;
         return self._policies
 
-    def has_policy(self, policy_name):
+    def has_policy(self, policy_name: str) -&gt; bool:
         &#34;&#34;&#34;Checks if a schedule policy exists in the commcell with the input schedule policy name.
 
-            Args:
-                policy_name (str)  --  name of the schedule policy
+        Args:
+            policy_name (str): name of the schedule policy
 
-            Returns:
-                bool - boolean output whether the schedule policy exists in the commcell or not
+        Returns:
+            bool: boolean output whether the schedule policy exists in the commcell or not
 
-            Raises:
-                SDKException:
-                    if type of the schedule policy name argument is not string
+        Raises:
+            SDKException:
+                if type of the schedule policy name argument is not string
         &#34;&#34;&#34;
         if not isinstance(policy_name, str):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
@@ -345,14 +386,14 @@ class SchedulePolicies:
         return self._policies and policy_name.lower() in self._policies
 
     @staticmethod
-    def subtasks_json(policy_type):
-        &#34;&#34;&#34;
-        gets the subtask in schedule policy JSON
+    def subtasks_json(policy_type: str) -&gt; dict:
+        &#34;&#34;&#34;Gets the subtask in schedule policy JSON.
+
         Args:
-            policy_type (str) -- Type of the schedule policy from &#39;policy_types&#39; dict
+            policy_type (str): Type of the schedule policy from &#39;policy_types&#39; dict
 
         Returns:
-            returns schedule policy Subtask
+            dict: schedule policy Subtask
         &#34;&#34;&#34;
 
         _backup_subtask = {
@@ -363,22 +404,20 @@ class SchedulePolicies:
         return _backup_subtask
 
     @staticmethod
-    def schedule_json(policy_type, schedule_dict):
-        &#34;&#34;&#34;
-            Returns the schedule json for the given schedule options and pattern
+    def schedule_json(policy_type: str, schedule_dict: dict) -&gt; dict:
+        &#34;&#34;&#34;Returns the schedule json for the given schedule options and pattern.
 
         Args:
-            policy_type (str) -- Type of the schedule policy from &#39;policy_types&#39; dict
-            schedule_dict (dict) -- with the below format, check add() module for more documentation on the below dict
+            policy_type (str): Type of the schedule policy from &#39;policy_types&#39; dict
+            schedule_dict (dict): with the below format, check add() module for more documentation on the below dict
 
-                                            {
-                                                pattern : {},
-                                                options: {}
-                                            }
+                                        {
+                                            pattern : {},
+                                            options: {}
+                                        }
 
         Returns:
-            Returns the schedule json for the given schedule options and pattern
-
+            dict: The schedule json for the given schedule options and pattern
         &#34;&#34;&#34;
         schedule_options = ScheduleOptions(ScheduleOptions.policy_to_options_map[policy_type]
                                            ).options_json(schedule_dict.get(&#39;options&#39;, None))
@@ -398,61 +437,53 @@ class SchedulePolicies:
             schedule_dict[&#34;pattern&#34;] = {&#34;freq_type&#34;: freq_type}
 
         task_json = SchedulePattern().create_schedule({&#39;taskInfo&#39;:
-                                                           {&#39;subTasks&#39;: [sub_task]
-                                                            }
+                                                       {&#39;subTasks&#39;: [sub_task]
+                                                        }
                                                        }, schedule_dict.get(&#39;pattern&#39;))
         return task_json.get(&#39;taskInfo&#39;).get(&#39;subTasks&#39;)[0]
 
-
-    def add(self, name, policy_type, associations, schedules, agent_type=None):
-        &#34;&#34;&#34;
-
-        Adds a schedule policy
+    def add(self, name: str, policy_type: str, associations: list, schedules: list, agent_type: list = None) -&gt; &#39;SchedulePolicy&#39;:
+        &#34;&#34;&#34;Adds a schedule policy.
 
         Args:
-            name (str) -- Name of the Schedule Policy
-            policy_type (str) -- Type of the schedule policy from &#39;policy_types&#39; dict
-            associations (str) -- List of schedule associations
-            [
-            {
-                &#34;clientName&#34;: &#34;scheduleclient1&#34;
-            },
-            {
-                &#34;clientGroupName&#34;: &#34;scheduleclient2&#34;
-            }
-            ]
+            name (str): Name of the Schedule Policy
+            policy_type (str): Type of the schedule policy from &#39;policy_types&#39; dict
+            associations (list): List of schedule associations
+                [
+                    {
+                        &#34;clientName&#34;: &#34;scheduleclient1&#34;
+                    },
+                    {
+                        &#34;clientGroupName&#34;: &#34;scheduleclient2&#34;
+                    }
+                ]
+            schedules (list): schedules to be associated to the schedule policy
+                [
+                    {
+                        pattern : {}, -- Please refer SchedulePattern.create_schedule in schedules.py for the types of
+                                         pattern to be sent
 
-            schedules (List) -- schedules to be associated to the schedule policy
+                                         eg: {
+                                                &#34;freq_type&#34;: &#39;daily&#39;,
+                                                &#34;active_start_time&#34;: time_in_%H/%S (str),
+                                                &#34;repeat_days&#34;: days_to_repeat (int)
+                                             }
 
-            [
-                {
-                    pattern : {}, -- Please refer SchedulePattern.create_schedule in schedules.py for the types of
-                                     pattern to be sent
+                        options: {} -- Please refer ScheduleOptions.py classes for respective schedule options
 
-                                     eg: {
-                                            &#34;freq_type&#34;: &#39;daily&#39;,
-                                            &#34;active_start_time&#34;: time_in_%H/%S (str),
-                                            &#34;repeat_days&#34;: days_to_repeat (int)
-                                         }
-
-                    options: {} -- Please refer ScheduleOptions.py classes for respective schedule options
-
-                                    eg:  {
-                                        &#34;maxNumberOfStreams&#34;: 0,
-                                        &#34;useMaximumStreams&#34;: True,
-                                        &#34;useScallableResourceManagement&#34;: True,
-                                        &#34;totalJobsToProcess&#34;: 1000,
-                                        &#34;allCopies&#34;: True,
-                                        &#34;mediaAgent&#34;: {
-                                            &#34;mediaAgentName&#34;: &#34;&lt;ANY MEDIAAGENT&gt;&#34;
+                                        eg:  {
+                                            &#34;maxNumberOfStreams&#34;: 0,
+                                            &#34;useMaximumStreams&#34;: True,
+                                            &#34;useScallableResourceManagement&#34;: True,
+                                            &#34;totalJobsToProcess&#34;: 1000,
+                                            &#34;allCopies&#34;: True,
+                                            &#34;mediaAgent&#34;: {
+                                                &#34;mediaAgentName&#34;: &#34;&lt;ANY MEDIAAGENT&gt;&#34;
+                                            }
                                         }
-                                    }
                 }
             ]
-
-
-
-            agent_type (List) -- Agent Types to be associated to the schedule policy
+            agent_type (list): Agent Types to be associated to the schedule policy
 
                       eg:    [
                                 {
@@ -463,35 +494,33 @@ class SchedulePolicies:
                                 }
                             ]
 
-        sample:
-
-                    apptype = [{&#39;appGroupName&#39;: &#39;DB2&#39;}]
-                    associations = [{&#39;clientName&#39;: &#39;testclient&#39;}]
-                    schedule = [
-                        {
-                            &#39;name&#39;: &#39;trying&#39;,
-                            &#39;pattern&#39;: {
-                                            &#39;freq_type&#39;: &#39;Daily&#39;
-                                        }
-                        }
-                    ]
-                    commcellobj.schedule_policies.add(&#39;testsch1&#39;, &#39;Data Protection&#39;, associations, schedule, apptype)
-
-        Returns: schedule policy object on successful completion
+        Returns:
+            object: schedule policy object on successful completion
 
         Raises:
+            SDKExceptions: on wrong input types and failure to create schedule policy
 
-            SDKExceptions on wrong input types and failure to create schedule policy
-
+        Usage:
+            apptype = [{&#39;appGroupName&#39;: &#39;DB2&#39;}]
+            associations = [{&#39;clientName&#39;: &#39;testclient&#39;}]
+            schedule = [
+                {
+                    &#39;name&#39;: &#39;trying&#39;,
+                    &#39;pattern&#39;: {
+                                    &#39;freq_type&#39;: &#39;Daily&#39;
+                                }
+                }
+            ]
+            commcellobj.schedule_policies.add(&#39;testsch1&#39;, &#39;Data Protection&#39;, associations, schedule, apptype)
         &#34;&#34;&#34;
 
         if not isinstance(schedules, list):
-            raise SDKException(&#39;Schedules&#39;, &#39;102&#39;, &#39;schedules should be a list&#39;)
+            raise SDKException(&#39;Schedules&#39;, &#39;102&#39;,
+                               &#39;schedules should be a list&#39;)
 
         sub_tasks = []
         for schedule in schedules:
             sub_tasks.append(self.schedule_json(policy_type, schedule))
-
 
         schedule_policy = {
             &#34;taskInfo&#34;:
@@ -527,23 +556,24 @@ class SchedulePolicies:
         o_str = &#39;Failed to update properties of Schedule\nError: &#34;{0}&#34;&#39;
         raise SDKException(&#39;Schedules&#39;, &#39;102&#39;, o_str.format(output[2]))
 
-    def get(self, schedule_policy_name, schedule_policy_id=None):
+    def get(self, schedule_policy_name: str, schedule_policy_id: int = None) -&gt; &#39;SchedulePolicy&#39;:
         &#34;&#34;&#34;Returns a schedule policy object of the specified schedule policy name.
 
-            Args:
-                schedule_policy_name (str)  --  name of the Schedule Policy
-                schedule_policy_id (int) -- id of the schedule Policy
+        Args:
+            schedule_policy_name (str): name of the Schedule Policy
+            schedule_policy_id (int): id of the schedule Policy
 
-            Sample: sch_pol_obj = commcellobj.schedule_policies.get(&#39;testschp&#39;)
+        Returns:
+            object: instance of the schedule policy class for the given schedule name
 
-            Returns:
-                object - instance of the schedule policy class for the given schedule name
+        Raises:
+            SDKException:
+                if type of the schedule policy name argument is not string
 
-            Raises:
-                SDKException:
-                    if type of the schedule policy name argument is not string
+                if no schedule policy exists with the given name
 
-                    if no schedule policy exists with the given name
+        Usage:
+            sch_pol_obj = commcellobj.schedule_policies.get(&#39;testschp&#39;)
         &#34;&#34;&#34;
 
         if schedule_policy_name and not isinstance(schedule_policy_name, str):
@@ -553,7 +583,8 @@ class SchedulePolicies:
             raise SDKException(&#39;Schedules&#39;, &#39;102&#39;)
 
         schedule_policy_name = schedule_policy_name.lower()
-        schedule_policy_id = self.all_schedule_policies.get(schedule_policy_name)
+        schedule_policy_id = self.all_schedule_policies.get(
+            schedule_policy_name)
         if self.has_policy(schedule_policy_name):
             return SchedulePolicy(
                 self._commcell_object, schedule_policy_name, schedule_policy_id
@@ -564,25 +595,27 @@ class SchedulePolicies:
             &#39;102&#39;,
             &#39;No Schedule Policy exists with name: {0}&#39;.format(schedule_policy_name))
 
-    def delete(self, schedule_policy_name):
-        &#34;&#34;&#34;deletes the specified schedule policy name.
+    def delete(self, schedule_policy_name: str) -&gt; None:
+        &#34;&#34;&#34;Deletes the specified schedule policy name.
 
-                    Args:
-                        schedule_policy_name (str)  --  name of the Schedule Policy
+        Args:
+            schedule_policy_name (str): name of the Schedule Policy
 
-                    Sample:  commcellobj.schedule_policies.delete(&#39;testschp&#39;)
+        Raises:
+            SDKException:
+                if type of the schedule policy name argument is not string
+                if no schedule policy exists with the given name
 
-                    Raises:
-                        SDKException:
-                            if type of the schedule policy name argument is not string
-                            if no schedule policy exists with the given name
+        Usage:
+            commcellobj.schedule_policies.delete(&#39;testschp&#39;)
         &#34;&#34;&#34;
 
         if schedule_policy_name and not isinstance(schedule_policy_name, str):
             raise SDKException(&#39;Schedules&#39;, &#39;102&#39;)
 
         schedule_policy_name = schedule_policy_name.lower()
-        schedule_policy_id = self.all_schedule_policies.get(schedule_policy_name)
+        schedule_policy_id = self.all_schedule_policies.get(
+            schedule_policy_name)
 
         if schedule_policy_id:
             request_json = {
@@ -627,20 +660,19 @@ class SchedulePolicies:
                     schedule_policy_id)
             )
 
-    def refresh(self):
+    def refresh(self) -&gt; None:
         &#34;&#34;&#34;Refresh the Schedule Policies associated with the Commcell.&#34;&#34;&#34;
         self._policies = self._get_policies()
 
-    def _process_schedule_policy_response(self, flag, response):
-        &#34;&#34;&#34;
-        processes the response received post create request
+    def _process_schedule_policy_response(self, flag: bool, response: dict) -&gt; tuple:
+        &#34;&#34;&#34;Processes the response received post create request.
+
         Args:
-        flag: (bool) -- True or false based on response
-        response: (dict) response from modify request
+            flag (bool): True or false based on response
+            response (dict): response from modify request
+
         Returns:
-            flag: (Bool) -- based on success and failure
-            error_code: (int) -- error_code from response
-            error_message: (str) -- error_message from the response if any
+            tuple: (Bool, str, str) -- based on success and failure, error_code, error_message
         &#34;&#34;&#34;
 
         if flag:
@@ -671,24 +703,45 @@ class SchedulePolicies:
                 response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
+
 class SchedulePolicy:
-    &#34;&#34;&#34;Class for performing operations for a specific Schedule.&#34;&#34;&#34;
+    &#34;&#34;&#34;Class for performing operations for a specific Schedule.
 
-    def __init__(self, commcell_obj, schedule_policy_name, schedule_policy_id=None):
+    Attributes:
+        _commcell_object (object): Instance of the Commcell object.
+        schedule_policy_name (str): Name of the Schedule Policy.
+        schedule_policy_id (int): ID of the Schedule Policy.
+        _SCHEDULE_POLICY (str): API endpoint for getting schedule policy details.
+        _MODIFY_SCHEDULE_POLICY (str): API endpoint for modifying schedule policy.
+        _associations (list): List of associations for the schedule policy.
+        _subtasks (list): List of subtasks (schedules) associated with the policy.
+        _app_groups (list): List of application groups associated with the policy.
+        _task_json (dict): JSON representation of the task.
+        _task_name (str): Name of the task.
+        _all_schedules (list): List of all schedules associated with the policy.
 
+    Usage:
+        # Initialize a SchedulePolicy object
+        schedule_policy = SchedulePolicy(commcell_object, &#34;MySchedulePolicy&#34;, schedule_policy_id=123)
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_obj: &#39;Commcell&#39;, schedule_policy_name: str, schedule_policy_id: int = None) -&gt; None:
         &#34;&#34;&#34;Initialise the Schedule Policy class instance.
 
-            Args:
-                class_object (object)     --  instance of Class Object
+        Args:
+            commcell_obj (object): Instance of the Commcell Object.
+            schedule_policy_name (str): Name of the Schedule.
+            schedule_policy_id (int, optional): Task IDs of the Schedule. Defaults to None.
 
-                schedule_policy_name      (str)     --  name of the Schedule
+        Raises:
+            SDKException: If failed to get schedule policy id.
 
-                schedule_policy_id        (int)     --   task ids of the Schedule
+        Usage:
+            # Initialize a SchedulePolicy object with a schedule policy ID
+            schedule_policy = SchedulePolicy(commcell_object, &#34;MySchedulePolicy&#34;, schedule_policy_id=123)
 
-
-
-            Returns:
-                object - instance of the Schedule Policy class
+            # Initialize a SchedulePolicy object without a schedule policy ID
+            schedule_policy = SchedulePolicy(commcell_object, &#34;MySchedulePolicy&#34;)
         &#34;&#34;&#34;
 
         self._commcell_object = commcell_obj
@@ -700,10 +753,11 @@ class SchedulePolicy:
         else:
             self.schedule_policy_id = self._get_schedule_policy_id()
 
-
         self._SCHEDULE_POLICY = self._commcell_object._services[&#39;GET_SCHEDULE_POLICY&#39;] % (
             self.schedule_policy_id)
-        self._MODIFY_SCHEDULE_POLICY = self._commcell_object._services[&#39;CREATE_UPDATE_SCHEDULE_POLICY&#39;]
+        self._MODIFY_SCHEDULE_POLICY = self._commcell_object._services[
+            &#39;CREATE_UPDATE_SCHEDULE_POLICY&#39;]
+        self._TASK_OPERATION = self._commcell_object._services[&#39;TASK_OPERATION&#39;]
 
         self._associations = []
         self._subtasks = []
@@ -713,42 +767,48 @@ class SchedulePolicy:
         self._all_schedules = []
         self.refresh()
 
-    def _get_schedule_policy_id(self):
-        &#34;&#34;&#34;
-        Gets a schedule ID of the schedule policy
-        Returns (int) -- schedule policy ID
+    def _get_schedule_policy_id(self) -&gt; int:
+        &#34;&#34;&#34;Gets a schedule ID of the schedule policy
+
+        Returns:
+            int: Schedule policy ID
+
+        Usage:
+            schedule_policy_id = self._get_schedule_policy_id()
         &#34;&#34;&#34;
         schedule_policies = SchedulePolicies(self._commcell_object)
         return schedule_policies.get(self.schedule_policy_name).schedule_policy_id
 
     @property
-    def policy_type(self):
-        &#34;&#34;&#34;
-        Get the policy Type of the schedule policy
+    def policy_type(self) -&gt; str:
+        &#34;&#34;&#34;Get the policy Type of the schedule policy
 
-        Sample:  sch_pol_obj.policy_type
+        Returns:
+            str: Type of the schedule policy from &#39;policy_types&#39; dict
 
-        Returns (str) -- Type of the schedule policy from &#39;policy_types&#39; dict
-
+        Usage:
+            policy_type = sch_pol_obj.policy_type
         &#34;&#34;&#34;
         return (
-                list(
+            list(
                 SchedulePolicies.policy_types.keys())[
                 list(
                     SchedulePolicies.policy_types.values()).index(self._task_json[&#39;policyType&#39;])])
 
-
-    def _get_schedule_policy_properties(self):
+    def _get_schedule_policy_properties(self) -&gt; dict:
         &#34;&#34;&#34;Gets the properties of this Schedule Policy.
 
-            Returns:
-                dict - dictionary consisting of the properties of this Schedule Policy
+        Returns:
+            dict: Dictionary consisting of the properties of this Schedule Policy
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException:
+                if response is empty
 
-                    if response is not success
+                if response is not success
+
+        Usage:
+            schedule_policy_properties = self._get_schedule_policy_properties()
         &#34;&#34;&#34;
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             &#39;GET&#39;, self._SCHEDULE_POLICY)
@@ -765,14 +825,14 @@ class SchedulePolicy:
 
                 self._app_groups = _task_info[&#39;appGroup&#39;].get(&#39;appGroups&#39;)
 
-                self._subtasks = _task_info[&#39;subTasks&#39;]
+                self._subtasks = _task_info.get(&#39;subTasks&#39;, [])
+                self._all_schedules = []
 
                 for subtask in self._subtasks:
                     self._all_schedules.append({
-                                                &#34;schedule_name&#34; : subtask[&#34;subTask&#34;].get(&#34;subTaskName&#34;, &#39;&#39;),
-                                                &#34;schedule_id&#34;: subtask[&#34;subTask&#34;][&#34;subTaskId&#34;]
-                                                })
-
+                        &#34;schedule_name&#34;: subtask[&#34;subTask&#34;].get(&#34;subTaskName&#34;, &#39;&#39;),
+                        &#34;schedule_id&#34;: subtask[&#34;subTask&#34;][&#34;subTaskId&#34;]
+                    })
 
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
@@ -781,70 +841,59 @@ class SchedulePolicy:
                 response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def update_associations(self, associations, operation_type):
-        &#34;&#34;&#34;
-        Updates the schedule policy associations
+    def update_associations(self, associations: list, operation_type: &#39;OperationType&#39;) -&gt; None:
+        &#34;&#34;&#34;Updates the schedule policy associations
+
         Args:
-            associations (str) -- List of schedule associations
-            [
-            {
-                &#34;clientName&#34;: &#34;scheduleclient1&#34;
-            },
-            {
-                &#34;clientGroupName&#34;: &#34;scheduleclient2&#34;
-            }
-            ]
-            operation_type (OperationType) -- Please check OperationType class present in this file
+            associations (list): List of schedule associations.
+            operation_type (object): OperationType object (INCLUDE or DELETE).
 
-        Sample:
-            associations = [{&#39;clientName&#39;: &#39;client2&#39;}]
+        Usage:
+            associations = [{&#39;clientName&#39;: &#39;client2&#39;}] # [{&#39;clientGroupName&#39;: &#39;client2&#39;}]
             sch_pol_obj.update_associations(associations, OperationType.DELETE)
-
         &#34;&#34;&#34;
 
         for app_group in associations:
             app_group[&#34;flags&#34;] = {
-                                    operation_type: True
-                                 }
+                operation_type: True
+            }
         self._associations = associations
         self._modify_schedule_policy_properties()
 
     @property
-    def all_schedules(self):
-        &#34;&#34;&#34;
-        Gets all the schedules of the schedule policy
+    def all_schedules(self) -&gt; list:
+        &#34;&#34;&#34;Gets all the schedules of the schedule policy
 
-        Sample:  sch_pol_obj.all_schedules
+        Returns:
+            list: Schedules in the below format
 
-        Returns (dict) -- schedules in the below format
+        Usage:
+            all_schedules = sch_pol_obj.all_schedules
 
-            {
-                    &#34;schedule_name&#34; : (str),
-                    &#34;schedule_id&#34;: (int)
-            }
-
+            # Returns (list) -- schedules in the below format
+            # [
+            #         {
+            #                 &#34;schedule_name&#34; : (str),
+            #                 &#34;schedule_id&#34;: (int)
+            #         }
+            # ]
         &#34;&#34;&#34;
         return self._all_schedules
 
-
-    def _update_pattern(self, schedule_id, pattern_dict):
-
-        &#34;&#34;&#34;
-
-        Updates the schedule pattern for the provided schedule id (internal function)
+    def _update_pattern(self, schedule_id: int, pattern_dict: dict) -&gt; None:
+        &#34;&#34;&#34;Updates the schedule pattern for the provided schedule id (internal function)
 
         Args:
-            schedule_id (int) -- id of the schedule
-            pattern_dict (dict) -- Please refer SchedulePattern.create_schedule in schedules.py for the types of
-                                     pattern to be sent
+            schedule_id (int): ID of the schedule.
+            pattern_dict (dict): Dictionary containing the schedule pattern.
 
-                                     eg: {
-                                            &#34;freq_type&#34;: &#39;daily&#39;,
-                                            &#34;active_start_time&#34;: time_in_%H/%S (str),
-                                            &#34;repeat_days&#34;: days_to_repeat (int)
-                                         }
-
-
+        Usage:
+            pattern_dict = {
+                &#34;freq_type&#34;: &#39;daily&#39;,
+                &#34;active_start_time&#34;: time_in_%H/%S (str),
+                &#34;repeat_days&#34;: days_to_repeat (int)
+            }
+            self._update_pattern(schedule_id, pattern_dict)
         &#34;&#34;&#34;
 
         existing_pattern = {}
@@ -869,24 +918,26 @@ class SchedulePolicy:
                                 existing_pattern.update(_data_opt)
                 break
 
-
         task_json = SchedulePattern(existing_pattern).create_schedule({&#39;taskInfo&#39;:
-                                                                           {&#39;subTasks&#39;: self._subtasks
-                                                                            }
+                                                                       {&#39;subTasks&#39;: self._subtasks
+                                                                        }
                                                                        }, pattern_dict, schedule_id)
 
         self._subtasks = task_json.get(&#39;taskInfo&#39;).get(&#39;subTasks&#39;)
 
     @staticmethod
-    def get_option(option_dict, option):
-        &#34;&#34;&#34;
-        gets the schedule options for the provided option
+    def get_option(option_dict: dict, option: str) -&gt; dict:
+        &#34;&#34;&#34;gets the schedule options for the provided option
+
         Args:
-            option_dict: the complete options dict
-            option: option for which the dict has to be fetched
+            option_dict (dict): The complete options dict.
+            option (str): Option for which the dict has to be fetched.
 
-        Returns (dict) -- Option dict for the provided option
+        Returns:
+            dict: Option dict for the provided option
 
+        Usage:
+            option = SchedulePolicy.get_option(option_dict, &#34;maxNumberOfStreams&#34;)
         &#34;&#34;&#34;
         if isinstance(option_dict, dict) and option in option_dict:
             return option_dict[option]
@@ -898,50 +949,64 @@ class SchedulePolicy:
                 if result is not None:
                     return result
 
-    def _update_option(self, schedule_id, options):
-        &#34;&#34;&#34;
-        Updates the option for the provided schedule id (internal)
+    def _update_option(self, schedule_id: int, options: dict) -&gt; None:
+        &#34;&#34;&#34;Updates the option for the provided schedule id (internal)
 
         Args:
-             schedule_id (int) -- id of the schedule
-            options (dict) -- Please refer ScheduleOptions.py classes for respective schedule options
+            schedule_id (int): ID of the schedule.
+            options (dict): Dictionary containing the schedule options.
 
-                                    eg:  {
-                                        &#34;maxNumberOfStreams&#34;: 0,
-                                        &#34;useMaximumStreams&#34;: True,
-                                        &#34;useScallableResourceManagement&#34;: True,
-                                        &#34;totalJobsToProcess&#34;: 1000,
-                                        &#34;allCopies&#34;: True,
-                                        &#34;mediaAgent&#34;: {
-                                            &#34;mediaAgentName&#34;: &#34;&lt;ANY MEDIAAGENT&gt;&#34;
-                                        }
-                                    }
+        Raises:
+            SDKException: If the schedule option is not found.
 
+        Usage:
+            options = {
+                &#34;maxNumberOfStreams&#34;: 0,
+                &#34;useMaximumStreams&#34;: True,
+                &#34;useScallableResourceManagement&#34;: True,
+                &#34;totalJobsToProcess&#34;: 1000,
+                &#34;allCopies&#34;: True,
+                &#34;mediaAgent&#34;: {
+                    &#34;mediaAgentName&#34;: &#34;&lt;ANY MEDIAAGENT&gt;&#34;
+                }
+            }
+            self._update_option(schedule_id, options)
         &#34;&#34;&#34;
 
         option_allowed = ScheduleOptions.policy_to_options_map[self.policy_type]
         for subtask in self._subtasks:
             if subtask[&#34;subTask&#34;][&#34;subTaskId&#34;] == schedule_id:
                 if &#39;options&#39; in subtask:
-                    existing_options = self.get_option(subtask[&#39;options&#39;], option_allowed)
+                    existing_options = self.get_option(
+                        subtask[&#39;options&#39;], option_allowed)
                     if not existing_options:
                         raise SDKException(&#39;Schedules&#39;, &#39;104&#39;)
 
-                    subtask[&#39;options&#39;] = ScheduleOptions(option_allowed, existing_options).options_json(options)
+                    subtask[&#39;options&#39;] = ScheduleOptions(
+                        option_allowed, existing_options).options_json(options)
                     self._subtasks[self._subtasks.index(subtask)] = subtask
                     break
 
-    def get_schedule(self, schedule_id=None, schedule_name=None):
-        &#34;&#34;&#34;
-        returns the subtask dict for the provided schedule id or name
+    def get_schedule(self, schedule_id: int = None, schedule_name: str = None) -&gt; dict:
+        &#34;&#34;&#34;returns the subtask dict for the provided schedule id or name
+
         Args:
-            schedule_id (int) -- id of the schedule
-            schedule_name (str) -- name of the schedule
+            schedule_id (int, optional): ID of the schedule. Defaults to None.
+            schedule_name (str, optional): Name of the schedule. Defaults to None.
 
-        Sample:  sch_pol_obj.get_schedule(schedule_id=10)
+        Returns:
+            dict: Subtask dict
 
-        Returns (dict) -- subtask dict
+        Raises:
+            SDKException:
+                if neither schedule_name nor schedule_id is provided
 
+                if schedule_name is not of type string
+
+                if schedule_id is not of type int
+
+        Usage:
+            schedule = sch_pol_obj.get_schedule(schedule_id=10)
         &#34;&#34;&#34;
         if not schedule_name and not schedule_id:
             raise SDKException(
@@ -964,9 +1029,9 @@ class SchedulePolicy:
             if search_dict in sub_task[&#34;subTask&#34;].items():
                 return sub_task
 
-    def add_schedule(self, schedule_dict):
-        &#34;&#34;&#34;
-        Adds a new schedule to the schedule policy
+    def add_schedule(self, schedule_dict: dict) -&gt; None:
+        &#34;&#34;&#34;Adds a new schedule to the schedule policy
+
         Args:
             schedule_dict (dict) -- {
                     pattern : {}, -- Please refer SchedulePattern.create_schedule in schedules.py for the types of
@@ -997,14 +1062,15 @@ class SchedulePolicy:
                 sch_pol_obj.add_schedule({&#39;pattern&#39;:{&#39;freq_type&#39;: &#39;monthly&#39;}})
 
         &#34;&#34;&#34;
-        sub_task = SchedulePolicies.schedule_json(self.policy_type, schedule_dict)
+        sub_task = SchedulePolicies.schedule_json(
+            self.policy_type, schedule_dict)
         sub_task[&#34;subTaskOperation&#34;] = 2
         self._subtasks.append(sub_task)
         self._modify_schedule_policy_properties()
 
-    def modify_schedule(self, schedule_json, schedule_id=None, schedule_name=None):
-        &#34;&#34;&#34;
-        Modifies the schedule with the given schedule json inputs for the given schedule id or name
+    def modify_schedule(self, schedule_json: dict, schedule_id: int = None, schedule_name: str = None) -&gt; None:
+        &#34;&#34;&#34;Modifies the schedule with the given schedule json inputs for the given schedule id or name
+
         Args:
             schedule_dict (dict) -- {
                     pattern : {}, -- Please refer SchedulePattern.create_schedule in schedules.py for the types of
@@ -1049,16 +1115,18 @@ class SchedulePolicy:
             self._update_option(sub_task[&#34;subTask&#34;][&#34;subTaskId&#34;], schedule_json.get(&#39;options&#39;))
         self._modify_schedule_policy_properties()
 
-    def delete_schedule(self, schedule_id=None, schedule_name=None):
-        &#34;&#34;&#34;
-        Deletes the schedule from the schedule policy
+    def delete_schedule(self, schedule_id: int = None, schedule_name: str = None) -&gt; None:
+        &#34;&#34;&#34;Deletes the schedule from the schedule policy
+
         Args:
-            schedule_id (int) -- id of the schedule
-            schedule_name (str) -- name of the schedule
+            schedule_id (int, optional): ID of the schedule. Defaults to None.
+            schedule_name (str, optional): Name of the schedule. Defaults to None.
 
-        Sample:
+        Raises:
+            SDKException: If the schedule is not found.
+
+        Usage:
             sch_pol_obj.delete_schedule(schedule_name=&#39;testsch&#39;)
-
         &#34;&#34;&#34;
         sub_task = self.get_schedule(schedule_id, schedule_name)
         if not sub_task:
@@ -1067,9 +1135,9 @@ class SchedulePolicy:
         self._subtasks[self._subtasks.index(sub_task)] = sub_task
         self._modify_schedule_policy_properties()
 
-    def update_app_groups(self, app_groups, operation_type):
-        &#34;&#34;&#34;
-        Update the appgroups for the provided schedule policy
+    def update_app_groups(self, app_groups: list, operation_type: &#39;OperationType&#39;) -&gt; None:
+        &#34;&#34;&#34;Update the appgroups for the provided schedule policy
+
         Args:
             app_groups(List) -- Agent Types to be associated to the schedule policy
 
@@ -1083,11 +1151,9 @@ class SchedulePolicy:
                             ]
             operation_type (OperationType) -- Please check OperationType class present in this file
 
-        Sample:
-
+        Usage:
             apptype = [{&#39;appGroupName&#39;: &#39;DB2&#39;}]
             sch_pol_obj.update_app_groups(apptype, OperationType.INCLUDE)
-
         &#34;&#34;&#34;
         for app_group in app_groups:
             app_group[&#34;flags&#34;] = {
@@ -1096,12 +1162,11 @@ class SchedulePolicy:
         self._app_groups = app_groups
         self._modify_schedule_policy_properties()
 
-    def _modify_schedule_policy_properties(self):
-        &#34;&#34;&#34;
-         Modifies the task properties of the schedule policy
-        Exception:
-            if modification of the schedule policy failed
+    def _modify_schedule_policy_properties(self) -&gt; None:
+        &#34;&#34;&#34;Modifies the task properties of the schedule policy
 
+        Raises:
+            SDKException: If modification of the schedule policy failed.
         &#34;&#34;&#34;
         request_json = {
             &#39;taskInfo&#39;:
@@ -1129,17 +1194,20 @@ class SchedulePolicy:
         o_str = &#39;Failed to update properties of Schedule Policy\nError: &#34;{0}&#34;&#39;
         raise SDKException(&#39;Schedules&#39;, &#39;102&#39;, o_str.format(output[2]))
 
-    def enable(self):
+    def enable(self) -&gt; None:
         &#34;&#34;&#34;Enable a schedule policy.
 
-                    Raises:
-                        SDKException:
-                            if failed to enable schedule policy
+        Raises:
+            SDKException:
+                if failed to enable schedule policy
 
-                            if response is empty
+                if response is empty
 
-                            if response is not success
-                &#34;&#34;&#34;
+                if response is not success
+
+        Usage:
+            sch_pol_obj.enable()
+        &#34;&#34;&#34;
         enable_request = self._commcell_object._services[&#39;ENABLE_SCHEDULE&#39;]
         request_text = &#34;taskId={0}&#34;.format(self.schedule_policy_id)
 
@@ -1156,7 +1224,8 @@ class SchedulePolicy:
                     error_message = &#39;Failed to enable Schedule Policy&#39;
 
                     if &#39;errorMessage&#39; in response.json():
-                        error_message = &#34;{0}\nError: {1}&#34;.format(error_message, response.json()[&#39;errorMessage&#39;])
+                        error_message = &#34;{0}\nError: {1}&#34;.format(
+                            error_message, response.json()[&#39;errorMessage&#39;])
 
                     raise SDKException(&#39;Schedules&#39;, &#39;102&#39;, error_message)
 
@@ -1167,16 +1236,19 @@ class SchedulePolicy:
             response.text)
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def disable(self):
+    def disable(self) -&gt; None:
         &#34;&#34;&#34;Disable a Schedule Policy.
 
-            Raises:
-                SDKException:
-                    if failed to disable Schedule Policy
+        Raises:
+            SDKException:
+                if failed to disable Schedule Policy
 
-                    if response is empty
+                if response is empty
 
-                    if response is not success
+                if response is not success
+
+        Usage:
+            sch_pol_obj.disable()
         &#34;&#34;&#34;
         disable_request = self._commcell_object._services[&#39;DISABLE_SCHEDULE&#39;]
 
@@ -1195,7 +1267,8 @@ class SchedulePolicy:
                     error_message = &#39;Failed to disable Schedule Policy&#39;
 
                     if &#39;errorMessage&#39; in response.json():
-                        error_message = &#34;{0}\nError: {1}&#34;.format(error_message, response.json()[&#39;errorMessage&#39;])
+                        error_message = &#34;{0}\nError: {1}&#34;.format(
+                            error_message, response.json()[&#39;errorMessage&#39;])
 
                     raise SDKException(&#39;Schedules&#39;, &#39;102&#39;, error_message)
 
@@ -1206,16 +1279,24 @@ class SchedulePolicy:
             response.text)
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def _process_schedule_policy_update_response(self, flag, response):
-        &#34;&#34;&#34;
-        processes the response received post update request
+    def _process_schedule_policy_update_response(self, flag: bool, response: dict) -&gt; tuple[bool, str, str]:
+        &#34;&#34;&#34;Processes the response received post update request.
+
         Args:
-        flag: (bool) -- True or false based on response
-        response: (dict) response from modify request
+            flag (bool): True or false based on response.
+            response (dict): Response from modify request.
+
         Returns:
-            flag: (Bool) -- based on success and failure
-            error_code: (int) -- error_code from response
-            error_message: (str) -- error_message from the response if any
+            tuple[bool, str, str]: A tuple containing:
+                - flag (bool): Based on success and failure.
+                - error_code (str): Error code from response.
+                - error_message (str): Error message from the response if any.
+
+        Raises:
+            SDKException: If the response is missing expected fields or indicates an error.
+
+        Usage:
+            success, error_code, error_message = self._process_schedule_policy_update_response(True, response_data)
         &#34;&#34;&#34;
         task_id = None
         if flag:
@@ -1246,9 +1327,90 @@ class SchedulePolicy:
                 response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def refresh(self):
-        &#34;&#34;&#34;Refresh the properties of the Schedule Policy.&#34;&#34;&#34;
-        self._get_schedule_policy_properties()</code></pre>
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Refresh the properties of the Schedule Policy.
+
+        Usage:
+            schedule_policy.refresh()
+        &#34;&#34;&#34;
+        self._get_schedule_policy_properties()
+
+    def _perform_task_operation(self, request_xml: str) -&gt; dict:
+        &#34;&#34;&#34;Perform task operation request for schedule policy.
+
+        Args:
+            request_xml (str): XML request body for task operation.
+            &lt;TMMsg_TaskOperationReq&gt;
+            &lt;/TMMsg_TaskOperationReq&gt;
+
+        Returns:
+            dict: JSON response from task operation API.
+
+        Raises:
+            SDKException: If request fails or operation returns error.
+        &#34;&#34;&#34;
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._TASK_OPERATION, request_xml)
+
+        if not flag:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+        response_json = response.json()
+        if isinstance(response_json, dict) and &#39;errorCode&#39; in response_json:
+            if str(response_json[&#39;errorCode&#39;]) == &#39;0&#39;:
+                return response_json
+            raise SDKException(
+                &#39;Schedules&#39;, &#39;102&#39;, response_json.get(&#39;errorMessage&#39;, &#39;Task operation failed&#39;))
+
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
+
+    def decouple_schedule_policy_from_subclient(self, entities: list) -&gt; None:
+        &#34;&#34;&#34;Decouple the current schedule policy from subclient entities.
+
+        This method forms and sends the below XML request to task operations API:
+
+            &lt;TMMsg_TaskOperationReq opType=&#34;4&#34;&gt;
+                &lt;taskIds val=&#34;{schedule_policy_id}&#34;/&gt;
+                &lt;taskEntities taskId=&#34;{schedule_policy_id}&#34;/&gt;
+                &lt;entities ...&gt;
+                    &lt;flags exclude=&#34;0&#34;/&gt;
+                &lt;/entities&gt;
+            &lt;/TMMsg_TaskOperationReq&gt;
+
+        Args:
+            entities (list): List of entity dictionaries. Each entity must contain
+                keys required by TaskOperations, such as:
+                    instanceName, appName, clientName, subclientName, backupsetName
+
+        Raises:
+            SDKException: If input is invalid or API call fails.
+        &#34;&#34;&#34;
+        if not isinstance(entities, list) or not entities:
+            raise SDKException(
+                &#39;Schedules&#39;, &#39;102&#39;, &#39;entities should be a non-empty list of dictionaries&#39;)
+
+        request_root = ET.Element(&#39;TMMsg_TaskOperationReq&#39;, {&#39;opType&#39;: &#39;4&#39;})
+        schedule_policy_id = str(self.schedule_policy_id)
+
+        ET.SubElement(request_root, &#39;taskIds&#39;, {&#39;val&#39;: schedule_policy_id})
+        ET.SubElement(request_root, &#39;taskEntities&#39;, {&#39;taskId&#39;: schedule_policy_id})
+
+        for entity in entities:
+            if not isinstance(entity, dict):
+                raise SDKException(&#39;Schedules&#39;, &#39;102&#39;, &#39;each entity should be a dictionary&#39;)
+
+            entity_attributes = {
+                key: str(value) for key, value in entity.items()
+                if value is not None
+            }
+
+            entity_element = ET.SubElement(request_root, &#39;entities&#39;, entity_attributes)
+
+            ET.SubElement(entity_element, &#39;flags&#39;, {&#39;exclude&#39;: &#39;0&#39;})
+
+        request_xml = ET.tostring(request_root, encoding=&#39;unicode&#39;)
+        self._perform_task_operation(request_xml)</code></pre>
 </details>
 </section>
 <section>
@@ -1264,58 +1426,118 @@ class SchedulePolicy:
 <span>class <span class="ident">OperationType</span></span>
 </code></dt>
 <dd>
-<div class="desc"><p>Operation Type for schedule policy associations and appGroups</p></div>
+<div class="desc"><p>Operation Type for schedule policy associations and appGroups</p>
+<dl>
+<dt>Attributes</dt>
+<dt>-----=</dt>
+<dt><strong><code>INCLUDE</code></strong> :&ensp;<code>str</code></dt>
+<dd>Represents an inclusion operation.</dd>
+<dt><strong><code>EXCLUDE</code></strong> :&ensp;<code>str</code></dt>
+<dd>Represents an exclusion operation.</dd>
+<dt><strong><code>DELETE</code></strong> :&ensp;<code>str</code></dt>
+<dd>Represents a deletion operation.</dd>
+</dl>
+<p>Usage
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; operation = OperationType.INCLUDE
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/policies/schedule_policies.py#L106-L110" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/policies/schedule_policies.py#L114-L127" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class OperationType:
-    &#34;&#34;&#34;Operation Type for schedule policy associations and appGroups&#34;&#34;&#34;
+    &#34;&#34;&#34;Operation Type for schedule policy associations and appGroups
+
+    Attributes:
+        INCLUDE (str): Represents an inclusion operation.
+        EXCLUDE (str): Represents an exclusion operation.
+        DELETE (str): Represents a deletion operation.
+
+    Usage:
+        &gt;&gt;&gt; operation = OperationType.INCLUDE
+    &#34;&#34;&#34;
     INCLUDE = &#39;include&#39;
-    EXCLUDE = &#39;exclude&#39;,
+    EXCLUDE = &#39;exclude&#39;
     DELETE = &#39;deleted&#39;</code></pre>
 </details>
 <h3>Class variables</h3>
 <dl>
 <dt id="cvpysdk.policies.schedule_policies.OperationType.DELETE"><code class="name">var <span class="ident">DELETE</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.policies.schedule_policies.OperationType.EXCLUDE"><code class="name">var <span class="ident">EXCLUDE</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.policies.schedule_policies.OperationType.INCLUDE"><code class="name">var <span class="ident">INCLUDE</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 </dl>
 </dd>
 <dt id="cvpysdk.policies.schedule_policies.SchedulePolicies"><code class="flex name class">
 <span>class <span class="ident">SchedulePolicies</span></span>
-<span>(</span><span>commcell_object)</span>
+<span>(</span><span>commcell_object: Commcell)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Class for getting all the schedule policies associated with the commcell.</p>
+<dl>
+<dt>Attributes</dt>
+<dt>-----=</dt>
+<dt><strong><code>policy_to_subtask_map</code></strong> :&ensp;<code>dict</code></dt>
+<dd>Mapping of policy types to subtask types and operation types.</dd>
+<dt><strong><code>policy_types</code></strong> :&ensp;<code>dict</code></dt>
+<dd>Mapping of policy names to policy IDs.</dd>
+<dt><strong><code>_commcell_object</code></strong> :&ensp;<code>object</code></dt>
+<dd>Instance of the Commcell class.</dd>
+<dt><strong><code>_POLICY</code></strong> :&ensp;<code>str</code></dt>
+<dd>Service name for schedule policy.</dd>
+<dt><strong><code>_CREATE_POLICY</code></strong> :&ensp;<code>str</code></dt>
+<dd>Service name for creating/updating schedule policy.</dd>
+<dt><strong><code>_policies</code></strong> :&ensp;<code>dict</code></dt>
+<dd>Dictionary of schedule policies.</dd>
+</dl>
+<p>Usage
+-----=</p>
+<h1 id="initialize-schedulepolicies-object">Initialize SchedulePolicies object</h1>
+<p>schedule_policies = SchedulePolicies(commcell_object)</p>
 <p>Initialize object of the SchedulePolicies class.</p>
-<h2 id="args">Args</h2>
-<p>commcell_object (object)
-&ndash;
-instance of the Commcell class</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the SchedulePolicies class</p></div>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>commcell_object</code></strong> :&ensp;<code>object</code></dt>
+<dd>instance of the Commcell class</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>object</code></dt>
+<dd>instance of the SchedulePolicies class</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/policies/schedule_policies.py#L112-L559" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/policies/schedule_policies.py#L130-L585" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class SchedulePolicies:
-    &#34;&#34;&#34;Class for getting all the schedule policies associated with the commcell.&#34;&#34;&#34;
+    &#34;&#34;&#34;Class for getting all the schedule policies associated with the commcell.
+
+    Attributes:
+        policy_to_subtask_map (dict): Mapping of policy types to subtask types and operation types.
+        policy_types (dict): Mapping of policy names to policy IDs.
+        _commcell_object (object): Instance of the Commcell class.
+        _POLICY (str): Service name for schedule policy.
+        _CREATE_POLICY (str): Service name for creating/updating schedule policy.
+        _policies (dict): Dictionary of schedule policies.
+
+    Usage:
+        # Initialize SchedulePolicies object
+        schedule_policies = SchedulePolicies(commcell_object)
+    &#34;&#34;&#34;
 
     policy_to_subtask_map = {
 
-        &#39;Data Protection&#39;: [2, 2], #[subtaskType, OperationType]
+        &#39;Data Protection&#39;: [2, 2],  # [subtaskType, OperationType]
         &#39;Auxiliary Copy&#39;: [1, 4003]
     }
 
@@ -1331,14 +1553,14 @@ instance of the Commcell class</p>
         &#34;Network Throttle&#34;: 8,
     }
 
-    def __init__(self, commcell_object):
+    def __init__(self, commcell_object: &#39;Commcell&#39;) -&gt; None:
         &#34;&#34;&#34;Initialize object of the SchedulePolicies class.
 
-            Args:
-                commcell_object (object)  --  instance of the Commcell class
+        Args:
+            commcell_object (object): instance of the Commcell class
 
-            Returns:
-                object - instance of the SchedulePolicies class
+        Returns:
+            object: instance of the SchedulePolicies class
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
         self._POLICY = self._commcell_object._services[&#39;SCHEDULE_POLICY&#39;]
@@ -1346,13 +1568,14 @@ instance of the Commcell class</p>
         self._policies = None
         self.refresh()
 
-    def __str__(self):
+    def __str__(self) -&gt; str:
         &#34;&#34;&#34;Representation string consisting of all schedule policies of the commcell.
 
-            Returns:
-                str - string of all the schedule policies associated with the commcell
+        Returns:
+            str: string of all the schedule policies associated with the commcell
         &#34;&#34;&#34;
-        representation_string = &#39;{:^5}\t{:^20}\n\n&#39;.format(&#39;S. No.&#39;, &#39;Schedule Policy&#39;)
+        representation_string = &#39;{:^5}\t{:^20}\n\n&#39;.format(
+            &#39;S. No.&#39;, &#39;Schedule Policy&#39;)
 
         for index, policy in enumerate(self._policies):
             sub_str = &#39;{:^5}\t{:20}\n&#39;.format(index + 1, policy)
@@ -1360,27 +1583,28 @@ instance of the Commcell class</p>
 
         return representation_string.strip()
 
-    def __repr__(self):
+    def __repr__(self) -&gt; str:
         &#34;&#34;&#34;Representation string for the instance of the SchedulePolicies class.&#34;&#34;&#34;
         return &#34;SchedulePolicies class instance for Commcell&#34;
 
-    def _get_policies(self):
+    def _get_policies(self) -&gt; dict:
         &#34;&#34;&#34;Gets all the schedule policies associated to the commcell specified by commcell object.
 
-            Returns:
-                dict - consists of all schedule policies of the commcell
-                    {
-                         &#34;schedule_policy1_name&#34;: schedule_policy1_id,
-                         &#34;schedule_policy2_name&#34;: schedule_policy2_id
-                    }
+        Returns:
+            dict: consists of all schedule policies of the commcell
+                {
+                     &#34;schedule_policy1_name&#34;: schedule_policy1_id,
+                     &#34;schedule_policy2_name&#34;: schedule_policy2_id
+                }
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException:
+                if response is empty
 
-                    if response is not success
+                if response is not success
         &#34;&#34;&#34;
-        flag, response = self._commcell_object._cvpysdk_object.make_request(&#39;GET&#39;, self._POLICY)
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;GET&#39;, self._POLICY)
 
         if flag:
             if response and response.json():
@@ -1399,33 +1623,35 @@ instance of the Commcell class</p>
             else:
                 return {}
         else:
-            response_string = self._commcell_object._update_response_(response.text)
+            response_string = self._commcell_object._update_response_(
+                response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
     @property
-    def all_schedule_policies(self):
+    def all_schedule_policies(self) -&gt; dict:
         &#34;&#34;&#34;Returns the schedule policies on this commcell
 
-            dict - consists of all schedule policies of the commcell
-                    {
-                         &#34;schedule_policy1_name&#34;: schedule_policy1_id,
-                         &#34;schedule_policy2_name&#34;: schedule_policy2_id
-                    }
+        Returns:
+            dict: consists of all schedule policies of the commcell
+                {
+                     &#34;schedule_policy1_name&#34;: schedule_policy1_id,
+                     &#34;schedule_policy2_name&#34;: schedule_policy2_id
+                }
         &#34;&#34;&#34;
         return self._policies
 
-    def has_policy(self, policy_name):
+    def has_policy(self, policy_name: str) -&gt; bool:
         &#34;&#34;&#34;Checks if a schedule policy exists in the commcell with the input schedule policy name.
 
-            Args:
-                policy_name (str)  --  name of the schedule policy
+        Args:
+            policy_name (str): name of the schedule policy
 
-            Returns:
-                bool - boolean output whether the schedule policy exists in the commcell or not
+        Returns:
+            bool: boolean output whether the schedule policy exists in the commcell or not
 
-            Raises:
-                SDKException:
-                    if type of the schedule policy name argument is not string
+        Raises:
+            SDKException:
+                if type of the schedule policy name argument is not string
         &#34;&#34;&#34;
         if not isinstance(policy_name, str):
             raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
@@ -1433,14 +1659,14 @@ instance of the Commcell class</p>
         return self._policies and policy_name.lower() in self._policies
 
     @staticmethod
-    def subtasks_json(policy_type):
-        &#34;&#34;&#34;
-        gets the subtask in schedule policy JSON
+    def subtasks_json(policy_type: str) -&gt; dict:
+        &#34;&#34;&#34;Gets the subtask in schedule policy JSON.
+
         Args:
-            policy_type (str) -- Type of the schedule policy from &#39;policy_types&#39; dict
+            policy_type (str): Type of the schedule policy from &#39;policy_types&#39; dict
 
         Returns:
-            returns schedule policy Subtask
+            dict: schedule policy Subtask
         &#34;&#34;&#34;
 
         _backup_subtask = {
@@ -1451,22 +1677,20 @@ instance of the Commcell class</p>
         return _backup_subtask
 
     @staticmethod
-    def schedule_json(policy_type, schedule_dict):
-        &#34;&#34;&#34;
-            Returns the schedule json for the given schedule options and pattern
+    def schedule_json(policy_type: str, schedule_dict: dict) -&gt; dict:
+        &#34;&#34;&#34;Returns the schedule json for the given schedule options and pattern.
 
         Args:
-            policy_type (str) -- Type of the schedule policy from &#39;policy_types&#39; dict
-            schedule_dict (dict) -- with the below format, check add() module for more documentation on the below dict
+            policy_type (str): Type of the schedule policy from &#39;policy_types&#39; dict
+            schedule_dict (dict): with the below format, check add() module for more documentation on the below dict
 
-                                            {
-                                                pattern : {},
-                                                options: {}
-                                            }
+                                        {
+                                            pattern : {},
+                                            options: {}
+                                        }
 
         Returns:
-            Returns the schedule json for the given schedule options and pattern
-
+            dict: The schedule json for the given schedule options and pattern
         &#34;&#34;&#34;
         schedule_options = ScheduleOptions(ScheduleOptions.policy_to_options_map[policy_type]
                                            ).options_json(schedule_dict.get(&#39;options&#39;, None))
@@ -1486,61 +1710,53 @@ instance of the Commcell class</p>
             schedule_dict[&#34;pattern&#34;] = {&#34;freq_type&#34;: freq_type}
 
         task_json = SchedulePattern().create_schedule({&#39;taskInfo&#39;:
-                                                           {&#39;subTasks&#39;: [sub_task]
-                                                            }
+                                                       {&#39;subTasks&#39;: [sub_task]
+                                                        }
                                                        }, schedule_dict.get(&#39;pattern&#39;))
         return task_json.get(&#39;taskInfo&#39;).get(&#39;subTasks&#39;)[0]
 
-
-    def add(self, name, policy_type, associations, schedules, agent_type=None):
-        &#34;&#34;&#34;
-
-        Adds a schedule policy
+    def add(self, name: str, policy_type: str, associations: list, schedules: list, agent_type: list = None) -&gt; &#39;SchedulePolicy&#39;:
+        &#34;&#34;&#34;Adds a schedule policy.
 
         Args:
-            name (str) -- Name of the Schedule Policy
-            policy_type (str) -- Type of the schedule policy from &#39;policy_types&#39; dict
-            associations (str) -- List of schedule associations
-            [
-            {
-                &#34;clientName&#34;: &#34;scheduleclient1&#34;
-            },
-            {
-                &#34;clientGroupName&#34;: &#34;scheduleclient2&#34;
-            }
-            ]
+            name (str): Name of the Schedule Policy
+            policy_type (str): Type of the schedule policy from &#39;policy_types&#39; dict
+            associations (list): List of schedule associations
+                [
+                    {
+                        &#34;clientName&#34;: &#34;scheduleclient1&#34;
+                    },
+                    {
+                        &#34;clientGroupName&#34;: &#34;scheduleclient2&#34;
+                    }
+                ]
+            schedules (list): schedules to be associated to the schedule policy
+                [
+                    {
+                        pattern : {}, -- Please refer SchedulePattern.create_schedule in schedules.py for the types of
+                                         pattern to be sent
 
-            schedules (List) -- schedules to be associated to the schedule policy
+                                         eg: {
+                                                &#34;freq_type&#34;: &#39;daily&#39;,
+                                                &#34;active_start_time&#34;: time_in_%H/%S (str),
+                                                &#34;repeat_days&#34;: days_to_repeat (int)
+                                             }
 
-            [
-                {
-                    pattern : {}, -- Please refer SchedulePattern.create_schedule in schedules.py for the types of
-                                     pattern to be sent
+                        options: {} -- Please refer ScheduleOptions.py classes for respective schedule options
 
-                                     eg: {
-                                            &#34;freq_type&#34;: &#39;daily&#39;,
-                                            &#34;active_start_time&#34;: time_in_%H/%S (str),
-                                            &#34;repeat_days&#34;: days_to_repeat (int)
-                                         }
-
-                    options: {} -- Please refer ScheduleOptions.py classes for respective schedule options
-
-                                    eg:  {
-                                        &#34;maxNumberOfStreams&#34;: 0,
-                                        &#34;useMaximumStreams&#34;: True,
-                                        &#34;useScallableResourceManagement&#34;: True,
-                                        &#34;totalJobsToProcess&#34;: 1000,
-                                        &#34;allCopies&#34;: True,
-                                        &#34;mediaAgent&#34;: {
-                                            &#34;mediaAgentName&#34;: &#34;&lt;ANY MEDIAAGENT&gt;&#34;
+                                        eg:  {
+                                            &#34;maxNumberOfStreams&#34;: 0,
+                                            &#34;useMaximumStreams&#34;: True,
+                                            &#34;useScallableResourceManagement&#34;: True,
+                                            &#34;totalJobsToProcess&#34;: 1000,
+                                            &#34;allCopies&#34;: True,
+                                            &#34;mediaAgent&#34;: {
+                                                &#34;mediaAgentName&#34;: &#34;&lt;ANY MEDIAAGENT&gt;&#34;
+                                            }
                                         }
-                                    }
                 }
             ]
-
-
-
-            agent_type (List) -- Agent Types to be associated to the schedule policy
+            agent_type (list): Agent Types to be associated to the schedule policy
 
                       eg:    [
                                 {
@@ -1551,35 +1767,33 @@ instance of the Commcell class</p>
                                 }
                             ]
 
-        sample:
-
-                    apptype = [{&#39;appGroupName&#39;: &#39;DB2&#39;}]
-                    associations = [{&#39;clientName&#39;: &#39;testclient&#39;}]
-                    schedule = [
-                        {
-                            &#39;name&#39;: &#39;trying&#39;,
-                            &#39;pattern&#39;: {
-                                            &#39;freq_type&#39;: &#39;Daily&#39;
-                                        }
-                        }
-                    ]
-                    commcellobj.schedule_policies.add(&#39;testsch1&#39;, &#39;Data Protection&#39;, associations, schedule, apptype)
-
-        Returns: schedule policy object on successful completion
+        Returns:
+            object: schedule policy object on successful completion
 
         Raises:
+            SDKExceptions: on wrong input types and failure to create schedule policy
 
-            SDKExceptions on wrong input types and failure to create schedule policy
-
+        Usage:
+            apptype = [{&#39;appGroupName&#39;: &#39;DB2&#39;}]
+            associations = [{&#39;clientName&#39;: &#39;testclient&#39;}]
+            schedule = [
+                {
+                    &#39;name&#39;: &#39;trying&#39;,
+                    &#39;pattern&#39;: {
+                                    &#39;freq_type&#39;: &#39;Daily&#39;
+                                }
+                }
+            ]
+            commcellobj.schedule_policies.add(&#39;testsch1&#39;, &#39;Data Protection&#39;, associations, schedule, apptype)
         &#34;&#34;&#34;
 
         if not isinstance(schedules, list):
-            raise SDKException(&#39;Schedules&#39;, &#39;102&#39;, &#39;schedules should be a list&#39;)
+            raise SDKException(&#39;Schedules&#39;, &#39;102&#39;,
+                               &#39;schedules should be a list&#39;)
 
         sub_tasks = []
         for schedule in schedules:
             sub_tasks.append(self.schedule_json(policy_type, schedule))
-
 
         schedule_policy = {
             &#34;taskInfo&#34;:
@@ -1615,23 +1829,24 @@ instance of the Commcell class</p>
         o_str = &#39;Failed to update properties of Schedule\nError: &#34;{0}&#34;&#39;
         raise SDKException(&#39;Schedules&#39;, &#39;102&#39;, o_str.format(output[2]))
 
-    def get(self, schedule_policy_name, schedule_policy_id=None):
+    def get(self, schedule_policy_name: str, schedule_policy_id: int = None) -&gt; &#39;SchedulePolicy&#39;:
         &#34;&#34;&#34;Returns a schedule policy object of the specified schedule policy name.
 
-            Args:
-                schedule_policy_name (str)  --  name of the Schedule Policy
-                schedule_policy_id (int) -- id of the schedule Policy
+        Args:
+            schedule_policy_name (str): name of the Schedule Policy
+            schedule_policy_id (int): id of the schedule Policy
 
-            Sample: sch_pol_obj = commcellobj.schedule_policies.get(&#39;testschp&#39;)
+        Returns:
+            object: instance of the schedule policy class for the given schedule name
 
-            Returns:
-                object - instance of the schedule policy class for the given schedule name
+        Raises:
+            SDKException:
+                if type of the schedule policy name argument is not string
 
-            Raises:
-                SDKException:
-                    if type of the schedule policy name argument is not string
+                if no schedule policy exists with the given name
 
-                    if no schedule policy exists with the given name
+        Usage:
+            sch_pol_obj = commcellobj.schedule_policies.get(&#39;testschp&#39;)
         &#34;&#34;&#34;
 
         if schedule_policy_name and not isinstance(schedule_policy_name, str):
@@ -1641,7 +1856,8 @@ instance of the Commcell class</p>
             raise SDKException(&#39;Schedules&#39;, &#39;102&#39;)
 
         schedule_policy_name = schedule_policy_name.lower()
-        schedule_policy_id = self.all_schedule_policies.get(schedule_policy_name)
+        schedule_policy_id = self.all_schedule_policies.get(
+            schedule_policy_name)
         if self.has_policy(schedule_policy_name):
             return SchedulePolicy(
                 self._commcell_object, schedule_policy_name, schedule_policy_id
@@ -1652,25 +1868,27 @@ instance of the Commcell class</p>
             &#39;102&#39;,
             &#39;No Schedule Policy exists with name: {0}&#39;.format(schedule_policy_name))
 
-    def delete(self, schedule_policy_name):
-        &#34;&#34;&#34;deletes the specified schedule policy name.
+    def delete(self, schedule_policy_name: str) -&gt; None:
+        &#34;&#34;&#34;Deletes the specified schedule policy name.
 
-                    Args:
-                        schedule_policy_name (str)  --  name of the Schedule Policy
+        Args:
+            schedule_policy_name (str): name of the Schedule Policy
 
-                    Sample:  commcellobj.schedule_policies.delete(&#39;testschp&#39;)
+        Raises:
+            SDKException:
+                if type of the schedule policy name argument is not string
+                if no schedule policy exists with the given name
 
-                    Raises:
-                        SDKException:
-                            if type of the schedule policy name argument is not string
-                            if no schedule policy exists with the given name
+        Usage:
+            commcellobj.schedule_policies.delete(&#39;testschp&#39;)
         &#34;&#34;&#34;
 
         if schedule_policy_name and not isinstance(schedule_policy_name, str):
             raise SDKException(&#39;Schedules&#39;, &#39;102&#39;)
 
         schedule_policy_name = schedule_policy_name.lower()
-        schedule_policy_id = self.all_schedule_policies.get(schedule_policy_name)
+        schedule_policy_id = self.all_schedule_policies.get(
+            schedule_policy_name)
 
         if schedule_policy_id:
             request_json = {
@@ -1715,20 +1933,19 @@ instance of the Commcell class</p>
                     schedule_policy_id)
             )
 
-    def refresh(self):
+    def refresh(self) -&gt; None:
         &#34;&#34;&#34;Refresh the Schedule Policies associated with the Commcell.&#34;&#34;&#34;
         self._policies = self._get_policies()
 
-    def _process_schedule_policy_response(self, flag, response):
-        &#34;&#34;&#34;
-        processes the response received post create request
+    def _process_schedule_policy_response(self, flag: bool, response: dict) -&gt; tuple:
+        &#34;&#34;&#34;Processes the response received post create request.
+
         Args:
-        flag: (bool) -- True or false based on response
-        response: (dict) response from modify request
+            flag (bool): True or false based on response
+            response (dict): response from modify request
+
         Returns:
-            flag: (Bool) -- based on success and failure
-            error_code: (int) -- error_code from response
-            error_message: (str) -- error_message from the response if any
+            tuple: (Bool, str, str) -- based on success and failure, error_code, error_message
         &#34;&#34;&#34;
 
         if flag:
@@ -1763,52 +1980,57 @@ instance of the Commcell class</p>
 <dl>
 <dt id="cvpysdk.policies.schedule_policies.SchedulePolicies.policy_to_subtask_map"><code class="name">var <span class="ident">policy_to_subtask_map</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.policies.schedule_policies.SchedulePolicies.policy_types"><code class="name">var <span class="ident">policy_types</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 </dl>
 <h3>Static methods</h3>
 <dl>
 <dt id="cvpysdk.policies.schedule_policies.SchedulePolicies.schedule_json"><code class="name flex">
-<span>def <span class="ident">schedule_json</span></span>(<span>policy_type, schedule_dict)</span>
+<span>def <span class="ident">schedule_json</span></span>(<span>policy_type: str, schedule_dict: dict) ‑> dict</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Returns the schedule json for the given schedule options and pattern</p>
-<h2 id="args">Args</h2>
-<p>policy_type (str) &ndash; Type of the schedule policy from 'policy_types' dict
-schedule_dict (dict) &ndash; with the below format, check add() module for more documentation on the below dict</p>
-<pre><code>                            {
-                                pattern : {},
-                                options: {}
-                            }
+<div class="desc"><p>Returns the schedule json for the given schedule options and pattern.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>policy_type</code></strong> :&ensp;<code>str</code></dt>
+<dd>Type of the schedule policy from 'policy_types' dict</dd>
+<dt><strong><code>schedule_dict</code></strong> :&ensp;<code>dict</code></dt>
+<dd>with the below format, check add() module for more documentation on the below dict<pre><code>                    {
+                        pattern : {},
+                        options: {}
+                    }
 </code></pre>
-<h2 id="returns">Returns</h2>
-<p>Returns the schedule json for the given schedule options and pattern</p></div>
+</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>The schedule json for the given schedule options and pattern</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/policies/schedule_policies.py#L252-L291" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/policies/schedule_policies.py#L287-L324" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@staticmethod
-def schedule_json(policy_type, schedule_dict):
-    &#34;&#34;&#34;
-        Returns the schedule json for the given schedule options and pattern
+def schedule_json(policy_type: str, schedule_dict: dict) -&gt; dict:
+    &#34;&#34;&#34;Returns the schedule json for the given schedule options and pattern.
 
     Args:
-        policy_type (str) -- Type of the schedule policy from &#39;policy_types&#39; dict
-        schedule_dict (dict) -- with the below format, check add() module for more documentation on the below dict
+        policy_type (str): Type of the schedule policy from &#39;policy_types&#39; dict
+        schedule_dict (dict): with the below format, check add() module for more documentation on the below dict
 
-                                        {
-                                            pattern : {},
-                                            options: {}
-                                        }
+                                    {
+                                        pattern : {},
+                                        options: {}
+                                    }
 
     Returns:
-        Returns the schedule json for the given schedule options and pattern
-
+        dict: The schedule json for the given schedule options and pattern
     &#34;&#34;&#34;
     schedule_options = ScheduleOptions(ScheduleOptions.policy_to_options_map[policy_type]
                                        ).options_json(schedule_dict.get(&#39;options&#39;, None))
@@ -1828,35 +2050,41 @@ def schedule_json(policy_type, schedule_dict):
         schedule_dict[&#34;pattern&#34;] = {&#34;freq_type&#34;: freq_type}
 
     task_json = SchedulePattern().create_schedule({&#39;taskInfo&#39;:
-                                                       {&#39;subTasks&#39;: [sub_task]
-                                                        }
+                                                   {&#39;subTasks&#39;: [sub_task]
+                                                    }
                                                    }, schedule_dict.get(&#39;pattern&#39;))
     return task_json.get(&#39;taskInfo&#39;).get(&#39;subTasks&#39;)[0]</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.policies.schedule_policies.SchedulePolicies.subtasks_json"><code class="name flex">
-<span>def <span class="ident">subtasks_json</span></span>(<span>policy_type)</span>
+<span>def <span class="ident">subtasks_json</span></span>(<span>policy_type: str) ‑> dict</span>
 </code></dt>
 <dd>
-<div class="desc"><p>gets the subtask in schedule policy JSON</p>
-<h2 id="args">Args</h2>
-<p>policy_type (str) &ndash; Type of the schedule policy from 'policy_types' dict</p>
-<h2 id="returns">Returns</h2>
-<p>returns schedule policy Subtask</p></div>
+<div class="desc"><p>Gets the subtask in schedule policy JSON.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>policy_type</code></strong> :&ensp;<code>str</code></dt>
+<dd>Type of the schedule policy from 'policy_types' dict</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>schedule policy Subtask</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/policies/schedule_policies.py#L234-L250" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/policies/schedule_policies.py#L269-L285" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@staticmethod
-def subtasks_json(policy_type):
-    &#34;&#34;&#34;
-    gets the subtask in schedule policy JSON
+def subtasks_json(policy_type: str) -&gt; dict:
+    &#34;&#34;&#34;Gets the subtask in schedule policy JSON.
+
     Args:
-        policy_type (str) -- Type of the schedule policy from &#39;policy_types&#39; dict
+        policy_type (str): Type of the schedule policy from &#39;policy_types&#39; dict
 
     Returns:
-        returns schedule policy Subtask
+        dict: schedule policy Subtask
     &#34;&#34;&#34;
 
     _backup_subtask = {
@@ -1870,28 +2098,34 @@ def subtasks_json(policy_type):
 </dl>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.policies.schedule_policies.SchedulePolicies.all_schedule_policies"><code class="name">var <span class="ident">all_schedule_policies</span></code></dt>
+<dt id="cvpysdk.policies.schedule_policies.SchedulePolicies.all_schedule_policies"><code class="name">var <span class="ident">all_schedule_policies</span> : dict</code></dt>
 <dd>
 <div class="desc"><p>Returns the schedule policies on this commcell</p>
-<p>dict - consists of all schedule policies of the commcell
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>consists of all schedule policies of the commcell
 {
 "schedule_policy1_name": schedule_policy1_id,
 "schedule_policy2_name": schedule_policy2_id
-}</p></div>
+}</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/policies/schedule_policies.py#L204-L214" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/policies/schedule_policies.py#L238-L249" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def all_schedule_policies(self):
+def all_schedule_policies(self) -&gt; dict:
     &#34;&#34;&#34;Returns the schedule policies on this commcell
 
-        dict - consists of all schedule policies of the commcell
-                {
-                     &#34;schedule_policy1_name&#34;: schedule_policy1_id,
-                     &#34;schedule_policy2_name&#34;: schedule_policy2_id
-                }
+    Returns:
+        dict: consists of all schedule policies of the commcell
+            {
+                 &#34;schedule_policy1_name&#34;: schedule_policy1_id,
+                 &#34;schedule_policy2_name&#34;: schedule_policy2_id
+            }
     &#34;&#34;&#34;
     return self._policies</code></pre>
 </details>
@@ -1900,14 +2134,19 @@ def all_schedule_policies(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.policies.schedule_policies.SchedulePolicies.add"><code class="name flex">
-<span>def <span class="ident">add</span></span>(<span>self, name, policy_type, associations, schedules, agent_type=None)</span>
+<span>def <span class="ident">add</span></span>(<span>self, name: str, policy_type: str, associations: list, schedules: list, agent_type: list = None) ‑> <a title="cvpysdk.policies.schedule_policies.SchedulePolicy" href="#cvpysdk.policies.schedule_policies.SchedulePolicy">SchedulePolicy</a></span>
 </code></dt>
 <dd>
-<div class="desc"><p>Adds a schedule policy</p>
-<h2 id="args">Args</h2>
-<p>name (str) &ndash; Name of the Schedule Policy
-policy_type (str) &ndash; Type of the schedule policy from 'policy_types' dict
-associations (str) &ndash; List of schedule associations
+<div class="desc"><p>Adds a schedule policy.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>name</code></strong> :&ensp;<code>str</code></dt>
+<dd>Name of the Schedule Policy</dd>
+<dt><strong><code>policy_type</code></strong> :&ensp;<code>str</code></dt>
+<dd>Type of the schedule policy from 'policy_types' dict</dd>
+<dt><strong><code>associations</code></strong> :&ensp;<code>list</code></dt>
+<dd>List of schedule associations
 [
 {
 "clientName": "scheduleclient1"
@@ -1915,13 +2154,13 @@ associations (str) &ndash; List of schedule associations
 {
 "clientGroupName": "scheduleclient2"
 }
-]</p>
-<p>schedules (List) &ndash; schedules to be associated to the schedule policy</p>
-<p>[
+]</dd>
+<dt><strong><code>schedules</code></strong> :&ensp;<code>list</code></dt>
+<dd>schedules to be associated to the schedule policy
+[
 {
 pattern : {}, &ndash; Please refer SchedulePattern.create_schedule in schedules.py for the types of
-pattern to be sent</p>
-<pre><code>                     eg: {
+pattern to be sent<pre><code>                     eg: {
                             "freq_type": 'daily',
                             "active_start_time": time_in_%H/%S (str),
                             "repeat_days": days_to_repeat (int)
@@ -1939,89 +2178,90 @@ pattern to be sent</p>
                             "mediaAgentName": "&lt;ANY MEDIAAGENT&gt;"
                         }
                     }
-}
 </code></pre>
-<p>]</p>
-<p>agent_type (List) &ndash; Agent Types to be associated to the schedule policy</p>
-<pre><code>      eg:    [
-                {
-                    "appGroupName": "Protected Files"
-                },
-                {
-                    "appGroupName": "Archived Files"
-                }
-            ]
-</code></pre>
-<p>sample:</p>
-<pre><code>        apptype = [{'appGroupName': 'DB2'}]
-        associations = [{'clientName': 'testclient'}]
-        schedule = [
+<p>}</p>
+</dd>
+<dt>]</dt>
+<dt><strong><code>agent_type</code></strong> :&ensp;<code>list</code></dt>
+<dd>Agent Types to be associated to the schedule policy<pre><code>  eg:    [
             {
-                'name': 'trying',
-                'pattern': {
-                                'freq_type': 'Daily'
-                            }
+                "appGroupName": "Protected Files"
+            },
+            {
+                "appGroupName": "Archived Files"
             }
         ]
-        commcellobj.schedule_policies.add('testsch1', 'Data Protection', associations, schedule, apptype)
 </code></pre>
-<p>Returns: schedule policy object on successful completion</p>
-<h2 id="raises">Raises</h2>
-<p>SDKExceptions on wrong input types and failure to create schedule policy</p></div>
+</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>object</code></dt>
+<dd>schedule policy object on successful completion</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKExceptions</code></dt>
+<dd>on wrong input types and failure to create schedule policy</dd>
+</dl>
+<p>Usage
+-----=
+apptype = [{'appGroupName': 'DB2'}]
+associations = [{'clientName': 'testclient'}]
+schedule = [
+{
+'name': 'trying',
+'pattern': {
+'freq_type': 'Daily'
+}
+}
+]
+commcellobj.schedule_policies.add('testsch1', 'Data Protection', associations, schedule, apptype)</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/policies/schedule_policies.py#L294-L415" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/policies/schedule_policies.py#L326-L438" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def add(self, name, policy_type, associations, schedules, agent_type=None):
-    &#34;&#34;&#34;
-
-    Adds a schedule policy
+<pre><code class="python">def add(self, name: str, policy_type: str, associations: list, schedules: list, agent_type: list = None) -&gt; &#39;SchedulePolicy&#39;:
+    &#34;&#34;&#34;Adds a schedule policy.
 
     Args:
-        name (str) -- Name of the Schedule Policy
-        policy_type (str) -- Type of the schedule policy from &#39;policy_types&#39; dict
-        associations (str) -- List of schedule associations
-        [
-        {
-            &#34;clientName&#34;: &#34;scheduleclient1&#34;
-        },
-        {
-            &#34;clientGroupName&#34;: &#34;scheduleclient2&#34;
-        }
-        ]
+        name (str): Name of the Schedule Policy
+        policy_type (str): Type of the schedule policy from &#39;policy_types&#39; dict
+        associations (list): List of schedule associations
+            [
+                {
+                    &#34;clientName&#34;: &#34;scheduleclient1&#34;
+                },
+                {
+                    &#34;clientGroupName&#34;: &#34;scheduleclient2&#34;
+                }
+            ]
+        schedules (list): schedules to be associated to the schedule policy
+            [
+                {
+                    pattern : {}, -- Please refer SchedulePattern.create_schedule in schedules.py for the types of
+                                     pattern to be sent
 
-        schedules (List) -- schedules to be associated to the schedule policy
+                                     eg: {
+                                            &#34;freq_type&#34;: &#39;daily&#39;,
+                                            &#34;active_start_time&#34;: time_in_%H/%S (str),
+                                            &#34;repeat_days&#34;: days_to_repeat (int)
+                                         }
 
-        [
-            {
-                pattern : {}, -- Please refer SchedulePattern.create_schedule in schedules.py for the types of
-                                 pattern to be sent
+                    options: {} -- Please refer ScheduleOptions.py classes for respective schedule options
 
-                                 eg: {
-                                        &#34;freq_type&#34;: &#39;daily&#39;,
-                                        &#34;active_start_time&#34;: time_in_%H/%S (str),
-                                        &#34;repeat_days&#34;: days_to_repeat (int)
-                                     }
-
-                options: {} -- Please refer ScheduleOptions.py classes for respective schedule options
-
-                                eg:  {
-                                    &#34;maxNumberOfStreams&#34;: 0,
-                                    &#34;useMaximumStreams&#34;: True,
-                                    &#34;useScallableResourceManagement&#34;: True,
-                                    &#34;totalJobsToProcess&#34;: 1000,
-                                    &#34;allCopies&#34;: True,
-                                    &#34;mediaAgent&#34;: {
-                                        &#34;mediaAgentName&#34;: &#34;&lt;ANY MEDIAAGENT&gt;&#34;
+                                    eg:  {
+                                        &#34;maxNumberOfStreams&#34;: 0,
+                                        &#34;useMaximumStreams&#34;: True,
+                                        &#34;useScallableResourceManagement&#34;: True,
+                                        &#34;totalJobsToProcess&#34;: 1000,
+                                        &#34;allCopies&#34;: True,
+                                        &#34;mediaAgent&#34;: {
+                                            &#34;mediaAgentName&#34;: &#34;&lt;ANY MEDIAAGENT&gt;&#34;
+                                        }
                                     }
-                                }
             }
         ]
-
-
-
-        agent_type (List) -- Agent Types to be associated to the schedule policy
+        agent_type (list): Agent Types to be associated to the schedule policy
 
                   eg:    [
                             {
@@ -2032,35 +2272,33 @@ pattern to be sent</p>
                             }
                         ]
 
-    sample:
-
-                apptype = [{&#39;appGroupName&#39;: &#39;DB2&#39;}]
-                associations = [{&#39;clientName&#39;: &#39;testclient&#39;}]
-                schedule = [
-                    {
-                        &#39;name&#39;: &#39;trying&#39;,
-                        &#39;pattern&#39;: {
-                                        &#39;freq_type&#39;: &#39;Daily&#39;
-                                    }
-                    }
-                ]
-                commcellobj.schedule_policies.add(&#39;testsch1&#39;, &#39;Data Protection&#39;, associations, schedule, apptype)
-
-    Returns: schedule policy object on successful completion
+    Returns:
+        object: schedule policy object on successful completion
 
     Raises:
+        SDKExceptions: on wrong input types and failure to create schedule policy
 
-        SDKExceptions on wrong input types and failure to create schedule policy
-
+    Usage:
+        apptype = [{&#39;appGroupName&#39;: &#39;DB2&#39;}]
+        associations = [{&#39;clientName&#39;: &#39;testclient&#39;}]
+        schedule = [
+            {
+                &#39;name&#39;: &#39;trying&#39;,
+                &#39;pattern&#39;: {
+                                &#39;freq_type&#39;: &#39;Daily&#39;
+                            }
+            }
+        ]
+        commcellobj.schedule_policies.add(&#39;testsch1&#39;, &#39;Data Protection&#39;, associations, schedule, apptype)
     &#34;&#34;&#34;
 
     if not isinstance(schedules, list):
-        raise SDKException(&#39;Schedules&#39;, &#39;102&#39;, &#39;schedules should be a list&#39;)
+        raise SDKException(&#39;Schedules&#39;, &#39;102&#39;,
+                           &#39;schedules should be a list&#39;)
 
     sub_tasks = []
     for schedule in schedules:
         sub_tasks.append(self.schedule_json(policy_type, schedule))
-
 
     schedule_policy = {
         &#34;taskInfo&#34;:
@@ -2098,44 +2336,50 @@ pattern to be sent</p>
 </details>
 </dd>
 <dt id="cvpysdk.policies.schedule_policies.SchedulePolicies.delete"><code class="name flex">
-<span>def <span class="ident">delete</span></span>(<span>self, schedule_policy_name)</span>
+<span>def <span class="ident">delete</span></span>(<span>self, schedule_policy_name: str) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>deletes the specified schedule policy name.</p>
-<h2 id="args">Args</h2>
-<p>schedule_policy_name (str)
-&ndash;
-name of the Schedule Policy
-Sample:
-commcellobj.schedule_policies.delete('testschp')</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
+<div class="desc"><p>Deletes the specified schedule policy name.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>schedule_policy_name</code></strong> :&ensp;<code>str</code></dt>
+<dd>name of the Schedule Policy</dd>
+</dl>
+<p>Raises
+-----=
+SDKException:
 if type of the schedule policy name argument is not string
-if no schedule policy exists with the given name</p></div>
+if no schedule policy exists with the given name</p>
+<p>Usage
+-----=
+commcellobj.schedule_policies.delete('testschp')</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/policies/schedule_policies.py#L454-L515" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/policies/schedule_policies.py#L479-L542" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def delete(self, schedule_policy_name):
-    &#34;&#34;&#34;deletes the specified schedule policy name.
+<pre><code class="python">def delete(self, schedule_policy_name: str) -&gt; None:
+    &#34;&#34;&#34;Deletes the specified schedule policy name.
 
-                Args:
-                    schedule_policy_name (str)  --  name of the Schedule Policy
+    Args:
+        schedule_policy_name (str): name of the Schedule Policy
 
-                Sample:  commcellobj.schedule_policies.delete(&#39;testschp&#39;)
+    Raises:
+        SDKException:
+            if type of the schedule policy name argument is not string
+            if no schedule policy exists with the given name
 
-                Raises:
-                    SDKException:
-                        if type of the schedule policy name argument is not string
-                        if no schedule policy exists with the given name
+    Usage:
+        commcellobj.schedule_policies.delete(&#39;testschp&#39;)
     &#34;&#34;&#34;
 
     if schedule_policy_name and not isinstance(schedule_policy_name, str):
         raise SDKException(&#39;Schedules&#39;, &#39;102&#39;)
 
     schedule_policy_name = schedule_policy_name.lower()
-    schedule_policy_id = self.all_schedule_policies.get(schedule_policy_name)
+    schedule_policy_id = self.all_schedule_policies.get(
+        schedule_policy_name)
 
     if schedule_policy_id:
         request_json = {
@@ -2182,45 +2426,54 @@ if no schedule policy exists with the given name</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.policies.schedule_policies.SchedulePolicies.get"><code class="name flex">
-<span>def <span class="ident">get</span></span>(<span>self, schedule_policy_name, schedule_policy_id=None)</span>
+<span>def <span class="ident">get</span></span>(<span>self, schedule_policy_name: str, schedule_policy_id: int = None) ‑> <a title="cvpysdk.policies.schedule_policies.SchedulePolicy" href="#cvpysdk.policies.schedule_policies.SchedulePolicy">SchedulePolicy</a></span>
 </code></dt>
 <dd>
 <div class="desc"><p>Returns a schedule policy object of the specified schedule policy name.</p>
-<h2 id="args">Args</h2>
-<p>schedule_policy_name (str)
-&ndash;
-name of the Schedule Policy
-schedule_policy_id (int) &ndash; id of the schedule Policy
-Sample: sch_pol_obj = commcellobj.schedule_policies.get('testschp')</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the schedule policy class for the given schedule name</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>schedule_policy_name</code></strong> :&ensp;<code>str</code></dt>
+<dd>name of the Schedule Policy</dd>
+<dt><strong><code>schedule_policy_id</code></strong> :&ensp;<code>int</code></dt>
+<dd>id of the schedule Policy</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>object</code></dt>
+<dd>instance of the schedule policy class for the given schedule name</dd>
+</dl>
+<p>Raises
+-----=
+SDKException:
 if type of the schedule policy name argument is not string</p>
 <pre><code>if no schedule policy exists with the given name
-</code></pre></div>
+</code></pre>
+<p>Usage
+-----=
+sch_pol_obj = commcellobj.schedule_policies.get('testschp')</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/policies/schedule_policies.py#L417-L452" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/policies/schedule_policies.py#L440-L477" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def get(self, schedule_policy_name, schedule_policy_id=None):
+<pre><code class="python">def get(self, schedule_policy_name: str, schedule_policy_id: int = None) -&gt; &#39;SchedulePolicy&#39;:
     &#34;&#34;&#34;Returns a schedule policy object of the specified schedule policy name.
 
-        Args:
-            schedule_policy_name (str)  --  name of the Schedule Policy
-            schedule_policy_id (int) -- id of the schedule Policy
+    Args:
+        schedule_policy_name (str): name of the Schedule Policy
+        schedule_policy_id (int): id of the schedule Policy
 
-        Sample: sch_pol_obj = commcellobj.schedule_policies.get(&#39;testschp&#39;)
+    Returns:
+        object: instance of the schedule policy class for the given schedule name
 
-        Returns:
-            object - instance of the schedule policy class for the given schedule name
+    Raises:
+        SDKException:
+            if type of the schedule policy name argument is not string
 
-        Raises:
-            SDKException:
-                if type of the schedule policy name argument is not string
+            if no schedule policy exists with the given name
 
-                if no schedule policy exists with the given name
+    Usage:
+        sch_pol_obj = commcellobj.schedule_policies.get(&#39;testschp&#39;)
     &#34;&#34;&#34;
 
     if schedule_policy_name and not isinstance(schedule_policy_name, str):
@@ -2230,7 +2483,8 @@ if type of the schedule policy name argument is not string</p>
         raise SDKException(&#39;Schedules&#39;, &#39;102&#39;)
 
     schedule_policy_name = schedule_policy_name.lower()
-    schedule_policy_id = self.all_schedule_policies.get(schedule_policy_name)
+    schedule_policy_id = self.all_schedule_policies.get(
+        schedule_policy_name)
     if self.has_policy(schedule_policy_name):
         return SchedulePolicy(
             self._commcell_object, schedule_policy_name, schedule_policy_id
@@ -2243,36 +2497,41 @@ if type of the schedule policy name argument is not string</p>
 </details>
 </dd>
 <dt id="cvpysdk.policies.schedule_policies.SchedulePolicies.has_policy"><code class="name flex">
-<span>def <span class="ident">has_policy</span></span>(<span>self, policy_name)</span>
+<span>def <span class="ident">has_policy</span></span>(<span>self, policy_name: str) ‑> bool</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Checks if a schedule policy exists in the commcell with the input schedule policy name.</p>
-<h2 id="args">Args</h2>
-<p>policy_name (str)
-&ndash;
-name of the schedule policy</p>
-<h2 id="returns">Returns</h2>
-<p>bool - boolean output whether the schedule policy exists in the commcell or not</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>policy_name</code></strong> :&ensp;<code>str</code></dt>
+<dd>name of the schedule policy</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>bool</code></dt>
+<dd>boolean output whether the schedule policy exists in the commcell or not</dd>
+</dl>
+<p>Raises
+-----=
+SDKException:
 if type of the schedule policy name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/policies/schedule_policies.py#L216-L232" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/policies/schedule_policies.py#L251-L267" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def has_policy(self, policy_name):
+<pre><code class="python">def has_policy(self, policy_name: str) -&gt; bool:
     &#34;&#34;&#34;Checks if a schedule policy exists in the commcell with the input schedule policy name.
 
-        Args:
-            policy_name (str)  --  name of the schedule policy
+    Args:
+        policy_name (str): name of the schedule policy
 
-        Returns:
-            bool - boolean output whether the schedule policy exists in the commcell or not
+    Returns:
+        bool: boolean output whether the schedule policy exists in the commcell or not
 
-        Raises:
-            SDKException:
-                if type of the schedule policy name argument is not string
+    Raises:
+        SDKException:
+            if type of the schedule policy name argument is not string
     &#34;&#34;&#34;
     if not isinstance(policy_name, str):
         raise SDKException(&#39;Storage&#39;, &#39;101&#39;)
@@ -2281,16 +2540,16 @@ if type of the schedule policy name argument is not string</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.policies.schedule_policies.SchedulePolicies.refresh"><code class="name flex">
-<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+<span>def <span class="ident">refresh</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Refresh the Schedule Policies associated with the Commcell.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/policies/schedule_policies.py#L517-L519" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/policies/schedule_policies.py#L544-L546" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def refresh(self):
+<pre><code class="python">def refresh(self) -&gt; None:
     &#34;&#34;&#34;Refresh the Schedule Policies associated with the Commcell.&#34;&#34;&#34;
     self._policies = self._get_policies()</code></pre>
 </details>
@@ -2299,48 +2558,104 @@ if type of the schedule policy name argument is not string</p></div>
 </dd>
 <dt id="cvpysdk.policies.schedule_policies.SchedulePolicy"><code class="flex name class">
 <span>class <span class="ident">SchedulePolicy</span></span>
-<span>(</span><span>commcell_obj, schedule_policy_name, schedule_policy_id=None)</span>
+<span>(</span><span>commcell_obj: Commcell, schedule_policy_name: str, schedule_policy_id: int = None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Class for performing operations for a specific Schedule.</p>
+<dl>
+<dt>Attributes</dt>
+<dt>-----=</dt>
+<dt><strong><code>_commcell_object</code></strong> :&ensp;<code>object</code></dt>
+<dd>Instance of the Commcell object.</dd>
+<dt><strong><code>schedule_policy_name</code></strong> :&ensp;<code>str</code></dt>
+<dd>Name of the Schedule Policy.</dd>
+<dt><strong><code>schedule_policy_id</code></strong> :&ensp;<code>int</code></dt>
+<dd>ID of the Schedule Policy.</dd>
+<dt><strong><code>_SCHEDULE_POLICY</code></strong> :&ensp;<code>str</code></dt>
+<dd>API endpoint for getting schedule policy details.</dd>
+<dt><strong><code>_MODIFY_SCHEDULE_POLICY</code></strong> :&ensp;<code>str</code></dt>
+<dd>API endpoint for modifying schedule policy.</dd>
+<dt><strong><code>_associations</code></strong> :&ensp;<code>list</code></dt>
+<dd>List of associations for the schedule policy.</dd>
+<dt><strong><code>_subtasks</code></strong> :&ensp;<code>list</code></dt>
+<dd>List of subtasks (schedules) associated with the policy.</dd>
+<dt><strong><code>_app_groups</code></strong> :&ensp;<code>list</code></dt>
+<dd>List of application groups associated with the policy.</dd>
+<dt><strong><code>_task_json</code></strong> :&ensp;<code>dict</code></dt>
+<dd>JSON representation of the task.</dd>
+<dt><strong><code>_task_name</code></strong> :&ensp;<code>str</code></dt>
+<dd>Name of the task.</dd>
+<dt><strong><code>_all_schedules</code></strong> :&ensp;<code>list</code></dt>
+<dd>List of all schedules associated with the policy.</dd>
+</dl>
+<p>Usage
+-----=</p>
+<h1 id="initialize-a-schedulepolicy-object">Initialize a SchedulePolicy object</h1>
+<p>schedule_policy = SchedulePolicy(commcell_object, "MySchedulePolicy", schedule_policy_id=123)</p>
 <p>Initialise the Schedule Policy class instance.</p>
-<h2 id="args">Args</h2>
-<p>class_object (object)
-&ndash;
-instance of Class Object</p>
-<p>schedule_policy_name
-(str)
-&ndash;
-name of the Schedule</p>
-<p>schedule_policy_id
-(int)
-&ndash;
-task ids of the Schedule</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Schedule Policy class</p></div>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>commcell_obj</code></strong> :&ensp;<code>object</code></dt>
+<dd>Instance of the Commcell Object.</dd>
+<dt><strong><code>schedule_policy_name</code></strong> :&ensp;<code>str</code></dt>
+<dd>Name of the Schedule.</dd>
+<dt><strong><code>schedule_policy_id</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>Task IDs of the Schedule. Defaults to None.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If failed to get schedule policy id.</dd>
+</dl>
+<p>Usage
+-----=</p>
+<h1 id="initialize-a-schedulepolicy-object-with-a-schedule-policy-id">Initialize a SchedulePolicy object with a schedule policy ID</h1>
+<p>schedule_policy = SchedulePolicy(commcell_object, "MySchedulePolicy", schedule_policy_id=123)</p>
+<h1 id="initialize-a-schedulepolicy-object-without-a-schedule-policy-id">Initialize a SchedulePolicy object without a schedule policy ID</h1>
+<p>schedule_policy = SchedulePolicy(commcell_object, "MySchedulePolicy")</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/policies/schedule_policies.py#L561-L1138" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/policies/schedule_policies.py#L588-L1294" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class SchedulePolicy:
-    &#34;&#34;&#34;Class for performing operations for a specific Schedule.&#34;&#34;&#34;
+    &#34;&#34;&#34;Class for performing operations for a specific Schedule.
 
-    def __init__(self, commcell_obj, schedule_policy_name, schedule_policy_id=None):
+    Attributes:
+        _commcell_object (object): Instance of the Commcell object.
+        schedule_policy_name (str): Name of the Schedule Policy.
+        schedule_policy_id (int): ID of the Schedule Policy.
+        _SCHEDULE_POLICY (str): API endpoint for getting schedule policy details.
+        _MODIFY_SCHEDULE_POLICY (str): API endpoint for modifying schedule policy.
+        _associations (list): List of associations for the schedule policy.
+        _subtasks (list): List of subtasks (schedules) associated with the policy.
+        _app_groups (list): List of application groups associated with the policy.
+        _task_json (dict): JSON representation of the task.
+        _task_name (str): Name of the task.
+        _all_schedules (list): List of all schedules associated with the policy.
 
+    Usage:
+        # Initialize a SchedulePolicy object
+        schedule_policy = SchedulePolicy(commcell_object, &#34;MySchedulePolicy&#34;, schedule_policy_id=123)
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_obj: &#39;Commcell&#39;, schedule_policy_name: str, schedule_policy_id: int = None) -&gt; None:
         &#34;&#34;&#34;Initialise the Schedule Policy class instance.
 
-            Args:
-                class_object (object)     --  instance of Class Object
+        Args:
+            commcell_obj (object): Instance of the Commcell Object.
+            schedule_policy_name (str): Name of the Schedule.
+            schedule_policy_id (int, optional): Task IDs of the Schedule. Defaults to None.
 
-                schedule_policy_name      (str)     --  name of the Schedule
+        Raises:
+            SDKException: If failed to get schedule policy id.
 
-                schedule_policy_id        (int)     --   task ids of the Schedule
+        Usage:
+            # Initialize a SchedulePolicy object with a schedule policy ID
+            schedule_policy = SchedulePolicy(commcell_object, &#34;MySchedulePolicy&#34;, schedule_policy_id=123)
 
-
-
-            Returns:
-                object - instance of the Schedule Policy class
+            # Initialize a SchedulePolicy object without a schedule policy ID
+            schedule_policy = SchedulePolicy(commcell_object, &#34;MySchedulePolicy&#34;)
         &#34;&#34;&#34;
 
         self._commcell_object = commcell_obj
@@ -2352,10 +2667,11 @@ task ids of the Schedule</p>
         else:
             self.schedule_policy_id = self._get_schedule_policy_id()
 
-
         self._SCHEDULE_POLICY = self._commcell_object._services[&#39;GET_SCHEDULE_POLICY&#39;] % (
             self.schedule_policy_id)
-        self._MODIFY_SCHEDULE_POLICY = self._commcell_object._services[&#39;CREATE_UPDATE_SCHEDULE_POLICY&#39;]
+        self._MODIFY_SCHEDULE_POLICY = self._commcell_object._services[
+            &#39;CREATE_UPDATE_SCHEDULE_POLICY&#39;]
+        self._TASK_OPERATION = self._commcell_object._services[&#39;TASK_OPERATION&#39;]
 
         self._associations = []
         self._subtasks = []
@@ -2365,42 +2681,48 @@ task ids of the Schedule</p>
         self._all_schedules = []
         self.refresh()
 
-    def _get_schedule_policy_id(self):
-        &#34;&#34;&#34;
-        Gets a schedule ID of the schedule policy
-        Returns (int) -- schedule policy ID
+    def _get_schedule_policy_id(self) -&gt; int:
+        &#34;&#34;&#34;Gets a schedule ID of the schedule policy
+
+        Returns:
+            int: Schedule policy ID
+
+        Usage:
+            schedule_policy_id = self._get_schedule_policy_id()
         &#34;&#34;&#34;
         schedule_policies = SchedulePolicies(self._commcell_object)
         return schedule_policies.get(self.schedule_policy_name).schedule_policy_id
 
     @property
-    def policy_type(self):
-        &#34;&#34;&#34;
-        Get the policy Type of the schedule policy
+    def policy_type(self) -&gt; str:
+        &#34;&#34;&#34;Get the policy Type of the schedule policy
 
-        Sample:  sch_pol_obj.policy_type
+        Returns:
+            str: Type of the schedule policy from &#39;policy_types&#39; dict
 
-        Returns (str) -- Type of the schedule policy from &#39;policy_types&#39; dict
-
+        Usage:
+            policy_type = sch_pol_obj.policy_type
         &#34;&#34;&#34;
         return (
-                list(
+            list(
                 SchedulePolicies.policy_types.keys())[
                 list(
                     SchedulePolicies.policy_types.values()).index(self._task_json[&#39;policyType&#39;])])
 
-
-    def _get_schedule_policy_properties(self):
+    def _get_schedule_policy_properties(self) -&gt; dict:
         &#34;&#34;&#34;Gets the properties of this Schedule Policy.
 
-            Returns:
-                dict - dictionary consisting of the properties of this Schedule Policy
+        Returns:
+            dict: Dictionary consisting of the properties of this Schedule Policy
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException:
+                if response is empty
 
-                    if response is not success
+                if response is not success
+
+        Usage:
+            schedule_policy_properties = self._get_schedule_policy_properties()
         &#34;&#34;&#34;
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             &#39;GET&#39;, self._SCHEDULE_POLICY)
@@ -2417,14 +2739,14 @@ task ids of the Schedule</p>
 
                 self._app_groups = _task_info[&#39;appGroup&#39;].get(&#39;appGroups&#39;)
 
-                self._subtasks = _task_info[&#39;subTasks&#39;]
+                self._subtasks = _task_info.get(&#39;subTasks&#39;, [])
+                self._all_schedules = []
 
                 for subtask in self._subtasks:
                     self._all_schedules.append({
-                                                &#34;schedule_name&#34; : subtask[&#34;subTask&#34;].get(&#34;subTaskName&#34;, &#39;&#39;),
-                                                &#34;schedule_id&#34;: subtask[&#34;subTask&#34;][&#34;subTaskId&#34;]
-                                                })
-
+                        &#34;schedule_name&#34;: subtask[&#34;subTask&#34;].get(&#34;subTaskName&#34;, &#39;&#39;),
+                        &#34;schedule_id&#34;: subtask[&#34;subTask&#34;][&#34;subTaskId&#34;]
+                    })
 
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
@@ -2433,70 +2755,59 @@ task ids of the Schedule</p>
                 response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def update_associations(self, associations, operation_type):
-        &#34;&#34;&#34;
-        Updates the schedule policy associations
+    def update_associations(self, associations: list, operation_type: &#39;OperationType&#39;) -&gt; None:
+        &#34;&#34;&#34;Updates the schedule policy associations
+
         Args:
-            associations (str) -- List of schedule associations
-            [
-            {
-                &#34;clientName&#34;: &#34;scheduleclient1&#34;
-            },
-            {
-                &#34;clientGroupName&#34;: &#34;scheduleclient2&#34;
-            }
-            ]
-            operation_type (OperationType) -- Please check OperationType class present in this file
+            associations (list): List of schedule associations.
+            operation_type (object): OperationType object (INCLUDE or DELETE).
 
-        Sample:
-            associations = [{&#39;clientName&#39;: &#39;client2&#39;}]
+        Usage:
+            associations = [{&#39;clientName&#39;: &#39;client2&#39;}] # [{&#39;clientGroupName&#39;: &#39;client2&#39;}]
             sch_pol_obj.update_associations(associations, OperationType.DELETE)
-
         &#34;&#34;&#34;
 
         for app_group in associations:
             app_group[&#34;flags&#34;] = {
-                                    operation_type: True
-                                 }
+                operation_type: True
+            }
         self._associations = associations
         self._modify_schedule_policy_properties()
 
     @property
-    def all_schedules(self):
-        &#34;&#34;&#34;
-        Gets all the schedules of the schedule policy
+    def all_schedules(self) -&gt; list:
+        &#34;&#34;&#34;Gets all the schedules of the schedule policy
 
-        Sample:  sch_pol_obj.all_schedules
+        Returns:
+            list: Schedules in the below format
 
-        Returns (dict) -- schedules in the below format
+        Usage:
+            all_schedules = sch_pol_obj.all_schedules
 
-            {
-                    &#34;schedule_name&#34; : (str),
-                    &#34;schedule_id&#34;: (int)
-            }
-
+            # Returns (list) -- schedules in the below format
+            # [
+            #         {
+            #                 &#34;schedule_name&#34; : (str),
+            #                 &#34;schedule_id&#34;: (int)
+            #         }
+            # ]
         &#34;&#34;&#34;
         return self._all_schedules
 
-
-    def _update_pattern(self, schedule_id, pattern_dict):
-
-        &#34;&#34;&#34;
-
-        Updates the schedule pattern for the provided schedule id (internal function)
+    def _update_pattern(self, schedule_id: int, pattern_dict: dict) -&gt; None:
+        &#34;&#34;&#34;Updates the schedule pattern for the provided schedule id (internal function)
 
         Args:
-            schedule_id (int) -- id of the schedule
-            pattern_dict (dict) -- Please refer SchedulePattern.create_schedule in schedules.py for the types of
-                                     pattern to be sent
+            schedule_id (int): ID of the schedule.
+            pattern_dict (dict): Dictionary containing the schedule pattern.
 
-                                     eg: {
-                                            &#34;freq_type&#34;: &#39;daily&#39;,
-                                            &#34;active_start_time&#34;: time_in_%H/%S (str),
-                                            &#34;repeat_days&#34;: days_to_repeat (int)
-                                         }
-
-
+        Usage:
+            pattern_dict = {
+                &#34;freq_type&#34;: &#39;daily&#39;,
+                &#34;active_start_time&#34;: time_in_%H/%S (str),
+                &#34;repeat_days&#34;: days_to_repeat (int)
+            }
+            self._update_pattern(schedule_id, pattern_dict)
         &#34;&#34;&#34;
 
         existing_pattern = {}
@@ -2521,24 +2832,26 @@ task ids of the Schedule</p>
                                 existing_pattern.update(_data_opt)
                 break
 
-
         task_json = SchedulePattern(existing_pattern).create_schedule({&#39;taskInfo&#39;:
-                                                                           {&#39;subTasks&#39;: self._subtasks
-                                                                            }
+                                                                       {&#39;subTasks&#39;: self._subtasks
+                                                                        }
                                                                        }, pattern_dict, schedule_id)
 
         self._subtasks = task_json.get(&#39;taskInfo&#39;).get(&#39;subTasks&#39;)
 
     @staticmethod
-    def get_option(option_dict, option):
-        &#34;&#34;&#34;
-        gets the schedule options for the provided option
+    def get_option(option_dict: dict, option: str) -&gt; dict:
+        &#34;&#34;&#34;gets the schedule options for the provided option
+
         Args:
-            option_dict: the complete options dict
-            option: option for which the dict has to be fetched
+            option_dict (dict): The complete options dict.
+            option (str): Option for which the dict has to be fetched.
 
-        Returns (dict) -- Option dict for the provided option
+        Returns:
+            dict: Option dict for the provided option
 
+        Usage:
+            option = SchedulePolicy.get_option(option_dict, &#34;maxNumberOfStreams&#34;)
         &#34;&#34;&#34;
         if isinstance(option_dict, dict) and option in option_dict:
             return option_dict[option]
@@ -2550,50 +2863,64 @@ task ids of the Schedule</p>
                 if result is not None:
                     return result
 
-    def _update_option(self, schedule_id, options):
-        &#34;&#34;&#34;
-        Updates the option for the provided schedule id (internal)
+    def _update_option(self, schedule_id: int, options: dict) -&gt; None:
+        &#34;&#34;&#34;Updates the option for the provided schedule id (internal)
 
         Args:
-             schedule_id (int) -- id of the schedule
-            options (dict) -- Please refer ScheduleOptions.py classes for respective schedule options
+            schedule_id (int): ID of the schedule.
+            options (dict): Dictionary containing the schedule options.
 
-                                    eg:  {
-                                        &#34;maxNumberOfStreams&#34;: 0,
-                                        &#34;useMaximumStreams&#34;: True,
-                                        &#34;useScallableResourceManagement&#34;: True,
-                                        &#34;totalJobsToProcess&#34;: 1000,
-                                        &#34;allCopies&#34;: True,
-                                        &#34;mediaAgent&#34;: {
-                                            &#34;mediaAgentName&#34;: &#34;&lt;ANY MEDIAAGENT&gt;&#34;
-                                        }
-                                    }
+        Raises:
+            SDKException: If the schedule option is not found.
 
+        Usage:
+            options = {
+                &#34;maxNumberOfStreams&#34;: 0,
+                &#34;useMaximumStreams&#34;: True,
+                &#34;useScallableResourceManagement&#34;: True,
+                &#34;totalJobsToProcess&#34;: 1000,
+                &#34;allCopies&#34;: True,
+                &#34;mediaAgent&#34;: {
+                    &#34;mediaAgentName&#34;: &#34;&lt;ANY MEDIAAGENT&gt;&#34;
+                }
+            }
+            self._update_option(schedule_id, options)
         &#34;&#34;&#34;
 
         option_allowed = ScheduleOptions.policy_to_options_map[self.policy_type]
         for subtask in self._subtasks:
             if subtask[&#34;subTask&#34;][&#34;subTaskId&#34;] == schedule_id:
                 if &#39;options&#39; in subtask:
-                    existing_options = self.get_option(subtask[&#39;options&#39;], option_allowed)
+                    existing_options = self.get_option(
+                        subtask[&#39;options&#39;], option_allowed)
                     if not existing_options:
                         raise SDKException(&#39;Schedules&#39;, &#39;104&#39;)
 
-                    subtask[&#39;options&#39;] = ScheduleOptions(option_allowed, existing_options).options_json(options)
+                    subtask[&#39;options&#39;] = ScheduleOptions(
+                        option_allowed, existing_options).options_json(options)
                     self._subtasks[self._subtasks.index(subtask)] = subtask
                     break
 
-    def get_schedule(self, schedule_id=None, schedule_name=None):
-        &#34;&#34;&#34;
-        returns the subtask dict for the provided schedule id or name
+    def get_schedule(self, schedule_id: int = None, schedule_name: str = None) -&gt; dict:
+        &#34;&#34;&#34;returns the subtask dict for the provided schedule id or name
+
         Args:
-            schedule_id (int) -- id of the schedule
-            schedule_name (str) -- name of the schedule
+            schedule_id (int, optional): ID of the schedule. Defaults to None.
+            schedule_name (str, optional): Name of the schedule. Defaults to None.
 
-        Sample:  sch_pol_obj.get_schedule(schedule_id=10)
+        Returns:
+            dict: Subtask dict
 
-        Returns (dict) -- subtask dict
+        Raises:
+            SDKException:
+                if neither schedule_name nor schedule_id is provided
 
+                if schedule_name is not of type string
+
+                if schedule_id is not of type int
+
+        Usage:
+            schedule = sch_pol_obj.get_schedule(schedule_id=10)
         &#34;&#34;&#34;
         if not schedule_name and not schedule_id:
             raise SDKException(
@@ -2616,9 +2943,9 @@ task ids of the Schedule</p>
             if search_dict in sub_task[&#34;subTask&#34;].items():
                 return sub_task
 
-    def add_schedule(self, schedule_dict):
-        &#34;&#34;&#34;
-        Adds a new schedule to the schedule policy
+    def add_schedule(self, schedule_dict: dict) -&gt; None:
+        &#34;&#34;&#34;Adds a new schedule to the schedule policy
+
         Args:
             schedule_dict (dict) -- {
                     pattern : {}, -- Please refer SchedulePattern.create_schedule in schedules.py for the types of
@@ -2649,14 +2976,15 @@ task ids of the Schedule</p>
                 sch_pol_obj.add_schedule({&#39;pattern&#39;:{&#39;freq_type&#39;: &#39;monthly&#39;}})
 
         &#34;&#34;&#34;
-        sub_task = SchedulePolicies.schedule_json(self.policy_type, schedule_dict)
+        sub_task = SchedulePolicies.schedule_json(
+            self.policy_type, schedule_dict)
         sub_task[&#34;subTaskOperation&#34;] = 2
         self._subtasks.append(sub_task)
         self._modify_schedule_policy_properties()
 
-    def modify_schedule(self, schedule_json, schedule_id=None, schedule_name=None):
-        &#34;&#34;&#34;
-        Modifies the schedule with the given schedule json inputs for the given schedule id or name
+    def modify_schedule(self, schedule_json: dict, schedule_id: int = None, schedule_name: str = None) -&gt; None:
+        &#34;&#34;&#34;Modifies the schedule with the given schedule json inputs for the given schedule id or name
+
         Args:
             schedule_dict (dict) -- {
                     pattern : {}, -- Please refer SchedulePattern.create_schedule in schedules.py for the types of
@@ -2701,16 +3029,18 @@ task ids of the Schedule</p>
             self._update_option(sub_task[&#34;subTask&#34;][&#34;subTaskId&#34;], schedule_json.get(&#39;options&#39;))
         self._modify_schedule_policy_properties()
 
-    def delete_schedule(self, schedule_id=None, schedule_name=None):
-        &#34;&#34;&#34;
-        Deletes the schedule from the schedule policy
+    def delete_schedule(self, schedule_id: int = None, schedule_name: str = None) -&gt; None:
+        &#34;&#34;&#34;Deletes the schedule from the schedule policy
+
         Args:
-            schedule_id (int) -- id of the schedule
-            schedule_name (str) -- name of the schedule
+            schedule_id (int, optional): ID of the schedule. Defaults to None.
+            schedule_name (str, optional): Name of the schedule. Defaults to None.
 
-        Sample:
+        Raises:
+            SDKException: If the schedule is not found.
+
+        Usage:
             sch_pol_obj.delete_schedule(schedule_name=&#39;testsch&#39;)
-
         &#34;&#34;&#34;
         sub_task = self.get_schedule(schedule_id, schedule_name)
         if not sub_task:
@@ -2719,9 +3049,9 @@ task ids of the Schedule</p>
         self._subtasks[self._subtasks.index(sub_task)] = sub_task
         self._modify_schedule_policy_properties()
 
-    def update_app_groups(self, app_groups, operation_type):
-        &#34;&#34;&#34;
-        Update the appgroups for the provided schedule policy
+    def update_app_groups(self, app_groups: list, operation_type: &#39;OperationType&#39;) -&gt; None:
+        &#34;&#34;&#34;Update the appgroups for the provided schedule policy
+
         Args:
             app_groups(List) -- Agent Types to be associated to the schedule policy
 
@@ -2735,11 +3065,9 @@ task ids of the Schedule</p>
                             ]
             operation_type (OperationType) -- Please check OperationType class present in this file
 
-        Sample:
-
+        Usage:
             apptype = [{&#39;appGroupName&#39;: &#39;DB2&#39;}]
             sch_pol_obj.update_app_groups(apptype, OperationType.INCLUDE)
-
         &#34;&#34;&#34;
         for app_group in app_groups:
             app_group[&#34;flags&#34;] = {
@@ -2748,12 +3076,11 @@ task ids of the Schedule</p>
         self._app_groups = app_groups
         self._modify_schedule_policy_properties()
 
-    def _modify_schedule_policy_properties(self):
-        &#34;&#34;&#34;
-         Modifies the task properties of the schedule policy
-        Exception:
-            if modification of the schedule policy failed
+    def _modify_schedule_policy_properties(self) -&gt; None:
+        &#34;&#34;&#34;Modifies the task properties of the schedule policy
 
+        Raises:
+            SDKException: If modification of the schedule policy failed.
         &#34;&#34;&#34;
         request_json = {
             &#39;taskInfo&#39;:
@@ -2781,17 +3108,20 @@ task ids of the Schedule</p>
         o_str = &#39;Failed to update properties of Schedule Policy\nError: &#34;{0}&#34;&#39;
         raise SDKException(&#39;Schedules&#39;, &#39;102&#39;, o_str.format(output[2]))
 
-    def enable(self):
+    def enable(self) -&gt; None:
         &#34;&#34;&#34;Enable a schedule policy.
 
-                    Raises:
-                        SDKException:
-                            if failed to enable schedule policy
+        Raises:
+            SDKException:
+                if failed to enable schedule policy
 
-                            if response is empty
+                if response is empty
 
-                            if response is not success
-                &#34;&#34;&#34;
+                if response is not success
+
+        Usage:
+            sch_pol_obj.enable()
+        &#34;&#34;&#34;
         enable_request = self._commcell_object._services[&#39;ENABLE_SCHEDULE&#39;]
         request_text = &#34;taskId={0}&#34;.format(self.schedule_policy_id)
 
@@ -2808,7 +3138,8 @@ task ids of the Schedule</p>
                     error_message = &#39;Failed to enable Schedule Policy&#39;
 
                     if &#39;errorMessage&#39; in response.json():
-                        error_message = &#34;{0}\nError: {1}&#34;.format(error_message, response.json()[&#39;errorMessage&#39;])
+                        error_message = &#34;{0}\nError: {1}&#34;.format(
+                            error_message, response.json()[&#39;errorMessage&#39;])
 
                     raise SDKException(&#39;Schedules&#39;, &#39;102&#39;, error_message)
 
@@ -2819,16 +3150,19 @@ task ids of the Schedule</p>
             response.text)
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def disable(self):
+    def disable(self) -&gt; None:
         &#34;&#34;&#34;Disable a Schedule Policy.
 
-            Raises:
-                SDKException:
-                    if failed to disable Schedule Policy
+        Raises:
+            SDKException:
+                if failed to disable Schedule Policy
 
-                    if response is empty
+                if response is empty
 
-                    if response is not success
+                if response is not success
+
+        Usage:
+            sch_pol_obj.disable()
         &#34;&#34;&#34;
         disable_request = self._commcell_object._services[&#39;DISABLE_SCHEDULE&#39;]
 
@@ -2847,7 +3181,8 @@ task ids of the Schedule</p>
                     error_message = &#39;Failed to disable Schedule Policy&#39;
 
                     if &#39;errorMessage&#39; in response.json():
-                        error_message = &#34;{0}\nError: {1}&#34;.format(error_message, response.json()[&#39;errorMessage&#39;])
+                        error_message = &#34;{0}\nError: {1}&#34;.format(
+                            error_message, response.json()[&#39;errorMessage&#39;])
 
                     raise SDKException(&#39;Schedules&#39;, &#39;102&#39;, error_message)
 
@@ -2858,16 +3193,24 @@ task ids of the Schedule</p>
             response.text)
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def _process_schedule_policy_update_response(self, flag, response):
-        &#34;&#34;&#34;
-        processes the response received post update request
+    def _process_schedule_policy_update_response(self, flag: bool, response: dict) -&gt; tuple[bool, str, str]:
+        &#34;&#34;&#34;Processes the response received post update request.
+
         Args:
-        flag: (bool) -- True or false based on response
-        response: (dict) response from modify request
+            flag (bool): True or false based on response.
+            response (dict): Response from modify request.
+
         Returns:
-            flag: (Bool) -- based on success and failure
-            error_code: (int) -- error_code from response
-            error_message: (str) -- error_message from the response if any
+            tuple[bool, str, str]: A tuple containing:
+                - flag (bool): Based on success and failure.
+                - error_code (str): Error code from response.
+                - error_message (str): Error message from the response if any.
+
+        Raises:
+            SDKException: If the response is missing expected fields or indicates an error.
+
+        Usage:
+            success, error_code, error_message = self._process_schedule_policy_update_response(True, response_data)
         &#34;&#34;&#34;
         task_id = None
         if flag:
@@ -2898,40 +3241,131 @@ task ids of the Schedule</p>
                 response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def refresh(self):
-        &#34;&#34;&#34;Refresh the properties of the Schedule Policy.&#34;&#34;&#34;
-        self._get_schedule_policy_properties()</code></pre>
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Refresh the properties of the Schedule Policy.
+
+        Usage:
+            schedule_policy.refresh()
+        &#34;&#34;&#34;
+        self._get_schedule_policy_properties()
+
+    def _perform_task_operation(self, request_xml: str) -&gt; dict:
+        &#34;&#34;&#34;Perform task operation request for schedule policy.
+
+        Args:
+            request_xml (str): XML request body for task operation.
+            &lt;TMMsg_TaskOperationReq&gt;
+            &lt;/TMMsg_TaskOperationReq&gt;
+
+        Returns:
+            dict: JSON response from task operation API.
+
+        Raises:
+            SDKException: If request fails or operation returns error.
+        &#34;&#34;&#34;
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, self._TASK_OPERATION, request_xml)
+
+        if not flag:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
+
+        response_json = response.json()
+        if isinstance(response_json, dict) and &#39;errorCode&#39; in response_json:
+            if str(response_json[&#39;errorCode&#39;]) == &#39;0&#39;:
+                return response_json
+            raise SDKException(
+                &#39;Schedules&#39;, &#39;102&#39;, response_json.get(&#39;errorMessage&#39;, &#39;Task operation failed&#39;))
+
+        raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
+
+    def decouple_schedule_policy_from_subclient(self, entities: list) -&gt; None:
+        &#34;&#34;&#34;Decouple the current schedule policy from subclient entities.
+
+        This method forms and sends the below XML request to task operations API:
+
+            &lt;TMMsg_TaskOperationReq opType=&#34;4&#34;&gt;
+                &lt;taskIds val=&#34;{schedule_policy_id}&#34;/&gt;
+                &lt;taskEntities taskId=&#34;{schedule_policy_id}&#34;/&gt;
+                &lt;entities ...&gt;
+                    &lt;flags exclude=&#34;0&#34;/&gt;
+                &lt;/entities&gt;
+            &lt;/TMMsg_TaskOperationReq&gt;
+
+        Args:
+            entities (list): List of entity dictionaries. Each entity must contain
+                keys required by TaskOperations, such as:
+                    instanceName, appName, clientName, subclientName, backupsetName
+
+        Raises:
+            SDKException: If input is invalid or API call fails.
+        &#34;&#34;&#34;
+        if not isinstance(entities, list) or not entities:
+            raise SDKException(
+                &#39;Schedules&#39;, &#39;102&#39;, &#39;entities should be a non-empty list of dictionaries&#39;)
+
+        request_root = ET.Element(&#39;TMMsg_TaskOperationReq&#39;, {&#39;opType&#39;: &#39;4&#39;})
+        schedule_policy_id = str(self.schedule_policy_id)
+
+        ET.SubElement(request_root, &#39;taskIds&#39;, {&#39;val&#39;: schedule_policy_id})
+        ET.SubElement(request_root, &#39;taskEntities&#39;, {&#39;taskId&#39;: schedule_policy_id})
+
+        for entity in entities:
+            if not isinstance(entity, dict):
+                raise SDKException(&#39;Schedules&#39;, &#39;102&#39;, &#39;each entity should be a dictionary&#39;)
+
+            entity_attributes = {
+                key: str(value) for key, value in entity.items()
+                if value is not None
+            }
+
+            entity_element = ET.SubElement(request_root, &#39;entities&#39;, entity_attributes)
+
+            ET.SubElement(entity_element, &#39;flags&#39;, {&#39;exclude&#39;: &#39;0&#39;})
+
+        request_xml = ET.tostring(request_root, encoding=&#39;unicode&#39;)
+        self._perform_task_operation(request_xml)</code></pre>
 </details>
 <h3>Static methods</h3>
 <dl>
 <dt id="cvpysdk.policies.schedule_policies.SchedulePolicy.get_option"><code class="name flex">
-<span>def <span class="ident">get_option</span></span>(<span>option_dict, option)</span>
+<span>def <span class="ident">get_option</span></span>(<span>option_dict: dict, option: str) ‑> dict</span>
 </code></dt>
 <dd>
 <div class="desc"><p>gets the schedule options for the provided option</p>
-<h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>option_dict</code></strong></dt>
-<dd>the complete options dict</dd>
-<dt><strong><code>option</code></strong></dt>
-<dd>option for which the dict has to be fetched</dd>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>option_dict</code></strong> :&ensp;<code>dict</code></dt>
+<dd>The complete options dict.</dd>
+<dt><strong><code>option</code></strong> :&ensp;<code>str</code></dt>
+<dd>Option for which the dict has to be fetched.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>Option dict for the provided option</dd>
 </dl>
-<p>Returns (dict) &ndash; Option dict for the provided option</p></div>
+<p>Usage
+-----=
+option = SchedulePolicy.get_option(option_dict, "maxNumberOfStreams")</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/policies/schedule_policies.py#L767-L786" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/policies/schedule_policies.py#L809-L831" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@staticmethod
-def get_option(option_dict, option):
-    &#34;&#34;&#34;
-    gets the schedule options for the provided option
+def get_option(option_dict: dict, option: str) -&gt; dict:
+    &#34;&#34;&#34;gets the schedule options for the provided option
+
     Args:
-        option_dict: the complete options dict
-        option: option for which the dict has to be fetched
+        option_dict (dict): The complete options dict.
+        option (str): Option for which the dict has to be fetched.
 
-    Returns (dict) -- Option dict for the provided option
+    Returns:
+        dict: Option dict for the provided option
 
+    Usage:
+        option = SchedulePolicy.get_option(option_dict, &#34;maxNumberOfStreams&#34;)
     &#34;&#34;&#34;
     if isinstance(option_dict, dict) and option in option_dict:
         return option_dict[option]
@@ -2947,63 +3381,80 @@ def get_option(option_dict, option):
 </dl>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.policies.schedule_policies.SchedulePolicy.all_schedules"><code class="name">var <span class="ident">all_schedules</span></code></dt>
+<dt id="cvpysdk.policies.schedule_policies.SchedulePolicy.all_schedules"><code class="name">var <span class="ident">all_schedules</span> : list</code></dt>
 <dd>
 <div class="desc"><p>Gets all the schedules of the schedule policy</p>
-<p>Sample:
-sch_pol_obj.all_schedules</p>
-<p>Returns (dict) &ndash; schedules in the below format</p>
-<pre><code>{
-        "schedule_name" : (str),
-        "schedule_id": (int)
-}
-</code></pre></div>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>list</code></dt>
+<dd>Schedules in the below format</dd>
+</dl>
+<p>Usage
+-----=
+all_schedules = sch_pol_obj.all_schedules</p>
+<h1 id="returns-list-schedules-in-the-below-format">Returns (list) &ndash; schedules in the below format</h1>
+<h1 id="_1">[</h1>
+<h1 id="_2">{</h1>
+<h1 id="schedule_name-str">"schedule_name" : (str),</h1>
+<h1 id="schedule_id-int">"schedule_id": (int)</h1>
+<h1 id="_3">}</h1>
+<h1 id="_4">]</h1></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/policies/schedule_policies.py#L699-L714" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/policies/schedule_policies.py#L744-L762" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def all_schedules(self):
-    &#34;&#34;&#34;
-    Gets all the schedules of the schedule policy
+def all_schedules(self) -&gt; list:
+    &#34;&#34;&#34;Gets all the schedules of the schedule policy
 
-    Sample:  sch_pol_obj.all_schedules
+    Returns:
+        list: Schedules in the below format
 
-    Returns (dict) -- schedules in the below format
+    Usage:
+        all_schedules = sch_pol_obj.all_schedules
 
-        {
-                &#34;schedule_name&#34; : (str),
-                &#34;schedule_id&#34;: (int)
-        }
-
+        # Returns (list) -- schedules in the below format
+        # [
+        #         {
+        #                 &#34;schedule_name&#34; : (str),
+        #                 &#34;schedule_id&#34;: (int)
+        #         }
+        # ]
     &#34;&#34;&#34;
     return self._all_schedules</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.policies.schedule_policies.SchedulePolicy.policy_type"><code class="name">var <span class="ident">policy_type</span></code></dt>
+<dt id="cvpysdk.policies.schedule_policies.SchedulePolicy.policy_type"><code class="name">var <span class="ident">policy_type</span> : str</code></dt>
 <dd>
 <div class="desc"><p>Get the policy Type of the schedule policy</p>
-<p>Sample:
-sch_pol_obj.policy_type</p>
-<p>Returns (str) &ndash; Type of the schedule policy from 'policy_types' dict</p></div>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>str</code></dt>
+<dd>Type of the schedule policy from 'policy_types' dict</dd>
+</dl>
+<p>Usage
+-----=
+policy_type = sch_pol_obj.policy_type</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/policies/schedule_policies.py#L611-L625" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/policies/schedule_policies.py#L663-L677" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def policy_type(self):
-    &#34;&#34;&#34;
-    Get the policy Type of the schedule policy
+def policy_type(self) -&gt; str:
+    &#34;&#34;&#34;Get the policy Type of the schedule policy
 
-    Sample:  sch_pol_obj.policy_type
+    Returns:
+        str: Type of the schedule policy from &#39;policy_types&#39; dict
 
-    Returns (str) -- Type of the schedule policy from &#39;policy_types&#39; dict
-
+    Usage:
+        policy_type = sch_pol_obj.policy_type
     &#34;&#34;&#34;
     return (
-            list(
+        list(
             SchedulePolicies.policy_types.keys())[
             list(
                 SchedulePolicies.policy_types.values()).index(self._task_json[&#39;policyType&#39;])])</code></pre>
@@ -3013,12 +3464,13 @@ def policy_type(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.policies.schedule_policies.SchedulePolicy.add_schedule"><code class="name flex">
-<span>def <span class="ident">add_schedule</span></span>(<span>self, schedule_dict)</span>
+<span>def <span class="ident">add_schedule</span></span>(<span>self, schedule_dict: dict) ‑> None</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Adds a new schedule to the schedule policy</p>
-<h2 id="args">Args</h2>
-<p>schedule_dict (dict) &ndash; {
+<p>Args
+-----=
+schedule_dict (dict) &ndash; {
 pattern : {}, &ndash; Please refer SchedulePattern.create_schedule in schedules.py for the types of
 pattern to be sent</p>
 <pre><code>                     eg: {
@@ -3041,16 +3493,17 @@ pattern to be sent</p>
                     }
 }
 </code></pre>
-<h2 id="sample">Sample</h2>
+<p>Sample
+-----=</p>
 <p>sch_pol_obj.add_schedule({'pattern':{'freq_type': 'monthly'}})</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/policies/schedule_policies.py#L854-L890" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/policies/schedule_policies.py#L913-L950" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def add_schedule(self, schedule_dict):
-    &#34;&#34;&#34;
-    Adds a new schedule to the schedule policy
+<pre><code class="python">def add_schedule(self, schedule_dict: dict) -&gt; None:
+    &#34;&#34;&#34;Adds a new schedule to the schedule policy
+
     Args:
         schedule_dict (dict) -- {
                 pattern : {}, -- Please refer SchedulePattern.create_schedule in schedules.py for the types of
@@ -3081,37 +3534,129 @@ pattern to be sent</p>
             sch_pol_obj.add_schedule({&#39;pattern&#39;:{&#39;freq_type&#39;: &#39;monthly&#39;}})
 
     &#34;&#34;&#34;
-    sub_task = SchedulePolicies.schedule_json(self.policy_type, schedule_dict)
+    sub_task = SchedulePolicies.schedule_json(
+        self.policy_type, schedule_dict)
     sub_task[&#34;subTaskOperation&#34;] = 2
     self._subtasks.append(sub_task)
     self._modify_schedule_policy_properties()</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.policies.schedule_policies.SchedulePolicy.delete_schedule"><code class="name flex">
-<span>def <span class="ident">delete_schedule</span></span>(<span>self, schedule_id=None, schedule_name=None)</span>
+<dt id="cvpysdk.policies.schedule_policies.SchedulePolicy.decouple_schedule_policy_from_subclient"><code class="name flex">
+<span>def <span class="ident">decouple_schedule_policy_from_subclient</span></span>(<span>self, entities: list) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Deletes the schedule from the schedule policy</p>
-<h2 id="args">Args</h2>
-<p>schedule_id (int) &ndash; id of the schedule
-schedule_name (str) &ndash; name of the schedule</p>
-<h2 id="sample">Sample</h2>
-<p>sch_pol_obj.delete_schedule(schedule_name='testsch')</p></div>
+<div class="desc"><p>Decouple the current schedule policy from subclient entities.</p>
+<p>This method forms and sends the below XML request to task operations API:</p>
+<pre><code>&lt;TMMsg_TaskOperationReq opType="4"&gt;
+    &lt;taskIds val="{schedule_policy_id}"/&gt;
+    &lt;taskEntities taskId="{schedule_policy_id}"/&gt;
+    &lt;entities ...&gt;
+        &lt;flags exclude="0"/&gt;
+    &lt;/entities&gt;
+&lt;/TMMsg_TaskOperationReq&gt;
+</code></pre>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>entities</code></strong> :&ensp;<code>list</code></dt>
+<dd>List of entity dictionaries. Each entity must contain
+keys required by TaskOperations, such as:
+instanceName, appName, clientName, subclientName, backupsetName</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If input is invalid or API call fails.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/policies/schedule_policies.py#L939-L955" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/policies/schedule_policies.py#L1249-L1294" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def delete_schedule(self, schedule_id=None, schedule_name=None):
-    &#34;&#34;&#34;
-    Deletes the schedule from the schedule policy
+<pre><code class="python">def decouple_schedule_policy_from_subclient(self, entities: list) -&gt; None:
+    &#34;&#34;&#34;Decouple the current schedule policy from subclient entities.
+
+    This method forms and sends the below XML request to task operations API:
+
+        &lt;TMMsg_TaskOperationReq opType=&#34;4&#34;&gt;
+            &lt;taskIds val=&#34;{schedule_policy_id}&#34;/&gt;
+            &lt;taskEntities taskId=&#34;{schedule_policy_id}&#34;/&gt;
+            &lt;entities ...&gt;
+                &lt;flags exclude=&#34;0&#34;/&gt;
+            &lt;/entities&gt;
+        &lt;/TMMsg_TaskOperationReq&gt;
+
     Args:
-        schedule_id (int) -- id of the schedule
-        schedule_name (str) -- name of the schedule
+        entities (list): List of entity dictionaries. Each entity must contain
+            keys required by TaskOperations, such as:
+                instanceName, appName, clientName, subclientName, backupsetName
 
-    Sample:
+    Raises:
+        SDKException: If input is invalid or API call fails.
+    &#34;&#34;&#34;
+    if not isinstance(entities, list) or not entities:
+        raise SDKException(
+            &#39;Schedules&#39;, &#39;102&#39;, &#39;entities should be a non-empty list of dictionaries&#39;)
+
+    request_root = ET.Element(&#39;TMMsg_TaskOperationReq&#39;, {&#39;opType&#39;: &#39;4&#39;})
+    schedule_policy_id = str(self.schedule_policy_id)
+
+    ET.SubElement(request_root, &#39;taskIds&#39;, {&#39;val&#39;: schedule_policy_id})
+    ET.SubElement(request_root, &#39;taskEntities&#39;, {&#39;taskId&#39;: schedule_policy_id})
+
+    for entity in entities:
+        if not isinstance(entity, dict):
+            raise SDKException(&#39;Schedules&#39;, &#39;102&#39;, &#39;each entity should be a dictionary&#39;)
+
+        entity_attributes = {
+            key: str(value) for key, value in entity.items()
+            if value is not None
+        }
+
+        entity_element = ET.SubElement(request_root, &#39;entities&#39;, entity_attributes)
+
+        ET.SubElement(entity_element, &#39;flags&#39;, {&#39;exclude&#39;: &#39;0&#39;})
+
+    request_xml = ET.tostring(request_root, encoding=&#39;unicode&#39;)
+    self._perform_task_operation(request_xml)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.policies.schedule_policies.SchedulePolicy.delete_schedule"><code class="name flex">
+<span>def <span class="ident">delete_schedule</span></span>(<span>self, schedule_id: int = None, schedule_name: str = None) ‑> None</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Deletes the schedule from the schedule policy</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>schedule_id</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>ID of the schedule. Defaults to None.</dd>
+<dt><strong><code>schedule_name</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>Name of the schedule. Defaults to None.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the schedule is not found.</dd>
+</dl>
+<p>Usage
+-----=
+sch_pol_obj.delete_schedule(schedule_name='testsch')</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/policies/schedule_policies.py#L999-L1017" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def delete_schedule(self, schedule_id: int = None, schedule_name: str = None) -&gt; None:
+    &#34;&#34;&#34;Deletes the schedule from the schedule policy
+
+    Args:
+        schedule_id (int, optional): ID of the schedule. Defaults to None.
+        schedule_name (str, optional): Name of the schedule. Defaults to None.
+
+    Raises:
+        SDKException: If the schedule is not found.
+
+    Usage:
         sch_pol_obj.delete_schedule(schedule_name=&#39;testsch&#39;)
-
     &#34;&#34;&#34;
     sub_task = self.get_schedule(schedule_id, schedule_name)
     if not sub_task:
@@ -3122,32 +3667,39 @@ schedule_name (str) &ndash; name of the schedule</p>
 </details>
 </dd>
 <dt id="cvpysdk.policies.schedule_policies.SchedulePolicy.disable"><code class="name flex">
-<span>def <span class="ident">disable</span></span>(<span>self)</span>
+<span>def <span class="ident">disable</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Disable a Schedule Policy.</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
+<p>Raises
+-----=
+SDKException:
 if failed to disable Schedule Policy</p>
 <pre><code>if response is empty
 
 if response is not success
-</code></pre></div>
+</code></pre>
+<p>Usage
+-----=
+sch_pol_obj.disable()</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/policies/schedule_policies.py#L1057-L1094" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/policies/schedule_policies.py#L1120-L1161" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def disable(self):
+<pre><code class="python">def disable(self) -&gt; None:
     &#34;&#34;&#34;Disable a Schedule Policy.
 
-        Raises:
-            SDKException:
-                if failed to disable Schedule Policy
+    Raises:
+        SDKException:
+            if failed to disable Schedule Policy
 
-                if response is empty
+            if response is empty
 
-                if response is not success
+            if response is not success
+
+    Usage:
+        sch_pol_obj.disable()
     &#34;&#34;&#34;
     disable_request = self._commcell_object._services[&#39;DISABLE_SCHEDULE&#39;]
 
@@ -3166,7 +3718,8 @@ if response is not success
                 error_message = &#39;Failed to disable Schedule Policy&#39;
 
                 if &#39;errorMessage&#39; in response.json():
-                    error_message = &#34;{0}\nError: {1}&#34;.format(error_message, response.json()[&#39;errorMessage&#39;])
+                    error_message = &#34;{0}\nError: {1}&#34;.format(
+                        error_message, response.json()[&#39;errorMessage&#39;])
 
                 raise SDKException(&#39;Schedules&#39;, &#39;102&#39;, error_message)
 
@@ -3179,33 +3732,40 @@ if response is not success
 </details>
 </dd>
 <dt id="cvpysdk.policies.schedule_policies.SchedulePolicy.enable"><code class="name flex">
-<span>def <span class="ident">enable</span></span>(<span>self)</span>
+<span>def <span class="ident">enable</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Enable a schedule policy.</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
+<p>Raises
+-----=
+SDKException:
 if failed to enable schedule policy</p>
 <pre><code>if response is empty
 
 if response is not success
-</code></pre></div>
+</code></pre>
+<p>Usage
+-----=
+sch_pol_obj.enable()</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/policies/schedule_policies.py#L1019-L1055" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/policies/schedule_policies.py#L1078-L1118" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def enable(self):
+<pre><code class="python">def enable(self) -&gt; None:
     &#34;&#34;&#34;Enable a schedule policy.
 
-                Raises:
-                    SDKException:
-                        if failed to enable schedule policy
+    Raises:
+        SDKException:
+            if failed to enable schedule policy
 
-                        if response is empty
+            if response is empty
 
-                        if response is not success
-            &#34;&#34;&#34;
+            if response is not success
+
+    Usage:
+        sch_pol_obj.enable()
+    &#34;&#34;&#34;
     enable_request = self._commcell_object._services[&#39;ENABLE_SCHEDULE&#39;]
     request_text = &#34;taskId={0}&#34;.format(self.schedule_policy_id)
 
@@ -3222,7 +3782,8 @@ if response is not success
                 error_message = &#39;Failed to enable Schedule Policy&#39;
 
                 if &#39;errorMessage&#39; in response.json():
-                    error_message = &#34;{0}\nError: {1}&#34;.format(error_message, response.json()[&#39;errorMessage&#39;])
+                    error_message = &#34;{0}\nError: {1}&#34;.format(
+                        error_message, response.json()[&#39;errorMessage&#39;])
 
                 raise SDKException(&#39;Schedules&#39;, &#39;102&#39;, error_message)
 
@@ -3235,32 +3796,58 @@ if response is not success
 </details>
 </dd>
 <dt id="cvpysdk.policies.schedule_policies.SchedulePolicy.get_schedule"><code class="name flex">
-<span>def <span class="ident">get_schedule</span></span>(<span>self, schedule_id=None, schedule_name=None)</span>
+<span>def <span class="ident">get_schedule</span></span>(<span>self, schedule_id: int = None, schedule_name: str = None) ‑> dict</span>
 </code></dt>
 <dd>
 <div class="desc"><p>returns the subtask dict for the provided schedule id or name</p>
-<h2 id="args">Args</h2>
-<p>schedule_id (int) &ndash; id of the schedule
-schedule_name (str) &ndash; name of the schedule
-Sample:
-sch_pol_obj.get_schedule(schedule_id=10)</p>
-<p>Returns (dict) &ndash; subtask dict</p></div>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>schedule_id</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>ID of the schedule. Defaults to None.</dd>
+<dt><strong><code>schedule_name</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>Name of the schedule. Defaults to None.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>Subtask dict</dd>
+</dl>
+<p>Raises
+-----=
+SDKException:
+if neither schedule_name nor schedule_id is provided</p>
+<pre><code>if schedule_name is not of type string
+
+if schedule_id is not of type int
+</code></pre>
+<p>Usage
+-----=
+schedule = sch_pol_obj.get_schedule(schedule_id=10)</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/policies/schedule_policies.py#L821-L852" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/policies/schedule_policies.py#L871-L911" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def get_schedule(self, schedule_id=None, schedule_name=None):
-    &#34;&#34;&#34;
-    returns the subtask dict for the provided schedule id or name
+<pre><code class="python">def get_schedule(self, schedule_id: int = None, schedule_name: str = None) -&gt; dict:
+    &#34;&#34;&#34;returns the subtask dict for the provided schedule id or name
+
     Args:
-        schedule_id (int) -- id of the schedule
-        schedule_name (str) -- name of the schedule
+        schedule_id (int, optional): ID of the schedule. Defaults to None.
+        schedule_name (str, optional): Name of the schedule. Defaults to None.
 
-    Sample:  sch_pol_obj.get_schedule(schedule_id=10)
+    Returns:
+        dict: Subtask dict
 
-    Returns (dict) -- subtask dict
+    Raises:
+        SDKException:
+            if neither schedule_name nor schedule_id is provided
 
+            if schedule_name is not of type string
+
+            if schedule_id is not of type int
+
+    Usage:
+        schedule = sch_pol_obj.get_schedule(schedule_id=10)
     &#34;&#34;&#34;
     if not schedule_name and not schedule_id:
         raise SDKException(
@@ -3285,12 +3872,13 @@ sch_pol_obj.get_schedule(schedule_id=10)</p>
 </details>
 </dd>
 <dt id="cvpysdk.policies.schedule_policies.SchedulePolicy.modify_schedule"><code class="name flex">
-<span>def <span class="ident">modify_schedule</span></span>(<span>self, schedule_json, schedule_id=None, schedule_name=None)</span>
+<span>def <span class="ident">modify_schedule</span></span>(<span>self, schedule_json: dict, schedule_id: int = None, schedule_name: str = None) ‑> None</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Modifies the schedule with the given schedule json inputs for the given schedule id or name</p>
-<h2 id="args">Args</h2>
-<p>schedule_dict (dict) &ndash; {
+<p>Args
+-----=
+schedule_dict (dict) &ndash; {
 pattern : {}, &ndash; Please refer SchedulePattern.create_schedule in schedules.py for the types of
 pattern to be sent</p>
 <pre><code>                     eg: {
@@ -3315,19 +3903,20 @@ pattern to be sent</p>
 </code></pre>
 <p>schedule_id (int) &ndash; id of the schedule
 schedule_name (str) &ndash; name of the schedule</p>
-<h2 id="sample">Sample</h2>
-<p>Change Pattern:
+<p>Sample
+-----=
+Change Pattern:
 sch_pol_obj.change_schedule({'pattern':{'freq_type': 'monthly'}}, schedule_id=77)</p>
 <p>Change Options:
 sch_pol_obj.change_schedule({'options':{'maxNumberOfStreams': 10}}, schedule_id=77)</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/policies/schedule_policies.py#L892-L937" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/policies/schedule_policies.py#L952-L997" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def modify_schedule(self, schedule_json, schedule_id=None, schedule_name=None):
-    &#34;&#34;&#34;
-    Modifies the schedule with the given schedule json inputs for the given schedule id or name
+<pre><code class="python">def modify_schedule(self, schedule_json: dict, schedule_id: int = None, schedule_name: str = None) -&gt; None:
+    &#34;&#34;&#34;Modifies the schedule with the given schedule json inputs for the given schedule id or name
+
     Args:
         schedule_dict (dict) -- {
                 pattern : {}, -- Please refer SchedulePattern.create_schedule in schedules.py for the types of
@@ -3374,27 +3963,35 @@ sch_pol_obj.change_schedule({'options':{'maxNumberOfStreams': 10}}, schedule_id=
 </details>
 </dd>
 <dt id="cvpysdk.policies.schedule_policies.SchedulePolicy.refresh"><code class="name flex">
-<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+<span>def <span class="ident">refresh</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Refresh the properties of the Schedule Policy.</p></div>
+<div class="desc"><p>Refresh the properties of the Schedule Policy.</p>
+<p>Usage
+-----=
+schedule_policy.refresh()</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/policies/schedule_policies.py#L1136-L1138" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/policies/schedule_policies.py#L1211-L1217" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def refresh(self):
-    &#34;&#34;&#34;Refresh the properties of the Schedule Policy.&#34;&#34;&#34;
+<pre><code class="python">def refresh(self) -&gt; None:
+    &#34;&#34;&#34;Refresh the properties of the Schedule Policy.
+
+    Usage:
+        schedule_policy.refresh()
+    &#34;&#34;&#34;
     self._get_schedule_policy_properties()</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.policies.schedule_policies.SchedulePolicy.update_app_groups"><code class="name flex">
-<span>def <span class="ident">update_app_groups</span></span>(<span>self, app_groups, operation_type)</span>
+<span>def <span class="ident">update_app_groups</span></span>(<span>self, app_groups: list, operation_type: <a title="cvpysdk.policies.schedule_policies.OperationType" href="#cvpysdk.policies.schedule_policies.OperationType">OperationType</a>) ‑> None</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Update the appgroups for the provided schedule policy</p>
-<h2 id="args">Args</h2>
-<p>app_groups(List) &ndash; Agent Types to be associated to the schedule policy</p>
+<p>Args
+-----=
+app_groups(List) &ndash; Agent Types to be associated to the schedule policy</p>
 <pre><code>      eg:    [
                 {
                     "appGroupName": "Protected Files"
@@ -3405,17 +4002,18 @@ sch_pol_obj.change_schedule({'options':{'maxNumberOfStreams': 10}}, schedule_id=
             ]
 </code></pre>
 <p>operation_type (OperationType) &ndash; Please check OperationType class present in this file</p>
-<h2 id="sample">Sample</h2>
-<p>apptype = [{'appGroupName': 'DB2'}]
+<p>Usage
+-----=
+apptype = [{'appGroupName': 'DB2'}]
 sch_pol_obj.update_app_groups(apptype, OperationType.INCLUDE)</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/policies/schedule_policies.py#L957-L984" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/policies/schedule_policies.py#L1019-L1044" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def update_app_groups(self, app_groups, operation_type):
-    &#34;&#34;&#34;
-    Update the appgroups for the provided schedule policy
+<pre><code class="python">def update_app_groups(self, app_groups: list, operation_type: &#39;OperationType&#39;) -&gt; None:
+    &#34;&#34;&#34;Update the appgroups for the provided schedule policy
+
     Args:
         app_groups(List) -- Agent Types to be associated to the schedule policy
 
@@ -3429,11 +4027,9 @@ sch_pol_obj.update_app_groups(apptype, OperationType.INCLUDE)</p></div>
                         ]
         operation_type (OperationType) -- Please check OperationType class present in this file
 
-    Sample:
-
+    Usage:
         apptype = [{&#39;appGroupName&#39;: &#39;DB2&#39;}]
         sch_pol_obj.update_app_groups(apptype, OperationType.INCLUDE)
-
     &#34;&#34;&#34;
     for app_group in app_groups:
         app_group[&#34;flags&#34;] = {
@@ -3444,54 +4040,43 @@ sch_pol_obj.update_app_groups(apptype, OperationType.INCLUDE)</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.policies.schedule_policies.SchedulePolicy.update_associations"><code class="name flex">
-<span>def <span class="ident">update_associations</span></span>(<span>self, associations, operation_type)</span>
+<span>def <span class="ident">update_associations</span></span>(<span>self, associations: list, operation_type: <a title="cvpysdk.policies.schedule_policies.OperationType" href="#cvpysdk.policies.schedule_policies.OperationType">OperationType</a>) ‑> None</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Updates the schedule policy associations</p>
-<h2 id="args">Args</h2>
-<p>associations (str) &ndash; List of schedule associations
-[
-{
-"clientName": "scheduleclient1"
-},
-{
-"clientGroupName": "scheduleclient2"
-}
-]
-operation_type (OperationType) &ndash; Please check OperationType class present in this file</p>
-<h2 id="sample">Sample</h2>
-<p>associations = [{'clientName': 'client2'}]
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>associations</code></strong> :&ensp;<code>list</code></dt>
+<dd>List of schedule associations.</dd>
+<dt><strong><code>operation_type</code></strong> :&ensp;<code>object</code></dt>
+<dd>OperationType object (INCLUDE or DELETE).</dd>
+</dl>
+<p>Usage
+-----=
+associations = [{'clientName': 'client2'}] # [{'clientGroupName': 'client2'}]
 sch_pol_obj.update_associations(associations, OperationType.DELETE)</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/policies/schedule_policies.py#L671-L697" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/policies/schedule_policies.py#L725-L742" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def update_associations(self, associations, operation_type):
-    &#34;&#34;&#34;
-    Updates the schedule policy associations
+<pre><code class="python">def update_associations(self, associations: list, operation_type: &#39;OperationType&#39;) -&gt; None:
+    &#34;&#34;&#34;Updates the schedule policy associations
+
     Args:
-        associations (str) -- List of schedule associations
-        [
-        {
-            &#34;clientName&#34;: &#34;scheduleclient1&#34;
-        },
-        {
-            &#34;clientGroupName&#34;: &#34;scheduleclient2&#34;
-        }
-        ]
-        operation_type (OperationType) -- Please check OperationType class present in this file
+        associations (list): List of schedule associations.
+        operation_type (object): OperationType object (INCLUDE or DELETE).
 
-    Sample:
-        associations = [{&#39;clientName&#39;: &#39;client2&#39;}]
+    Usage:
+        associations = [{&#39;clientName&#39;: &#39;client2&#39;}] # [{&#39;clientGroupName&#39;: &#39;client2&#39;}]
         sch_pol_obj.update_associations(associations, OperationType.DELETE)
-
     &#34;&#34;&#34;
 
     for app_group in associations:
         app_group[&#34;flags&#34;] = {
-                                operation_type: True
-                             }
+            operation_type: True
+        }
     self._associations = associations
     self._modify_schedule_policy_properties()</code></pre>
 </details>
@@ -3591,9 +4176,10 @@ setTimeout(() => input.focus(), 100);
 </li>
 <li>
 <h4><code><a title="cvpysdk.policies.schedule_policies.SchedulePolicy" href="#cvpysdk.policies.schedule_policies.SchedulePolicy">SchedulePolicy</a></code></h4>
-<ul class="two-column">
+<ul class="">
 <li><code><a title="cvpysdk.policies.schedule_policies.SchedulePolicy.add_schedule" href="#cvpysdk.policies.schedule_policies.SchedulePolicy.add_schedule">add_schedule</a></code></li>
 <li><code><a title="cvpysdk.policies.schedule_policies.SchedulePolicy.all_schedules" href="#cvpysdk.policies.schedule_policies.SchedulePolicy.all_schedules">all_schedules</a></code></li>
+<li><code><a title="cvpysdk.policies.schedule_policies.SchedulePolicy.decouple_schedule_policy_from_subclient" href="#cvpysdk.policies.schedule_policies.SchedulePolicy.decouple_schedule_policy_from_subclient">decouple_schedule_policy_from_subclient</a></code></li>
 <li><code><a title="cvpysdk.policies.schedule_policies.SchedulePolicy.delete_schedule" href="#cvpysdk.policies.schedule_policies.SchedulePolicy.delete_schedule">delete_schedule</a></code></li>
 <li><code><a title="cvpysdk.policies.schedule_policies.SchedulePolicy.disable" href="#cvpysdk.policies.schedule_policies.SchedulePolicy.disable">disable</a></code></li>
 <li><code><a title="cvpysdk.policies.schedule_policies.SchedulePolicy.enable" href="#cvpysdk.policies.schedule_policies.SchedulePolicy.enable">enable</a></code></li>

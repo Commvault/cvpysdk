@@ -26,7 +26,8 @@
 <p>Class to perform all the Backup Network Pairs operations on commcell</p>
 <p>BackupNetworkPairs is the only class defined in this file.</p>
 <p>BackupNetworkPairs: Helper class to perform Backup Network Pairs operations.</p>
-<h2 id="backupnetworkpairs">Backupnetworkpairs</h2>
+<p>Backupnetworkpairs
+-----=</p>
 <p><strong>init</strong>()
 &ndash;
 initializes BackupNetworkPairs class object.</p>
@@ -48,7 +49,7 @@ deletes backup interface pairs on a client/client group</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/backup_network_pairs.py#L1-L244" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/backup_network_pairs.py#L1-L326" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 # --------------------------------------------------------------------------
@@ -96,16 +97,36 @@ from .exception import SDKException
 
 
 class BackupNetworkPairs(object):
-    &#34;&#34;&#34;Class for representing backup network pairs operations from commcell&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Manages backup network pairs operations within a CommCell environment.
 
-    def __init__(self, commcell_object):
-        &#34;&#34;&#34;Initializes object of the BackupNetworkPairs class.
+    This class provides an interface for handling backup network pairs, allowing
+    users to retrieve, add, delete, and modify backup interface pairs associated
+    with clients in the CommCell system. It is designed to facilitate network
+    configuration and management for backup operations.
 
-            Args:
-               commcell_object (object) -instance of the commcell class
+    Key Features:
+        - Retrieve backup interface pairs for a specific client
+        - Add new backup interface pairs
+        - Delete existing backup interface pairs
+        - Modify backup interface pairs with specified operations
+        - Integration with CommCell object for seamless operations
+        - Provides a string representation for easy inspection
 
-            Returns:
-               object - instance of the BackupNetworkPairs class
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_object: object) -&gt; None:
+        &#34;&#34;&#34;Initialize a BackupNetworkPairs object with the given Commcell connection.
+
+        Args:
+            commcell_object: An instance of the Commcell class representing the active Commcell connection.
+
+        Example:
+            &gt;&gt;&gt; from cvpysdk.commcell import Commcell
+            &gt;&gt;&gt; commcell = Commcell(&#39;commcell_host&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; backup_network_pairs = BackupNetworkPairs(commcell)
+            &gt;&gt;&gt; print(&#34;BackupNetworkPairs object created successfully&#34;)
+
         &#34;&#34;&#34;
 
         self._commcell_object = commcell_object
@@ -116,23 +137,41 @@ class BackupNetworkPairs(object):
         self._update_response_ = self._commcell_object._update_response_
         self.operation_type = [&#39;ADD&#39;, &#39;DELETE&#39;]
 
-    def __repr__(self):
-        &#34;&#34;&#34;Representation string for the instance of BackupNetworkPairs class&#34;&#34;&#34;
+    def __repr__(self) -&gt; str:
+        &#34;&#34;&#34;Return the string representation of the BackupNetworkPairs instance.
+
+        This method provides a developer-friendly string that represents the current
+        BackupNetworkPairs object, useful for debugging and logging purposes.
+
+        Returns:
+            A string representation of the BackupNetworkPairs instance.
+
+        Example:
+            &gt;&gt;&gt; backup_pairs = BackupNetworkPairs()
+            &gt;&gt;&gt; print(repr(backup_pairs))
+            &lt;BackupNetworkPairs object at 0x7f8b2c1d2e80&gt;
+
+        &#34;&#34;&#34;
 
         return &#34;BackupNetworkPairs class instance for Commcell&#34;
 
-    def get_backup_interface_for_client(self, client_name):
-        &#34;&#34;&#34;Returns interfaces set on a particular client
+    def get_backup_interface_for_client(self, client_name: str) -&gt; list:
+        &#34;&#34;&#34;Retrieve the list of backup network interfaces configured for a specific client.
 
-            Args:
-                client_name (str)  --  name of client
+        Args:
+            client_name: The name of the client for which to fetch backup network interfaces.
 
-            Returns:
-                list - list of interfaces with source and destination
+        Returns:
+            A list of dictionaries, each containing the source and destination interfaces set for the specified client.
 
-            Raises:
-                SDKException:
-                    if response is not received
+        Raises:
+            SDKException: If a response is not received from the server.
+
+        Example:
+            &gt;&gt;&gt; backup_network_pairs = BackupNetworkPairs()
+            &gt;&gt;&gt; interfaces = backup_network_pairs.get_backup_interface_for_client(&#34;ClientA&#34;)
+            &gt;&gt;&gt; print(interfaces)
+            [{&#39;source&#39;: &#39;192.168.1.10&#39;, &#39;destination&#39;: &#39;10.0.0.5&#39;}, ...]
 
         &#34;&#34;&#34;
 
@@ -154,30 +193,39 @@ class BackupNetworkPairs(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def add_backup_interface_pairs(self, interface_pairs):
-        &#34;&#34;&#34;Adds backup interface pairs on clients/client groups
+    def add_backup_interface_pairs(self, interface_pairs: list[tuple[dict, dict]]) -&gt; None:
+        &#34;&#34;&#34;Add backup interface pairs for clients or client groups.
 
-            Args:
-                interface_pairs (list)  --  list of tuples containing dict of source and destination
+        This method allows you to specify pairs of source and destination interfaces for backup operations.
+        Each pair should be a tuple containing two dictionaries: the first for the source (with &#39;srcip&#39; and either &#39;client&#39; or &#39;clientgroup&#39;),
+        and the second for the destination (with &#39;destip&#39; and either &#39;client&#39; or &#39;clientgroup&#39;).
 
+        The 0th index of each tuple must be the source with key &#39;srcip&#39;, and the 1st index must be the destination with key &#39;destip&#39;.
+        Entities should be specified using the &#39;client&#39; or &#39;clientgroup&#39; key.
+
+        Args:
+            interface_pairs: A list of tuples, where each tuple contains two dictionaries representing the source and destination interface.
                 Example:
-                [({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;},
-                {&#39;client&#39;: &#39;SP9client&#39;, &#39;destip&#39;: &#39;172.19.0.0&#39;}),
-                ({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;},
-                {&#39;clientgroup&#39;: &#39;G1&#39;, &#39;destip&#39;: &#39;No Default Interface&#39;}),
-                ({&#39;clientgroup&#39;: &#39;G2&#39;, &#39;srcip&#39;: &#39;172.19.0.0/16&#39;},
-                {&#39;clientgroup&#39;: &#39;G3&#39;, &#39;destip&#39;: &#39;172.19.0.*&#39;})]
+                    [
+                        ({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;},
+                         {&#39;client&#39;: &#39;SP9client&#39;, &#39;destip&#39;: &#39;172.19.0.0&#39;}),
+                        ({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;},
+                         {&#39;clientgroup&#39;: &#39;G1&#39;, &#39;destip&#39;: &#39;No Default Interface&#39;}),
+                        ({&#39;clientgroup&#39;: &#39;G2&#39;, &#39;srcip&#39;: &#39;172.19.0.0/16&#39;},
+                         {&#39;clientgroup&#39;: &#39;G3&#39;, &#39;destip&#39;: &#39;172.19.0.*&#39;})
+                    ]
 
-                Note: 0th index should be source with key &#39;srcip&#39; and 1st index
-                should be destination with key &#39;destip&#39;
+        Raises:
+            SDKException: If the input is not correct or if a response is not received.
 
-                      entities should be passed with key client/clientgroup
-
-            Raises:
-                SDKException:
-                    if input is not correct
-
-                    if response is not received
+        Example:
+            &gt;&gt;&gt; pairs = [
+            ...     ({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;}, {&#39;client&#39;: &#39;SP9client&#39;, &#39;destip&#39;: &#39;172.19.0.0&#39;}),
+            ...     ({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;}, {&#39;clientgroup&#39;: &#39;G1&#39;, &#39;destip&#39;: &#39;No Default Interface&#39;}),
+            ...     ({&#39;clientgroup&#39;: &#39;G2&#39;, &#39;srcip&#39;: &#39;172.19.0.0/16&#39;}, {&#39;clientgroup&#39;: &#39;G3&#39;, &#39;destip&#39;: &#39;172.19.0.*&#39;})
+            ... ]
+            &gt;&gt;&gt; backup_network_pairs.add_backup_interface_pairs(pairs)
+            &gt;&gt;&gt; print(&#34;Backup interface pairs added successfully.&#34;)
 
         &#34;&#34;&#34;
 
@@ -188,30 +236,44 @@ class BackupNetworkPairs(object):
 
         self._modify_backup_interface_pairs(interface_pairs, self.operation_type[0])
 
-    def delete_backup_interface_pairs(self, interface_pairs):
-        &#34;&#34;&#34;Deletes backup interface pairs on clients/client groups
+    def delete_backup_interface_pairs(self, interface_pairs: list[tuple[dict, dict]]) -&gt; None:
+        &#34;&#34;&#34;Delete backup interface pairs for specified clients or client groups.
 
-            Args:
-                interface_pairs (list)  --  list of tuples containing dict of source and destination
+        This method removes the specified backup interface pairs from the configuration.
+        Each pair should be a tuple of two dictionaries: the first representing the source
+        (with keys like &#39;client&#39; or &#39;clientgroup&#39; and &#39;srcip&#39;), and the second representing
+        the destination (with keys like &#39;client&#39;, &#39;clientgroup&#39;, and &#39;destip&#39;).
 
+        Args:
+            interface_pairs: A list of tuples, where each tuple contains two dictionaries:
+                - The first dictionary specifies the source entity and its source IP.
+                - The second dictionary specifies the destination entity and its destination IP.
                 Example:
-                [({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;},
-                {&#39;client&#39;: &#39;SP9client&#39;, &#39;destip&#39;: &#39;172.19.0.0&#39;}),
-                ({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;},
-                {&#39;clientgroup&#39;: &#39;G1&#39;, &#39;destip&#39;: &#39;No Default Interface&#39;}),
-                ({&#39;clientgroup&#39;: &#39;G2&#39;, &#39;srcip&#39;: &#39;172.19.0.0/16&#39;},
-                {&#39;clientgroup&#39;: &#39;G3&#39;, &#39;destip&#39;: &#39;172.19.0.*&#39;})]
+                    [
+                        ({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;},
+                         {&#39;client&#39;: &#39;SP9client&#39;, &#39;destip&#39;: &#39;172.19.0.0&#39;}),
+                        ({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;},
+                         {&#39;clientgroup&#39;: &#39;G1&#39;, &#39;destip&#39;: &#39;No Default Interface&#39;}),
+                        ({&#39;clientgroup&#39;: &#39;G2&#39;, &#39;srcip&#39;: &#39;172.19.0.0/16&#39;},
+                         {&#39;clientgroup&#39;: &#39;G3&#39;, &#39;destip&#39;: &#39;172.19.0.*&#39;})
+                    ]
+                Note:
+                    - The first element of each tuple must be the source (with &#39;srcip&#39;).
+                    - The second element must be the destination (with &#39;destip&#39;).
+                    - Entities should be specified using either &#39;client&#39; or &#39;clientgroup&#39; keys.
 
-                Note: 0th index should be source with key &#39;srcip&#39; and 1st index
-                should be destination with key &#39;destip&#39;
+        Raises:
+            SDKException: If the input is not correct or if a response is not received.
 
-                      entities should be passed with key client/clientgroup
-
-            Raises:
-                SDKException:
-                    if input is not correct
-
-                    if response is not received
+        Example:
+            &gt;&gt;&gt; pairs = [
+            ...     ({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;},
+            ...      {&#39;client&#39;: &#39;SP9client&#39;, &#39;destip&#39;: &#39;172.19.0.0&#39;}),
+            ...     ({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;},
+            ...      {&#39;clientgroup&#39;: &#39;G1&#39;, &#39;destip&#39;: &#39;No Default Interface&#39;})
+            ... ]
+            &gt;&gt;&gt; backup_network_pairs.delete_backup_interface_pairs(pairs)
+            &gt;&gt;&gt; print(&#34;Backup interface pairs deleted successfully.&#34;)
 
         &#34;&#34;&#34;
 
@@ -222,34 +284,48 @@ class BackupNetworkPairs(object):
 
         self._modify_backup_interface_pairs(interface_pairs, self.operation_type[1])
 
-    def _modify_backup_interface_pairs(self, interface_pairs, operation_type):
-        &#34;&#34;&#34;Sets a backup interface pair between clients/client-groups
+    def _modify_backup_interface_pairs(self, interface_pairs: list[tuple[dict[str, str], dict[str, str]]], operation_type: str) -&gt; None:
+        &#34;&#34;&#34;Set, update, or delete backup interface pairs between clients or client groups.
 
-            Args:
-                operation_type  (str)  --  operation type--&gt; add, update, delete
+        This method configures backup interface pairs, specifying the source and destination
+        network interfaces for data transfer between clients or client groups. Each pair is
+        represented as a tuple of two dictionaries: the first for the source (with &#39;srcip&#39;),
+        and the second for the destination (with &#39;destip&#39;). Entities can be specified using
+        either the &#39;client&#39; or &#39;clientgroup&#39; key.
 
-                interface_pairs (list)  --  list of tuples containing dict of source and destination
-                                           source and destination can be a combination of
-                                           client/client group
-
+        Args:
+            interface_pairs: A list of tuples, each containing two dictionaries. The first
+                dictionary represents the source (must include &#39;srcip&#39; and either &#39;client&#39;
+                or &#39;clientgroup&#39;), and the second represents the destination (must include
+                &#39;destip&#39; and either &#39;client&#39; or &#39;clientgroup&#39;).
                 Example:
-                [({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;},
-                {&#39;client&#39;: &#39;SP9client&#39;, &#39;destip&#39;: &#39;172.19.0.0&#39;}),
-                ({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;},
-                {&#39;clientgroup&#39;: &#39;G1&#39;, &#39;destip&#39;: &#39;No Default Interface&#39;}),
-                ({&#39;clientgroup&#39;: &#39;G2&#39;, &#39;srcip&#39;: &#39;172.19.0.0/16&#39;},
-                {&#39;clientgroup&#39;: &#39;G3&#39;, &#39;destip&#39;: &#39;172.19.0.*&#39;})]
+                    [
+                        ({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;},
+                         {&#39;client&#39;: &#39;SP9client&#39;, &#39;destip&#39;: &#39;172.19.0.0&#39;}),
+                        ({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;},
+                         {&#39;clientgroup&#39;: &#39;G1&#39;, &#39;destip&#39;: &#39;No Default Interface&#39;}),
+                        ({&#39;clientgroup&#39;: &#39;G2&#39;, &#39;srcip&#39;: &#39;172.19.0.0/16&#39;},
+                         {&#39;clientgroup&#39;: &#39;G3&#39;, &#39;destip&#39;: &#39;172.19.0.*&#39;})
+                    ]
+                Note: The 0th index should be the source with key &#39;srcip&#39;, and the 1st index
+                should be the destination with key &#39;destip&#39;. Entities should be specified
+                using &#39;client&#39; or &#39;clientgroup&#39;.
+            operation_type: The type of operation to perform. Must be one of &#39;add&#39;, &#39;update&#39;, or &#39;delete&#39;.
 
-                Note: 0th index should be source with key &#39;srcip&#39; and 1st index
-                should be destination with key &#39;destip&#39;
+        Raises:
+            SDKException: If the input is not correct or if a response is not received.
 
-                       entities should be passed with key client/clientgroup
-
-            Raises:
-                SDKException:
-                    if input is not correct
-
-                    if response is not received
+        Example:
+            &gt;&gt;&gt; pairs = [
+            ...     ({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;},
+            ...      {&#39;client&#39;: &#39;SP9client&#39;, &#39;destip&#39;: &#39;172.19.0.0&#39;}),
+            ...     ({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;},
+            ...      {&#39;clientgroup&#39;: &#39;G1&#39;, &#39;destip&#39;: &#39;No Default Interface&#39;}),
+            ...     ({&#39;clientgroup&#39;: &#39;G2&#39;, &#39;srcip&#39;: &#39;172.19.0.0/16&#39;},
+            ...      {&#39;clientgroup&#39;: &#39;G3&#39;, &#39;destip&#39;: &#39;172.19.0.*&#39;})
+            ... ]
+            &gt;&gt;&gt; backup_network_pairs._modify_backup_interface_pairs(pairs, &#39;add&#39;)
+            &gt;&gt;&gt; # This will add the specified backup interface pairs
 
         &#34;&#34;&#34;
 
@@ -307,31 +383,71 @@ class BackupNetworkPairs(object):
 <dl>
 <dt id="cvpysdk.backup_network_pairs.BackupNetworkPairs"><code class="flex name class">
 <span>class <span class="ident">BackupNetworkPairs</span></span>
-<span>(</span><span>commcell_object)</span>
+<span>(</span><span>commcell_object: object)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for representing backup network pairs operations from commcell</p>
-<p>Initializes object of the BackupNetworkPairs class.</p>
-<h2 id="args">Args</h2>
-<p>commcell_object (object) -instance of the commcell class</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the BackupNetworkPairs class</p></div>
+<div class="desc"><p>Manages backup network pairs operations within a CommCell environment.</p>
+<p>This class provides an interface for handling backup network pairs, allowing
+users to retrieve, add, delete, and modify backup interface pairs associated
+with clients in the CommCell system. It is designed to facilitate network
+configuration and management for backup operations.</p>
+<p>Key Features:
+- Retrieve backup interface pairs for a specific client
+- Add new backup interface pairs
+- Delete existing backup interface pairs
+- Modify backup interface pairs with specified operations
+- Integration with CommCell object for seamless operations
+- Provides a string representation for easy inspection</p>
+<p>Initialize a BackupNetworkPairs object with the given Commcell connection.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>commcell_object</code></strong></dt>
+<dd>An instance of the Commcell class representing the active Commcell connection.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; from cvpysdk.commcell import Commcell
+&gt;&gt;&gt; commcell = Commcell('commcell_host', 'username', 'password')
+&gt;&gt;&gt; backup_network_pairs = BackupNetworkPairs(commcell)
+&gt;&gt;&gt; print(&quot;BackupNetworkPairs object created successfully&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/backup_network_pairs.py#L46-L244" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/backup_network_pairs.py#L46-L326" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class BackupNetworkPairs(object):
-    &#34;&#34;&#34;Class for representing backup network pairs operations from commcell&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Manages backup network pairs operations within a CommCell environment.
 
-    def __init__(self, commcell_object):
-        &#34;&#34;&#34;Initializes object of the BackupNetworkPairs class.
+    This class provides an interface for handling backup network pairs, allowing
+    users to retrieve, add, delete, and modify backup interface pairs associated
+    with clients in the CommCell system. It is designed to facilitate network
+    configuration and management for backup operations.
 
-            Args:
-               commcell_object (object) -instance of the commcell class
+    Key Features:
+        - Retrieve backup interface pairs for a specific client
+        - Add new backup interface pairs
+        - Delete existing backup interface pairs
+        - Modify backup interface pairs with specified operations
+        - Integration with CommCell object for seamless operations
+        - Provides a string representation for easy inspection
 
-            Returns:
-               object - instance of the BackupNetworkPairs class
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_object: object) -&gt; None:
+        &#34;&#34;&#34;Initialize a BackupNetworkPairs object with the given Commcell connection.
+
+        Args:
+            commcell_object: An instance of the Commcell class representing the active Commcell connection.
+
+        Example:
+            &gt;&gt;&gt; from cvpysdk.commcell import Commcell
+            &gt;&gt;&gt; commcell = Commcell(&#39;commcell_host&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; backup_network_pairs = BackupNetworkPairs(commcell)
+            &gt;&gt;&gt; print(&#34;BackupNetworkPairs object created successfully&#34;)
+
         &#34;&#34;&#34;
 
         self._commcell_object = commcell_object
@@ -342,23 +458,41 @@ class BackupNetworkPairs(object):
         self._update_response_ = self._commcell_object._update_response_
         self.operation_type = [&#39;ADD&#39;, &#39;DELETE&#39;]
 
-    def __repr__(self):
-        &#34;&#34;&#34;Representation string for the instance of BackupNetworkPairs class&#34;&#34;&#34;
+    def __repr__(self) -&gt; str:
+        &#34;&#34;&#34;Return the string representation of the BackupNetworkPairs instance.
+
+        This method provides a developer-friendly string that represents the current
+        BackupNetworkPairs object, useful for debugging and logging purposes.
+
+        Returns:
+            A string representation of the BackupNetworkPairs instance.
+
+        Example:
+            &gt;&gt;&gt; backup_pairs = BackupNetworkPairs()
+            &gt;&gt;&gt; print(repr(backup_pairs))
+            &lt;BackupNetworkPairs object at 0x7f8b2c1d2e80&gt;
+
+        &#34;&#34;&#34;
 
         return &#34;BackupNetworkPairs class instance for Commcell&#34;
 
-    def get_backup_interface_for_client(self, client_name):
-        &#34;&#34;&#34;Returns interfaces set on a particular client
+    def get_backup_interface_for_client(self, client_name: str) -&gt; list:
+        &#34;&#34;&#34;Retrieve the list of backup network interfaces configured for a specific client.
 
-            Args:
-                client_name (str)  --  name of client
+        Args:
+            client_name: The name of the client for which to fetch backup network interfaces.
 
-            Returns:
-                list - list of interfaces with source and destination
+        Returns:
+            A list of dictionaries, each containing the source and destination interfaces set for the specified client.
 
-            Raises:
-                SDKException:
-                    if response is not received
+        Raises:
+            SDKException: If a response is not received from the server.
+
+        Example:
+            &gt;&gt;&gt; backup_network_pairs = BackupNetworkPairs()
+            &gt;&gt;&gt; interfaces = backup_network_pairs.get_backup_interface_for_client(&#34;ClientA&#34;)
+            &gt;&gt;&gt; print(interfaces)
+            [{&#39;source&#39;: &#39;192.168.1.10&#39;, &#39;destination&#39;: &#39;10.0.0.5&#39;}, ...]
 
         &#34;&#34;&#34;
 
@@ -380,30 +514,39 @@ class BackupNetworkPairs(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def add_backup_interface_pairs(self, interface_pairs):
-        &#34;&#34;&#34;Adds backup interface pairs on clients/client groups
+    def add_backup_interface_pairs(self, interface_pairs: list[tuple[dict, dict]]) -&gt; None:
+        &#34;&#34;&#34;Add backup interface pairs for clients or client groups.
 
-            Args:
-                interface_pairs (list)  --  list of tuples containing dict of source and destination
+        This method allows you to specify pairs of source and destination interfaces for backup operations.
+        Each pair should be a tuple containing two dictionaries: the first for the source (with &#39;srcip&#39; and either &#39;client&#39; or &#39;clientgroup&#39;),
+        and the second for the destination (with &#39;destip&#39; and either &#39;client&#39; or &#39;clientgroup&#39;).
 
+        The 0th index of each tuple must be the source with key &#39;srcip&#39;, and the 1st index must be the destination with key &#39;destip&#39;.
+        Entities should be specified using the &#39;client&#39; or &#39;clientgroup&#39; key.
+
+        Args:
+            interface_pairs: A list of tuples, where each tuple contains two dictionaries representing the source and destination interface.
                 Example:
-                [({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;},
-                {&#39;client&#39;: &#39;SP9client&#39;, &#39;destip&#39;: &#39;172.19.0.0&#39;}),
-                ({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;},
-                {&#39;clientgroup&#39;: &#39;G1&#39;, &#39;destip&#39;: &#39;No Default Interface&#39;}),
-                ({&#39;clientgroup&#39;: &#39;G2&#39;, &#39;srcip&#39;: &#39;172.19.0.0/16&#39;},
-                {&#39;clientgroup&#39;: &#39;G3&#39;, &#39;destip&#39;: &#39;172.19.0.*&#39;})]
+                    [
+                        ({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;},
+                         {&#39;client&#39;: &#39;SP9client&#39;, &#39;destip&#39;: &#39;172.19.0.0&#39;}),
+                        ({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;},
+                         {&#39;clientgroup&#39;: &#39;G1&#39;, &#39;destip&#39;: &#39;No Default Interface&#39;}),
+                        ({&#39;clientgroup&#39;: &#39;G2&#39;, &#39;srcip&#39;: &#39;172.19.0.0/16&#39;},
+                         {&#39;clientgroup&#39;: &#39;G3&#39;, &#39;destip&#39;: &#39;172.19.0.*&#39;})
+                    ]
 
-                Note: 0th index should be source with key &#39;srcip&#39; and 1st index
-                should be destination with key &#39;destip&#39;
+        Raises:
+            SDKException: If the input is not correct or if a response is not received.
 
-                      entities should be passed with key client/clientgroup
-
-            Raises:
-                SDKException:
-                    if input is not correct
-
-                    if response is not received
+        Example:
+            &gt;&gt;&gt; pairs = [
+            ...     ({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;}, {&#39;client&#39;: &#39;SP9client&#39;, &#39;destip&#39;: &#39;172.19.0.0&#39;}),
+            ...     ({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;}, {&#39;clientgroup&#39;: &#39;G1&#39;, &#39;destip&#39;: &#39;No Default Interface&#39;}),
+            ...     ({&#39;clientgroup&#39;: &#39;G2&#39;, &#39;srcip&#39;: &#39;172.19.0.0/16&#39;}, {&#39;clientgroup&#39;: &#39;G3&#39;, &#39;destip&#39;: &#39;172.19.0.*&#39;})
+            ... ]
+            &gt;&gt;&gt; backup_network_pairs.add_backup_interface_pairs(pairs)
+            &gt;&gt;&gt; print(&#34;Backup interface pairs added successfully.&#34;)
 
         &#34;&#34;&#34;
 
@@ -414,30 +557,44 @@ class BackupNetworkPairs(object):
 
         self._modify_backup_interface_pairs(interface_pairs, self.operation_type[0])
 
-    def delete_backup_interface_pairs(self, interface_pairs):
-        &#34;&#34;&#34;Deletes backup interface pairs on clients/client groups
+    def delete_backup_interface_pairs(self, interface_pairs: list[tuple[dict, dict]]) -&gt; None:
+        &#34;&#34;&#34;Delete backup interface pairs for specified clients or client groups.
 
-            Args:
-                interface_pairs (list)  --  list of tuples containing dict of source and destination
+        This method removes the specified backup interface pairs from the configuration.
+        Each pair should be a tuple of two dictionaries: the first representing the source
+        (with keys like &#39;client&#39; or &#39;clientgroup&#39; and &#39;srcip&#39;), and the second representing
+        the destination (with keys like &#39;client&#39;, &#39;clientgroup&#39;, and &#39;destip&#39;).
 
+        Args:
+            interface_pairs: A list of tuples, where each tuple contains two dictionaries:
+                - The first dictionary specifies the source entity and its source IP.
+                - The second dictionary specifies the destination entity and its destination IP.
                 Example:
-                [({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;},
-                {&#39;client&#39;: &#39;SP9client&#39;, &#39;destip&#39;: &#39;172.19.0.0&#39;}),
-                ({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;},
-                {&#39;clientgroup&#39;: &#39;G1&#39;, &#39;destip&#39;: &#39;No Default Interface&#39;}),
-                ({&#39;clientgroup&#39;: &#39;G2&#39;, &#39;srcip&#39;: &#39;172.19.0.0/16&#39;},
-                {&#39;clientgroup&#39;: &#39;G3&#39;, &#39;destip&#39;: &#39;172.19.0.*&#39;})]
+                    [
+                        ({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;},
+                         {&#39;client&#39;: &#39;SP9client&#39;, &#39;destip&#39;: &#39;172.19.0.0&#39;}),
+                        ({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;},
+                         {&#39;clientgroup&#39;: &#39;G1&#39;, &#39;destip&#39;: &#39;No Default Interface&#39;}),
+                        ({&#39;clientgroup&#39;: &#39;G2&#39;, &#39;srcip&#39;: &#39;172.19.0.0/16&#39;},
+                         {&#39;clientgroup&#39;: &#39;G3&#39;, &#39;destip&#39;: &#39;172.19.0.*&#39;})
+                    ]
+                Note:
+                    - The first element of each tuple must be the source (with &#39;srcip&#39;).
+                    - The second element must be the destination (with &#39;destip&#39;).
+                    - Entities should be specified using either &#39;client&#39; or &#39;clientgroup&#39; keys.
 
-                Note: 0th index should be source with key &#39;srcip&#39; and 1st index
-                should be destination with key &#39;destip&#39;
+        Raises:
+            SDKException: If the input is not correct or if a response is not received.
 
-                      entities should be passed with key client/clientgroup
-
-            Raises:
-                SDKException:
-                    if input is not correct
-
-                    if response is not received
+        Example:
+            &gt;&gt;&gt; pairs = [
+            ...     ({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;},
+            ...      {&#39;client&#39;: &#39;SP9client&#39;, &#39;destip&#39;: &#39;172.19.0.0&#39;}),
+            ...     ({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;},
+            ...      {&#39;clientgroup&#39;: &#39;G1&#39;, &#39;destip&#39;: &#39;No Default Interface&#39;})
+            ... ]
+            &gt;&gt;&gt; backup_network_pairs.delete_backup_interface_pairs(pairs)
+            &gt;&gt;&gt; print(&#34;Backup interface pairs deleted successfully.&#34;)
 
         &#34;&#34;&#34;
 
@@ -448,34 +605,48 @@ class BackupNetworkPairs(object):
 
         self._modify_backup_interface_pairs(interface_pairs, self.operation_type[1])
 
-    def _modify_backup_interface_pairs(self, interface_pairs, operation_type):
-        &#34;&#34;&#34;Sets a backup interface pair between clients/client-groups
+    def _modify_backup_interface_pairs(self, interface_pairs: list[tuple[dict[str, str], dict[str, str]]], operation_type: str) -&gt; None:
+        &#34;&#34;&#34;Set, update, or delete backup interface pairs between clients or client groups.
 
-            Args:
-                operation_type  (str)  --  operation type--&gt; add, update, delete
+        This method configures backup interface pairs, specifying the source and destination
+        network interfaces for data transfer between clients or client groups. Each pair is
+        represented as a tuple of two dictionaries: the first for the source (with &#39;srcip&#39;),
+        and the second for the destination (with &#39;destip&#39;). Entities can be specified using
+        either the &#39;client&#39; or &#39;clientgroup&#39; key.
 
-                interface_pairs (list)  --  list of tuples containing dict of source and destination
-                                           source and destination can be a combination of
-                                           client/client group
-
+        Args:
+            interface_pairs: A list of tuples, each containing two dictionaries. The first
+                dictionary represents the source (must include &#39;srcip&#39; and either &#39;client&#39;
+                or &#39;clientgroup&#39;), and the second represents the destination (must include
+                &#39;destip&#39; and either &#39;client&#39; or &#39;clientgroup&#39;).
                 Example:
-                [({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;},
-                {&#39;client&#39;: &#39;SP9client&#39;, &#39;destip&#39;: &#39;172.19.0.0&#39;}),
-                ({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;},
-                {&#39;clientgroup&#39;: &#39;G1&#39;, &#39;destip&#39;: &#39;No Default Interface&#39;}),
-                ({&#39;clientgroup&#39;: &#39;G2&#39;, &#39;srcip&#39;: &#39;172.19.0.0/16&#39;},
-                {&#39;clientgroup&#39;: &#39;G3&#39;, &#39;destip&#39;: &#39;172.19.0.*&#39;})]
+                    [
+                        ({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;},
+                         {&#39;client&#39;: &#39;SP9client&#39;, &#39;destip&#39;: &#39;172.19.0.0&#39;}),
+                        ({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;},
+                         {&#39;clientgroup&#39;: &#39;G1&#39;, &#39;destip&#39;: &#39;No Default Interface&#39;}),
+                        ({&#39;clientgroup&#39;: &#39;G2&#39;, &#39;srcip&#39;: &#39;172.19.0.0/16&#39;},
+                         {&#39;clientgroup&#39;: &#39;G3&#39;, &#39;destip&#39;: &#39;172.19.0.*&#39;})
+                    ]
+                Note: The 0th index should be the source with key &#39;srcip&#39;, and the 1st index
+                should be the destination with key &#39;destip&#39;. Entities should be specified
+                using &#39;client&#39; or &#39;clientgroup&#39;.
+            operation_type: The type of operation to perform. Must be one of &#39;add&#39;, &#39;update&#39;, or &#39;delete&#39;.
 
-                Note: 0th index should be source with key &#39;srcip&#39; and 1st index
-                should be destination with key &#39;destip&#39;
+        Raises:
+            SDKException: If the input is not correct or if a response is not received.
 
-                       entities should be passed with key client/clientgroup
-
-            Raises:
-                SDKException:
-                    if input is not correct
-
-                    if response is not received
+        Example:
+            &gt;&gt;&gt; pairs = [
+            ...     ({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;},
+            ...      {&#39;client&#39;: &#39;SP9client&#39;, &#39;destip&#39;: &#39;172.19.0.0&#39;}),
+            ...     ({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;},
+            ...      {&#39;clientgroup&#39;: &#39;G1&#39;, &#39;destip&#39;: &#39;No Default Interface&#39;}),
+            ...     ({&#39;clientgroup&#39;: &#39;G2&#39;, &#39;srcip&#39;: &#39;172.19.0.0/16&#39;},
+            ...      {&#39;clientgroup&#39;: &#39;G3&#39;, &#39;destip&#39;: &#39;172.19.0.*&#39;})
+            ... ]
+            &gt;&gt;&gt; backup_network_pairs._modify_backup_interface_pairs(pairs, &#39;add&#39;)
+            &gt;&gt;&gt; # This will add the specified backup interface pairs
 
         &#34;&#34;&#34;
 
@@ -524,62 +695,82 @@ class BackupNetworkPairs(object):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.backup_network_pairs.BackupNetworkPairs.add_backup_interface_pairs"><code class="name flex">
-<span>def <span class="ident">add_backup_interface_pairs</span></span>(<span>self, interface_pairs)</span>
+<span>def <span class="ident">add_backup_interface_pairs</span></span>(<span>self, interface_pairs: list[tuple[dict, dict]]) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Adds backup interface pairs on clients/client groups</p>
-<h2 id="args">Args</h2>
-<p>interface_pairs (list)
-&ndash;
-list of tuples containing dict of source and destination</p>
-<p>Example:
-[({'client': 'featuretest', 'srcip': '172.19.96.123'},
+<div class="desc"><p>Add backup interface pairs for clients or client groups.</p>
+<p>This method allows you to specify pairs of source and destination interfaces for backup operations.
+Each pair should be a tuple containing two dictionaries: the first for the source (with 'srcip' and either 'client' or 'clientgroup'),
+and the second for the destination (with 'destip' and either 'client' or 'clientgroup').</p>
+<p>The 0th index of each tuple must be the source with key 'srcip', and the 1st index must be the destination with key 'destip'.
+Entities should be specified using the 'client' or 'clientgroup' key.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>interface_pairs</code></strong></dt>
+<dd>A list of tuples, where each tuple contains two dictionaries representing the source and destination interface.
+Example:
+[
+({'client': 'featuretest', 'srcip': '172.19.96.123'},
 {'client': 'SP9client', 'destip': '172.19.0.0'}),
 ({'client': 'featuretest', 'srcip': '172.19.96.123'},
 {'clientgroup': 'G1', 'destip': 'No Default Interface'}),
 ({'clientgroup': 'G2', 'srcip': '172.19.0.0/16'},
-{'clientgroup': 'G3', 'destip': '172.19.0.*'})]</p>
-<dl>
-<dt><strong><code>Note</code></strong></dt>
-<dd>0th index should be source with key 'srcip' and 1st index</dd>
+{'clientgroup': 'G3', 'destip': '172.19.0.*'})
+]</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the input is not correct or if a response is not received.</dd>
 </dl>
-<p>should be destination with key 'destip'</p>
-<pre><code>  entities should be passed with key client/clientgroup
-</code></pre>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if input is not correct</p>
-<pre><code>if response is not received
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; pairs = [
+...     ({'client': 'featuretest', 'srcip': '172.19.96.123'}, {'client': 'SP9client', 'destip': '172.19.0.0'}),
+...     ({'client': 'featuretest', 'srcip': '172.19.96.123'}, {'clientgroup': 'G1', 'destip': 'No Default Interface'}),
+...     ({'clientgroup': 'G2', 'srcip': '172.19.0.0/16'}, {'clientgroup': 'G3', 'destip': '172.19.0.*'})
+... ]
+&gt;&gt;&gt; backup_network_pairs.add_backup_interface_pairs(pairs)
+&gt;&gt;&gt; print(&quot;Backup interface pairs added successfully.&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/backup_network_pairs.py#L105-L137" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/backup_network_pairs.py#L147-L189" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def add_backup_interface_pairs(self, interface_pairs):
-    &#34;&#34;&#34;Adds backup interface pairs on clients/client groups
+<pre><code class="python">def add_backup_interface_pairs(self, interface_pairs: list[tuple[dict, dict]]) -&gt; None:
+    &#34;&#34;&#34;Add backup interface pairs for clients or client groups.
 
-        Args:
-            interface_pairs (list)  --  list of tuples containing dict of source and destination
+    This method allows you to specify pairs of source and destination interfaces for backup operations.
+    Each pair should be a tuple containing two dictionaries: the first for the source (with &#39;srcip&#39; and either &#39;client&#39; or &#39;clientgroup&#39;),
+    and the second for the destination (with &#39;destip&#39; and either &#39;client&#39; or &#39;clientgroup&#39;).
 
+    The 0th index of each tuple must be the source with key &#39;srcip&#39;, and the 1st index must be the destination with key &#39;destip&#39;.
+    Entities should be specified using the &#39;client&#39; or &#39;clientgroup&#39; key.
+
+    Args:
+        interface_pairs: A list of tuples, where each tuple contains two dictionaries representing the source and destination interface.
             Example:
-            [({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;},
-            {&#39;client&#39;: &#39;SP9client&#39;, &#39;destip&#39;: &#39;172.19.0.0&#39;}),
-            ({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;},
-            {&#39;clientgroup&#39;: &#39;G1&#39;, &#39;destip&#39;: &#39;No Default Interface&#39;}),
-            ({&#39;clientgroup&#39;: &#39;G2&#39;, &#39;srcip&#39;: &#39;172.19.0.0/16&#39;},
-            {&#39;clientgroup&#39;: &#39;G3&#39;, &#39;destip&#39;: &#39;172.19.0.*&#39;})]
+                [
+                    ({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;},
+                     {&#39;client&#39;: &#39;SP9client&#39;, &#39;destip&#39;: &#39;172.19.0.0&#39;}),
+                    ({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;},
+                     {&#39;clientgroup&#39;: &#39;G1&#39;, &#39;destip&#39;: &#39;No Default Interface&#39;}),
+                    ({&#39;clientgroup&#39;: &#39;G2&#39;, &#39;srcip&#39;: &#39;172.19.0.0/16&#39;},
+                     {&#39;clientgroup&#39;: &#39;G3&#39;, &#39;destip&#39;: &#39;172.19.0.*&#39;})
+                ]
 
-            Note: 0th index should be source with key &#39;srcip&#39; and 1st index
-            should be destination with key &#39;destip&#39;
+    Raises:
+        SDKException: If the input is not correct or if a response is not received.
 
-                  entities should be passed with key client/clientgroup
-
-        Raises:
-            SDKException:
-                if input is not correct
-
-                if response is not received
+    Example:
+        &gt;&gt;&gt; pairs = [
+        ...     ({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;}, {&#39;client&#39;: &#39;SP9client&#39;, &#39;destip&#39;: &#39;172.19.0.0&#39;}),
+        ...     ({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;}, {&#39;clientgroup&#39;: &#39;G1&#39;, &#39;destip&#39;: &#39;No Default Interface&#39;}),
+        ...     ({&#39;clientgroup&#39;: &#39;G2&#39;, &#39;srcip&#39;: &#39;172.19.0.0/16&#39;}, {&#39;clientgroup&#39;: &#39;G3&#39;, &#39;destip&#39;: &#39;172.19.0.*&#39;})
+        ... ]
+        &gt;&gt;&gt; backup_network_pairs.add_backup_interface_pairs(pairs)
+        &gt;&gt;&gt; print(&#34;Backup interface pairs added successfully.&#34;)
 
     &#34;&#34;&#34;
 
@@ -592,62 +783,93 @@ if input is not correct</p>
 </details>
 </dd>
 <dt id="cvpysdk.backup_network_pairs.BackupNetworkPairs.delete_backup_interface_pairs"><code class="name flex">
-<span>def <span class="ident">delete_backup_interface_pairs</span></span>(<span>self, interface_pairs)</span>
+<span>def <span class="ident">delete_backup_interface_pairs</span></span>(<span>self, interface_pairs: list[tuple[dict, dict]]) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Deletes backup interface pairs on clients/client groups</p>
-<h2 id="args">Args</h2>
-<p>interface_pairs (list)
-&ndash;
-list of tuples containing dict of source and destination</p>
-<p>Example:
-[({'client': 'featuretest', 'srcip': '172.19.96.123'},
+<div class="desc"><p>Delete backup interface pairs for specified clients or client groups.</p>
+<p>This method removes the specified backup interface pairs from the configuration.
+Each pair should be a tuple of two dictionaries: the first representing the source
+(with keys like 'client' or 'clientgroup' and 'srcip'), and the second representing
+the destination (with keys like 'client', 'clientgroup', and 'destip').</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>interface_pairs</code></strong></dt>
+<dd>A list of tuples, where each tuple contains two dictionaries:
+- The first dictionary specifies the source entity and its source IP.
+- The second dictionary specifies the destination entity and its destination IP.
+Example:
+[
+({'client': 'featuretest', 'srcip': '172.19.96.123'},
 {'client': 'SP9client', 'destip': '172.19.0.0'}),
 ({'client': 'featuretest', 'srcip': '172.19.96.123'},
 {'clientgroup': 'G1', 'destip': 'No Default Interface'}),
 ({'clientgroup': 'G2', 'srcip': '172.19.0.0/16'},
-{'clientgroup': 'G3', 'destip': '172.19.0.*'})]</p>
-<dl>
-<dt><strong><code>Note</code></strong></dt>
-<dd>0th index should be source with key 'srcip' and 1st index</dd>
+{'clientgroup': 'G3', 'destip': '172.19.0.*'})
+]
+Note:
+- The first element of each tuple must be the source (with 'srcip').
+- The second element must be the destination (with 'destip').
+- Entities should be specified using either 'client' or 'clientgroup' keys.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the input is not correct or if a response is not received.</dd>
 </dl>
-<p>should be destination with key 'destip'</p>
-<pre><code>  entities should be passed with key client/clientgroup
-</code></pre>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if input is not correct</p>
-<pre><code>if response is not received
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; pairs = [
+...     ({'client': 'featuretest', 'srcip': '172.19.96.123'},
+...      {'client': 'SP9client', 'destip': '172.19.0.0'}),
+...     ({'client': 'featuretest', 'srcip': '172.19.96.123'},
+...      {'clientgroup': 'G1', 'destip': 'No Default Interface'})
+... ]
+&gt;&gt;&gt; backup_network_pairs.delete_backup_interface_pairs(pairs)
+&gt;&gt;&gt; print(&quot;Backup interface pairs deleted successfully.&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/backup_network_pairs.py#L139-L171" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/backup_network_pairs.py#L191-L238" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def delete_backup_interface_pairs(self, interface_pairs):
-    &#34;&#34;&#34;Deletes backup interface pairs on clients/client groups
+<pre><code class="python">def delete_backup_interface_pairs(self, interface_pairs: list[tuple[dict, dict]]) -&gt; None:
+    &#34;&#34;&#34;Delete backup interface pairs for specified clients or client groups.
 
-        Args:
-            interface_pairs (list)  --  list of tuples containing dict of source and destination
+    This method removes the specified backup interface pairs from the configuration.
+    Each pair should be a tuple of two dictionaries: the first representing the source
+    (with keys like &#39;client&#39; or &#39;clientgroup&#39; and &#39;srcip&#39;), and the second representing
+    the destination (with keys like &#39;client&#39;, &#39;clientgroup&#39;, and &#39;destip&#39;).
 
+    Args:
+        interface_pairs: A list of tuples, where each tuple contains two dictionaries:
+            - The first dictionary specifies the source entity and its source IP.
+            - The second dictionary specifies the destination entity and its destination IP.
             Example:
-            [({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;},
-            {&#39;client&#39;: &#39;SP9client&#39;, &#39;destip&#39;: &#39;172.19.0.0&#39;}),
-            ({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;},
-            {&#39;clientgroup&#39;: &#39;G1&#39;, &#39;destip&#39;: &#39;No Default Interface&#39;}),
-            ({&#39;clientgroup&#39;: &#39;G2&#39;, &#39;srcip&#39;: &#39;172.19.0.0/16&#39;},
-            {&#39;clientgroup&#39;: &#39;G3&#39;, &#39;destip&#39;: &#39;172.19.0.*&#39;})]
+                [
+                    ({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;},
+                     {&#39;client&#39;: &#39;SP9client&#39;, &#39;destip&#39;: &#39;172.19.0.0&#39;}),
+                    ({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;},
+                     {&#39;clientgroup&#39;: &#39;G1&#39;, &#39;destip&#39;: &#39;No Default Interface&#39;}),
+                    ({&#39;clientgroup&#39;: &#39;G2&#39;, &#39;srcip&#39;: &#39;172.19.0.0/16&#39;},
+                     {&#39;clientgroup&#39;: &#39;G3&#39;, &#39;destip&#39;: &#39;172.19.0.*&#39;})
+                ]
+            Note:
+                - The first element of each tuple must be the source (with &#39;srcip&#39;).
+                - The second element must be the destination (with &#39;destip&#39;).
+                - Entities should be specified using either &#39;client&#39; or &#39;clientgroup&#39; keys.
 
-            Note: 0th index should be source with key &#39;srcip&#39; and 1st index
-            should be destination with key &#39;destip&#39;
+    Raises:
+        SDKException: If the input is not correct or if a response is not received.
 
-                  entities should be passed with key client/clientgroup
-
-        Raises:
-            SDKException:
-                if input is not correct
-
-                if response is not received
+    Example:
+        &gt;&gt;&gt; pairs = [
+        ...     ({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;},
+        ...      {&#39;client&#39;: &#39;SP9client&#39;, &#39;destip&#39;: &#39;172.19.0.0&#39;}),
+        ...     ({&#39;client&#39;: &#39;featuretest&#39;, &#39;srcip&#39;: &#39;172.19.96.123&#39;},
+        ...      {&#39;clientgroup&#39;: &#39;G1&#39;, &#39;destip&#39;: &#39;No Default Interface&#39;})
+        ... ]
+        &gt;&gt;&gt; backup_network_pairs.delete_backup_interface_pairs(pairs)
+        &gt;&gt;&gt; print(&#34;Backup interface pairs deleted successfully.&#34;)
 
     &#34;&#34;&#34;
 
@@ -660,36 +882,54 @@ if input is not correct</p>
 </details>
 </dd>
 <dt id="cvpysdk.backup_network_pairs.BackupNetworkPairs.get_backup_interface_for_client"><code class="name flex">
-<span>def <span class="ident">get_backup_interface_for_client</span></span>(<span>self, client_name)</span>
+<span>def <span class="ident">get_backup_interface_for_client</span></span>(<span>self, client_name: str) ‑> list</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Returns interfaces set on a particular client</p>
-<h2 id="args">Args</h2>
-<p>client_name (str)
-&ndash;
-name of client</p>
-<h2 id="returns">Returns</h2>
-<p>list - list of interfaces with source and destination</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if response is not received</p></div>
+<div class="desc"><p>Retrieve the list of backup network interfaces configured for a specific client.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>client_name</code></strong></dt>
+<dd>The name of the client for which to fetch backup network interfaces.</dd>
+</dl>
+<p>Returns
+-----=
+A list of dictionaries, each containing the source and destination interfaces set for the specified client.</p>
+<dl>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If a response is not received from the server.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; backup_network_pairs = BackupNetworkPairs()
+&gt;&gt;&gt; interfaces = backup_network_pairs.get_backup_interface_for_client(&quot;ClientA&quot;)
+&gt;&gt;&gt; print(interfaces)
+[{'source': '192.168.1.10', 'destination': '10.0.0.5'}, ...]
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/backup_network_pairs.py#L72-L103" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/backup_network_pairs.py#L108-L145" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def get_backup_interface_for_client(self, client_name):
-    &#34;&#34;&#34;Returns interfaces set on a particular client
+<pre><code class="python">def get_backup_interface_for_client(self, client_name: str) -&gt; list:
+    &#34;&#34;&#34;Retrieve the list of backup network interfaces configured for a specific client.
 
-        Args:
-            client_name (str)  --  name of client
+    Args:
+        client_name: The name of the client for which to fetch backup network interfaces.
 
-        Returns:
-            list - list of interfaces with source and destination
+    Returns:
+        A list of dictionaries, each containing the source and destination interfaces set for the specified client.
 
-        Raises:
-            SDKException:
-                if response is not received
+    Raises:
+        SDKException: If a response is not received from the server.
+
+    Example:
+        &gt;&gt;&gt; backup_network_pairs = BackupNetworkPairs()
+        &gt;&gt;&gt; interfaces = backup_network_pairs.get_backup_interface_for_client(&#34;ClientA&#34;)
+        &gt;&gt;&gt; print(interfaces)
+        [{&#39;source&#39;: &#39;192.168.1.10&#39;, &#39;destination&#39;: &#39;10.0.0.5&#39;}, ...]
 
     &#34;&#34;&#34;
 

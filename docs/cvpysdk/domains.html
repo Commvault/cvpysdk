@@ -25,7 +25,8 @@
 <section id="section-intro">
 <p>File for performing domain related operations.</p>
 <p>Domains: Class for representing all the associated domains with the commcell.</p>
-<h2 id="domains">Domains</h2>
+<p>Domains
+-----=</p>
 <p><strong>init</strong>(commcell_object)
 &ndash;
 initialize instance of the Domains associated with
@@ -62,7 +63,8 @@ deletes the domain from the commcell</p>
 <p>refresh()
 &ndash;
 refresh the domains associated with the commcell</p>
-<h2 id="domain">Domain</h2>
+<p>Domain
+-----=</p>
 <p><strong>init</strong>()
 &ndash;
 initializes instance of the Domain class for doing
@@ -88,7 +90,7 @@ Enables/Disables the domain</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/domains.py#L1-L690" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/domains.py#L1-L908" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -165,20 +167,47 @@ from __future__ import unicode_literals
 
 from base64 import b64encode
 
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+
+if TYPE_CHECKING:
+    from .commcell import Commcell
+
 from .exception import SDKException
 
 
 class Domains(object):
-    &#34;&#34;&#34;Class for getting all the domains associated with a commcell.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Manages and interacts with all domains associated with a Commcell.
 
-    def __init__(self, commcell_object):
-        &#34;&#34;&#34;Initialize object of the Domains class.
+    The Domains class provides a comprehensive interface for retrieving, managing,
+    and manipulating domain objects within a Commcell environment. It supports
+    operations such as adding, deleting, refreshing, and querying domains, as well
+    as accessing domain details and checking for domain existence.
 
-            Args:
-                commcell_object     (object)    --  instance of the Commcell class
+    Key Features:
+        - Retrieve all domains associated with a Commcell
+        - Access domain details using indexing and property access
+        - Add new domains with detailed configuration options
+        - Delete existing domains
+        - Refresh the domain list to reflect current state
+        - Check for the existence of a domain by name
+        - Get domain information by name
+        - Support for string representation, length, and iteration
+        - Internal method for fetching domain data
 
-            Returns:
-                object - instance of the Domains class
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_object: &#39;Commcell&#39;) -&gt; None:
+        &#34;&#34;&#34;Initialize a Domains object with a Commcell connection.
+
+        Args:
+            commcell_object: Instance of the Commcell class used to interact with the Commcell environment.
+
+        Example:
+            &gt;&gt;&gt; from cvpysdk.commcell import Commcell
+            &gt;&gt;&gt; commcell = Commcell(command_center_hostname, username, password)
+            &gt;&gt;&gt; domains = Domains(commcell)
+            &gt;&gt;&gt; print(&#34;Domains object initialized successfully&#34;)
 
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
@@ -192,11 +221,22 @@ class Domains(object):
         self._domains = None
         self.refresh()
 
-    def __str__(self):
-        &#34;&#34;&#34;Representation string consisting of all domains of the Commcell.
+    def __str__(self) -&gt; str:
+        &#34;&#34;&#34;Return a formatted string representation of all domains in the Commcell.
 
-            Returns:
-                str - string of all the domains for a commcell
+        The output lists each domain with its serial number in a tabular format.
+
+        Returns:
+            A string containing all domains associated with the Commcell, formatted for display.
+
+        Example:
+            &gt;&gt;&gt; domains = Domains(commcell_object)
+            &gt;&gt;&gt; print(domains)
+            # Output:
+            # S. No.    Domain
+            #   1       domain1
+            #   2       domain2
+            #   ...
 
         &#34;&#34;&#34;
         representation_string = &#34;{:^5}\t{:^50}\n\n&#34;.format(&#39;S. No.&#39;, &#39;Domain&#39;)
@@ -207,29 +247,60 @@ class Domains(object):
 
         return representation_string.strip()
 
-    def __repr__(self):
-        &#34;&#34;&#34;Representation string for the instance of the Domains class.&#34;&#34;&#34;
+    def __repr__(self) -&gt; str:
+        &#34;&#34;&#34;Return a string representation of the Domains class instance.
+
+        This method provides a human-readable description of the Domains object,
+        typically used for debugging and logging purposes.
+
+        Returns:
+            String describing the Domains class instance.
+
+        Example:
+            &gt;&gt;&gt; domains = Domains(commcell_object)
+            &gt;&gt;&gt; print(repr(domains))
+            Domains class instance for Commcell
+
+        &#34;&#34;&#34;
         return &#34;Domains class instance for Commcell&#34;
 
-    def __len__(self):
-        &#34;&#34;&#34;Returns the number of the domains associated to the Commcell.&#34;&#34;&#34;
+    def __len__(self) -&gt; int:
+        &#34;&#34;&#34;Get the number of domains associated with the Commcell.
+
+        Returns:
+            The total count of domains managed by this Domains object.
+
+        Example:
+            &gt;&gt;&gt; domains = Domains(commcell_object)
+            &gt;&gt;&gt; num_domains = len(domains)
+            &gt;&gt;&gt; print(f&#34;Total domains: {num_domains}&#34;)
+        &#34;&#34;&#34;
         return len(self.all_domains)
 
-    def __getitem__(self, value):
-        &#34;&#34;&#34;Returns the name of the domain for the given domain ID or
-            the details of the domain for given domain Name.
+    def __getitem__(self, value: Union[str, int]) -&gt; Union[str, Dict[str, Any]]:
+        &#34;&#34;&#34;Retrieve domain information by name or ID.
 
-            Args:
-                value   (str / int)     --  Name or ID of the domain
+        If a domain name is provided, returns the details dictionary for that domain.
+        If a domain ID is provided, returns the name of the corresponding domain.
 
-            Returns:
-                str     -   name of the domain, if the domain id was given
+        Args:
+            value: The name (str) or ID (int or str) of the domain to retrieve.
 
-                dict    -   dict of details of the domain, if domain name was given
+        Returns:
+            If a domain name is provided, returns a dictionary containing domain details.
+            If a domain ID is provided, returns the name of the domain as a string.
 
-            Raises:
-                IndexError:
-                    no domain exists with the given Name / Id
+        Raises:
+            IndexError: If no domain exists with the given name or ID.
+
+        Example:
+            &gt;&gt;&gt; domains = Domains()
+            &gt;&gt;&gt; # Get domain details by name
+            &gt;&gt;&gt; details = domains[&#39;Finance&#39;]
+            &gt;&gt;&gt; print(details)
+            &gt;&gt;&gt; # Get domain name by ID
+            &gt;&gt;&gt; name = domains[101]
+            &gt;&gt;&gt; print(f&#34;Domain name: {name}&#34;)
 
         &#34;&#34;&#34;
         value = str(value)
@@ -242,23 +313,23 @@ class Domains(object):
             except IndexError:
                 raise IndexError(&#39;No domain exists with the given Name / Id&#39;)
 
-    def _get_domains(self):
-        &#34;&#34;&#34;Gets all the domains associated with the commcell
+    def _get_domains(self) -&gt; Dict[str, Dict[str, Any]]:
+        &#34;&#34;&#34;Retrieve all domains associated with the Commcell.
 
-            Returns:
-                dict - consists of all domain in the commcell
+        Returns:
+            Dictionary mapping domain names (as lowercase strings) to their details.
+            Each value is a dictionary containing domain-specific information.
 
-                    {
-                         &#34;domain1_name&#34;: domain_Details_dict1,
+        Raises:
+            SDKException: If the response from the Commcell is empty or unsuccessful.
 
-                         &#34;domain2_name&#34;: domain_Details_dict2
-                    }
-
-            Raises:
-                SDKException:
-                    if response is empty
-
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; domains = domains_obj._get_domains()
+            &gt;&gt;&gt; print(f&#34;Found {len(domains)} domains&#34;)
+            &gt;&gt;&gt; # Access details for a specific domain
+            &gt;&gt;&gt; if &#39;exampledomain&#39; in domains:
+            &gt;&gt;&gt;     details = domains[&#39;exampledomain&#39;]
+            &gt;&gt;&gt;     print(f&#34;Domain details: {details}&#34;)
 
         &#34;&#34;&#34;
         flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._DOMAIN_CONTROLER)
@@ -280,31 +351,40 @@ class Domains(object):
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
     @property
-    def all_domains(self):
-        &#34;&#34;&#34;Returns the domains configured on this commcell
+    def all_domains(self) -&gt; Dict[str, Dict[str, Any]]:
+        &#34;&#34;&#34;Get all domains configured on this Commcell.
 
-            dict - consists of all domain in the commcell
+        Returns:
+            Dictionary mapping domain names to their respective details.
+            Each key is a domain name (str), and each value is a dictionary containing domain-specific information.
 
-                    {
-                         &#34;domain1_name&#34;: domain_Details_dict1,
+        Example:
+            &gt;&gt;&gt; domains = Domains(commcell_object)
+            &gt;&gt;&gt; all_domains = domains.all_domains  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Total domains: {len(all_domains)}&#34;)
+            &gt;&gt;&gt; for domain_name, details in all_domains.items():
+            ...     print(f&#34;Domain: {domain_name}, Details: {details}&#34;)
 
-                         &#34;domain2_name&#34;: domain_Details_dict2
-                    }
         &#34;&#34;&#34;
         return self._domains
 
-    def has_domain(self, domain_name):
-        &#34;&#34;&#34;Checks if a domain exists in the commcell with the input domain name.
+    def has_domain(self, domain_name: str) -&gt; bool:
+        &#34;&#34;&#34;Check if a domain with the specified name exists in the Commcell.
 
-            Args:
-                domain_name     (str)   --  name of the domain
+        Args:
+            domain_name: Name of the domain to check, as a string.
 
-            Returns:
-                bool    -   boolean output whether the domain exists in the commcell or not
+        Returns:
+            True if the domain exists in the Commcell, False otherwise.
 
-            Raises:
-                SDKException:
-                    if type of the domain name argument is not string
+        Raises:
+            SDKException: If the domain_name argument is not a string.
+
+        Example:
+            &gt;&gt;&gt; domains = Domains(commcell_object)
+            &gt;&gt;&gt; exists = domains.has_domain(&#34;example.com&#34;)
+            &gt;&gt;&gt; print(f&#34;Domain exists: {exists}&#34;)
+            &gt;&gt;&gt; # Output: Domain exists: True or False
 
         &#34;&#34;&#34;
         if not isinstance(domain_name, str):
@@ -312,21 +392,23 @@ class Domains(object):
 
         return self._domains and domain_name.lower() in self._domains
 
-    def get(self, domain_name):
-        &#34;&#34;&#34;Returns a domain object of the specified domain name.
+    def get(self, domain_name: str) -&gt; &#39;Domain&#39;:
+        &#34;&#34;&#34;Retrieve a domain object by its name.
 
-            Args:
-                domain_name (str)  --  name of the domain
+        Args:
+            domain_name: Name of the domain to retrieve.
 
-            Returns:
-                object of the domain
+        Returns:
+            Domain object corresponding to the specified domain name.
 
-            Raises:
-                SDKException:
+        Raises:
+            SDKException: If the domain does not exist or if the domain_name is not a string.
 
-                                        if domain doesn&#39;t exist with specified name
-
-                                        if type of the domain name argument is not string
+        Example:
+            &gt;&gt;&gt; domains = Domains(commcell_object)
+            &gt;&gt;&gt; domain = domains.get(&#34;example.com&#34;)
+            &gt;&gt;&gt; print(f&#34;Domain object: {domain}&#34;)
+            &gt;&gt;&gt; # The returned Domain object can be used for further domain operations
 
         &#34;&#34;&#34;
         if not isinstance(domain_name, str):
@@ -339,23 +421,24 @@ class Domains(object):
 
         return Domain(self._commcell_object, domain_name, self._domains[domain_name.lower()][&#39;shortName&#39;][&#39;id&#39;])
 
-    def delete(self, domain_name):
-        &#34;&#34;&#34;Deletes the domain from the commcell.
+    def delete(self, domain_name: str) -&gt; None:
+        &#34;&#34;&#34;Delete a domain from the Commcell.
 
-            Args:
-                domain_name     (str)   --  name of the domain to remove from the commcell
+        Removes the specified domain by name from the Commcell. If the domain does not exist,
+        or if the deletion fails, an SDKException is raised.
 
-            Raises:
-                SDKException:
-                    if type of the domain name argument is not string
+        Args:
+            domain_name: Name of the domain to remove from the Commcell.
 
-                    if failed to delete domain
+        Raises:
+            SDKException: If the domain name is not a string, if the domain does not exist,
+                if the deletion fails, or if the response from the Commcell is invalid.
 
-                    if response is empty
-
-                    if response is not success
-
-                    if no domain exists with the given name
+        Example:
+            &gt;&gt;&gt; domains = Domains(commcell_object)
+            &gt;&gt;&gt; domains.delete(&#34;example_domain&#34;)
+            &gt;&gt;&gt; print(&#34;Domain deleted successfully&#34;)
+            # If the domain does not exist or deletion fails, an SDKException will be raised.
 
         &#34;&#34;&#34;
 
@@ -395,76 +478,82 @@ class Domains(object):
                     &#39;Domain&#39;, &#39;102&#39;, &#39;No domain exists with name: {0}&#39;.format(domain_name)
                 )
 
-    def refresh(self):
-        &#34;&#34;&#34;Refresh the domains associated with the Commcell.&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Reload the domain information associated with the Commcell.
+
+        This method updates the internal domain cache to ensure that the latest domain data
+        from the Commcell is available for subsequent operations.
+
+        Example:
+            &gt;&gt;&gt; domains = Domains(commcell_object)
+            &gt;&gt;&gt; domains.refresh()  # Refreshes the domain cache
+            &gt;&gt;&gt; print(&#34;Domain information updated successfully&#34;)
+            &gt;&gt;&gt; # The next access to domain data will use the refreshed information
+
+        &#34;&#34;&#34;
         self._domains = self._get_domains()
 
     def add(self,
-            domain_name,
-            netbios_name,
-            user_name,
-            password,
-            company_id=&#34;&#34;,
-            ad_proxy_list=None,
-            enable_sso=True,
-            type_of_server=&#34;active directory&#34;,
-            **kwargs):
-        &#34;&#34;&#34;Adds a new domain to the commcell.
+            domain_name: str,
+            netbios_name: str,
+            user_name: Optional[str] = None,
+            password: Optional[str] = None,
+            credential_id: Optional[int] = None,
+            use_local_system_account: Optional[bool] = None,
+            company_id: str = &#34;&#34;,
+            ad_proxy_list: Optional[List[str]] = None,
+            enable_sso: bool = True,
+            type_of_server: str = &#34;active directory&#34;,
+            **kwargs: Any) -&gt; Dict[str, Any]:
+        &#34;&#34;&#34;Add a new domain to the Commcell environment.
 
-            Args:
-                domain_name     (str)   --  name of the domain
+        This method registers a new domain (such as Active Directory, LDAP, etc.) with the Commcell,
+        allowing for centralized authentication and management. You can specify domain credentials,
+        proxy clients, SSO settings, and additional LDAP attributes as needed.
 
-                netbios_name    (str)   --  netbios name of the domain
+        Args:
+            domain_name: Name of the domain to be added.
+            netbios_name: NetBIOS name of the domain.
+            user_name: Username for domain authentication. Required unless using local system account or credential ID.
+            password: Password for domain authentication. Required unless using local system account or credential ID.
+            credential_id: Credential ID for domain authentication. Used if not providing username/password.
+            use_local_system_account: If True, uses the LocalSystemAccount for authentication.
+            company_id: Company ID for which the domain is being added.
+            ad_proxy_list: Optional list of client names to be used as proxy for domain operations.
+            enable_sso: Whether to enable Single Sign-On (SSO) for the domain.
+            type_of_server: Type of server to register. Supported values:
+                &#34;active directory&#34;, &#34;apple directory&#34;, &#34;oracle ldap&#34;, &#34;open ldap&#34;, &#34;ldap server&#34;
+            **kwargs: Additional LDAP or directory server settings, such as:
+                group_filter: LDAP group filter string.
+                user_filter: LDAP user filter string.
+                unique_identifier: LDAP unique identifier string.
+                base_dn: LDAP base distinguished name.
+                email_attribute: LDAP email attribute name.
+                guid_attribute: LDAP GUID attribute name.
+                additional_settings: List of additional settings dictionaries for directory server.
 
-                user_name       (str)   --  user name of the domain
+        Returns:
+            Dictionary containing the properties of the newly added domain.
 
-                password        (str)   --  password of the domain
+        Raises:
+            SDKException: If input parameters are invalid or domain addition fails.
 
-                company_id      (int)   --  company id for which the domain needs to be added for
-
-                ad_proxy_list     (list)  --  list of client objects to be used as proxy.
-
-                    default: None
-
-                    if no proxy required
-
-                enable_sso      (bool)  --  enable sso for domain
-
-                type_of_server  (str)   --  Type of server to be registered
-                    values:
-                    &#34;active directory&#34;
-                    &#34;apple directory&#34;
-                    &#34;oracle ldap&#34;
-                    &#34;open ldap&#34;
-                    &#34;ldap server&#34;
-
-                **kwargs            --      required parameters for LDAP Server registration and other additional
-                                            settings can be passed
-
-                    group_filter    (str)   --  group filter for ldap server
-                    user_filter     (str)   --  user filter for ldap server
-                    unique_identifier   (str)   --  unique identifier for ldap server
-                    base_dn              (str)  --  base dn for ldap server
-
-                    additional_settings     (list)  --  additional settings for directory server.
-                        eg:-    [
-                                    {
-                                        &#34;relativepath&#34;: &#34;CommServDB.Console&#34;,
-                                        &#34;keyName&#34;: &#34;basedn&#34;,
-                                        &#34;type&#34;: &#34;STRING&#34;,
-                                        &#34;value&#34;: &#34;cn=automation_group2,dc=example,dc=com&#34;,
-                                        &#34;enabled&#34;: 1
-                                    }
-                                ]
-
-            Returns:
-                dict    -   properties of domain
-
-            Raises:
-                SDKException:
-                    if type of the domain name argument is not string
-
-                    if no domain exists with the given name
+        Example:
+            &gt;&gt;&gt; domains = Domains(commcell_object)
+            &gt;&gt;&gt; domain_props = domains.add(
+            ...     domain_name=&#34;example.com&#34;,
+            ...     netbios_name=&#34;EXAMPLE&#34;,
+            ...     user_name=&#34;admin&#34;,
+            ...     password=&#34;password123&#34;,
+            ...     ad_proxy_list=[&#34;client1&#34;, &#34;client2&#34;],
+            ...     enable_sso=True,
+            ...     type_of_server=&#34;active directory&#34;,
+            ...     group_filter=&#34;(objectClass=group)&#34;,
+            ...     user_filter=&#34;(&amp;(objectCategory=User)(sAMAccountName=*))&#34;,
+            ...     base_dn=&#34;dc=example,dc=com&#34;
+            ... )
+            &gt;&gt;&gt; print(domain_props)
+            {&#39;domainName&#39;: &#39;example.com&#39;, &#39;netbiosName&#39;: &#39;EXAMPLE&#39;, ...}
 
         &#34;&#34;&#34;
         service_type_mapping = {&#34;active directory&#34;: 2, &#34;apple directory&#34;: 8, &#34;oracle ldap&#34;: 9, &#34;open ldap&#34;: 10,
@@ -474,8 +563,12 @@ class Domains(object):
             raise SDKException(&#39;Domain&#39;, &#34;102&#34;, &#34;please pass valid server type&#34;)
         if not (isinstance(domain_name, str) and
                 isinstance(netbios_name, str) and
-                isinstance(user_name, str) and
-                isinstance(password, str)):
+                (
+                        isinstance(use_local_system_account, bool) or
+                        isinstance(credential_id, int) or
+                        (isinstance(user_name, str) and isinstance(password, str))
+                )
+        ):
             raise SDKException(&#39;Domain&#39;, &#39;101&#39;)
         else:
             domain_name = domain_name.lower()
@@ -497,13 +590,10 @@ class Domains(object):
             &#34;operation&#34;: 1,
             &#34;provider&#34;: {
                 &#34;serviceType&#34;: service_type,
-                &#34;flags&#34;: 1,
-                &#34;bPassword&#34;: b64encode(password.encode()).decode(),
-                &#34;login&#34;: user_name,
+                &#34;flags&#34;: 1 if enable_sso else 0,
                 &#34;enabled&#34;: 1,
                 &#34;useSecureLdap&#34;: 0,
                 &#34;connectName&#34;: domain_name,
-                &#34;bLogin&#34;: user_name,
                 &#34;ownerCompanyId&#34;: company_id,
                 &#34;tppm&#34;: {
                     &#34;enable&#34;: True if ad_proxy_list else False,
@@ -515,6 +605,16 @@ class Domains(object):
                 }
             }
         }
+
+        if user_name and password:
+            domain_create_request[&#34;provider&#34;][&#39;login&#39;] = user_name
+            domain_create_request[&#34;provider&#34;][&#39;bLogin&#39;] = user_name
+            domain_create_request[&#34;provider&#34;][&#39;bPassword&#39;] = b64encode(password.encode()).decode()
+        elif use_local_system_account:
+            domain_create_request[&#34;provider&#34;][&#39;login&#39;] = &#39;LocalSystemAccount&#39;
+            domain_create_request[&#34;provider&#34;][&#39;bLogin&#39;] = &#39;LocalSystemAccount&#39;
+        else:
+            domain_create_request[&#34;provider&#34;][&#39;domainCredInfo&#39;] = {&#34;credentialId&#34;: credential_id}
 
         if kwargs:
             custom_provider = {
@@ -594,19 +694,41 @@ class Domains(object):
             response_string = self._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
+
 class Domain(object):
-    &#34;&#34;&#34;Class for representing a particular domain configured on a commcell&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents a specific domain configured on a CommCell.
 
-    def __init__(self, commcell_object, domain_name, domain_id=None):
-        &#34;&#34;&#34;Initialize the domain class object for specified domain
+    This class provides an interface for managing and interacting with domains within a CommCell environment.
+    It allows retrieval and modification of domain properties, management of Single Sign-On (SSO) settings,
+    and enables or disables domain status. The class also supports refreshing domain information and provides
+    access to domain identifiers and names.
 
-            Args:
-                commcell_object (object)  --  instance of the Commcell class
+    Key Features:
+        - Initialize domain objects with CommCell context, domain name, and domain ID
+        - Retrieve domain properties and identifiers
+        - Refresh domain information from the CommCell
+        - Enable or disable Single Sign-On (SSO) for the domain
+        - Update domain properties using request bodies
+        - Set domain status (enable/disable)
+        - Access domain name and domain ID via properties
+        - String representation for domain objects
 
-                domain_name         (str)     --  name of the domain
+    &#34;&#34;&#34;
 
-                domain_id           (str)     --  id of the domain
+    def __init__(self, commcell_object: &#39;Commcell&#39;, domain_name: str, domain_id: Optional[str] = None) -&gt; None:
+        &#34;&#34;&#34;Initialize a Domain object for the specified domain.
 
+        Args:
+            commcell_object: Instance of the Commcell class representing the Commcell connection.
+            domain_name: Name of the domain as a string.
+            domain_id: Optional string representing the domain ID. If not provided, it will be determined automatically.
+
+        Example:
+            &gt;&gt;&gt; commcell = Commcell(command_center_hostname, username, password)
+            &gt;&gt;&gt; domain = Domain(commcell, &#34;example.com&#34;)
+            &gt;&gt;&gt; # To specify a domain ID explicitly
+            &gt;&gt;&gt; domain_with_id = Domain(commcell, &#34;example.com&#34;, domain_id=&#34;12345&#34;)
 
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
@@ -622,30 +744,61 @@ class Domain(object):
         self._properties = None
         self._get_domain_properties()
 
-    def __repr__(self):
-        &#34;&#34;&#34;String representation of the instance of this class.&#34;&#34;&#34;
+    def __repr__(self) -&gt; str:
+        &#34;&#34;&#34;Return a string representation of the Domain instance.
+
+        This method provides a readable description of the Domain object,
+        including the domain name for easier identification during debugging
+        or logging.
+
+        Returns:
+            String representation of the Domain instance.
+
+        Example:
+            &gt;&gt;&gt; domain = Domain(...)
+            &gt;&gt;&gt; print(repr(domain))
+            Domain class instance for Domain: &#34;example.com&#34;
+        &#34;&#34;&#34;
         representation_string = &#39;Domain class instance for Domain: &#34;{0}&#34;&#39;
         return representation_string.format(self.domain_name)
 
+    def _get_domain_id(self, domain_name: str) -&gt; int:
+        &#34;&#34;&#34;Retrieve the domain ID associated with the specified domain name.
 
-    def _get_domain_id(self, domain_name):
-        &#34;&#34;&#34;Gets the domain id associated with this domain
+        Args:
+            domain_name: The name of the domain for which to fetch the ID.
 
-            Args:
-                domain_name         (str)     --     name of the domain
+        Returns:
+            The integer ID associated with the specified domain.
 
-            Returns:
-                int     -     id associated to the specified user
+        Example:
+            &gt;&gt;&gt; domain = Domain(commcell_object)
+            &gt;&gt;&gt; domain_id = domain._get_domain_id(&#34;example.com&#34;)
+            &gt;&gt;&gt; print(f&#34;Domain ID: {domain_id}&#34;)
+
         &#34;&#34;&#34;
         domain = Domains(self._commcell_object)
         return domain.get(domain_name).domain_id
 
-    def _get_domain_properties(self):
-        &#34;&#34;&#34;Gets the properties of this domain
+    def _get_domain_properties(self) -&gt; Dict[str, Any]:
+        &#34;&#34;&#34;Retrieve the properties of the current domain.
 
-            Returns (dict):
-                domain_name (str) - name of the domain
-                domain_id   (str) - domain id
+        This method fetches domain details such as domain name and domain ID from the Commcell server.
+        It returns a dictionary containing the domain properties.
+
+        Returns:
+            Dictionary with domain properties, including:
+                - domain_name (str): Name of the domain.
+                - domain_id (str): Unique identifier for the domain.
+
+        Raises:
+            SDKException: If the response from the server is invalid or does not contain expected data.
+
+        Example:
+            &gt;&gt;&gt; domain = Domain(commcell_object, domain_id)
+            &gt;&gt;&gt; properties = domain._get_domain_properties()
+            &gt;&gt;&gt; print(f&#34;Domain Name: {properties[&#39;domain_name&#39;]}&#34;)
+            &gt;&gt;&gt; print(f&#34;Domain ID: {properties[&#39;domain_id&#39;]}&#34;)
 
         &#34;&#34;&#34;
 
@@ -662,29 +815,41 @@ class Domain(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def refresh(self):
-        &#34;&#34;&#34;Refresh the properties of the domain.&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Reload the properties of the domain to ensure up-to-date information.
+
+        This method refreshes the domain&#39;s internal state by re-fetching its properties.
+        Use this when you need to ensure the domain object reflects the latest configuration.
+
+        Example:
+            &gt;&gt;&gt; domain = Domain(...)
+            &gt;&gt;&gt; domain.refresh()  # Updates domain properties from the source
+            &gt;&gt;&gt; print(&#34;Domain properties refreshed successfully&#34;)
+        &#34;&#34;&#34;
         self._get_domain_properties()
 
-    def set_sso(self, flag=True, **kwargs):
-        &#34;&#34;&#34;Enables/Disables single sign on the domain
-            Args:
-                flag(bool)      --  True    - enables SSO
-                                    False   - disables SSO
-                ** kwargs(dict) --  Key value pairs for supported arguments
-                Supported argument values:
-                username(str)       --  Username to be used
-                password(str)       --  Password to be used
+    def set_sso(self, flag: bool = True, **kwargs: Any) -&gt; None:
+        &#34;&#34;&#34;Enable or disable Single Sign-On (SSO) for the domain.
 
-            Returns:
-                None
+        This method allows you to enable or disable SSO for the domain. You can optionally provide
+        a username and password for authentication via keyword arguments.
 
-            Raises:
-                SDKException:
-                    if arguments passed are of incorrect types
-                    if failed to enable SSO
-                    if response is empty
-                    if response is not success
+        Args:
+            flag: Set to True to enable SSO, or False to disable SSO.
+            **kwargs: Optional keyword arguments for supported parameters:
+                - username (str): Username to be used for authentication.
+                - password (str): Password to be used for authentication.
+
+        Raises:
+            SDKException: If arguments are of incorrect types, if enabling/disabling SSO fails,
+                if the response is empty, or if the response indicates failure.
+
+        Example:
+            &gt;&gt;&gt; domain = Domain(...)
+            &gt;&gt;&gt; # Enable SSO with credentials
+            &gt;&gt;&gt; domain.set_sso(True, username=&#34;admin&#34;, password=&#34;securepass&#34;)
+            &gt;&gt;&gt; # Disable SSO
+            &gt;&gt;&gt; domain.set_sso(False)
         &#34;&#34;&#34;
 
         if not isinstance(flag, bool):
@@ -710,15 +875,23 @@ class Domain(object):
             raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
 
-    def set_properties(self, req_body):
-        &#34;&#34;&#34;Modifies domain properties
-            Args:
-                req_body  (json)       domain properties in json format to pass as payload to API
+    def set_properties(self, req_body: Dict[str, Any]) -&gt; None:
+        &#34;&#34;&#34;Modify the properties of the domain using the provided payload.
 
-            Raises:
-                SDKException:
-                    if failed to set properties
-                    if request is not successful
+        Args:
+            req_body: Dictionary containing domain properties to update, formatted as JSON payload for the API.
+
+        Raises:
+            SDKException: If the properties could not be set or if the API request fails.
+
+        Example:
+            &gt;&gt;&gt; domain = Domain(commcell_object, domain_id)
+            &gt;&gt;&gt; payload = {
+            ...     &#34;domainName&#34;: &#34;NewDomainName&#34;,
+            ...     &#34;description&#34;: &#34;Updated domain description&#34;
+            ... }
+            &gt;&gt;&gt; domain.set_properties(payload)
+            &gt;&gt;&gt; print(&#34;Domain properties updated successfully&#34;)
 
         &#34;&#34;&#34;
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -738,17 +911,22 @@ class Domain(object):
             &#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
 
     def set_domain_status(self, enable: bool) -&gt; None:
-        &#34;&#34;&#34;Enables/Disables the domain
-            Args:
-                enable(bool)      --  True    - enables domain
-                                      False   - disables domain
+        &#34;&#34;&#34;Enable or disable the domain.
 
-            Returns:
-                None
+        This method updates the domain status based on the provided flag. If `enable` is True, the domain is enabled;
+        if False, the domain is disabled. The operation is performed via a POST request to the domain controller.
 
-            Raises:
-                SDKException:
-                    if response is not success
+        Args:
+            enable: Set to True to enable the domain, or False to disable it.
+
+        Raises:
+            SDKException: If the response from the server indicates a failure or an error occurs during the update.
+
+        Example:
+            &gt;&gt;&gt; domain = Domain(commcell_object)
+            &gt;&gt;&gt; domain.set_domain_status(True)   # Enable the domain
+            &gt;&gt;&gt; domain.set_domain_status(False)  # Disable the domain
+
         &#34;&#34;&#34;
 
         self._properties[&#39;enabled&#39;] = 1 if enable else 0
@@ -771,13 +949,32 @@ class Domain(object):
                 response.json().get(&#39;errorMessage&#39;, &#39;Unable to update domain status&#39;))
 
     @property
-    def domain_name(self):
-        &#34;&#34;&#34;Returns the User display name&#34;&#34;&#34;
+    def domain_name(self) -&gt; str:
+        &#34;&#34;&#34;Get the domain name associated with this Domain object.
+
+        Returns:
+            The domain name as a string.
+
+        Example:
+            &gt;&gt;&gt; domain = Domain(...)
+            &gt;&gt;&gt; name = domain.domain_name  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Domain name: {name}&#34;)
+        &#34;&#34;&#34;
         return self._properties[&#39;shortName&#39;][&#39;domainName&#39;]
 
     @property
-    def domain_id(self):
-        &#34;&#34;&#34;Returns the user name of this commcell user&#34;&#34;&#34;
+    def domain_id(self) -&gt; str:
+        &#34;&#34;&#34;Get the unique identifier for this domain.
+
+        Returns:
+            The domain ID as a string.
+
+        Example:
+            &gt;&gt;&gt; domain = Domain(...)
+            &gt;&gt;&gt; domain_id = domain.domain_id  # Use dot notation for properties
+            &gt;&gt;&gt; print(f&#34;Domain ID: {domain_id}&#34;)
+
+        &#34;&#34;&#34;
         return self._properties[&#39;shortName&#39;][&#39;id&#39;]</code></pre>
 </details>
 </section>
@@ -792,41 +989,80 @@ class Domain(object):
 <dl>
 <dt id="cvpysdk.domains.Domain"><code class="flex name class">
 <span>class <span class="ident">Domain</span></span>
-<span>(</span><span>commcell_object, domain_name, domain_id=None)</span>
+<span>(</span><span>commcell_object: Commcell, domain_name: str, domain_id: Optional[str] = None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for representing a particular domain configured on a commcell</p>
-<p>Initialize the domain class object for specified domain</p>
-<h2 id="args">Args</h2>
-<p>commcell_object (object)
-&ndash;
-instance of the Commcell class</p>
-<p>domain_name
-(str)
-&ndash;
-name of the domain</p>
-<p>domain_id
-(str)
-&ndash;
-id of the domain</p></div>
+<div class="desc"><p>Represents a specific domain configured on a CommCell.</p>
+<p>This class provides an interface for managing and interacting with domains within a CommCell environment.
+It allows retrieval and modification of domain properties, management of Single Sign-On (SSO) settings,
+and enables or disables domain status. The class also supports refreshing domain information and provides
+access to domain identifiers and names.</p>
+<p>Key Features:
+- Initialize domain objects with CommCell context, domain name, and domain ID
+- Retrieve domain properties and identifiers
+- Refresh domain information from the CommCell
+- Enable or disable Single Sign-On (SSO) for the domain
+- Update domain properties using request bodies
+- Set domain status (enable/disable)
+- Access domain name and domain ID via properties
+- String representation for domain objects</p>
+<p>Initialize a Domain object for the specified domain.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>commcell_object</code></strong></dt>
+<dd>Instance of the Commcell class representing the Commcell connection.</dd>
+<dt><strong><code>domain_name</code></strong></dt>
+<dd>Name of the domain as a string.</dd>
+<dt><strong><code>domain_id</code></strong></dt>
+<dd>Optional string representing the domain ID. If not provided, it will be determined automatically.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; commcell = Commcell(command_center_hostname, username, password)
+&gt;&gt;&gt; domain = Domain(commcell, &quot;example.com&quot;)
+&gt;&gt;&gt; # To specify a domain ID explicitly
+&gt;&gt;&gt; domain_with_id = Domain(commcell, &quot;example.com&quot;, domain_id=&quot;12345&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/domains.py#L505-L689" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/domains.py#L617-L908" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Domain(object):
-    &#34;&#34;&#34;Class for representing a particular domain configured on a commcell&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents a specific domain configured on a CommCell.
 
-    def __init__(self, commcell_object, domain_name, domain_id=None):
-        &#34;&#34;&#34;Initialize the domain class object for specified domain
+    This class provides an interface for managing and interacting with domains within a CommCell environment.
+    It allows retrieval and modification of domain properties, management of Single Sign-On (SSO) settings,
+    and enables or disables domain status. The class also supports refreshing domain information and provides
+    access to domain identifiers and names.
 
-            Args:
-                commcell_object (object)  --  instance of the Commcell class
+    Key Features:
+        - Initialize domain objects with CommCell context, domain name, and domain ID
+        - Retrieve domain properties and identifiers
+        - Refresh domain information from the CommCell
+        - Enable or disable Single Sign-On (SSO) for the domain
+        - Update domain properties using request bodies
+        - Set domain status (enable/disable)
+        - Access domain name and domain ID via properties
+        - String representation for domain objects
 
-                domain_name         (str)     --  name of the domain
+    &#34;&#34;&#34;
 
-                domain_id           (str)     --  id of the domain
+    def __init__(self, commcell_object: &#39;Commcell&#39;, domain_name: str, domain_id: Optional[str] = None) -&gt; None:
+        &#34;&#34;&#34;Initialize a Domain object for the specified domain.
 
+        Args:
+            commcell_object: Instance of the Commcell class representing the Commcell connection.
+            domain_name: Name of the domain as a string.
+            domain_id: Optional string representing the domain ID. If not provided, it will be determined automatically.
+
+        Example:
+            &gt;&gt;&gt; commcell = Commcell(command_center_hostname, username, password)
+            &gt;&gt;&gt; domain = Domain(commcell, &#34;example.com&#34;)
+            &gt;&gt;&gt; # To specify a domain ID explicitly
+            &gt;&gt;&gt; domain_with_id = Domain(commcell, &#34;example.com&#34;, domain_id=&#34;12345&#34;)
 
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
@@ -842,30 +1078,61 @@ id of the domain</p></div>
         self._properties = None
         self._get_domain_properties()
 
-    def __repr__(self):
-        &#34;&#34;&#34;String representation of the instance of this class.&#34;&#34;&#34;
+    def __repr__(self) -&gt; str:
+        &#34;&#34;&#34;Return a string representation of the Domain instance.
+
+        This method provides a readable description of the Domain object,
+        including the domain name for easier identification during debugging
+        or logging.
+
+        Returns:
+            String representation of the Domain instance.
+
+        Example:
+            &gt;&gt;&gt; domain = Domain(...)
+            &gt;&gt;&gt; print(repr(domain))
+            Domain class instance for Domain: &#34;example.com&#34;
+        &#34;&#34;&#34;
         representation_string = &#39;Domain class instance for Domain: &#34;{0}&#34;&#39;
         return representation_string.format(self.domain_name)
 
+    def _get_domain_id(self, domain_name: str) -&gt; int:
+        &#34;&#34;&#34;Retrieve the domain ID associated with the specified domain name.
 
-    def _get_domain_id(self, domain_name):
-        &#34;&#34;&#34;Gets the domain id associated with this domain
+        Args:
+            domain_name: The name of the domain for which to fetch the ID.
 
-            Args:
-                domain_name         (str)     --     name of the domain
+        Returns:
+            The integer ID associated with the specified domain.
 
-            Returns:
-                int     -     id associated to the specified user
+        Example:
+            &gt;&gt;&gt; domain = Domain(commcell_object)
+            &gt;&gt;&gt; domain_id = domain._get_domain_id(&#34;example.com&#34;)
+            &gt;&gt;&gt; print(f&#34;Domain ID: {domain_id}&#34;)
+
         &#34;&#34;&#34;
         domain = Domains(self._commcell_object)
         return domain.get(domain_name).domain_id
 
-    def _get_domain_properties(self):
-        &#34;&#34;&#34;Gets the properties of this domain
+    def _get_domain_properties(self) -&gt; Dict[str, Any]:
+        &#34;&#34;&#34;Retrieve the properties of the current domain.
 
-            Returns (dict):
-                domain_name (str) - name of the domain
-                domain_id   (str) - domain id
+        This method fetches domain details such as domain name and domain ID from the Commcell server.
+        It returns a dictionary containing the domain properties.
+
+        Returns:
+            Dictionary with domain properties, including:
+                - domain_name (str): Name of the domain.
+                - domain_id (str): Unique identifier for the domain.
+
+        Raises:
+            SDKException: If the response from the server is invalid or does not contain expected data.
+
+        Example:
+            &gt;&gt;&gt; domain = Domain(commcell_object, domain_id)
+            &gt;&gt;&gt; properties = domain._get_domain_properties()
+            &gt;&gt;&gt; print(f&#34;Domain Name: {properties[&#39;domain_name&#39;]}&#34;)
+            &gt;&gt;&gt; print(f&#34;Domain ID: {properties[&#39;domain_id&#39;]}&#34;)
 
         &#34;&#34;&#34;
 
@@ -882,29 +1149,41 @@ id of the domain</p></div>
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def refresh(self):
-        &#34;&#34;&#34;Refresh the properties of the domain.&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Reload the properties of the domain to ensure up-to-date information.
+
+        This method refreshes the domain&#39;s internal state by re-fetching its properties.
+        Use this when you need to ensure the domain object reflects the latest configuration.
+
+        Example:
+            &gt;&gt;&gt; domain = Domain(...)
+            &gt;&gt;&gt; domain.refresh()  # Updates domain properties from the source
+            &gt;&gt;&gt; print(&#34;Domain properties refreshed successfully&#34;)
+        &#34;&#34;&#34;
         self._get_domain_properties()
 
-    def set_sso(self, flag=True, **kwargs):
-        &#34;&#34;&#34;Enables/Disables single sign on the domain
-            Args:
-                flag(bool)      --  True    - enables SSO
-                                    False   - disables SSO
-                ** kwargs(dict) --  Key value pairs for supported arguments
-                Supported argument values:
-                username(str)       --  Username to be used
-                password(str)       --  Password to be used
+    def set_sso(self, flag: bool = True, **kwargs: Any) -&gt; None:
+        &#34;&#34;&#34;Enable or disable Single Sign-On (SSO) for the domain.
 
-            Returns:
-                None
+        This method allows you to enable or disable SSO for the domain. You can optionally provide
+        a username and password for authentication via keyword arguments.
 
-            Raises:
-                SDKException:
-                    if arguments passed are of incorrect types
-                    if failed to enable SSO
-                    if response is empty
-                    if response is not success
+        Args:
+            flag: Set to True to enable SSO, or False to disable SSO.
+            **kwargs: Optional keyword arguments for supported parameters:
+                - username (str): Username to be used for authentication.
+                - password (str): Password to be used for authentication.
+
+        Raises:
+            SDKException: If arguments are of incorrect types, if enabling/disabling SSO fails,
+                if the response is empty, or if the response indicates failure.
+
+        Example:
+            &gt;&gt;&gt; domain = Domain(...)
+            &gt;&gt;&gt; # Enable SSO with credentials
+            &gt;&gt;&gt; domain.set_sso(True, username=&#34;admin&#34;, password=&#34;securepass&#34;)
+            &gt;&gt;&gt; # Disable SSO
+            &gt;&gt;&gt; domain.set_sso(False)
         &#34;&#34;&#34;
 
         if not isinstance(flag, bool):
@@ -930,15 +1209,23 @@ id of the domain</p></div>
             raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
 
-    def set_properties(self, req_body):
-        &#34;&#34;&#34;Modifies domain properties
-            Args:
-                req_body  (json)       domain properties in json format to pass as payload to API
+    def set_properties(self, req_body: Dict[str, Any]) -&gt; None:
+        &#34;&#34;&#34;Modify the properties of the domain using the provided payload.
 
-            Raises:
-                SDKException:
-                    if failed to set properties
-                    if request is not successful
+        Args:
+            req_body: Dictionary containing domain properties to update, formatted as JSON payload for the API.
+
+        Raises:
+            SDKException: If the properties could not be set or if the API request fails.
+
+        Example:
+            &gt;&gt;&gt; domain = Domain(commcell_object, domain_id)
+            &gt;&gt;&gt; payload = {
+            ...     &#34;domainName&#34;: &#34;NewDomainName&#34;,
+            ...     &#34;description&#34;: &#34;Updated domain description&#34;
+            ... }
+            &gt;&gt;&gt; domain.set_properties(payload)
+            &gt;&gt;&gt; print(&#34;Domain properties updated successfully&#34;)
 
         &#34;&#34;&#34;
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -958,17 +1245,22 @@ id of the domain</p></div>
             &#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
 
     def set_domain_status(self, enable: bool) -&gt; None:
-        &#34;&#34;&#34;Enables/Disables the domain
-            Args:
-                enable(bool)      --  True    - enables domain
-                                      False   - disables domain
+        &#34;&#34;&#34;Enable or disable the domain.
 
-            Returns:
-                None
+        This method updates the domain status based on the provided flag. If `enable` is True, the domain is enabled;
+        if False, the domain is disabled. The operation is performed via a POST request to the domain controller.
 
-            Raises:
-                SDKException:
-                    if response is not success
+        Args:
+            enable: Set to True to enable the domain, or False to disable it.
+
+        Raises:
+            SDKException: If the response from the server indicates a failure or an error occurs during the update.
+
+        Example:
+            &gt;&gt;&gt; domain = Domain(commcell_object)
+            &gt;&gt;&gt; domain.set_domain_status(True)   # Enable the domain
+            &gt;&gt;&gt; domain.set_domain_status(False)  # Disable the domain
+
         &#34;&#34;&#34;
 
         self._properties[&#39;enabled&#39;] = 1 if enable else 0
@@ -991,42 +1283,98 @@ id of the domain</p></div>
                 response.json().get(&#39;errorMessage&#39;, &#39;Unable to update domain status&#39;))
 
     @property
-    def domain_name(self):
-        &#34;&#34;&#34;Returns the User display name&#34;&#34;&#34;
+    def domain_name(self) -&gt; str:
+        &#34;&#34;&#34;Get the domain name associated with this Domain object.
+
+        Returns:
+            The domain name as a string.
+
+        Example:
+            &gt;&gt;&gt; domain = Domain(...)
+            &gt;&gt;&gt; name = domain.domain_name  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Domain name: {name}&#34;)
+        &#34;&#34;&#34;
         return self._properties[&#39;shortName&#39;][&#39;domainName&#39;]
 
     @property
-    def domain_id(self):
-        &#34;&#34;&#34;Returns the user name of this commcell user&#34;&#34;&#34;
+    def domain_id(self) -&gt; str:
+        &#34;&#34;&#34;Get the unique identifier for this domain.
+
+        Returns:
+            The domain ID as a string.
+
+        Example:
+            &gt;&gt;&gt; domain = Domain(...)
+            &gt;&gt;&gt; domain_id = domain.domain_id  # Use dot notation for properties
+            &gt;&gt;&gt; print(f&#34;Domain ID: {domain_id}&#34;)
+
+        &#34;&#34;&#34;
         return self._properties[&#39;shortName&#39;][&#39;id&#39;]</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.domains.Domain.domain_id"><code class="name">var <span class="ident">domain_id</span></code></dt>
+<dt id="cvpysdk.domains.Domain.domain_id"><code class="name">var <span class="ident">domain_id</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the user name of this commcell user</p></div>
+<div class="desc"><p>Get the unique identifier for this domain.</p>
+<p>Returns
+-----=
+The domain ID as a string.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; domain = Domain(...)
+&gt;&gt;&gt; domain_id = domain.domain_id  # Use dot notation for properties
+&gt;&gt;&gt; print(f&quot;Domain ID: {domain_id}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/domains.py#L686-L689" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/domains.py#L894-L908" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def domain_id(self):
-    &#34;&#34;&#34;Returns the user name of this commcell user&#34;&#34;&#34;
+def domain_id(self) -&gt; str:
+    &#34;&#34;&#34;Get the unique identifier for this domain.
+
+    Returns:
+        The domain ID as a string.
+
+    Example:
+        &gt;&gt;&gt; domain = Domain(...)
+        &gt;&gt;&gt; domain_id = domain.domain_id  # Use dot notation for properties
+        &gt;&gt;&gt; print(f&#34;Domain ID: {domain_id}&#34;)
+
+    &#34;&#34;&#34;
     return self._properties[&#39;shortName&#39;][&#39;id&#39;]</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.domains.Domain.domain_name"><code class="name">var <span class="ident">domain_name</span></code></dt>
+<dt id="cvpysdk.domains.Domain.domain_name"><code class="name">var <span class="ident">domain_name</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the User display name</p></div>
+<div class="desc"><p>Get the domain name associated with this Domain object.</p>
+<p>Returns
+-----=
+The domain name as a string.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; domain = Domain(...)
+&gt;&gt;&gt; name = domain.domain_name  # Use dot notation for property access
+&gt;&gt;&gt; print(f&quot;Domain name: {name}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/domains.py#L681-L684" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/domains.py#L879-L892" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def domain_name(self):
-    &#34;&#34;&#34;Returns the User display name&#34;&#34;&#34;
+def domain_name(self) -&gt; str:
+    &#34;&#34;&#34;Get the domain name associated with this Domain object.
+
+    Returns:
+        The domain name as a string.
+
+    Example:
+        &gt;&gt;&gt; domain = Domain(...)
+        &gt;&gt;&gt; name = domain.domain_name  # Use dot notation for property access
+        &gt;&gt;&gt; print(f&#34;Domain name: {name}&#34;)
+    &#34;&#34;&#34;
     return self._properties[&#39;shortName&#39;][&#39;domainName&#39;]</code></pre>
 </details>
 </dd>
@@ -1034,17 +1382,34 @@ def domain_name(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.domains.Domain.refresh"><code class="name flex">
-<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+<span>def <span class="ident">refresh</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Refresh the properties of the domain.</p></div>
+<div class="desc"><p>Reload the properties of the domain to ensure up-to-date information.</p>
+<p>This method refreshes the domain's internal state by re-fetching its properties.
+Use this when you need to ensure the domain object reflects the latest configuration.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; domain = Domain(...)
+&gt;&gt;&gt; domain.refresh()  # Updates domain properties from the source
+&gt;&gt;&gt; print(&quot;Domain properties refreshed successfully&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/domains.py#L573-L575" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/domains.py#L742-L754" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def refresh(self):
-    &#34;&#34;&#34;Refresh the properties of the domain.&#34;&#34;&#34;
+<pre><code class="python">def refresh(self) -&gt; None:
+    &#34;&#34;&#34;Reload the properties of the domain to ensure up-to-date information.
+
+    This method refreshes the domain&#39;s internal state by re-fetching its properties.
+    Use this when you need to ensure the domain object reflects the latest configuration.
+
+    Example:
+        &gt;&gt;&gt; domain = Domain(...)
+        &gt;&gt;&gt; domain.refresh()  # Updates domain properties from the source
+        &gt;&gt;&gt; print(&#34;Domain properties refreshed successfully&#34;)
+    &#34;&#34;&#34;
     self._get_domain_properties()</code></pre>
 </details>
 </dd>
@@ -1052,36 +1417,47 @@ def domain_name(self):
 <span>def <span class="ident">set_domain_status</span></span>(<span>self, enable: bool) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Enables/Disables the domain</p>
-<h2 id="args">Args</h2>
-<p>enable(bool)
-&ndash;
-True
-- enables domain
-False
-- disables domain</p>
-<h2 id="returns">Returns</h2>
-<p>None</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if response is not success</p></div>
+<div class="desc"><p>Enable or disable the domain.</p>
+<p>This method updates the domain status based on the provided flag. If <code>enable</code> is True, the domain is enabled;
+if False, the domain is disabled. The operation is performed via a POST request to the domain controller.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>enable</code></strong></dt>
+<dd>Set to True to enable the domain, or False to disable it.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the response from the server indicates a failure or an error occurs during the update.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; domain = Domain(commcell_object)
+&gt;&gt;&gt; domain.set_domain_status(True)   # Enable the domain
+&gt;&gt;&gt; domain.set_domain_status(False)  # Disable the domain
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/domains.py#L648-L679" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/domains.py#L840-L877" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def set_domain_status(self, enable: bool) -&gt; None:
-    &#34;&#34;&#34;Enables/Disables the domain
-        Args:
-            enable(bool)      --  True    - enables domain
-                                  False   - disables domain
+    &#34;&#34;&#34;Enable or disable the domain.
 
-        Returns:
-            None
+    This method updates the domain status based on the provided flag. If `enable` is True, the domain is enabled;
+    if False, the domain is disabled. The operation is performed via a POST request to the domain controller.
 
-        Raises:
-            SDKException:
-                if response is not success
+    Args:
+        enable: Set to True to enable the domain, or False to disable it.
+
+    Raises:
+        SDKException: If the response from the server indicates a failure or an error occurs during the update.
+
+    Example:
+        &gt;&gt;&gt; domain = Domain(commcell_object)
+        &gt;&gt;&gt; domain.set_domain_status(True)   # Enable the domain
+        &gt;&gt;&gt; domain.set_domain_status(False)  # Disable the domain
+
     &#34;&#34;&#34;
 
     self._properties[&#39;enabled&#39;] = 1 if enable else 0
@@ -1105,32 +1481,52 @@ if response is not success</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.domains.Domain.set_properties"><code class="name flex">
-<span>def <span class="ident">set_properties</span></span>(<span>self, req_body)</span>
+<span>def <span class="ident">set_properties</span></span>(<span>self, req_body: Dict[str, Any]) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Modifies domain properties</p>
-<h2 id="args">Args</h2>
-<p>req_body
-(json)
-domain properties in json format to pass as payload to API</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if failed to set properties
-if request is not successful</p></div>
+<div class="desc"><p>Modify the properties of the domain using the provided payload.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>req_body</code></strong></dt>
+<dd>Dictionary containing domain properties to update, formatted as JSON payload for the API.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the properties could not be set or if the API request fails.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; domain = Domain(commcell_object, domain_id)
+&gt;&gt;&gt; payload = {
+...     &quot;domainName&quot;: &quot;NewDomainName&quot;,
+...     &quot;description&quot;: &quot;Updated domain description&quot;
+... }
+&gt;&gt;&gt; domain.set_properties(payload)
+&gt;&gt;&gt; print(&quot;Domain properties updated successfully&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/domains.py#L621-L646" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/domains.py#L804-L838" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def set_properties(self, req_body):
-    &#34;&#34;&#34;Modifies domain properties
-        Args:
-            req_body  (json)       domain properties in json format to pass as payload to API
+<pre><code class="python">def set_properties(self, req_body: Dict[str, Any]) -&gt; None:
+    &#34;&#34;&#34;Modify the properties of the domain using the provided payload.
 
-        Raises:
-            SDKException:
-                if failed to set properties
-                if request is not successful
+    Args:
+        req_body: Dictionary containing domain properties to update, formatted as JSON payload for the API.
+
+    Raises:
+        SDKException: If the properties could not be set or if the API request fails.
+
+    Example:
+        &gt;&gt;&gt; domain = Domain(commcell_object, domain_id)
+        &gt;&gt;&gt; payload = {
+        ...     &#34;domainName&#34;: &#34;NewDomainName&#34;,
+        ...     &#34;description&#34;: &#34;Updated domain description&#34;
+        ... }
+        &gt;&gt;&gt; domain.set_properties(payload)
+        &gt;&gt;&gt; print(&#34;Domain properties updated successfully&#34;)
 
     &#34;&#34;&#34;
     flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -1151,58 +1547,62 @@ if request is not successful</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.domains.Domain.set_sso"><code class="name flex">
-<span>def <span class="ident">set_sso</span></span>(<span>self, flag=True, **kwargs)</span>
+<span>def <span class="ident">set_sso</span></span>(<span>self, flag: bool = True, **kwargs: Any) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Enables/Disables single sign on the domain</p>
-<h2 id="args">Args</h2>
-<p>flag(bool)
-&ndash;
-True
-- enables SSO
-False
-- disables SSO
-** kwargs(dict) &ndash;
-Key value pairs for supported arguments
-Supported argument values:
-username(str)
-&ndash;
-Username to be used
-password(str)
-&ndash;
-Password to be used</p>
-<h2 id="returns">Returns</h2>
-<p>None</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if arguments passed are of incorrect types
-if failed to enable SSO
-if response is empty
-if response is not success</p></div>
+<div class="desc"><p>Enable or disable Single Sign-On (SSO) for the domain.</p>
+<p>This method allows you to enable or disable SSO for the domain. You can optionally provide
+a username and password for authentication via keyword arguments.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>flag</code></strong></dt>
+<dd>Set to True to enable SSO, or False to disable SSO.</dd>
+<dt><strong><code>**kwargs</code></strong></dt>
+<dd>Optional keyword arguments for supported parameters:
+- username (str): Username to be used for authentication.
+- password (str): Password to be used for authentication.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If arguments are of incorrect types, if enabling/disabling SSO fails,
+if the response is empty, or if the response indicates failure.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; domain = Domain(...)
+&gt;&gt;&gt; # Enable SSO with credentials
+&gt;&gt;&gt; domain.set_sso(True, username=&quot;admin&quot;, password=&quot;securepass&quot;)
+&gt;&gt;&gt; # Disable SSO
+&gt;&gt;&gt; domain.set_sso(False)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/domains.py#L577-L619" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/domains.py#L756-L802" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def set_sso(self, flag=True, **kwargs):
-    &#34;&#34;&#34;Enables/Disables single sign on the domain
-        Args:
-            flag(bool)      --  True    - enables SSO
-                                False   - disables SSO
-            ** kwargs(dict) --  Key value pairs for supported arguments
-            Supported argument values:
-            username(str)       --  Username to be used
-            password(str)       --  Password to be used
+<pre><code class="python">def set_sso(self, flag: bool = True, **kwargs: Any) -&gt; None:
+    &#34;&#34;&#34;Enable or disable Single Sign-On (SSO) for the domain.
 
-        Returns:
-            None
+    This method allows you to enable or disable SSO for the domain. You can optionally provide
+    a username and password for authentication via keyword arguments.
 
-        Raises:
-            SDKException:
-                if arguments passed are of incorrect types
-                if failed to enable SSO
-                if response is empty
-                if response is not success
+    Args:
+        flag: Set to True to enable SSO, or False to disable SSO.
+        **kwargs: Optional keyword arguments for supported parameters:
+            - username (str): Username to be used for authentication.
+            - password (str): Password to be used for authentication.
+
+    Raises:
+        SDKException: If arguments are of incorrect types, if enabling/disabling SSO fails,
+            if the response is empty, or if the response indicates failure.
+
+    Example:
+        &gt;&gt;&gt; domain = Domain(...)
+        &gt;&gt;&gt; # Enable SSO with credentials
+        &gt;&gt;&gt; domain.set_sso(True, username=&#34;admin&#34;, password=&#34;securepass&#34;)
+        &gt;&gt;&gt; # Disable SSO
+        &gt;&gt;&gt; domain.set_sso(False)
     &#34;&#34;&#34;
 
     if not isinstance(flag, bool):
@@ -1233,34 +1633,76 @@ if response is not success</p></div>
 </dd>
 <dt id="cvpysdk.domains.Domains"><code class="flex name class">
 <span>class <span class="ident">Domains</span></span>
-<span>(</span><span>commcell_object)</span>
+<span>(</span><span>commcell_object: Commcell)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for getting all the domains associated with a commcell.</p>
-<p>Initialize object of the Domains class.</p>
-<h2 id="args">Args</h2>
-<p>commcell_object
-(object)
-&ndash;
-instance of the Commcell class</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Domains class</p></div>
+<div class="desc"><p>Manages and interacts with all domains associated with a Commcell.</p>
+<p>The Domains class provides a comprehensive interface for retrieving, managing,
+and manipulating domain objects within a Commcell environment. It supports
+operations such as adding, deleting, refreshing, and querying domains, as well
+as accessing domain details and checking for domain existence.</p>
+<p>Key Features:
+- Retrieve all domains associated with a Commcell
+- Access domain details using indexing and property access
+- Add new domains with detailed configuration options
+- Delete existing domains
+- Refresh the domain list to reflect current state
+- Check for the existence of a domain by name
+- Get domain information by name
+- Support for string representation, length, and iteration
+- Internal method for fetching domain data</p>
+<p>Initialize a Domains object with a Commcell connection.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>commcell_object</code></strong></dt>
+<dd>Instance of the Commcell class used to interact with the Commcell environment.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; from cvpysdk.commcell import Commcell
+&gt;&gt;&gt; commcell = Commcell(command_center_hostname, username, password)
+&gt;&gt;&gt; domains = Domains(commcell)
+&gt;&gt;&gt; print(&quot;Domains object initialized successfully&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/domains.py#L79-L503" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/domains.py#L84-L614" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Domains(object):
-    &#34;&#34;&#34;Class for getting all the domains associated with a commcell.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Manages and interacts with all domains associated with a Commcell.
 
-    def __init__(self, commcell_object):
-        &#34;&#34;&#34;Initialize object of the Domains class.
+    The Domains class provides a comprehensive interface for retrieving, managing,
+    and manipulating domain objects within a Commcell environment. It supports
+    operations such as adding, deleting, refreshing, and querying domains, as well
+    as accessing domain details and checking for domain existence.
 
-            Args:
-                commcell_object     (object)    --  instance of the Commcell class
+    Key Features:
+        - Retrieve all domains associated with a Commcell
+        - Access domain details using indexing and property access
+        - Add new domains with detailed configuration options
+        - Delete existing domains
+        - Refresh the domain list to reflect current state
+        - Check for the existence of a domain by name
+        - Get domain information by name
+        - Support for string representation, length, and iteration
+        - Internal method for fetching domain data
 
-            Returns:
-                object - instance of the Domains class
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_object: &#39;Commcell&#39;) -&gt; None:
+        &#34;&#34;&#34;Initialize a Domains object with a Commcell connection.
+
+        Args:
+            commcell_object: Instance of the Commcell class used to interact with the Commcell environment.
+
+        Example:
+            &gt;&gt;&gt; from cvpysdk.commcell import Commcell
+            &gt;&gt;&gt; commcell = Commcell(command_center_hostname, username, password)
+            &gt;&gt;&gt; domains = Domains(commcell)
+            &gt;&gt;&gt; print(&#34;Domains object initialized successfully&#34;)
 
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
@@ -1274,11 +1716,22 @@ instance of the Commcell class</p>
         self._domains = None
         self.refresh()
 
-    def __str__(self):
-        &#34;&#34;&#34;Representation string consisting of all domains of the Commcell.
+    def __str__(self) -&gt; str:
+        &#34;&#34;&#34;Return a formatted string representation of all domains in the Commcell.
 
-            Returns:
-                str - string of all the domains for a commcell
+        The output lists each domain with its serial number in a tabular format.
+
+        Returns:
+            A string containing all domains associated with the Commcell, formatted for display.
+
+        Example:
+            &gt;&gt;&gt; domains = Domains(commcell_object)
+            &gt;&gt;&gt; print(domains)
+            # Output:
+            # S. No.    Domain
+            #   1       domain1
+            #   2       domain2
+            #   ...
 
         &#34;&#34;&#34;
         representation_string = &#34;{:^5}\t{:^50}\n\n&#34;.format(&#39;S. No.&#39;, &#39;Domain&#39;)
@@ -1289,29 +1742,60 @@ instance of the Commcell class</p>
 
         return representation_string.strip()
 
-    def __repr__(self):
-        &#34;&#34;&#34;Representation string for the instance of the Domains class.&#34;&#34;&#34;
+    def __repr__(self) -&gt; str:
+        &#34;&#34;&#34;Return a string representation of the Domains class instance.
+
+        This method provides a human-readable description of the Domains object,
+        typically used for debugging and logging purposes.
+
+        Returns:
+            String describing the Domains class instance.
+
+        Example:
+            &gt;&gt;&gt; domains = Domains(commcell_object)
+            &gt;&gt;&gt; print(repr(domains))
+            Domains class instance for Commcell
+
+        &#34;&#34;&#34;
         return &#34;Domains class instance for Commcell&#34;
 
-    def __len__(self):
-        &#34;&#34;&#34;Returns the number of the domains associated to the Commcell.&#34;&#34;&#34;
+    def __len__(self) -&gt; int:
+        &#34;&#34;&#34;Get the number of domains associated with the Commcell.
+
+        Returns:
+            The total count of domains managed by this Domains object.
+
+        Example:
+            &gt;&gt;&gt; domains = Domains(commcell_object)
+            &gt;&gt;&gt; num_domains = len(domains)
+            &gt;&gt;&gt; print(f&#34;Total domains: {num_domains}&#34;)
+        &#34;&#34;&#34;
         return len(self.all_domains)
 
-    def __getitem__(self, value):
-        &#34;&#34;&#34;Returns the name of the domain for the given domain ID or
-            the details of the domain for given domain Name.
+    def __getitem__(self, value: Union[str, int]) -&gt; Union[str, Dict[str, Any]]:
+        &#34;&#34;&#34;Retrieve domain information by name or ID.
 
-            Args:
-                value   (str / int)     --  Name or ID of the domain
+        If a domain name is provided, returns the details dictionary for that domain.
+        If a domain ID is provided, returns the name of the corresponding domain.
 
-            Returns:
-                str     -   name of the domain, if the domain id was given
+        Args:
+            value: The name (str) or ID (int or str) of the domain to retrieve.
 
-                dict    -   dict of details of the domain, if domain name was given
+        Returns:
+            If a domain name is provided, returns a dictionary containing domain details.
+            If a domain ID is provided, returns the name of the domain as a string.
 
-            Raises:
-                IndexError:
-                    no domain exists with the given Name / Id
+        Raises:
+            IndexError: If no domain exists with the given name or ID.
+
+        Example:
+            &gt;&gt;&gt; domains = Domains()
+            &gt;&gt;&gt; # Get domain details by name
+            &gt;&gt;&gt; details = domains[&#39;Finance&#39;]
+            &gt;&gt;&gt; print(details)
+            &gt;&gt;&gt; # Get domain name by ID
+            &gt;&gt;&gt; name = domains[101]
+            &gt;&gt;&gt; print(f&#34;Domain name: {name}&#34;)
 
         &#34;&#34;&#34;
         value = str(value)
@@ -1324,23 +1808,23 @@ instance of the Commcell class</p>
             except IndexError:
                 raise IndexError(&#39;No domain exists with the given Name / Id&#39;)
 
-    def _get_domains(self):
-        &#34;&#34;&#34;Gets all the domains associated with the commcell
+    def _get_domains(self) -&gt; Dict[str, Dict[str, Any]]:
+        &#34;&#34;&#34;Retrieve all domains associated with the Commcell.
 
-            Returns:
-                dict - consists of all domain in the commcell
+        Returns:
+            Dictionary mapping domain names (as lowercase strings) to their details.
+            Each value is a dictionary containing domain-specific information.
 
-                    {
-                         &#34;domain1_name&#34;: domain_Details_dict1,
+        Raises:
+            SDKException: If the response from the Commcell is empty or unsuccessful.
 
-                         &#34;domain2_name&#34;: domain_Details_dict2
-                    }
-
-            Raises:
-                SDKException:
-                    if response is empty
-
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; domains = domains_obj._get_domains()
+            &gt;&gt;&gt; print(f&#34;Found {len(domains)} domains&#34;)
+            &gt;&gt;&gt; # Access details for a specific domain
+            &gt;&gt;&gt; if &#39;exampledomain&#39; in domains:
+            &gt;&gt;&gt;     details = domains[&#39;exampledomain&#39;]
+            &gt;&gt;&gt;     print(f&#34;Domain details: {details}&#34;)
 
         &#34;&#34;&#34;
         flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._DOMAIN_CONTROLER)
@@ -1362,31 +1846,40 @@ instance of the Commcell class</p>
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
     @property
-    def all_domains(self):
-        &#34;&#34;&#34;Returns the domains configured on this commcell
+    def all_domains(self) -&gt; Dict[str, Dict[str, Any]]:
+        &#34;&#34;&#34;Get all domains configured on this Commcell.
 
-            dict - consists of all domain in the commcell
+        Returns:
+            Dictionary mapping domain names to their respective details.
+            Each key is a domain name (str), and each value is a dictionary containing domain-specific information.
 
-                    {
-                         &#34;domain1_name&#34;: domain_Details_dict1,
+        Example:
+            &gt;&gt;&gt; domains = Domains(commcell_object)
+            &gt;&gt;&gt; all_domains = domains.all_domains  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Total domains: {len(all_domains)}&#34;)
+            &gt;&gt;&gt; for domain_name, details in all_domains.items():
+            ...     print(f&#34;Domain: {domain_name}, Details: {details}&#34;)
 
-                         &#34;domain2_name&#34;: domain_Details_dict2
-                    }
         &#34;&#34;&#34;
         return self._domains
 
-    def has_domain(self, domain_name):
-        &#34;&#34;&#34;Checks if a domain exists in the commcell with the input domain name.
+    def has_domain(self, domain_name: str) -&gt; bool:
+        &#34;&#34;&#34;Check if a domain with the specified name exists in the Commcell.
 
-            Args:
-                domain_name     (str)   --  name of the domain
+        Args:
+            domain_name: Name of the domain to check, as a string.
 
-            Returns:
-                bool    -   boolean output whether the domain exists in the commcell or not
+        Returns:
+            True if the domain exists in the Commcell, False otherwise.
 
-            Raises:
-                SDKException:
-                    if type of the domain name argument is not string
+        Raises:
+            SDKException: If the domain_name argument is not a string.
+
+        Example:
+            &gt;&gt;&gt; domains = Domains(commcell_object)
+            &gt;&gt;&gt; exists = domains.has_domain(&#34;example.com&#34;)
+            &gt;&gt;&gt; print(f&#34;Domain exists: {exists}&#34;)
+            &gt;&gt;&gt; # Output: Domain exists: True or False
 
         &#34;&#34;&#34;
         if not isinstance(domain_name, str):
@@ -1394,21 +1887,23 @@ instance of the Commcell class</p>
 
         return self._domains and domain_name.lower() in self._domains
 
-    def get(self, domain_name):
-        &#34;&#34;&#34;Returns a domain object of the specified domain name.
+    def get(self, domain_name: str) -&gt; &#39;Domain&#39;:
+        &#34;&#34;&#34;Retrieve a domain object by its name.
 
-            Args:
-                domain_name (str)  --  name of the domain
+        Args:
+            domain_name: Name of the domain to retrieve.
 
-            Returns:
-                object of the domain
+        Returns:
+            Domain object corresponding to the specified domain name.
 
-            Raises:
-                SDKException:
+        Raises:
+            SDKException: If the domain does not exist or if the domain_name is not a string.
 
-                                        if domain doesn&#39;t exist with specified name
-
-                                        if type of the domain name argument is not string
+        Example:
+            &gt;&gt;&gt; domains = Domains(commcell_object)
+            &gt;&gt;&gt; domain = domains.get(&#34;example.com&#34;)
+            &gt;&gt;&gt; print(f&#34;Domain object: {domain}&#34;)
+            &gt;&gt;&gt; # The returned Domain object can be used for further domain operations
 
         &#34;&#34;&#34;
         if not isinstance(domain_name, str):
@@ -1421,23 +1916,24 @@ instance of the Commcell class</p>
 
         return Domain(self._commcell_object, domain_name, self._domains[domain_name.lower()][&#39;shortName&#39;][&#39;id&#39;])
 
-    def delete(self, domain_name):
-        &#34;&#34;&#34;Deletes the domain from the commcell.
+    def delete(self, domain_name: str) -&gt; None:
+        &#34;&#34;&#34;Delete a domain from the Commcell.
 
-            Args:
-                domain_name     (str)   --  name of the domain to remove from the commcell
+        Removes the specified domain by name from the Commcell. If the domain does not exist,
+        or if the deletion fails, an SDKException is raised.
 
-            Raises:
-                SDKException:
-                    if type of the domain name argument is not string
+        Args:
+            domain_name: Name of the domain to remove from the Commcell.
 
-                    if failed to delete domain
+        Raises:
+            SDKException: If the domain name is not a string, if the domain does not exist,
+                if the deletion fails, or if the response from the Commcell is invalid.
 
-                    if response is empty
-
-                    if response is not success
-
-                    if no domain exists with the given name
+        Example:
+            &gt;&gt;&gt; domains = Domains(commcell_object)
+            &gt;&gt;&gt; domains.delete(&#34;example_domain&#34;)
+            &gt;&gt;&gt; print(&#34;Domain deleted successfully&#34;)
+            # If the domain does not exist or deletion fails, an SDKException will be raised.
 
         &#34;&#34;&#34;
 
@@ -1477,76 +1973,82 @@ instance of the Commcell class</p>
                     &#39;Domain&#39;, &#39;102&#39;, &#39;No domain exists with name: {0}&#39;.format(domain_name)
                 )
 
-    def refresh(self):
-        &#34;&#34;&#34;Refresh the domains associated with the Commcell.&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Reload the domain information associated with the Commcell.
+
+        This method updates the internal domain cache to ensure that the latest domain data
+        from the Commcell is available for subsequent operations.
+
+        Example:
+            &gt;&gt;&gt; domains = Domains(commcell_object)
+            &gt;&gt;&gt; domains.refresh()  # Refreshes the domain cache
+            &gt;&gt;&gt; print(&#34;Domain information updated successfully&#34;)
+            &gt;&gt;&gt; # The next access to domain data will use the refreshed information
+
+        &#34;&#34;&#34;
         self._domains = self._get_domains()
 
     def add(self,
-            domain_name,
-            netbios_name,
-            user_name,
-            password,
-            company_id=&#34;&#34;,
-            ad_proxy_list=None,
-            enable_sso=True,
-            type_of_server=&#34;active directory&#34;,
-            **kwargs):
-        &#34;&#34;&#34;Adds a new domain to the commcell.
+            domain_name: str,
+            netbios_name: str,
+            user_name: Optional[str] = None,
+            password: Optional[str] = None,
+            credential_id: Optional[int] = None,
+            use_local_system_account: Optional[bool] = None,
+            company_id: str = &#34;&#34;,
+            ad_proxy_list: Optional[List[str]] = None,
+            enable_sso: bool = True,
+            type_of_server: str = &#34;active directory&#34;,
+            **kwargs: Any) -&gt; Dict[str, Any]:
+        &#34;&#34;&#34;Add a new domain to the Commcell environment.
 
-            Args:
-                domain_name     (str)   --  name of the domain
+        This method registers a new domain (such as Active Directory, LDAP, etc.) with the Commcell,
+        allowing for centralized authentication and management. You can specify domain credentials,
+        proxy clients, SSO settings, and additional LDAP attributes as needed.
 
-                netbios_name    (str)   --  netbios name of the domain
+        Args:
+            domain_name: Name of the domain to be added.
+            netbios_name: NetBIOS name of the domain.
+            user_name: Username for domain authentication. Required unless using local system account or credential ID.
+            password: Password for domain authentication. Required unless using local system account or credential ID.
+            credential_id: Credential ID for domain authentication. Used if not providing username/password.
+            use_local_system_account: If True, uses the LocalSystemAccount for authentication.
+            company_id: Company ID for which the domain is being added.
+            ad_proxy_list: Optional list of client names to be used as proxy for domain operations.
+            enable_sso: Whether to enable Single Sign-On (SSO) for the domain.
+            type_of_server: Type of server to register. Supported values:
+                &#34;active directory&#34;, &#34;apple directory&#34;, &#34;oracle ldap&#34;, &#34;open ldap&#34;, &#34;ldap server&#34;
+            **kwargs: Additional LDAP or directory server settings, such as:
+                group_filter: LDAP group filter string.
+                user_filter: LDAP user filter string.
+                unique_identifier: LDAP unique identifier string.
+                base_dn: LDAP base distinguished name.
+                email_attribute: LDAP email attribute name.
+                guid_attribute: LDAP GUID attribute name.
+                additional_settings: List of additional settings dictionaries for directory server.
 
-                user_name       (str)   --  user name of the domain
+        Returns:
+            Dictionary containing the properties of the newly added domain.
 
-                password        (str)   --  password of the domain
+        Raises:
+            SDKException: If input parameters are invalid or domain addition fails.
 
-                company_id      (int)   --  company id for which the domain needs to be added for
-
-                ad_proxy_list     (list)  --  list of client objects to be used as proxy.
-
-                    default: None
-
-                    if no proxy required
-
-                enable_sso      (bool)  --  enable sso for domain
-
-                type_of_server  (str)   --  Type of server to be registered
-                    values:
-                    &#34;active directory&#34;
-                    &#34;apple directory&#34;
-                    &#34;oracle ldap&#34;
-                    &#34;open ldap&#34;
-                    &#34;ldap server&#34;
-
-                **kwargs            --      required parameters for LDAP Server registration and other additional
-                                            settings can be passed
-
-                    group_filter    (str)   --  group filter for ldap server
-                    user_filter     (str)   --  user filter for ldap server
-                    unique_identifier   (str)   --  unique identifier for ldap server
-                    base_dn              (str)  --  base dn for ldap server
-
-                    additional_settings     (list)  --  additional settings for directory server.
-                        eg:-    [
-                                    {
-                                        &#34;relativepath&#34;: &#34;CommServDB.Console&#34;,
-                                        &#34;keyName&#34;: &#34;basedn&#34;,
-                                        &#34;type&#34;: &#34;STRING&#34;,
-                                        &#34;value&#34;: &#34;cn=automation_group2,dc=example,dc=com&#34;,
-                                        &#34;enabled&#34;: 1
-                                    }
-                                ]
-
-            Returns:
-                dict    -   properties of domain
-
-            Raises:
-                SDKException:
-                    if type of the domain name argument is not string
-
-                    if no domain exists with the given name
+        Example:
+            &gt;&gt;&gt; domains = Domains(commcell_object)
+            &gt;&gt;&gt; domain_props = domains.add(
+            ...     domain_name=&#34;example.com&#34;,
+            ...     netbios_name=&#34;EXAMPLE&#34;,
+            ...     user_name=&#34;admin&#34;,
+            ...     password=&#34;password123&#34;,
+            ...     ad_proxy_list=[&#34;client1&#34;, &#34;client2&#34;],
+            ...     enable_sso=True,
+            ...     type_of_server=&#34;active directory&#34;,
+            ...     group_filter=&#34;(objectClass=group)&#34;,
+            ...     user_filter=&#34;(&amp;(objectCategory=User)(sAMAccountName=*))&#34;,
+            ...     base_dn=&#34;dc=example,dc=com&#34;
+            ... )
+            &gt;&gt;&gt; print(domain_props)
+            {&#39;domainName&#39;: &#39;example.com&#39;, &#39;netbiosName&#39;: &#39;EXAMPLE&#39;, ...}
 
         &#34;&#34;&#34;
         service_type_mapping = {&#34;active directory&#34;: 2, &#34;apple directory&#34;: 8, &#34;oracle ldap&#34;: 9, &#34;open ldap&#34;: 10,
@@ -1556,8 +2058,12 @@ instance of the Commcell class</p>
             raise SDKException(&#39;Domain&#39;, &#34;102&#34;, &#34;please pass valid server type&#34;)
         if not (isinstance(domain_name, str) and
                 isinstance(netbios_name, str) and
-                isinstance(user_name, str) and
-                isinstance(password, str)):
+                (
+                        isinstance(use_local_system_account, bool) or
+                        isinstance(credential_id, int) or
+                        (isinstance(user_name, str) and isinstance(password, str))
+                )
+        ):
             raise SDKException(&#39;Domain&#39;, &#39;101&#39;)
         else:
             domain_name = domain_name.lower()
@@ -1579,13 +2085,10 @@ instance of the Commcell class</p>
             &#34;operation&#34;: 1,
             &#34;provider&#34;: {
                 &#34;serviceType&#34;: service_type,
-                &#34;flags&#34;: 1,
-                &#34;bPassword&#34;: b64encode(password.encode()).decode(),
-                &#34;login&#34;: user_name,
+                &#34;flags&#34;: 1 if enable_sso else 0,
                 &#34;enabled&#34;: 1,
                 &#34;useSecureLdap&#34;: 0,
                 &#34;connectName&#34;: domain_name,
-                &#34;bLogin&#34;: user_name,
                 &#34;ownerCompanyId&#34;: company_id,
                 &#34;tppm&#34;: {
                     &#34;enable&#34;: True if ad_proxy_list else False,
@@ -1597,6 +2100,16 @@ instance of the Commcell class</p>
                 }
             }
         }
+
+        if user_name and password:
+            domain_create_request[&#34;provider&#34;][&#39;login&#39;] = user_name
+            domain_create_request[&#34;provider&#34;][&#39;bLogin&#39;] = user_name
+            domain_create_request[&#34;provider&#34;][&#39;bPassword&#39;] = b64encode(password.encode()).decode()
+        elif use_local_system_account:
+            domain_create_request[&#34;provider&#34;][&#39;login&#39;] = &#39;LocalSystemAccount&#39;
+            domain_create_request[&#34;provider&#34;][&#39;bLogin&#39;] = &#39;LocalSystemAccount&#39;
+        else:
+            domain_create_request[&#34;provider&#34;][&#39;domainCredInfo&#39;] = {&#34;credentialId&#34;: credential_id}
 
         if kwargs:
             custom_provider = {
@@ -1678,32 +2191,41 @@ instance of the Commcell class</p>
 </details>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.domains.Domains.all_domains"><code class="name">var <span class="ident">all_domains</span></code></dt>
+<dt id="cvpysdk.domains.Domains.all_domains"><code class="name">var <span class="ident">all_domains</span> : Dict[str, Dict[str, Any]]</code></dt>
 <dd>
-<div class="desc"><p>Returns the domains configured on this commcell</p>
-<p>dict - consists of all domain in the commcell</p>
-<pre><code>    {
-         "domain1_name": domain_Details_dict1,
-
-         "domain2_name": domain_Details_dict2
-    }
+<div class="desc"><p>Get all domains configured on this Commcell.</p>
+<p>Returns
+-----=
+Dictionary mapping domain names to their respective details.
+Each key is a domain name (str), and each value is a dictionary containing domain-specific information.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; domains = Domains(commcell_object)
+&gt;&gt;&gt; all_domains = domains.all_domains  # Use dot notation for property access
+&gt;&gt;&gt; print(f&quot;Total domains: {len(all_domains)}&quot;)
+&gt;&gt;&gt; for domain_name, details in all_domains.items():
+...     print(f&quot;Domain: {domain_name}, Details: {details}&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/domains.py#L190-L202" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/domains.py#L266-L283" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def all_domains(self):
-    &#34;&#34;&#34;Returns the domains configured on this commcell
+def all_domains(self) -&gt; Dict[str, Dict[str, Any]]:
+    &#34;&#34;&#34;Get all domains configured on this Commcell.
 
-        dict - consists of all domain in the commcell
+    Returns:
+        Dictionary mapping domain names to their respective details.
+        Each key is a domain name (str), and each value is a dictionary containing domain-specific information.
 
-                {
-                     &#34;domain1_name&#34;: domain_Details_dict1,
+    Example:
+        &gt;&gt;&gt; domains = Domains(commcell_object)
+        &gt;&gt;&gt; all_domains = domains.all_domains  # Use dot notation for property access
+        &gt;&gt;&gt; print(f&#34;Total domains: {len(all_domains)}&#34;)
+        &gt;&gt;&gt; for domain_name, details in all_domains.items():
+        ...     print(f&#34;Domain: {domain_name}, Details: {details}&#34;)
 
-                     &#34;domain2_name&#34;: domain_Details_dict2
-                }
     &#34;&#34;&#34;
     return self._domains</code></pre>
 </details>
@@ -1712,153 +2234,140 @@ def all_domains(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.domains.Domains.add"><code class="name flex">
-<span>def <span class="ident">add</span></span>(<span>self, domain_name, netbios_name, user_name, password, company_id='', ad_proxy_list=None, enable_sso=True, type_of_server='active directory', **kwargs)</span>
+<span>def <span class="ident">add</span></span>(<span>self, domain_name: str, netbios_name: str, user_name: Optional[str] = None, password: Optional[str] = None, credential_id: Optional[int] = None, use_local_system_account: Optional[bool] = None, company_id: str = '', ad_proxy_list: Optional[List[str]] = None, enable_sso: bool = True, type_of_server: str = 'active directory', **kwargs: Any) ‑> Dict[str, Any]</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Adds a new domain to the commcell.</p>
-<h2 id="args">Args</h2>
-<p>domain_name
-(str)
-&ndash;
-name of the domain</p>
-<p>netbios_name
-(str)
-&ndash;
-netbios name of the domain</p>
-<p>user_name
-(str)
-&ndash;
-user name of the domain</p>
-<p>password
-(str)
-&ndash;
-password of the domain</p>
-<p>company_id
-(int)
-&ndash;
-company id for which the domain needs to be added for</p>
-<p>ad_proxy_list
-(list)
-&ndash;
-list of client objects to be used as proxy.</p>
-<pre><code>default: None
-
-if no proxy required
-</code></pre>
-<p>enable_sso
-(bool)
-&ndash;
-enable sso for domain</p>
-<p>type_of_server
-(str)
-&ndash;
-Type of server to be registered
-values:
-"active directory"
-"apple directory"
-"oracle ldap"
-"open ldap"
-"ldap server"</p>
-<p>**kwargs
-&ndash;
-required parameters for LDAP Server registration and other additional
-settings can be passed</p>
-<pre><code>group_filter    (str)   --  group filter for ldap server
-user_filter     (str)   --  user filter for ldap server
-unique_identifier   (str)   --  unique identifier for ldap server
-base_dn              (str)  --  base dn for ldap server
-
-additional_settings     (list)  --  additional settings for directory server.
-    eg:-    [
-                {
-                    "relativepath": "CommServDB.Console",
-                    "keyName": "basedn",
-                    "type": "STRING",
-                    "value": "cn=automation_group2,dc=example,dc=com",
-                    "enabled": 1
-                }
-            ]
-</code></pre>
-<h2 id="returns">Returns</h2>
-<p>dict
--
-properties of domain</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if type of the domain name argument is not string</p>
-<pre><code>if no domain exists with the given name
+<div class="desc"><p>Add a new domain to the Commcell environment.</p>
+<p>This method registers a new domain (such as Active Directory, LDAP, etc.) with the Commcell,
+allowing for centralized authentication and management. You can specify domain credentials,
+proxy clients, SSO settings, and additional LDAP attributes as needed.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>domain_name</code></strong></dt>
+<dd>Name of the domain to be added.</dd>
+<dt><strong><code>netbios_name</code></strong></dt>
+<dd>NetBIOS name of the domain.</dd>
+<dt><strong><code>user_name</code></strong></dt>
+<dd>Username for domain authentication. Required unless using local system account or credential ID.</dd>
+<dt><strong><code>password</code></strong></dt>
+<dd>Password for domain authentication. Required unless using local system account or credential ID.</dd>
+<dt><strong><code>credential_id</code></strong></dt>
+<dd>Credential ID for domain authentication. Used if not providing username/password.</dd>
+<dt><strong><code>use_local_system_account</code></strong></dt>
+<dd>If True, uses the LocalSystemAccount for authentication.</dd>
+<dt><strong><code>company_id</code></strong></dt>
+<dd>Company ID for which the domain is being added.</dd>
+<dt><strong><code>ad_proxy_list</code></strong></dt>
+<dd>Optional list of client names to be used as proxy for domain operations.</dd>
+<dt><strong><code>enable_sso</code></strong></dt>
+<dd>Whether to enable Single Sign-On (SSO) for the domain.</dd>
+<dt><strong><code>type_of_server</code></strong></dt>
+<dd>Type of server to register. Supported values:
+"active directory", "apple directory", "oracle ldap", "open ldap", "ldap server"</dd>
+<dt><strong><code>**kwargs</code></strong></dt>
+<dd>Additional LDAP or directory server settings, such as:
+group_filter: LDAP group filter string.
+user_filter: LDAP user filter string.
+unique_identifier: LDAP unique identifier string.
+base_dn: LDAP base distinguished name.
+email_attribute: LDAP email attribute name.
+guid_attribute: LDAP GUID attribute name.
+additional_settings: List of additional settings dictionaries for directory server.</dd>
+</dl>
+<p>Returns
+-----=
+Dictionary containing the properties of the newly added domain.</p>
+<dl>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If input parameters are invalid or domain addition fails.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; domains = Domains(commcell_object)
+&gt;&gt;&gt; domain_props = domains.add(
+...     domain_name=&quot;example.com&quot;,
+...     netbios_name=&quot;EXAMPLE&quot;,
+...     user_name=&quot;admin&quot;,
+...     password=&quot;password123&quot;,
+...     ad_proxy_list=[&quot;client1&quot;, &quot;client2&quot;],
+...     enable_sso=True,
+...     type_of_server=&quot;active directory&quot;,
+...     group_filter=&quot;(objectClass=group)&quot;,
+...     user_filter=&quot;(&amp;(objectCategory=User)(sAMAccountName=*))&quot;,
+...     base_dn=&quot;dc=example,dc=com&quot;
+... )
+&gt;&gt;&gt; print(domain_props)
+{'domainName': 'example.com', 'netbiosName': 'EXAMPLE', ...}
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/domains.py#L310-L503" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/domains.py#L414-L614" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self,
-        domain_name,
-        netbios_name,
-        user_name,
-        password,
-        company_id=&#34;&#34;,
-        ad_proxy_list=None,
-        enable_sso=True,
-        type_of_server=&#34;active directory&#34;,
-        **kwargs):
-    &#34;&#34;&#34;Adds a new domain to the commcell.
+        domain_name: str,
+        netbios_name: str,
+        user_name: Optional[str] = None,
+        password: Optional[str] = None,
+        credential_id: Optional[int] = None,
+        use_local_system_account: Optional[bool] = None,
+        company_id: str = &#34;&#34;,
+        ad_proxy_list: Optional[List[str]] = None,
+        enable_sso: bool = True,
+        type_of_server: str = &#34;active directory&#34;,
+        **kwargs: Any) -&gt; Dict[str, Any]:
+    &#34;&#34;&#34;Add a new domain to the Commcell environment.
 
-        Args:
-            domain_name     (str)   --  name of the domain
+    This method registers a new domain (such as Active Directory, LDAP, etc.) with the Commcell,
+    allowing for centralized authentication and management. You can specify domain credentials,
+    proxy clients, SSO settings, and additional LDAP attributes as needed.
 
-            netbios_name    (str)   --  netbios name of the domain
+    Args:
+        domain_name: Name of the domain to be added.
+        netbios_name: NetBIOS name of the domain.
+        user_name: Username for domain authentication. Required unless using local system account or credential ID.
+        password: Password for domain authentication. Required unless using local system account or credential ID.
+        credential_id: Credential ID for domain authentication. Used if not providing username/password.
+        use_local_system_account: If True, uses the LocalSystemAccount for authentication.
+        company_id: Company ID for which the domain is being added.
+        ad_proxy_list: Optional list of client names to be used as proxy for domain operations.
+        enable_sso: Whether to enable Single Sign-On (SSO) for the domain.
+        type_of_server: Type of server to register. Supported values:
+            &#34;active directory&#34;, &#34;apple directory&#34;, &#34;oracle ldap&#34;, &#34;open ldap&#34;, &#34;ldap server&#34;
+        **kwargs: Additional LDAP or directory server settings, such as:
+            group_filter: LDAP group filter string.
+            user_filter: LDAP user filter string.
+            unique_identifier: LDAP unique identifier string.
+            base_dn: LDAP base distinguished name.
+            email_attribute: LDAP email attribute name.
+            guid_attribute: LDAP GUID attribute name.
+            additional_settings: List of additional settings dictionaries for directory server.
 
-            user_name       (str)   --  user name of the domain
+    Returns:
+        Dictionary containing the properties of the newly added domain.
 
-            password        (str)   --  password of the domain
+    Raises:
+        SDKException: If input parameters are invalid or domain addition fails.
 
-            company_id      (int)   --  company id for which the domain needs to be added for
-
-            ad_proxy_list     (list)  --  list of client objects to be used as proxy.
-
-                default: None
-
-                if no proxy required
-
-            enable_sso      (bool)  --  enable sso for domain
-
-            type_of_server  (str)   --  Type of server to be registered
-                values:
-                &#34;active directory&#34;
-                &#34;apple directory&#34;
-                &#34;oracle ldap&#34;
-                &#34;open ldap&#34;
-                &#34;ldap server&#34;
-
-            **kwargs            --      required parameters for LDAP Server registration and other additional
-                                        settings can be passed
-
-                group_filter    (str)   --  group filter for ldap server
-                user_filter     (str)   --  user filter for ldap server
-                unique_identifier   (str)   --  unique identifier for ldap server
-                base_dn              (str)  --  base dn for ldap server
-
-                additional_settings     (list)  --  additional settings for directory server.
-                    eg:-    [
-                                {
-                                    &#34;relativepath&#34;: &#34;CommServDB.Console&#34;,
-                                    &#34;keyName&#34;: &#34;basedn&#34;,
-                                    &#34;type&#34;: &#34;STRING&#34;,
-                                    &#34;value&#34;: &#34;cn=automation_group2,dc=example,dc=com&#34;,
-                                    &#34;enabled&#34;: 1
-                                }
-                            ]
-
-        Returns:
-            dict    -   properties of domain
-
-        Raises:
-            SDKException:
-                if type of the domain name argument is not string
-
-                if no domain exists with the given name
+    Example:
+        &gt;&gt;&gt; domains = Domains(commcell_object)
+        &gt;&gt;&gt; domain_props = domains.add(
+        ...     domain_name=&#34;example.com&#34;,
+        ...     netbios_name=&#34;EXAMPLE&#34;,
+        ...     user_name=&#34;admin&#34;,
+        ...     password=&#34;password123&#34;,
+        ...     ad_proxy_list=[&#34;client1&#34;, &#34;client2&#34;],
+        ...     enable_sso=True,
+        ...     type_of_server=&#34;active directory&#34;,
+        ...     group_filter=&#34;(objectClass=group)&#34;,
+        ...     user_filter=&#34;(&amp;(objectCategory=User)(sAMAccountName=*))&#34;,
+        ...     base_dn=&#34;dc=example,dc=com&#34;
+        ... )
+        &gt;&gt;&gt; print(domain_props)
+        {&#39;domainName&#39;: &#39;example.com&#39;, &#39;netbiosName&#39;: &#39;EXAMPLE&#39;, ...}
 
     &#34;&#34;&#34;
     service_type_mapping = {&#34;active directory&#34;: 2, &#34;apple directory&#34;: 8, &#34;oracle ldap&#34;: 9, &#34;open ldap&#34;: 10,
@@ -1868,8 +2377,12 @@ if type of the domain name argument is not string</p>
         raise SDKException(&#39;Domain&#39;, &#34;102&#34;, &#34;please pass valid server type&#34;)
     if not (isinstance(domain_name, str) and
             isinstance(netbios_name, str) and
-            isinstance(user_name, str) and
-            isinstance(password, str)):
+            (
+                    isinstance(use_local_system_account, bool) or
+                    isinstance(credential_id, int) or
+                    (isinstance(user_name, str) and isinstance(password, str))
+            )
+    ):
         raise SDKException(&#39;Domain&#39;, &#39;101&#39;)
     else:
         domain_name = domain_name.lower()
@@ -1891,13 +2404,10 @@ if type of the domain name argument is not string</p>
         &#34;operation&#34;: 1,
         &#34;provider&#34;: {
             &#34;serviceType&#34;: service_type,
-            &#34;flags&#34;: 1,
-            &#34;bPassword&#34;: b64encode(password.encode()).decode(),
-            &#34;login&#34;: user_name,
+            &#34;flags&#34;: 1 if enable_sso else 0,
             &#34;enabled&#34;: 1,
             &#34;useSecureLdap&#34;: 0,
             &#34;connectName&#34;: domain_name,
-            &#34;bLogin&#34;: user_name,
             &#34;ownerCompanyId&#34;: company_id,
             &#34;tppm&#34;: {
                 &#34;enable&#34;: True if ad_proxy_list else False,
@@ -1909,6 +2419,16 @@ if type of the domain name argument is not string</p>
             }
         }
     }
+
+    if user_name and password:
+        domain_create_request[&#34;provider&#34;][&#39;login&#39;] = user_name
+        domain_create_request[&#34;provider&#34;][&#39;bLogin&#39;] = user_name
+        domain_create_request[&#34;provider&#34;][&#39;bPassword&#39;] = b64encode(password.encode()).decode()
+    elif use_local_system_account:
+        domain_create_request[&#34;provider&#34;][&#39;login&#39;] = &#39;LocalSystemAccount&#39;
+        domain_create_request[&#34;provider&#34;][&#39;bLogin&#39;] = &#39;LocalSystemAccount&#39;
+    else:
+        domain_create_request[&#34;provider&#34;][&#39;domainCredInfo&#39;] = {&#34;credentialId&#34;: credential_id}
 
     if kwargs:
         custom_provider = {
@@ -1990,48 +2510,53 @@ if type of the domain name argument is not string</p>
 </details>
 </dd>
 <dt id="cvpysdk.domains.Domains.delete"><code class="name flex">
-<span>def <span class="ident">delete</span></span>(<span>self, domain_name)</span>
+<span>def <span class="ident">delete</span></span>(<span>self, domain_name: str) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Deletes the domain from the commcell.</p>
-<h2 id="args">Args</h2>
-<p>domain_name
-(str)
-&ndash;
-name of the domain to remove from the commcell</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if type of the domain name argument is not string</p>
-<pre><code>if failed to delete domain
-
-if response is empty
-
-if response is not success
-
-if no domain exists with the given name
+<div class="desc"><p>Delete a domain from the Commcell.</p>
+<p>Removes the specified domain by name from the Commcell. If the domain does not exist,
+or if the deletion fails, an SDKException is raised.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>domain_name</code></strong></dt>
+<dd>Name of the domain to remove from the Commcell.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the domain name is not a string, if the domain does not exist,
+if the deletion fails, or if the response from the Commcell is invalid.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; domains = Domains(commcell_object)
+&gt;&gt;&gt; domains.delete(&quot;example_domain&quot;)
+&gt;&gt;&gt; print(&quot;Domain deleted successfully&quot;)
+# If the domain does not exist or deletion fails, an SDKException will be raised.
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/domains.py#L250-L304" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/domains.py#L340-L396" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def delete(self, domain_name):
-    &#34;&#34;&#34;Deletes the domain from the commcell.
+<pre><code class="python">def delete(self, domain_name: str) -&gt; None:
+    &#34;&#34;&#34;Delete a domain from the Commcell.
 
-        Args:
-            domain_name     (str)   --  name of the domain to remove from the commcell
+    Removes the specified domain by name from the Commcell. If the domain does not exist,
+    or if the deletion fails, an SDKException is raised.
 
-        Raises:
-            SDKException:
-                if type of the domain name argument is not string
+    Args:
+        domain_name: Name of the domain to remove from the Commcell.
 
-                if failed to delete domain
+    Raises:
+        SDKException: If the domain name is not a string, if the domain does not exist,
+            if the deletion fails, or if the response from the Commcell is invalid.
 
-                if response is empty
-
-                if response is not success
-
-                if no domain exists with the given name
+    Example:
+        &gt;&gt;&gt; domains = Domains(commcell_object)
+        &gt;&gt;&gt; domains.delete(&#34;example_domain&#34;)
+        &gt;&gt;&gt; print(&#34;Domain deleted successfully&#34;)
+        # If the domain does not exist or deletion fails, an SDKException will be raised.
 
     &#34;&#34;&#34;
 
@@ -2073,42 +2598,54 @@ if no domain exists with the given name
 </details>
 </dd>
 <dt id="cvpysdk.domains.Domains.get"><code class="name flex">
-<span>def <span class="ident">get</span></span>(<span>self, domain_name)</span>
+<span>def <span class="ident">get</span></span>(<span>self, domain_name: str) ‑> <a title="cvpysdk.domains.Domain" href="#cvpysdk.domains.Domain">Domain</a></span>
 </code></dt>
 <dd>
-<div class="desc"><p>Returns a domain object of the specified domain name.</p>
-<h2 id="args">Args</h2>
-<p>domain_name (str)
-&ndash;
-name of the domain</p>
-<h2 id="returns">Returns</h2>
-<p>object of the domain</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
-<pre><code>                    if domain doesn't exist with specified name
-
-                    if type of the domain name argument is not string
+<div class="desc"><p>Retrieve a domain object by its name.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>domain_name</code></strong></dt>
+<dd>Name of the domain to retrieve.</dd>
+</dl>
+<p>Returns
+-----=
+Domain object corresponding to the specified domain name.</p>
+<dl>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the domain does not exist or if the domain_name is not a string.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; domains = Domains(commcell_object)
+&gt;&gt;&gt; domain = domains.get(&quot;example.com&quot;)
+&gt;&gt;&gt; print(f&quot;Domain object: {domain}&quot;)
+&gt;&gt;&gt; # The returned Domain object can be used for further domain operations
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/domains.py#L223-L248" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/domains.py#L310-L338" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def get(self, domain_name):
-    &#34;&#34;&#34;Returns a domain object of the specified domain name.
+<pre><code class="python">def get(self, domain_name: str) -&gt; &#39;Domain&#39;:
+    &#34;&#34;&#34;Retrieve a domain object by its name.
 
-        Args:
-            domain_name (str)  --  name of the domain
+    Args:
+        domain_name: Name of the domain to retrieve.
 
-        Returns:
-            object of the domain
+    Returns:
+        Domain object corresponding to the specified domain name.
 
-        Raises:
-            SDKException:
+    Raises:
+        SDKException: If the domain does not exist or if the domain_name is not a string.
 
-                                    if domain doesn&#39;t exist with specified name
-
-                                    if type of the domain name argument is not string
+    Example:
+        &gt;&gt;&gt; domains = Domains(commcell_object)
+        &gt;&gt;&gt; domain = domains.get(&#34;example.com&#34;)
+        &gt;&gt;&gt; print(f&#34;Domain object: {domain}&#34;)
+        &gt;&gt;&gt; # The returned Domain object can be used for further domain operations
 
     &#34;&#34;&#34;
     if not isinstance(domain_name, str):
@@ -2123,39 +2660,54 @@ name of the domain</p>
 </details>
 </dd>
 <dt id="cvpysdk.domains.Domains.has_domain"><code class="name flex">
-<span>def <span class="ident">has_domain</span></span>(<span>self, domain_name)</span>
+<span>def <span class="ident">has_domain</span></span>(<span>self, domain_name: str) ‑> bool</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Checks if a domain exists in the commcell with the input domain name.</p>
-<h2 id="args">Args</h2>
-<p>domain_name
-(str)
-&ndash;
-name of the domain</p>
-<h2 id="returns">Returns</h2>
-<p>bool
--
-boolean output whether the domain exists in the commcell or not</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if type of the domain name argument is not string</p></div>
+<div class="desc"><p>Check if a domain with the specified name exists in the Commcell.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>domain_name</code></strong></dt>
+<dd>Name of the domain to check, as a string.</dd>
+</dl>
+<p>Returns
+-----=
+True if the domain exists in the Commcell, False otherwise.</p>
+<dl>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the domain_name argument is not a string.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; domains = Domains(commcell_object)
+&gt;&gt;&gt; exists = domains.has_domain(&quot;example.com&quot;)
+&gt;&gt;&gt; print(f&quot;Domain exists: {exists}&quot;)
+&gt;&gt;&gt; # Output: Domain exists: True or False
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/domains.py#L204-L221" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/domains.py#L285-L308" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def has_domain(self, domain_name):
-    &#34;&#34;&#34;Checks if a domain exists in the commcell with the input domain name.
+<pre><code class="python">def has_domain(self, domain_name: str) -&gt; bool:
+    &#34;&#34;&#34;Check if a domain with the specified name exists in the Commcell.
 
-        Args:
-            domain_name     (str)   --  name of the domain
+    Args:
+        domain_name: Name of the domain to check, as a string.
 
-        Returns:
-            bool    -   boolean output whether the domain exists in the commcell or not
+    Returns:
+        True if the domain exists in the Commcell, False otherwise.
 
-        Raises:
-            SDKException:
-                if type of the domain name argument is not string
+    Raises:
+        SDKException: If the domain_name argument is not a string.
+
+    Example:
+        &gt;&gt;&gt; domains = Domains(commcell_object)
+        &gt;&gt;&gt; exists = domains.has_domain(&#34;example.com&#34;)
+        &gt;&gt;&gt; print(f&#34;Domain exists: {exists}&#34;)
+        &gt;&gt;&gt; # Output: Domain exists: True or False
 
     &#34;&#34;&#34;
     if not isinstance(domain_name, str):
@@ -2165,17 +2717,37 @@ if type of the domain name argument is not string</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.domains.Domains.refresh"><code class="name flex">
-<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+<span>def <span class="ident">refresh</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Refresh the domains associated with the Commcell.</p></div>
+<div class="desc"><p>Reload the domain information associated with the Commcell.</p>
+<p>This method updates the internal domain cache to ensure that the latest domain data
+from the Commcell is available for subsequent operations.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; domains = Domains(commcell_object)
+&gt;&gt;&gt; domains.refresh()  # Refreshes the domain cache
+&gt;&gt;&gt; print(&quot;Domain information updated successfully&quot;)
+&gt;&gt;&gt; # The next access to domain data will use the refreshed information
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/domains.py#L306-L308" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/domains.py#L398-L412" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def refresh(self):
-    &#34;&#34;&#34;Refresh the domains associated with the Commcell.&#34;&#34;&#34;
+<pre><code class="python">def refresh(self) -&gt; None:
+    &#34;&#34;&#34;Reload the domain information associated with the Commcell.
+
+    This method updates the internal domain cache to ensure that the latest domain data
+    from the Commcell is available for subsequent operations.
+
+    Example:
+        &gt;&gt;&gt; domains = Domains(commcell_object)
+        &gt;&gt;&gt; domains.refresh()  # Refreshes the domain cache
+        &gt;&gt;&gt; print(&#34;Domain information updated successfully&#34;)
+        &gt;&gt;&gt; # The next access to domain data will use the refreshed information
+
+    &#34;&#34;&#34;
     self._domains = self._get_domains()</code></pre>
 </details>
 </dd>

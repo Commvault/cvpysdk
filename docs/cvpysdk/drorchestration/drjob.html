@@ -38,7 +38,7 @@ get_vm_list()
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/drorchestration/drjob.py#L1-L187" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/drorchestration/drjob.py#L1-L185" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -82,9 +82,7 @@ class DRJob(Job):
         &#34;&#34;&#34;Initialise the DR job&#34;&#34;&#34;
         self._replication_job_stats = None
 
-        service_url = (commcell_object._services[&#39;DRORCHESTRATION_JOB_STATS&#39;]
-                       if commcell_object.commserv_version &gt; 30
-                       else commcell_object._services[&#39;DR_JOB_STATS&#39;])
+        service_url = commcell_object._services[&#39;DRORCHESTRATION_JOB_STATS&#39;]
         self._REPLICATION_STATS = service_url % job_id
 
         Job.__init__(self, commcell_object, job_id)
@@ -248,7 +246,7 @@ class DRJob(Job):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/drorchestration/drjob.py#L36-L187" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/drorchestration/drjob.py#L36-L185" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class DRJob(Job):
     &#34;&#34;&#34;Class for performing DR orchestration operations on ReplicationMonitor.&#34;&#34;&#34;
@@ -257,9 +255,7 @@ class DRJob(Job):
         &#34;&#34;&#34;Initialise the DR job&#34;&#34;&#34;
         self._replication_job_stats = None
 
-        service_url = (commcell_object._services[&#39;DRORCHESTRATION_JOB_STATS&#39;]
-                       if commcell_object.commserv_version &gt; 30
-                       else commcell_object._services[&#39;DR_JOB_STATS&#39;])
+        service_url = commcell_object._services[&#39;DRORCHESTRATION_JOB_STATS&#39;]
         self._REPLICATION_STATS = service_url % job_id
 
         Job.__init__(self, commcell_object, job_id)
@@ -417,7 +413,7 @@ class DRJob(Job):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/drorchestration/drjob.py#L127-L132" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/drorchestration/drjob.py#L125-L130" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def blobs_retained(self):
     &#34;&#34;&#34;Returns True if blobs to be retained chosen in failover job for Azure destination&#34;&#34;&#34;
@@ -445,7 +441,7 @@ Returns: dictionaries of phases for each source and destination VM pair
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/drorchestration/drjob.py#L134-L166" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/drorchestration/drjob.py#L132-L164" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_phases(self):
     &#34;&#34;&#34;
@@ -490,7 +486,7 @@ Returns: dictionaries of phases for each source and destination VM pair
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/drorchestration/drjob.py#L168-L187" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/drorchestration/drjob.py#L166-L185" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_storagepolicy_restore_vm(self, source):
     &#34;&#34;&#34;
@@ -531,20 +527,24 @@ Returns: dictionaries of phases for each source and destination VM pair
 <li><code><a title="cvpysdk.job.Job.end_timestamp" href="../job.html#cvpysdk.job.Job.end_timestamp">end_timestamp</a></code></li>
 <li><code><a title="cvpysdk.job.Job.get_child_jobs" href="../job.html#cvpysdk.job.Job.get_child_jobs">get_child_jobs</a></code></li>
 <li><code><a title="cvpysdk.job.Job.get_events" href="../job.html#cvpysdk.job.Job.get_events">get_events</a></code></li>
+<li><code><a title="cvpysdk.job.Job.get_logs" href="../job.html#cvpysdk.job.Job.get_logs">get_logs</a></code></li>
 <li><code><a title="cvpysdk.job.Job.get_vm_list" href="../job.html#cvpysdk.job.Job.get_vm_list">get_vm_list</a></code></li>
 <li><code><a title="cvpysdk.job.Job.instance_name" href="../job.html#cvpysdk.job.Job.instance_name">instance_name</a></code></li>
 <li><code><a title="cvpysdk.job.Job.is_finished" href="../job.html#cvpysdk.job.Job.is_finished">is_finished</a></code></li>
+<li><code><a title="cvpysdk.job.Job.job_end_time" href="../job.html#cvpysdk.job.Job.job_end_time">job_end_time</a></code></li>
 <li><code><a title="cvpysdk.job.Job.job_id" href="../job.html#cvpysdk.job.Job.job_id">job_id</a></code></li>
 <li><code><a title="cvpysdk.job.Job.job_type" href="../job.html#cvpysdk.job.Job.job_type">job_type</a></code></li>
 <li><code><a title="cvpysdk.job.Job.kill" href="../job.html#cvpysdk.job.Job.kill">kill</a></code></li>
 <li><code><a title="cvpysdk.job.Job.media_size" href="../job.html#cvpysdk.job.Job.media_size">media_size</a></code></li>
 <li><code><a title="cvpysdk.job.Job.num_of_files_transferred" href="../job.html#cvpysdk.job.Job.num_of_files_transferred">num_of_files_transferred</a></code></li>
+<li><code><a title="cvpysdk.job.Job.num_of_objects" href="../job.html#cvpysdk.job.Job.num_of_objects">num_of_objects</a></code></li>
 <li><code><a title="cvpysdk.job.Job.pause" href="../job.html#cvpysdk.job.Job.pause">pause</a></code></li>
 <li><code><a title="cvpysdk.job.Job.pending_reason" href="../job.html#cvpysdk.job.Job.pending_reason">pending_reason</a></code></li>
 <li><code><a title="cvpysdk.job.Job.phase" href="../job.html#cvpysdk.job.Job.phase">phase</a></code></li>
 <li><code><a title="cvpysdk.job.Job.refresh" href="../job.html#cvpysdk.job.Job.refresh">refresh</a></code></li>
 <li><code><a title="cvpysdk.job.Job.resubmit" href="../job.html#cvpysdk.job.Job.resubmit">resubmit</a></code></li>
 <li><code><a title="cvpysdk.job.Job.resume" href="../job.html#cvpysdk.job.Job.resume">resume</a></code></li>
+<li><code><a title="cvpysdk.job.Job.send_logs" href="../job.html#cvpysdk.job.Job.send_logs">send_logs</a></code></li>
 <li><code><a title="cvpysdk.job.Job.size_of_application" href="../job.html#cvpysdk.job.Job.size_of_application">size_of_application</a></code></li>
 <li><code><a title="cvpysdk.job.Job.start_time" href="../job.html#cvpysdk.job.Job.start_time">start_time</a></code></li>
 <li><code><a title="cvpysdk.job.Job.start_timestamp" href="../job.html#cvpysdk.job.Job.start_timestamp">start_timestamp</a></code></li>

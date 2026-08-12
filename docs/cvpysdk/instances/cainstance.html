@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.10.0" />
 <title>cvpysdk.instances.cainstance API documentation</title>
-<meta name="description" content="File for operating on a Cloud Apps Instance …" />
+<meta name="description" content="File for operating on Cloud Apps Instance …" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
 <link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
@@ -23,13 +23,14 @@
 <h1 class="title">Module <code>cvpysdk.instances.cainstance</code></h1>
 </header>
 <section id="section-intro">
-<p>File for operating on a Cloud Apps Instance.</p>
+<p>File for operating on Cloud Apps Instance.</p>
 <p>CloudAppsInstance is the only class defined in this file.</p>
 <p>CloudAppsInstance:
 Derived class from Instance Base class, representing a
 cloud apps instance, and to perform operations on that instance</p>
 <p><strong>Note:</strong> GoogleInstance class is used for OneDrive as well.</p>
-<h2 id="cloudappsinstance">Cloudappsinstance</h2>
+<p>Cloudappsinstance
+-----=</p>
 <p><strong>new</strong>()
 &ndash;
 Method to create object based on specific cloud apps instance type</p>
@@ -53,7 +54,7 @@ Method to create object based on specific cloud apps instance type</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/cainstance.py#L1-L113" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/cainstance.py#L1-L249" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -73,7 +74,7 @@ Method to create object based on specific cloud apps instance type</p>
 # limitations under the License.
 # --------------------------------------------------------------------------
 
-&#34;&#34;&#34;File for operating on a Cloud Apps Instance.
+&#34;&#34;&#34;File for operating on Cloud Apps Instance.
 
 CloudAppsInstance is the only class defined in this file.
 
@@ -114,11 +115,135 @@ from __future__ import unicode_literals
 from ..instance import Instance
 from ..exception import SDKException
 
+from typing import Optional, TYPE_CHECKING
+if TYPE_CHECKING:
+    from ..agent import Agent
+
 
 class CloudAppsInstance(Instance):
-    &#34;&#34;&#34;Class for representing an Instance of the Cloud Apps agent.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents an instance of the Cloud Apps agent.
 
-    def __new__(cls, agent_object, instance_name, instance_id):
+    This class is responsible for encapsulating the details of a Cloud Apps agent instance,
+    including its association with a specific agent object, instance name, and instance ID.
+    It provides a specialized constructor for creating new Cloud Apps agent instances.
+
+    Common cloud apps properties (instance type, proxy client, credential, plan, account)
+    are parsed here so that derived classes only need to handle workload-specific properties.
+
+    &#34;&#34;&#34;
+
+    def __init__(self, agent_object, instance_name, instance_id=None):
+        &#34;&#34;&#34;Initialize a CloudAppsInstance object.
+
+        Args:
+            agent_object: The agent object associated with this instance.
+            instance_name: The name of the cloud application instance.
+            instance_id: Optional unique identifier for the instance.
+        &#34;&#34;&#34;
+        self._ca_instance_type = None
+        self._proxy_client = None
+        self._credential_name = None
+        self._credential_id = None
+        self._plan_name = None
+        self._account_name = None
+
+        super(CloudAppsInstance, self).__init__(
+            agent_object,
+            instance_name,
+            instance_id
+        )
+
+    def _get_instance_properties(self):
+        &#34;&#34;&#34;Retrieve and parse common cloud apps instance properties.
+
+        Extracts instance type, proxy client, credential, plan, and account
+        from the instance properties response. Derived classes should call
+        super()._get_instance_properties() and then parse workload-specific
+        properties (e.g. custom properties).
+        &#34;&#34;&#34;
+        super(CloudAppsInstance, self)._get_instance_properties()
+
+        self._ca_instance_type = None
+        self._proxy_client = None
+        self._credential_name = None
+        self._credential_id = None
+        self._plan_name = None
+        self._account_name = None
+
+        if &#39;cloudAppsInstance&#39; in self._properties:
+            cloud_apps_instance = self._properties[&#39;cloudAppsInstance&#39;]
+            self._ca_instance_type = cloud_apps_instance.get(&#39;instanceType&#39;)
+
+            if &#39;generalCloudProperties&#39; in cloud_apps_instance:
+                general_props = cloud_apps_instance[&#39;generalCloudProperties&#39;]
+
+                # Proxy client
+                proxy_servers = general_props.get(&#39;proxyServers&#39;, [])
+                if proxy_servers:
+                    self._proxy_client = proxy_servers[0].get(&#39;clientName&#39;)
+
+                # Credential
+                if &#39;credentials&#39; in general_props:
+                    creds = general_props[&#39;credentials&#39;]
+                    self._credential_name = creds.get(&#39;credentialName&#39;)
+                    self._credential_id = creds.get(&#39;credentialId&#39;)
+
+        # Plan
+        plan = self._properties.get(&#39;planEntity&#39;, {})
+        self._plan_name = plan.get(&#39;planName&#39;)
+
+        # Account name (client name)
+        instance_info = self._properties.get(&#39;instance&#39;, {})
+        self._account_name = instance_info.get(&#39;clientName&#39;)
+
+    @property
+    def ca_instance_type(self):
+        &#34;&#34;&#34;Returns the cloud apps instance type.&#34;&#34;&#34;
+        return self._ca_instance_type
+
+    @property
+    def proxy_client(self) -&gt; Optional[str]:
+        &#34;&#34;&#34;Returns the proxy client name for this instance.&#34;&#34;&#34;
+        return self._proxy_client
+
+    @property
+    def credential_name(self) -&gt; Optional[str]:
+        &#34;&#34;&#34;Returns the credential name used for authentication.&#34;&#34;&#34;
+        return self._credential_name
+
+    @property
+    def credential_id(self) -&gt; Optional[int]:
+        &#34;&#34;&#34;Returns the credential ID used for authentication.&#34;&#34;&#34;
+        return self._credential_id
+
+    @property
+    def plan_name(self) -&gt; Optional[str]:
+        &#34;&#34;&#34;Returns the plan name associated with this instance.&#34;&#34;&#34;
+        return self._plan_name
+
+    @property
+    def account_name(self) -&gt; Optional[str]:
+        &#34;&#34;&#34;Returns the account name (client name) for this instance.&#34;&#34;&#34;
+        return self._account_name
+
+    def __new__(cls, agent_object: &#39;Agent&#39;, instance_name: str, instance_id: int) -&gt; object:
+        &#34;&#34;&#34;Create and return a new instance of the CloudAppsInstance class.
+
+        Args:
+            agent_object: The agent object associated with this instance.
+            instance_name: The name of the cloud application instance.
+            instance_id: The unique identifier for the instance.
+
+        Returns:
+            A new CloudAppsInstance object.
+
+        Example:
+            &gt;&gt;&gt; instance = CloudAppsInstance(agent_object, &#34;MyCloudApp&#34;, 101)
+            &gt;&gt;&gt; print(instance)
+            &lt;CloudAppsInstance object at 0x...&gt;
+
+        &#34;&#34;&#34;
         from .cloudapps.google_instance import GoogleInstance
         from .cloudapps.salesforce_instance import SalesforceInstance
         from .cloudapps.cloud_storage_instance import CloudStorageInstance
@@ -131,28 +256,38 @@ class CloudAppsInstance(Instance):
         from .cloudapps.spanner_instance import GoogleSpannerInstance
         from .cloudapps.onedrive_instance import OneDriveInstance
         from .cloudapps.azure_cosmosdb_instance import AzureCosmosDBInstance
+        from .cloudapps.powerbi_instance import PowerBIInstance
+        from .cloudapps.cloud_database_instance import CloudDatabaseInstance
+        from .cloudapps.pinecone_instance import PineConeInstance
+        from .cloudapps.snowflake_instance import SnowflakeInstance
 
         instance_type = {
             1: GoogleInstance,
             2: GoogleInstance,
             3: SalesforceInstance,
-            4: AmazonRDSInstance,     # Amazon RDS Instance
+            4: AmazonRDSInstance,  # Amazon RDS Instance
             5: CloudStorageInstance,  # AmazonS3 Instance
             6: CloudStorageInstance,  # AzureBlob Instance
-            7: OneDriveInstance,      # OneDrive Instance
+            7: OneDriveInstance,  # OneDrive Instance
             14: CloudStorageInstance,  # OracleCloud Instance
             15: CloudStorageInstance,  # Openstack Instance
             20: CloudStorageInstance,  # Google Cloud Instance
             21: CloudStorageInstance,  # azure data lake gen2
-            26: AmazonRedshiftInstance, # Amazon Redshift
-            27: AmazonDocumentDBInstance, # Amazon Document DB
-            25: CloudStorageInstance,   #AliBaba
-            24: CloudStorageInstance,   #IBM
-            22: AmazonDynamoDBInstance, # Amazon DynamoDB
-            35: MSDynamics365Instance,   #  MS Dynamics 365 Instance
-            36: TeamsInstance, # Office 365 Teams
-                        37: GoogleSpannerInstance, # Google Cloud Spanner Instance
-            44: AzureCosmosDBInstance # Azure Cosmos DB Cloud Apps Instance
+            26: AmazonRedshiftInstance,  # Amazon Redshift
+            27: AmazonDocumentDBInstance,  # Amazon Document DB
+            25: CloudStorageInstance,  # AliBaba
+            24: CloudStorageInstance,  # IBM
+            22: AmazonDynamoDBInstance,  # Amazon DynamoDB
+            35: MSDynamics365Instance,  # MS Dynamics 365 Instance
+            36: TeamsInstance,  # Office 365 Teams
+            37: GoogleSpannerInstance,  # Google Cloud Spanner Instance
+            40: CloudDatabaseInstance,  # MongoDB Atlas
+            44: AzureCosmosDBInstance,  # Azure Cosmos DB Cloud Apps Instance
+            51: AzureCosmosDBInstance,   # Azure Cosmos DB MongoDBAPI Instance
+            56: CloudStorageInstance,  # S3 Compatible Instance
+            58: PineConeInstance,  # PineCone Instance
+            60: PowerBIInstance,     # Power Platform PowerBi Instance
+            61: SnowflakeInstance   # Snowflake Instance
         }
 
         commcell_object = agent_object._commcell_object
@@ -184,33 +319,152 @@ class CloudAppsInstance(Instance):
 <span>(</span><span>agent_object, instance_name, instance_id=None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for representing an Instance of the Cloud Apps agent.</p>
-<p>Initialise the instance object.</p>
-<h2 id="args">Args</h2>
-<p>agent_object
-(object)
-&ndash;
-instance of the Agent class</p>
-<p>instance_name
-(str)
-&ndash;
-name of the instance</p>
-<p>instance_id
-(str)
-&ndash;
-id of the instance
-default: None</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Instance class</p></div>
+<div class="desc"><p>Represents an instance of the Cloud Apps agent.</p>
+<p>This class is responsible for encapsulating the details of a Cloud Apps agent instance,
+including its association with a specific agent object, instance name, and instance ID.
+It provides a specialized constructor for creating new Cloud Apps agent instances.</p>
+<p>Common cloud apps properties (instance type, proxy client, credential, plan, account)
+are parsed here so that derived classes only need to handle workload-specific properties.</p>
+<p>Initialize a CloudAppsInstance object.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>agent_object</code></strong></dt>
+<dd>The agent object associated with this instance.</dd>
+<dt><strong><code>instance_name</code></strong></dt>
+<dd>The name of the cloud application instance.</dd>
+<dt><strong><code>instance_id</code></strong></dt>
+<dd>Optional unique identifier for the instance.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/cainstance.py#L61-L113" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/cainstance.py#L65-L249" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class CloudAppsInstance(Instance):
-    &#34;&#34;&#34;Class for representing an Instance of the Cloud Apps agent.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents an instance of the Cloud Apps agent.
 
-    def __new__(cls, agent_object, instance_name, instance_id):
+    This class is responsible for encapsulating the details of a Cloud Apps agent instance,
+    including its association with a specific agent object, instance name, and instance ID.
+    It provides a specialized constructor for creating new Cloud Apps agent instances.
+
+    Common cloud apps properties (instance type, proxy client, credential, plan, account)
+    are parsed here so that derived classes only need to handle workload-specific properties.
+
+    &#34;&#34;&#34;
+
+    def __init__(self, agent_object, instance_name, instance_id=None):
+        &#34;&#34;&#34;Initialize a CloudAppsInstance object.
+
+        Args:
+            agent_object: The agent object associated with this instance.
+            instance_name: The name of the cloud application instance.
+            instance_id: Optional unique identifier for the instance.
+        &#34;&#34;&#34;
+        self._ca_instance_type = None
+        self._proxy_client = None
+        self._credential_name = None
+        self._credential_id = None
+        self._plan_name = None
+        self._account_name = None
+
+        super(CloudAppsInstance, self).__init__(
+            agent_object,
+            instance_name,
+            instance_id
+        )
+
+    def _get_instance_properties(self):
+        &#34;&#34;&#34;Retrieve and parse common cloud apps instance properties.
+
+        Extracts instance type, proxy client, credential, plan, and account
+        from the instance properties response. Derived classes should call
+        super()._get_instance_properties() and then parse workload-specific
+        properties (e.g. custom properties).
+        &#34;&#34;&#34;
+        super(CloudAppsInstance, self)._get_instance_properties()
+
+        self._ca_instance_type = None
+        self._proxy_client = None
+        self._credential_name = None
+        self._credential_id = None
+        self._plan_name = None
+        self._account_name = None
+
+        if &#39;cloudAppsInstance&#39; in self._properties:
+            cloud_apps_instance = self._properties[&#39;cloudAppsInstance&#39;]
+            self._ca_instance_type = cloud_apps_instance.get(&#39;instanceType&#39;)
+
+            if &#39;generalCloudProperties&#39; in cloud_apps_instance:
+                general_props = cloud_apps_instance[&#39;generalCloudProperties&#39;]
+
+                # Proxy client
+                proxy_servers = general_props.get(&#39;proxyServers&#39;, [])
+                if proxy_servers:
+                    self._proxy_client = proxy_servers[0].get(&#39;clientName&#39;)
+
+                # Credential
+                if &#39;credentials&#39; in general_props:
+                    creds = general_props[&#39;credentials&#39;]
+                    self._credential_name = creds.get(&#39;credentialName&#39;)
+                    self._credential_id = creds.get(&#39;credentialId&#39;)
+
+        # Plan
+        plan = self._properties.get(&#39;planEntity&#39;, {})
+        self._plan_name = plan.get(&#39;planName&#39;)
+
+        # Account name (client name)
+        instance_info = self._properties.get(&#39;instance&#39;, {})
+        self._account_name = instance_info.get(&#39;clientName&#39;)
+
+    @property
+    def ca_instance_type(self):
+        &#34;&#34;&#34;Returns the cloud apps instance type.&#34;&#34;&#34;
+        return self._ca_instance_type
+
+    @property
+    def proxy_client(self) -&gt; Optional[str]:
+        &#34;&#34;&#34;Returns the proxy client name for this instance.&#34;&#34;&#34;
+        return self._proxy_client
+
+    @property
+    def credential_name(self) -&gt; Optional[str]:
+        &#34;&#34;&#34;Returns the credential name used for authentication.&#34;&#34;&#34;
+        return self._credential_name
+
+    @property
+    def credential_id(self) -&gt; Optional[int]:
+        &#34;&#34;&#34;Returns the credential ID used for authentication.&#34;&#34;&#34;
+        return self._credential_id
+
+    @property
+    def plan_name(self) -&gt; Optional[str]:
+        &#34;&#34;&#34;Returns the plan name associated with this instance.&#34;&#34;&#34;
+        return self._plan_name
+
+    @property
+    def account_name(self) -&gt; Optional[str]:
+        &#34;&#34;&#34;Returns the account name (client name) for this instance.&#34;&#34;&#34;
+        return self._account_name
+
+    def __new__(cls, agent_object: &#39;Agent&#39;, instance_name: str, instance_id: int) -&gt; object:
+        &#34;&#34;&#34;Create and return a new instance of the CloudAppsInstance class.
+
+        Args:
+            agent_object: The agent object associated with this instance.
+            instance_name: The name of the cloud application instance.
+            instance_id: The unique identifier for the instance.
+
+        Returns:
+            A new CloudAppsInstance object.
+
+        Example:
+            &gt;&gt;&gt; instance = CloudAppsInstance(agent_object, &#34;MyCloudApp&#34;, 101)
+            &gt;&gt;&gt; print(instance)
+            &lt;CloudAppsInstance object at 0x...&gt;
+
+        &#34;&#34;&#34;
         from .cloudapps.google_instance import GoogleInstance
         from .cloudapps.salesforce_instance import SalesforceInstance
         from .cloudapps.cloud_storage_instance import CloudStorageInstance
@@ -223,28 +477,38 @@ default: None</p>
         from .cloudapps.spanner_instance import GoogleSpannerInstance
         from .cloudapps.onedrive_instance import OneDriveInstance
         from .cloudapps.azure_cosmosdb_instance import AzureCosmosDBInstance
+        from .cloudapps.powerbi_instance import PowerBIInstance
+        from .cloudapps.cloud_database_instance import CloudDatabaseInstance
+        from .cloudapps.pinecone_instance import PineConeInstance
+        from .cloudapps.snowflake_instance import SnowflakeInstance
 
         instance_type = {
             1: GoogleInstance,
             2: GoogleInstance,
             3: SalesforceInstance,
-            4: AmazonRDSInstance,     # Amazon RDS Instance
+            4: AmazonRDSInstance,  # Amazon RDS Instance
             5: CloudStorageInstance,  # AmazonS3 Instance
             6: CloudStorageInstance,  # AzureBlob Instance
-            7: OneDriveInstance,      # OneDrive Instance
+            7: OneDriveInstance,  # OneDrive Instance
             14: CloudStorageInstance,  # OracleCloud Instance
             15: CloudStorageInstance,  # Openstack Instance
             20: CloudStorageInstance,  # Google Cloud Instance
             21: CloudStorageInstance,  # azure data lake gen2
-            26: AmazonRedshiftInstance, # Amazon Redshift
-            27: AmazonDocumentDBInstance, # Amazon Document DB
-            25: CloudStorageInstance,   #AliBaba
-            24: CloudStorageInstance,   #IBM
-            22: AmazonDynamoDBInstance, # Amazon DynamoDB
-            35: MSDynamics365Instance,   #  MS Dynamics 365 Instance
-            36: TeamsInstance, # Office 365 Teams
-                        37: GoogleSpannerInstance, # Google Cloud Spanner Instance
-            44: AzureCosmosDBInstance # Azure Cosmos DB Cloud Apps Instance
+            26: AmazonRedshiftInstance,  # Amazon Redshift
+            27: AmazonDocumentDBInstance,  # Amazon Document DB
+            25: CloudStorageInstance,  # AliBaba
+            24: CloudStorageInstance,  # IBM
+            22: AmazonDynamoDBInstance,  # Amazon DynamoDB
+            35: MSDynamics365Instance,  # MS Dynamics 365 Instance
+            36: TeamsInstance,  # Office 365 Teams
+            37: GoogleSpannerInstance,  # Google Cloud Spanner Instance
+            40: CloudDatabaseInstance,  # MongoDB Atlas
+            44: AzureCosmosDBInstance,  # Azure Cosmos DB Cloud Apps Instance
+            51: AzureCosmosDBInstance,   # Azure Cosmos DB MongoDBAPI Instance
+            56: CloudStorageInstance,  # S3 Compatible Instance
+            58: PineConeInstance,  # PineCone Instance
+            60: PowerBIInstance,     # Power Platform PowerBi Instance
+            61: SnowflakeInstance   # Snowflake Instance
         }
 
         commcell_object = agent_object._commcell_object
@@ -273,10 +537,100 @@ default: None</p>
 <li><a title="cvpysdk.instances.cloudapps.dynamics365_instance.MSDynamics365Instance" href="cloudapps/dynamics365_instance.html#cvpysdk.instances.cloudapps.dynamics365_instance.MSDynamics365Instance">MSDynamics365Instance</a></li>
 <li><a title="cvpysdk.instances.cloudapps.google_instance.GoogleInstance" href="cloudapps/google_instance.html#cvpysdk.instances.cloudapps.google_instance.GoogleInstance">GoogleInstance</a></li>
 <li><a title="cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance" href="cloudapps/onedrive_instance.html#cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance">OneDriveInstance</a></li>
+<li><a title="cvpysdk.instances.cloudapps.pinecone_instance.PineConeInstance" href="cloudapps/pinecone_instance.html#cvpysdk.instances.cloudapps.pinecone_instance.PineConeInstance">PineConeInstance</a></li>
+<li><a title="cvpysdk.instances.cloudapps.powerbi_instance.PowerBIInstance" href="cloudapps/powerbi_instance.html#cvpysdk.instances.cloudapps.powerbi_instance.PowerBIInstance">PowerBIInstance</a></li>
 <li><a title="cvpysdk.instances.cloudapps.salesforce_instance.SalesforceInstance" href="cloudapps/salesforce_instance.html#cvpysdk.instances.cloudapps.salesforce_instance.SalesforceInstance">SalesforceInstance</a></li>
+<li><a title="cvpysdk.instances.cloudapps.snowflake_instance.SnowflakeInstance" href="cloudapps/snowflake_instance.html#cvpysdk.instances.cloudapps.snowflake_instance.SnowflakeInstance">SnowflakeInstance</a></li>
 <li><a title="cvpysdk.instances.cloudapps.spanner_instance.GoogleSpannerInstance" href="cloudapps/spanner_instance.html#cvpysdk.instances.cloudapps.spanner_instance.GoogleSpannerInstance">GoogleSpannerInstance</a></li>
 <li><a title="cvpysdk.instances.cloudapps.teams_instance.TeamsInstance" href="cloudapps/teams_instance.html#cvpysdk.instances.cloudapps.teams_instance.TeamsInstance">TeamsInstance</a></li>
 </ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="cvpysdk.instances.cainstance.CloudAppsInstance.account_name"><code class="name">var <span class="ident">account_name</span> : Optional[str]</code></dt>
+<dd>
+<div class="desc"><p>Returns the account name (client name) for this instance.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/cainstance.py#L168-L171" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def account_name(self) -&gt; Optional[str]:
+    &#34;&#34;&#34;Returns the account name (client name) for this instance.&#34;&#34;&#34;
+    return self._account_name</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.instances.cainstance.CloudAppsInstance.ca_instance_type"><code class="name">var <span class="ident">ca_instance_type</span></code></dt>
+<dd>
+<div class="desc"><p>Returns the cloud apps instance type.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/cainstance.py#L143-L146" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def ca_instance_type(self):
+    &#34;&#34;&#34;Returns the cloud apps instance type.&#34;&#34;&#34;
+    return self._ca_instance_type</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.instances.cainstance.CloudAppsInstance.credential_id"><code class="name">var <span class="ident">credential_id</span> : Optional[int]</code></dt>
+<dd>
+<div class="desc"><p>Returns the credential ID used for authentication.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/cainstance.py#L158-L161" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def credential_id(self) -&gt; Optional[int]:
+    &#34;&#34;&#34;Returns the credential ID used for authentication.&#34;&#34;&#34;
+    return self._credential_id</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.instances.cainstance.CloudAppsInstance.credential_name"><code class="name">var <span class="ident">credential_name</span> : Optional[str]</code></dt>
+<dd>
+<div class="desc"><p>Returns the credential name used for authentication.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/cainstance.py#L153-L156" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def credential_name(self) -&gt; Optional[str]:
+    &#34;&#34;&#34;Returns the credential name used for authentication.&#34;&#34;&#34;
+    return self._credential_name</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.instances.cainstance.CloudAppsInstance.plan_name"><code class="name">var <span class="ident">plan_name</span> : Optional[str]</code></dt>
+<dd>
+<div class="desc"><p>Returns the plan name associated with this instance.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/cainstance.py#L163-L166" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def plan_name(self) -&gt; Optional[str]:
+    &#34;&#34;&#34;Returns the plan name associated with this instance.&#34;&#34;&#34;
+    return self._plan_name</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.instances.cainstance.CloudAppsInstance.proxy_client"><code class="name">var <span class="ident">proxy_client</span> : Optional[str]</code></dt>
+<dd>
+<div class="desc"><p>Returns the proxy client name for this instance.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/cainstance.py#L148-L151" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def proxy_client(self) -&gt; Optional[str]:
+    &#34;&#34;&#34;Returns the proxy client name for this instance.&#34;&#34;&#34;
+    return self._proxy_client</code></pre>
+</details>
+</dd>
+</dl>
 <h3>Inherited members</h3>
 <ul class="hlist">
 <li><code><b><a title="cvpysdk.instance.Instance" href="../instance.html#cvpysdk.instance.Instance">Instance</a></b></code>:
@@ -368,6 +722,14 @@ setTimeout(() => input.focus(), 100);
 <ul>
 <li>
 <h4><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance" href="#cvpysdk.instances.cainstance.CloudAppsInstance">CloudAppsInstance</a></code></h4>
+<ul class="two-column">
+<li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.account_name" href="#cvpysdk.instances.cainstance.CloudAppsInstance.account_name">account_name</a></code></li>
+<li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.ca_instance_type" href="#cvpysdk.instances.cainstance.CloudAppsInstance.ca_instance_type">ca_instance_type</a></code></li>
+<li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.credential_id" href="#cvpysdk.instances.cainstance.CloudAppsInstance.credential_id">credential_id</a></code></li>
+<li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.credential_name" href="#cvpysdk.instances.cainstance.CloudAppsInstance.credential_name">credential_name</a></code></li>
+<li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.plan_name" href="#cvpysdk.instances.cainstance.CloudAppsInstance.plan_name">plan_name</a></code></li>
+<li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.proxy_client" href="#cvpysdk.instances.cainstance.CloudAppsInstance.proxy_client">proxy_client</a></code></li>
+</ul>
 </li>
 </ul>
 </li>

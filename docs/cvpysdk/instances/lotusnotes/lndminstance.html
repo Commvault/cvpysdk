@@ -25,8 +25,9 @@
 <section id="section-intro">
 <p>File for operating on a Lotus Notes Database Agent Instance.</p>
 <p>LNDOCInstance is the only class defined in this file.</p>
-<h2 id="lndocinstance">Lndocinstance</h2>
-<p>_commonoption_restore_json
+<p>Lndocinstance
+-----=
+_commonoption_restore_json
 &ndash;
 setter for
 the Common options in restore JSON</p>
@@ -39,7 +40,7 @@ performs an out of place restore of the subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/lotusnotes/lndminstance.py#L1-L251" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/lotusnotes/lndminstance.py#L1-L243" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -74,16 +75,45 @@ LNDOCInstance:
 
 from __future__ import unicode_literals
 
+from typing import TYPE_CHECKING
+
 from .lninstance import LNInstance
 from ...exception import SDKException
 
+if TYPE_CHECKING:
+    from ...job import Job
 
 class LNDMInstance(LNInstance):
-    &#34;&#34;&#34;Derived class from LNInstance Base class, representing an LNDOC instance,
-        and to perform operations on that instance.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents an LNDOC instance, derived from the LNInstance base class.
 
-    def _commonoption_restore_json(self, value):
-        &#34;&#34;&#34;setter for  the Common options in restore JSON&#34;&#34;&#34;
+    This class provides specialized operations for managing and restoring data
+    within an LNDOC instance. It includes methods for restoring data both in place
+    and out of place, as well as handling common restore options in JSON format.
+
+    Key Features:
+        - Restore data in place with customizable options such as overwrite, ACL restoration, copy precedence, and time range selection.
+        - Restore data out of place to a specified client and destination path, with similar customization options.
+        - Manage and process common restore options using JSON input for flexible configuration.
+
+    &#34;&#34;&#34;
+
+    def _commonoption_restore_json(self, value: dict) -&gt; None:
+        &#34;&#34;&#34;Set the common options section in the restore JSON configuration.
+
+        Args:
+            value: A dictionary containing the common options to be set in the restore JSON.
+
+        Example:
+            &gt;&gt;&gt; instance = LNDMInstance()
+            &gt;&gt;&gt; common_options = {
+            ...     &#34;overwrite&#34;: True,
+            ...     &#34;preserve_permissions&#34;: False
+            ... }
+            &gt;&gt;&gt; instance._commonoption_restore_json(common_options)
+            &gt;&gt;&gt; # The common options are now set in the restore JSON
+
+        &#34;&#34;&#34;
 
         if not isinstance(value, dict):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
@@ -129,66 +159,53 @@ class LNDMInstance(LNInstance):
 
     def restore_in_place(
             self,
-            paths,
-            overwrite=True,
-            restore_data_and_acl=True,
-            copy_precedence=None,
-            from_time=None,
-            to_time=None,
-            common_options_dict=None):
-        &#34;&#34;&#34;Restores the files/folders specified in the input paths list to the same location.
+            paths: list,
+            overwrite: bool = True,
+            restore_data_and_acl: bool = True,
+            copy_precedence: int = None,
+            from_time: str = None,
+            to_time: str = None,
+            common_options_dict: dict = None
+        ) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;Restore files or folders to their original location (in-place restore).
 
-            Args:
-                paths                   (list)  --  list of full paths of files/folders to restore
+        This method restores the specified files or folders, as provided in the `paths` list, 
+        to their original location on the client. You can control overwrite behavior, 
+        data and ACL restoration, copy precedence, time range, and additional restore options.
 
-                overwrite               (bool)  --  unconditional overwrite files during restore
-                    default: True
+        Args:
+            paths: List of full file or folder paths to restore.
+            overwrite: If True, unconditionally overwrite existing files during restore. Default is True.
+            restore_data_and_acl: If True, restore both data and ACLs. Default is True.
+            copy_precedence: Optional storage policy copy precedence value. Default is None.
+            from_time: Optional lower bound for restore time range (format: &#39;YYYY-MM-DD HH:MM:SS&#39;). Default is None.
+            to_time: Optional upper bound for restore time range (format: &#39;YYYY-MM-DD HH:MM:SS&#39;). Default is None.
+            common_options_dict: Optional dictionary of additional restore options. Supported keys include:
+                - &#39;append&#39;: Append documents to the database (default: False)
+                - &#39;skip&#39;: Skip if already present (default: False)
+                - &#39;unconditionalOverwrite&#39;: Overwrite the documents (default: False)
+                - &#39;restoreOnlyStubExists&#39;: Restore only if it is a stub (default: False)
 
-                restore_data_and_acl    (bool)  --  restore data and ACL files
-                    default: True
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                copy_precedence         (int)   --  copy precedence value of storage policy copy
-                    default: None
+        Raises:
+            SDKException: If `paths` is not a list, if the job fails to initialize, 
+                if the response is empty, or if the response indicates failure.
 
-                from_time           (str)       --  time to retore the contents after
-                        format: YYYY-MM-DD HH:MM:SS
+        Example:
+            &gt;&gt;&gt; instance = LNDMInstance()
+            &gt;&gt;&gt; restore_job = instance.restore_in_place(
+            ...     paths=[&#39;/data/file1.txt&#39;, &#39;/data/folder2&#39;],
+            ...     overwrite=True,
+            ...     restore_data_and_acl=True,
+            ...     copy_precedence=2,
+            ...     from_time=&#39;2023-01-01 00:00:00&#39;,
+            ...     to_time=&#39;2023-12-31 23:59:59&#39;,
+            ...     common_options_dict={&#39;skip&#39;: True}
+            ... )
+            &gt;&gt;&gt; print(f&#34;Restore job started with ID: {restore_job.job_id}&#34;)
 
-                    default: None
-
-                to_time           (str)         --  time to retore the contents before
-                        format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                common_options_dict (dict)          -- dictionary for all the common options
-                    options:
-                        append                      :   append documents to the database
-
-                            default: False
-
-                        skip                        :   skip if already present
-
-                            default: False
-
-                        unconditionalOverwrite      :   overwrite the documents
-
-                            default: False
-
-                        restoreOnlyStubExists       :   restore only if it is a stub
-
-                            default: False
-            Returns:
-                object - instance of the Job class for this restore job
-
-            Raises:
-                SDKException:
-                    if paths is not a list
-
-                    if failed to initialize job
-
-                    if response is empty
-
-                    if response is not success
         &#34;&#34;&#34;
         return super(LNDMInstance, self).restore_in_place(
             paths,
@@ -201,85 +218,58 @@ class LNDMInstance(LNInstance):
 
     def restore_out_of_place(
             self,
-            client,
-            destination_path,
-            paths,
-            overwrite=True,
-            restore_data_and_acl=True,
-            copy_precedence=None,
-            from_time=None,
-            to_time=None,
-            common_options_dict=None):
-        &#34;&#34;&#34;Restores the files/folders specified in the input paths list to the input client,
-            at the specified destionation location.
+            client: object,
+            destination_path: str,
+            paths: list,
+            overwrite: bool = True,
+            restore_data_and_acl: bool = True,
+            copy_precedence: int = None,
+            from_time: str = None,
+            to_time: str = None,
+            common_options_dict: dict = None
+        ) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;Restore specified files or folders to a different client and destination path.
 
-            Args:
-                client                (str/object) --  either the name of the client or
-                the instance of the Client
+        This method restores the files or folders listed in `paths` to the specified `destination_path`
+        on the given `client`. The restore can be customized with options such as overwriting existing files,
+        restoring data and ACLs, specifying copy precedence, time filters, and additional common options.
 
-                destination_path      (str)        --  full path of the restore location on client
+        Args:
+            client: The target client for restore. Can be a client name (str) or a Client object.
+            destination_path: Full path on the client where data will be restored.
+            paths: List of full file or folder paths to restore.
+            overwrite: If True, existing files at the destination will be overwritten. Default is True.
+            restore_data_and_acl: If True, both data and ACLs will be restored. Default is True.
+            copy_precedence: Optional storage policy copy precedence value. Default is None.
+            from_time: Optional lower time boundary for restore (format: &#39;YYYY-MM-DD HH:MM:SS&#39;). Default is None.
+            to_time: Optional upper time boundary for restore (format: &#39;YYYY-MM-DD HH:MM:SS&#39;). Default is None.
+            common_options_dict: Optional dictionary of additional restore options. Supported keys include:
+                - &#39;append&#39;: Append documents to the database (default: False)
+                - &#39;skip&#39;: Skip if already present (default: False)
+                - &#39;unconditionalOverwrite&#39;: Overwrite the documents (default: False)
+                - &#39;restoreOnlyStubExists&#39;: Restore only if it is a stub (default: False)
 
-                paths                 (list)       --  list of full paths of
-                files/folders to restore
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                overwrite             (bool)       --  unconditional overwrite files during restore
+        Raises:
+            SDKException: If input parameters are invalid or if the restore job fails to initialize.
 
-                    default: True
+        Example:
+            &gt;&gt;&gt; # Restore files to a different client and path
+            &gt;&gt;&gt; job = lndm_instance.restore_out_of_place(
+            ...     client=&#39;TargetClient&#39;,
+            ...     destination_path=&#39;/restore/location&#39;,
+            ...     paths=[&#39;/data/file1.txt&#39;, &#39;/data/folder2&#39;],
+            ...     overwrite=True,
+            ...     restore_data_and_acl=True,
+            ...     copy_precedence=2,
+            ...     from_time=&#39;2023-01-01 00:00:00&#39;,
+            ...     to_time=&#39;2023-12-31 23:59:59&#39;,
+            ...     common_options_dict={&#39;skip&#39;: True}
+            ... )
+            &gt;&gt;&gt; print(f&#34;Restore job started with ID: {job.job_id}&#34;)
 
-                restore_data_and_acl  (bool)       --  restore data and ACL files
-
-                    default: True
-
-                copy_precedence         (int)      --  copy precedence value of storage policy copy
-
-                    default: None
-
-                from_time           (str)          --  time to retore the contents after
-
-                        format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                to_time           (str)            --  time to retore the contents before
-
-                        format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                 common_options_dict (dict)          -- dictionary for all the common options
-                    options:
-                        append                      :   append documents to the database
-
-                            default: False
-
-                        skip                        :   skip if already present
-
-                            default: False
-
-                        unconditionalOverwrite      :   overwrite the documents
-
-                            default: False
-
-                        restoreOnlyStubExists       :   restore only if it is a stub
-
-                            default: False
-
-            Returns:
-                object - instance of the Job class for this restore job
-
-            Raises:
-                SDKException:
-                    if client is not a string or Client instance
-
-                    if destination_path is not a string
-
-                    if paths is not a list
-
-                    if failed to initialize job
-
-                    if response is empty
-
-                    if response is not success
         &#34;&#34;&#34;
         return super(LNDMInstance, self).restore_out_of_place(
             client,
@@ -307,11 +297,18 @@ class LNDMInstance(LNInstance):
 <span>(</span><span>agent_object, instance_name, instance_id=None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Derived class from LNInstance Base class, representing an LNDOC instance,
-and to perform operations on that instance.</p>
+<div class="desc"><p>Represents an LNDOC instance, derived from the LNInstance base class.</p>
+<p>This class provides specialized operations for managing and restoring data
+within an LNDOC instance. It includes methods for restoring data both in place
+and out of place, as well as handling common restore options in JSON format.</p>
+<p>Key Features:
+- Restore data in place with customizable options such as overwrite, ACL restoration, copy precedence, and time range selection.
+- Restore data out of place to a specified client and destination path, with similar customization options.
+- Manage and process common restore options using JSON input for flexible configuration.</p>
 <p>Initialise the instance object.</p>
-<h2 id="args">Args</h2>
-<p>agent_object
+<p>Args
+-----=
+agent_object
 (object)
 &ndash;
 instance of the Agent class</p>
@@ -324,19 +321,45 @@ name of the instance</p>
 &ndash;
 id of the instance
 default: None</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Instance class</p></div>
+<p>Returns
+-----=
+object - instance of the Instance class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/lotusnotes/lndminstance.py#L38-L250" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/lotusnotes/lndminstance.py#L42-L243" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class LNDMInstance(LNInstance):
-    &#34;&#34;&#34;Derived class from LNInstance Base class, representing an LNDOC instance,
-        and to perform operations on that instance.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents an LNDOC instance, derived from the LNInstance base class.
 
-    def _commonoption_restore_json(self, value):
-        &#34;&#34;&#34;setter for  the Common options in restore JSON&#34;&#34;&#34;
+    This class provides specialized operations for managing and restoring data
+    within an LNDOC instance. It includes methods for restoring data both in place
+    and out of place, as well as handling common restore options in JSON format.
+
+    Key Features:
+        - Restore data in place with customizable options such as overwrite, ACL restoration, copy precedence, and time range selection.
+        - Restore data out of place to a specified client and destination path, with similar customization options.
+        - Manage and process common restore options using JSON input for flexible configuration.
+
+    &#34;&#34;&#34;
+
+    def _commonoption_restore_json(self, value: dict) -&gt; None:
+        &#34;&#34;&#34;Set the common options section in the restore JSON configuration.
+
+        Args:
+            value: A dictionary containing the common options to be set in the restore JSON.
+
+        Example:
+            &gt;&gt;&gt; instance = LNDMInstance()
+            &gt;&gt;&gt; common_options = {
+            ...     &#34;overwrite&#34;: True,
+            ...     &#34;preserve_permissions&#34;: False
+            ... }
+            &gt;&gt;&gt; instance._commonoption_restore_json(common_options)
+            &gt;&gt;&gt; # The common options are now set in the restore JSON
+
+        &#34;&#34;&#34;
 
         if not isinstance(value, dict):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
@@ -382,66 +405,53 @@ default: None</p>
 
     def restore_in_place(
             self,
-            paths,
-            overwrite=True,
-            restore_data_and_acl=True,
-            copy_precedence=None,
-            from_time=None,
-            to_time=None,
-            common_options_dict=None):
-        &#34;&#34;&#34;Restores the files/folders specified in the input paths list to the same location.
+            paths: list,
+            overwrite: bool = True,
+            restore_data_and_acl: bool = True,
+            copy_precedence: int = None,
+            from_time: str = None,
+            to_time: str = None,
+            common_options_dict: dict = None
+        ) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;Restore files or folders to their original location (in-place restore).
 
-            Args:
-                paths                   (list)  --  list of full paths of files/folders to restore
+        This method restores the specified files or folders, as provided in the `paths` list, 
+        to their original location on the client. You can control overwrite behavior, 
+        data and ACL restoration, copy precedence, time range, and additional restore options.
 
-                overwrite               (bool)  --  unconditional overwrite files during restore
-                    default: True
+        Args:
+            paths: List of full file or folder paths to restore.
+            overwrite: If True, unconditionally overwrite existing files during restore. Default is True.
+            restore_data_and_acl: If True, restore both data and ACLs. Default is True.
+            copy_precedence: Optional storage policy copy precedence value. Default is None.
+            from_time: Optional lower bound for restore time range (format: &#39;YYYY-MM-DD HH:MM:SS&#39;). Default is None.
+            to_time: Optional upper bound for restore time range (format: &#39;YYYY-MM-DD HH:MM:SS&#39;). Default is None.
+            common_options_dict: Optional dictionary of additional restore options. Supported keys include:
+                - &#39;append&#39;: Append documents to the database (default: False)
+                - &#39;skip&#39;: Skip if already present (default: False)
+                - &#39;unconditionalOverwrite&#39;: Overwrite the documents (default: False)
+                - &#39;restoreOnlyStubExists&#39;: Restore only if it is a stub (default: False)
 
-                restore_data_and_acl    (bool)  --  restore data and ACL files
-                    default: True
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                copy_precedence         (int)   --  copy precedence value of storage policy copy
-                    default: None
+        Raises:
+            SDKException: If `paths` is not a list, if the job fails to initialize, 
+                if the response is empty, or if the response indicates failure.
 
-                from_time           (str)       --  time to retore the contents after
-                        format: YYYY-MM-DD HH:MM:SS
+        Example:
+            &gt;&gt;&gt; instance = LNDMInstance()
+            &gt;&gt;&gt; restore_job = instance.restore_in_place(
+            ...     paths=[&#39;/data/file1.txt&#39;, &#39;/data/folder2&#39;],
+            ...     overwrite=True,
+            ...     restore_data_and_acl=True,
+            ...     copy_precedence=2,
+            ...     from_time=&#39;2023-01-01 00:00:00&#39;,
+            ...     to_time=&#39;2023-12-31 23:59:59&#39;,
+            ...     common_options_dict={&#39;skip&#39;: True}
+            ... )
+            &gt;&gt;&gt; print(f&#34;Restore job started with ID: {restore_job.job_id}&#34;)
 
-                    default: None
-
-                to_time           (str)         --  time to retore the contents before
-                        format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                common_options_dict (dict)          -- dictionary for all the common options
-                    options:
-                        append                      :   append documents to the database
-
-                            default: False
-
-                        skip                        :   skip if already present
-
-                            default: False
-
-                        unconditionalOverwrite      :   overwrite the documents
-
-                            default: False
-
-                        restoreOnlyStubExists       :   restore only if it is a stub
-
-                            default: False
-            Returns:
-                object - instance of the Job class for this restore job
-
-            Raises:
-                SDKException:
-                    if paths is not a list
-
-                    if failed to initialize job
-
-                    if response is empty
-
-                    if response is not success
         &#34;&#34;&#34;
         return super(LNDMInstance, self).restore_in_place(
             paths,
@@ -454,85 +464,58 @@ default: None</p>
 
     def restore_out_of_place(
             self,
-            client,
-            destination_path,
-            paths,
-            overwrite=True,
-            restore_data_and_acl=True,
-            copy_precedence=None,
-            from_time=None,
-            to_time=None,
-            common_options_dict=None):
-        &#34;&#34;&#34;Restores the files/folders specified in the input paths list to the input client,
-            at the specified destionation location.
+            client: object,
+            destination_path: str,
+            paths: list,
+            overwrite: bool = True,
+            restore_data_and_acl: bool = True,
+            copy_precedence: int = None,
+            from_time: str = None,
+            to_time: str = None,
+            common_options_dict: dict = None
+        ) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;Restore specified files or folders to a different client and destination path.
 
-            Args:
-                client                (str/object) --  either the name of the client or
-                the instance of the Client
+        This method restores the files or folders listed in `paths` to the specified `destination_path`
+        on the given `client`. The restore can be customized with options such as overwriting existing files,
+        restoring data and ACLs, specifying copy precedence, time filters, and additional common options.
 
-                destination_path      (str)        --  full path of the restore location on client
+        Args:
+            client: The target client for restore. Can be a client name (str) or a Client object.
+            destination_path: Full path on the client where data will be restored.
+            paths: List of full file or folder paths to restore.
+            overwrite: If True, existing files at the destination will be overwritten. Default is True.
+            restore_data_and_acl: If True, both data and ACLs will be restored. Default is True.
+            copy_precedence: Optional storage policy copy precedence value. Default is None.
+            from_time: Optional lower time boundary for restore (format: &#39;YYYY-MM-DD HH:MM:SS&#39;). Default is None.
+            to_time: Optional upper time boundary for restore (format: &#39;YYYY-MM-DD HH:MM:SS&#39;). Default is None.
+            common_options_dict: Optional dictionary of additional restore options. Supported keys include:
+                - &#39;append&#39;: Append documents to the database (default: False)
+                - &#39;skip&#39;: Skip if already present (default: False)
+                - &#39;unconditionalOverwrite&#39;: Overwrite the documents (default: False)
+                - &#39;restoreOnlyStubExists&#39;: Restore only if it is a stub (default: False)
 
-                paths                 (list)       --  list of full paths of
-                files/folders to restore
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                overwrite             (bool)       --  unconditional overwrite files during restore
+        Raises:
+            SDKException: If input parameters are invalid or if the restore job fails to initialize.
 
-                    default: True
+        Example:
+            &gt;&gt;&gt; # Restore files to a different client and path
+            &gt;&gt;&gt; job = lndm_instance.restore_out_of_place(
+            ...     client=&#39;TargetClient&#39;,
+            ...     destination_path=&#39;/restore/location&#39;,
+            ...     paths=[&#39;/data/file1.txt&#39;, &#39;/data/folder2&#39;],
+            ...     overwrite=True,
+            ...     restore_data_and_acl=True,
+            ...     copy_precedence=2,
+            ...     from_time=&#39;2023-01-01 00:00:00&#39;,
+            ...     to_time=&#39;2023-12-31 23:59:59&#39;,
+            ...     common_options_dict={&#39;skip&#39;: True}
+            ... )
+            &gt;&gt;&gt; print(f&#34;Restore job started with ID: {job.job_id}&#34;)
 
-                restore_data_and_acl  (bool)       --  restore data and ACL files
-
-                    default: True
-
-                copy_precedence         (int)      --  copy precedence value of storage policy copy
-
-                    default: None
-
-                from_time           (str)          --  time to retore the contents after
-
-                        format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                to_time           (str)            --  time to retore the contents before
-
-                        format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                 common_options_dict (dict)          -- dictionary for all the common options
-                    options:
-                        append                      :   append documents to the database
-
-                            default: False
-
-                        skip                        :   skip if already present
-
-                            default: False
-
-                        unconditionalOverwrite      :   overwrite the documents
-
-                            default: False
-
-                        restoreOnlyStubExists       :   restore only if it is a stub
-
-                            default: False
-
-            Returns:
-                object - instance of the Job class for this restore job
-
-            Raises:
-                SDKException:
-                    if client is not a string or Client instance
-
-                    if destination_path is not a string
-
-                    if paths is not a list
-
-                    if failed to initialize job
-
-                    if response is empty
-
-                    if response is not success
         &#34;&#34;&#34;
         return super(LNDMInstance, self).restore_out_of_place(
             client,
@@ -553,142 +536,112 @@ default: None</p>
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.instances.lotusnotes.lndminstance.LNDMInstance.restore_in_place"><code class="name flex">
-<span>def <span class="ident">restore_in_place</span></span>(<span>self, paths, overwrite=True, restore_data_and_acl=True, copy_precedence=None, from_time=None, to_time=None, common_options_dict=None)</span>
+<span>def <span class="ident">restore_in_place</span></span>(<span>self, paths: list, overwrite: bool = True, restore_data_and_acl: bool = True, copy_precedence: int = None, from_time: str = None, to_time: str = None, common_options_dict: dict = None) ‑> Job</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Restores the files/folders specified in the input paths list to the same location.</p>
-<h2 id="args">Args</h2>
-<p>paths
-(list)
-&ndash;
-list of full paths of files/folders to restore</p>
-<p>overwrite
-(bool)
-&ndash;
-unconditional overwrite files during restore
-default: True</p>
-<p>restore_data_and_acl
-(bool)
-&ndash;
-restore data and ACL files
-default: True</p>
-<p>copy_precedence
-(int)
-&ndash;
-copy precedence value of storage policy copy
-default: None</p>
-<p>from_time
-(str)
-&ndash;
-time to retore the contents after
-format: YYYY-MM-DD HH:MM:SS</p>
-<pre><code>default: None
-</code></pre>
-<p>to_time
-(str)
-&ndash;
-time to retore the contents before
-format: YYYY-MM-DD HH:MM:SS</p>
-<pre><code>default: None
-</code></pre>
-<p>common_options_dict (dict)
-&ndash; dictionary for all the common options
-options:
-append
-:
-append documents to the database</p>
-<pre><code>        default: False
-
-    skip                        :   skip if already present
-
-        default: False
-
-    unconditionalOverwrite      :   overwrite the documents
-
-        default: False
-
-    restoreOnlyStubExists       :   restore only if it is a stub
-
-        default: False
-</code></pre>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this restore job</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if paths is not a list</p>
-<pre><code>if failed to initialize job
-
-if response is empty
-
-if response is not success
+<div class="desc"><p>Restore files or folders to their original location (in-place restore).</p>
+<p>This method restores the specified files or folders, as provided in the <code>paths</code> list,
+to their original location on the client. You can control overwrite behavior,
+data and ACL restoration, copy precedence, time range, and additional restore options.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>paths</code></strong></dt>
+<dd>List of full file or folder paths to restore.</dd>
+<dt><strong><code>overwrite</code></strong></dt>
+<dd>If True, unconditionally overwrite existing files during restore. Default is True.</dd>
+<dt><strong><code>restore_data_and_acl</code></strong></dt>
+<dd>If True, restore both data and ACLs. Default is True.</dd>
+<dt><strong><code>copy_precedence</code></strong></dt>
+<dd>Optional storage policy copy precedence value. Default is None.</dd>
+<dt><strong><code>from_time</code></strong></dt>
+<dd>Optional lower bound for restore time range (format: 'YYYY-MM-DD HH:MM:SS'). Default is None.</dd>
+<dt><strong><code>to_time</code></strong></dt>
+<dd>Optional upper bound for restore time range (format: 'YYYY-MM-DD HH:MM:SS'). Default is None.</dd>
+<dt><strong><code>common_options_dict</code></strong></dt>
+<dd>Optional dictionary of additional restore options. Supported keys include:
+- 'append': Append documents to the database (default: False)
+- 'skip': Skip if already present (default: False)
+- 'unconditionalOverwrite': Overwrite the documents (default: False)
+- 'restoreOnlyStubExists': Restore only if it is a stub (default: False)</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Job</code></dt>
+<dd>An instance of the Job class representing the restore job.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If <code>paths</code> is not a list, if the job fails to initialize,
+if the response is empty, or if the response indicates failure.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; instance = LNDMInstance()
+&gt;&gt;&gt; restore_job = instance.restore_in_place(
+...     paths=['/data/file1.txt', '/data/folder2'],
+...     overwrite=True,
+...     restore_data_and_acl=True,
+...     copy_precedence=2,
+...     from_time='2023-01-01 00:00:00',
+...     to_time='2023-12-31 23:59:59',
+...     common_options_dict={'skip': True}
+... )
+&gt;&gt;&gt; print(f&quot;Restore job started with ID: {restore_job.job_id}&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/lotusnotes/lndminstance.py#L87-L157" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/lotusnotes/lndminstance.py#L118-L176" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_in_place(
         self,
-        paths,
-        overwrite=True,
-        restore_data_and_acl=True,
-        copy_precedence=None,
-        from_time=None,
-        to_time=None,
-        common_options_dict=None):
-    &#34;&#34;&#34;Restores the files/folders specified in the input paths list to the same location.
+        paths: list,
+        overwrite: bool = True,
+        restore_data_and_acl: bool = True,
+        copy_precedence: int = None,
+        from_time: str = None,
+        to_time: str = None,
+        common_options_dict: dict = None
+    ) -&gt; &#39;Job&#39;:
+    &#34;&#34;&#34;Restore files or folders to their original location (in-place restore).
 
-        Args:
-            paths                   (list)  --  list of full paths of files/folders to restore
+    This method restores the specified files or folders, as provided in the `paths` list, 
+    to their original location on the client. You can control overwrite behavior, 
+    data and ACL restoration, copy precedence, time range, and additional restore options.
 
-            overwrite               (bool)  --  unconditional overwrite files during restore
-                default: True
+    Args:
+        paths: List of full file or folder paths to restore.
+        overwrite: If True, unconditionally overwrite existing files during restore. Default is True.
+        restore_data_and_acl: If True, restore both data and ACLs. Default is True.
+        copy_precedence: Optional storage policy copy precedence value. Default is None.
+        from_time: Optional lower bound for restore time range (format: &#39;YYYY-MM-DD HH:MM:SS&#39;). Default is None.
+        to_time: Optional upper bound for restore time range (format: &#39;YYYY-MM-DD HH:MM:SS&#39;). Default is None.
+        common_options_dict: Optional dictionary of additional restore options. Supported keys include:
+            - &#39;append&#39;: Append documents to the database (default: False)
+            - &#39;skip&#39;: Skip if already present (default: False)
+            - &#39;unconditionalOverwrite&#39;: Overwrite the documents (default: False)
+            - &#39;restoreOnlyStubExists&#39;: Restore only if it is a stub (default: False)
 
-            restore_data_and_acl    (bool)  --  restore data and ACL files
-                default: True
+    Returns:
+        Job: An instance of the Job class representing the restore job.
 
-            copy_precedence         (int)   --  copy precedence value of storage policy copy
-                default: None
+    Raises:
+        SDKException: If `paths` is not a list, if the job fails to initialize, 
+            if the response is empty, or if the response indicates failure.
 
-            from_time           (str)       --  time to retore the contents after
-                    format: YYYY-MM-DD HH:MM:SS
+    Example:
+        &gt;&gt;&gt; instance = LNDMInstance()
+        &gt;&gt;&gt; restore_job = instance.restore_in_place(
+        ...     paths=[&#39;/data/file1.txt&#39;, &#39;/data/folder2&#39;],
+        ...     overwrite=True,
+        ...     restore_data_and_acl=True,
+        ...     copy_precedence=2,
+        ...     from_time=&#39;2023-01-01 00:00:00&#39;,
+        ...     to_time=&#39;2023-12-31 23:59:59&#39;,
+        ...     common_options_dict={&#39;skip&#39;: True}
+        ... )
+        &gt;&gt;&gt; print(f&#34;Restore job started with ID: {restore_job.job_id}&#34;)
 
-                default: None
-
-            to_time           (str)         --  time to retore the contents before
-                    format: YYYY-MM-DD HH:MM:SS
-
-                default: None
-
-            common_options_dict (dict)          -- dictionary for all the common options
-                options:
-                    append                      :   append documents to the database
-
-                        default: False
-
-                    skip                        :   skip if already present
-
-                        default: False
-
-                    unconditionalOverwrite      :   overwrite the documents
-
-                        default: False
-
-                    restoreOnlyStubExists       :   restore only if it is a stub
-
-                        default: False
-        Returns:
-            object - instance of the Job class for this restore job
-
-        Raises:
-            SDKException:
-                if paths is not a list
-
-                if failed to initialize job
-
-                if response is empty
-
-                if response is not success
     &#34;&#34;&#34;
     return super(LNDMInstance, self).restore_in_place(
         paths,
@@ -701,180 +654,122 @@ if response is not success
 </details>
 </dd>
 <dt id="cvpysdk.instances.lotusnotes.lndminstance.LNDMInstance.restore_out_of_place"><code class="name flex">
-<span>def <span class="ident">restore_out_of_place</span></span>(<span>self, client, destination_path, paths, overwrite=True, restore_data_and_acl=True, copy_precedence=None, from_time=None, to_time=None, common_options_dict=None)</span>
+<span>def <span class="ident">restore_out_of_place</span></span>(<span>self, client: object, destination_path: str, paths: list, overwrite: bool = True, restore_data_and_acl: bool = True, copy_precedence: int = None, from_time: str = None, to_time: str = None, common_options_dict: dict = None) ‑> Job</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Restores the files/folders specified in the input paths list to the input client,
-at the specified destionation location.</p>
-<h2 id="args">Args</h2>
-<p>client
-(str/object) &ndash;
-either the name of the client or
-the instance of the Client</p>
-<p>destination_path
-(str)
-&ndash;
-full path of the restore location on client</p>
-<p>paths
-(list)
-&ndash;
-list of full paths of
-files/folders to restore</p>
-<p>overwrite
-(bool)
-&ndash;
-unconditional overwrite files during restore</p>
-<pre><code>default: True
-</code></pre>
-<p>restore_data_and_acl
-(bool)
-&ndash;
-restore data and ACL files</p>
-<pre><code>default: True
-</code></pre>
-<p>copy_precedence
-(int)
-&ndash;
-copy precedence value of storage policy copy</p>
-<pre><code>default: None
-</code></pre>
-<p>from_time
-(str)
-&ndash;
-time to retore the contents after</p>
-<pre><code>    format: YYYY-MM-DD HH:MM:SS
-
-default: None
-</code></pre>
-<p>to_time
-(str)
-&ndash;
-time to retore the contents before</p>
-<pre><code>    format: YYYY-MM-DD HH:MM:SS
-
-default: None
-</code></pre>
-<p>common_options_dict (dict)
-&ndash; dictionary for all the common options
-options:
-append
-:
-append documents to the database</p>
-<pre><code>        default: False
-
-    skip                        :   skip if already present
-
-        default: False
-
-    unconditionalOverwrite      :   overwrite the documents
-
-        default: False
-
-    restoreOnlyStubExists       :   restore only if it is a stub
-
-        default: False
-</code></pre>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this restore job</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if client is not a string or Client instance</p>
-<pre><code>if destination_path is not a string
-
-if paths is not a list
-
-if failed to initialize job
-
-if response is empty
-
-if response is not success
+<div class="desc"><p>Restore specified files or folders to a different client and destination path.</p>
+<p>This method restores the files or folders listed in <code>paths</code> to the specified <code>destination_path</code>
+on the given <code>client</code>. The restore can be customized with options such as overwriting existing files,
+restoring data and ACLs, specifying copy precedence, time filters, and additional common options.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>client</code></strong></dt>
+<dd>The target client for restore. Can be a client name (str) or a Client object.</dd>
+<dt><strong><code>destination_path</code></strong></dt>
+<dd>Full path on the client where data will be restored.</dd>
+<dt><strong><code>paths</code></strong></dt>
+<dd>List of full file or folder paths to restore.</dd>
+<dt><strong><code>overwrite</code></strong></dt>
+<dd>If True, existing files at the destination will be overwritten. Default is True.</dd>
+<dt><strong><code>restore_data_and_acl</code></strong></dt>
+<dd>If True, both data and ACLs will be restored. Default is True.</dd>
+<dt><strong><code>copy_precedence</code></strong></dt>
+<dd>Optional storage policy copy precedence value. Default is None.</dd>
+<dt><strong><code>from_time</code></strong></dt>
+<dd>Optional lower time boundary for restore (format: 'YYYY-MM-DD HH:MM:SS'). Default is None.</dd>
+<dt><strong><code>to_time</code></strong></dt>
+<dd>Optional upper time boundary for restore (format: 'YYYY-MM-DD HH:MM:SS'). Default is None.</dd>
+<dt><strong><code>common_options_dict</code></strong></dt>
+<dd>Optional dictionary of additional restore options. Supported keys include:
+- 'append': Append documents to the database (default: False)
+- 'skip': Skip if already present (default: False)
+- 'unconditionalOverwrite': Overwrite the documents (default: False)
+- 'restoreOnlyStubExists': Restore only if it is a stub (default: False)</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Job</code></dt>
+<dd>An instance of the Job class representing the restore job.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If input parameters are invalid or if the restore job fails to initialize.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; # Restore files to a different client and path
+&gt;&gt;&gt; job = lndm_instance.restore_out_of_place(
+...     client='TargetClient',
+...     destination_path='/restore/location',
+...     paths=['/data/file1.txt', '/data/folder2'],
+...     overwrite=True,
+...     restore_data_and_acl=True,
+...     copy_precedence=2,
+...     from_time='2023-01-01 00:00:00',
+...     to_time='2023-12-31 23:59:59',
+...     common_options_dict={'skip': True}
+... )
+&gt;&gt;&gt; print(f&quot;Restore job started with ID: {job.job_id}&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/lotusnotes/lndminstance.py#L159-L250" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/lotusnotes/lndminstance.py#L178-L243" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_out_of_place(
         self,
-        client,
-        destination_path,
-        paths,
-        overwrite=True,
-        restore_data_and_acl=True,
-        copy_precedence=None,
-        from_time=None,
-        to_time=None,
-        common_options_dict=None):
-    &#34;&#34;&#34;Restores the files/folders specified in the input paths list to the input client,
-        at the specified destionation location.
+        client: object,
+        destination_path: str,
+        paths: list,
+        overwrite: bool = True,
+        restore_data_and_acl: bool = True,
+        copy_precedence: int = None,
+        from_time: str = None,
+        to_time: str = None,
+        common_options_dict: dict = None
+    ) -&gt; &#39;Job&#39;:
+    &#34;&#34;&#34;Restore specified files or folders to a different client and destination path.
 
-        Args:
-            client                (str/object) --  either the name of the client or
-            the instance of the Client
+    This method restores the files or folders listed in `paths` to the specified `destination_path`
+    on the given `client`. The restore can be customized with options such as overwriting existing files,
+    restoring data and ACLs, specifying copy precedence, time filters, and additional common options.
 
-            destination_path      (str)        --  full path of the restore location on client
+    Args:
+        client: The target client for restore. Can be a client name (str) or a Client object.
+        destination_path: Full path on the client where data will be restored.
+        paths: List of full file or folder paths to restore.
+        overwrite: If True, existing files at the destination will be overwritten. Default is True.
+        restore_data_and_acl: If True, both data and ACLs will be restored. Default is True.
+        copy_precedence: Optional storage policy copy precedence value. Default is None.
+        from_time: Optional lower time boundary for restore (format: &#39;YYYY-MM-DD HH:MM:SS&#39;). Default is None.
+        to_time: Optional upper time boundary for restore (format: &#39;YYYY-MM-DD HH:MM:SS&#39;). Default is None.
+        common_options_dict: Optional dictionary of additional restore options. Supported keys include:
+            - &#39;append&#39;: Append documents to the database (default: False)
+            - &#39;skip&#39;: Skip if already present (default: False)
+            - &#39;unconditionalOverwrite&#39;: Overwrite the documents (default: False)
+            - &#39;restoreOnlyStubExists&#39;: Restore only if it is a stub (default: False)
 
-            paths                 (list)       --  list of full paths of
-            files/folders to restore
+    Returns:
+        Job: An instance of the Job class representing the restore job.
 
-            overwrite             (bool)       --  unconditional overwrite files during restore
+    Raises:
+        SDKException: If input parameters are invalid or if the restore job fails to initialize.
 
-                default: True
+    Example:
+        &gt;&gt;&gt; # Restore files to a different client and path
+        &gt;&gt;&gt; job = lndm_instance.restore_out_of_place(
+        ...     client=&#39;TargetClient&#39;,
+        ...     destination_path=&#39;/restore/location&#39;,
+        ...     paths=[&#39;/data/file1.txt&#39;, &#39;/data/folder2&#39;],
+        ...     overwrite=True,
+        ...     restore_data_and_acl=True,
+        ...     copy_precedence=2,
+        ...     from_time=&#39;2023-01-01 00:00:00&#39;,
+        ...     to_time=&#39;2023-12-31 23:59:59&#39;,
+        ...     common_options_dict={&#39;skip&#39;: True}
+        ... )
+        &gt;&gt;&gt; print(f&#34;Restore job started with ID: {job.job_id}&#34;)
 
-            restore_data_and_acl  (bool)       --  restore data and ACL files
-
-                default: True
-
-            copy_precedence         (int)      --  copy precedence value of storage policy copy
-
-                default: None
-
-            from_time           (str)          --  time to retore the contents after
-
-                    format: YYYY-MM-DD HH:MM:SS
-
-                default: None
-
-            to_time           (str)            --  time to retore the contents before
-
-                    format: YYYY-MM-DD HH:MM:SS
-
-                default: None
-
-             common_options_dict (dict)          -- dictionary for all the common options
-                options:
-                    append                      :   append documents to the database
-
-                        default: False
-
-                    skip                        :   skip if already present
-
-                        default: False
-
-                    unconditionalOverwrite      :   overwrite the documents
-
-                        default: False
-
-                    restoreOnlyStubExists       :   restore only if it is a stub
-
-                        default: False
-
-        Returns:
-            object - instance of the Job class for this restore job
-
-        Raises:
-            SDKException:
-                if client is not a string or Client instance
-
-                if destination_path is not a string
-
-                if paths is not a list
-
-                if failed to initialize job
-
-                if response is empty
-
-                if response is not success
     &#34;&#34;&#34;
     return super(LNDMInstance, self).restore_out_of_place(
         client,

@@ -31,8 +31,9 @@ PrivateMetrics
 PublicMetrics
 : Class for representing Public Metrics and performing operations on it.</p>
 <p>use method save_config() or upload_now() to save the updated configurations.</p>
-<h2 id="metrics">Metrics</h2>
-<p><strong>init</strong>(Commcell_object, isprivate)&ndash;
+<p>Metrics
+-----=
+<strong>init</strong>(Commcell_object, isprivate)&ndash;
 initialise with object of CommCell and flag to
 specificy metrics Type</p>
 <p><strong>repr</strong>()
@@ -97,8 +98,9 @@ get_uploaded_filename()
 &ndash; Gets last uploaded file name
 get_uploaded_zip_filename()
 &ndash; Gets last uploaded zip file name</p>
-<h2 id="privatemetrics">Privatemetrics</h2>
-<p><strong>init</strong>(Commcell_object)
+<p>Privatemetrics
+-----=
+<strong>init</strong>(Commcell_object)
 &ndash;
 initialise with object of CommCell</p>
 <p>update_url(hostname)
@@ -107,8 +109,9 @@ Updates Metrics URL for download and upload</p>
 <p>enable_chargeback(daily, weekly, monthly)
 &ndash;
 enables chargeback service</p>
-<h2 id="publicmetrics">Publicmetrics</h2>
-<p><strong>init</strong>(Commcell_object)
+<p>Publicmetrics
+-----=
+<strong>init</strong>(Commcell_object)
 &ndash;
 initialise with object of CommCell</p>
 <p>enable_chargeback()
@@ -127,7 +130,7 @@ enables chargeback service</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/metricsreport.py#L1-L689" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/metricsreport.py#L1-L1424" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -243,17 +246,54 @@ PublicMetrics:
 from __future__ import absolute_import
 from __future__ import unicode_literals
 from time import sleep
+from typing import List, Optional
 from urllib.parse import urlparse
 
 from cvpysdk.license import LicenseDetails
+
+from Web.Common.exceptions import CVTestStepFailure
 from .exception import SDKException
 
-
 class _Metrics(object):
-    &#34;&#34;&#34;Class for common operations in Metrics reporting
-    this will be inherited by Private and Cloud metrics&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Base class for common operations in Metrics reporting.
 
-    def __init__(self, commcell_object, isprivate):
+    This class provides a comprehensive set of methods and properties for managing,
+    configuring, and monitoring metrics reporting services. It is designed to be
+    inherited by both Private and Cloud metrics classes, offering a unified interface
+    for metrics configuration, service state management, data collection, upload
+    scheduling, and health/activity/audit controls.
+
+    Key Features:
+        - Metrics configuration retrieval and refresh
+        - Service state management (enable/disable health, activity, audit, post-upgrade check, chargeback, etc.)
+        - Upload frequency and data collection window configuration
+        - Client group management for metrics reporting
+        - Enable/disable all metrics services
+        - Manual and scheduled metrics upload operations
+        - Wait mechanisms for download, collection, and upload completion with timeout support
+        - Access to key metrics properties (last download/collection/upload times, next upload time, upload frequency)
+        - Retrieval of uploaded file and zip filenames for reporting
+        - Saving and updating metrics configuration
+
+    This class is intended for internal use as a base for more specialized metrics
+    reporting classes, providing essential building blocks for metrics management
+    in both private and cloud environments.
+
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_object: object, isprivate: bool) -&gt; None:
+        &#34;&#34;&#34;Initialize the _Metrics object with a Commcell connection and privacy setting.
+
+        Args:
+            commcell_object: The Commcell object representing the connection to the Commcell environment.
+            isprivate: Boolean flag indicating whether the metrics are private.
+
+        Example:
+            &gt;&gt;&gt; metrics = _Metrics(commcell_object, isprivate=True)
+            &gt;&gt;&gt; print(&#34;Metrics object created successfully&#34;)
+
+        &#34;&#34;&#34;
         self._commcell_object = commcell_object
         self._isprivate = isprivate
         self._METRICS = self._commcell_object._services[&#39;METRICS&#39;]
@@ -262,8 +302,20 @@ class _Metrics(object):
         self._disable_service = False
         self._get_metrics_config()
 
-    def __repr__(self):
-        &#34;&#34;&#34;Representation string for the instance of the UserGroups class.&#34;&#34;&#34;
+    def __repr__(self) -&gt; str:
+        &#34;&#34;&#34;Return the string representation of the _Metrics instance.
+
+        This method provides a developer-friendly string that represents the current
+        _Metrics object, useful for debugging and logging purposes.
+
+        Returns:
+            A string representation of the _Metrics instance.
+
+        Example:
+            &gt;&gt;&gt; metrics = _Metrics()
+            &gt;&gt;&gt; print(repr(metrics))
+            &lt;_Metrics object at 0x7f8b2c1d2e80&gt;
+        &#34;&#34;&#34;
         if self._isprivate == 1:
             metrics_type = &#39;Private&#39;
         else:
@@ -273,7 +325,19 @@ class _Metrics(object):
             self._metrics_config
         )
 
-    def _get_metrics_config(self):
+    def _get_metrics_config(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the configuration settings for metrics.
+
+        Returns:
+            dict: A dictionary containing the current metrics configuration.
+
+        Example:
+            &gt;&gt;&gt; metrics = _Metrics()
+            &gt;&gt;&gt; config = metrics._get_metrics_config()
+            &gt;&gt;&gt; print(config)
+            {&#39;enabled&#39;: True, &#39;interval&#39;: 60, &#39;retention&#39;: 30}
+
+        &#34;&#34;&#34;
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             &#39;GET&#39;, self._GET_METRICS
         )
@@ -294,150 +358,359 @@ class _Metrics(object):
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
 
-    def refresh(self):
-        &#34;&#34;&#34;updates metrics object with the latest configuration&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Update the metrics object with the latest configuration.
+
+        This method refreshes the internal state of the metrics object to ensure it reflects
+        the most current configuration data.
+
+        Example:
+            &gt;&gt;&gt; metrics = _Metrics()
+            &gt;&gt;&gt; metrics.refresh()
+            &gt;&gt;&gt; print(&#34;Metrics configuration updated successfully&#34;)
+
+        &#34;&#34;&#34;
         self._get_metrics_config()
 
-    def _update_service_state(self, service_name, state):
+    def _update_service_state(self, service_name: str, state: str) -&gt; None:
+        &#34;&#34;&#34;Update the state of a specified service in the metrics system.
+
+        Args:
+            service_name: The name of the service whose state is being updated.
+            state: The new state to assign to the service (e.g., &#39;running&#39;, &#39;stopped&#39;, &#39;error&#39;).
+
+        Example:
+            &gt;&gt;&gt; metrics = _Metrics()
+            &gt;&gt;&gt; metrics._update_service_state(&#39;BackupService&#39;, &#39;running&#39;)
+            &gt;&gt;&gt; # The state of &#39;BackupService&#39; is now set to &#39;running&#39; in the metrics system
+
+        &#34;&#34;&#34;
         for idx, service in enumerate(self._service_list):
             if service[&#39;service&#39;][&#39;name&#39;] == service_name:
                 self._service_list[idx][&#39;enabled&#39;] = state
                 self.services[service_name] = state
 
     @property
-    def lastdownloadtime(self):
-        &#34;&#34;&#34;Returns last download time in unix time format&#34;&#34;&#34;
+    def lastdownloadtime(self) -&gt; int:
+        &#34;&#34;&#34;Get the last download time in Unix time format.
+
+        Returns:
+            The last download time as an integer representing seconds since the Unix epoch.
+
+        Example:
+            &gt;&gt;&gt; metrics = _Metrics()
+            &gt;&gt;&gt; last_time = metrics.lastdownloadtime
+            &gt;&gt;&gt; print(f&#34;Last download time (Unix timestamp): {last_time}&#34;)
+
+        &#34;&#34;&#34;
         return self._metrics_config[&#39;config&#39;][&#39;scriptDownloadTime&#39;]
 
     @property
-    def lastcollectiontime(self):
-        &#34;&#34;&#34;Returns last collection time in unix time format&#34;&#34;&#34;
+    def lastcollectiontime(self) -&gt; int:
+        &#34;&#34;&#34;Get the last collection time in Unix time format.
+
+        Returns:
+            The last collection time as an integer representing seconds since the Unix epoch.
+
+        Example:
+            &gt;&gt;&gt; metrics = _Metrics()
+            &gt;&gt;&gt; last_time = metrics.lastcollectiontime
+            &gt;&gt;&gt; print(f&#34;Last collection time (Unix timestamp): {last_time}&#34;)
+
+        &#34;&#34;&#34;
         return self._metrics_config[&#39;config&#39;][&#39;lastCollectionTime&#39;]
 
     @property
-    def lastuploadtime(self):
-        &#34;&#34;&#34;Returns last upload time in unix time format&#34;&#34;&#34;
+    def lastuploadtime(self) -&gt; int:
+        &#34;&#34;&#34;Get the last upload time in Unix time format.
+
+        Returns:
+            The last upload time as an integer representing seconds since the Unix epoch.
+
+        Example:
+            &gt;&gt;&gt; metrics = _Metrics()
+            &gt;&gt;&gt; last_time = metrics.lastuploadtime
+            &gt;&gt;&gt; print(f&#34;Last upload time (Unix timestamp): {last_time}&#34;)
+
+        &#34;&#34;&#34;
         return self._metrics_config[&#39;config&#39;][&#39;lastUploadTime&#39;]
 
     @property
-    def nextuploadtime(self):
-        &#34;&#34;&#34;Returns last Next time in unix time format&#34;&#34;&#34;
+    def nextuploadtime(self) -&gt; int:
+        &#34;&#34;&#34;Get the next upload time in Unix timestamp format.
+
+        Returns:
+            The next scheduled upload time as an integer Unix timestamp.
+
+        Example:
+            &gt;&gt;&gt; metrics = _Metrics()
+            &gt;&gt;&gt; next_time = metrics.nextuploadtime  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Next upload time (Unix timestamp): {next_time}&#34;)
+
+        &#34;&#34;&#34;
         return self._metrics_config[&#39;config&#39;][&#39;nextUploadTime&#39;]
 
     @property
-    def uploadfrequency(self):
-        &#34;&#34;&#34;Returns last Next time in unix time format&#34;&#34;&#34;
+    def uploadfrequency(self) -&gt; int:
+        &#34;&#34;&#34;Get the next upload time in Unix time format.
+
+        Returns:
+            The next scheduled upload time as a Unix timestamp (seconds since epoch).
+
+        Example:
+            &gt;&gt;&gt; metrics = _Metrics()
+            &gt;&gt;&gt; next_upload = metrics.uploadfrequency
+            &gt;&gt;&gt; print(f&#34;Next upload scheduled at: {next_upload}&#34;)
+
+        &#34;&#34;&#34;
         return self._metrics_config[&#39;config&#39;][&#39;uploadFrequency&#39;]
 
-    def enable_health(self):
-        &#34;&#34;&#34;enables Health Service&#34;&#34;&#34;
+    def enable_health(self) -&gt; None:
+        &#34;&#34;&#34;Enable the Health Service for metrics monitoring.
+
+        This method activates the Health Service, allowing the system to collect and report health-related metrics.
+
+        Example:
+            &gt;&gt;&gt; metrics = _Metrics()
+            &gt;&gt;&gt; metrics.enable_health()
+            &gt;&gt;&gt; print(&#34;Health Service enabled successfully&#34;)
+
+        &#34;&#34;&#34;
         if self.services[&#39;Health Check&#39;] is not True:
             self._update_service_state(&#39;Health Check&#39;, self._enable_service)
 
-    def disable_health(self):
-        &#34;&#34;&#34;disables Health Service&#34;&#34;&#34;
+    def disable_health(self) -&gt; None:
+        &#34;&#34;&#34;Disable the Health Service for this metrics instance.
+
+        This method turns off the Health Service monitoring functionality associated with the metrics object.
+
+        Example:
+            &gt;&gt;&gt; metrics = _Metrics()
+            &gt;&gt;&gt; metrics.disable_health()
+            &gt;&gt;&gt; print(&#34;Health Service has been disabled.&#34;)
+        &#34;&#34;&#34;
         if self.services[&#39;Health Check&#39;] is True:
             self._update_service_state(&#39;Health Check&#39;, self._disable_service)
 
-    def enable_activity(self):
-        &#34;&#34;&#34;enables Activity Service&#34;&#34;&#34;
+    def enable_activity(self) -&gt; None:
+        &#34;&#34;&#34;Enable the Activity Service for metrics collection.
+
+        This method activates the Activity Service, allowing the system to start collecting and reporting activity metrics.
+
+        Example:
+            &gt;&gt;&gt; metrics = _Metrics()
+            &gt;&gt;&gt; metrics.enable_activity()
+            &gt;&gt;&gt; print(&#34;Activity Service enabled for metrics collection.&#34;)
+
+        &#34;&#34;&#34;
         if self.services[&#39;Activity&#39;] is not True:
             self._update_service_state(&#39;Activity&#39;, self._enable_service)
 
-    def disable_activity(self):
-        &#34;&#34;&#34;disables Activity Service&#34;&#34;&#34;
+    def disable_activity(self) -&gt; None:
+        &#34;&#34;&#34;Disable the Activity Service for metrics.
+
+        This method disables the Activity Service, preventing further activity tracking or metric collection.
+
+        Example:
+            &gt;&gt;&gt; metrics = _Metrics()
+            &gt;&gt;&gt; metrics.disable_activity()
+            &gt;&gt;&gt; print(&#34;Activity Service has been disabled.&#34;)
+
+        &#34;&#34;&#34;
         if self.services[&#39;Activity&#39;] is True:
             self._update_service_state(&#39;Activity&#39;, self._disable_service)
 
-    def enable_audit(self):
-        &#34;&#34;&#34;enables Audit Service&#34;&#34;&#34;
+    def enable_audit(self) -&gt; None:
+        &#34;&#34;&#34;Enable the Audit Service for metrics collection.
+
+        This method activates the Audit Service, allowing the system to track and record audit-related events.
+
+        Example:
+            &gt;&gt;&gt; metrics = _Metrics()
+            &gt;&gt;&gt; metrics.enable_audit()
+            &gt;&gt;&gt; print(&#34;Audit Service enabled successfully&#34;)
+
+        &#34;&#34;&#34;
         if self.services[&#39;Audit&#39;] is not True:
             self._update_service_state(&#39;Audit&#39;, self._enable_service)
 
-    def disable_audit(self):
-        &#34;&#34;&#34;disables Audit Service&#34;&#34;&#34;
+    def disable_audit(self) -&gt; None:
+        &#34;&#34;&#34;Disable the Audit Service for the current metrics context.
+
+        This method turns off auditing, preventing further audit logs from being generated
+        or collected for the associated metrics.
+
+        Example:
+            &gt;&gt;&gt; metrics = _Metrics()
+            &gt;&gt;&gt; metrics.disable_audit()
+            &gt;&gt;&gt; print(&#34;Audit service has been disabled for metrics.&#34;)
+        &#34;&#34;&#34;
         if self.services[&#39;Audit&#39;] is True:
             self._update_service_state(&#39;Audit&#39;, self._disable_service)
 
-    def enable_post_upgrade_check(self):
-        &#34;&#34;&#34;enables post_upgrade_check Service&#34;&#34;&#34;
+    def enable_post_upgrade_check(self) -&gt; None:
+        &#34;&#34;&#34;Enable the post-upgrade check service.
+
+        This method activates the post-upgrade check service, which can be used to verify 
+        system integrity or configuration after an upgrade process.
+
+        Example:
+            &gt;&gt;&gt; metrics = _Metrics()
+            &gt;&gt;&gt; metrics.enable_post_upgrade_check()
+            &gt;&gt;&gt; print(&#34;Post-upgrade check service enabled.&#34;)
+
+        &#34;&#34;&#34;
         if self.services[&#39;Post Upgrade Check&#39;] is not True:
             self._update_service_state(&#39;Post Upgrade Check&#39;, self._enable_service)
 
-    def disables_post_upgrade_check(self):
-        &#34;&#34;&#34;disables post_upgrade_check Service&#34;&#34;&#34;
+    def disables_post_upgrade_check(self) -&gt; None:
+        &#34;&#34;&#34;Disable the post-upgrade check service.
+
+        This method disables the post-upgrade check service, preventing it from running after an upgrade operation.
+
+        Example:
+            &gt;&gt;&gt; metrics = _Metrics()
+            &gt;&gt;&gt; metrics.disables_post_upgrade_check()
+            &gt;&gt;&gt; print(&#34;Post-upgrade check service has been disabled.&#34;)
+
+        &#34;&#34;&#34;
         if self.services[&#39;Post Upgrade Check&#39;] is True:
             self._update_service_state(&#39;Post Upgrade Check&#39;, self._disable_service)
 
-    def disables_chargeback(self):
-        &#34;&#34;&#34;disables post_upgrade_check Service&#34;&#34;&#34;
+    def disables_chargeback(self) -&gt; None:
+        &#34;&#34;&#34;Disable the chargeback feature in the metrics service.
+
+        This method disables the chargeback functionality, which may be used for tracking or billing purposes within the metrics service.
+
+        Example:
+            &gt;&gt;&gt; metrics = _Metrics()
+            &gt;&gt;&gt; metrics.disables_chargeback()
+            &gt;&gt;&gt; print(&#34;Chargeback feature disabled.&#34;)
+        &#34;&#34;&#34;
         if self.services[&#39;Charge Back&#39;] is True:
             self._update_service_state(&#39;Charge Back&#39;, self._disable_service)
 
-    def enable_all_services(self):
-        &#34;&#34;&#34;enables All Service&#34;&#34;&#34;
+    def enable_all_services(self) -&gt; None:
+        &#34;&#34;&#34;Enable all available metric services.
+
+        This method activates all metric services managed by the _Metrics class.
+
+        Example:
+            &gt;&gt;&gt; metrics = _Metrics()
+            &gt;&gt;&gt; metrics.enable_all_services()
+            &gt;&gt;&gt; print(&#34;All metric services have been enabled.&#34;)
+
+        &#34;&#34;&#34;
         for index, service in enumerate(self._service_list):
             if service[&#39;service&#39;][&#39;name&#39;] not in [&#39;Post Upgrade Check&#39;, &#39;Upgrade Readiness&#39;]:
                 self._service_list[index][&#39;enabled&#39;] = self._enable_service
                 service_name = service[&#39;service&#39;][&#39;name&#39;]
                 self.services[service_name] = self._enable_service
 
-    def disable_all_services(self):
-        &#34;&#34;&#34;disables All Service&#34;&#34;&#34;
+    def disable_all_services(self) -&gt; None:
+        &#34;&#34;&#34;Disable all metric services managed by this instance.
+
+        This method disables all services associated with the metrics system.
+
+        Example:
+            &gt;&gt;&gt; metrics = _Metrics()
+            &gt;&gt;&gt; metrics.disable_all_services()
+            &gt;&gt;&gt; print(&#34;All metric services have been disabled.&#34;)
+
+        &#34;&#34;&#34;
         for index, service in enumerate(self._service_list):
             if service[&#39;service&#39;][&#39;name&#39;] not in [&#39;Post Upgrade Check&#39;, &#39;Upgrade Readiness&#39;]:
                 self._service_list[index][&#39;enabled&#39;] = self._disable_service
                 service_name = service[&#39;service&#39;][&#39;name&#39;]
                 self.services[service_name] = self._disable_service
 
-    def set_upload_freq(self, days=1):
-        &#34;&#34;&#34;
-        updates the upload frequency
+    def set_upload_freq(self, days: int = 1) -&gt; None:
+        &#34;&#34;&#34;Update the upload frequency for metrics data.
+
         Args:
-            days (int): number of days for upload frequency, value can be between 1 to 7
+            days: The number of days to set as the upload frequency. Must be an integer between 1 and 7.
 
         Raises:
-            SDKException:
-                if invalid days supplied for upload frequency
+            SDKException: If an invalid value for days is supplied (not in the range 1 to 7).
+
+        Example:
+            &gt;&gt;&gt; metrics = _Metrics()
+            &gt;&gt;&gt; metrics.set_upload_freq(3)
+            &gt;&gt;&gt; # The upload frequency is now set to every 3 days
 
         &#34;&#34;&#34;
         if days &lt; 1:
             raise SDKException(&#39;Metrics&#39;, &#39;101&#39;, &#39;Invalid Upload Frequency supplied&#39;)
         self._metrics_config[&#39;config&#39;][&#39;uploadFrequency&#39;] = days
 
-    def set_data_collection_window(self, seconds=28800):
-        &#34;&#34;&#34;
-        updates the data collection window
+    def set_data_collection_window(self, seconds: int = 28800) -&gt; None:
+        &#34;&#34;&#34;Update the data collection window for metrics collection.
+
+        This method sets the start time for data collection, specified as the number of seconds after 12:00 AM.
+        For example, 28800 seconds corresponds to 8:00 AM. The default value is 28800 seconds.
+
         Args:
-            seconds: number for seconds after 12 AM
-            e.g.; 28800 for 8 AM
-            default; 28800
+            seconds: The number of seconds after 12:00 AM to begin data collection. Must be at least 300 seconds (12:05 AM).
 
         Raises:
-            SDKException:
-                if window specified is below 12.05 am
+            SDKException: If the specified window is below 12:05 AM (less than 300 seconds).
+
+        Example:
+            &gt;&gt;&gt; metrics = _Metrics()
+            &gt;&gt;&gt; metrics.set_data_collection_window(32400)  # Sets window to 9:00 AM
+            &gt;&gt;&gt; metrics.set_data_collection_window()       # Uses default of 8:00 AM
 
         &#34;&#34;&#34;
         if seconds &lt; 300:  # minimum 5 minutes after 12 midnight
             raise SDKException(&#39;Metrics&#39;, &#39;101&#39;, &#39;Data collection window should be above 12.05 AM&#39;)
         self._metrics_config[&#39;config&#39;][&#39;dataCollectionTime&#39;] = seconds
 
-    def remove_data_collection_window(self):
-        &#34;&#34;&#34;removes data collection window&#34;&#34;&#34;
+    def remove_data_collection_window(self) -&gt; None:
+        &#34;&#34;&#34;Remove the data collection window configuration from the metrics object.
+
+        This method deletes any existing data collection window settings, reverting to default behavior.
+
+        Example:
+            &gt;&gt;&gt; metrics = _Metrics()
+            &gt;&gt;&gt; metrics.remove_data_collection_window()
+            &gt;&gt;&gt; print(&#34;Data collection window removed successfully&#34;)
+
+        &#34;&#34;&#34;
         self._metrics_config[&#39;config&#39;][&#39;dataCollectionTime&#39;] = -1
 
-    def set_all_clientgroups(self):
-        &#34;&#34;&#34;updates metrics configuration with all client groups&#34;&#34;&#34;
+    def set_all_clientgroups(self) -&gt; None:
+        &#34;&#34;&#34;Update the metrics configuration to include all client groups.
+
+        This method refreshes the metrics settings so that all available client groups 
+        are included in the configuration. Use this when you want metrics to apply 
+        universally across all client groups managed by the system.
+
+        Example:
+            &gt;&gt;&gt; metrics = _Metrics()
+            &gt;&gt;&gt; metrics.set_all_clientgroups()
+            &gt;&gt;&gt; print(&#34;Metrics configuration updated to include all client groups.&#34;)
+
+        &#34;&#34;&#34;
 
         # sets the list to one row with client group id as -1
         self._metrics_config[&#39;config&#39;][&#39;clientGroupList&#39;] = [{&#39;_type_&#39;: 28, &#39;clientGroupId&#39;: -1}]
 
-    def set_clientgroups(self, clientgroup_name=None):
-        &#34;&#34;&#34;
-        sets the client groups for metrics
+    def set_clientgroups(self, clientgroup_name: Optional[List[str]] = None) -&gt; None:
+        &#34;&#34;&#34;Set the client groups to be used for metrics collection.
+
+        If no client group names are provided, all available client groups will be enabled for metrics.
+
         Args:
-            clientgroup_name (list): list of client group names, None is set all client groups
-            will be enabled.
+            clientgroup_name: Optional list of client group names to enable for metrics. 
+                If None, all client groups will be enabled.
+
+        Example:
+            &gt;&gt;&gt; metrics = _Metrics()
+            &gt;&gt;&gt; metrics.set_clientgroups([&#39;GroupA&#39;, &#39;GroupB&#39;])
+            &gt;&gt;&gt; # Only &#39;GroupA&#39; and &#39;GroupB&#39; will be enabled for metrics
+            &gt;&gt;&gt; metrics.set_clientgroups()
+            &gt;&gt;&gt; # All client groups will be enabled for metrics
+
         &#34;&#34;&#34;
         if clientgroup_name is None:
             self.set_all_clientgroups()
@@ -450,21 +723,46 @@ class _Metrics(object):
                     {&#39;_type_&#39;: 28, &#39;clientGroupId&#39;: int(cg_id), &#39;clientGroupName&#39;: each_client_grp}
                 )
 
-    def enable_metrics(self):
-        &#34;&#34;&#34;enables Metrics in CommServe&#34;&#34;&#34;
+    def enable_metrics(self) -&gt; None:
+        &#34;&#34;&#34;Enable the Metrics feature in the CommServe environment.
+
+        This method activates Metrics collection and reporting capabilities within the CommServe.
+
+        Example:
+            &gt;&gt;&gt; metrics = _Metrics()
+            &gt;&gt;&gt; metrics.enable_metrics()
+            &gt;&gt;&gt; print(&#34;Metrics have been enabled in CommServe.&#34;)
+        &#34;&#34;&#34;
         self._metrics_config[&#39;config&#39;][&#39;commcellDiagUsage&#39;] = self._enable_service
 
-    def disable_metrics(self):
-        &#34;&#34;&#34;disables Metrics in CommServe&#34;&#34;&#34;
+    def disable_metrics(self) -&gt; None:
+        &#34;&#34;&#34;Disable the Metrics feature in the CommServe environment.
+
+        This method turns off the Metrics functionality, preventing the collection and reporting
+        of metrics data within the CommServe system.
+
+        Example:
+            &gt;&gt;&gt; metrics = _Metrics()
+            &gt;&gt;&gt; metrics.disable_metrics()
+            &gt;&gt;&gt; print(&#34;Metrics have been disabled in CommServe.&#34;)
+
+        &#34;&#34;&#34;
         self._metrics_config[&#39;config&#39;][&#39;commcellDiagUsage&#39;] = self._disable_service
 
-    def save_config(self):
-        &#34;&#34;&#34;
-        updates the configuration of Metrics
-        this must be called to save the configuration changes made in this object
+    def save_config(self) -&gt; None:
+        &#34;&#34;&#34;Save the current configuration changes for the Metrics object.
+
+        This method updates the Metrics configuration with any changes made to the object.
+        It must be called after making modifications to ensure that the changes are persisted.
+
         Raises:
-            SDKException:
-                if response is not success
+            SDKException: If the configuration update response is not successful.
+
+        Example:
+            &gt;&gt;&gt; metrics = _Metrics()
+            &gt;&gt;&gt; # Make configuration changes to the metrics object
+            &gt;&gt;&gt; metrics.save_config()  # Persist the changes to the configuration
+
         &#34;&#34;&#34;
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             &#39;POST&#39;, self._METRICS, self._metrics_config
@@ -472,12 +770,19 @@ class _Metrics(object):
         if not flag:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
 
-    def upload_now(self):
-        &#34;&#34;&#34;
-        Performs Upload Now operation of metrics
+    def upload_now(self) -&gt; None:
+        &#34;&#34;&#34;Trigger an immediate upload of metrics data.
+
+        This method initiates the &#34;Upload Now&#34; operation for metrics, sending the latest metrics data to the configured destination.
+
         Raises:
-            SDKException:
-                if response is not success:
+            SDKException: If the upload operation does not complete successfully.
+
+        Example:
+            &gt;&gt;&gt; metrics = _Metrics()
+            &gt;&gt;&gt; metrics.upload_now()
+            &gt;&gt;&gt; print(&#34;Metrics upload initiated successfully.&#34;)
+
         &#34;&#34;&#34;
 
         self._metrics_config[&#39;config&#39;][&#39;uploadNow&#39;] = 1
@@ -489,12 +794,20 @@ class _Metrics(object):
         # reset upload now flag
         self._metrics_config[&#39;config&#39;][&#39;uploadNow&#39;] = 0
 
-    def wait_for_download_completion(self, timeout=300):
-        &#34;&#34;&#34;
-        Waits for Metrics collection to complete for maximum of seconds given in timeout
+    def wait_for_download_completion(self, timeout: int = 300) -&gt; None:
+        &#34;&#34;&#34;Wait for the Metrics collection download to complete, up to the specified timeout.
+
+        This method blocks execution until the Metrics collection process finishes or the timeout 
+        (in seconds) is reached.
 
         Args:
-            timeout (int): maximum seconds to wait
+            timeout: Maximum number of seconds to wait for the download to complete. Defaults to 300 seconds.
+
+        Example:
+            &gt;&gt;&gt; metrics = _Metrics()
+            &gt;&gt;&gt; metrics.wait_for_download_completion(timeout=600)
+            &gt;&gt;&gt; print(&#34;Metrics download completed or timed out.&#34;)
+
         &#34;&#34;&#34;
         self.refresh()
         time_limit = timeout
@@ -505,17 +818,25 @@ class _Metrics(object):
                 sleep(30)
                 time_limit -= 30
                 self.refresh()
-        raise TimeoutError(
-            &#34;Download process didn&#39;t complete after {0} seconds&#34;.format(timeout))
+        raise CVTestStepFailure(&#34;Download process didn&#39;t complete after {0} seconds&#34;.format(timeout))
 
-    def wait_for_collection_completion(self, timeout=400):
-        &#34;&#34;&#34;
-        Waits for Metrics collection to complete for maximum of seconds given in timeout
+    def wait_for_collection_completion(self, timeout: int = 400) -&gt; None:
+        &#34;&#34;&#34;Wait for the metrics collection process to complete within a specified timeout period.
+
+        This method blocks execution until the metrics collection is finished or the specified
+        timeout (in seconds) is reached.
 
         Args:
-            timeout (int): maximum seconds to wait
+            timeout: The maximum number of seconds to wait for the collection to complete. Defaults to 400 seconds.
 
-        Raises: Timeout error if collection didn&#39;t complete within timeout period
+        Raises:
+            TimeoutError: If the metrics collection does not complete within the specified timeout period.
+
+        Example:
+            &gt;&gt;&gt; metrics = _Metrics()
+            &gt;&gt;&gt; metrics.wait_for_collection_completion(timeout=300)
+            &gt;&gt;&gt; print(&#34;Metrics collection completed successfully.&#34;)
+
         &#34;&#34;&#34;
         self.refresh()
         timelimit = timeout
@@ -528,14 +849,22 @@ class _Metrics(object):
                 self.refresh()
         raise TimeoutError(&#34;Collection process didn&#39;t complete after {0} seconds&#34;.format(timeout))
 
-    def wait_for_upload_completion(self, timeout=120):
-        &#34;&#34;&#34;
-        Waits for Metrics upload to complete for maximum of seconds given in timeout
+    def wait_for_upload_completion(self, timeout: int = 120) -&gt; None:
+        &#34;&#34;&#34;Wait for the Metrics upload process to complete within a specified timeout period.
+
+        This method blocks execution until the Metrics upload is finished or the timeout is reached.
 
         Args:
-            timeout (int): maximum seconds to wait
+            timeout: The maximum number of seconds to wait for the upload to complete. Defaults to 120 seconds.
 
-        Raises: Timeout error if upload didn&#39;t complete within timeout period
+        Raises:
+            TimeoutError: If the upload does not complete within the specified timeout period.
+
+        Example:
+            &gt;&gt;&gt; metrics = _Metrics()
+            &gt;&gt;&gt; metrics.wait_for_upload_completion(timeout=180)
+            &gt;&gt;&gt; print(&#34;Upload completed successfully.&#34;)
+
         &#34;&#34;&#34;
         self.refresh()
         timelimit = timeout
@@ -548,27 +877,41 @@ class _Metrics(object):
                 self.refresh()
         raise TimeoutError(&#34;Upload process didn&#39;t complete after {0} seconds&#34;.format(timeout))
 
-    def wait_for_uploadnow_completion(self,
-                                      download_timeout=300,
-                                      collection_timeout=400,
-                                      upload_timeout=120):
-        &#34;&#34;&#34;
-        Waits for Metrics uploadNow operation to complete, checks both collection and upload
+    def wait_for_uploadnow_completion(self, download_timeout: int = 300, collection_timeout: int = 400, upload_timeout: int = 120) -&gt; None:
+        &#34;&#34;&#34;Wait for the Metrics uploadNow operation to complete, including both collection and upload phases.
+
+        This method blocks execution until the Metrics uploadNow process has finished, or until the specified timeouts are reached for each phase.
 
         Args:
-            download_timeout (int): maximum seconds to wait for download
-            collection_timeout (int): maximum seconds to wait for collection
-            upload_timeout (int): maximum seconds to wait for upload
+            download_timeout: Maximum number of seconds to wait for the download phase to complete. Default is 300 seconds.
+            collection_timeout: Maximum number of seconds to wait for the collection phase to complete. Default is 400 seconds.
+            upload_timeout: Maximum number of seconds to wait for the upload phase to complete. Default is 120 seconds.
 
-        Raises: Timeout error if uploadNow operation didn&#39;t complete
+        Raises:
+            TimeoutError: If the uploadNow operation does not complete within the specified timeouts.
+
+        Example:
+            &gt;&gt;&gt; metrics = _Metrics()
+            &gt;&gt;&gt; metrics.wait_for_uploadnow_completion(download_timeout=200, collection_timeout=300, upload_timeout=100)
+            &gt;&gt;&gt; print(&#34;UploadNow operation completed successfully.&#34;)
 
         &#34;&#34;&#34;
         self.wait_for_download_completion(download_timeout)
         self.wait_for_collection_completion(collection_timeout)
         self.wait_for_upload_completion(upload_timeout)
 
-    def _get_commcell_id(self):
-        &#34;&#34;&#34;returns the hexadecimal value of commcell id&#34;&#34;&#34;
+    def _get_commcell_id(self) -&gt; str:
+        &#34;&#34;&#34;Retrieve the hexadecimal representation of the Commcell ID.
+
+        Returns:
+            The Commcell ID as a hexadecimal string.
+
+        Example:
+            &gt;&gt;&gt; metrics = _Metrics()
+            &gt;&gt;&gt; hex_id = metrics._get_commcell_id()
+            &gt;&gt;&gt; print(f&#34;Commcell ID (hex): {hex_id}&#34;)
+
+        &#34;&#34;&#34;
         license_details = LicenseDetails(self._commcell_object)
         ccid = license_details.commcell_id
         if ccid == -1:
@@ -577,15 +920,33 @@ class _Metrics(object):
             commcellid = hex(ccid).split(&#39;x&#39;)[1].upper()
         return commcellid
 
-    def get_uploaded_filename(self, query_id=None, last_collection_time=None):
-        &#34;&#34;&#34;
-        Gets last uploaded file name
+    def get_uploaded_filename(self, query_id: Optional[int] = None, last_collection_time: Optional[int] = None) -&gt; str:
+        &#34;&#34;&#34;Retrieve the name of the last uploaded file.
+
+        This method returns the filename of the most recently uploaded file. Optionally, you can specify a query ID
+        to get the filename associated with a particular query, or provide a last collection time to get the filename
+        for a specific collection timestamp.
 
         Args:
-            query_id (int): optional argument to get file name specific to a query
-            last_collection_time (int): optional argument to get file name for specified last collection time
+            query_id: Optional; The ID of the query to filter the uploaded file name.
+            last_collection_time: Optional; The timestamp of the last collection to filter the uploaded file name.
 
-        Returns: Last uploaded file name
+        Returns:
+            The name of the last uploaded file as a string.
+
+        Example:
+            &gt;&gt;&gt; metrics = _Metrics()
+            &gt;&gt;&gt; filename = metrics.get_uploaded_filename()
+            &gt;&gt;&gt; print(f&#34;Last uploaded file: {filename}&#34;)
+            &gt;&gt;&gt;
+            &gt;&gt;&gt; # With query_id
+            &gt;&gt;&gt; filename = metrics.get_uploaded_filename(query_id=123)
+            &gt;&gt;&gt; print(f&#34;File for query 123: {filename}&#34;)
+            &gt;&gt;&gt;
+            &gt;&gt;&gt; # With last_collection_time
+            &gt;&gt;&gt; filename = metrics.get_uploaded_filename(last_collection_time=1680000000)
+            &gt;&gt;&gt; print(f&#34;File for collection time 1680000000: {filename}&#34;)
+
         &#34;&#34;&#34;
 
         commcellid = self._get_commcell_id()
@@ -602,12 +963,21 @@ class _Metrics(object):
                 commcellid) + &#34;_&#34; + str(query_id) + &#34;.xml&#34;
         return file_name
 
-    def get_uploaded_zip_filename(self, commserv_guid, backupjob_id):
-        &#34;&#34;&#34;
-        Gets last uploaded zip file name
+    def get_uploaded_zip_filename(self, commserv_guid: str, backupjob_id: int) -&gt; str:
+        &#34;&#34;&#34;Retrieve the name of the last uploaded zip file for a given CommServe and backup job.
+
         Args:
-            query_id (int): optional argument to get file name specific to a query
-        Returns : Last uploaded file name
+            commserv_guid: The GUID of the CommServe for which the zip file was uploaded.
+            backupjob_id: The ID of the backup job associated with the uploaded zip file.
+
+        Returns:
+            The filename of the last uploaded zip file as a string.
+
+        Example:
+            &gt;&gt;&gt; metrics = _Metrics()
+            &gt;&gt;&gt; filename = metrics.get_uploaded_zip_filename(&#34;1234-5678-90ab-cdef&#34;, 101)
+            &gt;&gt;&gt; print(f&#34;Last uploaded zip file: {filename}&#34;)
+
         &#34;&#34;&#34;
         commcellid = self._get_commcell_id()
         cs_lastcollectiontime = int(self.lastcollectiontime)
@@ -618,29 +988,87 @@ class _Metrics(object):
         return file_name
 
 class PrivateMetrics(_Metrics):
-    &#34;&#34;&#34;Class for operations in private Metrics reporting&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Handles operations related to private metrics reporting within the system.
 
-    def __init__(self, commcell_object):
-        &#34;&#34;&#34;Initialize object of the UserGroups class.
+    This class provides an interface for managing private metrics, including
+    configuration of download and upload URLs, chargeback settings, and forwarding
+    options. It exposes properties to access current metrics server information and
+    supports enabling or disabling forwarding and chargeback features.
 
-                    Args:
-                        commcell_object (object)  --  instance of the Commcell class
-                        type -- 1 for private, 0 for public
+    Key Features:
+        - Initialize with a CommCell object for context
+        - Update private download and upload URLs with specified host, port, and protocol
+        - Access current download and upload URLs via properties
+        - Retrieve the private metrics server name
+        - Update URLs for metrics reporting
+        - Enable chargeback with daily, weekly, and monthly flags
+        - Enable or disable forwarding to a specified URL
 
-                    Returns:
-                        object - instance of the UserGroups class
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_object: object) -&gt; None:
+        &#34;&#34;&#34;Initialize an instance of the PrivateMetrics class.
+
+        Args:
+            commcell_object: An instance of the Commcell class used to establish a connection.
+
+        Example:
+            &gt;&gt;&gt; commcell = Commcell(&#39;hostname&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; private_metrics = PrivateMetrics(commcell)
+            &gt;&gt;&gt; print(&#34;PrivateMetrics object created successfully&#34;)
+
         &#34;&#34;&#34;
         _Metrics.__init__(self, commcell_object, isprivate=True)
 
-    def _update_private_download_url(self, hostname, port, protocol):
+    def _update_private_download_url(self, hostname: str, port: int, protocol: str) -&gt; None:
+        &#34;&#34;&#34;Update the private download URL using the specified hostname, port, and protocol.
+
+        Args:
+            hostname: The hostname to be used in the download URL.
+            port: The port number to be used in the download URL.
+            protocol: The protocol (e.g., &#39;http&#39;, &#39;https&#39;) to be used in the download URL.
+
+        Example:
+            &gt;&gt;&gt; metrics = PrivateMetrics()
+            &gt;&gt;&gt; metrics._update_private_download_url(&#39;example.com&#39;, 8080, &#39;https&#39;)
+            &gt;&gt;&gt; # The private download URL is now updated with the new parameters
+
+        &#34;&#34;&#34;
         self._cloud[&#39;downloadURL&#39;] = &#39;{0}://{1}:{2}/downloads/sqlscripts/&#39;.format(protocol,
                                                                                   hostname,
                                                                                   port)
 
-    def _update_private_upload_url(self, hostname, port, protocol):
+    def _update_private_upload_url(self, hostname: str, port: int, protocol: str) -&gt; None:
+        &#34;&#34;&#34;Update the private upload URL using the specified hostname, port, and protocol.
+
+        Args:
+            hostname: The hostname to use for constructing the upload URL.
+            port: The port number to use for the upload URL.
+            protocol: The protocol to use (e.g., &#39;http&#39;, &#39;https&#39;) for the upload URL.
+
+        Example:
+            &gt;&gt;&gt; metrics = PrivateMetrics()
+            &gt;&gt;&gt; metrics._update_private_upload_url(&#39;example.com&#39;, 8080, &#39;https&#39;)
+            &gt;&gt;&gt; # The private upload URL is now updated with the new settings
+
+        &#34;&#34;&#34;
         self._cloud[&#39;uploadURL&#39;] = &#39;{0}://{1}:{2}/commandcenter/&#39;.format(protocol, hostname, port)
 
-    def _update_chargeback_flags(self, daily, weekly, monthly):
+    def _update_chargeback_flags(self, daily: bool, weekly: bool, monthly: bool) -&gt; None:
+        &#34;&#34;&#34;Update the chargeback flags for daily, weekly, and monthly metrics.
+
+        Args:
+            daily: Set to True to enable daily chargeback metrics, False to disable.
+            weekly: Set to True to enable weekly chargeback metrics, False to disable.
+            monthly: Set to True to enable monthly chargeback metrics, False to disable.
+
+        Example:
+            &gt;&gt;&gt; metrics = PrivateMetrics()
+            &gt;&gt;&gt; metrics._update_chargeback_flags(daily=True, weekly=False, monthly=True)
+            &gt;&gt;&gt; # This will enable daily and monthly chargeback metrics, and disable weekly.
+
+        &#34;&#34;&#34;
         flags = 0
         if daily:
             flags = flags | 4
@@ -653,50 +1081,105 @@ class PrivateMetrics(_Metrics):
                 service[&#39;flags&#39;] = flags
 
     @property
-    def downloadurl(self):
-        &#34;&#34;&#34;Returns download URL of private metrics&#34;&#34;&#34;
+    def downloadurl(self) -&gt; str:
+        &#34;&#34;&#34;Get the download URL for private metrics.
+
+        Returns:
+            The URL as a string that can be used to download private metrics data.
+
+        Example:
+            &gt;&gt;&gt; metrics = PrivateMetrics()
+            &gt;&gt;&gt; url = metrics.downloadurl  # Use dot notation to access the property
+            &gt;&gt;&gt; print(f&#34;Download URL: {url}&#34;)
+
+        &#34;&#34;&#34;
         return self._metrics_config[&#39;config&#39;][&#39;cloud&#39;][&#39;downloadURL&#39;]
 
     @property
-    def uploadurl(self):
-        &#34;&#34;&#34;Returns Upload URL of private metrics&#34;&#34;&#34;
+    def uploadurl(self) -&gt; str:
+        &#34;&#34;&#34;Get the upload URL for private metrics.
+
+        Returns:
+            str: The URL endpoint used for uploading private metrics.
+
+        Example:
+            &gt;&gt;&gt; metrics = PrivateMetrics()
+            &gt;&gt;&gt; url = metrics.uploadurl  # Use dot notation to access the property
+            &gt;&gt;&gt; print(f&#34;Upload URL: {url}&#34;)
+
+        &#34;&#34;&#34;
         return self._metrics_config[&#39;config&#39;][&#39;cloud&#39;][&#39;uploadURL&#39;]
 
     @property
-    def private_metrics_server_name(self):
+    def private_metrics_server_name(self) -&gt; str:
+        &#34;&#34;&#34;Get the name of the private metrics server associated with this instance.
+
+        Returns:
+            The name of the private metrics server as a string.
+
+        Example:
+            &gt;&gt;&gt; metrics = PrivateMetrics()
+            &gt;&gt;&gt; server_name = metrics.private_metrics_server_name
+            &gt;&gt;&gt; print(f&#34;Private Metrics Server: {server_name}&#34;)
+
+        &#34;&#34;&#34;
         return urlparse(self.uploadurl).hostname
 
-    def update_url(self, hostname, port=80, protocol=&#39;http&#39;):
-        &#34;&#34;&#34;
-        updates private Metrics URL in CommServe
+    def update_url(self, hostname: str, port: int = 80, protocol: str = &#39;http&#39;) -&gt; None:
+        &#34;&#34;&#34;Update the private Metrics URL in the CommServe configuration.
+
+        This method sets the URL used by the CommServe to communicate with the private Metrics server,
+        based on the provided hostname, port, and protocol.
+
         Args:
-            hostname (str): Metrics server hostname
-            port (int): port of webconsole
-                e.g.; 80 for http and 443 for https
-            protocol (str): http or https
-                default: http
+            hostname: The hostname or IP address of the Metrics server.
+            port: The port number for the web console (default is 80 for HTTP, 443 for HTTPS).
+            protocol: The protocol to use for the connection (&#39;http&#39; or &#39;https&#39;). Default is &#39;http&#39;.
+
+        Example:
+            &gt;&gt;&gt; metrics = PrivateMetrics()
+            &gt;&gt;&gt; metrics.update_url(&#39;metrics.example.com&#39;, port=443, protocol=&#39;https&#39;)
+            &gt;&gt;&gt; # The CommServe will now use https://metrics.example.com:443 as the Metrics URL
+
         &#34;&#34;&#34;
         self._update_private_download_url(hostname, port, protocol)
         self._update_private_upload_url(hostname, port, protocol)
 
-    def enable_chargeback(self, daily=True, weekly=False, monthly=False):
-        &#34;&#34;&#34;
-        Enables Chargeback service as per the daily,weekly and Monthly arguments passes
+    def enable_chargeback(self, daily: bool = True, weekly: bool = False, monthly: bool = False) -&gt; None:
+        &#34;&#34;&#34;Enable the Chargeback service with daily, weekly, and/or monthly options.
+
+        This method activates the Chargeback service according to the specified frequency flags.
+        You can enable any combination of daily, weekly, and monthly chargeback reporting.
+
         Args:
-            daily  (bool): enables daily chargeback
-            weekly (bool): enables weekly chargeback
-            monthly(bool): enables Monthly chargeback
+            daily: If True, enables daily chargeback reporting. Default is True.
+            weekly: If True, enables weekly chargeback reporting. Default is False.
+            monthly: If True, enables monthly chargeback reporting. Default is False.
+
+        Example:
+            &gt;&gt;&gt; metrics = PrivateMetrics()
+            &gt;&gt;&gt; metrics.enable_chargeback(daily=True, weekly=True, monthly=False)
+            &gt;&gt;&gt; # This enables daily and weekly chargeback reporting
+
+            &gt;&gt;&gt; metrics.enable_chargeback(monthly=True)
+            &gt;&gt;&gt; # This enables only monthly chargeback reporting
 
         &#34;&#34;&#34;
         if self.services[&#39;Charge Back&#39;] is not True:
             self._update_service_state(&#39;Charge Back&#39;, self._enable_service)
         self._update_chargeback_flags(daily, weekly, monthly)
 
-    def enable_forwarding(self, forwarding_url):
-        &#34;&#34;&#34;
-        Enables forwarding
+    def enable_forwarding(self, forwarding_url: str) -&gt; None:
+        &#34;&#34;&#34;Enable forwarding of metrics data to a specified Webconsole URL.
+
         Args:
-            forwarding_url: Webconsole url where metrics data to be forwarded
+            forwarding_url: The Webconsole URL to which metrics data should be forwarded.
+
+        Example:
+            &gt;&gt;&gt; metrics = PrivateMetrics()
+            &gt;&gt;&gt; metrics.enable_forwarding(&#34;https://webconsole.example.com/metrics&#34;)
+            &gt;&gt;&gt; print(&#34;Forwarding enabled to the specified Webconsole URL&#34;)
+
         &#34;&#34;&#34;
         fwd_info = [{
             &#34;httpServerURL&#34;: forwarding_url,
@@ -707,72 +1190,189 @@ class PrivateMetrics(_Metrics):
         self._metrics_config[&#39;config&#39;][&#39;tieringActive&#39;] = True
         self._metrics_config[&#39;config&#39;][&#39;HttpServerInfo&#39;][&#34;httpServer&#34;] = fwd_info
 
-    def disable_forwarding(self):
-        &#34;&#34;&#34;Disables forwarding&#34;&#34;&#34;
+    def disable_forwarding(self) -&gt; None:
+        &#34;&#34;&#34;Disable the forwarding of private metrics.
+
+        This method stops the forwarding of private metrics data, preventing it from being sent to external systems or services.
+
+        Example:
+            &gt;&gt;&gt; metrics = PrivateMetrics()
+            &gt;&gt;&gt; metrics.disable_forwarding()
+            &gt;&gt;&gt; print(&#34;Forwarding disabled for private metrics.&#34;)
+
+        &#34;&#34;&#34;
         self._metrics_config[&#39;config&#39;][&#39;tieringActive&#39;] = False
 
 
 class CloudMetrics(_Metrics):
-    &#34;&#34;&#34;Class for operations in Cloud Metrics reporting&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    CloudMetrics provides a suite of operations for managing and reporting cloud metrics.
 
-    def __init__(self, commcell_object):
-        &#34;&#34;&#34;Initialize object of the UserGroups class.
+    This class enables the configuration and control of various cloud metrics features,
+    including chargeback, upgrade readiness, proactive support, and cloud assist functionalities.
+    It also allows for the management of randomization settings to optimize reporting intervals.
 
-                    Args:
-                        commcell_object (object)  --  instance of the Commcell class
+    Key Features:
+        - Enable or disable chargeback reporting
+        - Enable or disable upgrade readiness monitoring
+        - Enable or disable proactive support features
+        - Enable or disable cloud assist capabilities
+        - Configure randomization minutes for metrics reporting
+        - Access randomization settings via property
 
-                    Returns:
-                        object - instance of the UserGroups class
+    Inherits from:
+        _Metrics
+
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_object: object) -&gt; None:
+        &#34;&#34;&#34;Initialize a CloudMetrics object with the given Commcell connection.
+
+        Args:
+            commcell_object: An instance of the Commcell class representing the active Commcell connection.
+
+        Example:
+            &gt;&gt;&gt; from cvpysdk.commcell import Commcell
+            &gt;&gt;&gt; commcell = Commcell(&#39;commcell_host&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; cloud_metrics = CloudMetrics(commcell)
+            &gt;&gt;&gt; print(&#34;CloudMetrics object initialized successfully&#34;)
+
         &#34;&#34;&#34;
         _Metrics.__init__(self, commcell_object, isprivate=False)
 
     @property
-    def randomization_minutes(self):
+    def randomization_minutes(self) -&gt; int:
+        &#34;&#34;&#34;Get the number of randomization minutes configured for cloud metrics.
+
+        Returns:
+            int: The number of minutes used for randomizing cloud metrics operations.
+
+        Example:
+            &gt;&gt;&gt; metrics = CloudMetrics()
+            &gt;&gt;&gt; minutes = metrics.randomization_minutes
+            &gt;&gt;&gt; print(f&#34;Randomization minutes: {minutes}&#34;)
+
+        &#34;&#34;&#34;
         return self._metrics_config[&#39;config&#39;][&#39;randomization&#39;]
 
-    def enable_chargeback(self):
-        &#34;&#34;&#34;Enables Chargeback service&#34;&#34;&#34;
+    def enable_chargeback(self) -&gt; None:
+        &#34;&#34;&#34;Enable the Chargeback service for cloud metrics.
+
+        This method activates the Chargeback service, allowing for tracking and reporting of resource usage and associated costs.
+
+        Example:
+            &gt;&gt;&gt; cloud_metrics = CloudMetrics()
+            &gt;&gt;&gt; cloud_metrics.enable_chargeback()
+            &gt;&gt;&gt; print(&#34;Chargeback service enabled successfully.&#34;)
+
+        &#34;&#34;&#34;
         if self.services[&#39;Charge Back&#39;] is not True:
             self._update_service_state(&#39;Charge Back&#39;, self._enable_service)
 
-    def enable_upgrade_readiness(self):
-        &#34;&#34;&#34;Enables pre upgrade readiness service&#34;&#34;&#34;
+    def enable_upgrade_readiness(self) -&gt; None:
+        &#34;&#34;&#34;Enable the pre-upgrade readiness service for cloud metrics.
+
+        This method activates the pre-upgrade readiness service, which helps ensure that the environment is prepared for an upgrade.
+
+        Example:
+            &gt;&gt;&gt; cloud_metrics = CloudMetrics()
+            &gt;&gt;&gt; cloud_metrics.enable_upgrade_readiness()
+            &gt;&gt;&gt; print(&#34;Pre-upgrade readiness service enabled.&#34;)
+
+        &#34;&#34;&#34;
         if self.services[&#39;Upgrade Readiness&#39;] is not True:
             self._update_service_state(&#39;Upgrade Readiness&#39;, self._enable_service)
 
-    def disable_upgrade_readiness(self):
-        &#34;&#34;&#34;disables pre upgrade readiness service&#34;&#34;&#34;
+    def disable_upgrade_readiness(self) -&gt; None:
+        &#34;&#34;&#34;Disable the pre-upgrade readiness service for the cloud metrics environment.
+
+        This method turns off the pre-upgrade readiness checks, which may be used to prepare 
+        the environment for upgrades or maintenance.
+
+        Example:
+            &gt;&gt;&gt; metrics = CloudMetrics()
+            &gt;&gt;&gt; metrics.disable_upgrade_readiness()
+            &gt;&gt;&gt; print(&#34;Upgrade readiness service has been disabled.&#34;)
+
+        &#34;&#34;&#34;
         if self.services[&#39;Upgrade Readiness&#39;] is True:
             self._update_service_state(&#39;Upgrade Readiness&#39;, self._disable_service)
 
-    def enable_proactive_support(self):
-        &#34;&#34;&#34;Enables Proactive Support service&#34;&#34;&#34;
+    def enable_proactive_support(self) -&gt; None:
+        &#34;&#34;&#34;Enable the Proactive Support service for the cloud metrics system.
+
+        This method activates the Proactive Support feature, which may provide enhanced monitoring 
+        and support capabilities for your cloud environment.
+
+        Example:
+            &gt;&gt;&gt; metrics = CloudMetrics()
+            &gt;&gt;&gt; metrics.enable_proactive_support()
+            &gt;&gt;&gt; print(&#34;Proactive Support has been enabled.&#34;)
+
+        &#34;&#34;&#34;
         if self.services[&#39;Proactive Support&#39;] is not True:
             self._update_service_state(&#39;Proactive Support&#39;, self._enable_service)
 
-    def disable_proactive_support(self):
-        &#34;&#34;&#34;disables Proactive Support service&#34;&#34;&#34;
+    def disable_proactive_support(self) -&gt; None:
+        &#34;&#34;&#34;Disable the Proactive Support service for the current CloudMetrics instance.
+
+        This method turns off the Proactive Support service, preventing it from collecting
+        or sending diagnostic data to the support team.
+
+        Example:
+            &gt;&gt;&gt; metrics = CloudMetrics()
+            &gt;&gt;&gt; metrics.disable_proactive_support()
+            &gt;&gt;&gt; print(&#34;Proactive Support has been disabled.&#34;)
+
+        &#34;&#34;&#34;
         if self.services[&#39;Proactive Support&#39;] is True:
             self._update_service_state(&#39;Proactive Support&#39;, self._disable_service)
 
-    def enable_cloud_assist(self):
-        &#34;&#34;&#34;Enables Cloud Assist service and proactive support if not already enabled&#34;&#34;&#34;
+    def enable_cloud_assist(self) -&gt; None:
+        &#34;&#34;&#34;Enable the Cloud Assist service and proactive support if not already enabled.
+
+        This method activates the Cloud Assist service, which may include enabling proactive support features
+        for your cloud environment. If Cloud Assist is already enabled, this method has no effect.
+
+        Example:
+            &gt;&gt;&gt; metrics = CloudMetrics()
+            &gt;&gt;&gt; metrics.enable_cloud_assist()
+            &gt;&gt;&gt; print(&#34;Cloud Assist service is now enabled.&#34;)
+
+        &#34;&#34;&#34;
         if self.services[&#39;Proactive Support&#39;] is not True:
             # pro active support must be enabled to enable cloud assist
             self.enable_proactive_support()
             self._update_service_state(&#39;Cloud Assist&#39;, self._enable_service)
 
-    def disable_cloud_assist(self):
-        &#34;&#34;&#34;disables Cloud Assist service&#34;&#34;&#34;
+    def disable_cloud_assist(self) -&gt; None:
+        &#34;&#34;&#34;Disable the Cloud Assist service for this CloudMetrics instance.
+
+        This method turns off the Cloud Assist service, preventing it from collecting or sending metrics data to the cloud.
+
+        Example:
+            &gt;&gt;&gt; metrics = CloudMetrics()
+            &gt;&gt;&gt; metrics.disable_cloud_assist()
+            &gt;&gt;&gt; print(&#34;Cloud Assist service has been disabled.&#34;)
+
+        &#34;&#34;&#34;
         if self.services[&#39;Cloud Assist&#39;] is True:
             self._update_service_state(&#39;Cloud Assist&#39;, self._disable_service)
 
-    def set_randomization_minutes(self, minutes=0):
-        &#34;&#34;&#34;
-        Sets the randomization value in gxglobal param
+    def set_randomization_minutes(self, minutes: int = 0) -&gt; None:
+        &#34;&#34;&#34;Set the randomization value (in minutes) in the gxglobal parameter.
+
+        This method updates the randomization setting, which may be used to stagger scheduled operations 
+        to avoid simultaneous execution.
 
         Args:
-            minutes (int): randomization value in minutes
+            minutes: The randomization value in minutes to set. Defaults to 0 (no randomization).
+
+        Example:
+            &gt;&gt;&gt; metrics = CloudMetrics()
+            &gt;&gt;&gt; metrics.set_randomization_minutes(15)
+            &gt;&gt;&gt; # The randomization value is now set to 15 minutes
+
         &#34;&#34;&#34;
         qcommand = self._commcell_object._services[&#39;QCOMMAND&#39;]
         qoperation = (&#39;qoperation execscript -sn SetKeyIntoGlobalParamTbl.sql &#39;
@@ -786,15 +1386,55 @@ class CloudMetrics(_Metrics):
 
 
 class LocalMetrics:
-    &#34;&#34;&#34;class for operation in localmetrics&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Class for managing and operating on local metrics configurations.
 
-    def __init__(self, commcell_object, islocalmetrics= True):
+    The LocalMetrics class provides functionality to interact with and manage
+    local metrics within a system. It allows for initialization with a commcell
+    object, retrieval and refresh of metrics configuration, and provides
+    properties to access the last and next upload times for metrics data.
+
+    Key Features:
+        - Initialize with commcell object and local metrics flag
+        - Retrieve current metrics configuration
+        - Refresh metrics configuration data
+        - Access last upload time of metrics
+        - Access next scheduled upload time of metrics
+
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_object: object, islocalmetrics: bool = True) -&gt; None:
+        &#34;&#34;&#34;Initialize the LocalMetrics object with a Commcell connection.
+
+        Args:
+            commcell_object: The Commcell instance to associate with this LocalMetrics object.
+            islocalmetrics: Indicates whether to use local metrics. Defaults to True.
+
+        Example:
+            &gt;&gt;&gt; commcell = Commcell(&#39;hostname&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; local_metrics = LocalMetrics(commcell)
+            &gt;&gt;&gt; # To specify not using local metrics:
+            &gt;&gt;&gt; local_metrics = LocalMetrics(commcell, islocalmetrics=False)
+
+        &#34;&#34;&#34;
         self._commcell_object = commcell_object
         self._islocalmetrics = islocalmetrics
         self._LOCAL_METRICS = self._commcell_object._services[&#39;LOCAL_METRICS&#39;] % self._islocalmetrics
         self._get_metrics_config()
 
-    def _get_metrics_config(self):
+    def _get_metrics_config(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the configuration settings for local metrics.
+
+        Returns:
+            dict: A dictionary containing the configuration parameters for local metrics.
+
+        Example:
+            &gt;&gt;&gt; metrics = LocalMetrics()
+            &gt;&gt;&gt; config = metrics._get_metrics_config()
+            &gt;&gt;&gt; print(config)
+            {&#39;enabled&#39;: True, &#39;interval&#39;: 60, ...}
+
+        &#34;&#34;&#34;
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             &#39;GET&#39;, self._LOCAL_METRICS
         )
@@ -805,18 +1445,49 @@ class LocalMetrics:
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
 
-    def refresh(self):
-        &#34;&#34;&#34;updates metrics object with the latest configuration&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Update the metrics object with the latest configuration.
+
+        This method refreshes the internal state of the metrics object to ensure it reflects
+        the most recent configuration settings.
+
+        Example:
+            &gt;&gt;&gt; metrics = LocalMetrics()
+            &gt;&gt;&gt; metrics.refresh()
+            &gt;&gt;&gt; print(&#34;Metrics configuration updated.&#34;)
+
+        &#34;&#34;&#34;
         self._get_metrics_config()
 
     @property
-    def last_upload_time(self):
-        &#34;&#34;&#34; get last upload time&#34;&#34;&#34;
+    def last_upload_time(self) -&gt; Optional[str]:
+        &#34;&#34;&#34;Get the timestamp of the last metrics upload.
+
+        Returns:
+            The last upload time as a string in ISO 8601 format, or None if no upload has occurred.
+
+        Example:
+            &gt;&gt;&gt; metrics = LocalMetrics()
+            &gt;&gt;&gt; last_time = metrics.last_upload_time  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Last upload time: {last_time}&#34;)
+            &gt;&gt;&gt; # Output might be: &#34;2024-06-01T12:34:56Z&#34; or None if never uploaded
+
+        &#34;&#34;&#34;
         return self._metrics_config[&#39;config&#39;][&#39;lastCollectionTime&#39;]
 
     @property
-    def nextup_load_time(self):
-        &#34;&#34;&#34;get the next upload time&#34;&#34;&#34;
+    def nextup_load_time(self) -&gt; float:
+        &#34;&#34;&#34;Get the scheduled time for the next upload operation.
+
+        Returns:
+            The timestamp (as a float, typically in seconds since the epoch) representing when the next upload is scheduled.
+
+        Example:
+            &gt;&gt;&gt; metrics = LocalMetrics()
+            &gt;&gt;&gt; next_time = metrics.nextup_load_time
+            &gt;&gt;&gt; print(f&#34;Next upload scheduled at: {next_time}&#34;)
+
+        &#34;&#34;&#34;
         return self._metrics_config[&#39;config&#39;][&#39;nextUploadTime&#39;]</code></pre>
 </details>
 </section>
@@ -831,83 +1502,210 @@ class LocalMetrics:
 <dl>
 <dt id="cvpysdk.metricsreport.CloudMetrics"><code class="flex name class">
 <span>class <span class="ident">CloudMetrics</span></span>
-<span>(</span><span>commcell_object)</span>
+<span>(</span><span>commcell_object: object)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for operations in Cloud Metrics reporting</p>
-<p>Initialize object of the UserGroups class.</p>
-<h2 id="args">Args</h2>
-<p>commcell_object (object)
-&ndash;
-instance of the Commcell class</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the UserGroups class</p></div>
+<div class="desc"><p>CloudMetrics provides a suite of operations for managing and reporting cloud metrics.</p>
+<p>This class enables the configuration and control of various cloud metrics features,
+including chargeback, upgrade readiness, proactive support, and cloud assist functionalities.
+It also allows for the management of randomization settings to optimize reporting intervals.</p>
+<p>Key Features:
+- Enable or disable chargeback reporting
+- Enable or disable upgrade readiness monitoring
+- Enable or disable proactive support features
+- Enable or disable cloud assist capabilities
+- Configure randomization minutes for metrics reporting
+- Access randomization settings via property</p>
+<p>Inherits from:
+_Metrics</p>
+<p>Initialize a CloudMetrics object with the given Commcell connection.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>commcell_object</code></strong></dt>
+<dd>An instance of the Commcell class representing the active Commcell connection.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; from cvpysdk.commcell import Commcell
+&gt;&gt;&gt; commcell = Commcell('commcell_host', 'username', 'password')
+&gt;&gt;&gt; cloud_metrics = CloudMetrics(commcell)
+&gt;&gt;&gt; print(&quot;CloudMetrics object initialized successfully&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/metricsreport.py#L584-L654" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/metricsreport.py#L1123-L1312" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class CloudMetrics(_Metrics):
-    &#34;&#34;&#34;Class for operations in Cloud Metrics reporting&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    CloudMetrics provides a suite of operations for managing and reporting cloud metrics.
 
-    def __init__(self, commcell_object):
-        &#34;&#34;&#34;Initialize object of the UserGroups class.
+    This class enables the configuration and control of various cloud metrics features,
+    including chargeback, upgrade readiness, proactive support, and cloud assist functionalities.
+    It also allows for the management of randomization settings to optimize reporting intervals.
 
-                    Args:
-                        commcell_object (object)  --  instance of the Commcell class
+    Key Features:
+        - Enable or disable chargeback reporting
+        - Enable or disable upgrade readiness monitoring
+        - Enable or disable proactive support features
+        - Enable or disable cloud assist capabilities
+        - Configure randomization minutes for metrics reporting
+        - Access randomization settings via property
 
-                    Returns:
-                        object - instance of the UserGroups class
+    Inherits from:
+        _Metrics
+
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_object: object) -&gt; None:
+        &#34;&#34;&#34;Initialize a CloudMetrics object with the given Commcell connection.
+
+        Args:
+            commcell_object: An instance of the Commcell class representing the active Commcell connection.
+
+        Example:
+            &gt;&gt;&gt; from cvpysdk.commcell import Commcell
+            &gt;&gt;&gt; commcell = Commcell(&#39;commcell_host&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; cloud_metrics = CloudMetrics(commcell)
+            &gt;&gt;&gt; print(&#34;CloudMetrics object initialized successfully&#34;)
+
         &#34;&#34;&#34;
         _Metrics.__init__(self, commcell_object, isprivate=False)
 
     @property
-    def randomization_minutes(self):
+    def randomization_minutes(self) -&gt; int:
+        &#34;&#34;&#34;Get the number of randomization minutes configured for cloud metrics.
+
+        Returns:
+            int: The number of minutes used for randomizing cloud metrics operations.
+
+        Example:
+            &gt;&gt;&gt; metrics = CloudMetrics()
+            &gt;&gt;&gt; minutes = metrics.randomization_minutes
+            &gt;&gt;&gt; print(f&#34;Randomization minutes: {minutes}&#34;)
+
+        &#34;&#34;&#34;
         return self._metrics_config[&#39;config&#39;][&#39;randomization&#39;]
 
-    def enable_chargeback(self):
-        &#34;&#34;&#34;Enables Chargeback service&#34;&#34;&#34;
+    def enable_chargeback(self) -&gt; None:
+        &#34;&#34;&#34;Enable the Chargeback service for cloud metrics.
+
+        This method activates the Chargeback service, allowing for tracking and reporting of resource usage and associated costs.
+
+        Example:
+            &gt;&gt;&gt; cloud_metrics = CloudMetrics()
+            &gt;&gt;&gt; cloud_metrics.enable_chargeback()
+            &gt;&gt;&gt; print(&#34;Chargeback service enabled successfully.&#34;)
+
+        &#34;&#34;&#34;
         if self.services[&#39;Charge Back&#39;] is not True:
             self._update_service_state(&#39;Charge Back&#39;, self._enable_service)
 
-    def enable_upgrade_readiness(self):
-        &#34;&#34;&#34;Enables pre upgrade readiness service&#34;&#34;&#34;
+    def enable_upgrade_readiness(self) -&gt; None:
+        &#34;&#34;&#34;Enable the pre-upgrade readiness service for cloud metrics.
+
+        This method activates the pre-upgrade readiness service, which helps ensure that the environment is prepared for an upgrade.
+
+        Example:
+            &gt;&gt;&gt; cloud_metrics = CloudMetrics()
+            &gt;&gt;&gt; cloud_metrics.enable_upgrade_readiness()
+            &gt;&gt;&gt; print(&#34;Pre-upgrade readiness service enabled.&#34;)
+
+        &#34;&#34;&#34;
         if self.services[&#39;Upgrade Readiness&#39;] is not True:
             self._update_service_state(&#39;Upgrade Readiness&#39;, self._enable_service)
 
-    def disable_upgrade_readiness(self):
-        &#34;&#34;&#34;disables pre upgrade readiness service&#34;&#34;&#34;
+    def disable_upgrade_readiness(self) -&gt; None:
+        &#34;&#34;&#34;Disable the pre-upgrade readiness service for the cloud metrics environment.
+
+        This method turns off the pre-upgrade readiness checks, which may be used to prepare 
+        the environment for upgrades or maintenance.
+
+        Example:
+            &gt;&gt;&gt; metrics = CloudMetrics()
+            &gt;&gt;&gt; metrics.disable_upgrade_readiness()
+            &gt;&gt;&gt; print(&#34;Upgrade readiness service has been disabled.&#34;)
+
+        &#34;&#34;&#34;
         if self.services[&#39;Upgrade Readiness&#39;] is True:
             self._update_service_state(&#39;Upgrade Readiness&#39;, self._disable_service)
 
-    def enable_proactive_support(self):
-        &#34;&#34;&#34;Enables Proactive Support service&#34;&#34;&#34;
+    def enable_proactive_support(self) -&gt; None:
+        &#34;&#34;&#34;Enable the Proactive Support service for the cloud metrics system.
+
+        This method activates the Proactive Support feature, which may provide enhanced monitoring 
+        and support capabilities for your cloud environment.
+
+        Example:
+            &gt;&gt;&gt; metrics = CloudMetrics()
+            &gt;&gt;&gt; metrics.enable_proactive_support()
+            &gt;&gt;&gt; print(&#34;Proactive Support has been enabled.&#34;)
+
+        &#34;&#34;&#34;
         if self.services[&#39;Proactive Support&#39;] is not True:
             self._update_service_state(&#39;Proactive Support&#39;, self._enable_service)
 
-    def disable_proactive_support(self):
-        &#34;&#34;&#34;disables Proactive Support service&#34;&#34;&#34;
+    def disable_proactive_support(self) -&gt; None:
+        &#34;&#34;&#34;Disable the Proactive Support service for the current CloudMetrics instance.
+
+        This method turns off the Proactive Support service, preventing it from collecting
+        or sending diagnostic data to the support team.
+
+        Example:
+            &gt;&gt;&gt; metrics = CloudMetrics()
+            &gt;&gt;&gt; metrics.disable_proactive_support()
+            &gt;&gt;&gt; print(&#34;Proactive Support has been disabled.&#34;)
+
+        &#34;&#34;&#34;
         if self.services[&#39;Proactive Support&#39;] is True:
             self._update_service_state(&#39;Proactive Support&#39;, self._disable_service)
 
-    def enable_cloud_assist(self):
-        &#34;&#34;&#34;Enables Cloud Assist service and proactive support if not already enabled&#34;&#34;&#34;
+    def enable_cloud_assist(self) -&gt; None:
+        &#34;&#34;&#34;Enable the Cloud Assist service and proactive support if not already enabled.
+
+        This method activates the Cloud Assist service, which may include enabling proactive support features
+        for your cloud environment. If Cloud Assist is already enabled, this method has no effect.
+
+        Example:
+            &gt;&gt;&gt; metrics = CloudMetrics()
+            &gt;&gt;&gt; metrics.enable_cloud_assist()
+            &gt;&gt;&gt; print(&#34;Cloud Assist service is now enabled.&#34;)
+
+        &#34;&#34;&#34;
         if self.services[&#39;Proactive Support&#39;] is not True:
             # pro active support must be enabled to enable cloud assist
             self.enable_proactive_support()
             self._update_service_state(&#39;Cloud Assist&#39;, self._enable_service)
 
-    def disable_cloud_assist(self):
-        &#34;&#34;&#34;disables Cloud Assist service&#34;&#34;&#34;
+    def disable_cloud_assist(self) -&gt; None:
+        &#34;&#34;&#34;Disable the Cloud Assist service for this CloudMetrics instance.
+
+        This method turns off the Cloud Assist service, preventing it from collecting or sending metrics data to the cloud.
+
+        Example:
+            &gt;&gt;&gt; metrics = CloudMetrics()
+            &gt;&gt;&gt; metrics.disable_cloud_assist()
+            &gt;&gt;&gt; print(&#34;Cloud Assist service has been disabled.&#34;)
+
+        &#34;&#34;&#34;
         if self.services[&#39;Cloud Assist&#39;] is True:
             self._update_service_state(&#39;Cloud Assist&#39;, self._disable_service)
 
-    def set_randomization_minutes(self, minutes=0):
-        &#34;&#34;&#34;
-        Sets the randomization value in gxglobal param
+    def set_randomization_minutes(self, minutes: int = 0) -&gt; None:
+        &#34;&#34;&#34;Set the randomization value (in minutes) in the gxglobal parameter.
+
+        This method updates the randomization setting, which may be used to stagger scheduled operations 
+        to avoid simultaneous execution.
 
         Args:
-            minutes (int): randomization value in minutes
+            minutes: The randomization value in minutes to set. Defaults to 0 (no randomization).
+
+        Example:
+            &gt;&gt;&gt; metrics = CloudMetrics()
+            &gt;&gt;&gt; metrics.set_randomization_minutes(15)
+            &gt;&gt;&gt; # The randomization value is now set to 15 minutes
+
         &#34;&#34;&#34;
         qcommand = self._commcell_object._services[&#39;QCOMMAND&#39;]
         qoperation = (&#39;qoperation execscript -sn SetKeyIntoGlobalParamTbl.sql &#39;
@@ -925,16 +1723,39 @@ instance of the Commcell class</p>
 </ul>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.metricsreport.CloudMetrics.randomization_minutes"><code class="name">var <span class="ident">randomization_minutes</span></code></dt>
+<dt id="cvpysdk.metricsreport.CloudMetrics.randomization_minutes"><code class="name">var <span class="ident">randomization_minutes</span> : int</code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Get the number of randomization minutes configured for cloud metrics.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>int</code></dt>
+<dd>The number of minutes used for randomizing cloud metrics operations.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; metrics = CloudMetrics()
+&gt;&gt;&gt; minutes = metrics.randomization_minutes
+&gt;&gt;&gt; print(f&quot;Randomization minutes: {minutes}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/metricsreport.py#L598-L600" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/metricsreport.py#L1161-L1175" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def randomization_minutes(self):
+def randomization_minutes(self) -&gt; int:
+    &#34;&#34;&#34;Get the number of randomization minutes configured for cloud metrics.
+
+    Returns:
+        int: The number of minutes used for randomizing cloud metrics operations.
+
+    Example:
+        &gt;&gt;&gt; metrics = CloudMetrics()
+        &gt;&gt;&gt; minutes = metrics.randomization_minutes
+        &gt;&gt;&gt; print(f&#34;Randomization minutes: {minutes}&#34;)
+
+    &#34;&#34;&#34;
     return self._metrics_config[&#39;config&#39;][&#39;randomization&#39;]</code></pre>
 </details>
 </dd>
@@ -942,81 +1763,167 @@ def randomization_minutes(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.metricsreport.CloudMetrics.disable_cloud_assist"><code class="name flex">
-<span>def <span class="ident">disable_cloud_assist</span></span>(<span>self)</span>
+<span>def <span class="ident">disable_cloud_assist</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>disables Cloud Assist service</p></div>
+<div class="desc"><p>Disable the Cloud Assist service for this CloudMetrics instance.</p>
+<p>This method turns off the Cloud Assist service, preventing it from collecting or sending metrics data to the cloud.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; metrics = CloudMetrics()
+&gt;&gt;&gt; metrics.disable_cloud_assist()
+&gt;&gt;&gt; print(&quot;Cloud Assist service has been disabled.&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/metricsreport.py#L634-L637" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/metricsreport.py#L1273-L1286" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def disable_cloud_assist(self):
-    &#34;&#34;&#34;disables Cloud Assist service&#34;&#34;&#34;
+<pre><code class="python">def disable_cloud_assist(self) -&gt; None:
+    &#34;&#34;&#34;Disable the Cloud Assist service for this CloudMetrics instance.
+
+    This method turns off the Cloud Assist service, preventing it from collecting or sending metrics data to the cloud.
+
+    Example:
+        &gt;&gt;&gt; metrics = CloudMetrics()
+        &gt;&gt;&gt; metrics.disable_cloud_assist()
+        &gt;&gt;&gt; print(&#34;Cloud Assist service has been disabled.&#34;)
+
+    &#34;&#34;&#34;
     if self.services[&#39;Cloud Assist&#39;] is True:
         self._update_service_state(&#39;Cloud Assist&#39;, self._disable_service)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.metricsreport.CloudMetrics.disable_proactive_support"><code class="name flex">
-<span>def <span class="ident">disable_proactive_support</span></span>(<span>self)</span>
+<span>def <span class="ident">disable_proactive_support</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>disables Proactive Support service</p></div>
+<div class="desc"><p>Disable the Proactive Support service for the current CloudMetrics instance.</p>
+<p>This method turns off the Proactive Support service, preventing it from collecting
+or sending diagnostic data to the support team.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; metrics = CloudMetrics()
+&gt;&gt;&gt; metrics.disable_proactive_support()
+&gt;&gt;&gt; print(&quot;Proactive Support has been disabled.&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/metricsreport.py#L622-L625" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/metricsreport.py#L1239-L1253" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def disable_proactive_support(self):
-    &#34;&#34;&#34;disables Proactive Support service&#34;&#34;&#34;
+<pre><code class="python">def disable_proactive_support(self) -&gt; None:
+    &#34;&#34;&#34;Disable the Proactive Support service for the current CloudMetrics instance.
+
+    This method turns off the Proactive Support service, preventing it from collecting
+    or sending diagnostic data to the support team.
+
+    Example:
+        &gt;&gt;&gt; metrics = CloudMetrics()
+        &gt;&gt;&gt; metrics.disable_proactive_support()
+        &gt;&gt;&gt; print(&#34;Proactive Support has been disabled.&#34;)
+
+    &#34;&#34;&#34;
     if self.services[&#39;Proactive Support&#39;] is True:
         self._update_service_state(&#39;Proactive Support&#39;, self._disable_service)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.metricsreport.CloudMetrics.disable_upgrade_readiness"><code class="name flex">
-<span>def <span class="ident">disable_upgrade_readiness</span></span>(<span>self)</span>
+<span>def <span class="ident">disable_upgrade_readiness</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>disables pre upgrade readiness service</p></div>
+<div class="desc"><p>Disable the pre-upgrade readiness service for the cloud metrics environment.</p>
+<p>This method turns off the pre-upgrade readiness checks, which may be used to prepare
+the environment for upgrades or maintenance.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; metrics = CloudMetrics()
+&gt;&gt;&gt; metrics.disable_upgrade_readiness()
+&gt;&gt;&gt; print(&quot;Upgrade readiness service has been disabled.&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/metricsreport.py#L612-L615" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/metricsreport.py#L1207-L1221" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def disable_upgrade_readiness(self):
-    &#34;&#34;&#34;disables pre upgrade readiness service&#34;&#34;&#34;
+<pre><code class="python">def disable_upgrade_readiness(self) -&gt; None:
+    &#34;&#34;&#34;Disable the pre-upgrade readiness service for the cloud metrics environment.
+
+    This method turns off the pre-upgrade readiness checks, which may be used to prepare 
+    the environment for upgrades or maintenance.
+
+    Example:
+        &gt;&gt;&gt; metrics = CloudMetrics()
+        &gt;&gt;&gt; metrics.disable_upgrade_readiness()
+        &gt;&gt;&gt; print(&#34;Upgrade readiness service has been disabled.&#34;)
+
+    &#34;&#34;&#34;
     if self.services[&#39;Upgrade Readiness&#39;] is True:
         self._update_service_state(&#39;Upgrade Readiness&#39;, self._disable_service)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.metricsreport.CloudMetrics.enable_chargeback"><code class="name flex">
-<span>def <span class="ident">enable_chargeback</span></span>(<span>self)</span>
+<span>def <span class="ident">enable_chargeback</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Enables Chargeback service</p></div>
+<div class="desc"><p>Enable the Chargeback service for cloud metrics.</p>
+<p>This method activates the Chargeback service, allowing for tracking and reporting of resource usage and associated costs.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; cloud_metrics = CloudMetrics()
+&gt;&gt;&gt; cloud_metrics.enable_chargeback()
+&gt;&gt;&gt; print(&quot;Chargeback service enabled successfully.&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/metricsreport.py#L602-L605" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/metricsreport.py#L1177-L1190" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def enable_chargeback(self):
-    &#34;&#34;&#34;Enables Chargeback service&#34;&#34;&#34;
+<pre><code class="python">def enable_chargeback(self) -&gt; None:
+    &#34;&#34;&#34;Enable the Chargeback service for cloud metrics.
+
+    This method activates the Chargeback service, allowing for tracking and reporting of resource usage and associated costs.
+
+    Example:
+        &gt;&gt;&gt; cloud_metrics = CloudMetrics()
+        &gt;&gt;&gt; cloud_metrics.enable_chargeback()
+        &gt;&gt;&gt; print(&#34;Chargeback service enabled successfully.&#34;)
+
+    &#34;&#34;&#34;
     if self.services[&#39;Charge Back&#39;] is not True:
         self._update_service_state(&#39;Charge Back&#39;, self._enable_service)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.metricsreport.CloudMetrics.enable_cloud_assist"><code class="name flex">
-<span>def <span class="ident">enable_cloud_assist</span></span>(<span>self)</span>
+<span>def <span class="ident">enable_cloud_assist</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Enables Cloud Assist service and proactive support if not already enabled</p></div>
+<div class="desc"><p>Enable the Cloud Assist service and proactive support if not already enabled.</p>
+<p>This method activates the Cloud Assist service, which may include enabling proactive support features
+for your cloud environment. If Cloud Assist is already enabled, this method has no effect.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; metrics = CloudMetrics()
+&gt;&gt;&gt; metrics.enable_cloud_assist()
+&gt;&gt;&gt; print(&quot;Cloud Assist service is now enabled.&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/metricsreport.py#L627-L632" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/metricsreport.py#L1255-L1271" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def enable_cloud_assist(self):
-    &#34;&#34;&#34;Enables Cloud Assist service and proactive support if not already enabled&#34;&#34;&#34;
+<pre><code class="python">def enable_cloud_assist(self) -&gt; None:
+    &#34;&#34;&#34;Enable the Cloud Assist service and proactive support if not already enabled.
+
+    This method activates the Cloud Assist service, which may include enabling proactive support features
+    for your cloud environment. If Cloud Assist is already enabled, this method has no effect.
+
+    Example:
+        &gt;&gt;&gt; metrics = CloudMetrics()
+        &gt;&gt;&gt; metrics.enable_cloud_assist()
+        &gt;&gt;&gt; print(&#34;Cloud Assist service is now enabled.&#34;)
+
+    &#34;&#34;&#34;
     if self.services[&#39;Proactive Support&#39;] is not True:
         # pro active support must be enabled to enable cloud assist
         self.enable_proactive_support()
@@ -1024,58 +1931,109 @@ def randomization_minutes(self):
 </details>
 </dd>
 <dt id="cvpysdk.metricsreport.CloudMetrics.enable_proactive_support"><code class="name flex">
-<span>def <span class="ident">enable_proactive_support</span></span>(<span>self)</span>
+<span>def <span class="ident">enable_proactive_support</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Enables Proactive Support service</p></div>
+<div class="desc"><p>Enable the Proactive Support service for the cloud metrics system.</p>
+<p>This method activates the Proactive Support feature, which may provide enhanced monitoring
+and support capabilities for your cloud environment.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; metrics = CloudMetrics()
+&gt;&gt;&gt; metrics.enable_proactive_support()
+&gt;&gt;&gt; print(&quot;Proactive Support has been enabled.&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/metricsreport.py#L617-L620" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/metricsreport.py#L1223-L1237" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def enable_proactive_support(self):
-    &#34;&#34;&#34;Enables Proactive Support service&#34;&#34;&#34;
+<pre><code class="python">def enable_proactive_support(self) -&gt; None:
+    &#34;&#34;&#34;Enable the Proactive Support service for the cloud metrics system.
+
+    This method activates the Proactive Support feature, which may provide enhanced monitoring 
+    and support capabilities for your cloud environment.
+
+    Example:
+        &gt;&gt;&gt; metrics = CloudMetrics()
+        &gt;&gt;&gt; metrics.enable_proactive_support()
+        &gt;&gt;&gt; print(&#34;Proactive Support has been enabled.&#34;)
+
+    &#34;&#34;&#34;
     if self.services[&#39;Proactive Support&#39;] is not True:
         self._update_service_state(&#39;Proactive Support&#39;, self._enable_service)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.metricsreport.CloudMetrics.enable_upgrade_readiness"><code class="name flex">
-<span>def <span class="ident">enable_upgrade_readiness</span></span>(<span>self)</span>
+<span>def <span class="ident">enable_upgrade_readiness</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Enables pre upgrade readiness service</p></div>
+<div class="desc"><p>Enable the pre-upgrade readiness service for cloud metrics.</p>
+<p>This method activates the pre-upgrade readiness service, which helps ensure that the environment is prepared for an upgrade.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; cloud_metrics = CloudMetrics()
+&gt;&gt;&gt; cloud_metrics.enable_upgrade_readiness()
+&gt;&gt;&gt; print(&quot;Pre-upgrade readiness service enabled.&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/metricsreport.py#L607-L610" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/metricsreport.py#L1192-L1205" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def enable_upgrade_readiness(self):
-    &#34;&#34;&#34;Enables pre upgrade readiness service&#34;&#34;&#34;
+<pre><code class="python">def enable_upgrade_readiness(self) -&gt; None:
+    &#34;&#34;&#34;Enable the pre-upgrade readiness service for cloud metrics.
+
+    This method activates the pre-upgrade readiness service, which helps ensure that the environment is prepared for an upgrade.
+
+    Example:
+        &gt;&gt;&gt; cloud_metrics = CloudMetrics()
+        &gt;&gt;&gt; cloud_metrics.enable_upgrade_readiness()
+        &gt;&gt;&gt; print(&#34;Pre-upgrade readiness service enabled.&#34;)
+
+    &#34;&#34;&#34;
     if self.services[&#39;Upgrade Readiness&#39;] is not True:
         self._update_service_state(&#39;Upgrade Readiness&#39;, self._enable_service)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.metricsreport.CloudMetrics.set_randomization_minutes"><code class="name flex">
-<span>def <span class="ident">set_randomization_minutes</span></span>(<span>self, minutes=0)</span>
+<span>def <span class="ident">set_randomization_minutes</span></span>(<span>self, minutes: int = 0) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Sets the randomization value in gxglobal param</p>
-<h2 id="args">Args</h2>
+<div class="desc"><p>Set the randomization value (in minutes) in the gxglobal parameter.</p>
+<p>This method updates the randomization setting, which may be used to stagger scheduled operations
+to avoid simultaneous execution.</p>
 <dl>
-<dt><strong><code>minutes</code></strong> :&ensp;<code>int</code></dt>
-<dd>randomization value in minutes</dd>
-</dl></div>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>minutes</code></strong></dt>
+<dd>The randomization value in minutes to set. Defaults to 0 (no randomization).</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; metrics = CloudMetrics()
+&gt;&gt;&gt; metrics.set_randomization_minutes(15)
+&gt;&gt;&gt; # The randomization value is now set to 15 minutes
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/metricsreport.py#L639-L654" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/metricsreport.py#L1288-L1312" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def set_randomization_minutes(self, minutes=0):
-    &#34;&#34;&#34;
-    Sets the randomization value in gxglobal param
+<pre><code class="python">def set_randomization_minutes(self, minutes: int = 0) -&gt; None:
+    &#34;&#34;&#34;Set the randomization value (in minutes) in the gxglobal parameter.
+
+    This method updates the randomization setting, which may be used to stagger scheduled operations 
+    to avoid simultaneous execution.
 
     Args:
-        minutes (int): randomization value in minutes
+        minutes: The randomization value in minutes to set. Defaults to 0 (no randomization).
+
+    Example:
+        &gt;&gt;&gt; metrics = CloudMetrics()
+        &gt;&gt;&gt; metrics.set_randomization_minutes(15)
+        &gt;&gt;&gt; # The randomization value is now set to 15 minutes
+
     &#34;&#34;&#34;
     qcommand = self._commcell_object._services[&#39;QCOMMAND&#39;]
     qoperation = (&#39;qoperation execscript -sn SetKeyIntoGlobalParamTbl.sql &#39;
@@ -1092,25 +2050,91 @@ def randomization_minutes(self):
 </dd>
 <dt id="cvpysdk.metricsreport.LocalMetrics"><code class="flex name class">
 <span>class <span class="ident">LocalMetrics</span></span>
-<span>(</span><span>commcell_object, islocalmetrics=True)</span>
+<span>(</span><span>commcell_object: object, islocalmetrics: bool = True)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>class for operation in localmetrics</p></div>
+<div class="desc"><p>Class for managing and operating on local metrics configurations.</p>
+<p>The LocalMetrics class provides functionality to interact with and manage
+local metrics within a system. It allows for initialization with a commcell
+object, retrieval and refresh of metrics configuration, and provides
+properties to access the last and next upload times for metrics data.</p>
+<p>Key Features:
+- Initialize with commcell object and local metrics flag
+- Retrieve current metrics configuration
+- Refresh metrics configuration data
+- Access last upload time of metrics
+- Access next scheduled upload time of metrics</p>
+<p>Initialize the LocalMetrics object with a Commcell connection.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>commcell_object</code></strong></dt>
+<dd>The Commcell instance to associate with this LocalMetrics object.</dd>
+<dt><strong><code>islocalmetrics</code></strong></dt>
+<dd>Indicates whether to use local metrics. Defaults to True.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; commcell = Commcell('hostname', 'username', 'password')
+&gt;&gt;&gt; local_metrics = LocalMetrics(commcell)
+&gt;&gt;&gt; # To specify not using local metrics:
+&gt;&gt;&gt; local_metrics = LocalMetrics(commcell, islocalmetrics=False)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/metricsreport.py#L657-L689" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/metricsreport.py#L1315-L1424" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class LocalMetrics:
-    &#34;&#34;&#34;class for operation in localmetrics&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Class for managing and operating on local metrics configurations.
 
-    def __init__(self, commcell_object, islocalmetrics= True):
+    The LocalMetrics class provides functionality to interact with and manage
+    local metrics within a system. It allows for initialization with a commcell
+    object, retrieval and refresh of metrics configuration, and provides
+    properties to access the last and next upload times for metrics data.
+
+    Key Features:
+        - Initialize with commcell object and local metrics flag
+        - Retrieve current metrics configuration
+        - Refresh metrics configuration data
+        - Access last upload time of metrics
+        - Access next scheduled upload time of metrics
+
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_object: object, islocalmetrics: bool = True) -&gt; None:
+        &#34;&#34;&#34;Initialize the LocalMetrics object with a Commcell connection.
+
+        Args:
+            commcell_object: The Commcell instance to associate with this LocalMetrics object.
+            islocalmetrics: Indicates whether to use local metrics. Defaults to True.
+
+        Example:
+            &gt;&gt;&gt; commcell = Commcell(&#39;hostname&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; local_metrics = LocalMetrics(commcell)
+            &gt;&gt;&gt; # To specify not using local metrics:
+            &gt;&gt;&gt; local_metrics = LocalMetrics(commcell, islocalmetrics=False)
+
+        &#34;&#34;&#34;
         self._commcell_object = commcell_object
         self._islocalmetrics = islocalmetrics
         self._LOCAL_METRICS = self._commcell_object._services[&#39;LOCAL_METRICS&#39;] % self._islocalmetrics
         self._get_metrics_config()
 
-    def _get_metrics_config(self):
+    def _get_metrics_config(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the configuration settings for local metrics.
+
+        Returns:
+            dict: A dictionary containing the configuration parameters for local metrics.
+
+        Example:
+            &gt;&gt;&gt; metrics = LocalMetrics()
+            &gt;&gt;&gt; config = metrics._get_metrics_config()
+            &gt;&gt;&gt; print(config)
+            {&#39;enabled&#39;: True, &#39;interval&#39;: 60, ...}
+
+        &#34;&#34;&#34;
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             &#39;GET&#39;, self._LOCAL_METRICS
         )
@@ -1121,47 +2145,118 @@ def randomization_minutes(self):
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
 
-    def refresh(self):
-        &#34;&#34;&#34;updates metrics object with the latest configuration&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Update the metrics object with the latest configuration.
+
+        This method refreshes the internal state of the metrics object to ensure it reflects
+        the most recent configuration settings.
+
+        Example:
+            &gt;&gt;&gt; metrics = LocalMetrics()
+            &gt;&gt;&gt; metrics.refresh()
+            &gt;&gt;&gt; print(&#34;Metrics configuration updated.&#34;)
+
+        &#34;&#34;&#34;
         self._get_metrics_config()
 
     @property
-    def last_upload_time(self):
-        &#34;&#34;&#34; get last upload time&#34;&#34;&#34;
+    def last_upload_time(self) -&gt; Optional[str]:
+        &#34;&#34;&#34;Get the timestamp of the last metrics upload.
+
+        Returns:
+            The last upload time as a string in ISO 8601 format, or None if no upload has occurred.
+
+        Example:
+            &gt;&gt;&gt; metrics = LocalMetrics()
+            &gt;&gt;&gt; last_time = metrics.last_upload_time  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Last upload time: {last_time}&#34;)
+            &gt;&gt;&gt; # Output might be: &#34;2024-06-01T12:34:56Z&#34; or None if never uploaded
+
+        &#34;&#34;&#34;
         return self._metrics_config[&#39;config&#39;][&#39;lastCollectionTime&#39;]
 
     @property
-    def nextup_load_time(self):
-        &#34;&#34;&#34;get the next upload time&#34;&#34;&#34;
+    def nextup_load_time(self) -&gt; float:
+        &#34;&#34;&#34;Get the scheduled time for the next upload operation.
+
+        Returns:
+            The timestamp (as a float, typically in seconds since the epoch) representing when the next upload is scheduled.
+
+        Example:
+            &gt;&gt;&gt; metrics = LocalMetrics()
+            &gt;&gt;&gt; next_time = metrics.nextup_load_time
+            &gt;&gt;&gt; print(f&#34;Next upload scheduled at: {next_time}&#34;)
+
+        &#34;&#34;&#34;
         return self._metrics_config[&#39;config&#39;][&#39;nextUploadTime&#39;]</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.metricsreport.LocalMetrics.last_upload_time"><code class="name">var <span class="ident">last_upload_time</span></code></dt>
+<dt id="cvpysdk.metricsreport.LocalMetrics.last_upload_time"><code class="name">var <span class="ident">last_upload_time</span> : Optional[str]</code></dt>
 <dd>
-<div class="desc"><p>get last upload time</p></div>
+<div class="desc"><p>Get the timestamp of the last metrics upload.</p>
+<p>Returns
+-----=
+The last upload time as a string in ISO 8601 format, or None if no upload has occurred.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; metrics = LocalMetrics()
+&gt;&gt;&gt; last_time = metrics.last_upload_time  # Use dot notation for property access
+&gt;&gt;&gt; print(f&quot;Last upload time: {last_time}&quot;)
+&gt;&gt;&gt; # Output might be: &quot;2024-06-01T12:34:56Z&quot; or None if never uploaded
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/metricsreport.py#L681-L684" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/metricsreport.py#L1393-L1408" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def last_upload_time(self):
-    &#34;&#34;&#34; get last upload time&#34;&#34;&#34;
+def last_upload_time(self) -&gt; Optional[str]:
+    &#34;&#34;&#34;Get the timestamp of the last metrics upload.
+
+    Returns:
+        The last upload time as a string in ISO 8601 format, or None if no upload has occurred.
+
+    Example:
+        &gt;&gt;&gt; metrics = LocalMetrics()
+        &gt;&gt;&gt; last_time = metrics.last_upload_time  # Use dot notation for property access
+        &gt;&gt;&gt; print(f&#34;Last upload time: {last_time}&#34;)
+        &gt;&gt;&gt; # Output might be: &#34;2024-06-01T12:34:56Z&#34; or None if never uploaded
+
+    &#34;&#34;&#34;
     return self._metrics_config[&#39;config&#39;][&#39;lastCollectionTime&#39;]</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.metricsreport.LocalMetrics.nextup_load_time"><code class="name">var <span class="ident">nextup_load_time</span></code></dt>
+<dt id="cvpysdk.metricsreport.LocalMetrics.nextup_load_time"><code class="name">var <span class="ident">nextup_load_time</span> : float</code></dt>
 <dd>
-<div class="desc"><p>get the next upload time</p></div>
+<div class="desc"><p>Get the scheduled time for the next upload operation.</p>
+<p>Returns
+-----=
+The timestamp (as a float, typically in seconds since the epoch) representing when the next upload is scheduled.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; metrics = LocalMetrics()
+&gt;&gt;&gt; next_time = metrics.nextup_load_time
+&gt;&gt;&gt; print(f&quot;Next upload scheduled at: {next_time}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/metricsreport.py#L686-L689" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/metricsreport.py#L1410-L1424" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def nextup_load_time(self):
-    &#34;&#34;&#34;get the next upload time&#34;&#34;&#34;
+def nextup_load_time(self) -&gt; float:
+    &#34;&#34;&#34;Get the scheduled time for the next upload operation.
+
+    Returns:
+        The timestamp (as a float, typically in seconds since the epoch) representing when the next upload is scheduled.
+
+    Example:
+        &gt;&gt;&gt; metrics = LocalMetrics()
+        &gt;&gt;&gt; next_time = metrics.nextup_load_time
+        &gt;&gt;&gt; print(f&#34;Next upload scheduled at: {next_time}&#34;)
+
+    &#34;&#34;&#34;
     return self._metrics_config[&#39;config&#39;][&#39;nextUploadTime&#39;]</code></pre>
 </details>
 </dd>
@@ -1169,17 +2264,35 @@ def nextup_load_time(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.metricsreport.LocalMetrics.refresh"><code class="name flex">
-<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+<span>def <span class="ident">refresh</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>updates metrics object with the latest configuration</p></div>
+<div class="desc"><p>Update the metrics object with the latest configuration.</p>
+<p>This method refreshes the internal state of the metrics object to ensure it reflects
+the most recent configuration settings.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; metrics = LocalMetrics()
+&gt;&gt;&gt; metrics.refresh()
+&gt;&gt;&gt; print(&quot;Metrics configuration updated.&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/metricsreport.py#L677-L679" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/metricsreport.py#L1378-L1391" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def refresh(self):
-    &#34;&#34;&#34;updates metrics object with the latest configuration&#34;&#34;&#34;
+<pre><code class="python">def refresh(self) -&gt; None:
+    &#34;&#34;&#34;Update the metrics object with the latest configuration.
+
+    This method refreshes the internal state of the metrics object to ensure it reflects
+    the most recent configuration settings.
+
+    Example:
+        &gt;&gt;&gt; metrics = LocalMetrics()
+        &gt;&gt;&gt; metrics.refresh()
+        &gt;&gt;&gt; print(&#34;Metrics configuration updated.&#34;)
+
+    &#34;&#34;&#34;
     self._get_metrics_config()</code></pre>
 </details>
 </dd>
@@ -1187,47 +2300,122 @@ def nextup_load_time(self):
 </dd>
 <dt id="cvpysdk.metricsreport.PrivateMetrics"><code class="flex name class">
 <span>class <span class="ident">PrivateMetrics</span></span>
-<span>(</span><span>commcell_object)</span>
+<span>(</span><span>commcell_object: object)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for operations in private Metrics reporting</p>
-<p>Initialize object of the UserGroups class.</p>
-<h2 id="args">Args</h2>
-<p>commcell_object (object)
-&ndash;
-instance of the Commcell class
-type &ndash; 1 for private, 0 for public</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the UserGroups class</p></div>
+<div class="desc"><p>Handles operations related to private metrics reporting within the system.</p>
+<p>This class provides an interface for managing private metrics, including
+configuration of download and upload URLs, chargeback settings, and forwarding
+options. It exposes properties to access current metrics server information and
+supports enabling or disabling forwarding and chargeback features.</p>
+<p>Key Features:
+- Initialize with a CommCell object for context
+- Update private download and upload URLs with specified host, port, and protocol
+- Access current download and upload URLs via properties
+- Retrieve the private metrics server name
+- Update URLs for metrics reporting
+- Enable chargeback with daily, weekly, and monthly flags
+- Enable or disable forwarding to a specified URL</p>
+<p>Initialize an instance of the PrivateMetrics class.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>commcell_object</code></strong></dt>
+<dd>An instance of the Commcell class used to establish a connection.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; commcell = Commcell('hostname', 'username', 'password')
+&gt;&gt;&gt; private_metrics = PrivateMetrics(commcell)
+&gt;&gt;&gt; print(&quot;PrivateMetrics object created successfully&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/metricsreport.py#L489-L581" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/metricsreport.py#L894-L1120" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class PrivateMetrics(_Metrics):
-    &#34;&#34;&#34;Class for operations in private Metrics reporting&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Handles operations related to private metrics reporting within the system.
 
-    def __init__(self, commcell_object):
-        &#34;&#34;&#34;Initialize object of the UserGroups class.
+    This class provides an interface for managing private metrics, including
+    configuration of download and upload URLs, chargeback settings, and forwarding
+    options. It exposes properties to access current metrics server information and
+    supports enabling or disabling forwarding and chargeback features.
 
-                    Args:
-                        commcell_object (object)  --  instance of the Commcell class
-                        type -- 1 for private, 0 for public
+    Key Features:
+        - Initialize with a CommCell object for context
+        - Update private download and upload URLs with specified host, port, and protocol
+        - Access current download and upload URLs via properties
+        - Retrieve the private metrics server name
+        - Update URLs for metrics reporting
+        - Enable chargeback with daily, weekly, and monthly flags
+        - Enable or disable forwarding to a specified URL
 
-                    Returns:
-                        object - instance of the UserGroups class
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_object: object) -&gt; None:
+        &#34;&#34;&#34;Initialize an instance of the PrivateMetrics class.
+
+        Args:
+            commcell_object: An instance of the Commcell class used to establish a connection.
+
+        Example:
+            &gt;&gt;&gt; commcell = Commcell(&#39;hostname&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; private_metrics = PrivateMetrics(commcell)
+            &gt;&gt;&gt; print(&#34;PrivateMetrics object created successfully&#34;)
+
         &#34;&#34;&#34;
         _Metrics.__init__(self, commcell_object, isprivate=True)
 
-    def _update_private_download_url(self, hostname, port, protocol):
+    def _update_private_download_url(self, hostname: str, port: int, protocol: str) -&gt; None:
+        &#34;&#34;&#34;Update the private download URL using the specified hostname, port, and protocol.
+
+        Args:
+            hostname: The hostname to be used in the download URL.
+            port: The port number to be used in the download URL.
+            protocol: The protocol (e.g., &#39;http&#39;, &#39;https&#39;) to be used in the download URL.
+
+        Example:
+            &gt;&gt;&gt; metrics = PrivateMetrics()
+            &gt;&gt;&gt; metrics._update_private_download_url(&#39;example.com&#39;, 8080, &#39;https&#39;)
+            &gt;&gt;&gt; # The private download URL is now updated with the new parameters
+
+        &#34;&#34;&#34;
         self._cloud[&#39;downloadURL&#39;] = &#39;{0}://{1}:{2}/downloads/sqlscripts/&#39;.format(protocol,
                                                                                   hostname,
                                                                                   port)
 
-    def _update_private_upload_url(self, hostname, port, protocol):
+    def _update_private_upload_url(self, hostname: str, port: int, protocol: str) -&gt; None:
+        &#34;&#34;&#34;Update the private upload URL using the specified hostname, port, and protocol.
+
+        Args:
+            hostname: The hostname to use for constructing the upload URL.
+            port: The port number to use for the upload URL.
+            protocol: The protocol to use (e.g., &#39;http&#39;, &#39;https&#39;) for the upload URL.
+
+        Example:
+            &gt;&gt;&gt; metrics = PrivateMetrics()
+            &gt;&gt;&gt; metrics._update_private_upload_url(&#39;example.com&#39;, 8080, &#39;https&#39;)
+            &gt;&gt;&gt; # The private upload URL is now updated with the new settings
+
+        &#34;&#34;&#34;
         self._cloud[&#39;uploadURL&#39;] = &#39;{0}://{1}:{2}/commandcenter/&#39;.format(protocol, hostname, port)
 
-    def _update_chargeback_flags(self, daily, weekly, monthly):
+    def _update_chargeback_flags(self, daily: bool, weekly: bool, monthly: bool) -&gt; None:
+        &#34;&#34;&#34;Update the chargeback flags for daily, weekly, and monthly metrics.
+
+        Args:
+            daily: Set to True to enable daily chargeback metrics, False to disable.
+            weekly: Set to True to enable weekly chargeback metrics, False to disable.
+            monthly: Set to True to enable monthly chargeback metrics, False to disable.
+
+        Example:
+            &gt;&gt;&gt; metrics = PrivateMetrics()
+            &gt;&gt;&gt; metrics._update_chargeback_flags(daily=True, weekly=False, monthly=True)
+            &gt;&gt;&gt; # This will enable daily and monthly chargeback metrics, and disable weekly.
+
+        &#34;&#34;&#34;
         flags = 0
         if daily:
             flags = flags | 4
@@ -1240,50 +2428,105 @@ type &ndash; 1 for private, 0 for public</p>
                 service[&#39;flags&#39;] = flags
 
     @property
-    def downloadurl(self):
-        &#34;&#34;&#34;Returns download URL of private metrics&#34;&#34;&#34;
+    def downloadurl(self) -&gt; str:
+        &#34;&#34;&#34;Get the download URL for private metrics.
+
+        Returns:
+            The URL as a string that can be used to download private metrics data.
+
+        Example:
+            &gt;&gt;&gt; metrics = PrivateMetrics()
+            &gt;&gt;&gt; url = metrics.downloadurl  # Use dot notation to access the property
+            &gt;&gt;&gt; print(f&#34;Download URL: {url}&#34;)
+
+        &#34;&#34;&#34;
         return self._metrics_config[&#39;config&#39;][&#39;cloud&#39;][&#39;downloadURL&#39;]
 
     @property
-    def uploadurl(self):
-        &#34;&#34;&#34;Returns Upload URL of private metrics&#34;&#34;&#34;
+    def uploadurl(self) -&gt; str:
+        &#34;&#34;&#34;Get the upload URL for private metrics.
+
+        Returns:
+            str: The URL endpoint used for uploading private metrics.
+
+        Example:
+            &gt;&gt;&gt; metrics = PrivateMetrics()
+            &gt;&gt;&gt; url = metrics.uploadurl  # Use dot notation to access the property
+            &gt;&gt;&gt; print(f&#34;Upload URL: {url}&#34;)
+
+        &#34;&#34;&#34;
         return self._metrics_config[&#39;config&#39;][&#39;cloud&#39;][&#39;uploadURL&#39;]
 
     @property
-    def private_metrics_server_name(self):
+    def private_metrics_server_name(self) -&gt; str:
+        &#34;&#34;&#34;Get the name of the private metrics server associated with this instance.
+
+        Returns:
+            The name of the private metrics server as a string.
+
+        Example:
+            &gt;&gt;&gt; metrics = PrivateMetrics()
+            &gt;&gt;&gt; server_name = metrics.private_metrics_server_name
+            &gt;&gt;&gt; print(f&#34;Private Metrics Server: {server_name}&#34;)
+
+        &#34;&#34;&#34;
         return urlparse(self.uploadurl).hostname
 
-    def update_url(self, hostname, port=80, protocol=&#39;http&#39;):
-        &#34;&#34;&#34;
-        updates private Metrics URL in CommServe
+    def update_url(self, hostname: str, port: int = 80, protocol: str = &#39;http&#39;) -&gt; None:
+        &#34;&#34;&#34;Update the private Metrics URL in the CommServe configuration.
+
+        This method sets the URL used by the CommServe to communicate with the private Metrics server,
+        based on the provided hostname, port, and protocol.
+
         Args:
-            hostname (str): Metrics server hostname
-            port (int): port of webconsole
-                e.g.; 80 for http and 443 for https
-            protocol (str): http or https
-                default: http
+            hostname: The hostname or IP address of the Metrics server.
+            port: The port number for the web console (default is 80 for HTTP, 443 for HTTPS).
+            protocol: The protocol to use for the connection (&#39;http&#39; or &#39;https&#39;). Default is &#39;http&#39;.
+
+        Example:
+            &gt;&gt;&gt; metrics = PrivateMetrics()
+            &gt;&gt;&gt; metrics.update_url(&#39;metrics.example.com&#39;, port=443, protocol=&#39;https&#39;)
+            &gt;&gt;&gt; # The CommServe will now use https://metrics.example.com:443 as the Metrics URL
+
         &#34;&#34;&#34;
         self._update_private_download_url(hostname, port, protocol)
         self._update_private_upload_url(hostname, port, protocol)
 
-    def enable_chargeback(self, daily=True, weekly=False, monthly=False):
-        &#34;&#34;&#34;
-        Enables Chargeback service as per the daily,weekly and Monthly arguments passes
+    def enable_chargeback(self, daily: bool = True, weekly: bool = False, monthly: bool = False) -&gt; None:
+        &#34;&#34;&#34;Enable the Chargeback service with daily, weekly, and/or monthly options.
+
+        This method activates the Chargeback service according to the specified frequency flags.
+        You can enable any combination of daily, weekly, and monthly chargeback reporting.
+
         Args:
-            daily  (bool): enables daily chargeback
-            weekly (bool): enables weekly chargeback
-            monthly(bool): enables Monthly chargeback
+            daily: If True, enables daily chargeback reporting. Default is True.
+            weekly: If True, enables weekly chargeback reporting. Default is False.
+            monthly: If True, enables monthly chargeback reporting. Default is False.
+
+        Example:
+            &gt;&gt;&gt; metrics = PrivateMetrics()
+            &gt;&gt;&gt; metrics.enable_chargeback(daily=True, weekly=True, monthly=False)
+            &gt;&gt;&gt; # This enables daily and weekly chargeback reporting
+
+            &gt;&gt;&gt; metrics.enable_chargeback(monthly=True)
+            &gt;&gt;&gt; # This enables only monthly chargeback reporting
 
         &#34;&#34;&#34;
         if self.services[&#39;Charge Back&#39;] is not True:
             self._update_service_state(&#39;Charge Back&#39;, self._enable_service)
         self._update_chargeback_flags(daily, weekly, monthly)
 
-    def enable_forwarding(self, forwarding_url):
-        &#34;&#34;&#34;
-        Enables forwarding
+    def enable_forwarding(self, forwarding_url: str) -&gt; None:
+        &#34;&#34;&#34;Enable forwarding of metrics data to a specified Webconsole URL.
+
         Args:
-            forwarding_url: Webconsole url where metrics data to be forwarded
+            forwarding_url: The Webconsole URL to which metrics data should be forwarded.
+
+        Example:
+            &gt;&gt;&gt; metrics = PrivateMetrics()
+            &gt;&gt;&gt; metrics.enable_forwarding(&#34;https://webconsole.example.com/metrics&#34;)
+            &gt;&gt;&gt; print(&#34;Forwarding enabled to the specified Webconsole URL&#34;)
+
         &#34;&#34;&#34;
         fwd_info = [{
             &#34;httpServerURL&#34;: forwarding_url,
@@ -1294,8 +2537,17 @@ type &ndash; 1 for private, 0 for public</p>
         self._metrics_config[&#39;config&#39;][&#39;tieringActive&#39;] = True
         self._metrics_config[&#39;config&#39;][&#39;HttpServerInfo&#39;][&#34;httpServer&#34;] = fwd_info
 
-    def disable_forwarding(self):
-        &#34;&#34;&#34;Disables forwarding&#34;&#34;&#34;
+    def disable_forwarding(self) -&gt; None:
+        &#34;&#34;&#34;Disable the forwarding of private metrics.
+
+        This method stops the forwarding of private metrics data, preventing it from being sent to external systems or services.
+
+        Example:
+            &gt;&gt;&gt; metrics = PrivateMetrics()
+            &gt;&gt;&gt; metrics.disable_forwarding()
+            &gt;&gt;&gt; print(&#34;Forwarding disabled for private metrics.&#34;)
+
+        &#34;&#34;&#34;
         self._metrics_config[&#39;config&#39;][&#39;tieringActive&#39;] = False</code></pre>
 </details>
 <h3>Ancestors</h3>
@@ -1304,44 +2556,105 @@ type &ndash; 1 for private, 0 for public</p>
 </ul>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.metricsreport.PrivateMetrics.downloadurl"><code class="name">var <span class="ident">downloadurl</span></code></dt>
+<dt id="cvpysdk.metricsreport.PrivateMetrics.downloadurl"><code class="name">var <span class="ident">downloadurl</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns download URL of private metrics</p></div>
+<div class="desc"><p>Get the download URL for private metrics.</p>
+<p>Returns
+-----=
+The URL as a string that can be used to download private metrics data.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; metrics = PrivateMetrics()
+&gt;&gt;&gt; url = metrics.downloadurl  # Use dot notation to access the property
+&gt;&gt;&gt; print(f&quot;Download URL: {url}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/metricsreport.py#L524-L527" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/metricsreport.py#L992-L1006" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def downloadurl(self):
-    &#34;&#34;&#34;Returns download URL of private metrics&#34;&#34;&#34;
+def downloadurl(self) -&gt; str:
+    &#34;&#34;&#34;Get the download URL for private metrics.
+
+    Returns:
+        The URL as a string that can be used to download private metrics data.
+
+    Example:
+        &gt;&gt;&gt; metrics = PrivateMetrics()
+        &gt;&gt;&gt; url = metrics.downloadurl  # Use dot notation to access the property
+        &gt;&gt;&gt; print(f&#34;Download URL: {url}&#34;)
+
+    &#34;&#34;&#34;
     return self._metrics_config[&#39;config&#39;][&#39;cloud&#39;][&#39;downloadURL&#39;]</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.metricsreport.PrivateMetrics.private_metrics_server_name"><code class="name">var <span class="ident">private_metrics_server_name</span></code></dt>
+<dt id="cvpysdk.metricsreport.PrivateMetrics.private_metrics_server_name"><code class="name">var <span class="ident">private_metrics_server_name</span> : str</code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Get the name of the private metrics server associated with this instance.</p>
+<p>Returns
+-----=
+The name of the private metrics server as a string.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; metrics = PrivateMetrics()
+&gt;&gt;&gt; server_name = metrics.private_metrics_server_name
+&gt;&gt;&gt; print(f&quot;Private Metrics Server: {server_name}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/metricsreport.py#L534-L536" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/metricsreport.py#L1024-L1038" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def private_metrics_server_name(self):
+def private_metrics_server_name(self) -&gt; str:
+    &#34;&#34;&#34;Get the name of the private metrics server associated with this instance.
+
+    Returns:
+        The name of the private metrics server as a string.
+
+    Example:
+        &gt;&gt;&gt; metrics = PrivateMetrics()
+        &gt;&gt;&gt; server_name = metrics.private_metrics_server_name
+        &gt;&gt;&gt; print(f&#34;Private Metrics Server: {server_name}&#34;)
+
+    &#34;&#34;&#34;
     return urlparse(self.uploadurl).hostname</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.metricsreport.PrivateMetrics.uploadurl"><code class="name">var <span class="ident">uploadurl</span></code></dt>
+<dt id="cvpysdk.metricsreport.PrivateMetrics.uploadurl"><code class="name">var <span class="ident">uploadurl</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns Upload URL of private metrics</p></div>
+<div class="desc"><p>Get the upload URL for private metrics.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>str</code></dt>
+<dd>The URL endpoint used for uploading private metrics.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; metrics = PrivateMetrics()
+&gt;&gt;&gt; url = metrics.uploadurl  # Use dot notation to access the property
+&gt;&gt;&gt; print(f&quot;Upload URL: {url}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/metricsreport.py#L529-L532" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/metricsreport.py#L1008-L1022" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def uploadurl(self):
-    &#34;&#34;&#34;Returns Upload URL of private metrics&#34;&#34;&#34;
+def uploadurl(self) -&gt; str:
+    &#34;&#34;&#34;Get the upload URL for private metrics.
+
+    Returns:
+        str: The URL endpoint used for uploading private metrics.
+
+    Example:
+        &gt;&gt;&gt; metrics = PrivateMetrics()
+        &gt;&gt;&gt; url = metrics.uploadurl  # Use dot notation to access the property
+        &gt;&gt;&gt; print(f&#34;Upload URL: {url}&#34;)
+
+    &#34;&#34;&#34;
     return self._metrics_config[&#39;config&#39;][&#39;cloud&#39;][&#39;uploadURL&#39;]</code></pre>
 </details>
 </dd>
@@ -1349,45 +2662,85 @@ def uploadurl(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.metricsreport.PrivateMetrics.disable_forwarding"><code class="name flex">
-<span>def <span class="ident">disable_forwarding</span></span>(<span>self)</span>
+<span>def <span class="ident">disable_forwarding</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Disables forwarding</p></div>
+<div class="desc"><p>Disable the forwarding of private metrics.</p>
+<p>This method stops the forwarding of private metrics data, preventing it from being sent to external systems or services.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; metrics = PrivateMetrics()
+&gt;&gt;&gt; metrics.disable_forwarding()
+&gt;&gt;&gt; print(&quot;Forwarding disabled for private metrics.&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/metricsreport.py#L579-L581" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/metricsreport.py#L1108-L1120" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def disable_forwarding(self):
-    &#34;&#34;&#34;Disables forwarding&#34;&#34;&#34;
+<pre><code class="python">def disable_forwarding(self) -&gt; None:
+    &#34;&#34;&#34;Disable the forwarding of private metrics.
+
+    This method stops the forwarding of private metrics data, preventing it from being sent to external systems or services.
+
+    Example:
+        &gt;&gt;&gt; metrics = PrivateMetrics()
+        &gt;&gt;&gt; metrics.disable_forwarding()
+        &gt;&gt;&gt; print(&#34;Forwarding disabled for private metrics.&#34;)
+
+    &#34;&#34;&#34;
     self._metrics_config[&#39;config&#39;][&#39;tieringActive&#39;] = False</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.metricsreport.PrivateMetrics.enable_chargeback"><code class="name flex">
-<span>def <span class="ident">enable_chargeback</span></span>(<span>self, daily=True, weekly=False, monthly=False)</span>
+<span>def <span class="ident">enable_chargeback</span></span>(<span>self, daily: bool = True, weekly: bool = False, monthly: bool = False) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Enables Chargeback service as per the daily,weekly and Monthly arguments passes</p>
-<h2 id="args">Args</h2>
+<div class="desc"><p>Enable the Chargeback service with daily, weekly, and/or monthly options.</p>
+<p>This method activates the Chargeback service according to the specified frequency flags.
+You can enable any combination of daily, weekly, and monthly chargeback reporting.</p>
 <dl>
-<dt>daily
-(bool): enables daily chargeback</dt>
-<dt><strong><code>weekly</code></strong> :&ensp;<code>bool</code></dt>
-<dd>enables weekly chargeback</dd>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>daily</code></strong></dt>
+<dd>If True, enables daily chargeback reporting. Default is True.</dd>
+<dt><strong><code>weekly</code></strong></dt>
+<dd>If True, enables weekly chargeback reporting. Default is False.</dd>
+<dt><strong><code>monthly</code></strong></dt>
+<dd>If True, enables monthly chargeback reporting. Default is False.</dd>
 </dl>
-<p>monthly(bool): enables Monthly chargeback</p></div>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; metrics = PrivateMetrics()
+&gt;&gt;&gt; metrics.enable_chargeback(daily=True, weekly=True, monthly=False)
+&gt;&gt;&gt; # This enables daily and weekly chargeback reporting
+</code></pre>
+<pre><code class="language-python-repl">&gt;&gt;&gt; metrics.enable_chargeback(monthly=True)
+&gt;&gt;&gt; # This enables only monthly chargeback reporting
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/metricsreport.py#L551-L562" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/metricsreport.py#L1061-L1084" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def enable_chargeback(self, daily=True, weekly=False, monthly=False):
-    &#34;&#34;&#34;
-    Enables Chargeback service as per the daily,weekly and Monthly arguments passes
+<pre><code class="python">def enable_chargeback(self, daily: bool = True, weekly: bool = False, monthly: bool = False) -&gt; None:
+    &#34;&#34;&#34;Enable the Chargeback service with daily, weekly, and/or monthly options.
+
+    This method activates the Chargeback service according to the specified frequency flags.
+    You can enable any combination of daily, weekly, and monthly chargeback reporting.
+
     Args:
-        daily  (bool): enables daily chargeback
-        weekly (bool): enables weekly chargeback
-        monthly(bool): enables Monthly chargeback
+        daily: If True, enables daily chargeback reporting. Default is True.
+        weekly: If True, enables weekly chargeback reporting. Default is False.
+        monthly: If True, enables monthly chargeback reporting. Default is False.
+
+    Example:
+        &gt;&gt;&gt; metrics = PrivateMetrics()
+        &gt;&gt;&gt; metrics.enable_chargeback(daily=True, weekly=True, monthly=False)
+        &gt;&gt;&gt; # This enables daily and weekly chargeback reporting
+
+        &gt;&gt;&gt; metrics.enable_chargeback(monthly=True)
+        &gt;&gt;&gt; # This enables only monthly chargeback reporting
 
     &#34;&#34;&#34;
     if self.services[&#39;Charge Back&#39;] is not True:
@@ -1396,25 +2749,38 @@ def uploadurl(self):
 </details>
 </dd>
 <dt id="cvpysdk.metricsreport.PrivateMetrics.enable_forwarding"><code class="name flex">
-<span>def <span class="ident">enable_forwarding</span></span>(<span>self, forwarding_url)</span>
+<span>def <span class="ident">enable_forwarding</span></span>(<span>self, forwarding_url: str) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Enables forwarding</p>
-<h2 id="args">Args</h2>
+<div class="desc"><p>Enable forwarding of metrics data to a specified Webconsole URL.</p>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>forwarding_url</code></strong></dt>
-<dd>Webconsole url where metrics data to be forwarded</dd>
-</dl></div>
+<dd>The Webconsole URL to which metrics data should be forwarded.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; metrics = PrivateMetrics()
+&gt;&gt;&gt; metrics.enable_forwarding(&quot;https://webconsole.example.com/metrics&quot;)
+&gt;&gt;&gt; print(&quot;Forwarding enabled to the specified Webconsole URL&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/metricsreport.py#L564-L577" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/metricsreport.py#L1086-L1106" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def enable_forwarding(self, forwarding_url):
-    &#34;&#34;&#34;
-    Enables forwarding
+<pre><code class="python">def enable_forwarding(self, forwarding_url: str) -&gt; None:
+    &#34;&#34;&#34;Enable forwarding of metrics data to a specified Webconsole URL.
+
     Args:
-        forwarding_url: Webconsole url where metrics data to be forwarded
+        forwarding_url: The Webconsole URL to which metrics data should be forwarded.
+
+    Example:
+        &gt;&gt;&gt; metrics = PrivateMetrics()
+        &gt;&gt;&gt; metrics.enable_forwarding(&#34;https://webconsole.example.com/metrics&#34;)
+        &gt;&gt;&gt; print(&#34;Forwarding enabled to the specified Webconsole URL&#34;)
+
     &#34;&#34;&#34;
     fwd_info = [{
         &#34;httpServerURL&#34;: forwarding_url,
@@ -1427,35 +2793,49 @@ def uploadurl(self):
 </details>
 </dd>
 <dt id="cvpysdk.metricsreport.PrivateMetrics.update_url"><code class="name flex">
-<span>def <span class="ident">update_url</span></span>(<span>self, hostname, port=80, protocol='http')</span>
+<span>def <span class="ident">update_url</span></span>(<span>self, hostname: str, port: int = 80, protocol: str = 'http') ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>updates private Metrics URL in CommServe</p>
-<h2 id="args">Args</h2>
+<div class="desc"><p>Update the private Metrics URL in the CommServe configuration.</p>
+<p>This method sets the URL used by the CommServe to communicate with the private Metrics server,
+based on the provided hostname, port, and protocol.</p>
 <dl>
-<dt><strong><code>hostname</code></strong> :&ensp;<code>str</code></dt>
-<dd>Metrics server hostname</dd>
-<dt><strong><code>port</code></strong> :&ensp;<code>int</code></dt>
-<dd>port of webconsole
-e.g.; 80 for http and 443 for https</dd>
-<dt><strong><code>protocol</code></strong> :&ensp;<code>str</code></dt>
-<dd>http or https
-default: http</dd>
-</dl></div>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>hostname</code></strong></dt>
+<dd>The hostname or IP address of the Metrics server.</dd>
+<dt><strong><code>port</code></strong></dt>
+<dd>The port number for the web console (default is 80 for HTTP, 443 for HTTPS).</dd>
+<dt><strong><code>protocol</code></strong></dt>
+<dd>The protocol to use for the connection ('http' or 'https'). Default is 'http'.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; metrics = PrivateMetrics()
+&gt;&gt;&gt; metrics.update_url('metrics.example.com', port=443, protocol='https')
+&gt;&gt;&gt; # The CommServe will now use &lt;https://metrics.example.com:443&gt; as the Metrics URL
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/metricsreport.py#L538-L549" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/metricsreport.py#L1040-L1059" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def update_url(self, hostname, port=80, protocol=&#39;http&#39;):
-    &#34;&#34;&#34;
-    updates private Metrics URL in CommServe
+<pre><code class="python">def update_url(self, hostname: str, port: int = 80, protocol: str = &#39;http&#39;) -&gt; None:
+    &#34;&#34;&#34;Update the private Metrics URL in the CommServe configuration.
+
+    This method sets the URL used by the CommServe to communicate with the private Metrics server,
+    based on the provided hostname, port, and protocol.
+
     Args:
-        hostname (str): Metrics server hostname
-        port (int): port of webconsole
-            e.g.; 80 for http and 443 for https
-        protocol (str): http or https
-            default: http
+        hostname: The hostname or IP address of the Metrics server.
+        port: The port number for the web console (default is 80 for HTTP, 443 for HTTPS).
+        protocol: The protocol to use for the connection (&#39;http&#39; or &#39;https&#39;). Default is &#39;http&#39;.
+
+    Example:
+        &gt;&gt;&gt; metrics = PrivateMetrics()
+        &gt;&gt;&gt; metrics.update_url(&#39;metrics.example.com&#39;, port=443, protocol=&#39;https&#39;)
+        &gt;&gt;&gt; # The CommServe will now use https://metrics.example.com:443 as the Metrics URL
+
     &#34;&#34;&#34;
     self._update_private_download_url(hostname, port, protocol)
     self._update_private_upload_url(hostname, port, protocol)</code></pre>

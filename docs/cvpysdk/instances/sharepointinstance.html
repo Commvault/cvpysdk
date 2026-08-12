@@ -29,7 +29,8 @@
 Derived class from Instance
 Base class, representing a
 Sharepoint Instance, and to perform operations on that instance</p>
-<h2 id="sharepointinstance">Sharepointinstance</h2>
+<p>Sharepointinstance
+-----=</p>
 <p>_restore_common_options_json()
 &ndash; setter for common options property in restore</p>
 <p>_restore_json() &ndash;
@@ -38,7 +39,7 @@ Method which creates json for a restore job</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/sharepointinstance.py#L1-L230" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/sharepointinstance.py#L1-L291" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 # --------------------------------------------------------------------------
@@ -72,17 +73,35 @@ SharepointInstance:
 
 &#34;&#34;&#34;
 
-from cvpysdk.exception import SDKException
+from ..exception import SDKException
 from ..instance import Instance
 
 
-
 class SharepointInstance(Instance):
-    &#34;&#34;&#34; Class  representing a sharepoint instance, and to perform operations on that instance
+    &#34;&#34;&#34;
+    Represents a SharePoint instance and provides operations for managing and restoring SharePoint data.
+
+    This class is designed to handle various restore operations on a SharePoint instance, including
+    generating and processing JSON configurations for restore options, destinations, and browsing.
+    It encapsulates the logic required to prepare and manage restore-related data structures for
+    SharePoint environments.
+
+    Key Features:
+        - Generate and process JSON for restore browse options
+        - Handle common restore options in JSON format
+        - Manage restore destination configurations as JSON
+        - Provide comprehensive restore JSON data for SharePoint
+        - Support legacy and versioned restore JSON formats
+
     &#34;&#34;&#34;
 
-    def _restore_browse_option_json(self, value):
-        &#34;&#34;&#34;setter for the Browse options for restore in Json&#34;&#34;&#34;
+    def _restore_browse_option_json(self, value: dict) -&gt; None:
+        &#34;&#34;&#34;Set the browse options for restore operations in JSON format.
+
+        Args:
+            value: A dictionary containing the browse options to be used during restore.
+
+        &#34;&#34;&#34;
 
         if not isinstance(value, dict):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
@@ -102,8 +121,13 @@ class SharepointInstance(Instance):
             &#34;timeRange&#34;: time_range_dict
         }
 
-    def _restore_common_options_json(self, value):
-        &#34;&#34;&#34;setter for  the Common options of in restore JSON&#34;&#34;&#34;
+    def _restore_common_options_json(self, value: dict) -&gt; None:
+        &#34;&#34;&#34;Set the common options section in the restore JSON configuration.
+
+        Args:
+            value: A dictionary containing the common options to be set in the restore JSON.
+
+        &#34;&#34;&#34;
         if not isinstance(value, dict):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
 
@@ -118,8 +142,13 @@ class SharepointInstance(Instance):
             &#34;append&#34;: False
         }
 
-    def _restore_destination_json(self, value):
-        &#34;&#34;&#34;setter for  the destination restore option in restore JSON&#34;&#34;&#34;
+    def _restore_destination_json(self, value: dict) -&gt; None:
+        &#34;&#34;&#34;Set the destination restore option in the restore JSON configuration.
+
+        Args:
+            value: A dictionary containing the destination restore options to be set in the restore JSON.
+
+        &#34;&#34;&#34;
         if not isinstance(value, dict):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
@@ -131,23 +160,37 @@ class SharepointInstance(Instance):
             }
         }
 
-    def _restore_json(self, **kwargs):
-        &#34;&#34;&#34;
-        Creates json required for restore job
+    def _restore_json(self, **kwargs) -&gt; dict:
+        &#34;&#34;&#34;Create the JSON dictionary required for a SharePoint restore job.
 
-        Kwargs:
+        This method constructs the parameters needed to initiate a restore job for SharePoint sites or webs.
+        The primary input is a list of paths specifying the SharePoint sites, webs, or lists to be restored.
 
-            paths   (list)  --  list of sites or webs to be restored
-                Example : [
+        Keyword Args:
+            paths (list of str): List of SharePoint site or web paths to restore.
+                Example:
+                    [
                         &#34;MB\\https://&lt;tenant_name&gt;.sharepoint.com/sites/TestSite\\/\\Shared Documents\\TestFolder&#34;,
                         &#34;MB\\https://&lt;tenant_name&gt;.sharepoint.com/sites/TestSite\\/\\Lists\\TestList&#34;,
-                        ]
-        Returns:
+                    ]
+            Additional keyword arguments may be provided as needed for restore customization.
 
-            rest_json  (dict)  --  dictionary with parameters set required for a restore job
+        Returns:
+            dict: A dictionary containing the parameters required for a SharePoint restore job.
+
+        Example:
+            &gt;&gt;&gt; instance = SharepointInstance()
+            &gt;&gt;&gt; restore_json = instance._restore_json(
+            ...     paths=[
+            ...         &#34;MB\\https://tenant.sharepoint.com/sites/SiteA\\/\\Shared Documents\\Folder1&#34;,
+            ...         &#34;MB\\https://tenant.sharepoint.com/sites/SiteA\\/\\Lists\\List1&#34;
+            ...     ]
+            ... )
+            &gt;&gt;&gt; print(restore_json)
+            # The output will be a dictionary with restore job parameters.
 
         &#34;&#34;&#34;
-        if(kwargs.get(&#34;v1&#34;,False)):
+        if kwargs.get(&#34;v1&#34;, False):
             return self._restore_v1_json(**kwargs)
         rest_json = super(SharepointInstance, self)._restore_json(**kwargs)
         rest_json[&#34;taskInfo&#34;][&#34;task&#34;][&#34;initiatedFrom&#34;] = 1
@@ -165,20 +208,34 @@ class SharepointInstance(Instance):
         }
         return rest_json
 
-    def _restore_v1_json(self, **kwargs):
-        &#34;&#34;&#34;
-        Creates json required for restore job for v1 client
+    def _restore_v1_json(self, **kwargs) -&gt; dict:
+        &#34;&#34;&#34;Create the JSON payload required for a restore job for a v1 SharePoint client.
 
-        Kwargs:
+        This method constructs a dictionary containing the parameters necessary to initiate
+        a restore job for SharePoint v1 clients. The primary input is a list of site or web
+        paths to be restored, provided via the &#39;paths&#39; keyword argument.
 
-            paths   (list)  --  list of sites or webs to be restored
-                Example : [
+        Keyword Args:
+            paths (list of str): List of SharePoint site or web paths to restore.
+                Example:
+                    [
                         &#34;MB\\https://&lt;tenant_name&gt;.sharepoint.com/sites/TestSite\\/\\Shared Documents\\TestFolder&#34;,
                         &#34;MB\\https://&lt;tenant_name&gt;.sharepoint.com/sites/TestSite\\/\\Lists\\TestList&#34;,
-                        ]
-        Returns:
+                    ]
 
-            rest_json  (dict)  --  dictionary with parameters set required for a restore job
+        Returns:
+            dict: A dictionary containing the parameters required for the restore job.
+
+        Example:
+            &gt;&gt;&gt; instance = SharepointInstance()
+            &gt;&gt;&gt; restore_json = instance._restore_v1_json(
+            ...     paths=[
+            ...         &#34;MB\\https://tenant.sharepoint.com/sites/SiteA\\/\\Shared Documents\\Folder1&#34;,
+            ...         &#34;MB\\https://tenant.sharepoint.com/sites/SiteA\\/\\Lists\\List1&#34;
+            ...     ]
+            ... )
+            &gt;&gt;&gt; print(restore_json)
+            # The returned dictionary can be used to submit a restore job request.
 
         &#34;&#34;&#34;
         restore_option = {}
@@ -231,7 +288,7 @@ class SharepointInstance(Instance):
         self._restore_common_opts_json(restore_option)
 
         if not restore_option.get(&#39;index_free_restore&#39;, False):
-            if restore_option.get(&#34;paths&#34;) == []:
+            if not restore_option.get(&#34;paths&#34;):
                 raise SDKException(&#39;Subclient&#39;, &#39;104&#39;)
 
         request_json = {
@@ -285,11 +342,21 @@ class SharepointInstance(Instance):
 <span>(</span><span>agent_object, instance_name, instance_id=None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class
-representing a sharepoint instance, and to perform operations on that instance</p>
+<div class="desc"><p>Represents a SharePoint instance and provides operations for managing and restoring SharePoint data.</p>
+<p>This class is designed to handle various restore operations on a SharePoint instance, including
+generating and processing JSON configurations for restore options, destinations, and browsing.
+It encapsulates the logic required to prepare and manage restore-related data structures for
+SharePoint environments.</p>
+<p>Key Features:
+- Generate and process JSON for restore browse options
+- Handle common restore options in JSON format
+- Manage restore destination configurations as JSON
+- Provide comprehensive restore JSON data for SharePoint
+- Support legacy and versioned restore JSON formats</p>
 <p>Initialise the instance object.</p>
-<h2 id="args">Args</h2>
-<p>agent_object
+<p>Args
+-----=
+agent_object
 (object)
 &ndash;
 instance of the Agent class</p>
@@ -302,19 +369,39 @@ name of the instance</p>
 &ndash;
 id of the instance
 default: None</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Instance class</p></div>
+<p>Returns
+-----=
+object - instance of the Instance class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/sharepointinstance.py#L38-L229" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/sharepointinstance.py#L37-L291" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class SharepointInstance(Instance):
-    &#34;&#34;&#34; Class  representing a sharepoint instance, and to perform operations on that instance
+    &#34;&#34;&#34;
+    Represents a SharePoint instance and provides operations for managing and restoring SharePoint data.
+
+    This class is designed to handle various restore operations on a SharePoint instance, including
+    generating and processing JSON configurations for restore options, destinations, and browsing.
+    It encapsulates the logic required to prepare and manage restore-related data structures for
+    SharePoint environments.
+
+    Key Features:
+        - Generate and process JSON for restore browse options
+        - Handle common restore options in JSON format
+        - Manage restore destination configurations as JSON
+        - Provide comprehensive restore JSON data for SharePoint
+        - Support legacy and versioned restore JSON formats
+
     &#34;&#34;&#34;
 
-    def _restore_browse_option_json(self, value):
-        &#34;&#34;&#34;setter for the Browse options for restore in Json&#34;&#34;&#34;
+    def _restore_browse_option_json(self, value: dict) -&gt; None:
+        &#34;&#34;&#34;Set the browse options for restore operations in JSON format.
+
+        Args:
+            value: A dictionary containing the browse options to be used during restore.
+
+        &#34;&#34;&#34;
 
         if not isinstance(value, dict):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
@@ -334,8 +421,13 @@ default: None</p>
             &#34;timeRange&#34;: time_range_dict
         }
 
-    def _restore_common_options_json(self, value):
-        &#34;&#34;&#34;setter for  the Common options of in restore JSON&#34;&#34;&#34;
+    def _restore_common_options_json(self, value: dict) -&gt; None:
+        &#34;&#34;&#34;Set the common options section in the restore JSON configuration.
+
+        Args:
+            value: A dictionary containing the common options to be set in the restore JSON.
+
+        &#34;&#34;&#34;
         if not isinstance(value, dict):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
 
@@ -350,8 +442,13 @@ default: None</p>
             &#34;append&#34;: False
         }
 
-    def _restore_destination_json(self, value):
-        &#34;&#34;&#34;setter for  the destination restore option in restore JSON&#34;&#34;&#34;
+    def _restore_destination_json(self, value: dict) -&gt; None:
+        &#34;&#34;&#34;Set the destination restore option in the restore JSON configuration.
+
+        Args:
+            value: A dictionary containing the destination restore options to be set in the restore JSON.
+
+        &#34;&#34;&#34;
         if not isinstance(value, dict):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
 
@@ -363,23 +460,37 @@ default: None</p>
             }
         }
 
-    def _restore_json(self, **kwargs):
-        &#34;&#34;&#34;
-        Creates json required for restore job
+    def _restore_json(self, **kwargs) -&gt; dict:
+        &#34;&#34;&#34;Create the JSON dictionary required for a SharePoint restore job.
 
-        Kwargs:
+        This method constructs the parameters needed to initiate a restore job for SharePoint sites or webs.
+        The primary input is a list of paths specifying the SharePoint sites, webs, or lists to be restored.
 
-            paths   (list)  --  list of sites or webs to be restored
-                Example : [
+        Keyword Args:
+            paths (list of str): List of SharePoint site or web paths to restore.
+                Example:
+                    [
                         &#34;MB\\https://&lt;tenant_name&gt;.sharepoint.com/sites/TestSite\\/\\Shared Documents\\TestFolder&#34;,
                         &#34;MB\\https://&lt;tenant_name&gt;.sharepoint.com/sites/TestSite\\/\\Lists\\TestList&#34;,
-                        ]
-        Returns:
+                    ]
+            Additional keyword arguments may be provided as needed for restore customization.
 
-            rest_json  (dict)  --  dictionary with parameters set required for a restore job
+        Returns:
+            dict: A dictionary containing the parameters required for a SharePoint restore job.
+
+        Example:
+            &gt;&gt;&gt; instance = SharepointInstance()
+            &gt;&gt;&gt; restore_json = instance._restore_json(
+            ...     paths=[
+            ...         &#34;MB\\https://tenant.sharepoint.com/sites/SiteA\\/\\Shared Documents\\Folder1&#34;,
+            ...         &#34;MB\\https://tenant.sharepoint.com/sites/SiteA\\/\\Lists\\List1&#34;
+            ...     ]
+            ... )
+            &gt;&gt;&gt; print(restore_json)
+            # The output will be a dictionary with restore job parameters.
 
         &#34;&#34;&#34;
-        if(kwargs.get(&#34;v1&#34;,False)):
+        if kwargs.get(&#34;v1&#34;, False):
             return self._restore_v1_json(**kwargs)
         rest_json = super(SharepointInstance, self)._restore_json(**kwargs)
         rest_json[&#34;taskInfo&#34;][&#34;task&#34;][&#34;initiatedFrom&#34;] = 1
@@ -397,20 +508,34 @@ default: None</p>
         }
         return rest_json
 
-    def _restore_v1_json(self, **kwargs):
-        &#34;&#34;&#34;
-        Creates json required for restore job for v1 client
+    def _restore_v1_json(self, **kwargs) -&gt; dict:
+        &#34;&#34;&#34;Create the JSON payload required for a restore job for a v1 SharePoint client.
 
-        Kwargs:
+        This method constructs a dictionary containing the parameters necessary to initiate
+        a restore job for SharePoint v1 clients. The primary input is a list of site or web
+        paths to be restored, provided via the &#39;paths&#39; keyword argument.
 
-            paths   (list)  --  list of sites or webs to be restored
-                Example : [
+        Keyword Args:
+            paths (list of str): List of SharePoint site or web paths to restore.
+                Example:
+                    [
                         &#34;MB\\https://&lt;tenant_name&gt;.sharepoint.com/sites/TestSite\\/\\Shared Documents\\TestFolder&#34;,
                         &#34;MB\\https://&lt;tenant_name&gt;.sharepoint.com/sites/TestSite\\/\\Lists\\TestList&#34;,
-                        ]
-        Returns:
+                    ]
 
-            rest_json  (dict)  --  dictionary with parameters set required for a restore job
+        Returns:
+            dict: A dictionary containing the parameters required for the restore job.
+
+        Example:
+            &gt;&gt;&gt; instance = SharepointInstance()
+            &gt;&gt;&gt; restore_json = instance._restore_v1_json(
+            ...     paths=[
+            ...         &#34;MB\\https://tenant.sharepoint.com/sites/SiteA\\/\\Shared Documents\\Folder1&#34;,
+            ...         &#34;MB\\https://tenant.sharepoint.com/sites/SiteA\\/\\Lists\\List1&#34;
+            ...     ]
+            ... )
+            &gt;&gt;&gt; print(restore_json)
+            # The returned dictionary can be used to submit a restore job request.
 
         &#34;&#34;&#34;
         restore_option = {}
@@ -463,7 +588,7 @@ default: None</p>
         self._restore_common_opts_json(restore_option)
 
         if not restore_option.get(&#39;index_free_restore&#39;, False):
-            if restore_option.get(&#34;paths&#34;) == []:
+            if not restore_option.get(&#34;paths&#34;):
                 raise SDKException(&#39;Subclient&#39;, &#39;104&#39;)
 
         request_json = {

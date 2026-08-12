@@ -28,7 +28,8 @@
 <p>JournalMailboxSubclient:
 Derived class from ExchangeMailboxSubclient Base class, representing a
 JournalMailbox subclient, and to perform operations on that subclient</p>
-<h2 id="journalmailboxsubclient">Journalmailboxsubclient</h2>
+<p>Journalmailboxsubclient
+-----=</p>
 <p>users()
 &ndash;
 creates users association for subclient</p>
@@ -38,7 +39,7 @@ runs in-place restore for the subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/journalmailbox_subclient.py#L1-L522" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/exchange/journalmailbox_subclient.py#L1-L636" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -75,27 +76,47 @@ JournalMailboxSubclient:
 
 from __future__ import unicode_literals
 
+from typing import List
+
 from ...exception import SDKException
 from ..exchsubclient import ExchangeSubclient
 import time
 
 class JournalMailboxSubclient(ExchangeSubclient):
-    &#34;&#34;&#34;Derived class from ExchangeSubclient Base class.
+    &#34;&#34;&#34;
+    Specialized subclient class for managing Journal Mailbox operations in Exchange environments.
 
-        This represents a JournalMailbox subclient,
-        and can perform discover and restore operations on only that subclient.
+    This class extends the ExchangeSubclient base class to provide functionality specific to
+    Journal Mailbox subclients. It enables discovery, association, and restoration operations
+    for journal users, as well as management of user associations and PST associations.
+
+    Key Features:
+        - Initialization with backup set, subclient name, and subclient ID
+        - Discovery of journal users with support for refresh and retry mechanisms
+        - Retrieval and management of journal user associations
+        - Setting associations using JSON payloads and plan details
+        - Properties for accessing discovered journal users and current journal users
+        - Methods to set journal user and PST associations, optionally using policies
+        - Refresh capability to update subclient state
+
+    Intended Usage:
+        Use this class to automate and manage Journal Mailbox subclient operations, including
+        user discovery, association management, and restoration tasks within an Exchange backup set.
 
     &#34;&#34;&#34;
 
-    def __init__(self, backupset_object, subclient_name, subclient_id=None):
-        &#34;&#34;&#34;Initialize the Instance object for the given JournalMailbox Subclient.
+    def __init__(self, backupset_object: object, subclient_name: str, subclient_id: int = None) -&gt; None:
+        &#34;&#34;&#34;Initialize a JournalMailboxSubclient instance.
 
-            Args:
-                backupset_object    (object)    --  instance of the backupset class
+        Args:
+            backupset_object: Instance of the backupset class associated with this subclient.
+            subclient_name: Name of the JournalMailbox subclient.
+            subclient_id: Optional; unique identifier for the subclient. If not provided, it will be determined automatically.
 
-                subclient_name      (str)       --  subclient name
-
-                subclient_id        (int)       --  subclient id
+        Example:
+            &gt;&gt;&gt; backupset = Backupset(commcell_object, &#39;Exchange&#39;, &#39;BackupSet1&#39;)
+            &gt;&gt;&gt; subclient = JournalMailboxSubclient(backupset, &#39;JournalSubclient01&#39;, subclient_id=123)
+            &gt;&gt;&gt; print(f&#34;Subclient &#39;{subclient_name}&#39; initialized successfully.&#34;)
 
         &#34;&#34;&#34;
         super(JournalMailboxSubclient, self).__init__(
@@ -109,17 +130,19 @@ class JournalMailboxSubclient(ExchangeSubclient):
 
         self.refresh()
 
-    def _get_discover_journal_users(self, use_without_refresh_url=False, retry_attempts=0):
-        &#34;&#34;&#34;Gets the discovered users from the Subclient .
+    def _get_discover_journal_users(self, use_without_refresh_url: bool = False, retry_attempts: int = 0) -&gt; list:
+        &#34;&#34;&#34;Retrieve the list of discovered users associated with the journal mailbox subclient.
 
-            Args:
-                use_without_refresh_url (boolean)   -   discovery without refresh cache
+        Args:
+            use_without_refresh_url: If True, performs discovery without refreshing the cache.
+            retry_attempts: Number of retry attempts for the discovery operation.
 
-                retry_attempts(int)                 - retry for discovery
+        Returns:
+            list: A list of discovered users associated with the subclient.
 
-
-            Returns:
-                list    -   list of discovered users associated with the subclient
+        Example:
+            &gt;&gt;&gt; users = subclient._get_discover_journal_users(use_without_refresh_url=True, retry_attempts=2)
+            &gt;&gt;&gt; print(f&#34;Discovered users: {users}&#34;)
 
         &#34;&#34;&#34;
         self._DISCOVERY = self._commcell_object._services[&#39;EMAIL_DISCOVERY&#39;] % (
@@ -135,8 +158,9 @@ class JournalMailboxSubclient(ExchangeSubclient):
         if flag:
             if response and response.json():
                 discover_content = response.json()
-                if discover_content.get(&#39;resp&#39;, {}).get(&#39;errorCode&#39;, 0) == 469762468:
-                    time.sleep(10) # the results might take some time depending on domains
+                _error_code = discover_content.get(&#39;resp&#39;, {}).get(&#39;errorCode&#39;, 0)
+                if _error_code == 469762468 or _error_code == 469762470:
+                    time.sleep(60) # the results might take some time depending on domains
                     if retry_attempts &gt; 10:
                         raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;Failed to perform discovery.&#39;)
 
@@ -156,11 +180,17 @@ class JournalMailboxSubclient(ExchangeSubclient):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def _get_journal_user_assocaitions(self):
-        &#34;&#34;&#34;Gets the appropriate journal users associations from the Subclient.
+    def _get_journal_user_assocaitions(self) -&gt; List[str]:
+        &#34;&#34;&#34;Retrieve the list of journal user associations for this Subclient.
 
-            Returns:
-                list    -   list of users associated with the subclient
+        Returns:
+            List of user names (as strings) associated with the subclient for journaling purposes.
+
+        Example:
+            &gt;&gt;&gt; subclient = JournalMailboxSubclient()
+            &gt;&gt;&gt; user_list = subclient._get_journal_user_assocaitions()
+            &gt;&gt;&gt; print(f&#34;Associated users: {user_list}&#34;)
+            &gt;&gt;&gt; # Output might be: [&#39;user1@example.com&#39;, &#39;user2@example.com&#39;]
 
         &#34;&#34;&#34;
         users = []
@@ -212,23 +242,28 @@ class JournalMailboxSubclient(ExchangeSubclient):
 
         return users
 
-    def _set_association_request(self, associations_json):
-        &#34;&#34;&#34;Runs the emailAssociation as API to set association
+    def _set_association_request(self, associations_json: dict) -&gt; tuple[str, str]:
+        &#34;&#34;&#34;Send an email association request using the provided JSON payload.
 
-            Args:
-                associations_json    (dict)  -- request json sent as payload
+        This method runs the emailAssociation API to set associations for the JournalMailboxSubclient.
+        It returns the error code and error message received in the response.
 
-            Returns:
-                (str, str):
-                    str  -  error code received in the response
+        Args:
+            associations_json: Dictionary containing the request payload for the association API.
 
-                    str  -  error message received
+        Returns:
+            A tuple containing:
+                str: The error code received in the response.
+                str: The error message received in the response.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException: If the response is empty or not successful.
 
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; payload = {&#34;mailboxIds&#34;: [123, 456], &#34;associationType&#34;: &#34;user&#34;}
+            &gt;&gt;&gt; error_code, error_message = subclient._set_association_request(payload)
+            &gt;&gt;&gt; print(f&#34;Error code: {error_code}, Message: {error_message}&#34;)
+
         &#34;&#34;&#34;
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             &#39;POST&#39;, self._SET_EMAIL_POLICY_ASSOCIATIONS, associations_json
@@ -252,33 +287,66 @@ class JournalMailboxSubclient(ExchangeSubclient):
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
     @property
-    def discover_journal_users(self):
-        &#34;&#34;&#34;&#34;Returns the list of discovered journal users for the JournalMailbox subclient.&#34;&#34;&#34;
+    def discover_journal_users(self) -&gt; list:
+        &#34;&#34;&#34;Get the list of discovered journal users for the JournalMailbox subclient.
+
+        Returns:
+            list: A list containing the discovered journal users associated with this JournalMailbox subclient.
+
+        Example:
+            &gt;&gt;&gt; subclient = JournalMailboxSubclient()
+            &gt;&gt;&gt; users = subclient.discover_journal_users  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Discovered users: {users}&#34;)
+
+        &#34;&#34;&#34;
         return self._discover_journal_users
 
     @property
-    def journal_users(self):
-        &#34;&#34;&#34;Returns the list of journal users associated with JournalMailbox subclient.&#34;&#34;&#34;
+    def journal_users(self) -&gt; List[str]:
+        &#34;&#34;&#34;Get the list of journal users associated with the JournalMailbox subclient.
+
+        Returns:
+            List of strings representing the email addresses or usernames of journal users.
+
+        Example:
+            &gt;&gt;&gt; subclient = JournalMailboxSubclient()
+            &gt;&gt;&gt; users = subclient.journal_users  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Journal users: {users}&#34;)
+            &gt;&gt;&gt; # Output might be: [&#39;user1@example.com&#39;, &#39;user2@example.com&#39;]
+
+        &#34;&#34;&#34;
         return self._journal_users
 
-    def _association_json(self, subclient_content):
-        &#34;&#34;&#34;Constructs association json to create assocaition in UserMailbox Subclient.
+    def _association_json(self, subclient_content: dict) -&gt; dict:
+        &#34;&#34;&#34;Construct the association JSON payload for creating an association in a UserMailbox Subclient.
 
-            Args:
-                subclient_content (dict)  --  dict of the Users to add to the subclient
-                                             (dict of only policies in case of office 365 groups)
-                subclient_content = {
+        This method generates a dictionary representing the association configuration,
+        typically including archiving, cleanup, and retention policies for the subclient.
+        The input should be a dictionary specifying the relevant policies or users.
 
-                        &#39;archive_policy&#39; : &#34;CIPLAN Archiving policy&#34;,
-
-                        &#39;cleanup_policy&#39; : &#39;CIPLAN Clean-up policy&#39;,
-
-                        &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;
+        Args:
+            subclient_content: Dictionary containing the users or policies to associate with the subclient.
+                For example:
+                    {
+                        &#39;archive_policy&#39;: &#34;CIPLAN Archiving policy&#34;,
+                        &#39;cleanup_policy&#39;: &#34;CIPLAN Clean-up policy&#34;,
+                        &#39;retention_policy&#39;: &#34;CIPLAN Retention policy&#34;
                     }
 
+        Returns:
+            Dictionary representing the association JSON request to be passed to the API.
 
-            Returns:
-                dict -- Association JSON request to pass to the API
+        Example:
+            &gt;&gt;&gt; subclient = JournalMailboxSubclient()
+            &gt;&gt;&gt; content = {
+            ...     &#39;archive_policy&#39;: &#34;CIPLAN Archiving policy&#34;,
+            ...     &#39;cleanup_policy&#39;: &#34;CIPLAN Clean-up policy&#34;,
+            ...     &#39;retention_policy&#39;: &#34;CIPLAN Retention policy&#34;
+            ... }
+            &gt;&gt;&gt; association_json = subclient._association_json(content)
+            &gt;&gt;&gt; print(association_json)
+            # Output will be a dictionary suitable for the API request
+
         &#34;&#34;&#34;
         if not isinstance(subclient_content, dict):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
@@ -381,15 +449,23 @@ class JournalMailboxSubclient(ExchangeSubclient):
 
         return associations_json
 
-    def _association_json_with_plan(self, plan_details):
-        &#34;&#34;&#34;Constructs association json with plan to create association in UserMailbox Subclient.
+    def _association_json_with_plan(self, plan_details: dict) -&gt; dict:
+        &#34;&#34;&#34;Construct the association JSON payload using the provided plan details for creating an association in a UserMailbox Subclient.
 
-            Args: plan_details = {
-                    &#39;plan_name&#39;: Plan Name,
-                    &#39;plan_id&#39;: int or None (Optional)
-                    }
-                 Returns:
-                    dict -- Association JSON request to pass to the API
+        Args:
+            plan_details: A dictionary containing plan information. Expected keys:
+                - &#39;plan_name&#39; (str): The name of the plan.
+                - &#39;plan_id&#39; (Optional[int]): The ID of the plan, or None if not specified.
+
+        Returns:
+            dict: The association JSON request payload to be sent to the API.
+
+        Example:
+            &gt;&gt;&gt; plan_info = {&#39;plan_name&#39;: &#39;ExchangePlan&#39;, &#39;plan_id&#39;: 1234}
+            &gt;&gt;&gt; assoc_json = subclient._association_json_with_plan(plan_info)
+            &gt;&gt;&gt; print(assoc_json)
+            # Output will be a dictionary formatted for the API association request
+
         &#34;&#34;&#34;
 
         try:
@@ -416,31 +492,40 @@ class JournalMailboxSubclient(ExchangeSubclient):
         }
         return association_json
 
-    def set_journal_user_assocaition(self, subclient_content, use_policies=True):
-        &#34;&#34;&#34;Create Journal assocaition for JournalMailboxSubclient.
+    def set_journal_user_assocaition(self, subclient_content: dict, use_policies: bool = True) -&gt; None:
+        &#34;&#34;&#34;Create a journal association for the JournalMailboxSubclient.
 
-            Args:
-                subclient_content   (dict)  --  dict of the Users to add to the subclient
+        This method associates users or mailboxes with the JournalMailboxSubclient, using either policies or plans
+        based on the `use_policies` flag. The association details are provided in the `subclient_content` dictionary.
 
-                    subclient_content = {
+        Args:
+            subclient_content: Dictionary containing details of the users or mailboxes to associate. The expected keys are:
+                - &#39;mailboxNames&#39;: List of mailbox names to add (e.g., [&#34;AutoCi2&#34;]).
+                - &#39;archive_policy&#39;: Name of the archive policy to use.
+                - &#39;cleanup_policy&#39;: Name of the cleanup policy to use.
+                - &#39;retention_policy&#39;: Name of the retention policy to use.
+                - If `use_policies` is False, also include:
+                    - &#39;plan_name&#39;: Name of the Exchange plan.
+                    - &#39;plan_id&#39;: Integer plan ID or None (optional).
+            use_policies: If True, use policies for association; if False, use plans.
+                Defaults to True.
 
-                        &#39;mailboxNames&#39; : [&#34;AutoCi2&#34;],
-
-                        &#39;archive_policy&#39; : &#34;CIPLAN Archiving policy&#34;,
-
-                        &#39;cleanup_policy&#39; : &#39;CIPLAN Clean-up policy&#39;,
-
-                        &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;,
-
-                        -- if use_policies is False --
-
-                        &#39;plan_name&#39;: &#39;Exchange Plan Name&#39;,
-
-                        &#39;plan_id&#39;: int or None (Optional)
-                    }
-
-                user_policies   (bool)  --  Use policies or plans for association
-                    Default: True
+        Example:
+            &gt;&gt;&gt; subclient_content = {
+            ...     &#39;mailboxNames&#39;: [&#39;user1@example.com&#39;, &#39;user2@example.com&#39;],
+            ...     &#39;archive_policy&#39;: &#39;Corporate Archive Policy&#39;,
+            ...     &#39;cleanup_policy&#39;: &#39;Corporate Cleanup Policy&#39;,
+            ...     &#39;retention_policy&#39;: &#39;Corporate Retention Policy&#39;
+            ... }
+            &gt;&gt;&gt; subclient.set_journal_user_assocaition(subclient_content)
+            &gt;&gt;&gt;
+            &gt;&gt;&gt; # Using plans instead of policies
+            &gt;&gt;&gt; subclient_content = {
+            ...     &#39;mailboxNames&#39;: [&#39;user3@example.com&#39;],
+            ...     &#39;plan_name&#39;: &#39;Exchange Plan Name&#39;,
+            ...     &#39;plan_id&#39;: 12345
+            ... }
+            &gt;&gt;&gt; subclient.set_journal_user_assocaition(subclient_content, use_policies=False)
 
         &#34;&#34;&#34;
         users = []
@@ -482,27 +567,36 @@ class JournalMailboxSubclient(ExchangeSubclient):
             _association_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = {&#34;discoverByType&#34;:5, &#34;mailBoxes&#34; : users}
         self._set_association_request(_association_json_)
 
-    def set_pst_assocaition(self, subclient_content):
-        &#34;&#34;&#34;Create PST assocaition for JournalMailboxSubclient.
+    def set_pst_assocaition(self, subclient_content: dict) -&gt; None:
+        &#34;&#34;&#34;Create a PST association for the JournalMailboxSubclient.
 
-            Args:
-                subclient_content   (dict)  --  dict of the pst to add to the subclient
+        This method associates a PST (Personal Storage Table) with the JournalMailboxSubclient
+        by specifying the PST task name, folders to include, and owner management options.
 
-                    subclient_content = {
+        Args:
+            subclient_content: Dictionary containing PST association details. The expected format is:
+                {
+                    &#39;pstTaskName&#39;: str,  # Name for the PST task
+                    &#39;folders&#39;: list,     # List of folder names to include
+                    &#39;pstOwnerManagement&#39;: {
+                        &#39;defaultOwner&#39;: str,            # Default owner if no owner is determined
+                        &#39;pstDestFolder&#39;: str,           # Destination folder for ingested PSTs
+                        &#39;usePSTNameToCreateChild&#39;: bool # Whether to use PST name to create a child folder
+                    }
+                }
 
-                            &#39;pstTaskName&#39; : &#34;Task Name for PST&#34;,
-
-                            &#39;folders&#39; : [&#39;list of folders&#39;],
-
-                            &#39;pstOwnerManagement&#39; : {
-
-                                &#39;defaultOwner&#39;: &#34;default owner if no owner is determined&#34;,
-
-                                &#39;pstDestFolder&#39;: &#34;ingest psts under this folder&#34;,
-
-                                &#39;usePSTNameToCreateChild&#39;: Boolean
-                            }
-                        }
+        Example:
+            &gt;&gt;&gt; subclient_content = {
+            ...     &#39;pstTaskName&#39;: &#34;Import PST Task&#34;,
+            ...     &#39;folders&#39;: [&#34;Inbox&#34;, &#34;Sent Items&#34;],
+            ...     &#39;pstOwnerManagement&#39;: {
+            ...         &#39;defaultOwner&#39;: &#34;user@example.com&#34;,
+            ...         &#39;pstDestFolder&#39;: &#34;ImportedPSTs&#34;,
+            ...         &#39;usePSTNameToCreateChild&#39;: True
+            ...     }
+            ... }
+            &gt;&gt;&gt; subclient.set_pst_assocaition(subclient_content)
+            &gt;&gt;&gt; print(&#34;PST association created successfully.&#34;)
 
         &#34;&#34;&#34;
         if not isinstance(subclient_content, dict):
@@ -557,8 +651,17 @@ class JournalMailboxSubclient(ExchangeSubclient):
         except Exception as excp:
             raise excp
 
-    def refresh(self):
-        &#34;&#34;&#34;Refresh the Journal Mailbox Subclient.&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Reload the Journal Mailbox Subclient information.
+
+        This method refreshes the internal state of the JournalMailboxSubclient instance,
+        ensuring that any changes made externally are reflected in the object.
+
+        Example:
+            &gt;&gt;&gt; subclient = JournalMailboxSubclient()
+            &gt;&gt;&gt; subclient.refresh()  # Updates the subclient&#39;s information from the source
+            &gt;&gt;&gt; print(&#34;Subclient refreshed successfully&#34;)
+        &#34;&#34;&#34;
         self._get_subclient_properties()
         self._discover_journal_users = self._get_discover_journal_users()
         self._journal_users = self._get_journal_user_assocaitions()</code></pre>
@@ -575,48 +678,81 @@ class JournalMailboxSubclient(ExchangeSubclient):
 <dl>
 <dt id="cvpysdk.subclients.exchange.journalmailbox_subclient.JournalMailboxSubclient"><code class="flex name class">
 <span>class <span class="ident">JournalMailboxSubclient</span></span>
-<span>(</span><span>backupset_object, subclient_name, subclient_id=None)</span>
+<span>(</span><span>backupset_object: object, subclient_name: str, subclient_id: int = None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Derived class from ExchangeSubclient Base class.</p>
-<p>This represents a JournalMailbox subclient,
-and can perform discover and restore operations on only that subclient.</p>
-<p>Initialize the Instance object for the given JournalMailbox Subclient.</p>
-<h2 id="args">Args</h2>
-<p>backupset_object
-(object)
-&ndash;
-instance of the backupset class</p>
-<p>subclient_name
-(str)
-&ndash;
-subclient name</p>
-<p>subclient_id
-(int)
-&ndash;
-subclient id</p></div>
+<div class="desc"><p>Specialized subclient class for managing Journal Mailbox operations in Exchange environments.</p>
+<p>This class extends the ExchangeSubclient base class to provide functionality specific to
+Journal Mailbox subclients. It enables discovery, association, and restoration operations
+for journal users, as well as management of user associations and PST associations.</p>
+<p>Key Features:
+- Initialization with backup set, subclient name, and subclient ID
+- Discovery of journal users with support for refresh and retry mechanisms
+- Retrieval and management of journal user associations
+- Setting associations using JSON payloads and plan details
+- Properties for accessing discovered journal users and current journal users
+- Methods to set journal user and PST associations, optionally using policies
+- Refresh capability to update subclient state</p>
+<p>Intended Usage:
+Use this class to automate and manage Journal Mailbox subclient operations, including
+user discovery, association management, and restoration tasks within an Exchange backup set.</p>
+<p>Initialize a JournalMailboxSubclient instance.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>backupset_object</code></strong></dt>
+<dd>Instance of the backupset class associated with this subclient.</dd>
+<dt><strong><code>subclient_name</code></strong></dt>
+<dd>Name of the JournalMailbox subclient.</dd>
+<dt><strong><code>subclient_id</code></strong></dt>
+<dd>Optional; unique identifier for the subclient. If not provided, it will be determined automatically.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; backupset = Backupset(commcell_object, 'Exchange', 'BackupSet1')
+&gt;&gt;&gt; subclient = JournalMailboxSubclient(backupset, 'JournalSubclient01', subclient_id=123)
+&gt;&gt;&gt; print(f&quot;Subclient '{subclient_name}' initialized successfully.&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/journalmailbox_subclient.py#L40-L522" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/exchange/journalmailbox_subclient.py#L42-L636" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class JournalMailboxSubclient(ExchangeSubclient):
-    &#34;&#34;&#34;Derived class from ExchangeSubclient Base class.
+    &#34;&#34;&#34;
+    Specialized subclient class for managing Journal Mailbox operations in Exchange environments.
 
-        This represents a JournalMailbox subclient,
-        and can perform discover and restore operations on only that subclient.
+    This class extends the ExchangeSubclient base class to provide functionality specific to
+    Journal Mailbox subclients. It enables discovery, association, and restoration operations
+    for journal users, as well as management of user associations and PST associations.
+
+    Key Features:
+        - Initialization with backup set, subclient name, and subclient ID
+        - Discovery of journal users with support for refresh and retry mechanisms
+        - Retrieval and management of journal user associations
+        - Setting associations using JSON payloads and plan details
+        - Properties for accessing discovered journal users and current journal users
+        - Methods to set journal user and PST associations, optionally using policies
+        - Refresh capability to update subclient state
+
+    Intended Usage:
+        Use this class to automate and manage Journal Mailbox subclient operations, including
+        user discovery, association management, and restoration tasks within an Exchange backup set.
 
     &#34;&#34;&#34;
 
-    def __init__(self, backupset_object, subclient_name, subclient_id=None):
-        &#34;&#34;&#34;Initialize the Instance object for the given JournalMailbox Subclient.
+    def __init__(self, backupset_object: object, subclient_name: str, subclient_id: int = None) -&gt; None:
+        &#34;&#34;&#34;Initialize a JournalMailboxSubclient instance.
 
-            Args:
-                backupset_object    (object)    --  instance of the backupset class
+        Args:
+            backupset_object: Instance of the backupset class associated with this subclient.
+            subclient_name: Name of the JournalMailbox subclient.
+            subclient_id: Optional; unique identifier for the subclient. If not provided, it will be determined automatically.
 
-                subclient_name      (str)       --  subclient name
-
-                subclient_id        (int)       --  subclient id
+        Example:
+            &gt;&gt;&gt; backupset = Backupset(commcell_object, &#39;Exchange&#39;, &#39;BackupSet1&#39;)
+            &gt;&gt;&gt; subclient = JournalMailboxSubclient(backupset, &#39;JournalSubclient01&#39;, subclient_id=123)
+            &gt;&gt;&gt; print(f&#34;Subclient &#39;{subclient_name}&#39; initialized successfully.&#34;)
 
         &#34;&#34;&#34;
         super(JournalMailboxSubclient, self).__init__(
@@ -630,17 +766,19 @@ subclient id</p></div>
 
         self.refresh()
 
-    def _get_discover_journal_users(self, use_without_refresh_url=False, retry_attempts=0):
-        &#34;&#34;&#34;Gets the discovered users from the Subclient .
+    def _get_discover_journal_users(self, use_without_refresh_url: bool = False, retry_attempts: int = 0) -&gt; list:
+        &#34;&#34;&#34;Retrieve the list of discovered users associated with the journal mailbox subclient.
 
-            Args:
-                use_without_refresh_url (boolean)   -   discovery without refresh cache
+        Args:
+            use_without_refresh_url: If True, performs discovery without refreshing the cache.
+            retry_attempts: Number of retry attempts for the discovery operation.
 
-                retry_attempts(int)                 - retry for discovery
+        Returns:
+            list: A list of discovered users associated with the subclient.
 
-
-            Returns:
-                list    -   list of discovered users associated with the subclient
+        Example:
+            &gt;&gt;&gt; users = subclient._get_discover_journal_users(use_without_refresh_url=True, retry_attempts=2)
+            &gt;&gt;&gt; print(f&#34;Discovered users: {users}&#34;)
 
         &#34;&#34;&#34;
         self._DISCOVERY = self._commcell_object._services[&#39;EMAIL_DISCOVERY&#39;] % (
@@ -656,8 +794,9 @@ subclient id</p></div>
         if flag:
             if response and response.json():
                 discover_content = response.json()
-                if discover_content.get(&#39;resp&#39;, {}).get(&#39;errorCode&#39;, 0) == 469762468:
-                    time.sleep(10) # the results might take some time depending on domains
+                _error_code = discover_content.get(&#39;resp&#39;, {}).get(&#39;errorCode&#39;, 0)
+                if _error_code == 469762468 or _error_code == 469762470:
+                    time.sleep(60) # the results might take some time depending on domains
                     if retry_attempts &gt; 10:
                         raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, &#39;Failed to perform discovery.&#39;)
 
@@ -677,11 +816,17 @@ subclient id</p></div>
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def _get_journal_user_assocaitions(self):
-        &#34;&#34;&#34;Gets the appropriate journal users associations from the Subclient.
+    def _get_journal_user_assocaitions(self) -&gt; List[str]:
+        &#34;&#34;&#34;Retrieve the list of journal user associations for this Subclient.
 
-            Returns:
-                list    -   list of users associated with the subclient
+        Returns:
+            List of user names (as strings) associated with the subclient for journaling purposes.
+
+        Example:
+            &gt;&gt;&gt; subclient = JournalMailboxSubclient()
+            &gt;&gt;&gt; user_list = subclient._get_journal_user_assocaitions()
+            &gt;&gt;&gt; print(f&#34;Associated users: {user_list}&#34;)
+            &gt;&gt;&gt; # Output might be: [&#39;user1@example.com&#39;, &#39;user2@example.com&#39;]
 
         &#34;&#34;&#34;
         users = []
@@ -733,23 +878,28 @@ subclient id</p></div>
 
         return users
 
-    def _set_association_request(self, associations_json):
-        &#34;&#34;&#34;Runs the emailAssociation as API to set association
+    def _set_association_request(self, associations_json: dict) -&gt; tuple[str, str]:
+        &#34;&#34;&#34;Send an email association request using the provided JSON payload.
 
-            Args:
-                associations_json    (dict)  -- request json sent as payload
+        This method runs the emailAssociation API to set associations for the JournalMailboxSubclient.
+        It returns the error code and error message received in the response.
 
-            Returns:
-                (str, str):
-                    str  -  error code received in the response
+        Args:
+            associations_json: Dictionary containing the request payload for the association API.
 
-                    str  -  error message received
+        Returns:
+            A tuple containing:
+                str: The error code received in the response.
+                str: The error message received in the response.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException: If the response is empty or not successful.
 
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; payload = {&#34;mailboxIds&#34;: [123, 456], &#34;associationType&#34;: &#34;user&#34;}
+            &gt;&gt;&gt; error_code, error_message = subclient._set_association_request(payload)
+            &gt;&gt;&gt; print(f&#34;Error code: {error_code}, Message: {error_message}&#34;)
+
         &#34;&#34;&#34;
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             &#39;POST&#39;, self._SET_EMAIL_POLICY_ASSOCIATIONS, associations_json
@@ -773,33 +923,66 @@ subclient id</p></div>
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
     @property
-    def discover_journal_users(self):
-        &#34;&#34;&#34;&#34;Returns the list of discovered journal users for the JournalMailbox subclient.&#34;&#34;&#34;
+    def discover_journal_users(self) -&gt; list:
+        &#34;&#34;&#34;Get the list of discovered journal users for the JournalMailbox subclient.
+
+        Returns:
+            list: A list containing the discovered journal users associated with this JournalMailbox subclient.
+
+        Example:
+            &gt;&gt;&gt; subclient = JournalMailboxSubclient()
+            &gt;&gt;&gt; users = subclient.discover_journal_users  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Discovered users: {users}&#34;)
+
+        &#34;&#34;&#34;
         return self._discover_journal_users
 
     @property
-    def journal_users(self):
-        &#34;&#34;&#34;Returns the list of journal users associated with JournalMailbox subclient.&#34;&#34;&#34;
+    def journal_users(self) -&gt; List[str]:
+        &#34;&#34;&#34;Get the list of journal users associated with the JournalMailbox subclient.
+
+        Returns:
+            List of strings representing the email addresses or usernames of journal users.
+
+        Example:
+            &gt;&gt;&gt; subclient = JournalMailboxSubclient()
+            &gt;&gt;&gt; users = subclient.journal_users  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Journal users: {users}&#34;)
+            &gt;&gt;&gt; # Output might be: [&#39;user1@example.com&#39;, &#39;user2@example.com&#39;]
+
+        &#34;&#34;&#34;
         return self._journal_users
 
-    def _association_json(self, subclient_content):
-        &#34;&#34;&#34;Constructs association json to create assocaition in UserMailbox Subclient.
+    def _association_json(self, subclient_content: dict) -&gt; dict:
+        &#34;&#34;&#34;Construct the association JSON payload for creating an association in a UserMailbox Subclient.
 
-            Args:
-                subclient_content (dict)  --  dict of the Users to add to the subclient
-                                             (dict of only policies in case of office 365 groups)
-                subclient_content = {
+        This method generates a dictionary representing the association configuration,
+        typically including archiving, cleanup, and retention policies for the subclient.
+        The input should be a dictionary specifying the relevant policies or users.
 
-                        &#39;archive_policy&#39; : &#34;CIPLAN Archiving policy&#34;,
-
-                        &#39;cleanup_policy&#39; : &#39;CIPLAN Clean-up policy&#39;,
-
-                        &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;
+        Args:
+            subclient_content: Dictionary containing the users or policies to associate with the subclient.
+                For example:
+                    {
+                        &#39;archive_policy&#39;: &#34;CIPLAN Archiving policy&#34;,
+                        &#39;cleanup_policy&#39;: &#34;CIPLAN Clean-up policy&#34;,
+                        &#39;retention_policy&#39;: &#34;CIPLAN Retention policy&#34;
                     }
 
+        Returns:
+            Dictionary representing the association JSON request to be passed to the API.
 
-            Returns:
-                dict -- Association JSON request to pass to the API
+        Example:
+            &gt;&gt;&gt; subclient = JournalMailboxSubclient()
+            &gt;&gt;&gt; content = {
+            ...     &#39;archive_policy&#39;: &#34;CIPLAN Archiving policy&#34;,
+            ...     &#39;cleanup_policy&#39;: &#34;CIPLAN Clean-up policy&#34;,
+            ...     &#39;retention_policy&#39;: &#34;CIPLAN Retention policy&#34;
+            ... }
+            &gt;&gt;&gt; association_json = subclient._association_json(content)
+            &gt;&gt;&gt; print(association_json)
+            # Output will be a dictionary suitable for the API request
+
         &#34;&#34;&#34;
         if not isinstance(subclient_content, dict):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
@@ -902,15 +1085,23 @@ subclient id</p></div>
 
         return associations_json
 
-    def _association_json_with_plan(self, plan_details):
-        &#34;&#34;&#34;Constructs association json with plan to create association in UserMailbox Subclient.
+    def _association_json_with_plan(self, plan_details: dict) -&gt; dict:
+        &#34;&#34;&#34;Construct the association JSON payload using the provided plan details for creating an association in a UserMailbox Subclient.
 
-            Args: plan_details = {
-                    &#39;plan_name&#39;: Plan Name,
-                    &#39;plan_id&#39;: int or None (Optional)
-                    }
-                 Returns:
-                    dict -- Association JSON request to pass to the API
+        Args:
+            plan_details: A dictionary containing plan information. Expected keys:
+                - &#39;plan_name&#39; (str): The name of the plan.
+                - &#39;plan_id&#39; (Optional[int]): The ID of the plan, or None if not specified.
+
+        Returns:
+            dict: The association JSON request payload to be sent to the API.
+
+        Example:
+            &gt;&gt;&gt; plan_info = {&#39;plan_name&#39;: &#39;ExchangePlan&#39;, &#39;plan_id&#39;: 1234}
+            &gt;&gt;&gt; assoc_json = subclient._association_json_with_plan(plan_info)
+            &gt;&gt;&gt; print(assoc_json)
+            # Output will be a dictionary formatted for the API association request
+
         &#34;&#34;&#34;
 
         try:
@@ -937,31 +1128,40 @@ subclient id</p></div>
         }
         return association_json
 
-    def set_journal_user_assocaition(self, subclient_content, use_policies=True):
-        &#34;&#34;&#34;Create Journal assocaition for JournalMailboxSubclient.
+    def set_journal_user_assocaition(self, subclient_content: dict, use_policies: bool = True) -&gt; None:
+        &#34;&#34;&#34;Create a journal association for the JournalMailboxSubclient.
 
-            Args:
-                subclient_content   (dict)  --  dict of the Users to add to the subclient
+        This method associates users or mailboxes with the JournalMailboxSubclient, using either policies or plans
+        based on the `use_policies` flag. The association details are provided in the `subclient_content` dictionary.
 
-                    subclient_content = {
+        Args:
+            subclient_content: Dictionary containing details of the users or mailboxes to associate. The expected keys are:
+                - &#39;mailboxNames&#39;: List of mailbox names to add (e.g., [&#34;AutoCi2&#34;]).
+                - &#39;archive_policy&#39;: Name of the archive policy to use.
+                - &#39;cleanup_policy&#39;: Name of the cleanup policy to use.
+                - &#39;retention_policy&#39;: Name of the retention policy to use.
+                - If `use_policies` is False, also include:
+                    - &#39;plan_name&#39;: Name of the Exchange plan.
+                    - &#39;plan_id&#39;: Integer plan ID or None (optional).
+            use_policies: If True, use policies for association; if False, use plans.
+                Defaults to True.
 
-                        &#39;mailboxNames&#39; : [&#34;AutoCi2&#34;],
-
-                        &#39;archive_policy&#39; : &#34;CIPLAN Archiving policy&#34;,
-
-                        &#39;cleanup_policy&#39; : &#39;CIPLAN Clean-up policy&#39;,
-
-                        &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;,
-
-                        -- if use_policies is False --
-
-                        &#39;plan_name&#39;: &#39;Exchange Plan Name&#39;,
-
-                        &#39;plan_id&#39;: int or None (Optional)
-                    }
-
-                user_policies   (bool)  --  Use policies or plans for association
-                    Default: True
+        Example:
+            &gt;&gt;&gt; subclient_content = {
+            ...     &#39;mailboxNames&#39;: [&#39;user1@example.com&#39;, &#39;user2@example.com&#39;],
+            ...     &#39;archive_policy&#39;: &#39;Corporate Archive Policy&#39;,
+            ...     &#39;cleanup_policy&#39;: &#39;Corporate Cleanup Policy&#39;,
+            ...     &#39;retention_policy&#39;: &#39;Corporate Retention Policy&#39;
+            ... }
+            &gt;&gt;&gt; subclient.set_journal_user_assocaition(subclient_content)
+            &gt;&gt;&gt;
+            &gt;&gt;&gt; # Using plans instead of policies
+            &gt;&gt;&gt; subclient_content = {
+            ...     &#39;mailboxNames&#39;: [&#39;user3@example.com&#39;],
+            ...     &#39;plan_name&#39;: &#39;Exchange Plan Name&#39;,
+            ...     &#39;plan_id&#39;: 12345
+            ... }
+            &gt;&gt;&gt; subclient.set_journal_user_assocaition(subclient_content, use_policies=False)
 
         &#34;&#34;&#34;
         users = []
@@ -1003,27 +1203,36 @@ subclient id</p></div>
             _association_json_[&#34;emailAssociation&#34;][&#34;emailDiscoverinfo&#34;] = {&#34;discoverByType&#34;:5, &#34;mailBoxes&#34; : users}
         self._set_association_request(_association_json_)
 
-    def set_pst_assocaition(self, subclient_content):
-        &#34;&#34;&#34;Create PST assocaition for JournalMailboxSubclient.
+    def set_pst_assocaition(self, subclient_content: dict) -&gt; None:
+        &#34;&#34;&#34;Create a PST association for the JournalMailboxSubclient.
 
-            Args:
-                subclient_content   (dict)  --  dict of the pst to add to the subclient
+        This method associates a PST (Personal Storage Table) with the JournalMailboxSubclient
+        by specifying the PST task name, folders to include, and owner management options.
 
-                    subclient_content = {
+        Args:
+            subclient_content: Dictionary containing PST association details. The expected format is:
+                {
+                    &#39;pstTaskName&#39;: str,  # Name for the PST task
+                    &#39;folders&#39;: list,     # List of folder names to include
+                    &#39;pstOwnerManagement&#39;: {
+                        &#39;defaultOwner&#39;: str,            # Default owner if no owner is determined
+                        &#39;pstDestFolder&#39;: str,           # Destination folder for ingested PSTs
+                        &#39;usePSTNameToCreateChild&#39;: bool # Whether to use PST name to create a child folder
+                    }
+                }
 
-                            &#39;pstTaskName&#39; : &#34;Task Name for PST&#34;,
-
-                            &#39;folders&#39; : [&#39;list of folders&#39;],
-
-                            &#39;pstOwnerManagement&#39; : {
-
-                                &#39;defaultOwner&#39;: &#34;default owner if no owner is determined&#34;,
-
-                                &#39;pstDestFolder&#39;: &#34;ingest psts under this folder&#34;,
-
-                                &#39;usePSTNameToCreateChild&#39;: Boolean
-                            }
-                        }
+        Example:
+            &gt;&gt;&gt; subclient_content = {
+            ...     &#39;pstTaskName&#39;: &#34;Import PST Task&#34;,
+            ...     &#39;folders&#39;: [&#34;Inbox&#34;, &#34;Sent Items&#34;],
+            ...     &#39;pstOwnerManagement&#39;: {
+            ...         &#39;defaultOwner&#39;: &#34;user@example.com&#34;,
+            ...         &#39;pstDestFolder&#39;: &#34;ImportedPSTs&#34;,
+            ...         &#39;usePSTNameToCreateChild&#39;: True
+            ...     }
+            ... }
+            &gt;&gt;&gt; subclient.set_pst_assocaition(subclient_content)
+            &gt;&gt;&gt; print(&#34;PST association created successfully.&#34;)
 
         &#34;&#34;&#34;
         if not isinstance(subclient_content, dict):
@@ -1078,8 +1287,17 @@ subclient id</p></div>
         except Exception as excp:
             raise excp
 
-    def refresh(self):
-        &#34;&#34;&#34;Refresh the Journal Mailbox Subclient.&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Reload the Journal Mailbox Subclient information.
+
+        This method refreshes the internal state of the JournalMailboxSubclient instance,
+        ensuring that any changes made externally are reflected in the object.
+
+        Example:
+            &gt;&gt;&gt; subclient = JournalMailboxSubclient()
+            &gt;&gt;&gt; subclient.refresh()  # Updates the subclient&#39;s information from the source
+            &gt;&gt;&gt; print(&#34;Subclient refreshed successfully&#34;)
+        &#34;&#34;&#34;
         self._get_subclient_properties()
         self._discover_journal_users = self._get_discover_journal_users()
         self._journal_users = self._get_journal_user_assocaitions()</code></pre>
@@ -1091,31 +1309,74 @@ subclient id</p></div>
 </ul>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.subclients.exchange.journalmailbox_subclient.JournalMailboxSubclient.discover_journal_users"><code class="name">var <span class="ident">discover_journal_users</span></code></dt>
+<dt id="cvpysdk.subclients.exchange.journalmailbox_subclient.JournalMailboxSubclient.discover_journal_users"><code class="name">var <span class="ident">discover_journal_users</span> : list</code></dt>
 <dd>
-<div class="desc"><p>"Returns the list of discovered journal users for the JournalMailbox subclient.</p></div>
+<div class="desc"><p>Get the list of discovered journal users for the JournalMailbox subclient.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>list</code></dt>
+<dd>A list containing the discovered journal users associated with this JournalMailbox subclient.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; subclient = JournalMailboxSubclient()
+&gt;&gt;&gt; users = subclient.discover_journal_users  # Use dot notation for property access
+&gt;&gt;&gt; print(f&quot;Discovered users: {users}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/journalmailbox_subclient.py#L212-L215" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/exchange/journalmailbox_subclient.py#L251-L265" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def discover_journal_users(self):
-    &#34;&#34;&#34;&#34;Returns the list of discovered journal users for the JournalMailbox subclient.&#34;&#34;&#34;
+def discover_journal_users(self) -&gt; list:
+    &#34;&#34;&#34;Get the list of discovered journal users for the JournalMailbox subclient.
+
+    Returns:
+        list: A list containing the discovered journal users associated with this JournalMailbox subclient.
+
+    Example:
+        &gt;&gt;&gt; subclient = JournalMailboxSubclient()
+        &gt;&gt;&gt; users = subclient.discover_journal_users  # Use dot notation for property access
+        &gt;&gt;&gt; print(f&#34;Discovered users: {users}&#34;)
+
+    &#34;&#34;&#34;
     return self._discover_journal_users</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.subclients.exchange.journalmailbox_subclient.JournalMailboxSubclient.journal_users"><code class="name">var <span class="ident">journal_users</span></code></dt>
+<dt id="cvpysdk.subclients.exchange.journalmailbox_subclient.JournalMailboxSubclient.journal_users"><code class="name">var <span class="ident">journal_users</span> : List[str]</code></dt>
 <dd>
-<div class="desc"><p>Returns the list of journal users associated with JournalMailbox subclient.</p></div>
+<div class="desc"><p>Get the list of journal users associated with the JournalMailbox subclient.</p>
+<p>Returns
+-----=
+List of strings representing the email addresses or usernames of journal users.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; subclient = JournalMailboxSubclient()
+&gt;&gt;&gt; users = subclient.journal_users  # Use dot notation for property access
+&gt;&gt;&gt; print(f&quot;Journal users: {users}&quot;)
+&gt;&gt;&gt; # Output might be: ['user1@example.com', 'user2@example.com']
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/journalmailbox_subclient.py#L217-L220" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/exchange/journalmailbox_subclient.py#L267-L282" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def journal_users(self):
-    &#34;&#34;&#34;Returns the list of journal users associated with JournalMailbox subclient.&#34;&#34;&#34;
+def journal_users(self) -&gt; List[str]:
+    &#34;&#34;&#34;Get the list of journal users associated with the JournalMailbox subclient.
+
+    Returns:
+        List of strings representing the email addresses or usernames of journal users.
+
+    Example:
+        &gt;&gt;&gt; subclient = JournalMailboxSubclient()
+        &gt;&gt;&gt; users = subclient.journal_users  # Use dot notation for property access
+        &gt;&gt;&gt; print(f&#34;Journal users: {users}&#34;)
+        &gt;&gt;&gt; # Output might be: [&#39;user1@example.com&#39;, &#39;user2@example.com&#39;]
+
+    &#34;&#34;&#34;
     return self._journal_users</code></pre>
 </details>
 </dd>
@@ -1123,84 +1384,119 @@ def journal_users(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.subclients.exchange.journalmailbox_subclient.JournalMailboxSubclient.refresh"><code class="name flex">
-<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+<span>def <span class="ident">refresh</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Refresh the Journal Mailbox Subclient.</p></div>
+<div class="desc"><p>Reload the Journal Mailbox Subclient information.</p>
+<p>This method refreshes the internal state of the JournalMailboxSubclient instance,
+ensuring that any changes made externally are reflected in the object.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; subclient = JournalMailboxSubclient()
+&gt;&gt;&gt; subclient.refresh()  # Updates the subclient's information from the source
+&gt;&gt;&gt; print(&quot;Subclient refreshed successfully&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/journalmailbox_subclient.py#L518-L522" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/exchange/journalmailbox_subclient.py#L622-L636" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def refresh(self):
-    &#34;&#34;&#34;Refresh the Journal Mailbox Subclient.&#34;&#34;&#34;
+<pre><code class="python">def refresh(self) -&gt; None:
+    &#34;&#34;&#34;Reload the Journal Mailbox Subclient information.
+
+    This method refreshes the internal state of the JournalMailboxSubclient instance,
+    ensuring that any changes made externally are reflected in the object.
+
+    Example:
+        &gt;&gt;&gt; subclient = JournalMailboxSubclient()
+        &gt;&gt;&gt; subclient.refresh()  # Updates the subclient&#39;s information from the source
+        &gt;&gt;&gt; print(&#34;Subclient refreshed successfully&#34;)
+    &#34;&#34;&#34;
     self._get_subclient_properties()
     self._discover_journal_users = self._get_discover_journal_users()
     self._journal_users = self._get_journal_user_assocaitions()</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.subclients.exchange.journalmailbox_subclient.JournalMailboxSubclient.set_journal_user_assocaition"><code class="name flex">
-<span>def <span class="ident">set_journal_user_assocaition</span></span>(<span>self, subclient_content, use_policies=True)</span>
+<span>def <span class="ident">set_journal_user_assocaition</span></span>(<span>self, subclient_content: dict, use_policies: bool = True) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Create Journal assocaition for JournalMailboxSubclient.</p>
-<h2 id="args">Args</h2>
-<p>subclient_content
-(dict)
-&ndash;
-dict of the Users to add to the subclient</p>
-<pre><code>subclient_content = {
-
-    'mailboxNames' : ["AutoCi2"],
-
-    'archive_policy' : "CIPLAN Archiving policy",
-
-    'cleanup_policy' : 'CIPLAN Clean-up policy',
-
-    'retention_policy': 'CIPLAN Retention policy',
-
-    -- if use_policies is False --
-
-    'plan_name': 'Exchange Plan Name',
-
-    'plan_id': int or None (Optional)
-}
-</code></pre>
-<p>user_policies
-(bool)
-&ndash;
-Use policies or plans for association
-Default: True</p></div>
+<div class="desc"><p>Create a journal association for the JournalMailboxSubclient.</p>
+<p>This method associates users or mailboxes with the JournalMailboxSubclient, using either policies or plans
+based on the <code>use_policies</code> flag. The association details are provided in the <code>subclient_content</code> dictionary.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>subclient_content</code></strong></dt>
+<dd>Dictionary containing details of the users or mailboxes to associate. The expected keys are:
+- 'mailboxNames': List of mailbox names to add (e.g., ["AutoCi2"]).
+- 'archive_policy': Name of the archive policy to use.
+- 'cleanup_policy': Name of the cleanup policy to use.
+- 'retention_policy': Name of the retention policy to use.
+- If <code>use_policies</code> is False, also include:
+- 'plan_name': Name of the Exchange plan.
+- 'plan_id': Integer plan ID or None (optional).</dd>
+<dt><strong><code>use_policies</code></strong></dt>
+<dd>If True, use policies for association; if False, use plans.
+Defaults to True.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; subclient_content = {
+...     'mailboxNames': ['user1@example.com', 'user2@example.com'],
+...     'archive_policy': 'Corporate Archive Policy',
+...     'cleanup_policy': 'Corporate Cleanup Policy',
+...     'retention_policy': 'Corporate Retention Policy'
+... }
+&gt;&gt;&gt; subclient.set_journal_user_assocaition(subclient_content)
+&gt;&gt;&gt;
+&gt;&gt;&gt; # Using plans instead of policies
+&gt;&gt;&gt; subclient_content = {
+...     'mailboxNames': ['user3@example.com'],
+...     'plan_name': 'Exchange Plan Name',
+...     'plan_id': 12345
+... }
+&gt;&gt;&gt; subclient.set_journal_user_assocaition(subclient_content, use_policies=False)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/journalmailbox_subclient.py#L377-L441" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/exchange/journalmailbox_subclient.py#L461-L535" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def set_journal_user_assocaition(self, subclient_content, use_policies=True):
-    &#34;&#34;&#34;Create Journal assocaition for JournalMailboxSubclient.
+<pre><code class="python">def set_journal_user_assocaition(self, subclient_content: dict, use_policies: bool = True) -&gt; None:
+    &#34;&#34;&#34;Create a journal association for the JournalMailboxSubclient.
 
-        Args:
-            subclient_content   (dict)  --  dict of the Users to add to the subclient
+    This method associates users or mailboxes with the JournalMailboxSubclient, using either policies or plans
+    based on the `use_policies` flag. The association details are provided in the `subclient_content` dictionary.
 
-                subclient_content = {
+    Args:
+        subclient_content: Dictionary containing details of the users or mailboxes to associate. The expected keys are:
+            - &#39;mailboxNames&#39;: List of mailbox names to add (e.g., [&#34;AutoCi2&#34;]).
+            - &#39;archive_policy&#39;: Name of the archive policy to use.
+            - &#39;cleanup_policy&#39;: Name of the cleanup policy to use.
+            - &#39;retention_policy&#39;: Name of the retention policy to use.
+            - If `use_policies` is False, also include:
+                - &#39;plan_name&#39;: Name of the Exchange plan.
+                - &#39;plan_id&#39;: Integer plan ID or None (optional).
+        use_policies: If True, use policies for association; if False, use plans.
+            Defaults to True.
 
-                    &#39;mailboxNames&#39; : [&#34;AutoCi2&#34;],
-
-                    &#39;archive_policy&#39; : &#34;CIPLAN Archiving policy&#34;,
-
-                    &#39;cleanup_policy&#39; : &#39;CIPLAN Clean-up policy&#39;,
-
-                    &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;,
-
-                    -- if use_policies is False --
-
-                    &#39;plan_name&#39;: &#39;Exchange Plan Name&#39;,
-
-                    &#39;plan_id&#39;: int or None (Optional)
-                }
-
-            user_policies   (bool)  --  Use policies or plans for association
-                Default: True
+    Example:
+        &gt;&gt;&gt; subclient_content = {
+        ...     &#39;mailboxNames&#39;: [&#39;user1@example.com&#39;, &#39;user2@example.com&#39;],
+        ...     &#39;archive_policy&#39;: &#39;Corporate Archive Policy&#39;,
+        ...     &#39;cleanup_policy&#39;: &#39;Corporate Cleanup Policy&#39;,
+        ...     &#39;retention_policy&#39;: &#39;Corporate Retention Policy&#39;
+        ... }
+        &gt;&gt;&gt; subclient.set_journal_user_assocaition(subclient_content)
+        &gt;&gt;&gt;
+        &gt;&gt;&gt; # Using plans instead of policies
+        &gt;&gt;&gt; subclient_content = {
+        ...     &#39;mailboxNames&#39;: [&#39;user3@example.com&#39;],
+        ...     &#39;plan_name&#39;: &#39;Exchange Plan Name&#39;,
+        ...     &#39;plan_id&#39;: 12345
+        ... }
+        &gt;&gt;&gt; subclient.set_journal_user_assocaition(subclient_content, use_policies=False)
 
     &#34;&#34;&#34;
     users = []
@@ -1244,57 +1540,80 @@ Default: True</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.subclients.exchange.journalmailbox_subclient.JournalMailboxSubclient.set_pst_assocaition"><code class="name flex">
-<span>def <span class="ident">set_pst_assocaition</span></span>(<span>self, subclient_content)</span>
+<span>def <span class="ident">set_pst_assocaition</span></span>(<span>self, subclient_content: dict) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Create PST assocaition for JournalMailboxSubclient.</p>
-<h2 id="args">Args</h2>
-<p>subclient_content
-(dict)
-&ndash;
-dict of the pst to add to the subclient</p>
-<pre><code>subclient_content = {
-
-        'pstTaskName' : "Task Name for PST",
-
-        'folders' : ['list of folders'],
-
-        'pstOwnerManagement' : {
-
-            'defaultOwner': "default owner if no owner is determined",
-
-            'pstDestFolder': "ingest psts under this folder",
-
-            'usePSTNameToCreateChild': Boolean
-        }
-    }
+<div class="desc"><p>Create a PST association for the JournalMailboxSubclient.</p>
+<p>This method associates a PST (Personal Storage Table) with the JournalMailboxSubclient
+by specifying the PST task name, folders to include, and owner management options.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>subclient_content</code></strong></dt>
+<dd>Dictionary containing PST association details. The expected format is:
+{
+'pstTaskName': str,
+# Name for the PST task
+'folders': list,
+# List of folder names to include
+'pstOwnerManagement': {
+'defaultOwner': str,
+# Default owner if no owner is determined
+'pstDestFolder': str,
+# Destination folder for ingested PSTs
+'usePSTNameToCreateChild': bool # Whether to use PST name to create a child folder
+}
+}</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; subclient_content = {
+...     'pstTaskName': &quot;Import PST Task&quot;,
+...     'folders': [&quot;Inbox&quot;, &quot;Sent Items&quot;],
+...     'pstOwnerManagement': {
+...         'defaultOwner': &quot;user@example.com&quot;,
+...         'pstDestFolder': &quot;ImportedPSTs&quot;,
+...         'usePSTNameToCreateChild': True
+...     }
+... }
+&gt;&gt;&gt; subclient.set_pst_assocaition(subclient_content)
+&gt;&gt;&gt; print(&quot;PST association created successfully.&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/journalmailbox_subclient.py#L443-L516" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/exchange/journalmailbox_subclient.py#L537-L620" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def set_pst_assocaition(self, subclient_content):
-    &#34;&#34;&#34;Create PST assocaition for JournalMailboxSubclient.
+<pre><code class="python">def set_pst_assocaition(self, subclient_content: dict) -&gt; None:
+    &#34;&#34;&#34;Create a PST association for the JournalMailboxSubclient.
 
-        Args:
-            subclient_content   (dict)  --  dict of the pst to add to the subclient
+    This method associates a PST (Personal Storage Table) with the JournalMailboxSubclient
+    by specifying the PST task name, folders to include, and owner management options.
 
-                subclient_content = {
+    Args:
+        subclient_content: Dictionary containing PST association details. The expected format is:
+            {
+                &#39;pstTaskName&#39;: str,  # Name for the PST task
+                &#39;folders&#39;: list,     # List of folder names to include
+                &#39;pstOwnerManagement&#39;: {
+                    &#39;defaultOwner&#39;: str,            # Default owner if no owner is determined
+                    &#39;pstDestFolder&#39;: str,           # Destination folder for ingested PSTs
+                    &#39;usePSTNameToCreateChild&#39;: bool # Whether to use PST name to create a child folder
+                }
+            }
 
-                        &#39;pstTaskName&#39; : &#34;Task Name for PST&#34;,
-
-                        &#39;folders&#39; : [&#39;list of folders&#39;],
-
-                        &#39;pstOwnerManagement&#39; : {
-
-                            &#39;defaultOwner&#39;: &#34;default owner if no owner is determined&#34;,
-
-                            &#39;pstDestFolder&#39;: &#34;ingest psts under this folder&#34;,
-
-                            &#39;usePSTNameToCreateChild&#39;: Boolean
-                        }
-                    }
+    Example:
+        &gt;&gt;&gt; subclient_content = {
+        ...     &#39;pstTaskName&#39;: &#34;Import PST Task&#34;,
+        ...     &#39;folders&#39;: [&#34;Inbox&#34;, &#34;Sent Items&#34;],
+        ...     &#39;pstOwnerManagement&#39;: {
+        ...         &#39;defaultOwner&#39;: &#34;user@example.com&#34;,
+        ...         &#39;pstDestFolder&#39;: &#34;ImportedPSTs&#34;,
+        ...         &#39;usePSTNameToCreateChild&#39;: True
+        ...     }
+        ... }
+        &gt;&gt;&gt; subclient.set_pst_assocaition(subclient_content)
+        &gt;&gt;&gt; print(&#34;PST association created successfully.&#34;)
 
     &#34;&#34;&#34;
     if not isinstance(subclient_content, dict):
@@ -1356,9 +1675,11 @@ dict of the pst to add to the subclient</p>
 <li><code><b><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient" href="../exchsubclient.html#cvpysdk.subclients.exchsubclient.ExchangeSubclient">ExchangeSubclient</a></b></code>:
 <ul class="hlist">
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.ad_group_backup" href="../exchsubclient.html#cvpysdk.subclients.exchsubclient.ExchangeSubclient.ad_group_backup">ad_group_backup</a></code></li>
+<li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.additional_settings" href="../../subclient.html#cvpysdk.subclient.Subclient.additional_settings">additional_settings</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.allow_multiple_readers" href="../../subclient.html#cvpysdk.subclient.Subclient.allow_multiple_readers">allow_multiple_readers</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.backup" href="../../subclient.html#cvpysdk.subclient.Subclient.backup">backup</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.browse" href="../../subclient.html#cvpysdk.subclient.Subclient.browse">browse</a></code></li>
+<li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.browse_Cosmos_Content" href="../../subclient.html#cvpysdk.subclient.Subclient.browse_Cosmos_Content">browse_Cosmos_Content</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.cleanup" href="../exchsubclient.html#cvpysdk.subclients.exchsubclient.ExchangeSubclient.cleanup">cleanup</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.data_readers" href="../../subclient.html#cvpysdk.subclient.Subclient.data_readers">data_readers</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.deduplication_options" href="../../subclient.html#cvpysdk.subclient.Subclient.deduplication_options">deduplication_options</a></code></li>
@@ -1388,6 +1709,8 @@ dict of the pst to add to the subclient</p>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.is_trueup_enabled" href="../../subclient.html#cvpysdk.subclient.Subclient.is_trueup_enabled">is_trueup_enabled</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.last_backup_time" href="../../subclient.html#cvpysdk.subclient.Subclient.last_backup_time">last_backup_time</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.list_media" href="../../subclient.html#cvpysdk.subclient.Subclient.list_media">list_media</a></code></li>
+<li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.live_update_job" href="../exchsubclient.html#cvpysdk.subclients.exchsubclient.ExchangeSubclient.live_update_job">live_update_job</a></code></li>
+<li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.msg_restore" href="../exchsubclient.html#cvpysdk.subclients.exchsubclient.ExchangeSubclient.msg_restore">msg_restore</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.name" href="../../subclient.html#cvpysdk.subclient.Subclient.name">name</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.network_agent" href="../../subclient.html#cvpysdk.subclient.Subclient.network_agent">network_agent</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.next_backup_time" href="../../subclient.html#cvpysdk.subclient.Subclient.next_backup_time">next_backup_time</a></code></li>
@@ -1402,6 +1725,7 @@ dict of the pst to add to the subclient</p>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.restore_out_of_place" href="../../subclient.html#cvpysdk.subclient.Subclient.restore_out_of_place">restore_out_of_place</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.run_content_indexing" href="../../subclient.html#cvpysdk.subclient.Subclient.run_content_indexing">run_content_indexing</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.set_backup_nodes" href="../../subclient.html#cvpysdk.subclient.Subclient.set_backup_nodes">set_backup_nodes</a></code></li>
+<li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.set_proxy_for_backup_copy" href="../../subclient.html#cvpysdk.subclient.Subclient.set_proxy_for_backup_copy">set_proxy_for_backup_copy</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.set_proxy_for_snap" href="../../subclient.html#cvpysdk.subclient.Subclient.set_proxy_for_snap">set_proxy_for_snap</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.snapshot_engine_name" href="../../subclient.html#cvpysdk.subclient.Subclient.snapshot_engine_name">snapshot_engine_name</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.software_compression" href="../../subclient.html#cvpysdk.subclient.Subclient.software_compression">software_compression</a></code></li>
@@ -1412,7 +1736,9 @@ dict of the pst to add to the subclient</p>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.subclient_guid" href="../../subclient.html#cvpysdk.subclient.Subclient.subclient_guid">subclient_guid</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.subclient_id" href="../../subclient.html#cvpysdk.subclient.Subclient.subclient_id">subclient_id</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.subclient_name" href="../../subclient.html#cvpysdk.subclient.Subclient.subclient_name">subclient_name</a></code></li>
+<li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.unset_proxy_for_backup_copy" href="../../subclient.html#cvpysdk.subclient.Subclient.unset_proxy_for_backup_copy">unset_proxy_for_backup_copy</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.unset_proxy_for_snap" href="../../subclient.html#cvpysdk.subclient.Subclient.unset_proxy_for_snap">unset_proxy_for_snap</a></code></li>
+<li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.update_atlas_instance" href="../../subclient.html#cvpysdk.subclient.Subclient.update_atlas_instance">update_atlas_instance</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.update_properties" href="../../subclient.html#cvpysdk.subclient.Subclient.update_properties">update_properties</a></code></li>
 </ul>
 </li>

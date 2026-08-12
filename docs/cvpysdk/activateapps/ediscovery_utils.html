@@ -32,7 +32,8 @@ Class for getting ediscovery clients details for different apps in activate</p>
 Class to represent all datasources associated with ediscovery client</p>
 <p>EdiscoveryDataSource:
 Class to represent single data source associated with edisocvery client</p>
-<h2 id="ediscoveryclients">Ediscoveryclients</h2>
+<p>Ediscoveryclients
+-----=</p>
 <p><strong>init</strong>()
 &ndash;
 initialise object of the EdiscoveryClients class</p>
@@ -53,7 +54,8 @@ Adds ediscovery client</p>
 <p>delete()
 &ndash;
 deletes ediscovery client</p>
-<h2 id="ediscoveryclientoperations">Ediscoveryclientoperations</h2>
+<p>Ediscoveryclientoperations
+-----=</p>
 <p><strong>init</strong>()
 &ndash;
 initialise object of the EdiscoveryClientOperations class</p>
@@ -120,7 +122,8 @@ calls workflow operation for task</p>
 <h2 id="ediscoveryclientoperations-attributes">EdiscoveryClientOperations Attributes:</h2>
 <pre><code>**associations**            --  returns the blob of associated entities for this client
 </code></pre>
-<h2 id="ediscoverydatasources">Ediscoverydatasources</h2>
+<p>Ediscoverydatasources
+-----=</p>
 <p><strong>init</strong>()
 &ndash;
 initialise object of the EdiscoveryDataSources class</p>
@@ -156,6 +159,10 @@ deletes the given data source associated with client</p>
 <p>add_fs_data_source()
 &ndash;
 adds file system data source</p>
+<p>add_bulk_fs_data_source()
+&ndash;
+This method allows creating multiple file system data sources in a single
+API call</p>
 <p>add_o365_sdg_data_source()
 &ndash;
 Adds Office365 SDG data source to a project</p>
@@ -176,7 +183,8 @@ returns the document count for specified data source</p>
 
 **client_targetapp**        --  returns the source details of client (FSO/SDG)
 </code></pre>
-<h2 id="ediscoverydatasource">Ediscoverydatasource</h2>
+<p>Ediscoverydatasource
+-----=</p>
 <p><strong>init</strong>()
 &ndash;
 initialise object of the EdiscoveryDataSource class</p>
@@ -261,7 +269,7 @@ starts collection job on this data source</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L1-L3407" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L1-L3480" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -385,6 +393,9 @@ EdiscoveryDataSources:
 
     add_fs_data_source()                    --  adds file system data source
 
+    add_bulk_fs_data_source()               --  This method allows creating multiple file system data sources in a single
+                                                API call
+
     add_o365_sdg_data_source()              --  Adds Office365 SDG data source to a project
 
     refresh()                               --  refresh the data sources details associated with client
@@ -479,6 +490,7 @@ import copy
 import time
 import json
 import os
+import re
 
 from ..activateapps.entity_manager import EntityManagerTypes
 
@@ -750,11 +762,15 @@ class EdiscoveryClients():
         flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, api)
         output = {}
         if flag:
-            if response.json() and &#39;eDiscoveryClientProp&#39; in response.json():
-                projects = response.json()[&#39;eDiscoveryClientProp&#39;]
+            response_json = response.json()
+            if response_json and &#39;eDiscoveryClientProp&#39; in response_json:
+                projects = response_json[&#39;eDiscoveryClientProp&#39;]
                 for project in projects:
                     project[&#39;clientId&#39;] = project[&#39;eDiscoveryClient&#39;][&#39;clientId&#39;]
                     output[project[&#39;eDiscoveryClient&#39;][&#39;clientName&#39;].lower()] = project
+                return output
+            # Don&#39;t raise exception when there are no projects created
+            if response_json == {}:
                 return output
             raise SDKException(&#39;EdiscoveryClients&#39;, &#39;117&#39;)
         self._response_not_success(response)
@@ -813,8 +829,9 @@ class EdiscoveryClientOperations():
         self._API_DOC_TASK = self._services[&#39;EDISCOVERY_REQUEST_DOCUMENT_MARKER&#39;]
         self._API_CONFIGURE_TASK = self._services[&#39;EDISCOVERY_CONFIGURE_TASK&#39;]
         self._API_TASK_WORKFLOW = self._services[&#39;EDICOVERY_TASK_WORKFLOW&#39;]
+        self._API_TASK_AUDIT = self._services[&#39;EDISCOVERY_TASK_AUDIT&#39;]
         from .file_storage_optimization import FsoServer, FsoServerGroup
-        from .sensitive_data_governance import Project
+        from .sensitive_data_governance import Project, Projects
         from .request_manager import Request
 
         if isinstance(class_object, FsoServer):
@@ -854,6 +871,10 @@ class EdiscoveryClientOperations():
             self._app_type = 2  # for sharing, app type param
             self._search_entity_type = 188
             self._search_entity_id = class_object.project_id
+        elif isinstance(class_object, Projects):
+            self._client_id = 0
+            self._search_entity_type = 188
+            self._search_entity_id = &#34;all&#34;
         elif isinstance(class_object, Request):
             self._client_id = class_object.request_id
             self._request_type = class_object.request_type
@@ -1280,13 +1301,15 @@ class EdiscoveryClientOperations():
         # if called from EdiscoveryDatasource, then no association check needed as sharing is not possible at this level
         from ..activateapps.file_storage_optimization import FsoServerGroup
         from ..activateapps.request_manager import Request
+        from ..activateapps.sensitive_data_governance import Projects
         if isinstance(
                 self._class_obj,
                 Request) or isinstance(
                 self._class_obj,
                 EdiscoveryDatasource) or isinstance(
                 self._class_obj,
-                FsoServerGroup):
+                FsoServerGroup) or isinstance(
+                self._class_obj, Projects):
             return {}
         association_request_json = copy.deepcopy(EdiscoveryConstants.SHARE_REQUEST_JSON)
         del association_request_json[&#39;securityAssociations&#39;]
@@ -1809,6 +1832,21 @@ class EdiscoveryClientOperations():
                         f&#34;Something wrong while invoking task workflow operation - {response.json()[&#39;errorMessage&#39;]}&#34;)
                 if &#39;jobId&#39; in response.json():
                     return response.json()[&#39;jobId&#39;]
+                else:
+                    retry = 3
+                    while retry &gt; 0 :
+                        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._API_TASK_AUDIT % self._client_id)
+                        if flag:
+                            if response.json() and &#39;auditDetails&#39; in response.json():
+                                audit_records = response.json()[&#39;auditDetails&#39;]
+                                for record in audit_records:
+                                    for message in record.get(&#34;messages&#34;, []):
+                                        match = re.search(r&#34;ApprovalWorkflowJobId: Set to \[(\d+)\]&#34;, message)
+                                        if match:
+                                            return int(match.group(1))
+                        retry = retry - 1
+                        time.sleep(10)
+                    raise SDKException(&#39;EdiscoveryClients&#39;, &#39;102&#39;, f&#34;Workflow job fetch fails from Audit&#34;)
             raise SDKException(&#39;EdiscoveryClients&#39;, &#39;102&#39;, f&#34;Workflow task failed&#34;)
         self._response_not_success(response)
 
@@ -2087,9 +2125,7 @@ class EdiscoveryDataSources():
 
                     country_code        (str)       --  Country code (ISO 3166 2-letter code)
 
-                    user_name           (str)       --  User name who has access to UNC path
-
-                    password            (str)       --  base64 encoded password to access unc path
+                    credential_name     (str)       --  Credential name to use for UNC crawl path
 
                     enable_monitoring   (str)       --  specifies whether to enable file monitoring or not for this
 
@@ -2135,8 +2171,8 @@ class EdiscoveryDataSources():
         if not is_server_group:
             is_commvault_client = self._commcell_object.clients.has_client(server_name)
             if not is_commvault_client:
-                if (&#39;access_node&#39; not in kwargs or &#39;user_name&#39; not in kwargs or &#39;password&#39; not in kwargs):
-                    raise SDKException(&#39;EdiscoveryClients&#39;, &#39;102&#39;, &#34;Access node information is missing&#34;)
+                if (&#39;access_node&#39; not in kwargs or &#39;credential_name&#39; not in kwargs):
+                    raise SDKException(&#39;EdiscoveryClients&#39;, &#39;102&#39;, &#34;Access node/Credential information is missing&#34;)
                 if not self._commcell_object.clients.has_client(kwargs.get(&#34;access_node&#34;)):
                     raise SDKException(&#39;EdiscoveryClients&#39;, &#39;102&#39;, &#34;Access node client is not present&#34;)
             inventory_resp = inv_obj.data_source.ds_handlers.get(
@@ -2230,14 +2266,11 @@ class EdiscoveryDataSources():
                 &#34;propertyValue&#34;: str(EdiscoveryConstants.CrawlType.LIVE.value)
             })
             if not is_commvault_client or &#39;access_node&#39; in kwargs:
-                request_json[&#39;datasources&#39;][0][&#39;properties&#39;].append({
-                    &#34;propertyName&#34;: &#34;username&#34;,
-                    &#34;propertyValue&#34;: kwargs.get(&#39;user_name&#39;, &#39;&#39;)
-                })
-                request_json[&#39;datasources&#39;][0][&#39;properties&#39;].append({
-                    &#34;propertyName&#34;: &#34;password&#34;,
-                    &#34;propertyValue&#34;: kwargs.get(&#39;password&#39;, &#39;&#39;)
-                })
+                credential_name = kwargs.get(&#39;credential_name&#39;, &#39;&#39;)
+                if not self._commcell_object.credentials.has_credential(credential_name):
+                    raise SDKException(&#39;EdiscoveryClients&#39;, &#39;102&#39;, &#39;Invalid credential name&#39;)
+                request_json[&#39;datasources&#39;][0][&#39;credentialId&#39;] = self._commcell_object.credentials.get(
+                    credential_name).credential_id
                 request_json[&#39;datasources&#39;][0][&#39;properties&#39;].append({
                     &#34;propertyName&#34;: &#34;domainName&#34;,
                     &#34;propertyValue&#34;: inventory_resp[&#39;domainName&#39;]
@@ -2291,6 +2324,54 @@ class EdiscoveryDataSources():
                         f&#34;Creation of data source failed with error - {error[&#39;errorCode&#39;]}&#34;)
             raise SDKException(&#39;EdiscoveryClients&#39;, &#39;115&#39;)
         self._response_not_success(response)
+
+    def add_bulk_fs_data_source(self, fs_datasource_req_list: list[dict]) -&gt; dict:
+        &#34;&#34;&#34;Adds multiple file system data sources in bulk.
+
+        This method allows creating multiple file system data sources in a single
+        API call for improved performance when adding many data sources.
+
+        Args:
+            fs_datasource_req_list (list[dict]): List of file system data source
+                request dictionaries. Each dictionary should contain the complete
+                configuration for a single data source.
+
+        Returns:
+            dict: Response from server containing creation status and details.
+
+        Raises:
+            SDKException:
+                EdiscoveryClients, 102: If the bulk creation fails with an error.
+                EdiscoveryClients, 115: If response format is unexpected.
+                Response, 101: If the API request fails.
+
+        Example:
+            &gt;&gt;&gt; datasources = [
+            ...     {&#34;datasourceName&#34;: &#34;ds1&#34;, &#34;properties&#34;: [...]},
+            ...     {&#34;datasourceName&#34;: &#34;ds2&#34;, &#34;properties&#34;: [...]}
+            ... ]
+            &gt;&gt;&gt; result = data_sources.add_bulk_fs_data_source(datasources)
+        &#34;&#34;&#34;
+        request_json = {&#34;clientDataSources&#34;: fs_datasource_req_list}
+        add_bulk_fs_ds_url = self._services[&#39;EDISCOVERY_CREATE_DATA_SOURCE_BULK&#39;]
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, add_bulk_fs_ds_url, request_json)
+
+        if flag:
+            if response.json() and &#39;errorCode&#39; in response.json():
+                if response.json()[&#39;errorCode&#39;] != 0:
+                    error_msg = response.json().get(&#39;errorMessage&#39;, &#39;&#39;)
+                    raise SDKException(
+                        &#39;EdiscoveryClients&#39;, &#39;102&#39;,
+                        f&#34;Failed to create data sources in bulk with error [{error_msg}]&#34;)
+            else:
+                raise SDKException(&#39;EdiscoveryClients&#39;, &#39;115&#39;)
+        else:
+            raise SDKException(
+                &#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
+
+        return response.json()
 
     def add_o365_sdg_data_source(self, server_name, data_source_name, plan_name,
                                  datasource_type=EdiscoveryConstants.ClientType.ONEDRIVE, **kwargs):
@@ -3688,8 +3769,9 @@ class EdiscoveryDatasource():
 <dd>
 <div class="desc"><p>Class for performing operations on ediscovery client.</p>
 <p>Initializes an instance of the EdiscoveryClientOperations class.</p>
-<h2 id="args">Args</h2>
-<p>commcell_object
+<p>Args
+-----=
+commcell_object
 (object)
 &ndash;
 instance of the commcell class</p>
@@ -3697,14 +3779,15 @@ instance of the commcell class</p>
 (object)
 &ndash; instance of Inventory/Asset/FsoServer
 /EdiscoveryDataSource/EdiscoveryDataSources/FsoServerGroup class</p>
-<h2 id="returns">Returns</h2>
-<p>object
+<p>Returns
+-----=
+object
 -
 instance of the EdiscoveryClientOperations class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L498-L1607" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L506-L1637" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class EdiscoveryClientOperations():
     &#34;&#34;&#34;Class for performing operations on ediscovery client.&#34;&#34;&#34;
@@ -3759,8 +3842,9 @@ instance of the EdiscoveryClientOperations class</p></div>
         self._API_DOC_TASK = self._services[&#39;EDISCOVERY_REQUEST_DOCUMENT_MARKER&#39;]
         self._API_CONFIGURE_TASK = self._services[&#39;EDISCOVERY_CONFIGURE_TASK&#39;]
         self._API_TASK_WORKFLOW = self._services[&#39;EDICOVERY_TASK_WORKFLOW&#39;]
+        self._API_TASK_AUDIT = self._services[&#39;EDISCOVERY_TASK_AUDIT&#39;]
         from .file_storage_optimization import FsoServer, FsoServerGroup
-        from .sensitive_data_governance import Project
+        from .sensitive_data_governance import Project, Projects
         from .request_manager import Request
 
         if isinstance(class_object, FsoServer):
@@ -3800,6 +3884,10 @@ instance of the EdiscoveryClientOperations class</p></div>
             self._app_type = 2  # for sharing, app type param
             self._search_entity_type = 188
             self._search_entity_id = class_object.project_id
+        elif isinstance(class_object, Projects):
+            self._client_id = 0
+            self._search_entity_type = 188
+            self._search_entity_id = &#34;all&#34;
         elif isinstance(class_object, Request):
             self._client_id = class_object.request_id
             self._request_type = class_object.request_type
@@ -4226,13 +4314,15 @@ instance of the EdiscoveryClientOperations class</p></div>
         # if called from EdiscoveryDatasource, then no association check needed as sharing is not possible at this level
         from ..activateapps.file_storage_optimization import FsoServerGroup
         from ..activateapps.request_manager import Request
+        from ..activateapps.sensitive_data_governance import Projects
         if isinstance(
                 self._class_obj,
                 Request) or isinstance(
                 self._class_obj,
                 EdiscoveryDatasource) or isinstance(
                 self._class_obj,
-                FsoServerGroup):
+                FsoServerGroup) or isinstance(
+                self._class_obj, Projects):
             return {}
         association_request_json = copy.deepcopy(EdiscoveryConstants.SHARE_REQUEST_JSON)
         del association_request_json[&#39;securityAssociations&#39;]
@@ -4755,6 +4845,21 @@ instance of the EdiscoveryClientOperations class</p></div>
                         f&#34;Something wrong while invoking task workflow operation - {response.json()[&#39;errorMessage&#39;]}&#34;)
                 if &#39;jobId&#39; in response.json():
                     return response.json()[&#39;jobId&#39;]
+                else:
+                    retry = 3
+                    while retry &gt; 0 :
+                        flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._API_TASK_AUDIT % self._client_id)
+                        if flag:
+                            if response.json() and &#39;auditDetails&#39; in response.json():
+                                audit_records = response.json()[&#39;auditDetails&#39;]
+                                for record in audit_records:
+                                    for message in record.get(&#34;messages&#34;, []):
+                                        match = re.search(r&#34;ApprovalWorkflowJobId: Set to \[(\d+)\]&#34;, message)
+                                        if match:
+                                            return int(match.group(1))
+                        retry = retry - 1
+                        time.sleep(10)
+                    raise SDKException(&#39;EdiscoveryClients&#39;, &#39;102&#39;, f&#34;Workflow job fetch fails from Audit&#34;)
             raise SDKException(&#39;EdiscoveryClients&#39;, &#39;102&#39;, f&#34;Workflow task failed&#34;)
         self._response_not_success(response)
 
@@ -4822,13 +4927,14 @@ instance of the EdiscoveryClientOperations class</p></div>
 <dt id="cvpysdk.activateapps.ediscovery_utils.EdiscoveryClientOperations.associations"><code class="name">var <span class="ident">associations</span></code></dt>
 <dd>
 <div class="desc"><p>returns association blob for this client</p>
-<h2 id="returns">Returns</h2>
-<p>dict &ndash;
+<p>Returns
+-----=
+dict &ndash;
 containing security association blob details</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L1598-L1607" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L1628-L1637" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def associations(self):
@@ -4850,15 +4956,18 @@ def associations(self):
 </code></dt>
 <dd>
 <div class="desc"><p>configures task for this edsicovery client</p>
-<h2 id="args">Args</h2>
-<p>task_props
+<p>Args
+-----=
+task_props
 list(dict)
 &ndash;
 Task properties</p>
-<h2 id="returns">Returns</h2>
-<p>None</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Returns
+-----=
+None</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>if input is not valid
 
 if failed to configure task
@@ -4866,7 +4975,7 @@ if failed to configure task
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L1550-L1596" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L1580-L1626" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def configure_task(self, task_props):
     &#34;&#34;&#34;configures task for this edsicovery client
@@ -4922,8 +5031,9 @@ if failed to configure task
 </code></dt>
 <dd>
 <div class="desc"><p>does document update for consent/comment</p>
-<h2 id="args">Args</h2>
-<p>doc_id
+<p>Args
+-----=
+doc_id
 (str)
 &ndash;
 Document id (Mandatory in case of SDG)</p>
@@ -4944,10 +5054,12 @@ Accept or Decline (Default:True)</p>
 &ndash;
 Redact ON or OFF (only in case of export)
 (Default:False)</p>
-<h2 id="returns">Returns</h2>
-<p>None</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Returns
+-----=
+None</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>if failed to update document
 
 if input is not valid
@@ -4955,7 +5067,7 @@ if input is not valid
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L1428-L1518" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L1443-L1533" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def do_document_task(self, comment, doc_id=None, ds_id=None, consent=True, redact=False):
     &#34;&#34;&#34;does document update for consent/comment
@@ -5055,8 +5167,9 @@ if input is not valid
 </code></dt>
 <dd>
 <div class="desc"><p>do export to CSV on data</p>
-<h2 id="args">Args</h2>
-<p>criteria
+<p>Args
+-----=
+criteria
 (str)
 &ndash;
 containing criteria for query
@@ -5076,18 +5189,20 @@ Acts as 'fl' in query</p>
 &ndash;
 Any other params which needs to be passed
 Example : { "start" : "0" }</p>
-<h2 id="returns">Returns</h2>
-<p>str
+<p>Returns
+-----=
+str
 &ndash;
 export operation token</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>    if failed to perform export
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L887-L937" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L900-L950" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def export(self, criteria=None, attr_list=None, params=None):
     &#34;&#34;&#34;do export to CSV on data
@@ -5147,8 +5262,9 @@ export operation token</p>
 </code></dt>
 <dd>
 <div class="desc"><p>returns the search params dict based on input</p>
-<h2 id="args">Args</h2>
-<p>criteria
+<p>Args
+-----=
+criteria
 (str)
 &ndash;
 containing criteria for query</p>
@@ -5179,8 +5295,9 @@ key name to be used in request (default:key)</p>
 <p>is_separate_attr (bool)
 &ndash;
 specifies whether attribute list needs to formed as separate key-value</p>
-<h2 id="returns">Returns</h2>
-<p>dict
+<p>Returns
+-----=
+dict
 &ndash;
 Containing searchparams details</p>
 <dl>
@@ -5213,7 +5330,7 @@ Containing searchparams details</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L673-L768" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L686-L781" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def form_search_params(
         self,
@@ -5318,10 +5435,12 @@ Containing searchparams details</p>
 </code></dt>
 <dd>
 <div class="desc"><p>returns the ediscovery client details for this client</p>
-<h2 id="args">Args</h2>
-<p>None</p>
-<h2 id="returns">Returns</h2>
-<p>dict
+<p>Args
+-----=
+None</p>
+<p>Returns
+-----=
+dict
 &ndash; Containing client details
 Raises;</p>
 <pre><code>SDKException:
@@ -5335,7 +5454,7 @@ Raises;</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L1171-L1200" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L1186-L1215" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_ediscovery_client_details(self):
     &#34;&#34;&#34;returns the ediscovery client details for this client
@@ -5374,10 +5493,12 @@ Raises;</p>
 </code></dt>
 <dd>
 <div class="desc"><p>returns the ediscovery project details</p>
-<h2 id="args">Args</h2>
-<p>None</p>
-<h2 id="returns">Returns</h2>
-<p>dict
+<p>Args
+-----=
+None</p>
+<p>Returns
+-----=
+dict
 &ndash; Containing project details
 Raises;</p>
 <pre><code>SDKException:
@@ -5391,7 +5512,7 @@ Raises;</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L1140-L1169" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L1155-L1184" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_ediscovery_project_details(self):
     &#34;&#34;&#34;returns the ediscovery project details
@@ -5430,16 +5551,19 @@ Raises;</p>
 </code></dt>
 <dd>
 <div class="desc"><p>returns the id of given handler name</p>
-<h2 id="args">Args</h2>
-<p>handler_name
+<p>Args
+-----=
+handler_name
 (str)
 &ndash;
 Handler name(Default: default)</p>
-<h2 id="returns">Returns</h2>
-<p>int &ndash;
+<p>Returns
+-----=
+int &ndash;
 Handler id</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>if failed to find handler
 
 if response is empty
@@ -5447,7 +5571,7 @@ if response is empty
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L850-L885" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L863-L898" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_handler_id(self, handler_name=&#34;default&#34;):
     &#34;&#34;&#34;returns the id of given handler name
@@ -5492,20 +5616,23 @@ if response is empty
 </code></dt>
 <dd>
 <div class="desc"><p>Returns the job history details of ediscovery client</p>
-<h2 id="args">Args</h2>
-<p>None</p>
-<h2 id="returns">Returns</h2>
-<p>list(dict)
+<p>Args
+-----=
+None</p>
+<p>Returns
+-----=
+list(dict)
 &ndash;
 containing job history details</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>    if failed to get job history
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L1351-L1387" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L1366-L1402" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_job_history(self):
     &#34;&#34;&#34;Returns the job history details of ediscovery client
@@ -5551,20 +5678,23 @@ containing job history details</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Returns the job status details of this asset</p>
-<h2 id="args">Args</h2>
-<p>None</p>
-<h2 id="returns">Returns</h2>
-<p>dict
+<p>Args
+-----=
+None</p>
+<p>Returns
+-----=
+dict
 &ndash;
 containing job status details</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>    if failed to get job status
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L1389-L1426" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L1404-L1441" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_job_status(self):
     &#34;&#34;&#34;Returns the job status details of this asset
@@ -5614,7 +5744,7 @@ containing job status details</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L601-L603" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L614-L616" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;refresh ediscovery client properties&#34;&#34;&#34;
@@ -5626,8 +5756,9 @@ containing job status details</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Creates or modifies the schedule associated with ediscovery client</p>
-<h2 id="args">Args</h2>
-<p>schedule_name
+<p>Args
+-----=
+schedule_name
 (str)
 &ndash;
 Schedule name</p>
@@ -5644,8 +5775,9 @@ Operation type</p>
 
                                     Supported : 2 (Add/Modify)
 </code></pre>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>  if input is not valid
 
   if failed to create/modify schedule
@@ -5653,7 +5785,7 @@ Operation type</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L605-L671" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L618-L684" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def schedule(self, schedule_name, pattern_json, ops_type=2):
     &#34;&#34;&#34;Creates or modifies the schedule associated with ediscovery client
@@ -5729,8 +5861,9 @@ Operation type</p>
 </code></dt>
 <dd>
 <div class="desc"><p>do searches on data source and returns document details</p>
-<h2 id="args">Args</h2>
-<p>criteria
+<p>Args
+-----=
+criteria
 (str)
 &ndash;
 containing criteria for query
@@ -5750,19 +5883,21 @@ Acts as 'fl' in query</p>
 &ndash;
 Any other params which needs to be passed
 Example : { "start" : "0" }</p>
-<h2 id="returns">Returns</h2>
-<p>int,list(dict),dict
+<p>Returns
+-----=
+int,list(dict),dict
 &ndash;
 Containing document count, document
 details &amp; facet/stats details(if any)</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>    if failed to perform search
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L939-L995" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L952-L1008" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def search(self, criteria=None, attr_list=None, params=None):
     &#34;&#34;&#34;do searches on data source and returns document details
@@ -5828,8 +5963,9 @@ details &amp; facet/stats details(if any)</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Shares ediscovery client with given user or user group in commcell</p>
-<h2 id="args">Args</h2>
-<p>user_or_group_name
+<p>Args
+-----=
+user_or_group_name
 (str)
 &ndash;
 Name of user or group</p>
@@ -5851,10 +5987,12 @@ Operation type</p>
                                     Supported : 1 (Add)
                                                 3 (Delete)
 </code></pre>
-<h2 id="returns">Returns</h2>
-<p>None</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Returns
+-----=
+None</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>    if unable to update security associations
 
     if response is empty or not success
@@ -5862,7 +6000,7 @@ Operation type</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L1043-L1138" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L1058-L1153" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def share(self, user_or_group_name, allow_edit_permission=False, is_user=True, ops_type=1):
     &#34;&#34;&#34;Shares ediscovery client with given user or user group in commcell
@@ -5967,8 +6105,9 @@ Operation type</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Starts job on ediscovery client</p>
-<h2 id="args">Args</h2>
-<p>wait_for_job
+<p>Args
+-----=
+wait_for_job
 (bool)
 &ndash;
 specifies whether to wait for job to complete or not</p>
@@ -5983,14 +6122,15 @@ Default : 60Mins</p>
 Return:</p>
 <pre><code>    None
 </code></pre>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>    if failed to start collection job
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L1202-L1246" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L1217-L1261" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def start_job(self, wait_for_job=False, wait_time=60, is_incr=True):
     &#34;&#34;&#34;Starts job on ediscovery client
@@ -6044,19 +6184,22 @@ Return:</p>
 </code></dt>
 <dd>
 <div class="desc"><p>calls workflow operation for task</p>
-<h2 id="args">Args</h2>
-<p>None</p>
-<h2 id="returns">Returns</h2>
-<p>str &ndash;
+<p>Args
+-----=
+None</p>
+<p>Returns
+-----=
+str &ndash;
 Workflow job id</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>if failed to call task workflow
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L1520-L1548" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L1535-L1578" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def task_workflow_operation(self):
     &#34;&#34;&#34;calls workflow operation for task
@@ -6085,6 +6228,21 @@ Workflow job id</p>
                     f&#34;Something wrong while invoking task workflow operation - {response.json()[&#39;errorMessage&#39;]}&#34;)
             if &#39;jobId&#39; in response.json():
                 return response.json()[&#39;jobId&#39;]
+            else:
+                retry = 3
+                while retry &gt; 0 :
+                    flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._API_TASK_AUDIT % self._client_id)
+                    if flag:
+                        if response.json() and &#39;auditDetails&#39; in response.json():
+                            audit_records = response.json()[&#39;auditDetails&#39;]
+                            for record in audit_records:
+                                for message in record.get(&#34;messages&#34;, []):
+                                    match = re.search(r&#34;ApprovalWorkflowJobId: Set to \[(\d+)\]&#34;, message)
+                                    if match:
+                                        return int(match.group(1))
+                    retry = retry - 1
+                    time.sleep(10)
+                raise SDKException(&#39;EdiscoveryClients&#39;, &#39;102&#39;, f&#34;Workflow job fetch fails from Audit&#34;)
         raise SDKException(&#39;EdiscoveryClients&#39;, &#39;102&#39;, f&#34;Workflow task failed&#34;)
     self._response_not_success(response)</code></pre>
 </details>
@@ -6094,16 +6252,19 @@ Workflow job id</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Waits for collection job to finish</p>
-<h2 id="args">Args</h2>
-<p>wait_time
+<p>Args
+-----=
+wait_time
 (int)
 &ndash;
 time interval to wait for job completion in Mins
 Default : 60Mins</p>
-<h2 id="return">Return</h2>
+<p>Return
+-----=</p>
 <p>None</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>    if collection job fails
 
     if timeout happens
@@ -6111,7 +6272,7 @@ Default : 60Mins</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L1315-L1349" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L1330-L1364" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def wait_for_collection_job(self, wait_time=60):
     &#34;&#34;&#34;Waits for collection job to finish
@@ -6151,12 +6312,13 @@ Default : 60Mins</p>
 </details>
 </dd>
 <dt id="cvpysdk.activateapps.ediscovery_utils.EdiscoveryClientOperations.wait_for_export"><code class="name flex">
-<span>def <span class="ident">wait_for_export</span></span>(<span>self, token, wait_time=60, download=True, download_location='C:\\Users\\Administrator\\Desktop\\Automated\\cvpysdk')</span>
+<span>def <span class="ident">wait_for_export</span></span>(<span>self, token, wait_time=60, download=True, download_location='D:\\kevinjoseph\\sdk-prod\\github')</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Waits for Export to CSV to finish</p>
-<h2 id="args">Args</h2>
-<p>wait_time
+<p>Args
+-----=
+wait_time
 (int)
 &ndash;
 time interval to wait for job completion in Mins
@@ -6174,12 +6336,14 @@ specify whether to download exported file or not</p>
 &ndash;
 Path where to download exported csv file
 Default: Current working dir</p>
-<h2 id="return">Return</h2>
+<p>Return
+-----=</p>
 <p>str
 &ndash; Download GUID for exported CSV file if download=false
 File path containing exported csv file if download=true</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>    if Export status check fails
 
     if timeout happens
@@ -6187,7 +6351,7 @@ File path containing exported csv file if download=true</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L1248-L1313" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L1263-L1328" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def wait_for_export(self, token, wait_time=60, download=True, download_location=os.getcwd()):
     &#34;&#34;&#34;Waits for Export to CSV to finish
@@ -6266,22 +6430,24 @@ File path containing exported csv file if download=true</p>
 <dd>
 <div class="desc"><p>Class for getting ediscovery clients details for different apps in activate</p>
 <p>Initializes an instance of the EdiscoveryClients class.</p>
-<h2 id="args">Args</h2>
-<p>commcell_object
+<p>Args
+-----=
+commcell_object
 (object)
 &ndash;
 instance of the commcell class</p>
 <p>class_object
 (object)
 &ndash; instance of FsoServers/FsoServerGroups/FsoServerGroup class</p>
-<h2 id="returns">Returns</h2>
-<p>object
+<p>Returns
+-----=
+object
 -
 instance of the EdiscoveryClients class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L224-L495" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L228-L503" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class EdiscoveryClients():
     &#34;&#34;&#34;Class for getting ediscovery clients details for different apps in activate&#34;&#34;&#34;
@@ -6547,11 +6713,15 @@ instance of the EdiscoveryClients class</p></div>
         flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, api)
         output = {}
         if flag:
-            if response.json() and &#39;eDiscoveryClientProp&#39; in response.json():
-                projects = response.json()[&#39;eDiscoveryClientProp&#39;]
+            response_json = response.json()
+            if response_json and &#39;eDiscoveryClientProp&#39; in response_json:
+                projects = response_json[&#39;eDiscoveryClientProp&#39;]
                 for project in projects:
                     project[&#39;clientId&#39;] = project[&#39;eDiscoveryClient&#39;][&#39;clientId&#39;]
                     output[project[&#39;eDiscoveryClient&#39;][&#39;clientName&#39;].lower()] = project
+                return output
+            # Don&#39;t raise exception when there are no projects created
+            if response_json == {}:
                 return output
             raise SDKException(&#39;EdiscoveryClients&#39;, &#39;117&#39;)
         self._response_not_success(response)</code></pre>
@@ -6563,8 +6733,9 @@ instance of the EdiscoveryClients class</p></div>
 </code></dt>
 <dd>
 <div class="desc"><p>Adds ediscovery client</p>
-<h2 id="args">Args</h2>
-<p>client_name
+<p>Args
+-----=
+client_name
 (str)
 &ndash;
 Name of the client</p>
@@ -6576,11 +6747,13 @@ Name of inventory</p>
 (str)
 &ndash;
 Plan name to associate with this client</p>
-<h2 id="returns">Returns</h2>
-<p>int &ndash;
+<p>Returns
+-----=
+int &ndash;
 client id</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>    if input is not valid
 
     if failed to create client
@@ -6590,7 +6763,7 @@ client id</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L327-L379" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L331-L383" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self, client_name, inventory_name, plan_name):
     &#34;&#34;&#34;Adds ediscovery client
@@ -6652,14 +6825,17 @@ client id</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Deletes the ediscovery client</p>
-<h2 id="args">Args</h2>
-<p>client_id (int)
+<p>Args
+-----=
+client_id (int)
 &ndash;
 Client id</p>
-<h2 id="returns">Returns</h2>
-<p>None</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Returns
+-----=
+None</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>  if input is not valid
 
   if failed to delete client
@@ -6669,7 +6845,7 @@ Client id</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L289-L325" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L293-L329" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, client_id):
     &#34;&#34;&#34;Deletes the ediscovery client
@@ -6715,10 +6891,12 @@ Client id</p>
 </code></dt>
 <dd>
 <div class="desc"><p>returns the ediscovery client group details for the app</p>
-<h2 id="args">Args</h2>
-<p>None</p>
-<h2 id="returns">Returns</h2>
-<p>dict
+<p>Args
+-----=
+None</p>
+<p>Returns
+-----=
+dict
 &ndash; Containing client group details
 Raises;</p>
 <pre><code>SDKException:
@@ -6732,7 +6910,7 @@ Raises;</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L392-L421" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L396-L425" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_ediscovery_client_group_details(self):
     &#34;&#34;&#34;returns the ediscovery client group details for the app
@@ -6771,10 +6949,12 @@ Raises;</p>
 </code></dt>
 <dd>
 <div class="desc"><p>returns the ediscovery clients details for the app</p>
-<h2 id="args">Args</h2>
-<p>None</p>
-<h2 id="returns">Returns</h2>
-<p>dict
+<p>Args
+-----=
+None</p>
+<p>Returns
+-----=
+dict
 &ndash; Containing client details
 Raises;</p>
 <pre><code>SDKException:
@@ -6788,7 +6968,7 @@ Raises;</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L423-L458" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L427-L462" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_ediscovery_clients(self):
     &#34;&#34;&#34;returns the ediscovery clients details for the app
@@ -6833,10 +7013,12 @@ Raises;</p>
 </code></dt>
 <dd>
 <div class="desc"><p>returns the ediscovery projects details for the app</p>
-<h2 id="args">Args</h2>
-<p>None</p>
-<h2 id="returns">Returns</h2>
-<p>dict
+<p>Args
+-----=
+None</p>
+<p>Returns
+-----=
+dict
 &ndash; Containing project details
 Raises;</p>
 <pre><code>SDKException:
@@ -6850,7 +7032,7 @@ Raises;</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L460-L495" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L464-L503" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_ediscovery_projects(self):
     &#34;&#34;&#34;returns the ediscovery projects details for the app
@@ -6880,11 +7062,15 @@ Raises;</p>
     flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, api)
     output = {}
     if flag:
-        if response.json() and &#39;eDiscoveryClientProp&#39; in response.json():
-            projects = response.json()[&#39;eDiscoveryClientProp&#39;]
+        response_json = response.json()
+        if response_json and &#39;eDiscoveryClientProp&#39; in response_json:
+            projects = response_json[&#39;eDiscoveryClientProp&#39;]
             for project in projects:
                 project[&#39;clientId&#39;] = project[&#39;eDiscoveryClient&#39;][&#39;clientId&#39;]
                 output[project[&#39;eDiscoveryClient&#39;][&#39;clientName&#39;].lower()] = project
+            return output
+        # Don&#39;t raise exception when there are no projects created
+        if response_json == {}:
             return output
         raise SDKException(&#39;EdiscoveryClients&#39;, &#39;117&#39;)
     self._response_not_success(response)</code></pre>
@@ -6899,22 +7085,24 @@ Raises;</p>
 <dd>
 <div class="desc"><p>Class to represent all datasources associated with ediscovery client</p>
 <p>Initializes an instance of the EdiscoveryDataSources class.</p>
-<h2 id="args">Args</h2>
-<p>commcell_object
+<p>Args
+-----=
+commcell_object
 (object)
 &ndash;
 instance of the commcell class</p>
 <p>class_object
 (object)
 &ndash; instance of FsoServer/FsoServers/FsoServerGroups class</p>
-<h2 id="returns">Returns</h2>
-<p>object
+<p>Returns
+-----=
+object
 -
 instance of the EdiscoveryDataSources class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L1610-L2477" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L1640-L2550" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class EdiscoveryDataSources():
     &#34;&#34;&#34;Class to represent all datasources associated with ediscovery client&#34;&#34;&#34;
@@ -7131,9 +7319,7 @@ instance of the EdiscoveryDataSources class</p></div>
 
                     country_code        (str)       --  Country code (ISO 3166 2-letter code)
 
-                    user_name           (str)       --  User name who has access to UNC path
-
-                    password            (str)       --  base64 encoded password to access unc path
+                    credential_name     (str)       --  Credential name to use for UNC crawl path
 
                     enable_monitoring   (str)       --  specifies whether to enable file monitoring or not for this
 
@@ -7179,8 +7365,8 @@ instance of the EdiscoveryDataSources class</p></div>
         if not is_server_group:
             is_commvault_client = self._commcell_object.clients.has_client(server_name)
             if not is_commvault_client:
-                if (&#39;access_node&#39; not in kwargs or &#39;user_name&#39; not in kwargs or &#39;password&#39; not in kwargs):
-                    raise SDKException(&#39;EdiscoveryClients&#39;, &#39;102&#39;, &#34;Access node information is missing&#34;)
+                if (&#39;access_node&#39; not in kwargs or &#39;credential_name&#39; not in kwargs):
+                    raise SDKException(&#39;EdiscoveryClients&#39;, &#39;102&#39;, &#34;Access node/Credential information is missing&#34;)
                 if not self._commcell_object.clients.has_client(kwargs.get(&#34;access_node&#34;)):
                     raise SDKException(&#39;EdiscoveryClients&#39;, &#39;102&#39;, &#34;Access node client is not present&#34;)
             inventory_resp = inv_obj.data_source.ds_handlers.get(
@@ -7274,14 +7460,11 @@ instance of the EdiscoveryDataSources class</p></div>
                 &#34;propertyValue&#34;: str(EdiscoveryConstants.CrawlType.LIVE.value)
             })
             if not is_commvault_client or &#39;access_node&#39; in kwargs:
-                request_json[&#39;datasources&#39;][0][&#39;properties&#39;].append({
-                    &#34;propertyName&#34;: &#34;username&#34;,
-                    &#34;propertyValue&#34;: kwargs.get(&#39;user_name&#39;, &#39;&#39;)
-                })
-                request_json[&#39;datasources&#39;][0][&#39;properties&#39;].append({
-                    &#34;propertyName&#34;: &#34;password&#34;,
-                    &#34;propertyValue&#34;: kwargs.get(&#39;password&#39;, &#39;&#39;)
-                })
+                credential_name = kwargs.get(&#39;credential_name&#39;, &#39;&#39;)
+                if not self._commcell_object.credentials.has_credential(credential_name):
+                    raise SDKException(&#39;EdiscoveryClients&#39;, &#39;102&#39;, &#39;Invalid credential name&#39;)
+                request_json[&#39;datasources&#39;][0][&#39;credentialId&#39;] = self._commcell_object.credentials.get(
+                    credential_name).credential_id
                 request_json[&#39;datasources&#39;][0][&#39;properties&#39;].append({
                     &#34;propertyName&#34;: &#34;domainName&#34;,
                     &#34;propertyValue&#34;: inventory_resp[&#39;domainName&#39;]
@@ -7335,6 +7518,54 @@ instance of the EdiscoveryDataSources class</p></div>
                         f&#34;Creation of data source failed with error - {error[&#39;errorCode&#39;]}&#34;)
             raise SDKException(&#39;EdiscoveryClients&#39;, &#39;115&#39;)
         self._response_not_success(response)
+
+    def add_bulk_fs_data_source(self, fs_datasource_req_list: list[dict]) -&gt; dict:
+        &#34;&#34;&#34;Adds multiple file system data sources in bulk.
+
+        This method allows creating multiple file system data sources in a single
+        API call for improved performance when adding many data sources.
+
+        Args:
+            fs_datasource_req_list (list[dict]): List of file system data source
+                request dictionaries. Each dictionary should contain the complete
+                configuration for a single data source.
+
+        Returns:
+            dict: Response from server containing creation status and details.
+
+        Raises:
+            SDKException:
+                EdiscoveryClients, 102: If the bulk creation fails with an error.
+                EdiscoveryClients, 115: If response format is unexpected.
+                Response, 101: If the API request fails.
+
+        Example:
+            &gt;&gt;&gt; datasources = [
+            ...     {&#34;datasourceName&#34;: &#34;ds1&#34;, &#34;properties&#34;: [...]},
+            ...     {&#34;datasourceName&#34;: &#34;ds2&#34;, &#34;properties&#34;: [...]}
+            ... ]
+            &gt;&gt;&gt; result = data_sources.add_bulk_fs_data_source(datasources)
+        &#34;&#34;&#34;
+        request_json = {&#34;clientDataSources&#34;: fs_datasource_req_list}
+        add_bulk_fs_ds_url = self._services[&#39;EDISCOVERY_CREATE_DATA_SOURCE_BULK&#39;]
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;, add_bulk_fs_ds_url, request_json)
+
+        if flag:
+            if response.json() and &#39;errorCode&#39; in response.json():
+                if response.json()[&#39;errorCode&#39;] != 0:
+                    error_msg = response.json().get(&#39;errorMessage&#39;, &#39;&#39;)
+                    raise SDKException(
+                        &#39;EdiscoveryClients&#39;, &#39;102&#39;,
+                        f&#34;Failed to create data sources in bulk with error [{error_msg}]&#34;)
+            else:
+                raise SDKException(&#39;EdiscoveryClients&#39;, &#39;115&#39;)
+        else:
+            raise SDKException(
+                &#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
+
+        return response.json()
 
     def add_o365_sdg_data_source(self, server_name, data_source_name, plan_name,
                                  datasource_type=EdiscoveryConstants.ClientType.ONEDRIVE, **kwargs):
@@ -7790,13 +8021,14 @@ instance of the EdiscoveryDataSources class</p></div>
 <dt id="cvpysdk.activateapps.ediscovery_utils.EdiscoveryDataSources.client_id"><code class="name">var <span class="ident">client_id</span></code></dt>
 <dd>
 <div class="desc"><p>returns the associated client id</p>
-<h2 id="returns">Returns</h2>
-<p>int &ndash;
+<p>Returns
+-----=
+int &ndash;
 client id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L2423-L2432" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L2496-L2505" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def client_id(self):
@@ -7813,13 +8045,14 @@ def client_id(self):
 <dt id="cvpysdk.activateapps.ediscovery_utils.EdiscoveryDataSources.client_targetapp"><code class="name">var <span class="ident">client_targetapp</span></code></dt>
 <dd>
 <div class="desc"><p>returns the source client targetapp</p>
-<h2 id="returns">Returns</h2>
-<p>str &ndash;
+<p>Returns
+-----=
+str &ndash;
 Target app for this data sources</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L2434-L2443" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L2507-L2516" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def client_targetapp(self):
@@ -7836,13 +8069,14 @@ def client_targetapp(self):
 <dt id="cvpysdk.activateapps.ediscovery_utils.EdiscoveryDataSources.data_sources"><code class="name">var <span class="ident">data_sources</span></code></dt>
 <dd>
 <div class="desc"><p>returns the list of data sources display name associated with this client</p>
-<h2 id="returns">Returns</h2>
-<p>list &ndash;
+<p>Returns
+-----=
+list &ndash;
 Name of data sources</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L2412-L2421" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L2485-L2494" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def data_sources(self):
@@ -7859,13 +8093,14 @@ def data_sources(self):
 <dt id="cvpysdk.activateapps.ediscovery_utils.EdiscoveryDataSources.ediscovery_client_props"><code class="name">var <span class="ident">ediscovery_client_props</span></code></dt>
 <dd>
 <div class="desc"><p>Returns the associated client properties</p>
-<h2 id="returns">Returns</h2>
-<p>dict &ndash;
+<p>Returns
+-----=
+dict &ndash;
 containing client properties</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L2445-L2454" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L2518-L2527" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def ediscovery_client_props(self):
@@ -7882,13 +8117,14 @@ def ediscovery_client_props(self):
 <dt id="cvpysdk.activateapps.ediscovery_utils.EdiscoveryDataSources.total_documents"><code class="name">var <span class="ident">total_documents</span></code></dt>
 <dd>
 <div class="desc"><p>returns the total document counts of all data sources associated with this client</p>
-<h2 id="returns">Returns</h2>
-<p>int &ndash;
+<p>Returns
+-----=
+int &ndash;
 Total crawled documents from all of these data sources</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L2456-L2477" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L2529-L2550" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def total_documents(self):
@@ -7917,13 +8153,103 @@ def total_documents(self):
 </dl>
 <h3>Methods</h3>
 <dl>
+<dt id="cvpysdk.activateapps.ediscovery_utils.EdiscoveryDataSources.add_bulk_fs_data_source"><code class="name flex">
+<span>def <span class="ident">add_bulk_fs_data_source</span></span>(<span>self, fs_datasource_req_list: list[dict]) ‑> dict</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Adds multiple file system data sources in bulk.</p>
+<p>This method allows creating multiple file system data sources in a single
+API call for improved performance when adding many data sources.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>fs_datasource_req_list</code></strong> :&ensp;<code>list[dict]</code></dt>
+<dd>List of file system data source
+request dictionaries. Each dictionary should contain the complete
+configuration for a single data source.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>Response from server containing creation status and details.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt>SDKException:</dt>
+<dt><code>
+<a title="cvpysdk.activateapps.ediscovery_utils.EdiscoveryClients" href="#cvpysdk.activateapps.ediscovery_utils.EdiscoveryClients">EdiscoveryClients</a>, 102</code></dt>
+<dd>If the bulk creation fails with an error.
+EdiscoveryClients, 115: If response format is unexpected.
+Response, 101: If the API request fails.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; datasources = [
+...     {&quot;datasourceName&quot;: &quot;ds1&quot;, &quot;properties&quot;: [...]},
+...     {&quot;datasourceName&quot;: &quot;ds2&quot;, &quot;properties&quot;: [...]}
+... ]
+&gt;&gt;&gt; result = data_sources.add_bulk_fs_data_source(datasources)
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L2055-L2101" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def add_bulk_fs_data_source(self, fs_datasource_req_list: list[dict]) -&gt; dict:
+    &#34;&#34;&#34;Adds multiple file system data sources in bulk.
+
+    This method allows creating multiple file system data sources in a single
+    API call for improved performance when adding many data sources.
+
+    Args:
+        fs_datasource_req_list (list[dict]): List of file system data source
+            request dictionaries. Each dictionary should contain the complete
+            configuration for a single data source.
+
+    Returns:
+        dict: Response from server containing creation status and details.
+
+    Raises:
+        SDKException:
+            EdiscoveryClients, 102: If the bulk creation fails with an error.
+            EdiscoveryClients, 115: If response format is unexpected.
+            Response, 101: If the API request fails.
+
+    Example:
+        &gt;&gt;&gt; datasources = [
+        ...     {&#34;datasourceName&#34;: &#34;ds1&#34;, &#34;properties&#34;: [...]},
+        ...     {&#34;datasourceName&#34;: &#34;ds2&#34;, &#34;properties&#34;: [...]}
+        ... ]
+        &gt;&gt;&gt; result = data_sources.add_bulk_fs_data_source(datasources)
+    &#34;&#34;&#34;
+    request_json = {&#34;clientDataSources&#34;: fs_datasource_req_list}
+    add_bulk_fs_ds_url = self._services[&#39;EDISCOVERY_CREATE_DATA_SOURCE_BULK&#39;]
+
+    flag, response = self._cvpysdk_object.make_request(
+        &#39;POST&#39;, add_bulk_fs_ds_url, request_json)
+
+    if flag:
+        if response.json() and &#39;errorCode&#39; in response.json():
+            if response.json()[&#39;errorCode&#39;] != 0:
+                error_msg = response.json().get(&#39;errorMessage&#39;, &#39;&#39;)
+                raise SDKException(
+                    &#39;EdiscoveryClients&#39;, &#39;102&#39;,
+                    f&#34;Failed to create data sources in bulk with error [{error_msg}]&#34;)
+        else:
+            raise SDKException(&#39;EdiscoveryClients&#39;, &#39;115&#39;)
+    else:
+        raise SDKException(
+            &#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
+
+    return response.json()</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.activateapps.ediscovery_utils.EdiscoveryDataSources.add_fs_data_source"><code class="name flex">
 <span>def <span class="ident">add_fs_data_source</span></span>(<span>self, server_name, data_source_name, inventory_name, plan_name, source_type=SourceType.BACKUP, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Adds file system data source to server</p>
-<h2 id="args">Args</h2>
-<p>server_name
+<p>Args
+-----=
+server_name
 (str)
 &ndash;
 Server name which needs to be added</p>
@@ -7957,21 +8283,21 @@ country_name        (str)       --  country name where server is located (defaul
 
 country_code        (str)       --  Country code (ISO 3166 2-letter code)
 
-user_name           (str)       --  User name who has access to UNC path
-
-password            (str)       --  base64 encoded password to access unc path
+credential_name     (str)       --  Credential name to use for UNC crawl path
 
 enable_monitoring   (str)       --  specifies whether to enable file monitoring or not for this
 </code></pre>
-<h2 id="returns">Returns</h2>
-<p>obj
+<p>Returns
+-----=
+obj
 &ndash;
 Instance of EdiscoveryDataSource class</p>
 <p>None
 &ndash;
 if it is called to create FSO server group</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>  if plan/inventory/index server doesn't exists
 
   if failed to add FSO server data source
@@ -7979,7 +8305,7 @@ if it is called to create FSO server group</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L1794-L2028" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L1824-L2053" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_fs_data_source(self, server_name, data_source_name, inventory_name, plan_name,
                        source_type=EdiscoveryConstants.SourceType.BACKUP, **kwargs):
@@ -8012,9 +8338,7 @@ if it is called to create FSO server group</p>
 
                 country_code        (str)       --  Country code (ISO 3166 2-letter code)
 
-                user_name           (str)       --  User name who has access to UNC path
-
-                password            (str)       --  base64 encoded password to access unc path
+                credential_name     (str)       --  Credential name to use for UNC crawl path
 
                 enable_monitoring   (str)       --  specifies whether to enable file monitoring or not for this
 
@@ -8060,8 +8384,8 @@ if it is called to create FSO server group</p>
     if not is_server_group:
         is_commvault_client = self._commcell_object.clients.has_client(server_name)
         if not is_commvault_client:
-            if (&#39;access_node&#39; not in kwargs or &#39;user_name&#39; not in kwargs or &#39;password&#39; not in kwargs):
-                raise SDKException(&#39;EdiscoveryClients&#39;, &#39;102&#39;, &#34;Access node information is missing&#34;)
+            if (&#39;access_node&#39; not in kwargs or &#39;credential_name&#39; not in kwargs):
+                raise SDKException(&#39;EdiscoveryClients&#39;, &#39;102&#39;, &#34;Access node/Credential information is missing&#34;)
             if not self._commcell_object.clients.has_client(kwargs.get(&#34;access_node&#34;)):
                 raise SDKException(&#39;EdiscoveryClients&#39;, &#39;102&#39;, &#34;Access node client is not present&#34;)
         inventory_resp = inv_obj.data_source.ds_handlers.get(
@@ -8155,14 +8479,11 @@ if it is called to create FSO server group</p>
             &#34;propertyValue&#34;: str(EdiscoveryConstants.CrawlType.LIVE.value)
         })
         if not is_commvault_client or &#39;access_node&#39; in kwargs:
-            request_json[&#39;datasources&#39;][0][&#39;properties&#39;].append({
-                &#34;propertyName&#34;: &#34;username&#34;,
-                &#34;propertyValue&#34;: kwargs.get(&#39;user_name&#39;, &#39;&#39;)
-            })
-            request_json[&#39;datasources&#39;][0][&#39;properties&#39;].append({
-                &#34;propertyName&#34;: &#34;password&#34;,
-                &#34;propertyValue&#34;: kwargs.get(&#39;password&#39;, &#39;&#39;)
-            })
+            credential_name = kwargs.get(&#39;credential_name&#39;, &#39;&#39;)
+            if not self._commcell_object.credentials.has_credential(credential_name):
+                raise SDKException(&#39;EdiscoveryClients&#39;, &#39;102&#39;, &#39;Invalid credential name&#39;)
+            request_json[&#39;datasources&#39;][0][&#39;credentialId&#39;] = self._commcell_object.credentials.get(
+                credential_name).credential_id
             request_json[&#39;datasources&#39;][0][&#39;properties&#39;].append({
                 &#34;propertyName&#34;: &#34;domainName&#34;,
                 &#34;propertyValue&#34;: inventory_resp[&#39;domainName&#39;]
@@ -8223,8 +8544,9 @@ if it is called to create FSO server group</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Adds Office365 SDG data source to a project</p>
-<h2 id="args">Args</h2>
-<p>server_name
+<p>Args
+-----=
+server_name
 (str)
 &ndash;
 Server name which needs to be added</p>
@@ -8247,18 +8569,20 @@ country_code        (str)       --  Country code (ISO 3166 2-letter code)
 
 users               (list)      --  List of users/mailboxes to be added. If empty, all users would be added
 </code></pre>
-<h2 id="returns">Returns</h2>
-<p>obj
+<p>Returns
+-----=
+obj
 &ndash;
 Instance of EdiscoveryDataSource class</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>  if plan doesn't exists
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L2030-L2144" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L2103-L2217" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_o365_sdg_data_source(self, server_name, data_source_name, plan_name,
                              datasource_type=EdiscoveryConstants.ClientType.ONEDRIVE, **kwargs):
@@ -8382,15 +8706,18 @@ Instance of EdiscoveryDataSource class</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Deletes the given data source from client</p>
-<h2 id="args">Args</h2>
-<p>data_source_name
+<p>Args
+-----=
+data_source_name
 (str)
 &ndash;
 Datasource name</p>
-<h2 id="returns">Returns</h2>
-<p>None</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Returns
+-----=
+None</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>    if failed to find given data source in this client
 
     if failed to delete the data source
@@ -8398,7 +8725,7 @@ Datasource name</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L2174-L2210" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L2247-L2283" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, data_source_name):
     &#34;&#34;&#34;Deletes the given data source from client
@@ -8444,16 +8771,19 @@ Datasource name</p>
 </code></dt>
 <dd>
 <div class="desc"><p>returns EdiscoveryDataSource class object for given data source name</p>
-<h2 id="args">Args</h2>
-<p>data_source_name
+<p>Args
+-----=
+data_source_name
 (str)
 &ndash;
 Datasource name</p>
-<h2 id="returns">Returns</h2>
-<p>obj &ndash;
+<p>Returns
+-----=
+obj &ndash;
 Instance of EdiscoveryDataSource class</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>    if failed to find given data source in this client
 
     if input is not valid
@@ -8461,7 +8791,7 @@ Instance of EdiscoveryDataSource class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L2234-L2262" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L2307-L2335" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, data_source_name):
     &#34;&#34;&#34;returns EdiscoveryDataSource class object for given data source name
@@ -8499,16 +8829,19 @@ Instance of EdiscoveryDataSource class</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Returns the document count for given data source</p>
-<h2 id="args">Args</h2>
-<p>data_source
+<p>Args
+-----=
+data_source
 (str)
 &ndash;
 Name of the data source</p>
-<h2 id="returns">Returns</h2>
-<p>int &ndash;
+<p>Returns
+-----=
+int &ndash;
 Document count</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>    if data source doesn't exists
 
     if failed to get document count
@@ -8516,7 +8849,7 @@ Document count</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L2373-L2410" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L2446-L2483" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_datasource_document_count(self, data_source):
     &#34;&#34;&#34;Returns the document count for given data source
@@ -8563,23 +8896,26 @@ Document count</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Checks whether given data source exists in this client or not</p>
-<h2 id="args">Args</h2>
-<p>data_source_name
+<p>Args
+-----=
+data_source_name
 (str)
 &ndash;
 Datasource name</p>
-<h2 id="returns">Returns</h2>
-<p>bool
+<p>Returns
+-----=
+bool
 &ndash;
 True if exists else false</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>    if failed to find given data source in this client
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L2212-L2232" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L2285-L2305" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_data_source(self, data_source_name):
     &#34;&#34;&#34;Checks whether given data source exists in this client or not
@@ -8612,7 +8948,7 @@ True if exists else false</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L1777-L1792" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L1807-L1822" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the data sources associated with edisocvery client&#34;&#34;&#34;
@@ -8641,8 +8977,9 @@ True if exists else false</p>
 <dd>
 <div class="desc"><p>Class to represent single datasource associated with ediscovery client</p>
 <p>Initializes an instance of the EdiscoveryDataSource class.</p>
-<h2 id="args">Args</h2>
-<p>commcell_object
+<p>Args
+-----=
+commcell_object
 (object)
 &ndash;
 instance of the commcell class</p>
@@ -8664,14 +9001,15 @@ client id where this data source belongs to</p>
 &ndash;
 Specifies which app type these data sources belongs too
 Default:FSO</p>
-<h2 id="returns">Returns</h2>
-<p>object
+<p>Returns
+-----=
+object
 -
 instance of the EdiscoveryDataSource class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L2480-L3407" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L2553-L3480" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class EdiscoveryDatasource():
     &#34;&#34;&#34;Class to represent single datasource associated with ediscovery client&#34;&#34;&#34;
@@ -9607,12 +9945,13 @@ instance of the EdiscoveryDataSource class</p></div>
 <dt id="cvpysdk.activateapps.ediscovery_utils.EdiscoveryDatasource.client_id"><code class="name">var <span class="ident">client_id</span></code></dt>
 <dd>
 <div class="desc"><p>returns the client id associated</p>
-<h2 id="returns">Returns</h2>
-<p>int &ndash; client id</p></div>
+<p>Returns
+-----=
+int &ndash; client id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L3351-L3360" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L3424-L3433" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def client_id(self):
@@ -9629,13 +9968,14 @@ def client_id(self):
 <dt id="cvpysdk.activateapps.ediscovery_utils.EdiscoveryDatasource.cloud_id"><code class="name">var <span class="ident">cloud_id</span></code></dt>
 <dd>
 <div class="desc"><p>returns the index server cloudid associated with this data source</p>
-<h2 id="returns">Returns</h2>
-<p>int &ndash;
+<p>Returns
+-----=
+int &ndash;
 index server cloud id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L3274-L3283" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L3347-L3356" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def cloud_id(self):
@@ -9652,13 +9992,14 @@ def cloud_id(self):
 <dt id="cvpysdk.activateapps.ediscovery_utils.EdiscoveryDatasource.computed_core_name"><code class="name">var <span class="ident">computed_core_name</span></code></dt>
 <dd>
 <div class="desc"><p>returns the computed core name for this data source</p>
-<h2 id="returns">Returns</h2>
-<p>str &ndash;
+<p>Returns
+-----=
+str &ndash;
 Index server core name for this data source</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L3296-L3305" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L3369-L3378" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def computed_core_name(self):
@@ -9675,13 +10016,14 @@ def computed_core_name(self):
 <dt id="cvpysdk.activateapps.ediscovery_utils.EdiscoveryDatasource.core_id"><code class="name">var <span class="ident">core_id</span></code></dt>
 <dd>
 <div class="desc"><p>returns the core id for this data source</p>
-<h2 id="returns">Returns</h2>
-<p>int &ndash;
+<p>Returns
+-----=
+int &ndash;
 core id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L3307-L3316" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L3380-L3389" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def core_id(self):
@@ -9698,13 +10040,14 @@ def core_id(self):
 <dt id="cvpysdk.activateapps.ediscovery_utils.EdiscoveryDatasource.core_name"><code class="name">var <span class="ident">core_name</span></code></dt>
 <dd>
 <div class="desc"><p>returns the core name for this data source</p>
-<h2 id="returns">Returns</h2>
-<p>str &ndash;
+<p>Returns
+-----=
+str &ndash;
 core name for this data source</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L3285-L3294" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L3358-L3367" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def core_name(self):
@@ -9721,13 +10064,14 @@ def core_name(self):
 <dt id="cvpysdk.activateapps.ediscovery_utils.EdiscoveryDatasource.crawl_type"><code class="name">var <span class="ident">crawl_type</span></code></dt>
 <dd>
 <div class="desc"><p>returns the crawl type for this data source</p>
-<h2 id="returns">Returns</h2>
-<p>int &ndash;
+<p>Returns
+-----=
+int &ndash;
 crawl type</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L3329-L3338" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L3402-L3411" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def crawl_type(self):
@@ -9744,13 +10088,14 @@ def crawl_type(self):
 <dt id="cvpysdk.activateapps.ediscovery_utils.EdiscoveryDatasource.crawl_type_name"><code class="name">var <span class="ident">crawl_type_name</span></code></dt>
 <dd>
 <div class="desc"><p>returns the crawl type enum name for this data source</p>
-<h2 id="returns">Returns</h2>
-<p>str &ndash;
+<p>Returns
+-----=
+str &ndash;
 crawl type</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L3318-L3327" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L3391-L3400" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def crawl_type_name(self):
@@ -9767,13 +10112,14 @@ def crawl_type_name(self):
 <dt id="cvpysdk.activateapps.ediscovery_utils.EdiscoveryDatasource.data_source_id"><code class="name">var <span class="ident">data_source_id</span></code></dt>
 <dd>
 <div class="desc"><p>returns the data source id</p>
-<h2 id="returns">Returns</h2>
-<p>int &ndash;
+<p>Returns
+-----=
+int &ndash;
 data source id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L3252-L3261" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L3325-L3334" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def data_source_id(self):
@@ -9790,13 +10136,14 @@ def data_source_id(self):
 <dt id="cvpysdk.activateapps.ediscovery_utils.EdiscoveryDatasource.data_source_name"><code class="name">var <span class="ident">data_source_name</span></code></dt>
 <dd>
 <div class="desc"><p>returns the data source name</p>
-<h2 id="returns">Returns</h2>
-<p>str &ndash;
+<p>Returns
+-----=
+str &ndash;
 Name of data source</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L3218-L3227" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L3291-L3300" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def data_source_name(self):
@@ -9813,13 +10160,14 @@ def data_source_name(self):
 <dt id="cvpysdk.activateapps.ediscovery_utils.EdiscoveryDatasource.data_source_props"><code class="name">var <span class="ident">data_source_props</span></code></dt>
 <dd>
 <div class="desc"><p>returns the data source properties</p>
-<h2 id="returns">Returns</h2>
-<p>dict &ndash;
+<p>Returns
+-----=
+dict &ndash;
 data source properties</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L3263-L3272" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L3336-L3345" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def data_source_props(self):
@@ -9836,13 +10184,14 @@ def data_source_props(self):
 <dt id="cvpysdk.activateapps.ediscovery_utils.EdiscoveryDatasource.data_source_type"><code class="name">var <span class="ident">data_source_type</span></code></dt>
 <dd>
 <div class="desc"><p>returns the data source type</p>
-<h2 id="returns">Returns</h2>
-<p>str &ndash;
+<p>Returns
+-----=
+str &ndash;
 Type of data source</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L3229-L3238" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L3302-L3311" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def data_source_type(self):
@@ -9859,13 +10208,14 @@ def data_source_type(self):
 <dt id="cvpysdk.activateapps.ediscovery_utils.EdiscoveryDatasource.data_source_type_id"><code class="name">var <span class="ident">data_source_type_id</span></code></dt>
 <dd>
 <div class="desc"><p>returns the data source type id</p>
-<h2 id="returns">Returns</h2>
-<p>int &ndash;
+<p>Returns
+-----=
+int &ndash;
 data source type</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L3240-L3250" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L3313-L3323" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def data_source_type_id(self):
@@ -9883,13 +10233,14 @@ def data_source_type_id(self):
 <dt id="cvpysdk.activateapps.ediscovery_utils.EdiscoveryDatasource.index_server_node_client_id"><code class="name">var <span class="ident">index_server_node_client_id</span></code></dt>
 <dd>
 <div class="desc"><p>returns the associated Index server node client id on which the collection exists</p>
-<h2 id="returns">Returns</h2>
-<p>str &ndash;
+<p>Returns
+-----=
+str &ndash;
 Index server node client id on which the collection exists</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L3398-L3407" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L3471-L3480" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def index_server_node_client_id(self):
@@ -9906,13 +10257,14 @@ def index_server_node_client_id(self):
 <dt id="cvpysdk.activateapps.ediscovery_utils.EdiscoveryDatasource.name"><code class="name">var <span class="ident">name</span></code></dt>
 <dd>
 <div class="desc"><p>returns the actual name for this data source</p>
-<h2 id="returns">Returns</h2>
-<p>str &ndash;
+<p>Returns
+-----=
+str &ndash;
 Actual name of the datasource</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L3387-L3396" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L3460-L3469" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def name(self):
@@ -9929,12 +10281,13 @@ def name(self):
 <dt id="cvpysdk.activateapps.ediscovery_utils.EdiscoveryDatasource.plan_id"><code class="name">var <span class="ident">plan_id</span></code></dt>
 <dd>
 <div class="desc"><p>returns the DC plan id associated</p>
-<h2 id="returns">Returns</h2>
-<p>int &ndash; Data classification plan id</p></div>
+<p>Returns
+-----=
+int &ndash; Data classification plan id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L3340-L3349" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L3413-L3422" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def plan_id(self):
@@ -9951,13 +10304,14 @@ def plan_id(self):
 <dt id="cvpysdk.activateapps.ediscovery_utils.EdiscoveryDatasource.sensitive_files_count"><code class="name">var <span class="ident">sensitive_files_count</span></code></dt>
 <dd>
 <div class="desc"><p>returns the total sensitive files count on this data source</p>
-<h2 id="returns">Returns</h2>
-<p>int &ndash;
+<p>Returns
+-----=
+int &ndash;
 Sensitive files count</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L3374-L3385" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L3447-L3458" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def sensitive_files_count(self):
@@ -9976,13 +10330,14 @@ def sensitive_files_count(self):
 <dt id="cvpysdk.activateapps.ediscovery_utils.EdiscoveryDatasource.total_documents"><code class="name">var <span class="ident">total_documents</span></code></dt>
 <dd>
 <div class="desc"><p>returns the total document from this data source</p>
-<h2 id="returns">Returns</h2>
-<p>int &ndash;
+<p>Returns
+-----=
+int &ndash;
 Total document count</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L3362-L3372" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L3435-L3445" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def total_documents(self):
@@ -10005,8 +10360,9 @@ def total_documents(self):
 </code></dt>
 <dd>
 <div class="desc"><p>do export to CSV on data</p>
-<h2 id="args">Args</h2>
-<p>criteria
+<p>Args
+-----=
+criteria
 (str)
 &ndash;
 containing criteria for query
@@ -10026,18 +10382,20 @@ Acts as 'fl' in query</p>
 &ndash;
 Any other params which needs to be passed
 Example : { "start" : "0" }</p>
-<h2 id="returns">Returns</h2>
-<p>str
+<p>Returns
+-----=
+str
 &ndash;
 export operation token</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>    if failed to perform export
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L2808-L2843" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L2881-L2916" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def export(self, criteria=None, attr_list=None, params=None):
     &#34;&#34;&#34;do export to CSV on data
@@ -10082,8 +10440,9 @@ export operation token</p>
 </code></dt>
 <dd>
 <div class="desc"><p>returns the active jobs details for this data source</p>
-<h2 id="args">Args</h2>
-<p>limit
+<p>Args
+-----=
+limit
 (int)
 &ndash;
 No of jobs to return (default: 50 rows)</p>
@@ -10093,15 +10452,16 @@ list of jobs to be retrieved which are started within specified
 hours older</p>
 <pre><code>        default: 2160 hours (last 90 days)
 </code></pre>
-<h2 id="returns">Returns</h2>
-<p>dict
+<p>Returns
+-----=
+dict
 -
 dictionary consisting of the job IDs matching the given criteria
 as the key, and their details as its value</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L2752-L2772" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L2825-L2845" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_active_jobs(self, limit=50, lookup_time=2160):
     &#34;&#34;&#34;returns the active jobs details for this data source
@@ -10131,8 +10491,9 @@ as the key, and their details as its value</p></div>
 </code></dt>
 <dd>
 <div class="desc"><p>returns the job history details for this data source</p>
-<h2 id="args">Args</h2>
-<p>limit
+<p>Args
+-----=
+limit
 (int)
 &ndash;
 No of jobs to return (default: 50 rows)</p>
@@ -10145,7 +10506,7 @@ hours older</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L2735-L2750" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L2808-L2823" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_job_history(self, limit=50, lookup_time=2160):
     &#34;&#34;&#34;returns the job history details for this data source
@@ -10173,7 +10534,7 @@ hours older</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L2598-L2600" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L2671-L2673" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;refresh the data source properties&#34;&#34;&#34;
@@ -10185,8 +10546,9 @@ hours older</p>
 </code></dt>
 <dd>
 <div class="desc"><p>do review action on documents</p>
-<h2 id="args">Args</h2>
-<p>action_type
+<p>Args
+-----=
+action_type
 (enum)
 &ndash;
 Type of action to be taken
@@ -10227,11 +10589,13 @@ ignore_all_risks    (bool)      --  specifies whether it has to be ignore risk f
 ignore_risk_type    (list)      --  list of risks which needs to be ignored
                                         Refer to EDiscoveryConstants.RiskTypes
 </code></pre>
-<h2 id="returns">Returns</h2>
-<p>None &ndash; if create_review is true</p>
+<p>Returns
+-----=
+None &ndash; if create_review is true</p>
 <p>job id &ndash; if create_review is false</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>if action type is not valid
 
 if failed to do review action on documents
@@ -10241,7 +10605,7 @@ if document id's not found
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L3000-L3196" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L3073-L3269" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def review_action(self, action_type, reviewers=None, approvers=None, document_ids=None, req_name=None, **kwargs):
     &#34;&#34;&#34;do review action on documents
@@ -10447,8 +10811,9 @@ if document id's not found
 </code></dt>
 <dd>
 <div class="desc"><p>do searches on data source and returns document details</p>
-<h2 id="args">Args</h2>
-<p>criteria
+<p>Args
+-----=
+criteria
 (str)
 &ndash;
 containing criteria for query
@@ -10468,18 +10833,20 @@ Acts as 'fl' in query</p>
 &ndash;
 Any other params which needs to be passed
 Example : { "start" : "0" }</p>
-<h2 id="returns">Returns</h2>
-<p>list(dict),dict
+<p>Returns
+-----=
+list(dict),dict
 &ndash;
 Containing document details &amp; facet details(if any)</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>    if failed to perform search
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L2845-L2876" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L2918-L2949" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def search(self, criteria=None, attr_list=None, params=None):
     &#34;&#34;&#34;do searches on data source and returns document details
@@ -10520,22 +10887,25 @@ Containing document details &amp; facet details(if any)</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Starts collection job on this data source</p>
-<h2 id="args">Args</h2>
-<p>is_incr
+<p>Args
+-----=
+is_incr
 (bool)
 &ndash;
 Specifies whether to invoke incremental or full crawl job
 Default:True (Incremental job)</p>
-<h2 id="return">Return</h2>
+<p>Return
+-----=</p>
 <p>None</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>    if failed to start collection job
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L3198-L3216" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L3271-L3289" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def start_collection(self, is_incr=True):
     &#34;&#34;&#34;Starts collection job on this data source
@@ -10563,8 +10933,9 @@ Default:True (Incremental job)</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Applies given tag to documents</p>
-<h2 id="args">Args</h2>
-<p>tags
+<p>Args
+-----=
+tags
 (list)
 &ndash;
 list of tags names which needs to be applied
@@ -10597,11 +10968,13 @@ List of approver users</p>
 (str)
 &ndash;
 Request name</p>
-<h2 id="returns">Returns</h2>
-<p>None if it is tagging with review request</p>
+<p>Returns
+-----=
+None if it is tagging with review request</p>
 <p>jobid (str) &ndash; if it is bulk operation of tagging all items without review request</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>    if tag name doesn't exists in commcell
 
     if failed to apply tag
@@ -10613,7 +10986,7 @@ Request name</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L2602-L2733" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L2675-L2806" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def tag_items(
         self,
@@ -10750,12 +11123,13 @@ Request name</p>
 </details>
 </dd>
 <dt id="cvpysdk.activateapps.ediscovery_utils.EdiscoveryDatasource.wait_for_export"><code class="name flex">
-<span>def <span class="ident">wait_for_export</span></span>(<span>self, token, wait_time=60, download=True, download_location='C:\\Users\\Administrator\\Desktop\\Automated\\cvpysdk')</span>
+<span>def <span class="ident">wait_for_export</span></span>(<span>self, token, wait_time=60, download=True, download_location='D:\\kevinjoseph\\sdk-prod\\github')</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Waits for Export to CSV to finish</p>
-<h2 id="args">Args</h2>
-<p>wait_time
+<p>Args
+-----=
+wait_time
 (int)
 &ndash;
 time interval to wait for job completion in Mins
@@ -10773,12 +11147,14 @@ specify whether to download exported file or not</p>
 &ndash;
 Path where to download exported csv file
 Default: Current working dir</p>
-<h2 id="return">Return</h2>
+<p>Return
+-----=</p>
 <p>str
 &ndash; Download GUID for exported CSV file if download=false
 File path containing exported csv file if download=true</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>    if Export job fails
 
     if timeout happens
@@ -10786,7 +11162,7 @@ File path containing exported csv file if download=true</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/ediscovery_utils.py#L2774-L2806" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/ediscovery_utils.py#L2847-L2879" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def wait_for_export(self, token, wait_time=60, download=True, download_location=os.getcwd()):
     &#34;&#34;&#34;Waits for Export to CSV to finish
@@ -10933,6 +11309,7 @@ setTimeout(() => input.focus(), 100);
 <li>
 <h4><code><a title="cvpysdk.activateapps.ediscovery_utils.EdiscoveryDataSources" href="#cvpysdk.activateapps.ediscovery_utils.EdiscoveryDataSources">EdiscoveryDataSources</a></code></h4>
 <ul class="">
+<li><code><a title="cvpysdk.activateapps.ediscovery_utils.EdiscoveryDataSources.add_bulk_fs_data_source" href="#cvpysdk.activateapps.ediscovery_utils.EdiscoveryDataSources.add_bulk_fs_data_source">add_bulk_fs_data_source</a></code></li>
 <li><code><a title="cvpysdk.activateapps.ediscovery_utils.EdiscoveryDataSources.add_fs_data_source" href="#cvpysdk.activateapps.ediscovery_utils.EdiscoveryDataSources.add_fs_data_source">add_fs_data_source</a></code></li>
 <li><code><a title="cvpysdk.activateapps.ediscovery_utils.EdiscoveryDataSources.add_o365_sdg_data_source" href="#cvpysdk.activateapps.ediscovery_utils.EdiscoveryDataSources.add_o365_sdg_data_source">add_o365_sdg_data_source</a></code></li>
 <li><code><a title="cvpysdk.activateapps.ediscovery_utils.EdiscoveryDataSources.client_id" href="#cvpysdk.activateapps.ediscovery_utils.EdiscoveryDataSources.client_id">client_id</a></code></li>

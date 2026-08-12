@@ -24,8 +24,9 @@
 </header>
 <section id="section-intro">
 <p>Service URLs for REST API operations.</p>
-<h2 id="services_dict">Services_Dict</h2>
-<p>A python dictionary for holding all the API services endpoints.</p>
+<p>Services_Dict
+-----=
+A python dictionary for holding all the API services endpoints.</p>
 <p>|</p>
 <p>get_services(web_service):
 updates the SERVICES_DICT with the WebConsole API URL</p>
@@ -37,7 +38,7 @@ dictionary, for their usage, and the value will be in the format:</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/services.py#L1-L732" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/services.py#L1-L870" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -88,9 +89,13 @@ SERVICES_DICT_TEMPLATE = {
     &#39;COMMSERV&#39;: &#39;{0}CommServ&#39;,
     &#39;GET_SAML_TOKEN&#39;: &#39;{0}Commcell/SamlToken?validityInMins=%s&#39;,
     &#39;WHO_AM_I&#39;: &#39;{0}WhoAmI&#39;,
-    &#39;CREATE_RC&#39;: &#39;{0}V4/SoftwareCache&#39;,
+    &#39;SOFTWARE_CACHE&#39;: &#39;{0}V4/SoftwareCache&#39;,
+    &#39;QUALIFIED_SERVERS_SW&#39;: &#39;{0}v4/SoftwareCache/QualifiedServers&#39;,
     &#39;DOWNLOAD_SOFTWARE&#39;: &#39;{0}V4/DownloadSoftware&#39;,
     &#39;UPGRADE_SOFTWARE&#39;: &#39;{0}V4/UpgradeSoftware&#39;,
+    &#39;AVAILABLE_PACKAGES&#39;: &#39;{0}V4/commcell/available-packages&#39;,
+    &#39;REFRESH_UPDATES&#39;: &#39;{0}RefreshUpdates&#39;,
+    &#39;FTPServicePack&#39;: &#39;{0}CommServ/FTPServicePack?ReleaseName=%s&#39;,
 
     &#39;TFA&#39;: &#39;{0}Commcell/Properties/TwoFactorAuth&#39;,
     &#39;TFA_ENABLE&#39;: &#39;{0}Commcell/Properties/TwoFactorAuth/Action/Enable&#39;,
@@ -108,19 +113,25 @@ SERVICES_DICT_TEMPLATE = {
     &#39;GET_VIRTUALIZATION_ACCESS_NODES&#39;: &#39;{0}VSAClientAndClientGroupList&#39;,
     &#39;GET_FILE_SERVER_CLIENTS&#39;: &#39;{0}/v4/FileServers&#39;,
     &#39;CLIENTFORCEDELETE&#39;: &#39;{0}Client/%s?forceDelete=1&#39;,
+    &#39;SET_PATCH_OPTIONS&#39;: &#39;{0}client/setPatchOptions&#39;,
     &#39;CLIENT&#39;: &#39;{0}Client/%s&#39;,
+    &#39;CLIENT_PASSKEY&#39;: &#39;{0}Client/%s/Passkey&#39;,
+    &#39;CLIENT_AUTH_RESTORE&#39;: &#39;{0}Client/%s/AuthRestore&#39;,
     &#39;CLIENT_LOGS&#39;: &#39;{0}Client/%s/Logs/Read&#39;,
+    &#39;CLIENT_LOGS_BROWSE&#39;: &#39;{0}Client/%s/Logs/Browse&#39;,
+    &#39;CLIENT_LOG_SERVICE&#39;: &#39;{0}Client/%s/Logs/%s&#39;,
     &#39;GET_ADDITIIONAL_SETTINGS&#39;: &#39;{0}Client/%s/AdditionalSettings&#39;,
     &#39;FILTER_CLIENTS&#39;: &#39;{0}Client?%s&#39;,
     &#39;GET_ALL_CLIENTS_PLUS_HIDDEN&#39;: &#39;{0}Client?hiddenclients=true&#39;,
     &#39;GET_ALL_PSEUDO_CLIENTS&#39;: &#39;{0}Client?PseudoClientType&#39;,
     &#39;CHECK_READINESS&#39;: &#39;{0}Client/%s/CheckReadiness?network=%s&amp;resourceCapacity=%s&#39;
                        &#39;&amp;NeedXmlResp=true&amp;includeDisabledClients=%s&amp;CSCCNetworkCheck=%s&#39;
-                       &#39;&amp;applicationCheck=%s&amp;additionalResources=%s&#39;,
+                       &#39;&amp;applicationCheck=%s&amp;additionalResources=%s&amp;ApplicationReadinessOption=%s&#39;,
     &#39;RUN_TRUEUP&#39;: &#39;{0}Office365/TrueUp&#39;,
     &#39;READ_TRUEUP_RESULTS_CLIENT&#39;: &#39;{0}Job/Office365/Results?subclientId=%s&amp;clientId=%s&amp;appTypeId=134&amp;options=4&#39;,
     &#39;READ_TRUEUP_RESULTS_USER&#39;: &#39;{0}Job/Office365/Results?subclientId=%s&amp;clientId=%s&amp;options=3&amp;appTypeId=134&amp;userGUID=%s&#39;,
     &#39;MONGODB_CHECK_READINESS&#39;: &#39;{0}/clients/mongodb/status&#39;,
+    &#39;MACHINE_BROWSE&#39;: &#39;{0}Client/%s/Action/MachineBrowse&#39;,
     &#39;CLIENT_BROWSE_FS&#39;: &#39;{0}/client/%s/browsefs&#39;,
     &#39;GET_ALL_AGENTS&#39;: &#39;{0}Agent?clientId=%s&#39;,
     &#39;AGENT&#39;: &#39;{0}Agent&#39;,
@@ -135,7 +146,6 @@ SERVICES_DICT_TEMPLATE = {
     &#39;APPLICATION_INSTANCE&#39;: &#39;{0}Application/%s&#39;,
     &#39;APPLICATION&#39;: &#39;{0}Application&#39;,
     &#39;INSTANCE_CREDENTIALS&#39;: &#39;{0}v4/Hypervisor/%s/Credentials&#39;,
-
     &#39;GET_ALL_SUBCLIENTS&#39;: &#39;{0}Subclient?clientId=%s&amp;applicationId=%s&amp;propertyLevel=20&#39;,
     &#39;ADD_SUBCLIENT&#39;: &#39;{0}Subclient&#39;,
     &#39;SUBCLIENT&#39;: &#39;{0}Subclient/%s&#39;,
@@ -152,8 +162,11 @@ SERVICES_DICT_TEMPLATE = {
     &#39;KILL_JOB&#39;: &#39;{0}Job/%s/action/kill&#39;,
     &#39;RESUBMIT_JOB&#39;: &#39;{0}Job/%s/action/Resubmit&#39;,
     &#39;ALL_JOBS&#39;: &#39;{0}Jobs&#39;,
+    &#39;ACTIVE_JOBS&#39;: &#39;{0}Jobs/active&#39;,
+    &#39;ACTIVE_JOBS_SUMMARY&#39;: &#39;{0}Jobs/aggregations/summary&#39;,
     &#39;JOB_EVENTS&#39;: &#39;{0}Events?jobId=%s&#39;,
     &#39;JOB_MANAGEMENT_SETTINGS&#39;: &#39;{0}CommServ/JobManagementSetting&#39;,
+    &#39;GET_LOGS&#39;: &#39;{0}Stream/Job/%s/Logs&#39;,
 
     &#39;ENABLE_SHARED_LAPTOP&#39;: &#39;{0}Commcell/Properties/SharedLaptopUsage/Action/Enable&#39;,
     &#39;DISABLE_SHARED_LAPTOP&#39;: &#39;{0}Commcell/Properties/SharedLaptopUsage/Action/Disable&#39;,
@@ -165,6 +178,7 @@ SERVICES_DICT_TEMPLATE = {
     &#39;CONFIGURE_TAPE_LIBRARY&#39;: &#39;{0}Library?Action=configureTape&#39;,
     &#39;EDIT_CLOUD_CONTROLLER&#39;: &#39;{0}V4/Storage/Cloud/0/Bucket/%s/AccessPath/%s&#39;,
     &#39;GET_AGP_STORAGE&#39;: &#39;{0}V4/Storage/Cloud?additionalProperties=true&amp;storageSubType=4&#39;,
+    &#39;DELETE_DEVICE_CONTROLLER&#39;: &#39;{0}DriveController?action=deleteController&#39;,
 
     &#39;GET_MOVE_MOUNTPATH_DETAILS&#39;: &#39;{0}MountPath/%s/Move&#39;,
     &#39;MOVE_MOUNTPATH&#39;: &#39;{0}MountPath/Move&#39;,
@@ -180,11 +194,13 @@ SERVICES_DICT_TEMPLATE = {
     &#39;DELETE_STORAGE_POLICY_COPY&#39;: &#39;{0}StoragePolicy?Action=deleteCopy&#39;,
     &#39;SCHEDULE_POLICY&#39;: &#39;{0}SchedulePolicy&#39;,
     &#39;CREATE_UPDATE_SCHEDULE_POLICY&#39;: &#39;{0}Task&#39;,
+    &#39;TASK_OPERATION&#39;: &#39;{0}TaskOperation&#39;,
     &#39;GET_SCHEDULE_POLICY&#39;: &#39;{0}SchedulePolicy/%s&#39;,
     &#39;MEDIA_AGENT&#39;: &#39;{0}MediaAgent/%s&#39;,
     &#39;CLOUD_MEDIA_AGENT&#39;: &#39;{0}MediaAgent/%s/CloudVMPowerManagement&#39;,
     &#39;STORAGE_POLICY_COPY&#39;: &#39;{0}V2/StoragePolicy/%s/Copy/%s&#39;,
     &#39;DISABLE_STORAGE_POLICY_COMPLIANCE_LOCK&#39;: &#39;{0}V4/StoragePolicy/%s/Copy/%s/ComplianceLock/Disable&#39;,
+    &#39;ENABLE_RETENTION_LOCK&#39;: &#39;{0}V4/StoragePolicy/%s/Copy/%s/DataRetentionLock/Enable&#39;,
     &#39;STORAGE_POLICY_INFRASTRUCTUREPOOL&#39;: &#39;{0}/StoragePolicy/Infrastructurepool?planId=%s&#39;,
     &#39;RECOVERY_ENABLERS&#39;: &#39;{0}MediaAgent/RecoveryEnabler?osType=CLIENT_PLATFORM_OSTYPE_UNIX &#39;,
     &#39;GET_ALL_ALERTS&#39;: &#39;{0}AlertRule&#39;,
@@ -235,13 +251,19 @@ SERVICES_DICT_TEMPLATE = {
 
     &#39;CLIENTGROUPS&#39;: &#39;{0}ClientGroup&#39;,
     &#39;CLIENTGROUP&#39;: &#39;{0}ClientGroup/%s&#39;,
+    &#39;CLIENTGROUP_CLOUD_POWER_MGMT_GET&#39;: &#39;{0}ClientGroup/%s/CloudVMPowerManagement&#39;,
+    &#39;CLIENTGROUP_CLOUD_POWER_MGMT&#39;: &#39;{0}ClientGroup/CloudVMPowerManagement&#39;,
     &#39;SERVERGROUPS_V4&#39;: &#39;{0}V4/ServerGroup&#39;,
+    &#39;HTTP_PROXY&#39;: &#39;{0}HttpProxySettings&#39;,
 
     &#39;USERGROUPS&#39;: &#39;{0}UserGroup?includeSystemCreated=%s&#39;,
+    &#39;V4_USERGROUPS&#39;: &#39;{0}V4/UserGroup?includeSystemCreated=%s&#39;,
     &#39;USERGROUP&#39;: &#39;{0}UserGroup/%s&#39;,
     &#39;USERGROUP_V4&#39;: &#39;{0}V4/UserGroup/%s&#39;,
     &#39;DELETE_USERGROUP&#39;: &#39;{0}UserGroup/%s?newUserId=%s&amp;newUserGroupId=%s&#39;,
+    &#39;V4_DELETE_USERGROUP&#39;: &#39;{0}V4/UserGroup/%s?newUserId=%s&amp;newUserGroupId=%s&#39;,
     &#39;COMPANY_USERGROUP&#39;: &#39;{0}UserGroup?parentProvider/providerId=%s&#39;,
+    &#39;USERGROUP_SECURITY_ASSOCIATION&#39;: &#39;{0}UserGroup/%s/Security&#39;,
 
     &#39;BROWSE&#39;: &#39;{0}DoBrowse&#39;,
     &#39;RESTORE&#39;: &#39;{0}CreateTask&#39;,
@@ -271,7 +293,8 @@ SERVICES_DICT_TEMPLATE = {
 
     &#39;INSTANCE_BROWSE&#39;: &#39;{0}Client/%s/%s/Instance/%s/Browse&#39;,
     &#39;CLOUD_DATABASE_BROWSE&#39;: &#39;{0}BrowseRDSBackups&#39;,
-
+    &#39;GET_AWS_CFT&#39;: &#39;{0}v4/Cloud/AWS/ExpressConfig/QuickCreateLink/AccessNodeCFT?platform=%s&amp;regionName=%s&amp;authentication=%s&#39;,
+    &#39;CLOUD_CONTENT_BROWSE&#39;: &#39;{0}CloudApps/CloudDBContentPreview&#39;,
     &#39;SQL_RESTORE_OPTIONS&#39;: &#39;{0}SQL/RestoreOptions&#39;,
 
     &#39;EXECUTE_QCOMMAND&#39;: &#39;{0}Qcommand/qoperation execute&#39;,
@@ -285,9 +308,11 @@ SERVICES_DICT_TEMPLATE = {
 
     &#39;CREATE_TASK&#39;: &#39;{0}CreateTask&#39;,
     &#39;ADD_INSTANCE&#39;: &#39;{0}Instance&#39;,
+    &#39;ADD_SNOWFLAKE_INSTANCE&#39;: &#39;{0}V4/AI/Snowflake/Instance&#39;,
+    &#39;ADD_PINECONE_INSTANCE&#39;: &#39;{0}V4/AI/Pinecone/Instance&#39;,
     &#39;MASKING_POLICY&#39;: &#39;{0}MaskingPolicy&#39;,
 
-    &#39;DO_COMPLIANCE_SEARCH&#39;: &#39;{0}doWebSearch&#39;,
+    &#39;DO_COMPLIANCE_SEARCH&#39;: &#39;{0}Search&#39;,
     &#39;GET_EXPORT_SETS&#39;: &#39;{0}GetContainers&#39;,
     &#39;GET_EXPORTS&#39;: &#39;{0}getContainerItems&#39;,
     &#39;ADD_EXPORT_SET&#39;: &#39;{0}PerformContainerOperation&#39;,
@@ -317,6 +342,11 @@ SERVICES_DICT_TEMPLATE = {
     &#39;SHARE_HANDLER&#39;: &#39;{0}dcube/share/handler&#39;,
     &#39;SHARE_DATASOURCE&#39;: &#39;{0}dcube/share/datasource&#39;,
     &#39;GET_CONTENT_ANALYZER_CLOUD&#39;: &#39;{0}getContentAnalyzerClient&#39;,
+    &#39;GET_SCALE_TARGETS&#39;: &#39;{0}AutoScale/ScaleTarget&#39;,
+    &#39;GET_SCALE_TARGET&#39;: &#39;{0}AutoScale/ScaleTarget/%s&#39;,
+    &#39;CREATE_SCALE_TARGET&#39;: &#39;{0}AutoScale/ScaleTarget&#39;,
+    &#39;UPDATE_SCALE_TARGET&#39;: &#39;{0}AutoScale/ScaleTarget/%s&#39;,
+    &#39;DELETE_SCALE_TARGET&#39;: &#39;{0}AutoScale/ScaleTarget/%s&#39;,
     &#39;ACTIVATE_ENTITIES&#39;: &#39;{0}dcube/entity&#39;,
     &#39;ACTIVATE_ENTITY&#39;: &#39;{0}dcube/entity/%s&#39;,
     &#39;ACTIVATE_ENTITY_CONTAINER&#39;: &#39;{0}EntityExtractionRules?getDisabled=true&#39;,
@@ -352,6 +382,7 @@ SERVICES_DICT_TEMPLATE = {
     &#39;EDISCOVERY_EXPORT&#39;: &#39;{0}dcube/export/%s&#39;,
     &#39;EDISCOVERY_EXPORT_STATUS&#39;: &#39;{0}dcube/export/%s/status?token=%s&#39;,
     &#39;EDISCOVERY_CREATE_DATA_SOURCE&#39;: &#39;{0}EDiscoveryClients/Datasources&#39;,
+    &#39;EDISCOVERY_CREATE_DATA_SOURCE_BULK&#39;: &#39;{0}EDiscoveryClients/Datasources/Bulk&#39;,
     &#39;EDISCOVERY_REVIEW_ACTIONS_WITH_REQUEST&#39;: &#39;{0}EDiscoveryClients/Datasources/Actions/Requests&#39;,
     &#39;EDISCOVERY_REVIEW_ACTIONS&#39;: &#39;{0}V2/EDiscoveryClients/Datasources/Actions&#39;,
     &#39;EDISCOVERY_CLIENTS&#39;: &#39;{0}EDiscoveryClients?eDiscoverySubtype=%s&#39;,
@@ -367,6 +398,8 @@ SERVICES_DICT_TEMPLATE = {
     &#39;EDISCOVERY_REQUEST_DOCUMENT_MARKER&#39;: &#39;{0}EDiscoveryClients/Tasks/%s/Documents&#39;,
     &#39;EDISCOVERY_CONFIGURE_TASK&#39;: &#39;{0}EDiscoveryClient/ConfigureTask&#39;,
     &#39;EDICOVERY_TASK_WORKFLOW&#39;: &#39;{0}EDiscoveryClients/Tasks/%s/Workflows&#39;,
+    &#39;EDISCOVERY_TASK_AUDIT&#39;: &#39;{0}V4/Activate/Entity/9515/%s/Audit&#39;,
+    &#39;ENTITY_BY_SENSITIVITY&#39;: &#39;{0}dcube/entitiesbysensitivity&#39;,
     &#39;GET_RESOURCE_POOLS&#39;: &#39;{0}V4/ResourcePool&#39;,
     &#39;GET_RESOURCE_POOL_DETAILS&#39;: &#39;{0}ResourcePool/%s&#39;,
     &#39;DELETE_RESOURCE_POOL&#39;: &#39;{0}ResourcePool/%s&#39;,
@@ -392,13 +425,26 @@ SERVICES_DICT_TEMPLATE = {
     &#39;V4_SERVER_PLAN&#39;: &#39;{0}V4/ServerPlan/%s&#39;,
     &#39;V4_SERVER_PLANS&#39;: &#39;{0}V4/ServerPlan&#39;,
     &#39;V4_GLOBAL_SERVER_PLANS&#39;: &#39;{0}/V4/Global/ServerPlan&#39;,
+    &#39;V4_ARCHIVER_PLAN&#39;: &#39;{0}V4/ArchivePlan&#39;,
     &#39;V4_SERVER_PLAN_BACKUP_DESTINATION&#39;: &#39;{0}V4/ServerPlan/%s/BackupDestination&#39;,
+    &#39;V4_DRBACKUP_BACKUP_DESTINATIONS&#39;: &#39;{0}V4/DRBackup/BackupDestinations&#39;,
+    &#39;V4_DRBACKUP_BACKUP_DESTINATION_DELETE&#39;: &#39;{0}V4/DRBackup/BackupDestination/%s&#39;,
+    &#39;V4_DRBACKUP_STORAGE_POLICY&#39;: &#39;{0}V4/DRBackup/StoragePolicy&#39;,
     &#39;V4_SERVER_PLAN_COPY&#39;: &#39;{0}V4/ServerPlan/%s/BackupDestination/%s&#39;,
     &#39;V4_DC_PLANS&#39;: &#39;{0}V4/DCPlan&#39;,
     &#39;V4_DC_PLAN&#39;: &#39;{0}V4/DCPlan/%s&#39;,
     &#39;V5_SERVER_PLAN_COPY&#39;: &#39;{0}V5/ServerPlan/%s/BackupDestination/%s&#39;,
+    &#39;V5_SERVER_PLAN_COPY_CLONE&#39;: &#39;{0}V5/ServerPlan/%s/BackupDestination/%s/Clone&#39;,
+    &#39;V5_LAPTOP_PLAN_COPY_CLONE&#39;: &#39;{0}V5/LaptopPlan/%s/BackupDestination/%s/Clone&#39;,
+    &#39;V5_ARCHIVER_PLAN_COPY_CLONE&#39;: &#39;{0}V5/ArchivePlan/%s/BackupDestination/%s/Clone&#39;,
     &#39;SERVER_PLAN_REGIONS&#39;: &#39;{0}V4/ServerPlan/%s/storageRegion/%s?isRegionIdList=true&#39;,
     &#39;SERVER_PLAN_RPO&#39;: &#39;{0}V4/ServerPlan/%s/RPO&#39;,
+    &#39;SERVER_PLAN_RPO_RUN&#39;: &#39;{0}V4/ServerPlan/%s/RPO/Run&#39;,
+
+    # API Documentation: Manage &gt; Plan Operations
+    &#39;V4_JOB_OPERATIONS_ON_STORAGE_COPY&#39;: &#39;{0}V4/Plan/BackupDestination/JobOperations&#39;,
+    &#39;V4_PLAN_BACKUPDESTINATION_BACKUPCOPY_JOBS&#39;: &#39;{0}V4/Plan/%s/BackupDestination/%s/BackupCopy/Jobs&#39;,
+    &#39;V4_PLAN_BACKUPDESTINATION_JOBS&#39;: &#39;{0}V4/Plan/BackupDestination/%s/Jobs&#39;,
 
     &#39;DOMAIN_CONTROLER&#39;: &#39;{0}CommCell/DomainController&#39;,
     &#39;DELETE_DOMAIN_CONTROLER&#39;: &#39;{0}CommCell/DomainController/%s&#39;,
@@ -432,20 +478,30 @@ SERVICES_DICT_TEMPLATE = {
     &#39;USERS&#39;: &#39;{0}User&#39;,
     &#39;V4_USERS&#39;: &#39;{0}v4/user?additionalProperties=true&#39;,
     &#39;USER&#39;: &#39;{0}User/%s?Level=50&#39;,
+    &#39;V4_USER&#39;: &#39;{0}v4/user/%s&#39;,
+    &#39;USER_SECURITY_ASSOCIATION&#39;: &#39;{0}User/%s/Security&#39;,
     &#39;DELETE_USER&#39;: &#39;{0}User/%s?newUserId=%s&amp;newUserGroupId=%s&#39;,
+    &#39;V4_DELETE_USER&#39;: &#39;{0}v4/User/%s?newUserId=%s&amp;newUserGroupId=%s&#39;,
     &#39;OTP&#39;: &#39;{0}User/%s/preferences/OTP&#39;,
+    &#39;GENERATE_OTP&#39;: &#39;{0}user/otp/generate?dM2ClientType=AdminConsole&#39;,
+    &#39;SESSION&#39;: &#39;{0}Session?userId=%s&#39;,
 
     &#39;UNLOCK&#39;: &#39;{0}User/Unlock&#39;,
 
     &#39;ROLES&#39;: &#39;{0}Role&#39;,
     &#39;ROLE&#39;: &#39;{0}Role/%s&#39;,
+    &#39;V4_ROLES&#39;: &#39;{0}V4/Role&#39;,
+    &#39;V4_ROLE&#39;: &#39;{0}V4/Role/%s&#39;,
+    &#39;PERMISSIONS&#39;: &#39;{0}V4/Permissions&#39;,
 
-    &#39;ALL_CREDENTIALS&#39;: &#39;{0}/CommCell/Credentials?propertyLevel=30&#39;,
+    &#39;ALL_CREDENTIALS&#39;: &#39;{0}/CommCell/Credentials?propertyLevel=10&#39;,
+    &#39;ALL_CREDENTIAL_VAULTS&#39;: &#39;{0}v4/Credential?recordType=1000&#39;,
     &#39;ONE_CREDENTIAL&#39;: &#39;{0}/CommCell/Credentials/%s?propertyLevel=30&#39;,
     &#39;CREDENTIAL&#39;:   &#39;{0}/Commcell/Credentials&#39;,
     &#39;DELETE_RECORD&#39;: &#39;{0}/Commcell/Credentials/action/delete&#39;,
 
     &#39;ADD_CREDENTIALS&#39;: &#39;{0}V4/Credential&#39;,
+    &#39;V5_CREDENTIAL&#39;: &#39;{0}V5/credential/%s&#39;,
 
     &#39;GET_SECURITY_ROLES&#39;: &#39;{0}Security/Roles&#39;,
     &#39;SECURITY_ASSOCIATION&#39;: &#39;{0}Security&#39;,
@@ -461,18 +517,22 @@ SERVICES_DICT_TEMPLATE = {
     &#39;UPLOAD_PACKAGE&#39;: &#39;{0}saveDownloadCenterPackage&#39;,
     &#39;DELETE_PACKAGE&#39;: &#39;{0}deleteDownloadCenterPackage?packageId=%s&#39;,
 
-    &#39;ORGANIZATIONS&#39;: &#39;{0}Organization&#39;,
+    &#39;ORGANIZATIONS&#39;: &#39;{0}organization&#39;,
     &#39;ORGANIZATION&#39;: &#39;{0}Organization/%s&#39;,
     &#39;UPDATE_ORGANIZATION&#39;: &#39;{0}Organization?organizationId=%s&#39;,
     &#39;GENERATE_AUTH_CODE&#39;: &#39;{0}Organization/%s/Authtoken&#39;,
     &#39;ACTIVATE_ORGANIZATION&#39;: &#39;{0}Organization/%s/action/activate&#39;,
     &#39;DEACTIVATE_ORGANIZATION&#39;: &#39;{0}Organization/%s/action/deactivate&#39;,
+    &#39;LOCK_ORGANIZATION&#39;: &#39;{0}Organization/%s/action/lock&#39;,
+    &#39;UNLOCK_ORGANIZATION&#39;: &#39;{0}Organization/%s/action/unlock&#39;,
     &#39;ORGANIZATION_ASSOCIATION&#39;: &#39;{0}company/%s/company-association&#39;,
     &#39;ENABLE_PRIVACY_COMPANY_DATA&#39;: &#39;{0}V2/Organization/%s/Privacy/Action/Lock&#39;,
     &#39;DISABLE_PRIVACY_COMPANY_DATA&#39;: &#39;{0}V2/Organization/%s/Privacy/Action/Unlock&#39;,
+    &#39;BREAKGLASS_ACCOUNT&#39;: &#39;{0}BreakGlassAccount&#39;,
     &#39;ORGANIZATION_THEME&#39;: &#39;{0}V2/Organization/%s/Customization&#39;,
     &#39;GET_ORGANIZATION_THEME&#39;: &#39;{0}Organization/%s/Customization&#39;,
-    &#39;EXTEND_ORGANIZATION&#39;: &#39;{0}ThirdParty/App/Company/Extend&#39;,
+    &#39;EXTEND_ORGANIZATION&#39;: &#39;{0}V4/ThirdParty/App/Company/Extend&#39;,
+    &#39;SET_COMPANY_COUNTRY&#39;: &#39;{0}wapi/SetCompanyCountryAssociation&#39;,
     &#39;ORGANIZATION_TAGS&#39;: &#39;{0}Tags&#39;,
     &#39;GET_ORGANIZATION_TAGS&#39;: &#39;{0}Tags/PROVIDER_ENTITY/%s&#39;,
     &#39;COMPANY_PASSKEY&#39;: &#39;{0}Company/%s/Passkey&#39;,
@@ -482,6 +542,7 @@ SERVICES_DICT_TEMPLATE = {
     &#39;COMPANY_ENTITIES&#39;: &#39;{0}Company/%s/AssociatedEntities&#39;,
     &#39;MIGRATE_CLIENTS&#39;: &#39;{0}Company/%s/company-association&#39;,
     &#39;COMPANY_OPERATORS&#39;: &#39;{0}V4/Company/Operator&#39;,
+    &#39;COMPANY_ENTITY_ASSOCIATION&#39;: &#39;{0}/company/%s/%s/security&#39;, #entityType and entityID to be used in order
     &#34;ORGANIZATION_ADDITIONAL_SETTINGS&#34;: &#39;{0}v4/workload/AdditionalSettings&#39;,
 
     &#39;STORAGE_POOL&#39;: &#39;{0}StoragePool&#39;,
@@ -489,6 +550,7 @@ SERVICES_DICT_TEMPLATE = {
     &#39;ADD_STORAGE_POOL&#39;: &#39;{0}StoragePool?Action=create&#39;,
     &#39;DELETE_STORAGE_POOL&#39;: &#39;{0}StoragePool/%s&#39;,
     &#39;EDIT_STORAGE_POOL&#39;: &#39;{0}StoragePool?Action=edit&#39;,
+    &#39;MANAGE_MEDIA_AGENTS_FOR_POOL&#39;: &#39;{0}V4/StoragePool/%s/MediaAgent&#39;,
     &#39;REPLACE_DISK_STORAGE_POOL&#39;: &#39;{0}StoragePool?action=diskOperation&#39;,
     &#39;GET_METALLIC_STORAGE_DETAILS&#39;: &#39;{0}metallic/storage&#39;,
 
@@ -562,7 +624,8 @@ SERVICES_DICT_TEMPLATE = {
     &#39;DELETE_DOCUMENTS&#39;: &#39;{0}/DeleteDocuments&#39;,
 
     &#39;CREATE_NUTANIX_CLIENT&#39;: &#39;{0}Client/Nutanix&#39;,
-
+    &#39;CREATE_LUSTRE_CLIENT&#39;: &#39;{0}Client/Lustre&#39;,
+    
     &#39;GET_EVENTS&#39;: &#39;{0}Events&#39;,
     &#39;GET_EVENT&#39;: &#39;{0}Events/%s&#39;,
 
@@ -590,12 +653,14 @@ SERVICES_DICT_TEMPLATE = {
     &#39;DISABLE_CLIENT_PRIVACY&#39;: &#39;{0}/V3/Client/%s/Unlock&#39;,
 
     &#39;IDENTITY_APPS&#39;: &#39;{0}ThirdParty/App&#39;,
+    &#39;LOCAL_APP&#39;: &#39;{0}ThirdParty/App/Local&#39;,
 
     &#39;SET_GLOBAL_PARAM&#39;: &#39;{0}/setGlobalParam&#39;,
     &#39;GET_GLOBAL_PARAM&#39;: &#39;{0}/CommServ/GlobalParams&#39;,
 
     &#39;SNAP_OPERATIONS&#39;: &#39;{0}/Snaps/Operations&#39;,
     &#39;STORAGE_ARRAYS&#39;: &#39;{0}/StorageArrays&#39;,
+    &#39;ATLAS_ARRAYS&#39;: &#39;{0}V4/StorageArrays&#39;,
 
     &#39;GET_NETWORK_SUMMARY&#39;: &#39;{0}/FirewallSummary/%s&#39;,
     &#39;NETWORK_TOPOLOGIES&#39;: &#39;{0}FirewallTopology&#39;,
@@ -612,22 +677,27 @@ SERVICES_DICT_TEMPLATE = {
 
     &#39;CASEDEFINITION&#39;: &#39;{0}EDiscoveryClients/CaseDefinitions&#39;,
 
-    &#39;REGISTRATION&#39;: &#39;{0}/RegFrgnCell&#39;,
-    &#39;UNREGISTRATION&#39;: &#39;{0}/UnRegisterCommCell&#39;,
-    &#39;SERVICE_REGISTER&#39;: &#39;{0}/ServiceCommcells/Register&#39;,
-    &#39;SERVICE_PROPS&#39;: &#39;{0}/ServiceCommcell/Properties&#39;,
-    &#39;GET_REGISTERED_COMMCELLS&#39;: &#39;{0}/CommCell/registered&#39;,
-    &#39;GET_REGISTERED_ROUTER_COMMCELLS&#39;: &#39;{0}/ServiceCommcells&#39;,
-    &#39;GET_USERSPACE_SERVICE&#39;: &#39;{0}/ServiceCommcell/UserSpace&#39;,
-    &#39;POLL_USER_SERVICE&#39;: &#39;{0}/ServiceCommcell/IsUserPresent?userName=%s&#39;,
-    &#39;POLL_MAIL_SERVICE&#39;: &#39;{0}/ServiceCommcell/IsUserPresent?email=%s&#39;,
-    &#39;POLL_REQUEST_ROUTER&#39;: &#39;{0}/CommcellRedirect/RedirectListforUser?user=%s&amp;getDistinctSAMLAppType=true&#39;,
-    &#39;MULTI_COMMCELL_SWITCHER&#39;: &#39;{0}/CommcellRedirect/MultiCommcell&#39;,
-    &#39;MULTI_COMMCELL_DROP_DOWN&#39;: &#39;{0}/MultiCommcellsForUser&#39;,
-    &#39;SERVICE_COMMCELL_ASSOC&#39;: &#39;{0}/Security/MultiCommcell&#39;,
-    &#39;SYNC_SERVICE_COMMCELL&#39;: &#39;{0}/RouterCommcell/SyncUserSpace?commcellGUID=%s&#39;,
+    &#39;REGISTRATION&#39;: &#39;{0}RegFrgnCell&#39;,
+    &#39;UNREGISTRATION&#39;: &#39;{0}UnRegisterCommCell&#39;,
+    &#39;SERVICE_REGISTER&#39;: &#39;{0}ServiceCommcells/Register&#39;,
+    &#39;SERVICE_REREGISTER&#39;: &#39;{0}ServiceCommcells/Reregister?CommcellId=%s&#39;,
+    &#39;SERVICE_PROPS&#39;: &#39;{0}ServiceCommcell/Properties&#39;,
+    &#39;GET_REGISTERED_COMMCELLS&#39;: &#39;{0}CommCell/registered&#39;,
+    &#39;SERVICE_COMMCELLS&#39;: &#39;{0}ServiceCommcells&#39;,
+    &#39;POLL_USER_SERVICE&#39;: &#39;{0}ServiceCommcell/IsUserPresent?userName=%s&#39;,
+    &#39;POLL_MAIL_SERVICE&#39;: &#39;{0}ServiceCommcell/IsUserPresent?email=%s&#39;,
+    &#39;REDIRECT_LIST&#39;: &#39;{0}CommcellRedirect/RedirectListforUser?user=%s&amp;getDistinctSAMLAppType=true&#39;,
+    &#39;MULTI_COMMCELL_SWITCHER&#39;: &#39;{0}CommcellRedirect/MultiCommcell&#39;,
+    &#39;MCC_FOR_USER&#39;: &#39;{0}MultiCommcellsForUser&#39;,
+    &#39;SERVICE_COMMCELL_ASSOC&#39;: &#39;{0}Security/MultiCommcell&#39;,
+    &#39;SERVICE_COMMCELL_SEC&#39;: &#39;{0}V4/MultiCommcell/Security&#39;,
+    &#39;SERVICE_COMMCELL_COMP&#39;: &#39;{0}v4/MultiCommcell/Companies&#39;,
+    &#39;SYNC_SERVICE_COMMCELL&#39;: &#39;{0}RouterCommcell/SyncUserSpace?commcellId=%s&#39;,
+    &#39;ACTIVE_MANAGEMENT_ENABLE&#39;: &#39;{0}Multicommcell/Cloud/ActiveManagement/Enable?commUniId=%s&#39;,
+    &#39;ACTIVE_MANAGEMENT_DISABLE&#39;: &#39;{0}Multicommcell/Cloud/ActiveManagement/Disable?commUniId=%s&amp;forceDisableActiveManagement=%s&#39;,
 
     &#39;DASHBOARD_ENVIRONMENT_TILE&#39;: &#39;{0}clients/count?type=fileserver,vm,laptop&#39;,
+    &#39;DASHBOARD_ENVIRONMENT_TILE_USERS&#39;: &#39;{0}/v4/user/aggregate?func=count&amp;fq=users.isExtendedUser%3Aeq%3Afalse&#39;,
     &#39;DASHBOARD_NEEDS_ATTENTION_TILE&#39;: &#39;{0}CommServ/Anomaly/Entity/Count?anomalousEntityType=14&#39;,
 
     &#39;GET_ALL_LIVE_SYNC_PAIRS&#39;: &#39;{0}Replications/Monitors/streaming?subclientId=%s&#39;,
@@ -641,6 +711,8 @@ SERVICES_DICT_TEMPLATE = {
 
     &#39;GET_ALL_RECOVERY_TARGETS&#39;: &#39;{0}V4/RecoveryTargets&#39;,
     &#39;GET_RECOVERY_TARGET&#39;: &#39;{0}V4/RecoveryTarget/%s&#39;,
+    &#39;GET_RUNBOOK_TARGET&#39;: &#39;{0}V4/Cleanroom/Target/%s&#39;,
+    &#39;EDIT_RUNBOOK_TARGET_API&#39;: &#39;{0}Cleanroom/Target/%s&#39;,
 
     &#39;RETIRE&#39;: &#39;{0}Client/%s/Retire&#39;,
     &#39;GET_REMOTE_CACHE_CLIENTS&#39;: &#39;{0}RemoteCacheClients&#39;,
@@ -672,12 +744,16 @@ SERVICES_DICT_TEMPLATE = {
     &#39;ADD_OR_GET_SAML&#39;: &#39;{0}/v4/SAML&#39;,
     &#39;EDIT_SAML&#39;: &#39;{0}/v4/SAML/%s&#39;,
     &#39;GET_SAML_PROP&#39;: &#39;{0}/ThirdParty/SAML/App?isOpenAPISpec=true&#39;,
+    &#39;V4_IDENTITY_SERVERS&#39; : &#39;{0}/V4/IdentityServers&#39;,
 
     &#39;REGIONS&#39;: &#39;{0}/v4/Regions&#39;,
     &#39;REGION&#39;: &#39;{0}/v4/Regions/%s&#39;,
     &#39;EDIT_REGION&#39;: &#39;{0}/entity/%s/%s/region&#39;,
     &#39;GET_REGION&#39;: &#39;{0}/entity/%s/%s/region?entityRegionType=%s&#39;,
     &#39;CALCULATE_REGION&#39;: &#39;{0}/entity/%s/%s/region?calculate=True&amp;entityRegionType=%s&#39;,
+    &#39;GET_REGIONS&#39;: &#39;{0}/Regions?type=%s&#39;,
+    &#39;GET_SUPPORTED_REGIONS_MAPI&#39;: &#39;{0}mapi/supported-regions?feature=%s&amp;regionType=%s&#39;,
+    &#39;GET_CLOUD_REGIONS&#39;: &#39;{0}Cloud/Regions?vendor=%s&#39;,
 
     &#39;GET_OEM_ID&#39;: &#39;{0}/GetOemId&#39;,
 
@@ -700,7 +776,12 @@ SERVICES_DICT_TEMPLATE = {
     &#39;RECOVERY_GROUP&#39;: &#39;{0}RecoveryGroup/%s?getEntityDetails=true&#39;,
     &#39;RECOVERY_GROUP_RECOVER&#39;: &#39;{0}RecoveryGroup/%s/Recover&#39;,
     &#39;CLEANUP_RECOVERY_GROUP&#39;: &#39;{0}RecoveryGroup/CleanupRecovery&#39;,
-
+    &#39;CREATE_CLEANROOM_RUNBOOK&#39;: &#39;{0}Cleanroom/Runbook&#39;,
+    &#39;CREATE_RUNBOOK_TARGET&#39;: &#39;{0}Cleanroom/Target&#39;,
+    &#39;CLEANROOM_SITE&#39;: &#39;{0}Cleanroom/Site&#39;,
+    &#39;RECOVERY_ENTITY&#39;: &#39;{0}RecoveryEntity/%s&#39;,
+    &#39;RECOVERY_GROUP_RECOVERY_ENTITY&#39;: &#39;{0}RecoveryGroup/%s/entity/%s&#39;,
+    &#39;RECOVERY_GROUP_THREATS_COUNT&#39;: &#39;{0}RecoveryGroup/%s/KPI&#39;,
 
     &#39;ADCOMPAREID&#39;: &#39;{0}/ActiveDirectory/Subclient/%s/Comparison&#39;,
 
@@ -752,7 +833,65 @@ SERVICES_DICT_TEMPLATE = {
 
     &#39;GET_ACCESS_TOKENS&#39;: &#39;{0}/V4/AccessToken/?userId=%s&#39;,
 
-    &#39;RENEW_TOKEN&#39;: &#39;{0}/V4/AccessToken/Renew&#39;
+    &#39;RENEW_TOKEN&#39;: &#39;{0}/V4/AccessToken/Renew&#39;,
+
+    &#39;ASSESSMENT_DETAILS&#39;: &#39;{0}/V4/TCO/AssessmentDetails?assessmentId=%s&#39;,
+
+    &#39;ASSESSMENT_DISCOVERY_CRITERIA&#39;: &#39;{0}/V4/TCO/AssessmentDiscoveryCriteria?credentialId=%s&amp;authType=1&#39;
+                                     &#39;&amp;cloudConnector=%s&#39;,
+
+    &#39;RUN_ASSESSMENT&#39;: &#39;{0}/V4/TCO/Assessment&#39;,
+
+    &#39;CLOUD_DISCOVERY_CRITERIA&#39;: &#39;{0}Asset/Discovery/Criteria?credentialId=%s&amp;pageSize=%s&amp;offset=0&amp;discoverProvider=true&#39;,
+
+    &#39;CONFIGURE_DISCOVERY&#39;: &#39;{0}Asset/Discovery/Configuration&#39;,
+
+    &#39;GET_DISCOVERY_JOB&#39;: &#39;{0}Asset/Discovery/Status&#39;,
+
+    &#39;START_DISCOVERY&#39;: &#39;{0}Asset/Discovery&#39;,
+
+    &#39;GET_RESOURCES&#39;: &#39;{0}Asset/Search&#39;,
+
+    &#39;VALIDATE_AWS_CONNECTION&#39;: &#39;{0}/V4/Cloud/CloudConnection/credentials/validate&#39;,
+
+    &#39;ADD_EXPRESS_CONNECTION&#39;: &#39;{0}/V4/Cloud/CloudConnection&#39;,
+
+    &#39;GET_AWS_CLOUD_CONNECTIONS&#39;: &#39;{0}/V4/Cloud/CloudConnection?vendor=aws&#39;,
+
+    &#39;GET_AZURE_CLOUD_CONNECTIONS&#39;: &#39;{0}/V4/Cloud/CloudConnection?vendor=azure&#39;,
+
+    &#39;GET_AWS_CONNECTION_DETAILS&#39;: &#39;{0}/V4/Cloud/CloudConnection/%s&#39;,
+
+    &#39;GET_AWS_ORG_ACCOUNTS&#39;: &#39;{0}/V4/Cloud/CloudConnection/%s/accounts&#39;,
+
+    &#39;GET_AWS_PERMISSIONS_CFT&#39;: &#39;{0}/V4/Cloud/AWS/ExpressConfig/QuickCreateLink/PermissionsCFT?iamRoleAccountId=%s&#39;,
+
+    &#39;GET_DISCOVERY_SCHEDULES&#39;: &#39;{0}/Schedules?seaDataSourceId=%s&amp;operationType=5025&#39;,
+
+    &#39;SNMP&#39;: &#39;{0}/V4/Snmp&#39;,
+
+    &#39;SNMP_CONFIG&#39;: &#39;{0}CommServ/SNMPV3Configuration&#39;,
+
+    &#39;GET_LAPTOP_CLIENTS&#39;: &#39;{0}/Device&#39;,
+
+    &#39;GET_VIRTUAL_MACHINES&#39;: &#39;{0}/v4/VirtualMachines&#39;,
+
+    &#39;GET_ADDITIONAL_SETTINGS&#39;: &#39;{0}AdditionalSettings/%s/%s&#39;,
+
+    &#39;SET_ADDITIONAL_SETTINGS&#39;: &#39;{0}v4/workload/AdditionalSettings&#39;,
+
+    &#39;GLOBAL_MONGODB_STATUS&#39;: &#39;{0}/v4/globalmongodb/status&#39;,
+    
+    &#39;MEDIA_IN_TAPE&#39;: &#39;{0}/V4/Library/%s/Media?filterMediaType=%s&amp;isExported=%s&#39;,
+
+    &#39;MEDIA_OPERATION&#39;: &#39;{0}/V4/Storage/Tape/%s/Media&#39;,
+    
+    &#39;DRIVE_OPERATION&#39;: &#39;{0}/DriveOperations&#39;,
+
+    &#39;VIEW_LOGS_BY_TRACE_ID&#39;: &#39;{0}TraceId/%s/Logs&#39;,
+
+    &#34;MONGODB_CLIENT_CONFIG&#34;: &#34;{0}v4/clients/mongodb/%s/config&#34;
+
 }
 
 
@@ -785,19 +924,21 @@ def get_services(web_service):
 </code></dt>
 <dd>
 <div class="desc"><p>Initializes the SERVICES DICT with the web service for APIs.</p>
-<h2 id="args">Args</h2>
-<p>web_service
+<p>Args
+-----=
+web_service
 (str)
 &ndash;
 web service string for APIs</p>
-<h2 id="returns">Returns</h2>
-<p>dict
+<p>Returns
+-----=
+dict
 -
 services dict consisting of all APIs</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/services.py#L718-L732" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/services.py#L856-L870" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_services(web_service):
     &#34;&#34;&#34;Initializes the SERVICES DICT with the web service for APIs.

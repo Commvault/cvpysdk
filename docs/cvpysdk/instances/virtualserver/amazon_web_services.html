@@ -28,8 +28,9 @@
 <p>AmazonInstance: Derived class from VirtualServer
 Base class, representing a
 Amazon instance, and to perform operations on that instance</p>
-<h2 id="amazoninstance">Amazoninstance</h2>
-<p><strong>init</strong>(agent_object,instance_name,instance_id)
+<p>Amazoninstance
+-----=
+<strong>init</strong>(agent_object,instance_name,instance_id)
 &ndash;
 initialize object of amazon Instance
 object associated with the
@@ -37,7 +38,7 @@ VirtualServer Instance</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/amazon_web_services.py#L1-L118" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/amazon_web_services.py#L1-L181" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
@@ -69,43 +70,78 @@ AmazonInstance:
 
 &#34;&#34;&#34;
 
-from ..vsinstance import VirtualServerInstance
 from ...exception import SDKException
-from ...instance import Instance
+from ..vsinstance import VirtualServerInstance
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ...agent import Agent
 
 
 class AmazonInstance(VirtualServerInstance):
-    def __init__(self, agent, name, iid):
+    &#34;&#34;&#34;
+    Represents an Amazon virtual server instance within a cloud management framework.
+
+    This class extends the VirtualServerInstance to provide specialized handling
+    for Amazon-based virtual server instances. It manages instance properties,
+    initialization, and provides access to server-specific information such as
+    server name and host name.
+
+    Key Features:
+        - Initialization of Amazon instance with agent, name, and instance ID
+        - Retrieval of instance properties in both object and JSON formats
+        - Access to server name and host name via properties
+        - Initialization of tenant-specific instance properties
+
+    &#34;&#34;&#34;
+    def __init__(self, agent: &#39;Agent&#39;, name: str, iid: str) -&gt; None:
+        &#34;&#34;&#34;Initialize an AmazonInstance object with the specified agent, name, and instance ID.
+
+        Args:
+            agent: The agent object associated with this Amazon instance.
+            name: The name of the Amazon instance.
+            iid: The unique instance ID for the Amazon instance.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent()  # Replace with actual agent object
+            &gt;&gt;&gt; instance = AmazonInstance(agent, &#34;MyInstance&#34;, &#34;i-1234567890abcdef0&#34;)
+            &gt;&gt;&gt; print(instance)
+
+        &#34;&#34;&#34;
         self._vendor_id = 4
         self._server_name = []
         super(AmazonInstance, self).__init__(agent, name, iid)
 
-    def _get_instance_properties(self):
-        &#34;&#34;&#34;
-        Get the properties of this instance
+    def _get_instance_properties(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve and update the properties of this AmazonInstance object.
 
-        Raise:
-            SDK Exception:
-                if response is not empty
-                if response is not success
+        This method fetches the latest properties for the current AmazonInstance from the backend
+        and updates the instance&#39;s internal state accordingly.
+
+        Raises:
+            SDKException: If the response is not empty or if the response indicates a failure.
+
         &#34;&#34;&#34;
 
         super(AmazonInstance, self)._get_instance_properties()
         self._server_name = []
         self._initialize_tenant_instance_properties()
         if &#39;virtualServerInstance&#39; in self._properties:
-            _member_servers = self._properties[&#34;virtualServerInstance&#34;] \
-                [&#34;associatedClients&#34;][&#34;memberServers&#34;]
+            if self._properties[&#34;virtualServerInstance&#34;][&#34;associatedClients&#34;].get(&#34;memberServers&#34;):
+                _member_servers = self._properties[&#34;virtualServerInstance&#34;] \
+                    [&#34;associatedClients&#34;][&#34;memberServers&#34;]
+            else:
+                _member_servers = []
             for _each_client in _member_servers:
                 client = _each_client[&#39;client&#39;]
                 if &#39;clientName&#39; in client.keys():
                     self._server_name.append(str(client[&#39;clientName&#39;]))
 
-    def _get_instance_properties_json(self):
-        &#34;&#34;&#34;get the all instance related properties of this subclient.
+    def _get_instance_properties_json(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve all instance-related properties for this subclient.
 
-           Returns:
-                dict - all instance properties put inside a dict
+        Returns:
+            dict: A dictionary containing all properties associated with the current instance.
 
         &#34;&#34;&#34;
         instance_json = {
@@ -124,18 +160,39 @@ class AmazonInstance(VirtualServerInstance):
         return instance_json
 
     @property
-    def server_name(self):
-        &#34;&#34;&#34;getter for the domain name in the AWS vendor json&#34;&#34;&#34;
+    def server_name(self) -&gt; list:
+        &#34;&#34;&#34;Get the domain name of the server from the AWS vendor JSON.
+
+        Returns:
+            The domain names of the server as a list.
+
+        Example:
+            &gt;&gt;&gt; amazon_instance = AmazonInstance()
+            &gt;&gt;&gt; domain = amazon_instance.server_name  # Access the server name property
+            &gt;&gt;&gt; print(f&#34;Server domain name: {domain}&#34;)
+
+        &#34;&#34;&#34;
         return self._server_name
 
     @property
-    def server_host_name(self):
-        &#34;&#34;&#34;getter for the domain name in the AWS vendor json&#34;&#34;&#34;
+    def server_host_name(self) -&gt; list:
+        &#34;&#34;&#34;Get the domain name (server host name) from the AWS vendor JSON.
+
+        Returns:
+            The domain name or server host name as a string.
+
+        Example:
+            &gt;&gt;&gt; amazon_instance = AmazonInstance()
+            &gt;&gt;&gt; host_name = amazon_instance.server_host_name  # Use dot notation for property access
+
+        &#34;&#34;&#34;
         return self._server_name
 
-    def _initialize_tenant_instance_properties(self):
-        &#34;&#34;&#34;&#34;
-        Initializes the properties if the client is Tenant
+    def _initialize_tenant_instance_properties(self) -&gt; None:
+        &#34;&#34;&#34;Initialize tenant-specific instance properties for the AmazonInstance client.
+
+        This method sets up the necessary properties if the current client is identified as a tenant.
+
         &#34;&#34;&#34;
         if &#39;virtualServerInstance&#39; in self._properties.keys():
             if &#39;enableAdminAccount&#39; in self._properties[&#39;virtualServerInstance&#39;][&#39;amazonInstanceInfo&#39;]:
@@ -170,64 +227,105 @@ class AmazonInstance(VirtualServerInstance):
 <dl>
 <dt id="cvpysdk.instances.virtualserver.amazon_web_services.AmazonInstance"><code class="flex name class">
 <span>class <span class="ident">AmazonInstance</span></span>
-<span>(</span><span>agent, name, iid)</span>
+<span>(</span><span>agent: Agent, name: str, iid: str)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for representing an Instance of the Virtual Server agent.</p>
-<p>Initialise the instance object.</p>
-<h2 id="args">Args</h2>
-<p>agent_object
-(object)
-&ndash;
-instance of the Agent class</p>
-<p>instance_name
-(str)
-&ndash;
-name of the instance</p>
-<p>instance_id
-(str)
-&ndash;
-id of the instance
-default: None</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Instance class</p></div>
+<div class="desc"><p>Represents an Amazon virtual server instance within a cloud management framework.</p>
+<p>This class extends the VirtualServerInstance to provide specialized handling
+for Amazon-based virtual server instances. It manages instance properties,
+initialization, and provides access to server-specific information such as
+server name and host name.</p>
+<p>Key Features:
+- Initialization of Amazon instance with agent, name, and instance ID
+- Retrieval of instance properties in both object and JSON formats
+- Access to server name and host name via properties
+- Initialization of tenant-specific instance properties</p>
+<p>Initialize an AmazonInstance object with the specified agent, name, and instance ID.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>agent</code></strong></dt>
+<dd>The agent object associated with this Amazon instance.</dd>
+<dt><strong><code>name</code></strong></dt>
+<dd>The name of the Amazon instance.</dd>
+<dt><strong><code>iid</code></strong></dt>
+<dd>The unique instance ID for the Amazon instance.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; agent = Agent()  # Replace with actual agent object
+&gt;&gt;&gt; instance = AmazonInstance(agent, &quot;MyInstance&quot;, &quot;i-1234567890abcdef0&quot;)
+&gt;&gt;&gt; print(instance)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/amazon_web_services.py#L36-L118" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/amazon_web_services.py#L39-L181" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class AmazonInstance(VirtualServerInstance):
-    def __init__(self, agent, name, iid):
+    &#34;&#34;&#34;
+    Represents an Amazon virtual server instance within a cloud management framework.
+
+    This class extends the VirtualServerInstance to provide specialized handling
+    for Amazon-based virtual server instances. It manages instance properties,
+    initialization, and provides access to server-specific information such as
+    server name and host name.
+
+    Key Features:
+        - Initialization of Amazon instance with agent, name, and instance ID
+        - Retrieval of instance properties in both object and JSON formats
+        - Access to server name and host name via properties
+        - Initialization of tenant-specific instance properties
+
+    &#34;&#34;&#34;
+    def __init__(self, agent: &#39;Agent&#39;, name: str, iid: str) -&gt; None:
+        &#34;&#34;&#34;Initialize an AmazonInstance object with the specified agent, name, and instance ID.
+
+        Args:
+            agent: The agent object associated with this Amazon instance.
+            name: The name of the Amazon instance.
+            iid: The unique instance ID for the Amazon instance.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent()  # Replace with actual agent object
+            &gt;&gt;&gt; instance = AmazonInstance(agent, &#34;MyInstance&#34;, &#34;i-1234567890abcdef0&#34;)
+            &gt;&gt;&gt; print(instance)
+
+        &#34;&#34;&#34;
         self._vendor_id = 4
         self._server_name = []
         super(AmazonInstance, self).__init__(agent, name, iid)
 
-    def _get_instance_properties(self):
-        &#34;&#34;&#34;
-        Get the properties of this instance
+    def _get_instance_properties(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve and update the properties of this AmazonInstance object.
 
-        Raise:
-            SDK Exception:
-                if response is not empty
-                if response is not success
+        This method fetches the latest properties for the current AmazonInstance from the backend
+        and updates the instance&#39;s internal state accordingly.
+
+        Raises:
+            SDKException: If the response is not empty or if the response indicates a failure.
+
         &#34;&#34;&#34;
 
         super(AmazonInstance, self)._get_instance_properties()
         self._server_name = []
         self._initialize_tenant_instance_properties()
         if &#39;virtualServerInstance&#39; in self._properties:
-            _member_servers = self._properties[&#34;virtualServerInstance&#34;] \
-                [&#34;associatedClients&#34;][&#34;memberServers&#34;]
+            if self._properties[&#34;virtualServerInstance&#34;][&#34;associatedClients&#34;].get(&#34;memberServers&#34;):
+                _member_servers = self._properties[&#34;virtualServerInstance&#34;] \
+                    [&#34;associatedClients&#34;][&#34;memberServers&#34;]
+            else:
+                _member_servers = []
             for _each_client in _member_servers:
                 client = _each_client[&#39;client&#39;]
                 if &#39;clientName&#39; in client.keys():
                     self._server_name.append(str(client[&#39;clientName&#39;]))
 
-    def _get_instance_properties_json(self):
-        &#34;&#34;&#34;get the all instance related properties of this subclient.
+    def _get_instance_properties_json(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve all instance-related properties for this subclient.
 
-           Returns:
-                dict - all instance properties put inside a dict
+        Returns:
+            dict: A dictionary containing all properties associated with the current instance.
 
         &#34;&#34;&#34;
         instance_json = {
@@ -246,18 +344,39 @@ default: None</p>
         return instance_json
 
     @property
-    def server_name(self):
-        &#34;&#34;&#34;getter for the domain name in the AWS vendor json&#34;&#34;&#34;
+    def server_name(self) -&gt; list:
+        &#34;&#34;&#34;Get the domain name of the server from the AWS vendor JSON.
+
+        Returns:
+            The domain names of the server as a list.
+
+        Example:
+            &gt;&gt;&gt; amazon_instance = AmazonInstance()
+            &gt;&gt;&gt; domain = amazon_instance.server_name  # Access the server name property
+            &gt;&gt;&gt; print(f&#34;Server domain name: {domain}&#34;)
+
+        &#34;&#34;&#34;
         return self._server_name
 
     @property
-    def server_host_name(self):
-        &#34;&#34;&#34;getter for the domain name in the AWS vendor json&#34;&#34;&#34;
+    def server_host_name(self) -&gt; list:
+        &#34;&#34;&#34;Get the domain name (server host name) from the AWS vendor JSON.
+
+        Returns:
+            The domain name or server host name as a string.
+
+        Example:
+            &gt;&gt;&gt; amazon_instance = AmazonInstance()
+            &gt;&gt;&gt; host_name = amazon_instance.server_host_name  # Use dot notation for property access
+
+        &#34;&#34;&#34;
         return self._server_name
 
-    def _initialize_tenant_instance_properties(self):
-        &#34;&#34;&#34;&#34;
-        Initializes the properties if the client is Tenant
+    def _initialize_tenant_instance_properties(self) -&gt; None:
+        &#34;&#34;&#34;Initialize tenant-specific instance properties for the AmazonInstance client.
+
+        This method sets up the necessary properties if the current client is identified as a tenant.
+
         &#34;&#34;&#34;
         if &#39;virtualServerInstance&#39; in self._properties.keys():
             if &#39;enableAdminAccount&#39; in self._properties[&#39;virtualServerInstance&#39;][&#39;amazonInstanceInfo&#39;]:
@@ -287,31 +406,67 @@ default: None</p>
 </ul>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.instances.virtualserver.amazon_web_services.AmazonInstance.server_host_name"><code class="name">var <span class="ident">server_host_name</span></code></dt>
+<dt id="cvpysdk.instances.virtualserver.amazon_web_services.AmazonInstance.server_host_name"><code class="name">var <span class="ident">server_host_name</span> : list</code></dt>
 <dd>
-<div class="desc"><p>getter for the domain name in the AWS vendor json</p></div>
+<div class="desc"><p>Get the domain name (server host name) from the AWS vendor JSON.</p>
+<p>Returns
+-----=
+The domain name or server host name as a string.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; amazon_instance = AmazonInstance()
+&gt;&gt;&gt; host_name = amazon_instance.server_host_name  # Use dot notation for property access
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/amazon_web_services.py#L90-L93" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/amazon_web_services.py#L140-L153" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def server_host_name(self):
-    &#34;&#34;&#34;getter for the domain name in the AWS vendor json&#34;&#34;&#34;
+def server_host_name(self) -&gt; list:
+    &#34;&#34;&#34;Get the domain name (server host name) from the AWS vendor JSON.
+
+    Returns:
+        The domain name or server host name as a string.
+
+    Example:
+        &gt;&gt;&gt; amazon_instance = AmazonInstance()
+        &gt;&gt;&gt; host_name = amazon_instance.server_host_name  # Use dot notation for property access
+
+    &#34;&#34;&#34;
     return self._server_name</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.virtualserver.amazon_web_services.AmazonInstance.server_name"><code class="name">var <span class="ident">server_name</span></code></dt>
+<dt id="cvpysdk.instances.virtualserver.amazon_web_services.AmazonInstance.server_name"><code class="name">var <span class="ident">server_name</span> : list</code></dt>
 <dd>
-<div class="desc"><p>getter for the domain name in the AWS vendor json</p></div>
+<div class="desc"><p>Get the domain name of the server from the AWS vendor JSON.</p>
+<p>Returns
+-----=
+The domain names of the server as a list.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; amazon_instance = AmazonInstance()
+&gt;&gt;&gt; domain = amazon_instance.server_name  # Access the server name property
+&gt;&gt;&gt; print(f&quot;Server domain name: {domain}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/amazon_web_services.py#L85-L88" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/amazon_web_services.py#L124-L138" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def server_name(self):
-    &#34;&#34;&#34;getter for the domain name in the AWS vendor json&#34;&#34;&#34;
+def server_name(self) -&gt; list:
+    &#34;&#34;&#34;Get the domain name of the server from the AWS vendor JSON.
+
+    Returns:
+        The domain names of the server as a list.
+
+    Example:
+        &gt;&gt;&gt; amazon_instance = AmazonInstance()
+        &gt;&gt;&gt; domain = amazon_instance.server_name  # Access the server name property
+        &gt;&gt;&gt; print(f&#34;Server domain name: {domain}&#34;)
+
+    &#34;&#34;&#34;
     return self._server_name</code></pre>
 </details>
 </dd>

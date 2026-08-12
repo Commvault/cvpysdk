@@ -53,10 +53,11 @@ Method to run TrueUp for whole client</p>
 Method to read data from TrueUp API for whole client</p>
 <p>extract_last_sync_missing_items() &ndash;
 Extract LastSyncMissingItems values from JSON data for TrueUp API</p>
+<p>restore_to_azure_blob() &ndash; Runs restore to azure blob for specified users on OneDrive for business client</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/clients/onedrive_client.py#L1-L304" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/clients/onedrive_client.py#L1-L419" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -104,35 +105,69 @@ read_trueup_items_for_whole_client()  --  Method to read data from TrueUp API fo
 
 extract_last_sync_missing_items() --  Extract LastSyncMissingItems values from JSON data for TrueUp API
 
+restore_to_azure_blob() -- Runs restore to azure blob for specified users on OneDrive for business client
+
 &#34;&#34;&#34;
 
 
-from ..client import Client, SDKException
+from typing import Any, List, Optional
 
+from ..client import Client, SDKException
+from cvpysdk.commcell import Commcell
+from cvpysdk.job import Job
 
 class OneDriveClient(Client):
-    def __init__(self, commcell_object, client_name, client_id=None):
-        &#34;&#34;&#34;Initialise the OneDrive Client class instance.
+    &#34;&#34;&#34;
+    OneDriveClient provides comprehensive management and data protection operations for OneDrive clients.
 
-            Args:
-                commcell_object (object)     --  instance of the Commcell class
+    This class enables backup, restore, and configuration management for OneDrive users within a client.
+    It supports various restore scenarios including in-place, out-of-place, disk-based, and Azure Blob restores.
+    Additionally, it allows modification of server plans and job results directories, and facilitates true-up operations
+    to ensure data consistency across the client.
 
-                client_name     (str)        --  name of the client
+    Key Features:
+        - Initialization with commcell object, client name, and client ID
+        - Retrieval of subclient information
+        - Execution and reading of true-up operations for the whole client
+        - Backup of all users in the client
+        - In-place and out-of-place restore operations for selected users
+        - Disk restore to specified clients and paths with optional file permission skipping
+        - Restore data directly to Azure Blob storage
+        - Modification of server plans for migration or upgrade scenarios
+        - Update of job results directory for shared environments
 
-                client_id       (str)        --  id of the client
-                                                default: None
+    &#34;&#34;&#34;
+    def __init__(self, commcell_object: &#39;Commcell&#39;, client_name: str, client_id: Optional[str] = None) -&gt; None:
+        &#34;&#34;&#34;Initialize a OneDriveClient instance for managing OneDrive operations.
 
-            Returns:
-                object - instance of the OneDrive Client class
+        Args:
+            commcell_object: Instance of the Commcell class representing the Commcell connection.
+            client_name: Name of the OneDrive client as a string.
+            client_id: Optional string representing the client ID. If not provided, defaults to None.
+
+        Example:
+            &gt;&gt;&gt; commcell = Commcell(command_center_hostname, username, password)
+            &gt;&gt;&gt; onedrive_client = OneDriveClient(commcell, &#34;OneDriveClient01&#34;, client_id=&#34;12345&#34;)
+            &gt;&gt;&gt; # The OneDriveClient object can now be used for OneDrive operations
+
         &#34;&#34;&#34;
         super(OneDriveClient, self).__init__(
             commcell_object, client_name, client_id)
 
-    def _get_subclient(self):
-        &#34;&#34;&#34; Returns the sub-client object for OneDrive for Business client
+    def _get_subclient(self) -&gt; Any:
+        &#34;&#34;&#34;Retrieve the subclient object for the OneDrive for Business client.
 
-            Returns:
-                _subclient (object) -   Subclient object
+        This method navigates through the Commcell object hierarchy to obtain the
+        subclient associated with the default OneDrive backupset.
+
+        Returns:
+            The subclient object for the OneDrive for Business client.
+
+        Example:
+            &gt;&gt;&gt; onedrive_client = OneDriveClient(commcell_object, client_name)
+            &gt;&gt;&gt; subclient = onedrive_client._get_subclient()
+            &gt;&gt;&gt; print(f&#34;Subclient object: {subclient}&#34;)
+            &gt;&gt;&gt; # The returned subclient object can be used for backup and restore operations
 
         &#34;&#34;&#34;
         _client = self._commcell_object.clients.get(self.client_name)
@@ -142,12 +177,22 @@ class OneDriveClient(Client):
         _subclient = _backupset.subclients.get(&#39;default&#39;)
         return _subclient
 
-    def run_trueup_for_whole_client(self):
-        &#34;&#34;&#34;Function to run TrueUp for whole client
-        Raises:
-            SDKException:
+    def run_trueup_for_whole_client(self) -&gt; None:
+        &#34;&#34;&#34;Run the TrueUp operation for the entire OneDrive client.
 
-            If TrueUp fails to work for client
+        This method initiates a TrueUp process for the whole client, ensuring that
+        the backup data is synchronized and up-to-date. If the TrueUp operation fails,
+        an SDKException is raised with details about the error.
+
+        Raises:
+            SDKException: If the TrueUp operation fails for the client.
+
+        Example:
+            &gt;&gt;&gt; onedrive_client = OneDriveClient(...)
+            &gt;&gt;&gt; onedrive_client.run_trueup_for_whole_client()
+            &gt;&gt;&gt; print(&#34;TrueUp operation completed successfully&#34;)
+            # If the operation fails, an SDKException will be raised with error details.
+
         &#34;&#34;&#34;
         base_url = self._commcell_object.webconsole_hostname
         url = self._services[&#39;RUN_TRUEUP&#39;].format(base_url)
@@ -183,16 +228,22 @@ class OneDriveClient(Client):
             raise SDKException(&#39;Response&#39;, &#39;101&#39;,
                                self._update_response_(response.text))
 
-    def read_trueup_items_for_whole_client(self):
-        &#34;&#34;&#34;
-        Method to read data from TrueUp API for whole client
-        Args:
-            None
+    def read_trueup_items_for_whole_client(self) -&gt; int:
+        &#34;&#34;&#34;Read the number of items from the TrueUp API for the entire client.
+
+        This method queries the TrueUp API for the current client and returns the total number of items
+        reported as missing during the last synchronization. If the API call fails, an SDKException is raised.
+
         Returns:
-            num_of_items (int) : Number of items in TrueUp response
+            int: The total number of items in the TrueUp response.
+
         Raises:
-            SDKException:
-            If error occurs while reading TrueUp response
+            SDKException: If an error occurs while reading the TrueUp response.
+
+        Example:
+            &gt;&gt;&gt; client = OneDriveClient(...)
+            &gt;&gt;&gt; num_items = client.read_trueup_items_for_whole_client()
+            &gt;&gt;&gt; print(f&#34;Number of TrueUp items: {num_items}&#34;)
         &#34;&#34;&#34;
 
         def extract_last_sync_missing_items(json_data):
@@ -229,37 +280,49 @@ class OneDriveClient(Client):
             raise (
                 SDKException(&#39;Response&#39;, &#39;101&#39;, f&#39;Error occurred while reading TrueUp response \nError: {response.text}&#39;))
 
-    def backup_all_users_in_client(self):
-        &#34;&#34;&#34; Run backup for all users present in OneDrive client
+    def backup_all_users_in_client(self) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;Run an incremental backup for all users present in the OneDrive client.
 
-            Returns:
-                object - instance of the Job class for this backup job
+        This method initiates a backup operation for every user associated with the current OneDrive client instance.
+        The backup is performed at the incremental level, capturing only changes since the last backup.
+
+        Returns:
+            Job: Instance of the Job class representing the initiated backup job.
+
+        Example:
+            &gt;&gt;&gt; onedrive_client = OneDriveClient(...)
+            &gt;&gt;&gt; backup_job = onedrive_client.backup_all_users_in_client()
+            &gt;&gt;&gt; print(f&#34;Backup job started: {backup_job}&#34;)
+            &gt;&gt;&gt; # The returned Job object can be used to monitor backup progress
+
         &#34;&#34;&#34;
         _subclient_object = self._get_subclient()
         return _subclient_object.backup(backup_level=&#39;INCREMENTAL&#39;)
 
-    def in_place_restore(self, users, **kwargs):
-        &#34;&#34;&#34; Run an inplace restore of specified users for OneDrive for business client
+    def in_place_restore(self, users: List[str], **kwargs: Any):
+        &#34;&#34;&#34;Run an in-place restore for specified OneDrive for Business users.
 
-            Args:
-                users (list) :  List of SMTP addresses of users
-                **kwargs (dict) : Additional parameters
-                    overwrite (bool) : unconditional overwrite files during restore (default: False)
-                    restore_as_copy (bool) : restore files as copy during restore (default: False)
-                    skip_file_permissions (bool) : If True, restore of file permissions are skipped (default: False)
+        This method initiates an in-place restore operation for the provided list of user SMTP addresses.
+        Additional restore options can be specified using keyword arguments.
 
-            Returns:
-                object - instance of the Job class for this restore job
+        Args:
+            users: List of SMTP addresses (strings) representing the users to restore.
+            **kwargs: Additional restore options.
+                overwrite (bool, optional): If True, files are unconditionally overwritten during restore (default: False).
+                restore_as_copy (bool, optional): If True, files are restored as copies (default: False).
+                skip_file_permissions (bool, optional): If True, file permissions are not restored (default: False).
 
-            Raises:
-                SDKException:
-                    if inputs are not of correct type as per definition
+        Returns:
+            An instance of the Job class representing the restore job.
 
-                    if failed to initialize job
+        Raises:
+            SDKException: If input types are incorrect, job initialization fails, response is empty, or response is not successful.
 
-                    if response is empty
-
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; client = OneDriveClient(...)
+            &gt;&gt;&gt; users = [&#39;user1@domain.com&#39;, &#39;user2@domain.com&#39;]
+            &gt;&gt;&gt; job = client.in_place_restore(users, overwrite=True, restore_as_copy=False)
+            &gt;&gt;&gt; print(f&#34;Restore job started: {job}&#34;)
 
         &#34;&#34;&#34;
         _subclient_object = self._get_subclient()
@@ -267,29 +330,33 @@ class OneDriveClient(Client):
             users, **kwargs)
         return restore_job
 
-    def out_of_place_restore(self, users, destination_path, **kwargs):
-        &#34;&#34;&#34; Run an out-of-place restore of specified users for OneDrive for business client
+    def out_of_place_restore(self, users: List[str], destination_path: str, **kwargs: Any):
+        &#34;&#34;&#34;Run an out-of-place restore for specified OneDrive for Business users.
 
-            Args:
-                users (list) : list of SMTP addresses of users
-                destination_path (str) : SMTP address of destination user
-                **kwargs (dict) : Additional parameters
-                    overwrite (bool) : unconditional overwrite files during restore (default: False)
-                    restore_as_copy (bool) : restore files as copy during restore (default: False)
-                    skip_file_permissions (bool) : If True, restore of file permissions are skipped (default: False)
+        This method initiates a restore operation for the given list of users, restoring their OneDrive data
+        to the specified destination user. Additional restore options can be provided via keyword arguments.
 
-            Returns:
-                object - instance of the Job class for this restore job
+        Args:
+            users: List of SMTP addresses representing the users whose data will be restored.
+            destination_path: SMTP address of the destination user where data will be restored.
+            **kwargs: Additional restore options.
+                overwrite (bool): If True, files will be unconditionally overwritten during restore (default: False).
+                restore_as_copy (bool): If True, files will be restored as copies (default: False).
+                skip_file_permissions (bool): If True, file permissions will not be restored (default: False).
 
-            Raises:
-                SDKException:
-                    if inputs are not of correct type as per definition
+        Returns:
+            Job: Instance representing the restore job.
 
-                    if failed to initialize job
+        Raises:
+            SDKException: If input types are incorrect, job initialization fails, response is empty, or response is not successful.
 
-                    if response is empty
-
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; users = [&#39;user1@domain.com&#39;, &#39;user2@domain.com&#39;]
+            &gt;&gt;&gt; destination = &#39;restoreuser@domain.com&#39;
+            &gt;&gt;&gt; job = onedrive_client.out_of_place_restore(
+            ...     users, destination, overwrite=True, restore_as_copy=False
+            ... )
+            &gt;&gt;&gt; print(f&#34;Restore job started: {job}&#34;)
 
         &#34;&#34;&#34;
         _subclient_object = self._get_subclient()
@@ -298,30 +365,32 @@ class OneDriveClient(Client):
         return restore_job
 
     def disk_restore(self,
-                     users,
-                     destination_client,
-                     destination_path,
-                     skip_file_permissions=False):
-        &#34;&#34;&#34; Runs disk restore of specified users for OneDrive for business client
+                     users: List[str],
+                     destination_client: str,
+                     destination_path: str,
+                     skip_file_permissions: bool = False) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;Run a disk restore for specified OneDrive for Business users.
 
-               Args:
-                users (list) : list of SMTP addresses of users
-                destination_client (str) : client where the users need to be restored
-                destination_path (str) : Destination folder location
-                skip_file_permissions (bool) : If True, restore of file permissions are skipped (default: False)
+        This method initiates a disk restore operation for the given list of users, restoring their OneDrive data to the specified destination client and path. Optionally, file permissions can be skipped during the restore.
 
-            Returns:
-                object - instance of the Job class for this restore job
+        Args:
+            users: List of SMTP addresses representing the users to restore.
+            destination_client: Name of the client where the users&#39; data will be restored.
+            destination_path: Destination folder path on the target client.
+            skip_file_permissions: If True, file permissions will not be restored. Defaults to False.
 
-            Raises:
-                SDKException:
-                    if inputs are not of correct type as per definition
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                    if failed to initialize job
+        Raises:
+            SDKException: If input types are incorrect, job initialization fails, or the restore response is empty or unsuccessful.
 
-                    if response is empty
-
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; users = [&#39;user1@domain.com&#39;, &#39;user2@domain.com&#39;]
+            &gt;&gt;&gt; client = &#39;TargetClient01&#39;
+            &gt;&gt;&gt; path = &#39;C:/RestoredData/OneDrive&#39;
+            &gt;&gt;&gt; job = onedrive_client.disk_restore(users, client, path, skip_file_permissions=True)
+            &gt;&gt;&gt; print(f&#34;Restore job started: {job}&#34;)
 
         &#34;&#34;&#34;
         _subclient_object = self._get_subclient()
@@ -331,13 +400,42 @@ class OneDriveClient(Client):
                                                                                   skip_file_permissions=skip_file_permissions)
         return restore_job
 
-    def modify_server_plan(self, old_plan, new_plan):
-        &#34;&#34;&#34;
-           Method to Modify Server Plan Associated to Client
+    def restore_to_azure_blob(self, users: List[str], blob_name: str) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;Restore OneDrive data for specified users to an Azure Blob storage.
 
-           Arguments:
-                old_plan        (str)   --     existing server plan name
-                new_plan        (str)   --     new server plan name
+        Args:
+            users: List of SMTP addresses representing the users whose OneDrive data will be restored.
+            blob_name: Name of the Azure Blob credential to which the restore will be performed.
+
+        Returns:
+            Job: A Job object representing the restore operation.
+
+        Example:
+            &gt;&gt;&gt; users = [&#39;user1@domain.com&#39;, &#39;user2@domain.com&#39;]
+            &gt;&gt;&gt; blob_name = &#39;AzureBlobCredential&#39;
+            &gt;&gt;&gt; client = OneDriveClient(...)
+            &gt;&gt;&gt; restore_job = client.restore_to_azure_blob(users, blob_name)
+            &gt;&gt;&gt; print(f&#34;Restore job started: {restore_job}&#34;)
+
+        &#34;&#34;&#34;
+        _subclient_object = self._get_subclient()
+        restore_job = _subclient_object.restore_user_to_azure_blob(users, blob_name)
+        return restore_job
+
+    def modify_server_plan(self, old_plan: str, new_plan: str) -&gt; None:
+        &#34;&#34;&#34;Modify the server plan associated with this OneDrive client.
+
+        This method updates the server plan for the client by replacing the existing plan with a new one.
+
+        Args:
+            old_plan: The name of the existing server plan to be replaced.
+            new_plan: The name of the new server plan to associate with the client.
+
+        Example:
+            &gt;&gt;&gt; client = OneDriveClient(...)
+            &gt;&gt;&gt; client.modify_server_plan(&#39;OldServerPlan&#39;, &#39;NewServerPlan&#39;)
+            &gt;&gt;&gt; print(&#34;Server plan updated successfully&#34;)
+
         &#34;&#34;&#34;
 
         from ..plan import Plan
@@ -347,11 +445,17 @@ class OneDriveClient(Client):
         self.plan_obj = Plan(self._commcell_object, old_plan)
         self.plan_obj.edit_association(entities, new_plan)
 
-    def modify_job_results_directory(self, modified_shared_jr_directory):
-        &#34;&#34;&#34;
-        Method to modify job results directory
+    def modify_job_results_directory(self, modified_shared_jr_directory: str) -&gt; None:
+        &#34;&#34;&#34;Modify the job results directory for the OneDrive client.
 
-        modified_shared_jr_directory  (str)   --     new job results directory
+        Args:
+            modified_shared_jr_directory: The new path for the job results directory as a string.
+
+        Example:
+            &gt;&gt;&gt; client = OneDriveClient(...)
+            &gt;&gt;&gt; client.modify_job_results_directory(&#39;/mnt/shared/job_results&#39;)
+            &gt;&gt;&gt; # The job results directory is now updated to the specified path
+
         &#34;&#34;&#34;
         jr_update_dict = {
             &#34;client&#34;: {
@@ -375,54 +479,98 @@ class OneDriveClient(Client):
 <dl>
 <dt id="cvpysdk.clients.onedrive_client.OneDriveClient"><code class="flex name class">
 <span>class <span class="ident">OneDriveClient</span></span>
-<span>(</span><span>commcell_object, client_name, client_id=None)</span>
+<span>(</span><span>commcell_object: Commcell, client_name: str, client_id: Optional[str] = None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for performing client operations for a specific client.</p>
-<p>Initialise the OneDrive Client class instance.</p>
-<h2 id="args">Args</h2>
-<p>commcell_object (object)
-&ndash;
-instance of the Commcell class</p>
-<p>client_name
-(str)
-&ndash;
-name of the client</p>
-<p>client_id
-(str)
-&ndash;
-id of the client
-default: None</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the OneDrive Client class</p></div>
+<div class="desc"><p>OneDriveClient provides comprehensive management and data protection operations for OneDrive clients.</p>
+<p>This class enables backup, restore, and configuration management for OneDrive users within a client.
+It supports various restore scenarios including in-place, out-of-place, disk-based, and Azure Blob restores.
+Additionally, it allows modification of server plans and job results directories, and facilitates true-up operations
+to ensure data consistency across the client.</p>
+<p>Key Features:
+- Initialization with commcell object, client name, and client ID
+- Retrieval of subclient information
+- Execution and reading of true-up operations for the whole client
+- Backup of all users in the client
+- In-place and out-of-place restore operations for selected users
+- Disk restore to specified clients and paths with optional file permission skipping
+- Restore data directly to Azure Blob storage
+- Modification of server plans for migration or upgrade scenarios
+- Update of job results directory for shared environments</p>
+<p>Initialize a OneDriveClient instance for managing OneDrive operations.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>commcell_object</code></strong></dt>
+<dd>Instance of the Commcell class representing the Commcell connection.</dd>
+<dt><strong><code>client_name</code></strong></dt>
+<dd>Name of the OneDrive client as a string.</dd>
+<dt><strong><code>client_id</code></strong></dt>
+<dd>Optional string representing the client ID. If not provided, defaults to None.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; commcell = Commcell(command_center_hostname, username, password)
+&gt;&gt;&gt; onedrive_client = OneDriveClient(commcell, &quot;OneDriveClient01&quot;, client_id=&quot;12345&quot;)
+&gt;&gt;&gt; # The OneDriveClient object can now be used for OneDrive operations
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/clients/onedrive_client.py#L53-L304" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/clients/onedrive_client.py#L58-L419" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class OneDriveClient(Client):
-    def __init__(self, commcell_object, client_name, client_id=None):
-        &#34;&#34;&#34;Initialise the OneDrive Client class instance.
+    &#34;&#34;&#34;
+    OneDriveClient provides comprehensive management and data protection operations for OneDrive clients.
 
-            Args:
-                commcell_object (object)     --  instance of the Commcell class
+    This class enables backup, restore, and configuration management for OneDrive users within a client.
+    It supports various restore scenarios including in-place, out-of-place, disk-based, and Azure Blob restores.
+    Additionally, it allows modification of server plans and job results directories, and facilitates true-up operations
+    to ensure data consistency across the client.
 
-                client_name     (str)        --  name of the client
+    Key Features:
+        - Initialization with commcell object, client name, and client ID
+        - Retrieval of subclient information
+        - Execution and reading of true-up operations for the whole client
+        - Backup of all users in the client
+        - In-place and out-of-place restore operations for selected users
+        - Disk restore to specified clients and paths with optional file permission skipping
+        - Restore data directly to Azure Blob storage
+        - Modification of server plans for migration or upgrade scenarios
+        - Update of job results directory for shared environments
 
-                client_id       (str)        --  id of the client
-                                                default: None
+    &#34;&#34;&#34;
+    def __init__(self, commcell_object: &#39;Commcell&#39;, client_name: str, client_id: Optional[str] = None) -&gt; None:
+        &#34;&#34;&#34;Initialize a OneDriveClient instance for managing OneDrive operations.
 
-            Returns:
-                object - instance of the OneDrive Client class
+        Args:
+            commcell_object: Instance of the Commcell class representing the Commcell connection.
+            client_name: Name of the OneDrive client as a string.
+            client_id: Optional string representing the client ID. If not provided, defaults to None.
+
+        Example:
+            &gt;&gt;&gt; commcell = Commcell(command_center_hostname, username, password)
+            &gt;&gt;&gt; onedrive_client = OneDriveClient(commcell, &#34;OneDriveClient01&#34;, client_id=&#34;12345&#34;)
+            &gt;&gt;&gt; # The OneDriveClient object can now be used for OneDrive operations
+
         &#34;&#34;&#34;
         super(OneDriveClient, self).__init__(
             commcell_object, client_name, client_id)
 
-    def _get_subclient(self):
-        &#34;&#34;&#34; Returns the sub-client object for OneDrive for Business client
+    def _get_subclient(self) -&gt; Any:
+        &#34;&#34;&#34;Retrieve the subclient object for the OneDrive for Business client.
 
-            Returns:
-                _subclient (object) -   Subclient object
+        This method navigates through the Commcell object hierarchy to obtain the
+        subclient associated with the default OneDrive backupset.
+
+        Returns:
+            The subclient object for the OneDrive for Business client.
+
+        Example:
+            &gt;&gt;&gt; onedrive_client = OneDriveClient(commcell_object, client_name)
+            &gt;&gt;&gt; subclient = onedrive_client._get_subclient()
+            &gt;&gt;&gt; print(f&#34;Subclient object: {subclient}&#34;)
+            &gt;&gt;&gt; # The returned subclient object can be used for backup and restore operations
 
         &#34;&#34;&#34;
         _client = self._commcell_object.clients.get(self.client_name)
@@ -432,12 +580,22 @@ default: None</p>
         _subclient = _backupset.subclients.get(&#39;default&#39;)
         return _subclient
 
-    def run_trueup_for_whole_client(self):
-        &#34;&#34;&#34;Function to run TrueUp for whole client
-        Raises:
-            SDKException:
+    def run_trueup_for_whole_client(self) -&gt; None:
+        &#34;&#34;&#34;Run the TrueUp operation for the entire OneDrive client.
 
-            If TrueUp fails to work for client
+        This method initiates a TrueUp process for the whole client, ensuring that
+        the backup data is synchronized and up-to-date. If the TrueUp operation fails,
+        an SDKException is raised with details about the error.
+
+        Raises:
+            SDKException: If the TrueUp operation fails for the client.
+
+        Example:
+            &gt;&gt;&gt; onedrive_client = OneDriveClient(...)
+            &gt;&gt;&gt; onedrive_client.run_trueup_for_whole_client()
+            &gt;&gt;&gt; print(&#34;TrueUp operation completed successfully&#34;)
+            # If the operation fails, an SDKException will be raised with error details.
+
         &#34;&#34;&#34;
         base_url = self._commcell_object.webconsole_hostname
         url = self._services[&#39;RUN_TRUEUP&#39;].format(base_url)
@@ -473,16 +631,22 @@ default: None</p>
             raise SDKException(&#39;Response&#39;, &#39;101&#39;,
                                self._update_response_(response.text))
 
-    def read_trueup_items_for_whole_client(self):
-        &#34;&#34;&#34;
-        Method to read data from TrueUp API for whole client
-        Args:
-            None
+    def read_trueup_items_for_whole_client(self) -&gt; int:
+        &#34;&#34;&#34;Read the number of items from the TrueUp API for the entire client.
+
+        This method queries the TrueUp API for the current client and returns the total number of items
+        reported as missing during the last synchronization. If the API call fails, an SDKException is raised.
+
         Returns:
-            num_of_items (int) : Number of items in TrueUp response
+            int: The total number of items in the TrueUp response.
+
         Raises:
-            SDKException:
-            If error occurs while reading TrueUp response
+            SDKException: If an error occurs while reading the TrueUp response.
+
+        Example:
+            &gt;&gt;&gt; client = OneDriveClient(...)
+            &gt;&gt;&gt; num_items = client.read_trueup_items_for_whole_client()
+            &gt;&gt;&gt; print(f&#34;Number of TrueUp items: {num_items}&#34;)
         &#34;&#34;&#34;
 
         def extract_last_sync_missing_items(json_data):
@@ -519,37 +683,49 @@ default: None</p>
             raise (
                 SDKException(&#39;Response&#39;, &#39;101&#39;, f&#39;Error occurred while reading TrueUp response \nError: {response.text}&#39;))
 
-    def backup_all_users_in_client(self):
-        &#34;&#34;&#34; Run backup for all users present in OneDrive client
+    def backup_all_users_in_client(self) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;Run an incremental backup for all users present in the OneDrive client.
 
-            Returns:
-                object - instance of the Job class for this backup job
+        This method initiates a backup operation for every user associated with the current OneDrive client instance.
+        The backup is performed at the incremental level, capturing only changes since the last backup.
+
+        Returns:
+            Job: Instance of the Job class representing the initiated backup job.
+
+        Example:
+            &gt;&gt;&gt; onedrive_client = OneDriveClient(...)
+            &gt;&gt;&gt; backup_job = onedrive_client.backup_all_users_in_client()
+            &gt;&gt;&gt; print(f&#34;Backup job started: {backup_job}&#34;)
+            &gt;&gt;&gt; # The returned Job object can be used to monitor backup progress
+
         &#34;&#34;&#34;
         _subclient_object = self._get_subclient()
         return _subclient_object.backup(backup_level=&#39;INCREMENTAL&#39;)
 
-    def in_place_restore(self, users, **kwargs):
-        &#34;&#34;&#34; Run an inplace restore of specified users for OneDrive for business client
+    def in_place_restore(self, users: List[str], **kwargs: Any):
+        &#34;&#34;&#34;Run an in-place restore for specified OneDrive for Business users.
 
-            Args:
-                users (list) :  List of SMTP addresses of users
-                **kwargs (dict) : Additional parameters
-                    overwrite (bool) : unconditional overwrite files during restore (default: False)
-                    restore_as_copy (bool) : restore files as copy during restore (default: False)
-                    skip_file_permissions (bool) : If True, restore of file permissions are skipped (default: False)
+        This method initiates an in-place restore operation for the provided list of user SMTP addresses.
+        Additional restore options can be specified using keyword arguments.
 
-            Returns:
-                object - instance of the Job class for this restore job
+        Args:
+            users: List of SMTP addresses (strings) representing the users to restore.
+            **kwargs: Additional restore options.
+                overwrite (bool, optional): If True, files are unconditionally overwritten during restore (default: False).
+                restore_as_copy (bool, optional): If True, files are restored as copies (default: False).
+                skip_file_permissions (bool, optional): If True, file permissions are not restored (default: False).
 
-            Raises:
-                SDKException:
-                    if inputs are not of correct type as per definition
+        Returns:
+            An instance of the Job class representing the restore job.
 
-                    if failed to initialize job
+        Raises:
+            SDKException: If input types are incorrect, job initialization fails, response is empty, or response is not successful.
 
-                    if response is empty
-
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; client = OneDriveClient(...)
+            &gt;&gt;&gt; users = [&#39;user1@domain.com&#39;, &#39;user2@domain.com&#39;]
+            &gt;&gt;&gt; job = client.in_place_restore(users, overwrite=True, restore_as_copy=False)
+            &gt;&gt;&gt; print(f&#34;Restore job started: {job}&#34;)
 
         &#34;&#34;&#34;
         _subclient_object = self._get_subclient()
@@ -557,29 +733,33 @@ default: None</p>
             users, **kwargs)
         return restore_job
 
-    def out_of_place_restore(self, users, destination_path, **kwargs):
-        &#34;&#34;&#34; Run an out-of-place restore of specified users for OneDrive for business client
+    def out_of_place_restore(self, users: List[str], destination_path: str, **kwargs: Any):
+        &#34;&#34;&#34;Run an out-of-place restore for specified OneDrive for Business users.
 
-            Args:
-                users (list) : list of SMTP addresses of users
-                destination_path (str) : SMTP address of destination user
-                **kwargs (dict) : Additional parameters
-                    overwrite (bool) : unconditional overwrite files during restore (default: False)
-                    restore_as_copy (bool) : restore files as copy during restore (default: False)
-                    skip_file_permissions (bool) : If True, restore of file permissions are skipped (default: False)
+        This method initiates a restore operation for the given list of users, restoring their OneDrive data
+        to the specified destination user. Additional restore options can be provided via keyword arguments.
 
-            Returns:
-                object - instance of the Job class for this restore job
+        Args:
+            users: List of SMTP addresses representing the users whose data will be restored.
+            destination_path: SMTP address of the destination user where data will be restored.
+            **kwargs: Additional restore options.
+                overwrite (bool): If True, files will be unconditionally overwritten during restore (default: False).
+                restore_as_copy (bool): If True, files will be restored as copies (default: False).
+                skip_file_permissions (bool): If True, file permissions will not be restored (default: False).
 
-            Raises:
-                SDKException:
-                    if inputs are not of correct type as per definition
+        Returns:
+            Job: Instance representing the restore job.
 
-                    if failed to initialize job
+        Raises:
+            SDKException: If input types are incorrect, job initialization fails, response is empty, or response is not successful.
 
-                    if response is empty
-
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; users = [&#39;user1@domain.com&#39;, &#39;user2@domain.com&#39;]
+            &gt;&gt;&gt; destination = &#39;restoreuser@domain.com&#39;
+            &gt;&gt;&gt; job = onedrive_client.out_of_place_restore(
+            ...     users, destination, overwrite=True, restore_as_copy=False
+            ... )
+            &gt;&gt;&gt; print(f&#34;Restore job started: {job}&#34;)
 
         &#34;&#34;&#34;
         _subclient_object = self._get_subclient()
@@ -588,30 +768,32 @@ default: None</p>
         return restore_job
 
     def disk_restore(self,
-                     users,
-                     destination_client,
-                     destination_path,
-                     skip_file_permissions=False):
-        &#34;&#34;&#34; Runs disk restore of specified users for OneDrive for business client
+                     users: List[str],
+                     destination_client: str,
+                     destination_path: str,
+                     skip_file_permissions: bool = False) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;Run a disk restore for specified OneDrive for Business users.
 
-               Args:
-                users (list) : list of SMTP addresses of users
-                destination_client (str) : client where the users need to be restored
-                destination_path (str) : Destination folder location
-                skip_file_permissions (bool) : If True, restore of file permissions are skipped (default: False)
+        This method initiates a disk restore operation for the given list of users, restoring their OneDrive data to the specified destination client and path. Optionally, file permissions can be skipped during the restore.
 
-            Returns:
-                object - instance of the Job class for this restore job
+        Args:
+            users: List of SMTP addresses representing the users to restore.
+            destination_client: Name of the client where the users&#39; data will be restored.
+            destination_path: Destination folder path on the target client.
+            skip_file_permissions: If True, file permissions will not be restored. Defaults to False.
 
-            Raises:
-                SDKException:
-                    if inputs are not of correct type as per definition
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                    if failed to initialize job
+        Raises:
+            SDKException: If input types are incorrect, job initialization fails, or the restore response is empty or unsuccessful.
 
-                    if response is empty
-
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; users = [&#39;user1@domain.com&#39;, &#39;user2@domain.com&#39;]
+            &gt;&gt;&gt; client = &#39;TargetClient01&#39;
+            &gt;&gt;&gt; path = &#39;C:/RestoredData/OneDrive&#39;
+            &gt;&gt;&gt; job = onedrive_client.disk_restore(users, client, path, skip_file_permissions=True)
+            &gt;&gt;&gt; print(f&#34;Restore job started: {job}&#34;)
 
         &#34;&#34;&#34;
         _subclient_object = self._get_subclient()
@@ -621,13 +803,42 @@ default: None</p>
                                                                                   skip_file_permissions=skip_file_permissions)
         return restore_job
 
-    def modify_server_plan(self, old_plan, new_plan):
-        &#34;&#34;&#34;
-           Method to Modify Server Plan Associated to Client
+    def restore_to_azure_blob(self, users: List[str], blob_name: str) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;Restore OneDrive data for specified users to an Azure Blob storage.
 
-           Arguments:
-                old_plan        (str)   --     existing server plan name
-                new_plan        (str)   --     new server plan name
+        Args:
+            users: List of SMTP addresses representing the users whose OneDrive data will be restored.
+            blob_name: Name of the Azure Blob credential to which the restore will be performed.
+
+        Returns:
+            Job: A Job object representing the restore operation.
+
+        Example:
+            &gt;&gt;&gt; users = [&#39;user1@domain.com&#39;, &#39;user2@domain.com&#39;]
+            &gt;&gt;&gt; blob_name = &#39;AzureBlobCredential&#39;
+            &gt;&gt;&gt; client = OneDriveClient(...)
+            &gt;&gt;&gt; restore_job = client.restore_to_azure_blob(users, blob_name)
+            &gt;&gt;&gt; print(f&#34;Restore job started: {restore_job}&#34;)
+
+        &#34;&#34;&#34;
+        _subclient_object = self._get_subclient()
+        restore_job = _subclient_object.restore_user_to_azure_blob(users, blob_name)
+        return restore_job
+
+    def modify_server_plan(self, old_plan: str, new_plan: str) -&gt; None:
+        &#34;&#34;&#34;Modify the server plan associated with this OneDrive client.
+
+        This method updates the server plan for the client by replacing the existing plan with a new one.
+
+        Args:
+            old_plan: The name of the existing server plan to be replaced.
+            new_plan: The name of the new server plan to associate with the client.
+
+        Example:
+            &gt;&gt;&gt; client = OneDriveClient(...)
+            &gt;&gt;&gt; client.modify_server_plan(&#39;OldServerPlan&#39;, &#39;NewServerPlan&#39;)
+            &gt;&gt;&gt; print(&#34;Server plan updated successfully&#34;)
+
         &#34;&#34;&#34;
 
         from ..plan import Plan
@@ -637,11 +848,17 @@ default: None</p>
         self.plan_obj = Plan(self._commcell_object, old_plan)
         self.plan_obj.edit_association(entities, new_plan)
 
-    def modify_job_results_directory(self, modified_shared_jr_directory):
-        &#34;&#34;&#34;
-        Method to modify job results directory
+    def modify_job_results_directory(self, modified_shared_jr_directory: str) -&gt; None:
+        &#34;&#34;&#34;Modify the job results directory for the OneDrive client.
 
-        modified_shared_jr_directory  (str)   --     new job results directory
+        Args:
+            modified_shared_jr_directory: The new path for the job results directory as a string.
+
+        Example:
+            &gt;&gt;&gt; client = OneDriveClient(...)
+            &gt;&gt;&gt; client.modify_job_results_directory(&#39;/mnt/shared/job_results&#39;)
+            &gt;&gt;&gt; # The job results directory is now updated to the specified path
+
         &#34;&#34;&#34;
         jr_update_dict = {
             &#34;client&#34;: {
@@ -660,78 +877,116 @@ default: None</p>
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.clients.onedrive_client.OneDriveClient.backup_all_users_in_client"><code class="name flex">
-<span>def <span class="ident">backup_all_users_in_client</span></span>(<span>self)</span>
+<span>def <span class="ident">backup_all_users_in_client</span></span>(<span>self) ‑> <a title="cvpysdk.job.Job" href="../job.html#cvpysdk.job.Job">Job</a></span>
 </code></dt>
 <dd>
-<div class="desc"><p>Run backup for all users present in OneDrive client</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this backup job</p></div>
+<div class="desc"><p>Run an incremental backup for all users present in the OneDrive client.</p>
+<p>This method initiates a backup operation for every user associated with the current OneDrive client instance.
+The backup is performed at the incremental level, capturing only changes since the last backup.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Job</code></dt>
+<dd>Instance of the Job class representing the initiated backup job.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; onedrive_client = OneDriveClient(...)
+&gt;&gt;&gt; backup_job = onedrive_client.backup_all_users_in_client()
+&gt;&gt;&gt; print(f&quot;Backup job started: {backup_job}&quot;)
+&gt;&gt;&gt; # The returned Job object can be used to monitor backup progress
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/clients/onedrive_client.py#L172-L179" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/clients/onedrive_client.py#L227-L245" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def backup_all_users_in_client(self):
-    &#34;&#34;&#34; Run backup for all users present in OneDrive client
+<pre><code class="python">def backup_all_users_in_client(self) -&gt; &#39;Job&#39;:
+    &#34;&#34;&#34;Run an incremental backup for all users present in the OneDrive client.
 
-        Returns:
-            object - instance of the Job class for this backup job
+    This method initiates a backup operation for every user associated with the current OneDrive client instance.
+    The backup is performed at the incremental level, capturing only changes since the last backup.
+
+    Returns:
+        Job: Instance of the Job class representing the initiated backup job.
+
+    Example:
+        &gt;&gt;&gt; onedrive_client = OneDriveClient(...)
+        &gt;&gt;&gt; backup_job = onedrive_client.backup_all_users_in_client()
+        &gt;&gt;&gt; print(f&#34;Backup job started: {backup_job}&#34;)
+        &gt;&gt;&gt; # The returned Job object can be used to monitor backup progress
+
     &#34;&#34;&#34;
     _subclient_object = self._get_subclient()
     return _subclient_object.backup(backup_level=&#39;INCREMENTAL&#39;)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.clients.onedrive_client.OneDriveClient.disk_restore"><code class="name flex">
-<span>def <span class="ident">disk_restore</span></span>(<span>self, users, destination_client, destination_path, skip_file_permissions=False)</span>
+<span>def <span class="ident">disk_restore</span></span>(<span>self, users: List[str], destination_client: str, destination_path: str, skip_file_permissions: bool = False) ‑> <a title="cvpysdk.job.Job" href="../job.html#cvpysdk.job.Job">Job</a></span>
 </code></dt>
 <dd>
-<div class="desc"><p>Runs disk restore of specified users for OneDrive for business client</p>
-<p>Args:
-users (list) : list of SMTP addresses of users
-destination_client (str) : client where the users need to be restored
-destination_path (str) : Destination folder location
-skip_file_permissions (bool) : If True, restore of file permissions are skipped (default: False)</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this restore job</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if inputs are not of correct type as per definition</p>
-<pre><code>if failed to initialize job
-
-if response is empty
-
-if response is not success
+<div class="desc"><p>Run a disk restore for specified OneDrive for Business users.</p>
+<p>This method initiates a disk restore operation for the given list of users, restoring their OneDrive data to the specified destination client and path. Optionally, file permissions can be skipped during the restore.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>users</code></strong></dt>
+<dd>List of SMTP addresses representing the users to restore.</dd>
+<dt><strong><code>destination_client</code></strong></dt>
+<dd>Name of the client where the users' data will be restored.</dd>
+<dt><strong><code>destination_path</code></strong></dt>
+<dd>Destination folder path on the target client.</dd>
+<dt><strong><code>skip_file_permissions</code></strong></dt>
+<dd>If True, file permissions will not be restored. Defaults to False.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Job</code></dt>
+<dd>An instance of the Job class representing the restore job.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If input types are incorrect, job initialization fails, or the restore response is empty or unsuccessful.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; users = ['user1@domain.com', 'user2@domain.com']
+&gt;&gt;&gt; client = 'TargetClient01'
+&gt;&gt;&gt; path = 'C:/RestoredData/OneDrive'
+&gt;&gt;&gt; job = onedrive_client.disk_restore(users, client, path, skip_file_permissions=True)
+&gt;&gt;&gt; print(f&quot;Restore job started: {job}&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/clients/onedrive_client.py#L240-L272" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/clients/onedrive_client.py#L314-L349" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disk_restore(self,
-                 users,
-                 destination_client,
-                 destination_path,
-                 skip_file_permissions=False):
-    &#34;&#34;&#34; Runs disk restore of specified users for OneDrive for business client
+                 users: List[str],
+                 destination_client: str,
+                 destination_path: str,
+                 skip_file_permissions: bool = False) -&gt; &#39;Job&#39;:
+    &#34;&#34;&#34;Run a disk restore for specified OneDrive for Business users.
 
-           Args:
-            users (list) : list of SMTP addresses of users
-            destination_client (str) : client where the users need to be restored
-            destination_path (str) : Destination folder location
-            skip_file_permissions (bool) : If True, restore of file permissions are skipped (default: False)
+    This method initiates a disk restore operation for the given list of users, restoring their OneDrive data to the specified destination client and path. Optionally, file permissions can be skipped during the restore.
 
-        Returns:
-            object - instance of the Job class for this restore job
+    Args:
+        users: List of SMTP addresses representing the users to restore.
+        destination_client: Name of the client where the users&#39; data will be restored.
+        destination_path: Destination folder path on the target client.
+        skip_file_permissions: If True, file permissions will not be restored. Defaults to False.
 
-        Raises:
-            SDKException:
-                if inputs are not of correct type as per definition
+    Returns:
+        Job: An instance of the Job class representing the restore job.
 
-                if failed to initialize job
+    Raises:
+        SDKException: If input types are incorrect, job initialization fails, or the restore response is empty or unsuccessful.
 
-                if response is empty
-
-                if response is not success
+    Example:
+        &gt;&gt;&gt; users = [&#39;user1@domain.com&#39;, &#39;user2@domain.com&#39;]
+        &gt;&gt;&gt; client = &#39;TargetClient01&#39;
+        &gt;&gt;&gt; path = &#39;C:/RestoredData/OneDrive&#39;
+        &gt;&gt;&gt; job = onedrive_client.disk_restore(users, client, path, skip_file_permissions=True)
+        &gt;&gt;&gt; print(f&#34;Restore job started: {job}&#34;)
 
     &#34;&#34;&#34;
     _subclient_object = self._get_subclient()
@@ -743,55 +998,68 @@ if response is not success
 </details>
 </dd>
 <dt id="cvpysdk.clients.onedrive_client.OneDriveClient.in_place_restore"><code class="name flex">
-<span>def <span class="ident">in_place_restore</span></span>(<span>self, users, **kwargs)</span>
+<span>def <span class="ident">in_place_restore</span></span>(<span>self, users: List[str], **kwargs: Any)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Run an inplace restore of specified users for OneDrive for business client</p>
-<h2 id="args">Args</h2>
-<p>users (list) :
-List of SMTP addresses of users
-**kwargs (dict) : Additional parameters
-overwrite (bool) : unconditional overwrite files during restore (default: False)
-restore_as_copy (bool) : restore files as copy during restore (default: False)
-skip_file_permissions (bool) : If True, restore of file permissions are skipped (default: False)</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this restore job</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if inputs are not of correct type as per definition</p>
-<pre><code>if failed to initialize job
-
-if response is empty
-
-if response is not success
+<div class="desc"><p>Run an in-place restore for specified OneDrive for Business users.</p>
+<p>This method initiates an in-place restore operation for the provided list of user SMTP addresses.
+Additional restore options can be specified using keyword arguments.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>users</code></strong></dt>
+<dd>List of SMTP addresses (strings) representing the users to restore.</dd>
+<dt><strong><code>**kwargs</code></strong></dt>
+<dd>Additional restore options.
+overwrite (bool, optional): If True, files are unconditionally overwritten during restore (default: False).
+restore_as_copy (bool, optional): If True, files are restored as copies (default: False).
+skip_file_permissions (bool, optional): If True, file permissions are not restored (default: False).</dd>
+</dl>
+<p>Returns
+-----=
+An instance of the Job class representing the restore job.</p>
+<dl>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If input types are incorrect, job initialization fails, response is empty, or response is not successful.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; client = OneDriveClient(...)
+&gt;&gt;&gt; users = ['user1@domain.com', 'user2@domain.com']
+&gt;&gt;&gt; job = client.in_place_restore(users, overwrite=True, restore_as_copy=False)
+&gt;&gt;&gt; print(f&quot;Restore job started: {job}&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/clients/onedrive_client.py#L181-L208" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/clients/onedrive_client.py#L247-L277" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def in_place_restore(self, users, **kwargs):
-    &#34;&#34;&#34; Run an inplace restore of specified users for OneDrive for business client
+<pre><code class="python">def in_place_restore(self, users: List[str], **kwargs: Any):
+    &#34;&#34;&#34;Run an in-place restore for specified OneDrive for Business users.
 
-        Args:
-            users (list) :  List of SMTP addresses of users
-            **kwargs (dict) : Additional parameters
-                overwrite (bool) : unconditional overwrite files during restore (default: False)
-                restore_as_copy (bool) : restore files as copy during restore (default: False)
-                skip_file_permissions (bool) : If True, restore of file permissions are skipped (default: False)
+    This method initiates an in-place restore operation for the provided list of user SMTP addresses.
+    Additional restore options can be specified using keyword arguments.
 
-        Returns:
-            object - instance of the Job class for this restore job
+    Args:
+        users: List of SMTP addresses (strings) representing the users to restore.
+        **kwargs: Additional restore options.
+            overwrite (bool, optional): If True, files are unconditionally overwritten during restore (default: False).
+            restore_as_copy (bool, optional): If True, files are restored as copies (default: False).
+            skip_file_permissions (bool, optional): If True, file permissions are not restored (default: False).
 
-        Raises:
-            SDKException:
-                if inputs are not of correct type as per definition
+    Returns:
+        An instance of the Job class representing the restore job.
 
-                if failed to initialize job
+    Raises:
+        SDKException: If input types are incorrect, job initialization fails, response is empty, or response is not successful.
 
-                if response is empty
-
-                if response is not success
+    Example:
+        &gt;&gt;&gt; client = OneDriveClient(...)
+        &gt;&gt;&gt; users = [&#39;user1@domain.com&#39;, &#39;user2@domain.com&#39;]
+        &gt;&gt;&gt; job = client.in_place_restore(users, overwrite=True, restore_as_copy=False)
+        &gt;&gt;&gt; print(f&#34;Restore job started: {job}&#34;)
 
     &#34;&#34;&#34;
     _subclient_object = self._get_subclient()
@@ -801,24 +1069,38 @@ if response is not success
 </details>
 </dd>
 <dt id="cvpysdk.clients.onedrive_client.OneDriveClient.modify_job_results_directory"><code class="name flex">
-<span>def <span class="ident">modify_job_results_directory</span></span>(<span>self, modified_shared_jr_directory)</span>
+<span>def <span class="ident">modify_job_results_directory</span></span>(<span>self, modified_shared_jr_directory: str) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Method to modify job results directory</p>
-<p>modified_shared_jr_directory
-(str)
-&ndash;
-new job results directory</p></div>
+<div class="desc"><p>Modify the job results directory for the OneDrive client.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>modified_shared_jr_directory</code></strong></dt>
+<dd>The new path for the job results directory as a string.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; client = OneDriveClient(...)
+&gt;&gt;&gt; client.modify_job_results_directory('/mnt/shared/job_results')
+&gt;&gt;&gt; # The job results directory is now updated to the specified path
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/clients/onedrive_client.py#L290-L304" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/clients/onedrive_client.py#L398-L419" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def modify_job_results_directory(self, modified_shared_jr_directory):
-    &#34;&#34;&#34;
-    Method to modify job results directory
+<pre><code class="python">def modify_job_results_directory(self, modified_shared_jr_directory: str) -&gt; None:
+    &#34;&#34;&#34;Modify the job results directory for the OneDrive client.
 
-    modified_shared_jr_directory  (str)   --     new job results directory
+    Args:
+        modified_shared_jr_directory: The new path for the job results directory as a string.
+
+    Example:
+        &gt;&gt;&gt; client = OneDriveClient(...)
+        &gt;&gt;&gt; client.modify_job_results_directory(&#39;/mnt/shared/job_results&#39;)
+        &gt;&gt;&gt; # The job results directory is now updated to the specified path
+
     &#34;&#34;&#34;
     jr_update_dict = {
         &#34;client&#34;: {
@@ -832,31 +1114,44 @@ new job results directory</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.clients.onedrive_client.OneDriveClient.modify_server_plan"><code class="name flex">
-<span>def <span class="ident">modify_server_plan</span></span>(<span>self, old_plan, new_plan)</span>
+<span>def <span class="ident">modify_server_plan</span></span>(<span>self, old_plan: str, new_plan: str) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Method to Modify Server Plan Associated to Client</p>
-<h2 id="arguments">Arguments</h2>
-<p>old_plan
-(str)
-&ndash;
-existing server plan name
-new_plan
-(str)
-&ndash;
-new server plan name</p></div>
+<div class="desc"><p>Modify the server plan associated with this OneDrive client.</p>
+<p>This method updates the server plan for the client by replacing the existing plan with a new one.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>old_plan</code></strong></dt>
+<dd>The name of the existing server plan to be replaced.</dd>
+<dt><strong><code>new_plan</code></strong></dt>
+<dd>The name of the new server plan to associate with the client.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; client = OneDriveClient(...)
+&gt;&gt;&gt; client.modify_server_plan('OldServerPlan', 'NewServerPlan')
+&gt;&gt;&gt; print(&quot;Server plan updated successfully&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/clients/onedrive_client.py#L274-L288" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/clients/onedrive_client.py#L374-L396" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def modify_server_plan(self, old_plan, new_plan):
-    &#34;&#34;&#34;
-       Method to Modify Server Plan Associated to Client
+<pre><code class="python">def modify_server_plan(self, old_plan: str, new_plan: str) -&gt; None:
+    &#34;&#34;&#34;Modify the server plan associated with this OneDrive client.
 
-       Arguments:
-            old_plan        (str)   --     existing server plan name
-            new_plan        (str)   --     new server plan name
+    This method updates the server plan for the client by replacing the existing plan with a new one.
+
+    Args:
+        old_plan: The name of the existing server plan to be replaced.
+        new_plan: The name of the new server plan to associate with the client.
+
+    Example:
+        &gt;&gt;&gt; client = OneDriveClient(...)
+        &gt;&gt;&gt; client.modify_server_plan(&#39;OldServerPlan&#39;, &#39;NewServerPlan&#39;)
+        &gt;&gt;&gt; print(&#34;Server plan updated successfully&#34;)
+
     &#34;&#34;&#34;
 
     from ..plan import Plan
@@ -868,56 +1163,74 @@ new server plan name</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.clients.onedrive_client.OneDriveClient.out_of_place_restore"><code class="name flex">
-<span>def <span class="ident">out_of_place_restore</span></span>(<span>self, users, destination_path, **kwargs)</span>
+<span>def <span class="ident">out_of_place_restore</span></span>(<span>self, users: List[str], destination_path: str, **kwargs: Any)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Run an out-of-place restore of specified users for OneDrive for business client</p>
-<h2 id="args">Args</h2>
-<p>users (list) : list of SMTP addresses of users
-destination_path (str) : SMTP address of destination user
-**kwargs (dict) : Additional parameters
-overwrite (bool) : unconditional overwrite files during restore (default: False)
-restore_as_copy (bool) : restore files as copy during restore (default: False)
-skip_file_permissions (bool) : If True, restore of file permissions are skipped (default: False)</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this restore job</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if inputs are not of correct type as per definition</p>
-<pre><code>if failed to initialize job
-
-if response is empty
-
-if response is not success
+<div class="desc"><p>Run an out-of-place restore for specified OneDrive for Business users.</p>
+<p>This method initiates a restore operation for the given list of users, restoring their OneDrive data
+to the specified destination user. Additional restore options can be provided via keyword arguments.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>users</code></strong></dt>
+<dd>List of SMTP addresses representing the users whose data will be restored.</dd>
+<dt><strong><code>destination_path</code></strong></dt>
+<dd>SMTP address of the destination user where data will be restored.</dd>
+<dt><strong><code>**kwargs</code></strong></dt>
+<dd>Additional restore options.
+overwrite (bool): If True, files will be unconditionally overwritten during restore (default: False).
+restore_as_copy (bool): If True, files will be restored as copies (default: False).
+skip_file_permissions (bool): If True, file permissions will not be restored (default: False).</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Job</code></dt>
+<dd>Instance representing the restore job.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If input types are incorrect, job initialization fails, response is empty, or response is not successful.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; users = ['user1@domain.com', 'user2@domain.com']
+&gt;&gt;&gt; destination = 'restoreuser@domain.com'
+&gt;&gt;&gt; job = onedrive_client.out_of_place_restore(
+...     users, destination, overwrite=True, restore_as_copy=False
+... )
+&gt;&gt;&gt; print(f&quot;Restore job started: {job}&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/clients/onedrive_client.py#L210-L238" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/clients/onedrive_client.py#L279-L312" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def out_of_place_restore(self, users, destination_path, **kwargs):
-    &#34;&#34;&#34; Run an out-of-place restore of specified users for OneDrive for business client
+<pre><code class="python">def out_of_place_restore(self, users: List[str], destination_path: str, **kwargs: Any):
+    &#34;&#34;&#34;Run an out-of-place restore for specified OneDrive for Business users.
 
-        Args:
-            users (list) : list of SMTP addresses of users
-            destination_path (str) : SMTP address of destination user
-            **kwargs (dict) : Additional parameters
-                overwrite (bool) : unconditional overwrite files during restore (default: False)
-                restore_as_copy (bool) : restore files as copy during restore (default: False)
-                skip_file_permissions (bool) : If True, restore of file permissions are skipped (default: False)
+    This method initiates a restore operation for the given list of users, restoring their OneDrive data
+    to the specified destination user. Additional restore options can be provided via keyword arguments.
 
-        Returns:
-            object - instance of the Job class for this restore job
+    Args:
+        users: List of SMTP addresses representing the users whose data will be restored.
+        destination_path: SMTP address of the destination user where data will be restored.
+        **kwargs: Additional restore options.
+            overwrite (bool): If True, files will be unconditionally overwritten during restore (default: False).
+            restore_as_copy (bool): If True, files will be restored as copies (default: False).
+            skip_file_permissions (bool): If True, file permissions will not be restored (default: False).
 
-        Raises:
-            SDKException:
-                if inputs are not of correct type as per definition
+    Returns:
+        Job: Instance representing the restore job.
 
-                if failed to initialize job
+    Raises:
+        SDKException: If input types are incorrect, job initialization fails, response is empty, or response is not successful.
 
-                if response is empty
-
-                if response is not success
+    Example:
+        &gt;&gt;&gt; users = [&#39;user1@domain.com&#39;, &#39;user2@domain.com&#39;]
+        &gt;&gt;&gt; destination = &#39;restoreuser@domain.com&#39;
+        &gt;&gt;&gt; job = onedrive_client.out_of_place_restore(
+        ...     users, destination, overwrite=True, restore_as_copy=False
+        ... )
+        &gt;&gt;&gt; print(f&#34;Restore job started: {job}&#34;)
 
     &#34;&#34;&#34;
     _subclient_object = self._get_subclient()
@@ -927,32 +1240,49 @@ if response is not success
 </details>
 </dd>
 <dt id="cvpysdk.clients.onedrive_client.OneDriveClient.read_trueup_items_for_whole_client"><code class="name flex">
-<span>def <span class="ident">read_trueup_items_for_whole_client</span></span>(<span>self)</span>
+<span>def <span class="ident">read_trueup_items_for_whole_client</span></span>(<span>self) ‑> int</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Method to read data from TrueUp API for whole client</p>
-<h2 id="args">Args</h2>
-<p>None</p>
-<h2 id="returns">Returns</h2>
-<p>num_of_items (int) : Number of items in TrueUp response</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-If error occurs while reading TrueUp response</p></div>
+<div class="desc"><p>Read the number of items from the TrueUp API for the entire client.</p>
+<p>This method queries the TrueUp API for the current client and returns the total number of items
+reported as missing during the last synchronization. If the API call fails, an SDKException is raised.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>int</code></dt>
+<dd>The total number of items in the TrueUp response.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If an error occurs while reading the TrueUp response.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; client = OneDriveClient(...)
+&gt;&gt;&gt; num_items = client.read_trueup_items_for_whole_client()
+&gt;&gt;&gt; print(f&quot;Number of TrueUp items: {num_items}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/clients/onedrive_client.py#L126-L170" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/clients/onedrive_client.py#L174-L225" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def read_trueup_items_for_whole_client(self):
-    &#34;&#34;&#34;
-    Method to read data from TrueUp API for whole client
-    Args:
-        None
+<pre><code class="python">def read_trueup_items_for_whole_client(self) -&gt; int:
+    &#34;&#34;&#34;Read the number of items from the TrueUp API for the entire client.
+
+    This method queries the TrueUp API for the current client and returns the total number of items
+    reported as missing during the last synchronization. If the API call fails, an SDKException is raised.
+
     Returns:
-        num_of_items (int) : Number of items in TrueUp response
+        int: The total number of items in the TrueUp response.
+
     Raises:
-        SDKException:
-        If error occurs while reading TrueUp response
+        SDKException: If an error occurs while reading the TrueUp response.
+
+    Example:
+        &gt;&gt;&gt; client = OneDriveClient(...)
+        &gt;&gt;&gt; num_items = client.read_trueup_items_for_whole_client()
+        &gt;&gt;&gt; print(f&#34;Number of TrueUp items: {num_items}&#34;)
     &#34;&#34;&#34;
 
     def extract_last_sync_missing_items(json_data):
@@ -990,25 +1320,101 @@ If error occurs while reading TrueUp response</p></div>
             SDKException(&#39;Response&#39;, &#39;101&#39;, f&#39;Error occurred while reading TrueUp response \nError: {response.text}&#39;))</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.clients.onedrive_client.OneDriveClient.run_trueup_for_whole_client"><code class="name flex">
-<span>def <span class="ident">run_trueup_for_whole_client</span></span>(<span>self)</span>
+<dt id="cvpysdk.clients.onedrive_client.OneDriveClient.restore_to_azure_blob"><code class="name flex">
+<span>def <span class="ident">restore_to_azure_blob</span></span>(<span>self, users: List[str], blob_name: str) ‑> <a title="cvpysdk.job.Job" href="../job.html#cvpysdk.job.Job">Job</a></span>
 </code></dt>
 <dd>
-<div class="desc"><p>Function to run TrueUp for whole client</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
-<p>If TrueUp fails to work for client</p></div>
+<div class="desc"><p>Restore OneDrive data for specified users to an Azure Blob storage.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>users</code></strong></dt>
+<dd>List of SMTP addresses representing the users whose OneDrive data will be restored.</dd>
+<dt><strong><code>blob_name</code></strong></dt>
+<dd>Name of the Azure Blob credential to which the restore will be performed.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Job</code></dt>
+<dd>A Job object representing the restore operation.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; users = ['user1@domain.com', 'user2@domain.com']
+&gt;&gt;&gt; blob_name = 'AzureBlobCredential'
+&gt;&gt;&gt; client = OneDriveClient(...)
+&gt;&gt;&gt; restore_job = client.restore_to_azure_blob(users, blob_name)
+&gt;&gt;&gt; print(f&quot;Restore job started: {restore_job}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/clients/onedrive_client.py#L85-L124" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/clients/onedrive_client.py#L351-L372" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def run_trueup_for_whole_client(self):
-    &#34;&#34;&#34;Function to run TrueUp for whole client
-    Raises:
-        SDKException:
+<pre><code class="python">def restore_to_azure_blob(self, users: List[str], blob_name: str) -&gt; &#39;Job&#39;:
+    &#34;&#34;&#34;Restore OneDrive data for specified users to an Azure Blob storage.
 
-        If TrueUp fails to work for client
+    Args:
+        users: List of SMTP addresses representing the users whose OneDrive data will be restored.
+        blob_name: Name of the Azure Blob credential to which the restore will be performed.
+
+    Returns:
+        Job: A Job object representing the restore operation.
+
+    Example:
+        &gt;&gt;&gt; users = [&#39;user1@domain.com&#39;, &#39;user2@domain.com&#39;]
+        &gt;&gt;&gt; blob_name = &#39;AzureBlobCredential&#39;
+        &gt;&gt;&gt; client = OneDriveClient(...)
+        &gt;&gt;&gt; restore_job = client.restore_to_azure_blob(users, blob_name)
+        &gt;&gt;&gt; print(f&#34;Restore job started: {restore_job}&#34;)
+
+    &#34;&#34;&#34;
+    _subclient_object = self._get_subclient()
+    restore_job = _subclient_object.restore_user_to_azure_blob(users, blob_name)
+    return restore_job</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.clients.onedrive_client.OneDriveClient.run_trueup_for_whole_client"><code class="name flex">
+<span>def <span class="ident">run_trueup_for_whole_client</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Run the TrueUp operation for the entire OneDrive client.</p>
+<p>This method initiates a TrueUp process for the whole client, ensuring that
+the backup data is synchronized and up-to-date. If the TrueUp operation fails,
+an SDKException is raised with details about the error.</p>
+<dl>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the TrueUp operation fails for the client.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; onedrive_client = OneDriveClient(...)
+&gt;&gt;&gt; onedrive_client.run_trueup_for_whole_client()
+&gt;&gt;&gt; print(&quot;TrueUp operation completed successfully&quot;)
+# If the operation fails, an SDKException will be raised with error details.
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/clients/onedrive_client.py#L122-L172" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def run_trueup_for_whole_client(self) -&gt; None:
+    &#34;&#34;&#34;Run the TrueUp operation for the entire OneDrive client.
+
+    This method initiates a TrueUp process for the whole client, ensuring that
+    the backup data is synchronized and up-to-date. If the TrueUp operation fails,
+    an SDKException is raised with details about the error.
+
+    Raises:
+        SDKException: If the TrueUp operation fails for the client.
+
+    Example:
+        &gt;&gt;&gt; onedrive_client = OneDriveClient(...)
+        &gt;&gt;&gt; onedrive_client.run_trueup_for_whole_client()
+        &gt;&gt;&gt; print(&#34;TrueUp operation completed successfully&#34;)
+        # If the operation fails, an SDKException will be raised with error details.
+
     &#34;&#34;&#34;
     base_url = self._commcell_object.webconsole_hostname
     url = self._services[&#39;RUN_TRUEUP&#39;].format(base_url)
@@ -1052,9 +1458,12 @@ If error occurs while reading TrueUp response</p></div>
 <ul class="hlist">
 <li><code><a title="cvpysdk.client.Client.add_additional_setting" href="../client.html#cvpysdk.client.Client.add_additional_setting">add_additional_setting</a></code></li>
 <li><code><a title="cvpysdk.client.Client.add_client_owner" href="../client.html#cvpysdk.client.Client.add_client_owner">add_client_owner</a></code></li>
+<li><code><a title="cvpysdk.client.Client.add_http_proxy" href="../client.html#cvpysdk.client.Client.add_http_proxy">add_http_proxy</a></code></li>
 <li><code><a title="cvpysdk.client.Client.add_user_associations" href="../client.html#cvpysdk.client.Client.add_user_associations">add_user_associations</a></code></li>
+<li><code><a title="cvpysdk.client.Client.additional_settings" href="../client.html#cvpysdk.client.Client.additional_settings">additional_settings</a></code></li>
 <li><code><a title="cvpysdk.client.Client.agents" href="../client.html#cvpysdk.client.Client.agents">agents</a></code></li>
 <li><code><a title="cvpysdk.client.Client.associated_client_groups" href="../client.html#cvpysdk.client.Client.associated_client_groups">associated_client_groups</a></code></li>
+<li><code><a title="cvpysdk.client.Client.available_log_files" href="../client.html#cvpysdk.client.Client.available_log_files">available_log_files</a></code></li>
 <li><code><a title="cvpysdk.client.Client.available_security_roles" href="../client.html#cvpysdk.client.Client.available_security_roles">available_security_roles</a></code></li>
 <li><code><a title="cvpysdk.client.Client.block_level_cache_dir" href="../client.html#cvpysdk.client.Client.block_level_cache_dir">block_level_cache_dir</a></code></li>
 <li><code><a title="cvpysdk.client.Client.change_company_for_client" href="../client.html#cvpysdk.client.Client.change_company_for_client">change_company_for_client</a></code></li>
@@ -1096,6 +1505,7 @@ If error occurs while reading TrueUp response</p></div>
 <li><code><a title="cvpysdk.client.Client.get_configured_additional_settings" href="../client.html#cvpysdk.client.Client.get_configured_additional_settings">get_configured_additional_settings</a></code></li>
 <li><code><a title="cvpysdk.client.Client.get_dag_member_servers" href="../client.html#cvpysdk.client.Client.get_dag_member_servers">get_dag_member_servers</a></code></li>
 <li><code><a title="cvpysdk.client.Client.get_environment_details" href="../client.html#cvpysdk.client.Client.get_environment_details">get_environment_details</a></code></li>
+<li><code><a title="cvpysdk.client.Client.get_mongodb_config" href="../client.html#cvpysdk.client.Client.get_mongodb_config">get_mongodb_config</a></code></li>
 <li><code><a title="cvpysdk.client.Client.get_mount_volumes" href="../client.html#cvpysdk.client.Client.get_mount_volumes">get_mount_volumes</a></code></li>
 <li><code><a title="cvpysdk.client.Client.get_needs_attention_details" href="../client.html#cvpysdk.client.Client.get_needs_attention_details">get_needs_attention_details</a></code></li>
 <li><code><a title="cvpysdk.client.Client.get_network_summary" href="../client.html#cvpysdk.client.Client.get_network_summary">get_network_summary</a></code></li>
@@ -1131,6 +1541,8 @@ If error occurs while reading TrueUp response</p></div>
 <li><code><a title="cvpysdk.client.Client.os_info" href="../client.html#cvpysdk.client.Client.os_info">os_info</a></code></li>
 <li><code><a title="cvpysdk.client.Client.os_type" href="../client.html#cvpysdk.client.Client.os_type">os_type</a></code></li>
 <li><code><a title="cvpysdk.client.Client.owners" href="../client.html#cvpysdk.client.Client.owners">owners</a></code></li>
+<li><code><a title="cvpysdk.client.Client.passkey_authorize_for_restore" href="../client.html#cvpysdk.client.Client.passkey_authorize_for_restore">passkey_authorize_for_restore</a></code></li>
+<li><code><a title="cvpysdk.client.Client.passkey_for_restores" href="../client.html#cvpysdk.client.Client.passkey_for_restores">passkey_for_restores</a></code></li>
 <li><code><a title="cvpysdk.client.Client.properties" href="../client.html#cvpysdk.client.Client.properties">properties</a></code></li>
 <li><code><a title="cvpysdk.client.Client.push_network_config" href="../client.html#cvpysdk.client.Client.push_network_config">push_network_config</a></code></li>
 <li><code><a title="cvpysdk.client.Client.push_servicepack_and_hotfix" href="../client.html#cvpysdk.client.Client.push_servicepack_and_hotfix">push_servicepack_and_hotfix</a></code></li>
@@ -1139,16 +1551,21 @@ If error occurs while reading TrueUp response</p></div>
 <li><code><a title="cvpysdk.client.Client.reconfigure_client" href="../client.html#cvpysdk.client.Client.reconfigure_client">reconfigure_client</a></code></li>
 <li><code><a title="cvpysdk.client.Client.refresh" href="../client.html#cvpysdk.client.Client.refresh">refresh</a></code></li>
 <li><code><a title="cvpysdk.client.Client.release_license" href="../client.html#cvpysdk.client.Client.release_license">release_license</a></code></li>
+<li><code><a title="cvpysdk.client.Client.remove_http_proxy" href="../client.html#cvpysdk.client.Client.remove_http_proxy">remove_http_proxy</a></code></li>
 <li><code><a title="cvpysdk.client.Client.repair_software" href="../client.html#cvpysdk.client.Client.repair_software">repair_software</a></code></li>
 <li><code><a title="cvpysdk.client.Client.restart_service" href="../client.html#cvpysdk.client.Client.restart_service">restart_service</a></code></li>
 <li><code><a title="cvpysdk.client.Client.restart_services" href="../client.html#cvpysdk.client.Client.restart_services">restart_services</a></code></li>
 <li><code><a title="cvpysdk.client.Client.retire" href="../client.html#cvpysdk.client.Client.retire">retire</a></code></li>
 <li><code><a title="cvpysdk.client.Client.schedules" href="../client.html#cvpysdk.client.Client.schedules">schedules</a></code></li>
+<li><code><a title="cvpysdk.client.Client.send_logs" href="../client.html#cvpysdk.client.Client.send_logs">send_logs</a></code></li>
 <li><code><a title="cvpysdk.client.Client.service_pack" href="../client.html#cvpysdk.client.Client.service_pack">service_pack</a></code></li>
+<li><code><a title="cvpysdk.client.Client.set_debug_level" href="../client.html#cvpysdk.client.Client.set_debug_level">set_debug_level</a></code></li>
 <li><code><a title="cvpysdk.client.Client.set_dedup_property" href="../client.html#cvpysdk.client.Client.set_dedup_property">set_dedup_property</a></code></li>
 <li><code><a title="cvpysdk.client.Client.set_encryption_property" href="../client.html#cvpysdk.client.Client.set_encryption_property">set_encryption_property</a></code></li>
 <li><code><a title="cvpysdk.client.Client.set_job_start_time" href="../client.html#cvpysdk.client.Client.set_job_start_time">set_job_start_time</a></code></li>
+<li><code><a title="cvpysdk.client.Client.set_microsoft_sql_server_updates" href="../client.html#cvpysdk.client.Client.set_microsoft_sql_server_updates">set_microsoft_sql_server_updates</a></code></li>
 <li><code><a title="cvpysdk.client.Client.set_privacy" href="../client.html#cvpysdk.client.Client.set_privacy">set_privacy</a></code></li>
+<li><code><a title="cvpysdk.client.Client.set_windows_os_updates" href="../client.html#cvpysdk.client.Client.set_windows_os_updates">set_windows_os_updates</a></code></li>
 <li><code><a title="cvpysdk.client.Client.start_service" href="../client.html#cvpysdk.client.Client.start_service">start_service</a></code></li>
 <li><code><a title="cvpysdk.client.Client.stop_service" href="../client.html#cvpysdk.client.Client.stop_service">stop_service</a></code></li>
 <li><code><a title="cvpysdk.client.Client.timezone" href="../client.html#cvpysdk.client.Client.timezone">timezone</a></code></li>
@@ -1244,6 +1661,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.clients.onedrive_client.OneDriveClient.modify_server_plan" href="#cvpysdk.clients.onedrive_client.OneDriveClient.modify_server_plan">modify_server_plan</a></code></li>
 <li><code><a title="cvpysdk.clients.onedrive_client.OneDriveClient.out_of_place_restore" href="#cvpysdk.clients.onedrive_client.OneDriveClient.out_of_place_restore">out_of_place_restore</a></code></li>
 <li><code><a title="cvpysdk.clients.onedrive_client.OneDriveClient.read_trueup_items_for_whole_client" href="#cvpysdk.clients.onedrive_client.OneDriveClient.read_trueup_items_for_whole_client">read_trueup_items_for_whole_client</a></code></li>
+<li><code><a title="cvpysdk.clients.onedrive_client.OneDriveClient.restore_to_azure_blob" href="#cvpysdk.clients.onedrive_client.OneDriveClient.restore_to_azure_blob">restore_to_azure_blob</a></code></li>
 <li><code><a title="cvpysdk.clients.onedrive_client.OneDriveClient.run_trueup_for_whole_client" href="#cvpysdk.clients.onedrive_client.OneDriveClient.run_trueup_for_whole_client">run_trueup_for_whole_client</a></code></li>
 </ul>
 </li>

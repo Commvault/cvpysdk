@@ -83,7 +83,7 @@ refresh()                           --  refresh the index pool details associate
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/hac_clusters.py#L1-L515" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/hac_clusters.py#L1-L667" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
@@ -172,21 +172,49 @@ HACCluster Attributes
 &#34;&#34;&#34;
 
 from copy import deepcopy
+
 from .exception import SDKException
 from .datacube.constants import IndexServerConstants
 
+from typing import List, Optional, Union, TYPE_CHECKING
+if TYPE_CHECKING:
+    import requests
+    from cvpysdk.commcell import Commcell
+
 
 class HACClusters(object):
-    &#34;&#34;&#34;Class for representing all the HAC clusters associated with the commcell.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents and manages all High Availability Cluster (HAC) entities associated with a CommCell.
 
-    def __init__(self, commcell_object):
-        &#34;&#34;&#34;Initialize object of the HACClusters class
+    This class provides an interface to interact with HAC clusters, allowing users to retrieve,
+    add, delete, and refresh cluster information. It supports dictionary-like access to clusters,
+    and offers utility methods for checking cluster existence and obtaining detailed cluster data.
 
-            Args:
-                commcell_object (object)    --  instance of class Commcell
+    Key Features:
+        - Retrieve all HAC clusters associated with the CommCell
+        - Access clusters using dictionary-style indexing
+        - Check for the existence of a specific cluster by name
+        - Get detailed information about a specific cluster
+        - Add new HAC clusters with specified cloud and node names
+        - Delete existing HAC clusters by cloud name
+        - Refresh the internal list of clusters to reflect current state
+        - Access all HAC clusters via a property
+        - String and representation methods for easy inspection
 
-            Returns:
-                object  -   instance of class HACClusters
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_object: &#39;Commcell&#39;) -&gt; None:
+        &#34;&#34;&#34;Initialize an instance of the HACClusters class.
+
+        Args:
+            commcell_object: An instance of the Commcell class representing the Commcell connection.
+
+        Example:
+            &gt;&gt;&gt; from cvpysdk.commcell import Commcell
+            &gt;&gt;&gt; commcell = Commcell(&#39;commcell_host&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; hac_clusters = HACClusters(commcell)
+            &gt;&gt;&gt; print(&#34;HACClusters object created:&#34;, hac_clusters)
+
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
         self._cvpysdk_object = commcell_object._cvpysdk_object
@@ -196,11 +224,15 @@ class HACClusters(object):
         self._all_hac_clusters = None
         self.refresh()
 
-    def __str__(self):
-        &#34;&#34;&#34;Representation string consisting of all HAC Clusters of the commcell.
+    def __str__(self) -&gt; str:
+        &#34;&#34;&#34;Return a string representation of all HAC Clusters associated with the Commcell.
 
-                Returns:
-                    str - string of all the HAC clusters associated with the commcell
+        This method provides a human-readable summary of all HAC Clusters managed by the Commcell,
+        typically listing their names or key details in a single string.
+
+        Returns:
+            A string containing information about all HAC Clusters associated with the Commcell.
+
         &#34;&#34;&#34;
         representation_string = &#39;{:^5}\t{:^20}\n\n&#39;.format(&#39;S. No.&#39;, &#39;HAC Name&#39;)
         index = 1
@@ -210,45 +242,58 @@ class HACClusters(object):
             index += 1
         return representation_string
 
-    def __repr__(self):
-        &#34;&#34;&#34;Representation string for the instance of the HACClusters class.&#34;&#34;&#34;
+    def __repr__(self) -&gt; str:
+        &#34;&#34;&#34;Return a string representation of the HACClusters instance.
+
+        This method provides a developer-friendly string that identifies the HACClusters object,
+        which is useful for debugging and logging purposes.
+
+        Returns:
+            A string representing the HACClusters instance.
+
+        &#34;&#34;&#34;
         return &#34;HACClusters class instance for Commcell&#34;
 
-    def __getitem__(self, value):
-        &#34;&#34;&#34;Returns the details of HAC cluster for given HAC name
+    def __getitem__(self, value: str) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the details of a HAC cluster by its name.
 
-            Args:
-                value   (str)       --  name of HAC cluster
+        Args:
+            value: The name of the HAC cluster to look up.
 
-            Returns:
-                dict    -   details of the HAC cluster
+        Returns:
+            A dictionary containing the details of the specified HAC cluster.
 
-            Raises:
-                HAC cluster not found
+        Raises:
+            KeyError: If the HAC cluster with the given name is not found.
+
         &#34;&#34;&#34;
         value = value.lower()
         if value.lower() in self.all_hac_clusters:
             return {&#34;name&#34;: value.lower, &#34;id&#34;: self.all_hac_clusters[value]}
         raise SDKException(&#39;HACClusters&#39;, &#39;102&#39;)
 
-    def _response_not_success(self, response):
-        &#34;&#34;&#34;Helper method to raise exception when response is not 200 (ok)
+    def _response_not_success(self, response: &#39;requests.Response&#39;) -&gt; None:
+        &#34;&#34;&#34;Raise an exception if the response status is not successful (HTTP 200).
 
-            Args:
-                response    (object)    -   response object
+        Args:
+            response: The response object to check for a successful status.
 
-            Raises:
-                SDKException:
-                    Response was not success
+        Raises:
+            SDKException: If the response does not indicate a successful (200 OK) status.
+
         &#34;&#34;&#34;
         raise SDKException(
             &#39;Response&#39;,
             &#39;101&#39;,
-            self._update_response_(
-                response.text))
+            self._update_response_(response.text))
 
-    def _get_all_clusters(self):
-        &#34;&#34;&#34;Gets details of all HAC clusters associated to the commcell&#34;&#34;&#34;
+    def _get_all_clusters(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve details of all HAC clusters associated with the Commcell.
+
+        Returns:
+            None
+
+        &#34;&#34;&#34;
         if self._commcell_object.client_groups.has_clientgroup(&#34;HAC Cluster&#34;):
             if self._hac_group is None:
                 self._hac_group = self._commcell_object.client_groups.get(&#34;HAC Cluster&#34;)
@@ -259,38 +304,43 @@ class HACClusters(object):
                 )
                 self._all_hac_clusters[client_name.lower()] = int(client_obj.cloud_id)
 
-    def has_cluster(self, hac_name):
-        &#34;&#34;&#34;Returns whether the HAC cluster with given name is present or not
+    def has_cluster(self, hac_name: str) -&gt; bool:
+        &#34;&#34;&#34;Check if a HAC cluster with the specified name exists.
 
-            Args:
-                hac_name    (str)       --  hac cluster name
+        Args:
+            hac_name: The name of the HAC cluster to check.
 
-            Returns:
-                boolean     -   True if hac cluster is associated with the commcell
-                else returns False
+        Returns:
+            True if the HAC cluster with the given name is associated with the Commcell, otherwise False.
 
-            Raises:
-                SDKException:
-                    Data type of the input(s) is not valid
+        Raises:
+            SDKException: If the data type of the input is not valid.
+
         &#34;&#34;&#34;
         if not isinstance(hac_name, str):
             raise SDKException(&#39;HACClusters&#39;, &#39;101&#39;)
         return hac_name.lower() in self._all_hac_clusters
 
-    def get(self, hac_name):
-        &#34;&#34;&#34;Returns instance of HACCluster class is cluster is found
+    def get(self, hac_name: Union[str, int]) -&gt; &#39;HACCluster&#39;:
+        &#34;&#34;&#34;Retrieve an instance of the HACCluster class for the specified cluster name or ID.
 
-            Args:
-                hac_name        (str/int)   --      hac cluster name or id
+        Args:
+            hac_name: The name (str) or ID (int) of the HAC cluster to retrieve.
 
-            Returns:
-                object          (HACCluster)   --  Instance of a single hac cluster
+        Returns:
+            HACCluster: An instance representing the specified HAC cluster.
 
-            Raises:
-                SDKException:
-                    Data type of the input(s) is not valid
+        Raises:
+            SDKException: If the input data type is invalid or the HAC cluster is not found.
 
-                    HAC Cluster not found
+        Example:
+            &gt;&gt;&gt; clusters = HACClusters()
+            &gt;&gt;&gt; hac_cluster = clusters.get(&#39;ClusterA&#39;)
+            &gt;&gt;&gt; print(f&#34;Retrieved HAC cluster: {hac_cluster}&#34;)
+            &gt;&gt;&gt; # You can also use the cluster ID
+            &gt;&gt;&gt; hac_cluster_by_id = clusters.get(101)
+            &gt;&gt;&gt; print(f&#34;Retrieved HAC cluster by ID: {hac_cluster_by_id}&#34;)
+
         &#34;&#34;&#34;
         if isinstance(hac_name, str):
             if hac_name.lower() in self.all_hac_clusters:
@@ -303,31 +353,38 @@ class HACClusters(object):
             raise SDKException(&#39;HACClusters&#39;, &#39;101&#39;)
         raise SDKException(&#34;HACClusters&#34;, &#34;102&#34;)
 
-    def refresh(self):
-        &#34;&#34;&#34;Refreshes properties for HACClusters class&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Reload the properties and state information for the HACClusters class.
+
+        This method refreshes the internal data of the HACClusters instance, ensuring that 
+        any changes in the underlying cluster configuration or status are reflected in the object.
+
+        &#34;&#34;&#34;
         self._commcell_object.clients.refresh()
         self._commcell_object.client_groups.refresh()
         self._all_hac_clusters = {}
         self._hac_group = None
         self._get_all_clusters()
 
-    def add(self, cloud_name, cloud_node_names):
-        &#34;&#34;&#34;Creates a new HAC cluster
+    def add(self, cloud_name: str, cloud_node_names: List[str]) -&gt; &#39;HACCluster&#39;:
+        &#34;&#34;&#34;Create a new HAC cluster with the specified cloud name and node names.
 
-            Args:
-                cloud_name      (str)       --  hac cluster cloud name
-                cloud_node_names    (list)  --  string array of node names to be added to cluster
+        Args:
+            cloud_name: The name to assign to the HAC cluster cloud.
+            cloud_node_names: List of node names (strings) to be added to the cluster.
 
-            Raises:
-                SDKException:
-                    Data type of the input(s) is not valid.
+        Returns:
+            HACCluster: An instance representing the newly created HAC cluster.
 
-                    Response was not success.
+        Raises:
+            SDKException: If the input data types are invalid, the response is unsuccessful, or the response is empty.
 
-                    Response was empty.
+        Example:
+            &gt;&gt;&gt; hac_clusters = HACClusters()
+            &gt;&gt;&gt; cluster = hac_clusters.add(&#34;MyCloudCluster&#34;, [&#34;node1&#34;, &#34;node2&#34;, &#34;node3&#34;])
+            &gt;&gt;&gt; print(f&#34;Created HAC cluster: {cluster}&#34;)
+            &gt;&gt;&gt; # The returned HACCluster object can be used for further cluster management
 
-            Returns:
-                Object  -   Instance of class HACCluster
         &#34;&#34;&#34;
         if not (isinstance(cloud_name, str) and isinstance(cloud_node_names, list)):
             raise SDKException(&#39;HACClusters&#39;, &#39;101&#39;)
@@ -389,19 +446,20 @@ class HACClusters(object):
         else:
             self._response_not_success(response)
 
-    def delete(self, cloud_name):
-        &#34;&#34;&#34;Deletes an existing HAC cluster
+    def delete(self, cloud_name: str) -&gt; None:
+        &#34;&#34;&#34;Delete an existing HAC cluster by its cloud name.
 
         Args:
-            cloud_name  (str)   --  HAC cluster cloud name to be deleted
+            cloud_name: The name of the HAC cluster cloud to be deleted.
 
         Raises:
-            SDKException:
-                Data type of the input(s) is not valid.
+            SDKException: If the input data type is invalid, the response is not successful, or the response is empty.
 
-                Response was not success.
+        Example:
+            &gt;&gt;&gt; hac_clusters = HACClusters()
+            &gt;&gt;&gt; hac_clusters.delete(&#34;MyHACCluster&#34;)
+            &gt;&gt;&gt; print(&#34;HAC cluster deleted successfully.&#34;)
 
-                Response was empty.
         &#34;&#34;&#34;
         if not isinstance(cloud_name, str):
             raise SDKException(&#39;HACCluster&#39;, &#39;101&#39;)
@@ -425,25 +483,47 @@ class HACClusters(object):
         self._response_not_success(response)
 
     @property
-    def all_hac_clusters(self):
-        &#34;&#34;&#34;Returns the details of all HAC clusters associated with commcell&#34;&#34;&#34;
+    def all_hac_clusters(self) -&gt; dict:
+        &#34;&#34;&#34;Get the details of all HAC clusters associated with the Commcell.
+
+        Returns:
+            dict: A dict containing details of each HAC cluster associated with the Commcell.
+
+        &#34;&#34;&#34;
         return self._all_hac_clusters
 
 
 class HACCluster(object):
-    &#34;&#34;&#34;Class to perform HAC cluster operations on a specific HAC cluster&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Class for managing and performing operations on a specific HAC (High Availability Cluster).
 
-    def __init__(self, commcell_object, cluster_name, cluster_id=None):
-        &#34;&#34;&#34;Initializes the HACCluster class object
+    This class provides an interface to interact with a HAC cluster, allowing users to retrieve
+    cluster and node information, modify node configurations, and refresh cluster state. It exposes
+    properties for accessing cluster identifiers and node names, and includes internal mechanisms
+    for handling response validation.
 
-            Args:
-                commcell_object     (object)        --  Instance of commcell class
-                cluster_name        (str)           --  HAC cluster cloud name
-                cluster_id          (int)           --  HAC cluster cloud id
-                    default: None
+    Key Features:
+        - Initialization with commcell object, cluster name, and cluster ID
+        - Retrieve and modify node information and configuration
+        - Refresh cluster state to reflect latest changes
+        - Access cluster and node properties (cloud_id, node_names, cluster_id, cluster_name)
+        - Internal response validation for cluster operations
 
-            Returns:
-                object  -   instance of the HACCluster class
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_object: &#39;Commcell&#39;, cluster_name: str, cluster_id: int = None) -&gt; None:
+        &#34;&#34;&#34;Initialize a HACCluster object representing a specific HAC cluster.
+
+        Args:
+            commcell_object: An instance of the Commcell class used to interact with the Commcell environment.
+            cluster_name: The name of the HAC cluster cloud.
+            cluster_id: The unique identifier for the HAC cluster cloud. If not provided, it defaults to None.
+
+        Example:
+            &gt;&gt;&gt; commcell = Commcell(&#39;hostname&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; hac_cluster = HACCluster(commcell, &#39;MyHACCluster&#39;, cluster_id=123)
+            &gt;&gt;&gt; # The hac_cluster object can now be used to manage the specified HAC cluster
+
         &#34;&#34;&#34;
         self.commcell = commcell_object
         self._cluster_name = cluster_name
@@ -453,25 +533,44 @@ class HACCluster(object):
         self.cluster_nodes = None
         self.refresh()
 
-    def __repr__(self):
-        &#34;&#34;&#34;Representation string for the instance of the HACCluster class.&#34;&#34;&#34;
+    def __repr__(self) -&gt; str:
+        &#34;&#34;&#34;Return a string representation of the HACCluster instance.
+
+        This method provides a developer-friendly string that identifies the HACCluster object,
+        typically including its class name and key attributes for debugging purposes.
+
+        Returns:
+            A string representing the HACCluster instance.
+
+        &#34;&#34;&#34;
         return &#34;HACCluster class instance for Commcell&#34;
 
-    def _response_not_success(self, response):
-        &#34;&#34;&#34;Helper method to raise exception when response is not 200 (ok)
+    def _response_not_success(self, response: &#39;requests.Response&#39;) -&gt; None:
+        &#34;&#34;&#34;Raise an exception if the HTTP response status is not 200 (OK).
 
-                Raises:
-                    SDKException:
-                        Response was not success
+        This helper method checks the provided response object and raises an SDKException
+        if the response indicates a failure (i.e., status code is not 200).
+
+        Args:
+            response: The HTTP response object to validate.
+
+        Raises:
+            SDKException: If the response status code is not 200 (OK).
+
         &#34;&#34;&#34;
         raise SDKException(
             &#39;Response&#39;,
             &#39;101&#39;,
-            self.commcell._update_response_(
-                response.text))
+            self.commcell._update_response_(response.text)
+        )
 
-    def refresh(self):
-        &#34;&#34;&#34;Refreshes properties of the HAC cluster&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Reload the properties of the HAC cluster to ensure the latest information is available.
+
+        This method updates the internal state of the HACCluster object by fetching the most recent
+        properties from the underlying data source or system.
+
+        &#34;&#34;&#34;
         self.commcell.clients.refresh()
         if not self.commcell.clients.has_client(self._cluster_name):
             raise SDKException(&#39;HACClusters&#39;, &#39;102&#39;)
@@ -481,29 +580,39 @@ class HACCluster(object):
             properties[&#39;pseudoClientInfo&#39;][&#39;distributedClusterInstanceProperties&#39;][&#39;clusterConfig&#39;][&#39;cloudInfo&#39;]
         self.cluster_nodes = self._cluster_properties[&#39;cloudNodes&#39;]
 
-    def modify_node(self, node_name, listener_port=None, data_port=None,
-                    election_port=None, data_dir=None):
-        &#34;&#34;&#34;Methods to modify the hac cluster node properties
+    def modify_node(
+        self,
+        node_name: str,
+        listener_port: Optional[Union[int, str]] = None,
+        data_port: Optional[Union[int, str]] = None,
+        election_port: Optional[Union[int, str]] = None,
+        data_dir: Optional[str] = None
+    ) -&gt; None:
+        &#34;&#34;&#34;Modify the properties of a node in the HAC cluster.
+
+        This method updates the specified properties for a given node in the HAC cluster,
+        such as listener port, data port, election port, and the ZooKeeper data directory.
 
         Args:
-            node_name       (str)       -   Client name for the node
-            listener_port   (int/str)   -   zkListenerPort address to be updated
-                default - None              Sample: &#39;8090&#39; or 8090
-            data_port       (int/str)   -   zkDataPort address to be updated
-                default - None              Sample: &#39;8091&#39; or 8091
-            election_port   (int/str)   -   zkElectionPort address to be updated
-                default - None              Sample: &#39;8097&#39; or 8097
-            data_dir        (str)       -   zoo keeper data directory
-                default - None
+            node_name: The client name of the node to modify.
+            listener_port: The new zkListenerPort address for the node (e.g., 8090 or &#39;8090&#39;). Optional.
+            data_port: The new zkDataPort address for the node (e.g., 8091 or &#39;8091&#39;). Optional.
+            election_port: The new zkElectionPort address for the node (e.g., 8097 or &#39;8097&#39;). Optional.
+            data_dir: The new ZooKeeper data directory for the node. Optional.
 
         Raises:
-            SDKException:
-                HAC zKeeper node not found
+            SDKException: If the HAC zKeeper node is not found or the response is not successful.
 
-                Response was not success
-
-        Returns:
-            None
+        Example:
+            &gt;&gt;&gt; hac_cluster = HACCluster()
+            &gt;&gt;&gt; hac_cluster.modify_node(
+            ...     node_name=&#39;NodeA&#39;,
+            ...     listener_port=8090,
+            ...     data_port=&#39;8091&#39;,
+            ...     election_port=8097,
+            ...     data_dir=&#39;/var/lib/zookeeper&#39;
+            ... )
+            &gt;&gt;&gt; print(&#34;Node properties updated successfully.&#34;)
 
         &#34;&#34;&#34;
         node_info = self.node_info(node_name)
@@ -559,18 +668,17 @@ class HACCluster(object):
                     return
         self._response_not_success(response)
 
-    def node_info(self, node_name):
-        &#34;&#34;&#34;Returns the hac cluster node information
+    def node_info(self, node_name: str) -&gt; dict:
+        &#34;&#34;&#34;Retrieve information for a specific HAC cluster node.
 
         Args:
-            node_name       (str)   -   HAC cluster node name
+            node_name: The name of the HAC cluster node to query.
 
         Returns:
-            dict        -   dictionary containing details of the hac node
+            A dictionary containing details about the specified HAC cluster node.
 
         Raises:
-            SDKException:
-                HAC zKeeper node not found
+            SDKException: If the specified HAC zKeeper node is not found.
 
         &#34;&#34;&#34;
         for node_info in self.cluster_nodes:
@@ -579,26 +687,46 @@ class HACCluster(object):
         raise SDKException(&#39;HACCluster&#39;, &#39;103&#39;)
 
     @property
-    def cloud_id(self):
-        &#34;&#34;&#34;Returns HAC cluster cloud id&#34;&#34;&#34;
+    def cloud_id(self) -&gt; str:
+        &#34;&#34;&#34;Get the cloud ID associated with the HAC cluster.
+
+        Returns:
+            int: The unique cloud ID for this HAC cluster.
+
+        &#34;&#34;&#34;
         return self._cluster_properties[&#39;cloudInfoEntity&#39;][&#39;cloudId&#39;]
 
     @property
-    def node_names(self):
-        &#34;&#34;&#34;Returns a list of HAC cluster node names&#34;&#34;&#34;
+    def node_names(self) -&gt; list:
+        &#34;&#34;&#34;Get the list of node names in the HAC cluster.
+
+        Returns:
+            list: A list containing the names of all nodes in the HAC cluster.
+
+        &#34;&#34;&#34;
         result = []
         for node_info in self.cluster_nodes:
             result.append(node_info[&#39;nodeClientEntity&#39;][&#39;clientName&#39;])
         return result
 
     @property
-    def cluster_id(self):
-        &#34;&#34;&#34;Returns the HAC cluster pseudo client id&#34;&#34;&#34;
+    def cluster_id(self) -&gt; int:
+        &#34;&#34;&#34;Get the HAC cluster pseudo client ID.
+
+        Returns:
+            The unique integer ID representing the HAC cluster pseudo client.
+
+        &#34;&#34;&#34;
         return self._cluster_id
 
     @property
-    def cluster_name(self):
-        &#34;&#34;&#34;Returns the HAC cluster cloud name&#34;&#34;&#34;
+    def cluster_name(self) -&gt; str:
+        &#34;&#34;&#34;Get the name of the HAC cluster cloud.
+
+        Returns:
+            The name of the HAC cluster as a string.
+
+        &#34;&#34;&#34;
         return self._cluster_name</code></pre>
 </details>
 </section>
@@ -613,48 +741,73 @@ class HACCluster(object):
 <dl>
 <dt id="cvpysdk.hac_clusters.HACCluster"><code class="flex name class">
 <span>class <span class="ident">HACCluster</span></span>
-<span>(</span><span>commcell_object, cluster_name, cluster_id=None)</span>
+<span>(</span><span>commcell_object: Commcell, cluster_name: str, cluster_id: int = None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class to perform HAC cluster operations on a specific HAC cluster</p>
-<p>Initializes the HACCluster class object</p>
-<h2 id="args">Args</h2>
-<p>commcell_object
-(object)
-&ndash;
-Instance of commcell class
-cluster_name
-(str)
-&ndash;
-HAC cluster cloud name
-cluster_id
-(int)
-&ndash;
-HAC cluster cloud id
-default: None</p>
-<h2 id="returns">Returns</h2>
-<p>object
--
-instance of the HACCluster class</p></div>
+<div class="desc"><p>Class for managing and performing operations on a specific HAC (High Availability Cluster).</p>
+<p>This class provides an interface to interact with a HAC cluster, allowing users to retrieve
+cluster and node information, modify node configurations, and refresh cluster state. It exposes
+properties for accessing cluster identifiers and node names, and includes internal mechanisms
+for handling response validation.</p>
+<p>Key Features:
+- Initialization with commcell object, cluster name, and cluster ID
+- Retrieve and modify node information and configuration
+- Refresh cluster state to reflect latest changes
+- Access cluster and node properties (cloud_id, node_names, cluster_id, cluster_name)
+- Internal response validation for cluster operations</p>
+<p>Initialize a HACCluster object representing a specific HAC cluster.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>commcell_object</code></strong></dt>
+<dd>An instance of the Commcell class used to interact with the Commcell environment.</dd>
+<dt><strong><code>cluster_name</code></strong></dt>
+<dd>The name of the HAC cluster cloud.</dd>
+<dt><strong><code>cluster_id</code></strong></dt>
+<dd>The unique identifier for the HAC cluster cloud. If not provided, it defaults to None.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; commcell = Commcell('hostname', 'username', 'password')
+&gt;&gt;&gt; hac_cluster = HACCluster(commcell, 'MyHACCluster', cluster_id=123)
+&gt;&gt;&gt; # The hac_cluster object can now be used to manage the specified HAC cluster
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/hac_clusters.py#L346-L515" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/hac_clusters.py#L422-L667" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class HACCluster(object):
-    &#34;&#34;&#34;Class to perform HAC cluster operations on a specific HAC cluster&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Class for managing and performing operations on a specific HAC (High Availability Cluster).
 
-    def __init__(self, commcell_object, cluster_name, cluster_id=None):
-        &#34;&#34;&#34;Initializes the HACCluster class object
+    This class provides an interface to interact with a HAC cluster, allowing users to retrieve
+    cluster and node information, modify node configurations, and refresh cluster state. It exposes
+    properties for accessing cluster identifiers and node names, and includes internal mechanisms
+    for handling response validation.
 
-            Args:
-                commcell_object     (object)        --  Instance of commcell class
-                cluster_name        (str)           --  HAC cluster cloud name
-                cluster_id          (int)           --  HAC cluster cloud id
-                    default: None
+    Key Features:
+        - Initialization with commcell object, cluster name, and cluster ID
+        - Retrieve and modify node information and configuration
+        - Refresh cluster state to reflect latest changes
+        - Access cluster and node properties (cloud_id, node_names, cluster_id, cluster_name)
+        - Internal response validation for cluster operations
 
-            Returns:
-                object  -   instance of the HACCluster class
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_object: &#39;Commcell&#39;, cluster_name: str, cluster_id: int = None) -&gt; None:
+        &#34;&#34;&#34;Initialize a HACCluster object representing a specific HAC cluster.
+
+        Args:
+            commcell_object: An instance of the Commcell class used to interact with the Commcell environment.
+            cluster_name: The name of the HAC cluster cloud.
+            cluster_id: The unique identifier for the HAC cluster cloud. If not provided, it defaults to None.
+
+        Example:
+            &gt;&gt;&gt; commcell = Commcell(&#39;hostname&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; hac_cluster = HACCluster(commcell, &#39;MyHACCluster&#39;, cluster_id=123)
+            &gt;&gt;&gt; # The hac_cluster object can now be used to manage the specified HAC cluster
+
         &#34;&#34;&#34;
         self.commcell = commcell_object
         self._cluster_name = cluster_name
@@ -664,25 +817,44 @@ instance of the HACCluster class</p></div>
         self.cluster_nodes = None
         self.refresh()
 
-    def __repr__(self):
-        &#34;&#34;&#34;Representation string for the instance of the HACCluster class.&#34;&#34;&#34;
+    def __repr__(self) -&gt; str:
+        &#34;&#34;&#34;Return a string representation of the HACCluster instance.
+
+        This method provides a developer-friendly string that identifies the HACCluster object,
+        typically including its class name and key attributes for debugging purposes.
+
+        Returns:
+            A string representing the HACCluster instance.
+
+        &#34;&#34;&#34;
         return &#34;HACCluster class instance for Commcell&#34;
 
-    def _response_not_success(self, response):
-        &#34;&#34;&#34;Helper method to raise exception when response is not 200 (ok)
+    def _response_not_success(self, response: &#39;requests.Response&#39;) -&gt; None:
+        &#34;&#34;&#34;Raise an exception if the HTTP response status is not 200 (OK).
 
-                Raises:
-                    SDKException:
-                        Response was not success
+        This helper method checks the provided response object and raises an SDKException
+        if the response indicates a failure (i.e., status code is not 200).
+
+        Args:
+            response: The HTTP response object to validate.
+
+        Raises:
+            SDKException: If the response status code is not 200 (OK).
+
         &#34;&#34;&#34;
         raise SDKException(
             &#39;Response&#39;,
             &#39;101&#39;,
-            self.commcell._update_response_(
-                response.text))
+            self.commcell._update_response_(response.text)
+        )
 
-    def refresh(self):
-        &#34;&#34;&#34;Refreshes properties of the HAC cluster&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Reload the properties of the HAC cluster to ensure the latest information is available.
+
+        This method updates the internal state of the HACCluster object by fetching the most recent
+        properties from the underlying data source or system.
+
+        &#34;&#34;&#34;
         self.commcell.clients.refresh()
         if not self.commcell.clients.has_client(self._cluster_name):
             raise SDKException(&#39;HACClusters&#39;, &#39;102&#39;)
@@ -692,29 +864,39 @@ instance of the HACCluster class</p></div>
             properties[&#39;pseudoClientInfo&#39;][&#39;distributedClusterInstanceProperties&#39;][&#39;clusterConfig&#39;][&#39;cloudInfo&#39;]
         self.cluster_nodes = self._cluster_properties[&#39;cloudNodes&#39;]
 
-    def modify_node(self, node_name, listener_port=None, data_port=None,
-                    election_port=None, data_dir=None):
-        &#34;&#34;&#34;Methods to modify the hac cluster node properties
+    def modify_node(
+        self,
+        node_name: str,
+        listener_port: Optional[Union[int, str]] = None,
+        data_port: Optional[Union[int, str]] = None,
+        election_port: Optional[Union[int, str]] = None,
+        data_dir: Optional[str] = None
+    ) -&gt; None:
+        &#34;&#34;&#34;Modify the properties of a node in the HAC cluster.
+
+        This method updates the specified properties for a given node in the HAC cluster,
+        such as listener port, data port, election port, and the ZooKeeper data directory.
 
         Args:
-            node_name       (str)       -   Client name for the node
-            listener_port   (int/str)   -   zkListenerPort address to be updated
-                default - None              Sample: &#39;8090&#39; or 8090
-            data_port       (int/str)   -   zkDataPort address to be updated
-                default - None              Sample: &#39;8091&#39; or 8091
-            election_port   (int/str)   -   zkElectionPort address to be updated
-                default - None              Sample: &#39;8097&#39; or 8097
-            data_dir        (str)       -   zoo keeper data directory
-                default - None
+            node_name: The client name of the node to modify.
+            listener_port: The new zkListenerPort address for the node (e.g., 8090 or &#39;8090&#39;). Optional.
+            data_port: The new zkDataPort address for the node (e.g., 8091 or &#39;8091&#39;). Optional.
+            election_port: The new zkElectionPort address for the node (e.g., 8097 or &#39;8097&#39;). Optional.
+            data_dir: The new ZooKeeper data directory for the node. Optional.
 
         Raises:
-            SDKException:
-                HAC zKeeper node not found
+            SDKException: If the HAC zKeeper node is not found or the response is not successful.
 
-                Response was not success
-
-        Returns:
-            None
+        Example:
+            &gt;&gt;&gt; hac_cluster = HACCluster()
+            &gt;&gt;&gt; hac_cluster.modify_node(
+            ...     node_name=&#39;NodeA&#39;,
+            ...     listener_port=8090,
+            ...     data_port=&#39;8091&#39;,
+            ...     election_port=8097,
+            ...     data_dir=&#39;/var/lib/zookeeper&#39;
+            ... )
+            &gt;&gt;&gt; print(&#34;Node properties updated successfully.&#34;)
 
         &#34;&#34;&#34;
         node_info = self.node_info(node_name)
@@ -770,18 +952,17 @@ instance of the HACCluster class</p></div>
                     return
         self._response_not_success(response)
 
-    def node_info(self, node_name):
-        &#34;&#34;&#34;Returns the hac cluster node information
+    def node_info(self, node_name: str) -&gt; dict:
+        &#34;&#34;&#34;Retrieve information for a specific HAC cluster node.
 
         Args:
-            node_name       (str)   -   HAC cluster node name
+            node_name: The name of the HAC cluster node to query.
 
         Returns:
-            dict        -   dictionary containing details of the hac node
+            A dictionary containing details about the specified HAC cluster node.
 
         Raises:
-            SDKException:
-                HAC zKeeper node not found
+            SDKException: If the specified HAC zKeeper node is not found.
 
         &#34;&#34;&#34;
         for node_info in self.cluster_nodes:
@@ -790,83 +971,141 @@ instance of the HACCluster class</p></div>
         raise SDKException(&#39;HACCluster&#39;, &#39;103&#39;)
 
     @property
-    def cloud_id(self):
-        &#34;&#34;&#34;Returns HAC cluster cloud id&#34;&#34;&#34;
+    def cloud_id(self) -&gt; str:
+        &#34;&#34;&#34;Get the cloud ID associated with the HAC cluster.
+
+        Returns:
+            int: The unique cloud ID for this HAC cluster.
+
+        &#34;&#34;&#34;
         return self._cluster_properties[&#39;cloudInfoEntity&#39;][&#39;cloudId&#39;]
 
     @property
-    def node_names(self):
-        &#34;&#34;&#34;Returns a list of HAC cluster node names&#34;&#34;&#34;
+    def node_names(self) -&gt; list:
+        &#34;&#34;&#34;Get the list of node names in the HAC cluster.
+
+        Returns:
+            list: A list containing the names of all nodes in the HAC cluster.
+
+        &#34;&#34;&#34;
         result = []
         for node_info in self.cluster_nodes:
             result.append(node_info[&#39;nodeClientEntity&#39;][&#39;clientName&#39;])
         return result
 
     @property
-    def cluster_id(self):
-        &#34;&#34;&#34;Returns the HAC cluster pseudo client id&#34;&#34;&#34;
+    def cluster_id(self) -&gt; int:
+        &#34;&#34;&#34;Get the HAC cluster pseudo client ID.
+
+        Returns:
+            The unique integer ID representing the HAC cluster pseudo client.
+
+        &#34;&#34;&#34;
         return self._cluster_id
 
     @property
-    def cluster_name(self):
-        &#34;&#34;&#34;Returns the HAC cluster cloud name&#34;&#34;&#34;
+    def cluster_name(self) -&gt; str:
+        &#34;&#34;&#34;Get the name of the HAC cluster cloud.
+
+        Returns:
+            The name of the HAC cluster as a string.
+
+        &#34;&#34;&#34;
         return self._cluster_name</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.hac_clusters.HACCluster.cloud_id"><code class="name">var <span class="ident">cloud_id</span></code></dt>
+<dt id="cvpysdk.hac_clusters.HACCluster.cloud_id"><code class="name">var <span class="ident">cloud_id</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns HAC cluster cloud id</p></div>
+<div class="desc"><p>Get the cloud ID associated with the HAC cluster.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>int</code></dt>
+<dd>The unique cloud ID for this HAC cluster.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/hac_clusters.py#L494-L497" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/hac_clusters.py#L622-L631" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def cloud_id(self):
-    &#34;&#34;&#34;Returns HAC cluster cloud id&#34;&#34;&#34;
+def cloud_id(self) -&gt; str:
+    &#34;&#34;&#34;Get the cloud ID associated with the HAC cluster.
+
+    Returns:
+        int: The unique cloud ID for this HAC cluster.
+
+    &#34;&#34;&#34;
     return self._cluster_properties[&#39;cloudInfoEntity&#39;][&#39;cloudId&#39;]</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.hac_clusters.HACCluster.cluster_id"><code class="name">var <span class="ident">cluster_id</span></code></dt>
+<dt id="cvpysdk.hac_clusters.HACCluster.cluster_id"><code class="name">var <span class="ident">cluster_id</span> : int</code></dt>
 <dd>
-<div class="desc"><p>Returns the HAC cluster pseudo client id</p></div>
+<div class="desc"><p>Get the HAC cluster pseudo client ID.</p>
+<p>Returns
+-----=
+The unique integer ID representing the HAC cluster pseudo client.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/hac_clusters.py#L507-L510" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/hac_clusters.py#L647-L656" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def cluster_id(self):
-    &#34;&#34;&#34;Returns the HAC cluster pseudo client id&#34;&#34;&#34;
+def cluster_id(self) -&gt; int:
+    &#34;&#34;&#34;Get the HAC cluster pseudo client ID.
+
+    Returns:
+        The unique integer ID representing the HAC cluster pseudo client.
+
+    &#34;&#34;&#34;
     return self._cluster_id</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.hac_clusters.HACCluster.cluster_name"><code class="name">var <span class="ident">cluster_name</span></code></dt>
+<dt id="cvpysdk.hac_clusters.HACCluster.cluster_name"><code class="name">var <span class="ident">cluster_name</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the HAC cluster cloud name</p></div>
+<div class="desc"><p>Get the name of the HAC cluster cloud.</p>
+<p>Returns
+-----=
+The name of the HAC cluster as a string.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/hac_clusters.py#L512-L515" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/hac_clusters.py#L658-L667" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def cluster_name(self):
-    &#34;&#34;&#34;Returns the HAC cluster cloud name&#34;&#34;&#34;
+def cluster_name(self) -&gt; str:
+    &#34;&#34;&#34;Get the name of the HAC cluster cloud.
+
+    Returns:
+        The name of the HAC cluster as a string.
+
+    &#34;&#34;&#34;
     return self._cluster_name</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.hac_clusters.HACCluster.node_names"><code class="name">var <span class="ident">node_names</span></code></dt>
+<dt id="cvpysdk.hac_clusters.HACCluster.node_names"><code class="name">var <span class="ident">node_names</span> : list</code></dt>
 <dd>
-<div class="desc"><p>Returns a list of HAC cluster node names</p></div>
+<div class="desc"><p>Get the list of node names in the HAC cluster.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>list</code></dt>
+<dd>A list containing the names of all nodes in the HAC cluster.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/hac_clusters.py#L499-L505" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/hac_clusters.py#L633-L645" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def node_names(self):
-    &#34;&#34;&#34;Returns a list of HAC cluster node names&#34;&#34;&#34;
+def node_names(self) -&gt; list:
+    &#34;&#34;&#34;Get the list of node names in the HAC cluster.
+
+    Returns:
+        list: A list containing the names of all nodes in the HAC cluster.
+
+    &#34;&#34;&#34;
     result = []
     for node_info in self.cluster_nodes:
         result.append(node_info[&#39;nodeClientEntity&#39;][&#39;clientName&#39;])
@@ -877,73 +1116,80 @@ def node_names(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.hac_clusters.HACCluster.modify_node"><code class="name flex">
-<span>def <span class="ident">modify_node</span></span>(<span>self, node_name, listener_port=None, data_port=None, election_port=None, data_dir=None)</span>
+<span>def <span class="ident">modify_node</span></span>(<span>self, node_name: str, listener_port: Union[int, str, ForwardRef(None)] = None, data_port: Union[int, str, ForwardRef(None)] = None, election_port: Union[int, str, ForwardRef(None)] = None, data_dir: Optional[str] = None) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Methods to modify the hac cluster node properties</p>
-<h2 id="args">Args</h2>
-<p>node_name
-(str)
--
-Client name for the node
-listener_port
-(int/str)
--
-zkListenerPort address to be updated
-default - None
-Sample: '8090' or 8090
-data_port
-(int/str)
--
-zkDataPort address to be updated
-default - None
-Sample: '8091' or 8091
-election_port
-(int/str)
--
-zkElectionPort address to be updated
-default - None
-Sample: '8097' or 8097
-data_dir
-(str)
--
-zoo keeper data directory
-default - None</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-HAC zKeeper node not found</p>
-<pre><code>Response was not success
-</code></pre>
-<h2 id="returns">Returns</h2>
-<p>None</p></div>
+<div class="desc"><p>Modify the properties of a node in the HAC cluster.</p>
+<p>This method updates the specified properties for a given node in the HAC cluster,
+such as listener port, data port, election port, and the ZooKeeper data directory.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>node_name</code></strong></dt>
+<dd>The client name of the node to modify.</dd>
+<dt><strong><code>listener_port</code></strong></dt>
+<dd>The new zkListenerPort address for the node (e.g., 8090 or '8090'). Optional.</dd>
+<dt><strong><code>data_port</code></strong></dt>
+<dd>The new zkDataPort address for the node (e.g., 8091 or '8091'). Optional.</dd>
+<dt><strong><code>election_port</code></strong></dt>
+<dd>The new zkElectionPort address for the node (e.g., 8097 or '8097'). Optional.</dd>
+<dt><strong><code>data_dir</code></strong></dt>
+<dd>The new ZooKeeper data directory for the node. Optional.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the HAC zKeeper node is not found or the response is not successful.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; hac_cluster = HACCluster()
+&gt;&gt;&gt; hac_cluster.modify_node(
+...     node_name='NodeA',
+...     listener_port=8090,
+...     data_port='8091',
+...     election_port=8097,
+...     data_dir='/var/lib/zookeeper'
+... )
+&gt;&gt;&gt; print(&quot;Node properties updated successfully.&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/hac_clusters.py#L397-L473" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/hac_clusters.py#L514-L601" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def modify_node(self, node_name, listener_port=None, data_port=None,
-                election_port=None, data_dir=None):
-    &#34;&#34;&#34;Methods to modify the hac cluster node properties
+<pre><code class="python">def modify_node(
+    self,
+    node_name: str,
+    listener_port: Optional[Union[int, str]] = None,
+    data_port: Optional[Union[int, str]] = None,
+    election_port: Optional[Union[int, str]] = None,
+    data_dir: Optional[str] = None
+) -&gt; None:
+    &#34;&#34;&#34;Modify the properties of a node in the HAC cluster.
+
+    This method updates the specified properties for a given node in the HAC cluster,
+    such as listener port, data port, election port, and the ZooKeeper data directory.
 
     Args:
-        node_name       (str)       -   Client name for the node
-        listener_port   (int/str)   -   zkListenerPort address to be updated
-            default - None              Sample: &#39;8090&#39; or 8090
-        data_port       (int/str)   -   zkDataPort address to be updated
-            default - None              Sample: &#39;8091&#39; or 8091
-        election_port   (int/str)   -   zkElectionPort address to be updated
-            default - None              Sample: &#39;8097&#39; or 8097
-        data_dir        (str)       -   zoo keeper data directory
-            default - None
+        node_name: The client name of the node to modify.
+        listener_port: The new zkListenerPort address for the node (e.g., 8090 or &#39;8090&#39;). Optional.
+        data_port: The new zkDataPort address for the node (e.g., 8091 or &#39;8091&#39;). Optional.
+        election_port: The new zkElectionPort address for the node (e.g., 8097 or &#39;8097&#39;). Optional.
+        data_dir: The new ZooKeeper data directory for the node. Optional.
 
     Raises:
-        SDKException:
-            HAC zKeeper node not found
+        SDKException: If the HAC zKeeper node is not found or the response is not successful.
 
-            Response was not success
-
-    Returns:
-        None
+    Example:
+        &gt;&gt;&gt; hac_cluster = HACCluster()
+        &gt;&gt;&gt; hac_cluster.modify_node(
+        ...     node_name=&#39;NodeA&#39;,
+        ...     listener_port=8090,
+        ...     data_port=&#39;8091&#39;,
+        ...     election_port=8097,
+        ...     data_dir=&#39;/var/lib/zookeeper&#39;
+        ... )
+        &gt;&gt;&gt; print(&#34;Node properties updated successfully.&#34;)
 
     &#34;&#34;&#34;
     node_info = self.node_info(node_name)
@@ -1001,39 +1247,41 @@ HAC zKeeper node not found</p>
 </details>
 </dd>
 <dt id="cvpysdk.hac_clusters.HACCluster.node_info"><code class="name flex">
-<span>def <span class="ident">node_info</span></span>(<span>self, node_name)</span>
+<span>def <span class="ident">node_info</span></span>(<span>self, node_name: str) ‑> dict</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Returns the hac cluster node information</p>
-<h2 id="args">Args</h2>
-<p>node_name
-(str)
--
-HAC cluster node name</p>
-<h2 id="returns">Returns</h2>
-<p>dict
--
-dictionary containing details of the hac node</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-HAC zKeeper node not found</p></div>
+<div class="desc"><p>Retrieve information for a specific HAC cluster node.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>node_name</code></strong></dt>
+<dd>The name of the HAC cluster node to query.</dd>
+</dl>
+<p>Returns
+-----=
+A dictionary containing details about the specified HAC cluster node.</p>
+<dl>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the specified HAC zKeeper node is not found.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/hac_clusters.py#L475-L492" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/hac_clusters.py#L603-L620" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def node_info(self, node_name):
-    &#34;&#34;&#34;Returns the hac cluster node information
+<pre><code class="python">def node_info(self, node_name: str) -&gt; dict:
+    &#34;&#34;&#34;Retrieve information for a specific HAC cluster node.
 
     Args:
-        node_name       (str)   -   HAC cluster node name
+        node_name: The name of the HAC cluster node to query.
 
     Returns:
-        dict        -   dictionary containing details of the hac node
+        A dictionary containing details about the specified HAC cluster node.
 
     Raises:
-        SDKException:
-            HAC zKeeper node not found
+        SDKException: If the specified HAC zKeeper node is not found.
 
     &#34;&#34;&#34;
     for node_info in self.cluster_nodes:
@@ -1043,17 +1291,24 @@ HAC zKeeper node not found</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.hac_clusters.HACCluster.refresh"><code class="name flex">
-<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+<span>def <span class="ident">refresh</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Refreshes properties of the HAC cluster</p></div>
+<div class="desc"><p>Reload the properties of the HAC cluster to ensure the latest information is available.</p>
+<p>This method updates the internal state of the HACCluster object by fetching the most recent
+properties from the underlying data source or system.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/hac_clusters.py#L386-L395" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/hac_clusters.py#L497-L512" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def refresh(self):
-    &#34;&#34;&#34;Refreshes properties of the HAC cluster&#34;&#34;&#34;
+<pre><code class="python">def refresh(self) -&gt; None:
+    &#34;&#34;&#34;Reload the properties of the HAC cluster to ensure the latest information is available.
+
+    This method updates the internal state of the HACCluster object by fetching the most recent
+    properties from the underlying data source or system.
+
+    &#34;&#34;&#34;
     self.commcell.clients.refresh()
     if not self.commcell.clients.has_client(self._cluster_name):
         raise SDKException(&#39;HACClusters&#39;, &#39;102&#39;)
@@ -1068,35 +1323,75 @@ HAC zKeeper node not found</p></div>
 </dd>
 <dt id="cvpysdk.hac_clusters.HACClusters"><code class="flex name class">
 <span>class <span class="ident">HACClusters</span></span>
-<span>(</span><span>commcell_object)</span>
+<span>(</span><span>commcell_object: Commcell)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for representing all the HAC clusters associated with the commcell.</p>
-<p>Initialize object of the HACClusters class</p>
-<h2 id="args">Args</h2>
-<p>commcell_object (object)
-&ndash;
-instance of class Commcell</p>
-<h2 id="returns">Returns</h2>
-<p>object
--
-instance of class HACClusters</p></div>
+<div class="desc"><p>Represents and manages all High Availability Cluster (HAC) entities associated with a CommCell.</p>
+<p>This class provides an interface to interact with HAC clusters, allowing users to retrieve,
+add, delete, and refresh cluster information. It supports dictionary-like access to clusters,
+and offers utility methods for checking cluster existence and obtaining detailed cluster data.</p>
+<p>Key Features:
+- Retrieve all HAC clusters associated with the CommCell
+- Access clusters using dictionary-style indexing
+- Check for the existence of a specific cluster by name
+- Get detailed information about a specific cluster
+- Add new HAC clusters with specified cloud and node names
+- Delete existing HAC clusters by cloud name
+- Refresh the internal list of clusters to reflect current state
+- Access all HAC clusters via a property
+- String and representation methods for easy inspection</p>
+<p>Initialize an instance of the HACClusters class.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>commcell_object</code></strong></dt>
+<dd>An instance of the Commcell class representing the Commcell connection.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; from cvpysdk.commcell import Commcell
+&gt;&gt;&gt; commcell = Commcell('commcell_host', 'username', 'password')
+&gt;&gt;&gt; hac_clusters = HACClusters(commcell)
+&gt;&gt;&gt; print(&quot;HACClusters object created:&quot;, hac_clusters)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/hac_clusters.py#L92-L343" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/hac_clusters.py#L98-L419" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class HACClusters(object):
-    &#34;&#34;&#34;Class for representing all the HAC clusters associated with the commcell.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents and manages all High Availability Cluster (HAC) entities associated with a CommCell.
 
-    def __init__(self, commcell_object):
-        &#34;&#34;&#34;Initialize object of the HACClusters class
+    This class provides an interface to interact with HAC clusters, allowing users to retrieve,
+    add, delete, and refresh cluster information. It supports dictionary-like access to clusters,
+    and offers utility methods for checking cluster existence and obtaining detailed cluster data.
 
-            Args:
-                commcell_object (object)    --  instance of class Commcell
+    Key Features:
+        - Retrieve all HAC clusters associated with the CommCell
+        - Access clusters using dictionary-style indexing
+        - Check for the existence of a specific cluster by name
+        - Get detailed information about a specific cluster
+        - Add new HAC clusters with specified cloud and node names
+        - Delete existing HAC clusters by cloud name
+        - Refresh the internal list of clusters to reflect current state
+        - Access all HAC clusters via a property
+        - String and representation methods for easy inspection
 
-            Returns:
-                object  -   instance of class HACClusters
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_object: &#39;Commcell&#39;) -&gt; None:
+        &#34;&#34;&#34;Initialize an instance of the HACClusters class.
+
+        Args:
+            commcell_object: An instance of the Commcell class representing the Commcell connection.
+
+        Example:
+            &gt;&gt;&gt; from cvpysdk.commcell import Commcell
+            &gt;&gt;&gt; commcell = Commcell(&#39;commcell_host&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; hac_clusters = HACClusters(commcell)
+            &gt;&gt;&gt; print(&#34;HACClusters object created:&#34;, hac_clusters)
+
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
         self._cvpysdk_object = commcell_object._cvpysdk_object
@@ -1106,11 +1401,15 @@ instance of class HACClusters</p></div>
         self._all_hac_clusters = None
         self.refresh()
 
-    def __str__(self):
-        &#34;&#34;&#34;Representation string consisting of all HAC Clusters of the commcell.
+    def __str__(self) -&gt; str:
+        &#34;&#34;&#34;Return a string representation of all HAC Clusters associated with the Commcell.
 
-                Returns:
-                    str - string of all the HAC clusters associated with the commcell
+        This method provides a human-readable summary of all HAC Clusters managed by the Commcell,
+        typically listing their names or key details in a single string.
+
+        Returns:
+            A string containing information about all HAC Clusters associated with the Commcell.
+
         &#34;&#34;&#34;
         representation_string = &#39;{:^5}\t{:^20}\n\n&#39;.format(&#39;S. No.&#39;, &#39;HAC Name&#39;)
         index = 1
@@ -1120,45 +1419,58 @@ instance of class HACClusters</p></div>
             index += 1
         return representation_string
 
-    def __repr__(self):
-        &#34;&#34;&#34;Representation string for the instance of the HACClusters class.&#34;&#34;&#34;
+    def __repr__(self) -&gt; str:
+        &#34;&#34;&#34;Return a string representation of the HACClusters instance.
+
+        This method provides a developer-friendly string that identifies the HACClusters object,
+        which is useful for debugging and logging purposes.
+
+        Returns:
+            A string representing the HACClusters instance.
+
+        &#34;&#34;&#34;
         return &#34;HACClusters class instance for Commcell&#34;
 
-    def __getitem__(self, value):
-        &#34;&#34;&#34;Returns the details of HAC cluster for given HAC name
+    def __getitem__(self, value: str) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the details of a HAC cluster by its name.
 
-            Args:
-                value   (str)       --  name of HAC cluster
+        Args:
+            value: The name of the HAC cluster to look up.
 
-            Returns:
-                dict    -   details of the HAC cluster
+        Returns:
+            A dictionary containing the details of the specified HAC cluster.
 
-            Raises:
-                HAC cluster not found
+        Raises:
+            KeyError: If the HAC cluster with the given name is not found.
+
         &#34;&#34;&#34;
         value = value.lower()
         if value.lower() in self.all_hac_clusters:
             return {&#34;name&#34;: value.lower, &#34;id&#34;: self.all_hac_clusters[value]}
         raise SDKException(&#39;HACClusters&#39;, &#39;102&#39;)
 
-    def _response_not_success(self, response):
-        &#34;&#34;&#34;Helper method to raise exception when response is not 200 (ok)
+    def _response_not_success(self, response: &#39;requests.Response&#39;) -&gt; None:
+        &#34;&#34;&#34;Raise an exception if the response status is not successful (HTTP 200).
 
-            Args:
-                response    (object)    -   response object
+        Args:
+            response: The response object to check for a successful status.
 
-            Raises:
-                SDKException:
-                    Response was not success
+        Raises:
+            SDKException: If the response does not indicate a successful (200 OK) status.
+
         &#34;&#34;&#34;
         raise SDKException(
             &#39;Response&#39;,
             &#39;101&#39;,
-            self._update_response_(
-                response.text))
+            self._update_response_(response.text))
 
-    def _get_all_clusters(self):
-        &#34;&#34;&#34;Gets details of all HAC clusters associated to the commcell&#34;&#34;&#34;
+    def _get_all_clusters(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve details of all HAC clusters associated with the Commcell.
+
+        Returns:
+            None
+
+        &#34;&#34;&#34;
         if self._commcell_object.client_groups.has_clientgroup(&#34;HAC Cluster&#34;):
             if self._hac_group is None:
                 self._hac_group = self._commcell_object.client_groups.get(&#34;HAC Cluster&#34;)
@@ -1169,38 +1481,43 @@ instance of class HACClusters</p></div>
                 )
                 self._all_hac_clusters[client_name.lower()] = int(client_obj.cloud_id)
 
-    def has_cluster(self, hac_name):
-        &#34;&#34;&#34;Returns whether the HAC cluster with given name is present or not
+    def has_cluster(self, hac_name: str) -&gt; bool:
+        &#34;&#34;&#34;Check if a HAC cluster with the specified name exists.
 
-            Args:
-                hac_name    (str)       --  hac cluster name
+        Args:
+            hac_name: The name of the HAC cluster to check.
 
-            Returns:
-                boolean     -   True if hac cluster is associated with the commcell
-                else returns False
+        Returns:
+            True if the HAC cluster with the given name is associated with the Commcell, otherwise False.
 
-            Raises:
-                SDKException:
-                    Data type of the input(s) is not valid
+        Raises:
+            SDKException: If the data type of the input is not valid.
+
         &#34;&#34;&#34;
         if not isinstance(hac_name, str):
             raise SDKException(&#39;HACClusters&#39;, &#39;101&#39;)
         return hac_name.lower() in self._all_hac_clusters
 
-    def get(self, hac_name):
-        &#34;&#34;&#34;Returns instance of HACCluster class is cluster is found
+    def get(self, hac_name: Union[str, int]) -&gt; &#39;HACCluster&#39;:
+        &#34;&#34;&#34;Retrieve an instance of the HACCluster class for the specified cluster name or ID.
 
-            Args:
-                hac_name        (str/int)   --      hac cluster name or id
+        Args:
+            hac_name: The name (str) or ID (int) of the HAC cluster to retrieve.
 
-            Returns:
-                object          (HACCluster)   --  Instance of a single hac cluster
+        Returns:
+            HACCluster: An instance representing the specified HAC cluster.
 
-            Raises:
-                SDKException:
-                    Data type of the input(s) is not valid
+        Raises:
+            SDKException: If the input data type is invalid or the HAC cluster is not found.
 
-                    HAC Cluster not found
+        Example:
+            &gt;&gt;&gt; clusters = HACClusters()
+            &gt;&gt;&gt; hac_cluster = clusters.get(&#39;ClusterA&#39;)
+            &gt;&gt;&gt; print(f&#34;Retrieved HAC cluster: {hac_cluster}&#34;)
+            &gt;&gt;&gt; # You can also use the cluster ID
+            &gt;&gt;&gt; hac_cluster_by_id = clusters.get(101)
+            &gt;&gt;&gt; print(f&#34;Retrieved HAC cluster by ID: {hac_cluster_by_id}&#34;)
+
         &#34;&#34;&#34;
         if isinstance(hac_name, str):
             if hac_name.lower() in self.all_hac_clusters:
@@ -1213,31 +1530,38 @@ instance of class HACClusters</p></div>
             raise SDKException(&#39;HACClusters&#39;, &#39;101&#39;)
         raise SDKException(&#34;HACClusters&#34;, &#34;102&#34;)
 
-    def refresh(self):
-        &#34;&#34;&#34;Refreshes properties for HACClusters class&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Reload the properties and state information for the HACClusters class.
+
+        This method refreshes the internal data of the HACClusters instance, ensuring that 
+        any changes in the underlying cluster configuration or status are reflected in the object.
+
+        &#34;&#34;&#34;
         self._commcell_object.clients.refresh()
         self._commcell_object.client_groups.refresh()
         self._all_hac_clusters = {}
         self._hac_group = None
         self._get_all_clusters()
 
-    def add(self, cloud_name, cloud_node_names):
-        &#34;&#34;&#34;Creates a new HAC cluster
+    def add(self, cloud_name: str, cloud_node_names: List[str]) -&gt; &#39;HACCluster&#39;:
+        &#34;&#34;&#34;Create a new HAC cluster with the specified cloud name and node names.
 
-            Args:
-                cloud_name      (str)       --  hac cluster cloud name
-                cloud_node_names    (list)  --  string array of node names to be added to cluster
+        Args:
+            cloud_name: The name to assign to the HAC cluster cloud.
+            cloud_node_names: List of node names (strings) to be added to the cluster.
 
-            Raises:
-                SDKException:
-                    Data type of the input(s) is not valid.
+        Returns:
+            HACCluster: An instance representing the newly created HAC cluster.
 
-                    Response was not success.
+        Raises:
+            SDKException: If the input data types are invalid, the response is unsuccessful, or the response is empty.
 
-                    Response was empty.
+        Example:
+            &gt;&gt;&gt; hac_clusters = HACClusters()
+            &gt;&gt;&gt; cluster = hac_clusters.add(&#34;MyCloudCluster&#34;, [&#34;node1&#34;, &#34;node2&#34;, &#34;node3&#34;])
+            &gt;&gt;&gt; print(f&#34;Created HAC cluster: {cluster}&#34;)
+            &gt;&gt;&gt; # The returned HACCluster object can be used for further cluster management
 
-            Returns:
-                Object  -   Instance of class HACCluster
         &#34;&#34;&#34;
         if not (isinstance(cloud_name, str) and isinstance(cloud_node_names, list)):
             raise SDKException(&#39;HACClusters&#39;, &#39;101&#39;)
@@ -1299,19 +1623,20 @@ instance of class HACClusters</p></div>
         else:
             self._response_not_success(response)
 
-    def delete(self, cloud_name):
-        &#34;&#34;&#34;Deletes an existing HAC cluster
+    def delete(self, cloud_name: str) -&gt; None:
+        &#34;&#34;&#34;Delete an existing HAC cluster by its cloud name.
 
         Args:
-            cloud_name  (str)   --  HAC cluster cloud name to be deleted
+            cloud_name: The name of the HAC cluster cloud to be deleted.
 
         Raises:
-            SDKException:
-                Data type of the input(s) is not valid.
+            SDKException: If the input data type is invalid, the response is not successful, or the response is empty.
 
-                Response was not success.
+        Example:
+            &gt;&gt;&gt; hac_clusters = HACClusters()
+            &gt;&gt;&gt; hac_clusters.delete(&#34;MyHACCluster&#34;)
+            &gt;&gt;&gt; print(&#34;HAC cluster deleted successfully.&#34;)
 
-                Response was empty.
         &#34;&#34;&#34;
         if not isinstance(cloud_name, str):
             raise SDKException(&#39;HACCluster&#39;, &#39;101&#39;)
@@ -1335,23 +1660,39 @@ instance of class HACClusters</p></div>
         self._response_not_success(response)
 
     @property
-    def all_hac_clusters(self):
-        &#34;&#34;&#34;Returns the details of all HAC clusters associated with commcell&#34;&#34;&#34;
+    def all_hac_clusters(self) -&gt; dict:
+        &#34;&#34;&#34;Get the details of all HAC clusters associated with the Commcell.
+
+        Returns:
+            dict: A dict containing details of each HAC cluster associated with the Commcell.
+
+        &#34;&#34;&#34;
         return self._all_hac_clusters</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.hac_clusters.HACClusters.all_hac_clusters"><code class="name">var <span class="ident">all_hac_clusters</span></code></dt>
+<dt id="cvpysdk.hac_clusters.HACClusters.all_hac_clusters"><code class="name">var <span class="ident">all_hac_clusters</span> : dict</code></dt>
 <dd>
-<div class="desc"><p>Returns the details of all HAC clusters associated with commcell</p></div>
+<div class="desc"><p>Get the details of all HAC clusters associated with the Commcell.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>A dict containing details of each HAC cluster associated with the Commcell.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/hac_clusters.py#L340-L343" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/hac_clusters.py#L410-L419" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def all_hac_clusters(self):
-    &#34;&#34;&#34;Returns the details of all HAC clusters associated with commcell&#34;&#34;&#34;
+def all_hac_clusters(self) -&gt; dict:
+    &#34;&#34;&#34;Get the details of all HAC clusters associated with the Commcell.
+
+    Returns:
+        dict: A dict containing details of each HAC cluster associated with the Commcell.
+
+    &#34;&#34;&#34;
     return self._all_hac_clusters</code></pre>
 </details>
 </dd>
@@ -1359,52 +1700,57 @@ def all_hac_clusters(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.hac_clusters.HACClusters.add"><code class="name flex">
-<span>def <span class="ident">add</span></span>(<span>self, cloud_name, cloud_node_names)</span>
+<span>def <span class="ident">add</span></span>(<span>self, cloud_name: str, cloud_node_names: List[str]) ‑> <a title="cvpysdk.hac_clusters.HACCluster" href="#cvpysdk.hac_clusters.HACCluster">HACCluster</a></span>
 </code></dt>
 <dd>
-<div class="desc"><p>Creates a new HAC cluster</p>
-<h2 id="args">Args</h2>
-<p>cloud_name
-(str)
-&ndash;
-hac cluster cloud name
-cloud_node_names
-(list)
-&ndash;
-string array of node names to be added to cluster</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-Data type of the input(s) is not valid.</p>
-<pre><code>Response was not success.
-
-Response was empty.
-</code></pre>
-<h2 id="returns">Returns</h2>
-<p>Object
--
-Instance of class HACCluster</p></div>
+<div class="desc"><p>Create a new HAC cluster with the specified cloud name and node names.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>cloud_name</code></strong></dt>
+<dd>The name to assign to the HAC cluster cloud.</dd>
+<dt><strong><code>cloud_node_names</code></strong></dt>
+<dd>List of node names (strings) to be added to the cluster.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code><a title="cvpysdk.hac_clusters.HACCluster" href="#cvpysdk.hac_clusters.HACCluster">HACCluster</a></code></dt>
+<dd>An instance representing the newly created HAC cluster.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the input data types are invalid, the response is unsuccessful, or the response is empty.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; hac_clusters = HACClusters()
+&gt;&gt;&gt; cluster = hac_clusters.add(&quot;MyCloudCluster&quot;, [&quot;node1&quot;, &quot;node2&quot;, &quot;node3&quot;])
+&gt;&gt;&gt; print(f&quot;Created HAC cluster: {cluster}&quot;)
+&gt;&gt;&gt; # The returned HACCluster object can be used for further cluster management
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/hac_clusters.py#L227-L303" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/hac_clusters.py#L292-L371" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def add(self, cloud_name, cloud_node_names):
-    &#34;&#34;&#34;Creates a new HAC cluster
+<pre><code class="python">def add(self, cloud_name: str, cloud_node_names: List[str]) -&gt; &#39;HACCluster&#39;:
+    &#34;&#34;&#34;Create a new HAC cluster with the specified cloud name and node names.
 
-        Args:
-            cloud_name      (str)       --  hac cluster cloud name
-            cloud_node_names    (list)  --  string array of node names to be added to cluster
+    Args:
+        cloud_name: The name to assign to the HAC cluster cloud.
+        cloud_node_names: List of node names (strings) to be added to the cluster.
 
-        Raises:
-            SDKException:
-                Data type of the input(s) is not valid.
+    Returns:
+        HACCluster: An instance representing the newly created HAC cluster.
 
-                Response was not success.
+    Raises:
+        SDKException: If the input data types are invalid, the response is unsuccessful, or the response is empty.
 
-                Response was empty.
+    Example:
+        &gt;&gt;&gt; hac_clusters = HACClusters()
+        &gt;&gt;&gt; cluster = hac_clusters.add(&#34;MyCloudCluster&#34;, [&#34;node1&#34;, &#34;node2&#34;, &#34;node3&#34;])
+        &gt;&gt;&gt; print(f&#34;Created HAC cluster: {cluster}&#34;)
+        &gt;&gt;&gt; # The returned HACCluster object can be used for further cluster management
 
-        Returns:
-            Object  -   Instance of class HACCluster
     &#34;&#34;&#34;
     if not (isinstance(cloud_name, str) and isinstance(cloud_node_names, list)):
         raise SDKException(&#39;HACClusters&#39;, &#39;101&#39;)
@@ -1468,40 +1814,45 @@ Instance of class HACCluster</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.hac_clusters.HACClusters.delete"><code class="name flex">
-<span>def <span class="ident">delete</span></span>(<span>self, cloud_name)</span>
+<span>def <span class="ident">delete</span></span>(<span>self, cloud_name: str) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Deletes an existing HAC cluster</p>
-<h2 id="args">Args</h2>
-<p>cloud_name
-(str)
-&ndash;
-HAC cluster cloud name to be deleted</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-Data type of the input(s) is not valid.</p>
-<pre><code>Response was not success.
-
-Response was empty.
+<div class="desc"><p>Delete an existing HAC cluster by its cloud name.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>cloud_name</code></strong></dt>
+<dd>The name of the HAC cluster cloud to be deleted.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the input data type is invalid, the response is not successful, or the response is empty.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; hac_clusters = HACClusters()
+&gt;&gt;&gt; hac_clusters.delete(&quot;MyHACCluster&quot;)
+&gt;&gt;&gt; print(&quot;HAC cluster deleted successfully.&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/hac_clusters.py#L305-L338" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/hac_clusters.py#L373-L408" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def delete(self, cloud_name):
-    &#34;&#34;&#34;Deletes an existing HAC cluster
+<pre><code class="python">def delete(self, cloud_name: str) -&gt; None:
+    &#34;&#34;&#34;Delete an existing HAC cluster by its cloud name.
 
     Args:
-        cloud_name  (str)   --  HAC cluster cloud name to be deleted
+        cloud_name: The name of the HAC cluster cloud to be deleted.
 
     Raises:
-        SDKException:
-            Data type of the input(s) is not valid.
+        SDKException: If the input data type is invalid, the response is not successful, or the response is empty.
 
-            Response was not success.
+    Example:
+        &gt;&gt;&gt; hac_clusters = HACClusters()
+        &gt;&gt;&gt; hac_clusters.delete(&#34;MyHACCluster&#34;)
+        &gt;&gt;&gt; print(&#34;HAC cluster deleted successfully.&#34;)
 
-            Response was empty.
     &#34;&#34;&#34;
     if not isinstance(cloud_name, str):
         raise SDKException(&#39;HACCluster&#39;, &#39;101&#39;)
@@ -1526,44 +1877,58 @@ Response was empty.
 </details>
 </dd>
 <dt id="cvpysdk.hac_clusters.HACClusters.get"><code class="name flex">
-<span>def <span class="ident">get</span></span>(<span>self, hac_name)</span>
+<span>def <span class="ident">get</span></span>(<span>self, hac_name: Union[str, int]) ‑> <a title="cvpysdk.hac_clusters.HACCluster" href="#cvpysdk.hac_clusters.HACCluster">HACCluster</a></span>
 </code></dt>
 <dd>
-<div class="desc"><p>Returns instance of HACCluster class is cluster is found</p>
-<h2 id="args">Args</h2>
-<p>hac_name
-(str/int)
-&ndash;
-hac cluster name or id</p>
-<h2 id="returns">Returns</h2>
-<p>object
-(HACCluster)
-&ndash;
-Instance of a single hac cluster</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-Data type of the input(s) is not valid</p>
-<pre><code>HAC Cluster not found
+<div class="desc"><p>Retrieve an instance of the HACCluster class for the specified cluster name or ID.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>hac_name</code></strong></dt>
+<dd>The name (str) or ID (int) of the HAC cluster to retrieve.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code><a title="cvpysdk.hac_clusters.HACCluster" href="#cvpysdk.hac_clusters.HACCluster">HACCluster</a></code></dt>
+<dd>An instance representing the specified HAC cluster.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the input data type is invalid or the HAC cluster is not found.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; clusters = HACClusters()
+&gt;&gt;&gt; hac_cluster = clusters.get('ClusterA')
+&gt;&gt;&gt; print(f&quot;Retrieved HAC cluster: {hac_cluster}&quot;)
+&gt;&gt;&gt; # You can also use the cluster ID
+&gt;&gt;&gt; hac_cluster_by_id = clusters.get(101)
+&gt;&gt;&gt; print(f&quot;Retrieved HAC cluster by ID: {hac_cluster_by_id}&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/hac_clusters.py#L193-L217" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/hac_clusters.py#L245-L276" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def get(self, hac_name):
-    &#34;&#34;&#34;Returns instance of HACCluster class is cluster is found
+<pre><code class="python">def get(self, hac_name: Union[str, int]) -&gt; &#39;HACCluster&#39;:
+    &#34;&#34;&#34;Retrieve an instance of the HACCluster class for the specified cluster name or ID.
 
-        Args:
-            hac_name        (str/int)   --      hac cluster name or id
+    Args:
+        hac_name: The name (str) or ID (int) of the HAC cluster to retrieve.
 
-        Returns:
-            object          (HACCluster)   --  Instance of a single hac cluster
+    Returns:
+        HACCluster: An instance representing the specified HAC cluster.
 
-        Raises:
-            SDKException:
-                Data type of the input(s) is not valid
+    Raises:
+        SDKException: If the input data type is invalid or the HAC cluster is not found.
 
-                HAC Cluster not found
+    Example:
+        &gt;&gt;&gt; clusters = HACClusters()
+        &gt;&gt;&gt; hac_cluster = clusters.get(&#39;ClusterA&#39;)
+        &gt;&gt;&gt; print(f&#34;Retrieved HAC cluster: {hac_cluster}&#34;)
+        &gt;&gt;&gt; # You can also use the cluster ID
+        &gt;&gt;&gt; hac_cluster_by_id = clusters.get(101)
+        &gt;&gt;&gt; print(f&#34;Retrieved HAC cluster by ID: {hac_cluster_by_id}&#34;)
+
     &#34;&#34;&#34;
     if isinstance(hac_name, str):
         if hac_name.lower() in self.all_hac_clusters:
@@ -1578,41 +1943,42 @@ Data type of the input(s) is not valid</p>
 </details>
 </dd>
 <dt id="cvpysdk.hac_clusters.HACClusters.has_cluster"><code class="name flex">
-<span>def <span class="ident">has_cluster</span></span>(<span>self, hac_name)</span>
+<span>def <span class="ident">has_cluster</span></span>(<span>self, hac_name: str) ‑> bool</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Returns whether the HAC cluster with given name is present or not</p>
-<h2 id="args">Args</h2>
-<p>hac_name
-(str)
-&ndash;
-hac cluster name</p>
-<h2 id="returns">Returns</h2>
-<p>boolean
--
-True if hac cluster is associated with the commcell
-else returns False</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-Data type of the input(s) is not valid</p></div>
+<div class="desc"><p>Check if a HAC cluster with the specified name exists.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>hac_name</code></strong></dt>
+<dd>The name of the HAC cluster to check.</dd>
+</dl>
+<p>Returns
+-----=
+True if the HAC cluster with the given name is associated with the Commcell, otherwise False.</p>
+<dl>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the data type of the input is not valid.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/hac_clusters.py#L175-L191" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/hac_clusters.py#L227-L243" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def has_cluster(self, hac_name):
-    &#34;&#34;&#34;Returns whether the HAC cluster with given name is present or not
+<pre><code class="python">def has_cluster(self, hac_name: str) -&gt; bool:
+    &#34;&#34;&#34;Check if a HAC cluster with the specified name exists.
 
-        Args:
-            hac_name    (str)       --  hac cluster name
+    Args:
+        hac_name: The name of the HAC cluster to check.
 
-        Returns:
-            boolean     -   True if hac cluster is associated with the commcell
-            else returns False
+    Returns:
+        True if the HAC cluster with the given name is associated with the Commcell, otherwise False.
 
-        Raises:
-            SDKException:
-                Data type of the input(s) is not valid
+    Raises:
+        SDKException: If the data type of the input is not valid.
+
     &#34;&#34;&#34;
     if not isinstance(hac_name, str):
         raise SDKException(&#39;HACClusters&#39;, &#39;101&#39;)
@@ -1620,17 +1986,24 @@ Data type of the input(s) is not valid</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.hac_clusters.HACClusters.refresh"><code class="name flex">
-<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+<span>def <span class="ident">refresh</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Refreshes properties for HACClusters class</p></div>
+<div class="desc"><p>Reload the properties and state information for the HACClusters class.</p>
+<p>This method refreshes the internal data of the HACClusters instance, ensuring that
+any changes in the underlying cluster configuration or status are reflected in the object.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/hac_clusters.py#L219-L225" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/hac_clusters.py#L278-L290" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def refresh(self):
-    &#34;&#34;&#34;Refreshes properties for HACClusters class&#34;&#34;&#34;
+<pre><code class="python">def refresh(self) -&gt; None:
+    &#34;&#34;&#34;Reload the properties and state information for the HACClusters class.
+
+    This method refreshes the internal data of the HACClusters instance, ensuring that 
+    any changes in the underlying cluster configuration or status are reflected in the object.
+
+    &#34;&#34;&#34;
     self._commcell_object.clients.refresh()
     self._commcell_object.client_groups.refresh()
     self._all_hac_clusters = {}

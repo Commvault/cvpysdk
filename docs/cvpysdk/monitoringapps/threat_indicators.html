@@ -29,7 +29,8 @@
 <p>TAServer
 - class to represent single server in threat indicators</p>
 <p>AnomalyType - class to represent different types of anomaly</p>
-<h2 id="taservers">Taservers</h2>
+<p>Taservers
+-----=</p>
 <p><strong>init</strong>()
 &ndash;
 initialise object of the TAServers class</p>
@@ -62,7 +63,8 @@ runs anomaly scan on given server</p>
 
 **monitored_vms**       --  returns the monitored vms stats from threat indicators from CS
 </code></pre>
-<h2 id="taserver">Taserver</h2>
+<p>Taserver
+-----=</p>
 <p><strong>init</strong>()
 &ndash;
 initialise object of the TAServer class</p>
@@ -95,7 +97,7 @@ clears the anomalies present for this client</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/monitoringapps/threat_indicators.py#L1-L602" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/monitoringapps/threat_indicators.py#L1-L771" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># Copyright Commvault Systems, Inc.
 #
@@ -186,7 +188,19 @@ from ..monitoringapps.constants import ThreatConstants, FileTypeConstants, Reque
 
 
 class AnomalyType(enum.Enum):
-    &#34;&#34;&#34;Enum class for Anomaly type&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Enumeration class representing different types of anomalies.
+
+    This class is used to define and categorize anomaly types in a structured
+    and type-safe manner. It inherits from Python&#39;s enum.Enum, allowing for
+    clear and consistent usage of anomaly categories throughout the codebase.
+
+    Key Features:
+        - Provides a set of predefined anomaly types
+        - Ensures type safety and clarity when working with anomalies
+        - Facilitates easy comparison and usage in control flow
+
+    &#34;&#34;&#34;
     FILE_ACTIVITY = 16
     FILE_TYPE = 32
     THREAT_ANALYSIS = 64
@@ -196,18 +210,38 @@ class AnomalyType(enum.Enum):
 
 
 class TAServers():
-    &#34;&#34;&#34;class to represent all servers in threat indicators&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents and manages all servers involved in threat indicator monitoring.
 
-    def __init__(self, commcell_object):
-        &#34;&#34;&#34;Initializes an instance of the TAServers class.
+    This class provides an interface for interacting with servers that are part of a threat analysis system.
+    It allows users to query server details, monitor virtual machines, retrieve threat indicators, and
+    initiate scans for anomalies. The class also supports refreshing server data and checking for the
+    existence of specific servers.
 
-            Args:
+    Key Features:
+        - Initialization with a communication cell object for server context
+        - Error handling for unsuccessful responses
+        - Retrieval of client and monitored VM counts
+        - Access to threat indicators for servers
+        - Check for existence of a server by name
+        - Run scans for specified anomaly types within a time range
+        - Retrieve server details by name
+        - Refresh server data to ensure up-to-date information
+        - Properties for monitored VMs and client count
 
-                commcell_object     (object)    --  instance of the commcell class
+    &#34;&#34;&#34;
 
-            Returns:
+    def __init__(self, commcell_object: object) -&gt; None:
+        &#34;&#34;&#34;Initialize a new instance of the TAServers class.
 
-                object  -   instance of the Servers class
+        Args:
+            commcell_object: An instance of the Commcell class representing the active Commcell connection.
+
+        Example:
+            &gt;&gt;&gt; from cvpysdk.commcell import Commcell
+            &gt;&gt;&gt; commcell = Commcell(&#39;commcell_host&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; ta_servers = TAServers(commcell)
+            &gt;&gt;&gt; print(&#34;TAServers instance created successfully&#34;)
 
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
@@ -223,33 +257,41 @@ class TAServers():
         self._API_MONITORED_VMS = self._services[&#39;MONITORED_VM_COUNT&#39;]
         self.refresh()
 
-    def _response_not_success(self, response):
-        &#34;&#34;&#34;Helper function to raise an exception when reponse status is not 200 (OK).
+    def _response_not_success(self, response: object) -&gt; None:
+        &#34;&#34;&#34;Raise an exception if the API response status is not 200 (OK).
 
-            Args:
-                response    (object)    --  response class object,
+        This helper function checks the status of the provided response object,
+        typically obtained from the `requests` Python package, and raises an
+        exception if the response indicates a failure (i.e., status code is not 200).
 
-                received upon running an API request, using the `requests` python package
+        Args:
+            response: The response object returned from an API request.
+
+        Example:
+            &gt;&gt;&gt; response = requests.get(&#39;https://api.example.com/data&#39;)
+            &gt;&gt;&gt; taservers = TAServers()
+            &gt;&gt;&gt; taservers._response_not_success(response)
+            &gt;&gt;&gt; # If the response status is not 200, an exception will be raised.
 
         &#34;&#34;&#34;
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
 
-    def _get_clients_count(self):
-        &#34;&#34;&#34;returns the client count details for Threat inidcators on this CS
+    def _get_clients_count(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the client count statistics for Threat Indicators on this CommServe.
 
-            Args:
+        Returns:
+            dict: A dictionary containing total client statistics, including counts for each client type 
+            such as &#39;fileserver&#39;, &#39;vm&#39;, and &#39;laptop&#39;.
 
-                None
+        Raises:
+            SDKException: If the method fails to fetch the client count details.
 
-            Returns:
+        Example:
+            &gt;&gt;&gt; ta_servers = TAServers()
+            &gt;&gt;&gt; client_stats = ta_servers._get_clients_count()
+            &gt;&gt;&gt; print(client_stats)
+            {&#39;fileserver&#39;: 10, &#39;vm&#39;: 5, &#39;laptop&#39;: 3}
 
-                dict  - Containing total client stats [stats for client type = fileserver,vm,laptop]
-
-            Raises:
-
-                SDKException:
-
-                    if failed to fetch details
         &#34;&#34;&#34;
         flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._API_CLIENTS_COUNT)
         if flag:
@@ -259,22 +301,20 @@ class TAServers():
                 raise SDKException(&#39;ThreatIndicators&#39;, &#39;110&#39;)
         self._response_not_success(response)
 
-    def _get_monitored_vm_count(self):
-        &#34;&#34;&#34;returns the monitored vm count stats for Threat inidcators on this CS
+    def _get_monitored_vm_count(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the monitored virtual machine (VM) count statistics for threat indicators on this CommServe.
 
-            Args:
+        Returns:
+            dict: A dictionary containing statistics about the total number of monitored VMs for threat indicators.
 
-                None
+        Raises:
+            SDKException: If the method fails to fetch the monitored VM details.
 
-            Returns:
+        Example:
+            &gt;&gt;&gt; ta_servers = TAServers()
+            &gt;&gt;&gt; vm_stats = ta_servers._get_monitored_vm_count()
+            &gt;&gt;&gt; print(f&#34;Total monitored VMs: {vm_stats.get(&#39;total_monitored_vms&#39;, 0)}&#34;)
 
-                dict  - Containing total monitored vm stats
-
-            Raises:
-
-                SDKException:
-
-                    if failed to fetch details
         &#34;&#34;&#34;
         flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._API_MONITORED_VMS)
         if flag:
@@ -285,45 +325,51 @@ class TAServers():
         self._response_not_success(response)
 
 
-    def _get_threat_indicators(self):
-        &#34;&#34;&#34;returns the list of threat indicators for this CS
+    def _get_threat_indicators(self) -&gt; list[dict]:
+        &#34;&#34;&#34;Retrieve the list of threat indicators for this CommServe (CS) server.
 
-            Args:
+        Returns:
+            list of dict: A list containing dictionaries with server threat details. Each dictionary
+            includes information such as anomaly type, modification count, rename count, VM support,
+            reference time, delete and create counts, location, OS information, and client details.
 
-                None
+        Example:
+            &gt;&gt;&gt; ta_servers = TAServers()
+            &gt;&gt;&gt; indicators = ta_servers._get_threat_indicators()
+            &gt;&gt;&gt; print(f&#34;Found {len(indicators)} threat indicators&#34;)
+            &gt;&gt;&gt; if indicators:
+            ...     first = indicators[0]
+            ...     print(f&#34;First indicator anomaly type: {first[&#39;anomalyType&#39;]}&#34;)
+            ...     print(f&#34;Client name: {first[&#39;client&#39;][&#39;clientName&#39;]}&#34;)
 
-            Returns:
+        Example threat indicator dictionary:
+            {
+                &#34;anomalyType&#34;: 8,
+                &#34;modCount&#34;: 13705,
+                &#34;renameCount&#34;: 1,
+                &#34;isVMeSupported&#34;: True,
+                &#34;refTime&#34;: 1727519811,
+                &#34;deleteCount&#34;: 73280,
+                &#34;createCount&#34;: 19,
+                &#34;location&#34;: &#34;&#34;,
+                &#34;osInfo&#34;: {
+                    &#34;osInfo&#34;: {
+                        &#34;Type&#34;: &#34;Windows&#34;,
+                        &#34;SubType&#34;: &#34;Server&#34;,
+                        &#34;osId&#34;: 210,
+                        &#34;OsDisplayInfo&#34;: {
+                            &#34;ProcessorType&#34;: &#34;WinX64&#34;,
+                            &#34;OSName&#34;: &#34;Windows Server 2019 Datacenter&#34;
+                        }
+                    }
+                },
+                &#34;client&#34;: {
+                    &#34;clientId&#34;: 9,
+                    &#34;clientName&#34;: &#34;xx&#34;,
+                    &#34;displayName&#34;: &#34;xx_dn&#34;
+                }
+            }
 
-                list(dict)      - server threat details
-
-                        Eg:-
-
-                                {
-                                  &#34;anomalyType&#34;: 8,
-                                  &#34;modCount&#34;: 13705,
-                                  &#34;renameCount&#34;: 1,
-                                  &#34;isVMeSupported&#34;: true,
-                                  &#34;refTime&#34;: 1727519811,
-                                  &#34;deleteCount&#34;: 73280,
-                                  &#34;createCount&#34;: 19,
-                                  &#34;location&#34;: &#34;&#34;,
-                                  &#34;osInfo&#34;: {
-                                    &#34;osInfo&#34;: {
-                                      &#34;Type&#34;: &#34;Windows&#34;,
-                                      &#34;SubType&#34;: &#34;Server&#34;,
-                                      &#34;osId&#34;: 210,
-                                      &#34;OsDisplayInfo&#34;: {
-                                        &#34;ProcessorType&#34;: &#34;WinX64&#34;,
-                                        &#34;OSName&#34;: &#34;Windows Server 2019 Datacenter&#34;
-                                      }
-                                    }
-                                  },
-                                  &#34;client&#34;: {
-                                    &#34;clientId&#34;: 9,
-                                    &#34;clientName&#34;: &#34;xx&#34;,
-                                    &#34;displayName&#34;: &#34;xx_dn&#34;
-                                  }
-                                }
         &#34;&#34;&#34;
         flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._API_GET_ALL_INDICATORS)
         _threat_indicators = []
@@ -339,16 +385,20 @@ class TAServers():
             return _threat_indicators
         self._response_not_success(response)
 
-    def has(self, name):
-        &#34;&#34;&#34;Checks whether given server name exists in threat indicators or not
+    def has(self, name: str) -&gt; bool:
+        &#34;&#34;&#34;Check if the specified server name exists in the threat indicators.
 
-            Args:
+        Args:
+            name: The name of the server to check.
 
-                name        (str)       --  Name of the server
+        Returns:
+            True if the server name exists in the threat indicators, False otherwise.
 
-            Returns:
-
-                bool    --  True if server name exists in threat indicators
+        Example:
+            &gt;&gt;&gt; ta_servers = TAServers()
+            &gt;&gt;&gt; exists = ta_servers.has(&#34;server01&#34;)
+            &gt;&gt;&gt; print(f&#34;Server exists: {exists}&#34;)
+            # Output: Server exists: True
 
         &#34;&#34;&#34;
         if name.lower() in self._servers:
@@ -357,39 +407,42 @@ class TAServers():
 
     def run_scan(
             self,
-            server_name,
-            anomaly_types,
-            index_server_name=None,
-            storage_pool=None,
-            from_time=None,
-            to_time=None):
-        &#34;&#34;&#34;runs anomaly scan on given server name
+            server_name: str,
+            anomaly_types: list,
+            index_server_name: str = None,
+            storage_pool: str = None,
+            from_time: int = None,
+            to_time: int = None
+        ) -&gt; int:
+        &#34;&#34;&#34;Run an anomaly scan on the specified server.
 
-            Args:
+        This method initiates an anomaly scan for the given server, analyzing the specified anomaly types.
+        Optionally, you can specify an index server, storage pool, and a time range for the scan.
 
-                server_name     (str)           --  Server name to analyze
+        Args:
+            server_name: The name of the server to analyze.
+            anomaly_types: List of anomaly types to analyze on the client.
+            index_server_name: (Optional) Index server name to be used for the scan. Applicable for all OEMs except Metallic.
+            storage_pool: (Optional) Storage pool name to be used for the scan. Applicable only for Metallic OEM.
+            from_time: (Optional) Epoch timestamp indicating the start time for the scan analysis.
+            to_time: (Optional) Epoch timestamp indicating the end time for the scan analysis.
 
-                anomaly_types    (list)         --  list of anomaly to analyze on client
+        Returns:
+            The job ID (int) of the launched scan job.
 
-                index_server_name   (str)       --  Index server name to be used for scan
+        Raises:
+            SDKException: If the job fails to start or if input data types are invalid.
 
-                storage_pool        (str)       --  Storage pool name to be used for scan
-
-                from_time           (int)       --  epoch timestamp from when scan will analyze in backup
-
-                to_time             (int)       --  epoch timestamp to which scan will analyze in backup
-
-            Returns:
-
-                int --  job id of scan job launched
-
-            Raises:
-
-                SDKException:
-
-                    if failed to start job
-
-                    if input data type is not valid
+        Example:
+            &gt;&gt;&gt; ta_servers = TAServers()
+            &gt;&gt;&gt; job_id = ta_servers.run_scan(
+            ...     server_name=&#34;Server01&#34;,
+            ...     anomaly_types=[&#34;ransomware&#34;, &#34;suspicious_activity&#34;],
+            ...     index_server_name=&#34;IndexServerA&#34;,
+            ...     from_time=1672531200,
+            ...     to_time=1672617600
+            ... )
+            &gt;&gt;&gt; print(f&#34;Anomaly scan job started with ID: {job_id}&#34;)
 
         &#34;&#34;&#34;
         if not isinstance(server_name, str):
@@ -398,6 +451,8 @@ class TAServers():
             raise SDKException(&#39;ThreatIndicators&#39;, &#39;101&#39;)
         if not self._commcell_object.clients.has_client(server_name):
             raise SDKException(&#39;ThreatIndicators&#39;, &#39;102&#39;, &#39;Given server is not found in CS&#39;)
+        if storage_pool and index_server_name:
+            raise SDKException(&#39;ThreatIndicators&#39;, &#39;102&#39;, &#39;Cannot specify both storage_pool and index_server_name input&#39;)
         req_json = copy.deepcopy(RequestConstants.RUN_SCAN_JSON)
         req_json[&#39;client&#39;][&#39;clientId&#39;] = int(self._commcell_object.clients.get(server_name).client_id)
         ta_flag = 0
@@ -416,10 +471,7 @@ class TAServers():
         else:
             req_json[&#39;timeRange&#39;][&#39;toTime&#39;] = to_time
             req_json[&#39;timeRange&#39;][&#39;fromTime&#39;] = from_time
-
-        if int(self._commcell_object.commserv_oem_id) == 119:
-            if not storage_pool:
-                raise SDKException(&#39;ThreatIndicators&#39;, &#39;107&#39;)
+        if storage_pool:
             req_json.pop(&#39;indexServer&#39;)
             spool_obj = self._commcell_object.storage_pools.get(storage_pool)
             req_json[&#39;backupDetails&#39;][0][&#39;copyId&#39;] = int(spool_obj.copy_id)
@@ -440,24 +492,22 @@ class TAServers():
             raise SDKException(&#39;ThreatIndicators&#39;, &#39;109&#39;)
         self._response_not_success(response)
 
-    def get(self, server_name):
-        &#34;&#34;&#34;returns Server class object for given server name
+    def get(self, server_name: str) -&gt; &#39;TAServer&#39;:
+        &#34;&#34;&#34;Retrieve a Server object for the specified server name.
 
-                Args:
+        Args:
+            server_name: The name of the server (client) to retrieve.
 
-                    server_name        (str)       --  client name
+        Returns:
+            Server: An instance of the Server class corresponding to the given server name.
 
-                Returns:
+        Raises:
+            SDKException: If the server cannot be found or if the input is invalid.
 
-                    obj --  Instance of Server class
-
-                Raises:
-
-                    SDKException:
-
-                            if failed to find given server
-
-                            if input is not valid
+        Example:
+            &gt;&gt;&gt; ta_servers = TAServers()
+            &gt;&gt;&gt; server = ta_servers.get(&#34;MyServer01&#34;)
+            &gt;&gt;&gt; print(f&#34;Retrieved server: {server}&#34;)
 
         &#34;&#34;&#34;
         if not isinstance(server_name, str):
@@ -466,8 +516,18 @@ class TAServers():
             raise SDKException(&#39;ThreatIndicators&#39;, &#39;105&#39;)
         return TAServer(commcell_object=self._commcell_object, server_name=server_name)
 
-    def refresh(self):
-        &#34;&#34;&#34;Refresh the threat indicator servers associated with CS&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Reload the list of threat indicator servers associated with the CommServe (CS).
+
+        This method refreshes the internal cache of threat indicator servers, ensuring that 
+        any changes made on the CommServe are reflected in the TAServers instance.
+
+        Example:
+            &gt;&gt;&gt; ta_servers = TAServers(commcell_object)
+            &gt;&gt;&gt; ta_servers.refresh()  # Updates the list of threat indicator servers
+            &gt;&gt;&gt; print(&#34;Threat indicator servers refreshed successfully&#34;)
+
+        &#34;&#34;&#34;
         self._servers = []
         self._total_clients = None
         self._monitored_vms = None
@@ -476,23 +536,35 @@ class TAServers():
         self._monitored_vms = self._get_monitored_vm_count()
 
     @property
-    def monitored_vms(self):
-        &#34;&#34;&#34;returns the monitored vms stats from threat indicators on this CS
+    def monitored_vms(self) -&gt; dict:
+        &#34;&#34;&#34;Get the monitored virtual machines (VMs) statistics from threat indicators on this CommServe.
 
-            Returns:
+        Returns:
+            dict: A dictionary containing client statistics for monitored VMs.
 
-                dict --  client stats
+        Example:
+            &gt;&gt;&gt; ta_servers = TAServers()
+            &gt;&gt;&gt; vm_stats = ta_servers.monitored_vms  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Number of monitored VMs: {len(vm_stats)}&#34;)
+            &gt;&gt;&gt; # Access specific VM stats
+            &gt;&gt;&gt; for vm_name, stats in vm_stats.items():
+            ...     print(f&#34;VM: {vm_name}, Stats: {stats}&#34;)
 
         &#34;&#34;&#34;
         return self._monitored_vms
 
     @property
-    def clients_count(self):
-        &#34;&#34;&#34;returns the client stats from threat indicators on this CS
+    def clients_count(self) -&gt; dict:
+        &#34;&#34;&#34;Get the client statistics from threat indicators on this CommServe.
 
-            Returns:
+        Returns:
+            dict: A dictionary containing client statistics as reported by threat indicators.
 
-                dict --  client stats
+        Example:
+            &gt;&gt;&gt; ta_servers = TAServers()
+            &gt;&gt;&gt; stats = ta_servers.clients_count
+            &gt;&gt;&gt; print(f&#34;Number of clients: {stats.get(&#39;total_clients&#39;, 0)}&#34;)
+            &gt;&gt;&gt; # Access additional statistics as needed from the returned dictionary
 
         &#34;&#34;&#34;
         return self._total_clients
@@ -500,20 +572,36 @@ class TAServers():
 
 
 class TAServer:
+    &#34;&#34;&#34;
+    Threat Anomaly Server management class.
 
-    def __init__(self, commcell_object, server_name):
-        &#34;&#34;&#34;Initializes an instance of the TAServer class.
+    This class provides an interface for interacting with a Threat Anomaly Server,
+    enabling retrieval and management of anomaly statistics and records. It allows
+    users to refresh server data, clear specific anomaly types, and access various
+    properties related to anomaly detection and data sources.
 
-            Args:
+    Key Features:
+        - Initialization with commcell object and server name
+        - Handling of unsuccessful server responses
+        - Retrieval of anomaly statistics and records
+        - Refreshing server data to update anomaly information
+        - Clearing anomalies by specified types
+        - Access to anomaly records, threat anomaly statistics, and general anomaly statistics
+        - Access to datasource ID and anomaly file count via properties
 
-                commcell_object     (object)    --  instance of the commcell class
+    &#34;&#34;&#34;
 
-                server_name         (str)       --  Name of the server
+    def __init__(self, commcell_object: object, server_name: str) -&gt; None:
+        &#34;&#34;&#34;Initialize a new instance of the TAServer class.
 
+        Args:
+            commcell_object: An instance of the Commcell class representing the connection to the Commcell environment.
+            server_name: The name of the server to be managed by this TAServer instance.
 
-            Returns:
-
-                object  -   instance of the Server class
+        Example:
+            &gt;&gt;&gt; commcell = Commcell(&#39;commcell_host&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; ta_server = TAServer(commcell, &#39;MyServer&#39;)
+            &gt;&gt;&gt; print(&#34;TAServer instance created for:&#34;, ta_server)
 
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
@@ -531,19 +619,36 @@ class TAServer:
         self._API_CLEAR_ANOMALIES = self._services[&#39;CLEAR_ANOMALIES&#39;]
         self.refresh()
 
-    def _response_not_success(self, response):
-        &#34;&#34;&#34;Helper function to raise an exception when reponse status is not 200 (OK).
+    def _response_not_success(self, response: object) -&gt; None:
+        &#34;&#34;&#34;Raise an exception if the API response status is not 200 (OK).
 
-            Args:
-                response    (object)    --  response class object,
+        This helper function is intended to be used after making an API request using the `requests` package.
+        If the response status code is not 200, it raises an appropriate exception to indicate the failure.
 
-                received upon running an API request, using the `requests` python package
+        Args:
+            response: The response object returned by the `requests` library after making an API call.
+
+        Example:
+            &gt;&gt;&gt; response = requests.get(&#39;https://api.example.com/data&#39;)
+            &gt;&gt;&gt; server = TAServer()
+            &gt;&gt;&gt; server._response_not_success(response)
+            &gt;&gt;&gt; # If the response status is not 200, an exception will be raised
 
         &#34;&#34;&#34;
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
 
-    def _get_anomalies_stats(self):
-        &#34;&#34;&#34;returns the anomalies stats for this client&#34;&#34;&#34;
+    def _get_anomalies_stats(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the anomaly statistics for this client.
+
+        Returns:
+            dict: A dictionary containing anomaly statistics related to the client.
+
+        Example:
+            &gt;&gt;&gt; stats = ta_server._get_anomalies_stats()
+            &gt;&gt;&gt; print(stats)
+            &gt;&gt;&gt; # Output might include keys such as &#39;anomaly_count&#39;, &#39;last_detected&#39;, etc.
+
+        &#34;&#34;&#34;
         flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._API_GET_ALL_INDICATORS)
         threat_stats = {}
         stats = {}
@@ -571,8 +676,19 @@ class TAServer:
             return stats, threat_stats
         self._response_not_success(response)
 
-    def _get_anamoly_records(self):
-        &#34;&#34;&#34;returns file type anomaly records for this client&#34;&#34;&#34;
+    def _get_anamoly_records(self) -&gt; list:
+        &#34;&#34;&#34;Retrieve file type anomaly records for this client.
+
+        Returns:
+            list: A list containing anomaly records related to file types for the client.
+
+        Example:
+            &gt;&gt;&gt; ta_server = TAServer()
+            &gt;&gt;&gt; anomaly_records = ta_server._get_anamoly_records()
+            &gt;&gt;&gt; print(f&#34;Number of anomaly records: {len(anomaly_records)}&#34;)
+            &gt;&gt;&gt; # Each record in the list represents a file type anomaly
+
+        &#34;&#34;&#34;
         api = self._API_GET_ALL_ANOMALIES % (0, self._server_id)  # filter=0 to fetch all anomalies types
         flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, api)
         if flag:
@@ -586,30 +702,36 @@ class TAServer:
             raise SDKException(&#39;ThreatIndicators&#39;, &#39;104&#39;)
         self._response_not_success(response)
 
-    def refresh(self):
-        &#34;&#34;&#34;Refresh the anomalies details associated with this server&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Reload the anomaly details associated with this TAServer instance.
+
+        This method refreshes the internal state to ensure that the latest anomaly information
+        for the server is available. Use this method when you suspect that the anomaly data
+        may have changed and you want to update the server&#39;s details.
+
+        Example:
+            &gt;&gt;&gt; server = TAServer()
+            &gt;&gt;&gt; server.refresh()  # Updates the anomaly details for this server
+            &gt;&gt;&gt; print(&#34;Anomaly details refreshed successfully&#34;)
+        &#34;&#34;&#34;
         self._threat_dsid = 0
         self._anomaly_records = self._get_anamoly_records()
         self._anomaly_stats, self._threat_anomaly_stats = self._get_anomalies_stats()
 
-    def clear_anomaly(self, anomaly_types):
-        &#34;&#34;&#34;clears the anomalies for this server
+    def clear_anomaly(self, anomaly_types: list) -&gt; None:
+        &#34;&#34;&#34;Clear specified anomalies for this server.
 
-            Args:
+        Args:
+            anomaly_types: List of anomalies to clear. Each item should correspond to an anomaly type 
+                as defined in the AnomalyType class.
 
-                anomaly_types       (list)      --  list of anomalies to clear (Refer to AnomalyType class)
+        Raises:
+            SDKException: If clearing the anomaly fails or if the input is not valid.
 
-            Returns:
-
-                None
-
-            Raises:
-
-                SDKException:
-
-                    if failed to clear anomaly
-
-                    if input is not valid
+        Example:
+            &gt;&gt;&gt; server = TAServer()
+            &gt;&gt;&gt; server.clear_anomaly([AnomalyType.CPU_SPIKE, AnomalyType.MEMORY_LEAK])
+            &gt;&gt;&gt; print(&#34;Selected anomalies cleared successfully.&#34;)
 
         &#34;&#34;&#34;
         if not isinstance(anomaly_types, list):
@@ -643,56 +765,80 @@ class TAServer:
         self._response_not_success(response)
 
     @property
-    def anomaly_records(self):
-        &#34;&#34;&#34;returns the anomaly records list
+    def anomaly_records(self) -&gt; list:
+        &#34;&#34;&#34;Get the list of anomaly records for this client.
 
-            Returns:
+        Returns:
+            list: A list containing anomaly records associated with this client.
 
-                list --  anomaly records for this client
+        Example:
+            &gt;&gt;&gt; ta_server = TAServer()
+            &gt;&gt;&gt; records = ta_server.anomaly_records  # Access anomaly records using the property
+            &gt;&gt;&gt; print(f&#34;Number of anomaly records: {len(records)}&#34;)
+            &gt;&gt;&gt; # Iterate through the records
+            &gt;&gt;&gt; for record in records:
+            &gt;&gt;&gt;     print(record)
 
         &#34;&#34;&#34;
         return self._anomaly_records
 
     @property
-    def threat_anomaly_stats(self):
-        &#34;&#34;&#34;returns the threat anomaly stats
+    def threat_anomaly_stats(self) -&gt; dict:
+        &#34;&#34;&#34;Get the threat anomaly statistics for this client.
 
-            Returns:
+        Returns:
+            dict: A dictionary containing threat anomaly statistics specific to this client.
 
-                dict --  threat anomaly stats for this client
+        Example:
+            &gt;&gt;&gt; ta_server = TAServer()
+            &gt;&gt;&gt; stats = ta_server.threat_anomaly_stats
+            &gt;&gt;&gt; print(stats)
+            &gt;&gt;&gt; # Output will be a dictionary with threat anomaly statistics for the client
 
         &#34;&#34;&#34;
         return self._threat_anomaly_stats
 
     @property
-    def anomaly_stats(self):
-        &#34;&#34;&#34;returns the file type/data anomaly stats
+    def anomaly_stats(self) -&gt; dict:
+        &#34;&#34;&#34;Get the file type or data anomaly statistics for this client.
 
-            Returns:
+        Returns:
+            dict: A dictionary containing file or data anomaly statistics for the client.
 
-                dict --  file/data anomaly stats for this client
+        Example:
+            &gt;&gt;&gt; ta_server = TAServer()
+            &gt;&gt;&gt; stats = ta_server.anomaly_stats
+            &gt;&gt;&gt; print(f&#34;Anomaly stats: {stats}&#34;)
 
         &#34;&#34;&#34;
         return self._anomaly_stats
 
     @property
-    def datasource_id(self):
-        &#34;&#34;&#34;returns the threat datasource_id associated with this server
+    def datasource_id(self) -&gt; int:
+        &#34;&#34;&#34;Get the threat datasource ID associated with this server.
 
-            Returns:
+        Returns:
+            The datasource ID as an integer.
 
-                int --  datasource id
+        Example:
+            &gt;&gt;&gt; server = TAServer()
+            &gt;&gt;&gt; ds_id = server.datasource_id  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Datasource ID: {ds_id}&#34;)
 
         &#34;&#34;&#34;
         return int(self._threat_dsid)
 
     @property
-    def anomaly_file_count(self):
-        &#34;&#34;&#34;returns the total anomalies file count for this server
+    def anomaly_file_count(self) -&gt; int:
+        &#34;&#34;&#34;Get the total number of anomaly files detected for this server.
 
-            Returns:
+        Returns:
+            The total count of anomaly files as an integer.
 
-                int --  anomaly file count
+        Example:
+            &gt;&gt;&gt; server = TAServer()
+            &gt;&gt;&gt; count = server.anomaly_file_count  # Use dot notation for property
+            &gt;&gt;&gt; print(f&#34;Anomaly file count: {count}&#34;)
 
         &#34;&#34;&#34;
         _total_files = 0
@@ -712,17 +858,36 @@ class TAServer:
 <dl>
 <dt id="cvpysdk.monitoringapps.threat_indicators.AnomalyType"><code class="flex name class">
 <span>class <span class="ident">AnomalyType</span></span>
-<span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
+<span>(</span><span>*args, **kwds)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Enum class for Anomaly type</p></div>
+<div class="desc"><p>Enumeration class representing different types of anomalies.</p>
+<p>This class is used to define and categorize anomaly types in a structured
+and type-safe manner. It inherits from Python's enum.Enum, allowing for
+clear and consistent usage of anomaly categories throughout the codebase.</p>
+<p>Key Features:
+- Provides a set of predefined anomaly types
+- Ensures type safety and clarity when working with anomalies
+- Facilitates easy comparison and usage in control flow</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/monitoringapps/threat_indicators.py#L89-L96" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/monitoringapps/threat_indicators.py#L89-L109" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class AnomalyType(enum.Enum):
-    &#34;&#34;&#34;Enum class for Anomaly type&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Enumeration class representing different types of anomalies.
+
+    This class is used to define and categorize anomaly types in a structured
+    and type-safe manner. It inherits from Python&#39;s enum.Enum, allowing for
+    clear and consistent usage of anomaly categories throughout the codebase.
+
+    Key Features:
+        - Provides a set of predefined anomaly types
+        - Ensures type safety and clarity when working with anomalies
+        - Facilitates easy comparison and usage in control flow
+
+    &#34;&#34;&#34;
     FILE_ACTIVITY = 16
     FILE_TYPE = 32
     THREAT_ANALYSIS = 64
@@ -738,69 +903,99 @@ class TAServer:
 <dl>
 <dt id="cvpysdk.monitoringapps.threat_indicators.AnomalyType.DATA_WRITTEN"><code class="name">var <span class="ident">DATA_WRITTEN</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.monitoringapps.threat_indicators.AnomalyType.EXTENSION_BASED"><code class="name">var <span class="ident">EXTENSION_BASED</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.monitoringapps.threat_indicators.AnomalyType.FILE_ACTIVITY"><code class="name">var <span class="ident">FILE_ACTIVITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.monitoringapps.threat_indicators.AnomalyType.FILE_DATA"><code class="name">var <span class="ident">FILE_DATA</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.monitoringapps.threat_indicators.AnomalyType.FILE_TYPE"><code class="name">var <span class="ident">FILE_TYPE</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.monitoringapps.threat_indicators.AnomalyType.THREAT_ANALYSIS"><code class="name">var <span class="ident">THREAT_ANALYSIS</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 </dl>
 </dd>
 <dt id="cvpysdk.monitoringapps.threat_indicators.TAServer"><code class="flex name class">
 <span>class <span class="ident">TAServer</span></span>
-<span>(</span><span>commcell_object, server_name)</span>
+<span>(</span><span>commcell_object: object, server_name: str)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Initializes an instance of the TAServer class.</p>
-<h2 id="args">Args</h2>
-<p>commcell_object
-(object)
-&ndash;
-instance of the commcell class</p>
-<p>server_name
-(str)
-&ndash;
-Name of the server</p>
-<h2 id="returns">Returns</h2>
-<p>object
--
-instance of the Server class</p></div>
+<div class="desc"><p>Threat Anomaly Server management class.</p>
+<p>This class provides an interface for interacting with a Threat Anomaly Server,
+enabling retrieval and management of anomaly statistics and records. It allows
+users to refresh server data, clear specific anomaly types, and access various
+properties related to anomaly detection and data sources.</p>
+<p>Key Features:
+- Initialization with commcell object and server name
+- Handling of unsuccessful server responses
+- Retrieval of anomaly statistics and records
+- Refreshing server data to update anomaly information
+- Clearing anomalies by specified types
+- Access to anomaly records, threat anomaly statistics, and general anomaly statistics
+- Access to datasource ID and anomaly file count via properties</p>
+<p>Initialize a new instance of the TAServer class.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>commcell_object</code></strong></dt>
+<dd>An instance of the Commcell class representing the connection to the Commcell environment.</dd>
+<dt><strong><code>server_name</code></strong></dt>
+<dd>The name of the server to be managed by this TAServer instance.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; commcell = Commcell('commcell_host', 'username', 'password')
+&gt;&gt;&gt; ta_server = TAServer(commcell, 'MyServer')
+&gt;&gt;&gt; print(&quot;TAServer instance created for:&quot;, ta_server)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/monitoringapps/threat_indicators.py#L403-L602" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/monitoringapps/threat_indicators.py#L486-L771" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class TAServer:
+    &#34;&#34;&#34;
+    Threat Anomaly Server management class.
 
-    def __init__(self, commcell_object, server_name):
-        &#34;&#34;&#34;Initializes an instance of the TAServer class.
+    This class provides an interface for interacting with a Threat Anomaly Server,
+    enabling retrieval and management of anomaly statistics and records. It allows
+    users to refresh server data, clear specific anomaly types, and access various
+    properties related to anomaly detection and data sources.
 
-            Args:
+    Key Features:
+        - Initialization with commcell object and server name
+        - Handling of unsuccessful server responses
+        - Retrieval of anomaly statistics and records
+        - Refreshing server data to update anomaly information
+        - Clearing anomalies by specified types
+        - Access to anomaly records, threat anomaly statistics, and general anomaly statistics
+        - Access to datasource ID and anomaly file count via properties
 
-                commcell_object     (object)    --  instance of the commcell class
+    &#34;&#34;&#34;
 
-                server_name         (str)       --  Name of the server
+    def __init__(self, commcell_object: object, server_name: str) -&gt; None:
+        &#34;&#34;&#34;Initialize a new instance of the TAServer class.
 
+        Args:
+            commcell_object: An instance of the Commcell class representing the connection to the Commcell environment.
+            server_name: The name of the server to be managed by this TAServer instance.
 
-            Returns:
-
-                object  -   instance of the Server class
+        Example:
+            &gt;&gt;&gt; commcell = Commcell(&#39;commcell_host&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; ta_server = TAServer(commcell, &#39;MyServer&#39;)
+            &gt;&gt;&gt; print(&#34;TAServer instance created for:&#34;, ta_server)
 
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
@@ -818,19 +1013,36 @@ instance of the Server class</p></div>
         self._API_CLEAR_ANOMALIES = self._services[&#39;CLEAR_ANOMALIES&#39;]
         self.refresh()
 
-    def _response_not_success(self, response):
-        &#34;&#34;&#34;Helper function to raise an exception when reponse status is not 200 (OK).
+    def _response_not_success(self, response: object) -&gt; None:
+        &#34;&#34;&#34;Raise an exception if the API response status is not 200 (OK).
 
-            Args:
-                response    (object)    --  response class object,
+        This helper function is intended to be used after making an API request using the `requests` package.
+        If the response status code is not 200, it raises an appropriate exception to indicate the failure.
 
-                received upon running an API request, using the `requests` python package
+        Args:
+            response: The response object returned by the `requests` library after making an API call.
+
+        Example:
+            &gt;&gt;&gt; response = requests.get(&#39;https://api.example.com/data&#39;)
+            &gt;&gt;&gt; server = TAServer()
+            &gt;&gt;&gt; server._response_not_success(response)
+            &gt;&gt;&gt; # If the response status is not 200, an exception will be raised
 
         &#34;&#34;&#34;
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
 
-    def _get_anomalies_stats(self):
-        &#34;&#34;&#34;returns the anomalies stats for this client&#34;&#34;&#34;
+    def _get_anomalies_stats(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the anomaly statistics for this client.
+
+        Returns:
+            dict: A dictionary containing anomaly statistics related to the client.
+
+        Example:
+            &gt;&gt;&gt; stats = ta_server._get_anomalies_stats()
+            &gt;&gt;&gt; print(stats)
+            &gt;&gt;&gt; # Output might include keys such as &#39;anomaly_count&#39;, &#39;last_detected&#39;, etc.
+
+        &#34;&#34;&#34;
         flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._API_GET_ALL_INDICATORS)
         threat_stats = {}
         stats = {}
@@ -858,8 +1070,19 @@ instance of the Server class</p></div>
             return stats, threat_stats
         self._response_not_success(response)
 
-    def _get_anamoly_records(self):
-        &#34;&#34;&#34;returns file type anomaly records for this client&#34;&#34;&#34;
+    def _get_anamoly_records(self) -&gt; list:
+        &#34;&#34;&#34;Retrieve file type anomaly records for this client.
+
+        Returns:
+            list: A list containing anomaly records related to file types for the client.
+
+        Example:
+            &gt;&gt;&gt; ta_server = TAServer()
+            &gt;&gt;&gt; anomaly_records = ta_server._get_anamoly_records()
+            &gt;&gt;&gt; print(f&#34;Number of anomaly records: {len(anomaly_records)}&#34;)
+            &gt;&gt;&gt; # Each record in the list represents a file type anomaly
+
+        &#34;&#34;&#34;
         api = self._API_GET_ALL_ANOMALIES % (0, self._server_id)  # filter=0 to fetch all anomalies types
         flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, api)
         if flag:
@@ -873,30 +1096,36 @@ instance of the Server class</p></div>
             raise SDKException(&#39;ThreatIndicators&#39;, &#39;104&#39;)
         self._response_not_success(response)
 
-    def refresh(self):
-        &#34;&#34;&#34;Refresh the anomalies details associated with this server&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Reload the anomaly details associated with this TAServer instance.
+
+        This method refreshes the internal state to ensure that the latest anomaly information
+        for the server is available. Use this method when you suspect that the anomaly data
+        may have changed and you want to update the server&#39;s details.
+
+        Example:
+            &gt;&gt;&gt; server = TAServer()
+            &gt;&gt;&gt; server.refresh()  # Updates the anomaly details for this server
+            &gt;&gt;&gt; print(&#34;Anomaly details refreshed successfully&#34;)
+        &#34;&#34;&#34;
         self._threat_dsid = 0
         self._anomaly_records = self._get_anamoly_records()
         self._anomaly_stats, self._threat_anomaly_stats = self._get_anomalies_stats()
 
-    def clear_anomaly(self, anomaly_types):
-        &#34;&#34;&#34;clears the anomalies for this server
+    def clear_anomaly(self, anomaly_types: list) -&gt; None:
+        &#34;&#34;&#34;Clear specified anomalies for this server.
 
-            Args:
+        Args:
+            anomaly_types: List of anomalies to clear. Each item should correspond to an anomaly type 
+                as defined in the AnomalyType class.
 
-                anomaly_types       (list)      --  list of anomalies to clear (Refer to AnomalyType class)
+        Raises:
+            SDKException: If clearing the anomaly fails or if the input is not valid.
 
-            Returns:
-
-                None
-
-            Raises:
-
-                SDKException:
-
-                    if failed to clear anomaly
-
-                    if input is not valid
+        Example:
+            &gt;&gt;&gt; server = TAServer()
+            &gt;&gt;&gt; server.clear_anomaly([AnomalyType.CPU_SPIKE, AnomalyType.MEMORY_LEAK])
+            &gt;&gt;&gt; print(&#34;Selected anomalies cleared successfully.&#34;)
 
         &#34;&#34;&#34;
         if not isinstance(anomaly_types, list):
@@ -930,56 +1159,80 @@ instance of the Server class</p></div>
         self._response_not_success(response)
 
     @property
-    def anomaly_records(self):
-        &#34;&#34;&#34;returns the anomaly records list
+    def anomaly_records(self) -&gt; list:
+        &#34;&#34;&#34;Get the list of anomaly records for this client.
 
-            Returns:
+        Returns:
+            list: A list containing anomaly records associated with this client.
 
-                list --  anomaly records for this client
+        Example:
+            &gt;&gt;&gt; ta_server = TAServer()
+            &gt;&gt;&gt; records = ta_server.anomaly_records  # Access anomaly records using the property
+            &gt;&gt;&gt; print(f&#34;Number of anomaly records: {len(records)}&#34;)
+            &gt;&gt;&gt; # Iterate through the records
+            &gt;&gt;&gt; for record in records:
+            &gt;&gt;&gt;     print(record)
 
         &#34;&#34;&#34;
         return self._anomaly_records
 
     @property
-    def threat_anomaly_stats(self):
-        &#34;&#34;&#34;returns the threat anomaly stats
+    def threat_anomaly_stats(self) -&gt; dict:
+        &#34;&#34;&#34;Get the threat anomaly statistics for this client.
 
-            Returns:
+        Returns:
+            dict: A dictionary containing threat anomaly statistics specific to this client.
 
-                dict --  threat anomaly stats for this client
+        Example:
+            &gt;&gt;&gt; ta_server = TAServer()
+            &gt;&gt;&gt; stats = ta_server.threat_anomaly_stats
+            &gt;&gt;&gt; print(stats)
+            &gt;&gt;&gt; # Output will be a dictionary with threat anomaly statistics for the client
 
         &#34;&#34;&#34;
         return self._threat_anomaly_stats
 
     @property
-    def anomaly_stats(self):
-        &#34;&#34;&#34;returns the file type/data anomaly stats
+    def anomaly_stats(self) -&gt; dict:
+        &#34;&#34;&#34;Get the file type or data anomaly statistics for this client.
 
-            Returns:
+        Returns:
+            dict: A dictionary containing file or data anomaly statistics for the client.
 
-                dict --  file/data anomaly stats for this client
+        Example:
+            &gt;&gt;&gt; ta_server = TAServer()
+            &gt;&gt;&gt; stats = ta_server.anomaly_stats
+            &gt;&gt;&gt; print(f&#34;Anomaly stats: {stats}&#34;)
 
         &#34;&#34;&#34;
         return self._anomaly_stats
 
     @property
-    def datasource_id(self):
-        &#34;&#34;&#34;returns the threat datasource_id associated with this server
+    def datasource_id(self) -&gt; int:
+        &#34;&#34;&#34;Get the threat datasource ID associated with this server.
 
-            Returns:
+        Returns:
+            The datasource ID as an integer.
 
-                int --  datasource id
+        Example:
+            &gt;&gt;&gt; server = TAServer()
+            &gt;&gt;&gt; ds_id = server.datasource_id  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Datasource ID: {ds_id}&#34;)
 
         &#34;&#34;&#34;
         return int(self._threat_dsid)
 
     @property
-    def anomaly_file_count(self):
-        &#34;&#34;&#34;returns the total anomalies file count for this server
+    def anomaly_file_count(self) -&gt; int:
+        &#34;&#34;&#34;Get the total number of anomaly files detected for this server.
 
-            Returns:
+        Returns:
+            The total count of anomaly files as an integer.
 
-                int --  anomaly file count
+        Example:
+            &gt;&gt;&gt; server = TAServer()
+            &gt;&gt;&gt; count = server.anomaly_file_count  # Use dot notation for property
+            &gt;&gt;&gt; print(f&#34;Anomaly file count: {count}&#34;)
 
         &#34;&#34;&#34;
         _total_files = 0
@@ -987,26 +1240,40 @@ instance of the Server class</p></div>
         _total_files = _total_files + sum(self._threat_anomaly_stats.values())
         return _total_files</code></pre>
 </details>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="cvpysdk.securitycenter.resources.Resource" href="../securitycenter/resources.html#cvpysdk.securitycenter.resources.Resource">Resource</a></li>
+</ul>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.monitoringapps.threat_indicators.TAServer.anomaly_file_count"><code class="name">var <span class="ident">anomaly_file_count</span></code></dt>
+<dt id="cvpysdk.monitoringapps.threat_indicators.TAServer.anomaly_file_count"><code class="name">var <span class="ident">anomaly_file_count</span> : int</code></dt>
 <dd>
-<div class="desc"><p>returns the total anomalies file count for this server</p>
-<h2 id="returns">Returns</h2>
-<p>int &ndash;
-anomaly file count</p></div>
+<div class="desc"><p>Get the total number of anomaly files detected for this server.</p>
+<p>Returns
+-----=
+The total count of anomaly files as an integer.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; server = TAServer()
+&gt;&gt;&gt; count = server.anomaly_file_count  # Use dot notation for property
+&gt;&gt;&gt; print(f&quot;Anomaly file count: {count}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/monitoringapps/threat_indicators.py#L590-L602" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/monitoringapps/threat_indicators.py#L754-L771" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def anomaly_file_count(self):
-    &#34;&#34;&#34;returns the total anomalies file count for this server
+def anomaly_file_count(self) -&gt; int:
+    &#34;&#34;&#34;Get the total number of anomaly files detected for this server.
 
-        Returns:
+    Returns:
+        The total count of anomaly files as an integer.
 
-            int --  anomaly file count
+    Example:
+        &gt;&gt;&gt; server = TAServer()
+        &gt;&gt;&gt; count = server.anomaly_file_count  # Use dot notation for property
+        &gt;&gt;&gt; print(f&#34;Anomaly file count: {count}&#34;)
 
     &#34;&#34;&#34;
     _total_files = 0
@@ -1015,93 +1282,150 @@ def anomaly_file_count(self):
     return _total_files</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.monitoringapps.threat_indicators.TAServer.anomaly_records"><code class="name">var <span class="ident">anomaly_records</span></code></dt>
+<dt id="cvpysdk.monitoringapps.threat_indicators.TAServer.anomaly_records"><code class="name">var <span class="ident">anomaly_records</span> : list</code></dt>
 <dd>
-<div class="desc"><p>returns the anomaly records list</p>
-<h2 id="returns">Returns</h2>
-<p>list &ndash;
-anomaly records for this client</p></div>
+<div class="desc"><p>Get the list of anomaly records for this client.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>list</code></dt>
+<dd>A list containing anomaly records associated with this client.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; ta_server = TAServer()
+&gt;&gt;&gt; records = ta_server.anomaly_records  # Access anomaly records using the property
+&gt;&gt;&gt; print(f&quot;Number of anomaly records: {len(records)}&quot;)
+&gt;&gt;&gt; # Iterate through the records
+&gt;&gt;&gt; for record in records:
+&gt;&gt;&gt;     print(record)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/monitoringapps/threat_indicators.py#L546-L555" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/monitoringapps/threat_indicators.py#L686-L703" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def anomaly_records(self):
-    &#34;&#34;&#34;returns the anomaly records list
+def anomaly_records(self) -&gt; list:
+    &#34;&#34;&#34;Get the list of anomaly records for this client.
 
-        Returns:
+    Returns:
+        list: A list containing anomaly records associated with this client.
 
-            list --  anomaly records for this client
+    Example:
+        &gt;&gt;&gt; ta_server = TAServer()
+        &gt;&gt;&gt; records = ta_server.anomaly_records  # Access anomaly records using the property
+        &gt;&gt;&gt; print(f&#34;Number of anomaly records: {len(records)}&#34;)
+        &gt;&gt;&gt; # Iterate through the records
+        &gt;&gt;&gt; for record in records:
+        &gt;&gt;&gt;     print(record)
 
     &#34;&#34;&#34;
     return self._anomaly_records</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.monitoringapps.threat_indicators.TAServer.anomaly_stats"><code class="name">var <span class="ident">anomaly_stats</span></code></dt>
+<dt id="cvpysdk.monitoringapps.threat_indicators.TAServer.anomaly_stats"><code class="name">var <span class="ident">anomaly_stats</span> : dict</code></dt>
 <dd>
-<div class="desc"><p>returns the file type/data anomaly stats</p>
-<h2 id="returns">Returns</h2>
-<p>dict &ndash;
-file/data anomaly stats for this client</p></div>
+<div class="desc"><p>Get the file type or data anomaly statistics for this client.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>A dictionary containing file or data anomaly statistics for the client.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; ta_server = TAServer()
+&gt;&gt;&gt; stats = ta_server.anomaly_stats
+&gt;&gt;&gt; print(f&quot;Anomaly stats: {stats}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/monitoringapps/threat_indicators.py#L568-L577" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/monitoringapps/threat_indicators.py#L722-L736" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def anomaly_stats(self):
-    &#34;&#34;&#34;returns the file type/data anomaly stats
+def anomaly_stats(self) -&gt; dict:
+    &#34;&#34;&#34;Get the file type or data anomaly statistics for this client.
 
-        Returns:
+    Returns:
+        dict: A dictionary containing file or data anomaly statistics for the client.
 
-            dict --  file/data anomaly stats for this client
+    Example:
+        &gt;&gt;&gt; ta_server = TAServer()
+        &gt;&gt;&gt; stats = ta_server.anomaly_stats
+        &gt;&gt;&gt; print(f&#34;Anomaly stats: {stats}&#34;)
 
     &#34;&#34;&#34;
     return self._anomaly_stats</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.monitoringapps.threat_indicators.TAServer.datasource_id"><code class="name">var <span class="ident">datasource_id</span></code></dt>
+<dt id="cvpysdk.monitoringapps.threat_indicators.TAServer.datasource_id"><code class="name">var <span class="ident">datasource_id</span> : int</code></dt>
 <dd>
-<div class="desc"><p>returns the threat datasource_id associated with this server</p>
-<h2 id="returns">Returns</h2>
-<p>int &ndash;
-datasource id</p></div>
+<div class="desc"><p>Get the threat datasource ID associated with this server.</p>
+<p>Returns
+-----=
+The datasource ID as an integer.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; server = TAServer()
+&gt;&gt;&gt; ds_id = server.datasource_id  # Use dot notation for property access
+&gt;&gt;&gt; print(f&quot;Datasource ID: {ds_id}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/monitoringapps/threat_indicators.py#L579-L588" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/monitoringapps/threat_indicators.py#L738-L752" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def datasource_id(self):
-    &#34;&#34;&#34;returns the threat datasource_id associated with this server
+def datasource_id(self) -&gt; int:
+    &#34;&#34;&#34;Get the threat datasource ID associated with this server.
 
-        Returns:
+    Returns:
+        The datasource ID as an integer.
 
-            int --  datasource id
+    Example:
+        &gt;&gt;&gt; server = TAServer()
+        &gt;&gt;&gt; ds_id = server.datasource_id  # Use dot notation for property access
+        &gt;&gt;&gt; print(f&#34;Datasource ID: {ds_id}&#34;)
 
     &#34;&#34;&#34;
     return int(self._threat_dsid)</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.monitoringapps.threat_indicators.TAServer.threat_anomaly_stats"><code class="name">var <span class="ident">threat_anomaly_stats</span></code></dt>
+<dt id="cvpysdk.monitoringapps.threat_indicators.TAServer.threat_anomaly_stats"><code class="name">var <span class="ident">threat_anomaly_stats</span> : dict</code></dt>
 <dd>
-<div class="desc"><p>returns the threat anomaly stats</p>
-<h2 id="returns">Returns</h2>
-<p>dict &ndash;
-threat anomaly stats for this client</p></div>
+<div class="desc"><p>Get the threat anomaly statistics for this client.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>A dictionary containing threat anomaly statistics specific to this client.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; ta_server = TAServer()
+&gt;&gt;&gt; stats = ta_server.threat_anomaly_stats
+&gt;&gt;&gt; print(stats)
+&gt;&gt;&gt; # Output will be a dictionary with threat anomaly statistics for the client
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/monitoringapps/threat_indicators.py#L557-L566" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/monitoringapps/threat_indicators.py#L705-L720" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def threat_anomaly_stats(self):
-    &#34;&#34;&#34;returns the threat anomaly stats
+def threat_anomaly_stats(self) -&gt; dict:
+    &#34;&#34;&#34;Get the threat anomaly statistics for this client.
 
-        Returns:
+    Returns:
+        dict: A dictionary containing threat anomaly statistics specific to this client.
 
-            dict --  threat anomaly stats for this client
+    Example:
+        &gt;&gt;&gt; ta_server = TAServer()
+        &gt;&gt;&gt; stats = ta_server.threat_anomaly_stats
+        &gt;&gt;&gt; print(stats)
+        &gt;&gt;&gt; # Output will be a dictionary with threat anomaly statistics for the client
 
     &#34;&#34;&#34;
     return self._threat_anomaly_stats</code></pre>
@@ -1111,46 +1435,46 @@ def threat_anomaly_stats(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.monitoringapps.threat_indicators.TAServer.clear_anomaly"><code class="name flex">
-<span>def <span class="ident">clear_anomaly</span></span>(<span>self, anomaly_types)</span>
+<span>def <span class="ident">clear_anomaly</span></span>(<span>self, anomaly_types: list) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>clears the anomalies for this server</p>
-<h2 id="args">Args</h2>
-<p>anomaly_types
-(list)
-&ndash;
-list of anomalies to clear (Refer to AnomalyType class)</p>
-<h2 id="returns">Returns</h2>
-<p>None</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
-<pre><code>if failed to clear anomaly
-
-if input is not valid
+<div class="desc"><p>Clear specified anomalies for this server.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>anomaly_types</code></strong></dt>
+<dd>List of anomalies to clear. Each item should correspond to an anomaly type
+as defined in the AnomalyType class.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If clearing the anomaly fails or if the input is not valid.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; server = TAServer()
+&gt;&gt;&gt; server.clear_anomaly([AnomalyType.CPU_SPIKE, AnomalyType.MEMORY_LEAK])
+&gt;&gt;&gt; print(&quot;Selected anomalies cleared successfully.&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/monitoringapps/threat_indicators.py#L496-L544" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/monitoringapps/threat_indicators.py#L639-L684" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def clear_anomaly(self, anomaly_types):
-    &#34;&#34;&#34;clears the anomalies for this server
+<pre><code class="python">def clear_anomaly(self, anomaly_types: list) -&gt; None:
+    &#34;&#34;&#34;Clear specified anomalies for this server.
 
-        Args:
+    Args:
+        anomaly_types: List of anomalies to clear. Each item should correspond to an anomaly type 
+            as defined in the AnomalyType class.
 
-            anomaly_types       (list)      --  list of anomalies to clear (Refer to AnomalyType class)
+    Raises:
+        SDKException: If clearing the anomaly fails or if the input is not valid.
 
-        Returns:
-
-            None
-
-        Raises:
-
-            SDKException:
-
-                if failed to clear anomaly
-
-                if input is not valid
+    Example:
+        &gt;&gt;&gt; server = TAServer()
+        &gt;&gt;&gt; server.clear_anomaly([AnomalyType.CPU_SPIKE, AnomalyType.MEMORY_LEAK])
+        &gt;&gt;&gt; print(&#34;Selected anomalies cleared successfully.&#34;)
 
     &#34;&#34;&#34;
     if not isinstance(anomaly_types, list):
@@ -1185,17 +1509,36 @@ if input is not valid
 </details>
 </dd>
 <dt id="cvpysdk.monitoringapps.threat_indicators.TAServer.refresh"><code class="name flex">
-<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+<span>def <span class="ident">refresh</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Refresh the anomalies details associated with this server</p></div>
+<div class="desc"><p>Reload the anomaly details associated with this TAServer instance.</p>
+<p>This method refreshes the internal state to ensure that the latest anomaly information
+for the server is available. Use this method when you suspect that the anomaly data
+may have changed and you want to update the server's details.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; server = TAServer()
+&gt;&gt;&gt; server.refresh()  # Updates the anomaly details for this server
+&gt;&gt;&gt; print(&quot;Anomaly details refreshed successfully&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/monitoringapps/threat_indicators.py#L490-L494" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/monitoringapps/threat_indicators.py#L622-L637" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def refresh(self):
-    &#34;&#34;&#34;Refresh the anomalies details associated with this server&#34;&#34;&#34;
+<pre><code class="python">def refresh(self) -&gt; None:
+    &#34;&#34;&#34;Reload the anomaly details associated with this TAServer instance.
+
+    This method refreshes the internal state to ensure that the latest anomaly information
+    for the server is available. Use this method when you suspect that the anomaly data
+    may have changed and you want to update the server&#39;s details.
+
+    Example:
+        &gt;&gt;&gt; server = TAServer()
+        &gt;&gt;&gt; server.refresh()  # Updates the anomaly details for this server
+        &gt;&gt;&gt; print(&#34;Anomaly details refreshed successfully&#34;)
+    &#34;&#34;&#34;
     self._threat_dsid = 0
     self._anomaly_records = self._get_anamoly_records()
     self._anomaly_stats, self._threat_anomaly_stats = self._get_anomalies_stats()</code></pre>
@@ -1205,38 +1548,76 @@ if input is not valid
 </dd>
 <dt id="cvpysdk.monitoringapps.threat_indicators.TAServers"><code class="flex name class">
 <span>class <span class="ident">TAServers</span></span>
-<span>(</span><span>commcell_object)</span>
+<span>(</span><span>commcell_object: object)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>class to represent all servers in threat indicators</p>
-<p>Initializes an instance of the TAServers class.</p>
-<h2 id="args">Args</h2>
-<p>commcell_object
-(object)
-&ndash;
-instance of the commcell class</p>
-<h2 id="returns">Returns</h2>
-<p>object
--
-instance of the Servers class</p></div>
+<div class="desc"><p>Represents and manages all servers involved in threat indicator monitoring.</p>
+<p>This class provides an interface for interacting with servers that are part of a threat analysis system.
+It allows users to query server details, monitor virtual machines, retrieve threat indicators, and
+initiate scans for anomalies. The class also supports refreshing server data and checking for the
+existence of specific servers.</p>
+<p>Key Features:
+- Initialization with a communication cell object for server context
+- Error handling for unsuccessful responses
+- Retrieval of client and monitored VM counts
+- Access to threat indicators for servers
+- Check for existence of a server by name
+- Run scans for specified anomaly types within a time range
+- Retrieve server details by name
+- Refresh server data to ensure up-to-date information
+- Properties for monitored VMs and client count</p>
+<p>Initialize a new instance of the TAServers class.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>commcell_object</code></strong></dt>
+<dd>An instance of the Commcell class representing the active Commcell connection.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; from cvpysdk.commcell import Commcell
+&gt;&gt;&gt; commcell = Commcell('commcell_host', 'username', 'password')
+&gt;&gt;&gt; ta_servers = TAServers(commcell)
+&gt;&gt;&gt; print(&quot;TAServers instance created successfully&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/monitoringapps/threat_indicators.py#L99-L399" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/monitoringapps/threat_indicators.py#L112-L482" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class TAServers():
-    &#34;&#34;&#34;class to represent all servers in threat indicators&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents and manages all servers involved in threat indicator monitoring.
 
-    def __init__(self, commcell_object):
-        &#34;&#34;&#34;Initializes an instance of the TAServers class.
+    This class provides an interface for interacting with servers that are part of a threat analysis system.
+    It allows users to query server details, monitor virtual machines, retrieve threat indicators, and
+    initiate scans for anomalies. The class also supports refreshing server data and checking for the
+    existence of specific servers.
 
-            Args:
+    Key Features:
+        - Initialization with a communication cell object for server context
+        - Error handling for unsuccessful responses
+        - Retrieval of client and monitored VM counts
+        - Access to threat indicators for servers
+        - Check for existence of a server by name
+        - Run scans for specified anomaly types within a time range
+        - Retrieve server details by name
+        - Refresh server data to ensure up-to-date information
+        - Properties for monitored VMs and client count
 
-                commcell_object     (object)    --  instance of the commcell class
+    &#34;&#34;&#34;
 
-            Returns:
+    def __init__(self, commcell_object: object) -&gt; None:
+        &#34;&#34;&#34;Initialize a new instance of the TAServers class.
 
-                object  -   instance of the Servers class
+        Args:
+            commcell_object: An instance of the Commcell class representing the active Commcell connection.
+
+        Example:
+            &gt;&gt;&gt; from cvpysdk.commcell import Commcell
+            &gt;&gt;&gt; commcell = Commcell(&#39;commcell_host&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; ta_servers = TAServers(commcell)
+            &gt;&gt;&gt; print(&#34;TAServers instance created successfully&#34;)
 
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
@@ -1252,33 +1633,41 @@ instance of the Servers class</p></div>
         self._API_MONITORED_VMS = self._services[&#39;MONITORED_VM_COUNT&#39;]
         self.refresh()
 
-    def _response_not_success(self, response):
-        &#34;&#34;&#34;Helper function to raise an exception when reponse status is not 200 (OK).
+    def _response_not_success(self, response: object) -&gt; None:
+        &#34;&#34;&#34;Raise an exception if the API response status is not 200 (OK).
 
-            Args:
-                response    (object)    --  response class object,
+        This helper function checks the status of the provided response object,
+        typically obtained from the `requests` Python package, and raises an
+        exception if the response indicates a failure (i.e., status code is not 200).
 
-                received upon running an API request, using the `requests` python package
+        Args:
+            response: The response object returned from an API request.
+
+        Example:
+            &gt;&gt;&gt; response = requests.get(&#39;https://api.example.com/data&#39;)
+            &gt;&gt;&gt; taservers = TAServers()
+            &gt;&gt;&gt; taservers._response_not_success(response)
+            &gt;&gt;&gt; # If the response status is not 200, an exception will be raised.
 
         &#34;&#34;&#34;
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
 
-    def _get_clients_count(self):
-        &#34;&#34;&#34;returns the client count details for Threat inidcators on this CS
+    def _get_clients_count(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the client count statistics for Threat Indicators on this CommServe.
 
-            Args:
+        Returns:
+            dict: A dictionary containing total client statistics, including counts for each client type 
+            such as &#39;fileserver&#39;, &#39;vm&#39;, and &#39;laptop&#39;.
 
-                None
+        Raises:
+            SDKException: If the method fails to fetch the client count details.
 
-            Returns:
+        Example:
+            &gt;&gt;&gt; ta_servers = TAServers()
+            &gt;&gt;&gt; client_stats = ta_servers._get_clients_count()
+            &gt;&gt;&gt; print(client_stats)
+            {&#39;fileserver&#39;: 10, &#39;vm&#39;: 5, &#39;laptop&#39;: 3}
 
-                dict  - Containing total client stats [stats for client type = fileserver,vm,laptop]
-
-            Raises:
-
-                SDKException:
-
-                    if failed to fetch details
         &#34;&#34;&#34;
         flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._API_CLIENTS_COUNT)
         if flag:
@@ -1288,22 +1677,20 @@ instance of the Servers class</p></div>
                 raise SDKException(&#39;ThreatIndicators&#39;, &#39;110&#39;)
         self._response_not_success(response)
 
-    def _get_monitored_vm_count(self):
-        &#34;&#34;&#34;returns the monitored vm count stats for Threat inidcators on this CS
+    def _get_monitored_vm_count(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the monitored virtual machine (VM) count statistics for threat indicators on this CommServe.
 
-            Args:
+        Returns:
+            dict: A dictionary containing statistics about the total number of monitored VMs for threat indicators.
 
-                None
+        Raises:
+            SDKException: If the method fails to fetch the monitored VM details.
 
-            Returns:
+        Example:
+            &gt;&gt;&gt; ta_servers = TAServers()
+            &gt;&gt;&gt; vm_stats = ta_servers._get_monitored_vm_count()
+            &gt;&gt;&gt; print(f&#34;Total monitored VMs: {vm_stats.get(&#39;total_monitored_vms&#39;, 0)}&#34;)
 
-                dict  - Containing total monitored vm stats
-
-            Raises:
-
-                SDKException:
-
-                    if failed to fetch details
         &#34;&#34;&#34;
         flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._API_MONITORED_VMS)
         if flag:
@@ -1314,45 +1701,51 @@ instance of the Servers class</p></div>
         self._response_not_success(response)
 
 
-    def _get_threat_indicators(self):
-        &#34;&#34;&#34;returns the list of threat indicators for this CS
+    def _get_threat_indicators(self) -&gt; list[dict]:
+        &#34;&#34;&#34;Retrieve the list of threat indicators for this CommServe (CS) server.
 
-            Args:
+        Returns:
+            list of dict: A list containing dictionaries with server threat details. Each dictionary
+            includes information such as anomaly type, modification count, rename count, VM support,
+            reference time, delete and create counts, location, OS information, and client details.
 
-                None
+        Example:
+            &gt;&gt;&gt; ta_servers = TAServers()
+            &gt;&gt;&gt; indicators = ta_servers._get_threat_indicators()
+            &gt;&gt;&gt; print(f&#34;Found {len(indicators)} threat indicators&#34;)
+            &gt;&gt;&gt; if indicators:
+            ...     first = indicators[0]
+            ...     print(f&#34;First indicator anomaly type: {first[&#39;anomalyType&#39;]}&#34;)
+            ...     print(f&#34;Client name: {first[&#39;client&#39;][&#39;clientName&#39;]}&#34;)
 
-            Returns:
+        Example threat indicator dictionary:
+            {
+                &#34;anomalyType&#34;: 8,
+                &#34;modCount&#34;: 13705,
+                &#34;renameCount&#34;: 1,
+                &#34;isVMeSupported&#34;: True,
+                &#34;refTime&#34;: 1727519811,
+                &#34;deleteCount&#34;: 73280,
+                &#34;createCount&#34;: 19,
+                &#34;location&#34;: &#34;&#34;,
+                &#34;osInfo&#34;: {
+                    &#34;osInfo&#34;: {
+                        &#34;Type&#34;: &#34;Windows&#34;,
+                        &#34;SubType&#34;: &#34;Server&#34;,
+                        &#34;osId&#34;: 210,
+                        &#34;OsDisplayInfo&#34;: {
+                            &#34;ProcessorType&#34;: &#34;WinX64&#34;,
+                            &#34;OSName&#34;: &#34;Windows Server 2019 Datacenter&#34;
+                        }
+                    }
+                },
+                &#34;client&#34;: {
+                    &#34;clientId&#34;: 9,
+                    &#34;clientName&#34;: &#34;xx&#34;,
+                    &#34;displayName&#34;: &#34;xx_dn&#34;
+                }
+            }
 
-                list(dict)      - server threat details
-
-                        Eg:-
-
-                                {
-                                  &#34;anomalyType&#34;: 8,
-                                  &#34;modCount&#34;: 13705,
-                                  &#34;renameCount&#34;: 1,
-                                  &#34;isVMeSupported&#34;: true,
-                                  &#34;refTime&#34;: 1727519811,
-                                  &#34;deleteCount&#34;: 73280,
-                                  &#34;createCount&#34;: 19,
-                                  &#34;location&#34;: &#34;&#34;,
-                                  &#34;osInfo&#34;: {
-                                    &#34;osInfo&#34;: {
-                                      &#34;Type&#34;: &#34;Windows&#34;,
-                                      &#34;SubType&#34;: &#34;Server&#34;,
-                                      &#34;osId&#34;: 210,
-                                      &#34;OsDisplayInfo&#34;: {
-                                        &#34;ProcessorType&#34;: &#34;WinX64&#34;,
-                                        &#34;OSName&#34;: &#34;Windows Server 2019 Datacenter&#34;
-                                      }
-                                    }
-                                  },
-                                  &#34;client&#34;: {
-                                    &#34;clientId&#34;: 9,
-                                    &#34;clientName&#34;: &#34;xx&#34;,
-                                    &#34;displayName&#34;: &#34;xx_dn&#34;
-                                  }
-                                }
         &#34;&#34;&#34;
         flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._API_GET_ALL_INDICATORS)
         _threat_indicators = []
@@ -1368,16 +1761,20 @@ instance of the Servers class</p></div>
             return _threat_indicators
         self._response_not_success(response)
 
-    def has(self, name):
-        &#34;&#34;&#34;Checks whether given server name exists in threat indicators or not
+    def has(self, name: str) -&gt; bool:
+        &#34;&#34;&#34;Check if the specified server name exists in the threat indicators.
 
-            Args:
+        Args:
+            name: The name of the server to check.
 
-                name        (str)       --  Name of the server
+        Returns:
+            True if the server name exists in the threat indicators, False otherwise.
 
-            Returns:
-
-                bool    --  True if server name exists in threat indicators
+        Example:
+            &gt;&gt;&gt; ta_servers = TAServers()
+            &gt;&gt;&gt; exists = ta_servers.has(&#34;server01&#34;)
+            &gt;&gt;&gt; print(f&#34;Server exists: {exists}&#34;)
+            # Output: Server exists: True
 
         &#34;&#34;&#34;
         if name.lower() in self._servers:
@@ -1386,39 +1783,42 @@ instance of the Servers class</p></div>
 
     def run_scan(
             self,
-            server_name,
-            anomaly_types,
-            index_server_name=None,
-            storage_pool=None,
-            from_time=None,
-            to_time=None):
-        &#34;&#34;&#34;runs anomaly scan on given server name
+            server_name: str,
+            anomaly_types: list,
+            index_server_name: str = None,
+            storage_pool: str = None,
+            from_time: int = None,
+            to_time: int = None
+        ) -&gt; int:
+        &#34;&#34;&#34;Run an anomaly scan on the specified server.
 
-            Args:
+        This method initiates an anomaly scan for the given server, analyzing the specified anomaly types.
+        Optionally, you can specify an index server, storage pool, and a time range for the scan.
 
-                server_name     (str)           --  Server name to analyze
+        Args:
+            server_name: The name of the server to analyze.
+            anomaly_types: List of anomaly types to analyze on the client.
+            index_server_name: (Optional) Index server name to be used for the scan. Applicable for all OEMs except Metallic.
+            storage_pool: (Optional) Storage pool name to be used for the scan. Applicable only for Metallic OEM.
+            from_time: (Optional) Epoch timestamp indicating the start time for the scan analysis.
+            to_time: (Optional) Epoch timestamp indicating the end time for the scan analysis.
 
-                anomaly_types    (list)         --  list of anomaly to analyze on client
+        Returns:
+            The job ID (int) of the launched scan job.
 
-                index_server_name   (str)       --  Index server name to be used for scan
+        Raises:
+            SDKException: If the job fails to start or if input data types are invalid.
 
-                storage_pool        (str)       --  Storage pool name to be used for scan
-
-                from_time           (int)       --  epoch timestamp from when scan will analyze in backup
-
-                to_time             (int)       --  epoch timestamp to which scan will analyze in backup
-
-            Returns:
-
-                int --  job id of scan job launched
-
-            Raises:
-
-                SDKException:
-
-                    if failed to start job
-
-                    if input data type is not valid
+        Example:
+            &gt;&gt;&gt; ta_servers = TAServers()
+            &gt;&gt;&gt; job_id = ta_servers.run_scan(
+            ...     server_name=&#34;Server01&#34;,
+            ...     anomaly_types=[&#34;ransomware&#34;, &#34;suspicious_activity&#34;],
+            ...     index_server_name=&#34;IndexServerA&#34;,
+            ...     from_time=1672531200,
+            ...     to_time=1672617600
+            ... )
+            &gt;&gt;&gt; print(f&#34;Anomaly scan job started with ID: {job_id}&#34;)
 
         &#34;&#34;&#34;
         if not isinstance(server_name, str):
@@ -1427,6 +1827,8 @@ instance of the Servers class</p></div>
             raise SDKException(&#39;ThreatIndicators&#39;, &#39;101&#39;)
         if not self._commcell_object.clients.has_client(server_name):
             raise SDKException(&#39;ThreatIndicators&#39;, &#39;102&#39;, &#39;Given server is not found in CS&#39;)
+        if storage_pool and index_server_name:
+            raise SDKException(&#39;ThreatIndicators&#39;, &#39;102&#39;, &#39;Cannot specify both storage_pool and index_server_name input&#39;)
         req_json = copy.deepcopy(RequestConstants.RUN_SCAN_JSON)
         req_json[&#39;client&#39;][&#39;clientId&#39;] = int(self._commcell_object.clients.get(server_name).client_id)
         ta_flag = 0
@@ -1445,10 +1847,7 @@ instance of the Servers class</p></div>
         else:
             req_json[&#39;timeRange&#39;][&#39;toTime&#39;] = to_time
             req_json[&#39;timeRange&#39;][&#39;fromTime&#39;] = from_time
-
-        if int(self._commcell_object.commserv_oem_id) == 119:
-            if not storage_pool:
-                raise SDKException(&#39;ThreatIndicators&#39;, &#39;107&#39;)
+        if storage_pool:
             req_json.pop(&#39;indexServer&#39;)
             spool_obj = self._commcell_object.storage_pools.get(storage_pool)
             req_json[&#39;backupDetails&#39;][0][&#39;copyId&#39;] = int(spool_obj.copy_id)
@@ -1469,24 +1868,22 @@ instance of the Servers class</p></div>
             raise SDKException(&#39;ThreatIndicators&#39;, &#39;109&#39;)
         self._response_not_success(response)
 
-    def get(self, server_name):
-        &#34;&#34;&#34;returns Server class object for given server name
+    def get(self, server_name: str) -&gt; &#39;TAServer&#39;:
+        &#34;&#34;&#34;Retrieve a Server object for the specified server name.
 
-                Args:
+        Args:
+            server_name: The name of the server (client) to retrieve.
 
-                    server_name        (str)       --  client name
+        Returns:
+            Server: An instance of the Server class corresponding to the given server name.
 
-                Returns:
+        Raises:
+            SDKException: If the server cannot be found or if the input is invalid.
 
-                    obj --  Instance of Server class
-
-                Raises:
-
-                    SDKException:
-
-                            if failed to find given server
-
-                            if input is not valid
+        Example:
+            &gt;&gt;&gt; ta_servers = TAServers()
+            &gt;&gt;&gt; server = ta_servers.get(&#34;MyServer01&#34;)
+            &gt;&gt;&gt; print(f&#34;Retrieved server: {server}&#34;)
 
         &#34;&#34;&#34;
         if not isinstance(server_name, str):
@@ -1495,8 +1892,18 @@ instance of the Servers class</p></div>
             raise SDKException(&#39;ThreatIndicators&#39;, &#39;105&#39;)
         return TAServer(commcell_object=self._commcell_object, server_name=server_name)
 
-    def refresh(self):
-        &#34;&#34;&#34;Refresh the threat indicator servers associated with CS&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Reload the list of threat indicator servers associated with the CommServe (CS).
+
+        This method refreshes the internal cache of threat indicator servers, ensuring that 
+        any changes made on the CommServe are reflected in the TAServers instance.
+
+        Example:
+            &gt;&gt;&gt; ta_servers = TAServers(commcell_object)
+            &gt;&gt;&gt; ta_servers.refresh()  # Updates the list of threat indicator servers
+            &gt;&gt;&gt; print(&#34;Threat indicator servers refreshed successfully&#34;)
+
+        &#34;&#34;&#34;
         self._servers = []
         self._total_clients = None
         self._monitored_vms = None
@@ -1505,70 +1912,120 @@ instance of the Servers class</p></div>
         self._monitored_vms = self._get_monitored_vm_count()
 
     @property
-    def monitored_vms(self):
-        &#34;&#34;&#34;returns the monitored vms stats from threat indicators on this CS
+    def monitored_vms(self) -&gt; dict:
+        &#34;&#34;&#34;Get the monitored virtual machines (VMs) statistics from threat indicators on this CommServe.
 
-            Returns:
+        Returns:
+            dict: A dictionary containing client statistics for monitored VMs.
 
-                dict --  client stats
+        Example:
+            &gt;&gt;&gt; ta_servers = TAServers()
+            &gt;&gt;&gt; vm_stats = ta_servers.monitored_vms  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Number of monitored VMs: {len(vm_stats)}&#34;)
+            &gt;&gt;&gt; # Access specific VM stats
+            &gt;&gt;&gt; for vm_name, stats in vm_stats.items():
+            ...     print(f&#34;VM: {vm_name}, Stats: {stats}&#34;)
 
         &#34;&#34;&#34;
         return self._monitored_vms
 
     @property
-    def clients_count(self):
-        &#34;&#34;&#34;returns the client stats from threat indicators on this CS
+    def clients_count(self) -&gt; dict:
+        &#34;&#34;&#34;Get the client statistics from threat indicators on this CommServe.
 
-            Returns:
+        Returns:
+            dict: A dictionary containing client statistics as reported by threat indicators.
 
-                dict --  client stats
+        Example:
+            &gt;&gt;&gt; ta_servers = TAServers()
+            &gt;&gt;&gt; stats = ta_servers.clients_count
+            &gt;&gt;&gt; print(f&#34;Number of clients: {stats.get(&#39;total_clients&#39;, 0)}&#34;)
+            &gt;&gt;&gt; # Access additional statistics as needed from the returned dictionary
 
         &#34;&#34;&#34;
         return self._total_clients</code></pre>
 </details>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="cvpysdk.securitycenter.resources.Resources" href="../securitycenter/resources.html#cvpysdk.securitycenter.resources.Resources">Resources</a></li>
+</ul>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.monitoringapps.threat_indicators.TAServers.clients_count"><code class="name">var <span class="ident">clients_count</span></code></dt>
+<dt id="cvpysdk.monitoringapps.threat_indicators.TAServers.clients_count"><code class="name">var <span class="ident">clients_count</span> : dict</code></dt>
 <dd>
-<div class="desc"><p>returns the client stats from threat indicators on this CS</p>
-<h2 id="returns">Returns</h2>
-<p>dict &ndash;
-client stats</p></div>
+<div class="desc"><p>Get the client statistics from threat indicators on this CommServe.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>A dictionary containing client statistics as reported by threat indicators.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; ta_servers = TAServers()
+&gt;&gt;&gt; stats = ta_servers.clients_count
+&gt;&gt;&gt; print(f&quot;Number of clients: {stats.get('total_clients', 0)}&quot;)
+&gt;&gt;&gt; # Access additional statistics as needed from the returned dictionary
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/monitoringapps/threat_indicators.py#L390-L399" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/monitoringapps/threat_indicators.py#L467-L482" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def clients_count(self):
-    &#34;&#34;&#34;returns the client stats from threat indicators on this CS
+def clients_count(self) -&gt; dict:
+    &#34;&#34;&#34;Get the client statistics from threat indicators on this CommServe.
 
-        Returns:
+    Returns:
+        dict: A dictionary containing client statistics as reported by threat indicators.
 
-            dict --  client stats
+    Example:
+        &gt;&gt;&gt; ta_servers = TAServers()
+        &gt;&gt;&gt; stats = ta_servers.clients_count
+        &gt;&gt;&gt; print(f&#34;Number of clients: {stats.get(&#39;total_clients&#39;, 0)}&#34;)
+        &gt;&gt;&gt; # Access additional statistics as needed from the returned dictionary
 
     &#34;&#34;&#34;
     return self._total_clients</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.monitoringapps.threat_indicators.TAServers.monitored_vms"><code class="name">var <span class="ident">monitored_vms</span></code></dt>
+<dt id="cvpysdk.monitoringapps.threat_indicators.TAServers.monitored_vms"><code class="name">var <span class="ident">monitored_vms</span> : dict</code></dt>
 <dd>
-<div class="desc"><p>returns the monitored vms stats from threat indicators on this CS</p>
-<h2 id="returns">Returns</h2>
-<p>dict &ndash;
-client stats</p></div>
+<div class="desc"><p>Get the monitored virtual machines (VMs) statistics from threat indicators on this CommServe.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>A dictionary containing client statistics for monitored VMs.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; ta_servers = TAServers()
+&gt;&gt;&gt; vm_stats = ta_servers.monitored_vms  # Use dot notation for property access
+&gt;&gt;&gt; print(f&quot;Number of monitored VMs: {len(vm_stats)}&quot;)
+&gt;&gt;&gt; # Access specific VM stats
+&gt;&gt;&gt; for vm_name, stats in vm_stats.items():
+...     print(f&quot;VM: {vm_name}, Stats: {stats}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/monitoringapps/threat_indicators.py#L379-L388" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/monitoringapps/threat_indicators.py#L448-L465" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def monitored_vms(self):
-    &#34;&#34;&#34;returns the monitored vms stats from threat indicators on this CS
+def monitored_vms(self) -&gt; dict:
+    &#34;&#34;&#34;Get the monitored virtual machines (VMs) statistics from threat indicators on this CommServe.
 
-        Returns:
+    Returns:
+        dict: A dictionary containing client statistics for monitored VMs.
 
-            dict --  client stats
+    Example:
+        &gt;&gt;&gt; ta_servers = TAServers()
+        &gt;&gt;&gt; vm_stats = ta_servers.monitored_vms  # Use dot notation for property access
+        &gt;&gt;&gt; print(f&#34;Number of monitored VMs: {len(vm_stats)}&#34;)
+        &gt;&gt;&gt; # Access specific VM stats
+        &gt;&gt;&gt; for vm_name, stats in vm_stats.items():
+        ...     print(f&#34;VM: {vm_name}, Stats: {stats}&#34;)
 
     &#34;&#34;&#34;
     return self._monitored_vms</code></pre>
@@ -1578,47 +2035,51 @@ def monitored_vms(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.monitoringapps.threat_indicators.TAServers.get"><code class="name flex">
-<span>def <span class="ident">get</span></span>(<span>self, server_name)</span>
+<span>def <span class="ident">get</span></span>(<span>self, server_name: str) ‑> <a title="cvpysdk.monitoringapps.threat_indicators.TAServer" href="#cvpysdk.monitoringapps.threat_indicators.TAServer">TAServer</a></span>
 </code></dt>
 <dd>
-<div class="desc"><p>returns Server class object for given server name</p>
-<h2 id="args">Args</h2>
-<p>server_name
-(str)
-&ndash;
-client name</p>
-<h2 id="returns">Returns</h2>
-<p>obj &ndash;
-Instance of Server class</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
-<pre><code>    if failed to find given server
-
-    if input is not valid
+<div class="desc"><p>Retrieve a Server object for the specified server name.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>server_name</code></strong></dt>
+<dd>The name of the server (client) to retrieve.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Server</code></dt>
+<dd>An instance of the Server class corresponding to the given server name.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the server cannot be found or if the input is invalid.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; ta_servers = TAServers()
+&gt;&gt;&gt; server = ta_servers.get(&quot;MyServer01&quot;)
+&gt;&gt;&gt; print(f&quot;Retrieved server: {server}&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/monitoringapps/threat_indicators.py#L344-L368" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/monitoringapps/threat_indicators.py#L403-L426" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def get(self, server_name):
-    &#34;&#34;&#34;returns Server class object for given server name
+<pre><code class="python">def get(self, server_name: str) -&gt; &#39;TAServer&#39;:
+    &#34;&#34;&#34;Retrieve a Server object for the specified server name.
 
-            Args:
+    Args:
+        server_name: The name of the server (client) to retrieve.
 
-                server_name        (str)       --  client name
+    Returns:
+        Server: An instance of the Server class corresponding to the given server name.
 
-            Returns:
+    Raises:
+        SDKException: If the server cannot be found or if the input is invalid.
 
-                obj --  Instance of Server class
-
-            Raises:
-
-                SDKException:
-
-                        if failed to find given server
-
-                        if input is not valid
+    Example:
+        &gt;&gt;&gt; ta_servers = TAServers()
+        &gt;&gt;&gt; server = ta_servers.get(&#34;MyServer01&#34;)
+        &gt;&gt;&gt; print(f&#34;Retrieved server: {server}&#34;)
 
     &#34;&#34;&#34;
     if not isinstance(server_name, str):
@@ -1629,34 +2090,45 @@ Instance of Server class</p>
 </details>
 </dd>
 <dt id="cvpysdk.monitoringapps.threat_indicators.TAServers.has"><code class="name flex">
-<span>def <span class="ident">has</span></span>(<span>self, name)</span>
+<span>def <span class="ident">has</span></span>(<span>self, name: str) ‑> bool</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Checks whether given server name exists in threat indicators or not</p>
-<h2 id="args">Args</h2>
-<p>name
-(str)
-&ndash;
-Name of the server</p>
-<h2 id="returns">Returns</h2>
-<p>bool
-&ndash;
-True if server name exists in threat indicators</p></div>
+<div class="desc"><p>Check if the specified server name exists in the threat indicators.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>name</code></strong></dt>
+<dd>The name of the server to check.</dd>
+</dl>
+<p>Returns
+-----=
+True if the server name exists in the threat indicators, False otherwise.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; ta_servers = TAServers()
+&gt;&gt;&gt; exists = ta_servers.has(&quot;server01&quot;)
+&gt;&gt;&gt; print(f&quot;Server exists: {exists}&quot;)
+# Output: Server exists: True
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/monitoringapps/threat_indicators.py#L243-L257" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/monitoringapps/threat_indicators.py#L294-L313" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def has(self, name):
-    &#34;&#34;&#34;Checks whether given server name exists in threat indicators or not
+<pre><code class="python">def has(self, name: str) -&gt; bool:
+    &#34;&#34;&#34;Check if the specified server name exists in the threat indicators.
 
-        Args:
+    Args:
+        name: The name of the server to check.
 
-            name        (str)       --  Name of the server
+    Returns:
+        True if the server name exists in the threat indicators, False otherwise.
 
-        Returns:
-
-            bool    --  True if server name exists in threat indicators
+    Example:
+        &gt;&gt;&gt; ta_servers = TAServers()
+        &gt;&gt;&gt; exists = ta_servers.has(&#34;server01&#34;)
+        &gt;&gt;&gt; print(f&#34;Server exists: {exists}&#34;)
+        # Output: Server exists: True
 
     &#34;&#34;&#34;
     if name.lower() in self._servers:
@@ -1665,17 +2137,35 @@ True if server name exists in threat indicators</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.monitoringapps.threat_indicators.TAServers.refresh"><code class="name flex">
-<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+<span>def <span class="ident">refresh</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Refresh the threat indicator servers associated with CS</p></div>
+<div class="desc"><p>Reload the list of threat indicator servers associated with the CommServe (CS).</p>
+<p>This method refreshes the internal cache of threat indicator servers, ensuring that
+any changes made on the CommServe are reflected in the TAServers instance.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; ta_servers = TAServers(commcell_object)
+&gt;&gt;&gt; ta_servers.refresh()  # Updates the list of threat indicator servers
+&gt;&gt;&gt; print(&quot;Threat indicator servers refreshed successfully&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/monitoringapps/threat_indicators.py#L370-L377" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/monitoringapps/threat_indicators.py#L428-L446" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def refresh(self):
-    &#34;&#34;&#34;Refresh the threat indicator servers associated with CS&#34;&#34;&#34;
+<pre><code class="python">def refresh(self) -&gt; None:
+    &#34;&#34;&#34;Reload the list of threat indicator servers associated with the CommServe (CS).
+
+    This method refreshes the internal cache of threat indicator servers, ensuring that 
+    any changes made on the CommServe are reflected in the TAServers instance.
+
+    Example:
+        &gt;&gt;&gt; ta_servers = TAServers(commcell_object)
+        &gt;&gt;&gt; ta_servers.refresh()  # Updates the list of threat indicator servers
+        &gt;&gt;&gt; print(&#34;Threat indicator servers refreshed successfully&#34;)
+
+    &#34;&#34;&#34;
     self._servers = []
     self._total_clients = None
     self._monitored_vms = None
@@ -1685,84 +2175,92 @@ True if server name exists in threat indicators</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.monitoringapps.threat_indicators.TAServers.run_scan"><code class="name flex">
-<span>def <span class="ident">run_scan</span></span>(<span>self, server_name, anomaly_types, index_server_name=None, storage_pool=None, from_time=None, to_time=None)</span>
+<span>def <span class="ident">run_scan</span></span>(<span>self, server_name: str, anomaly_types: list, index_server_name: str = None, storage_pool: str = None, from_time: int = None, to_time: int = None) ‑> int</span>
 </code></dt>
 <dd>
-<div class="desc"><p>runs anomaly scan on given server name</p>
-<h2 id="args">Args</h2>
-<p>server_name
-(str)
-&ndash;
-Server name to analyze</p>
-<p>anomaly_types
-(list)
-&ndash;
-list of anomaly to analyze on client</p>
-<p>index_server_name
-(str)
-&ndash;
-Index server name to be used for scan</p>
-<p>storage_pool
-(str)
-&ndash;
-Storage pool name to be used for scan</p>
-<p>from_time
-(int)
-&ndash;
-epoch timestamp from when scan will analyze in backup</p>
-<p>to_time
-(int)
-&ndash;
-epoch timestamp to which scan will analyze in backup</p>
-<h2 id="returns">Returns</h2>
-<p>int &ndash;
-job id of scan job launched</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
-<pre><code>if failed to start job
-
-if input data type is not valid
+<div class="desc"><p>Run an anomaly scan on the specified server.</p>
+<p>This method initiates an anomaly scan for the given server, analyzing the specified anomaly types.
+Optionally, you can specify an index server, storage pool, and a time range for the scan.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>server_name</code></strong></dt>
+<dd>The name of the server to analyze.</dd>
+<dt><strong><code>anomaly_types</code></strong></dt>
+<dd>List of anomaly types to analyze on the client.</dd>
+<dt><strong><code>index_server_name</code></strong></dt>
+<dd>(Optional) Index server name to be used for the scan. Applicable for all OEMs except Metallic.</dd>
+<dt><strong><code>storage_pool</code></strong></dt>
+<dd>(Optional) Storage pool name to be used for the scan. Applicable only for Metallic OEM.</dd>
+<dt><strong><code>from_time</code></strong></dt>
+<dd>(Optional) Epoch timestamp indicating the start time for the scan analysis.</dd>
+<dt><strong><code>to_time</code></strong></dt>
+<dd>(Optional) Epoch timestamp indicating the end time for the scan analysis.</dd>
+</dl>
+<p>Returns
+-----=
+The job ID (int) of the launched scan job.</p>
+<dl>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the job fails to start or if input data types are invalid.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; ta_servers = TAServers()
+&gt;&gt;&gt; job_id = ta_servers.run_scan(
+...     server_name=&quot;Server01&quot;,
+...     anomaly_types=[&quot;ransomware&quot;, &quot;suspicious_activity&quot;],
+...     index_server_name=&quot;IndexServerA&quot;,
+...     from_time=1672531200,
+...     to_time=1672617600
+... )
+&gt;&gt;&gt; print(f&quot;Anomaly scan job started with ID: {job_id}&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/monitoringapps/threat_indicators.py#L259-L342" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/monitoringapps/threat_indicators.py#L315-L401" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def run_scan(
         self,
-        server_name,
-        anomaly_types,
-        index_server_name=None,
-        storage_pool=None,
-        from_time=None,
-        to_time=None):
-    &#34;&#34;&#34;runs anomaly scan on given server name
+        server_name: str,
+        anomaly_types: list,
+        index_server_name: str = None,
+        storage_pool: str = None,
+        from_time: int = None,
+        to_time: int = None
+    ) -&gt; int:
+    &#34;&#34;&#34;Run an anomaly scan on the specified server.
 
-        Args:
+    This method initiates an anomaly scan for the given server, analyzing the specified anomaly types.
+    Optionally, you can specify an index server, storage pool, and a time range for the scan.
 
-            server_name     (str)           --  Server name to analyze
+    Args:
+        server_name: The name of the server to analyze.
+        anomaly_types: List of anomaly types to analyze on the client.
+        index_server_name: (Optional) Index server name to be used for the scan. Applicable for all OEMs except Metallic.
+        storage_pool: (Optional) Storage pool name to be used for the scan. Applicable only for Metallic OEM.
+        from_time: (Optional) Epoch timestamp indicating the start time for the scan analysis.
+        to_time: (Optional) Epoch timestamp indicating the end time for the scan analysis.
 
-            anomaly_types    (list)         --  list of anomaly to analyze on client
+    Returns:
+        The job ID (int) of the launched scan job.
 
-            index_server_name   (str)       --  Index server name to be used for scan
+    Raises:
+        SDKException: If the job fails to start or if input data types are invalid.
 
-            storage_pool        (str)       --  Storage pool name to be used for scan
-
-            from_time           (int)       --  epoch timestamp from when scan will analyze in backup
-
-            to_time             (int)       --  epoch timestamp to which scan will analyze in backup
-
-        Returns:
-
-            int --  job id of scan job launched
-
-        Raises:
-
-            SDKException:
-
-                if failed to start job
-
-                if input data type is not valid
+    Example:
+        &gt;&gt;&gt; ta_servers = TAServers()
+        &gt;&gt;&gt; job_id = ta_servers.run_scan(
+        ...     server_name=&#34;Server01&#34;,
+        ...     anomaly_types=[&#34;ransomware&#34;, &#34;suspicious_activity&#34;],
+        ...     index_server_name=&#34;IndexServerA&#34;,
+        ...     from_time=1672531200,
+        ...     to_time=1672617600
+        ... )
+        &gt;&gt;&gt; print(f&#34;Anomaly scan job started with ID: {job_id}&#34;)
 
     &#34;&#34;&#34;
     if not isinstance(server_name, str):
@@ -1771,6 +2269,8 @@ if input data type is not valid
         raise SDKException(&#39;ThreatIndicators&#39;, &#39;101&#39;)
     if not self._commcell_object.clients.has_client(server_name):
         raise SDKException(&#39;ThreatIndicators&#39;, &#39;102&#39;, &#39;Given server is not found in CS&#39;)
+    if storage_pool and index_server_name:
+        raise SDKException(&#39;ThreatIndicators&#39;, &#39;102&#39;, &#39;Cannot specify both storage_pool and index_server_name input&#39;)
     req_json = copy.deepcopy(RequestConstants.RUN_SCAN_JSON)
     req_json[&#39;client&#39;][&#39;clientId&#39;] = int(self._commcell_object.clients.get(server_name).client_id)
     ta_flag = 0
@@ -1789,10 +2289,7 @@ if input data type is not valid
     else:
         req_json[&#39;timeRange&#39;][&#39;toTime&#39;] = to_time
         req_json[&#39;timeRange&#39;][&#39;fromTime&#39;] = from_time
-
-    if int(self._commcell_object.commserv_oem_id) == 119:
-        if not storage_pool:
-            raise SDKException(&#39;ThreatIndicators&#39;, &#39;107&#39;)
+    if storage_pool:
         req_json.pop(&#39;indexServer&#39;)
         spool_obj = self._commcell_object.storage_pools.get(storage_pool)
         req_json[&#39;backupDetails&#39;][0][&#39;copyId&#39;] = int(spool_obj.copy_id)

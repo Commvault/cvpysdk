@@ -85,7 +85,7 @@ refresh()                           --  refresh the index pool details associate
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/index_pools.py#L1-L521" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/index_pools.py#L1-L762" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
@@ -177,21 +177,47 @@ IndexPool Attributes
 &#34;&#34;&#34;
 
 from copy import deepcopy
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 from .exception import SDKException
 from .datacube.constants import IndexServerConstants
-
-
+if TYPE_CHECKING:
+    from .commcell import Commcell
+    
 class IndexPools(object):
-    &#34;&#34;&#34;Class for representing all the Index pools associated with the commcell&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents and manages all Index pools associated with a CommCell.
 
-    def __init__(self, commcell_object):
-        &#34;&#34;&#34;Initialize object of the IndexPools class
+    The IndexPools class provides an interface to interact with, manage, and manipulate
+    index pools within a CommCell environment. It allows users to retrieve, add, delete,
+    and check the existence of index pools, as well as refresh and access all available
+    index pools. The class supports dictionary-like access to individual pools and
+    provides string representations for easy inspection.
 
-            Args:
-                commcell_object     (object)    --  instance of the Commcell class
+    Key Features:
+        - Retrieve all index pools associated with the CommCell
+        - Access individual index pools by name or key
+        - Add new index pools with specified nodes and HAC name
+        - Delete existing index pools by name
+        - Check for the existence of a specific index pool
+        - Refresh the list of index pools to reflect current state
+        - Access all index pools via a property
+        - Handle unsuccessful responses from operations
+        - Provides string and representation methods for easy display
 
-            Returns:
-                object  -   instance of IndexPools class
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_object: &#39;Commcell&#39;) -&gt; None:
+        &#34;&#34;&#34;Initialize an IndexPools object with the given Commcell connection.
+
+        Args:
+            commcell_object: An instance of the Commcell class representing the active Commcell connection.
+
+        Example:
+            &gt;&gt;&gt; from cvpysdk.commcell import Commcell
+            &gt;&gt;&gt; commcell = Commcell(&#39;commcell_host&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; index_pools = IndexPools(commcell)
+            &gt;&gt;&gt; print(&#34;IndexPools object created successfully&#34;)
+
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
         self._cvpysdk_object = commcell_object._cvpysdk_object
@@ -200,11 +226,19 @@ class IndexPools(object):
         self._all_index_pools = None
         self.refresh()
 
-    def __str__(self):
-        &#34;&#34;&#34;Representation string consisting of all Index pools of the commcell.
+    def __str__(self) -&gt; str:
+        &#34;&#34;&#34;Return a string representation of all index pools associated with the Commcell.
 
-                Returns:
-                    str - string of all the index pools associated with the commcell
+        This method provides a human-readable summary of all index pools managed by the Commcell,
+        which can be useful for logging, debugging, or display purposes.
+
+        Returns:
+            A string listing all index pools associated with the Commcell.
+
+        Example:
+            &gt;&gt;&gt; index_pools = IndexPools(commcell_object)
+            &gt;&gt;&gt; print(str(index_pools))
+            IndexPool1, IndexPool2, IndexPool3
         &#34;&#34;&#34;
         representation_string = &#39;{:^5}\t{:^20}\n\n&#39;.format(&#39;S. No.&#39;, &#39;Index pool Name&#39;)
         index = 1
@@ -214,35 +248,57 @@ class IndexPools(object):
             index += 1
         return representation_string
 
-    def __repr__(self):
-        &#34;&#34;&#34;Representation string for the instance of the IndexPools class.&#34;&#34;&#34;
+    def __repr__(self) -&gt; str:
+        &#34;&#34;&#34;Return the string representation of the IndexPools instance.
+
+        This method provides a developer-friendly string that represents the current
+        IndexPools object, which can be useful for debugging and logging purposes.
+
+        Returns:
+            A string representation of the IndexPools instance.
+
+        Example:
+            &gt;&gt;&gt; index_pools = IndexPools(commcell_object)
+            &gt;&gt;&gt; print(repr(index_pools))
+            &lt;IndexPools object at 0x7f8b2c1d2e80&gt;
+
+        &#34;&#34;&#34;
         return &#34;IndexPools class instance for Commcell&#34;
 
-    def __getitem__(self, value):
-        &#34;&#34;&#34;Returns the details of index pool for given index pool name
+    def __getitem__(self, value: str) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the details of an index pool by its name.
 
-            Args:
-                value   (str)       --  name of index pool
+        Args:
+            value: The name of the index pool to retrieve.
 
-            Returns:
-                dict    -   details of the index pool
+        Returns:
+            A dictionary containing the details of the specified index pool.
 
-            Raises:
-                Index pool not found
+        Raises:
+            KeyError: If the specified index pool name does not exist.
+
+        Example:
+            &gt;&gt;&gt; index_pools = IndexPools()
+            &gt;&gt;&gt; pool_details = index_pools[&#34;DefaultIndexPool&#34;]
+            &gt;&gt;&gt; print(pool_details)
+            {&#39;name&#39;: &#39;DefaultIndexPool&#39;, &#39;status&#39;: &#39;Active&#39;, ...}
+
         &#34;&#34;&#34;
         value = value.lower()
         if value in self.all_index_pools:
             return {&#34;pool_name&#34;: value, &#34;pool_id&#34;: self.all_index_pools[value]}
         raise SDKException(&#39;IndexPools&#39;, &#39;102&#39;)
 
-    def _get_all_index_pools(self):
-        &#34;&#34;&#34;Method to get details of all the index pools present in commcell
+    def _get_all_index_pools(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve details of all index pools present in the Commcell.
 
-            Raises:
-                SDKException:
-                    Response was not success
+        Raises:
+            SDKException: If the response from the Commcell is unsuccessful or empty.
 
-                    Response was empty
+        Example:
+            &gt;&gt;&gt; index_pools = index_pools_obj._get_all_index_pools()
+            &gt;&gt;&gt; for pool in index_pools:
+            ...     print(f&#34;Index Pool Name: {pool.get(&#39;name&#39;)}, ID: {pool.get(&#39;id&#39;)}&#34;)
         &#34;&#34;&#34;
         flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._services[&#39;GET_ALL_CLIENTS&#39;])
         if flag:
@@ -257,14 +313,21 @@ class IndexPools(object):
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
-    def _response_not_success(self, response):
-        &#34;&#34;&#34;Helper method to raise exception when response is not 200 (ok)
-            Args:
-                response    (object)    -   response object
+    def _response_not_success(self, response: object) -&gt; None:
+        &#34;&#34;&#34;Raise an exception if the HTTP response is not successful (status code 200).
 
-            Raises:
-                SDKException:
-                    Response was not success
+        Args:
+            response: The response object to check for success.
+
+        Raises:
+            SDKException: If the response status code indicates failure.
+
+        Example:
+            &gt;&gt;&gt; index_pools = IndexPools()
+            &gt;&gt;&gt; response = some_http_request()
+            &gt;&gt;&gt; index_pools._response_not_success(response)
+            &gt;&gt;&gt; # If the response is not successful, an SDKException will be raised
+
         &#34;&#34;&#34;
         raise SDKException(
             &#39;Response&#39;,
@@ -272,40 +335,56 @@ class IndexPools(object):
             self._update_response_(
                 response.text))
 
-    def refresh(self):
-        &#34;&#34;&#34;Refreshes the properties of IndexPools class&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Reload the properties and state of the IndexPools class.
+
+        This method refreshes the internal data of the IndexPools instance, ensuring that 
+        any changes made externally are reflected in the current object.
+
+        Example:
+            &gt;&gt;&gt; index_pools = IndexPools()
+            &gt;&gt;&gt; index_pools.refresh()
+            &gt;&gt;&gt; print(&#34;IndexPools properties refreshed successfully&#34;)
+
+        &#34;&#34;&#34;
         self._commcell_object.clients.refresh()
         self._all_index_pools = {}
         self._get_all_index_pools()
 
     @property
-    def all_index_pools(self):
-        &#34;&#34;&#34;Returns a dict consisting details of all index pools
+    def all_index_pools(self) -&gt; Dict[str, int]:
+        &#34;&#34;&#34;Get a dictionary containing details of all index pools.
 
-            Returns:
-                dict    -   dictionary consisting details for all index pools
-                Sample:
-                    {
-                        &lt;pool_name_1&gt; : &lt;pool_id_1&gt;,
-                        &lt;pool_name_2&gt; : &lt;pool_id_2&gt;
-                    }
+        Returns:
+            Dict[str, int]: A dictionary where each key is the name of an index pool and the value is its corresponding pool ID.
+
+        Example:
+            &gt;&gt;&gt; index_pools = IndexPools(commcell_object)
+            &gt;&gt;&gt; pools = index_pools.all_index_pools
+            &gt;&gt;&gt; print(pools)
+            {&#39;DefaultPool&#39;: 1, &#39;ArchivePool&#39;: 2}
+
         &#34;&#34;&#34;
         return self._all_index_pools
 
-    def get(self, pool_name):
-        &#34;&#34;&#34;Returns the IndexPool class object with given pool_name
+    def get(self, pool_name: str) -&gt; &#39;IndexPool&#39;:
+        &#34;&#34;&#34;Retrieve the IndexPool object for the specified pool name.
 
         Args:
-            pool_name       (int/str)       --  Index pool name present in commcell
+            pool_name: The name or ID of the index pool as a string. This should match an existing index pool in the Commcell.
 
         Returns:
-            object  -   instance of IndexPool class
+            IndexPool: An instance of the IndexPool class corresponding to the given pool name.
 
         Raises:
-            SDKExecption:
-                Data type of the input(s) is not valid
+            SDKException: If the input data type is invalid or if the specified index pool is not found.
 
-                Index pool not found
+        Example:
+            &gt;&gt;&gt; index_pools = IndexPools(commcell_object)
+            &gt;&gt;&gt; pool = index_pools.get(&#34;DefaultIndexPool&#34;)
+            &gt;&gt;&gt; print(f&#34;Retrieved index pool: {pool}&#34;)
+            &gt;&gt;&gt; # The returned IndexPool object can be used for further operations
+
         &#34;&#34;&#34;
         if isinstance(pool_name, int):
             for index_pool_name in self.all_index_pools:
@@ -318,35 +397,46 @@ class IndexPools(object):
             raise SDKException(&#39;IndexPools&#39;, &#39;101&#39;)
         raise SDKException(&#39;IndexPools&#39;, &#39;102&#39;)
 
-    def has_pool(self, pool_name):
-        &#34;&#34;&#34;Returns whether a index pool is present in the commcell or not
+    def has_pool(self, pool_name: str) -&gt; bool:
+        &#34;&#34;&#34;Check if an index pool with the specified name exists in the Commcell.
 
         Args:
-            pool_name       (str)       --  Index pool name
+            pool_name: The name of the index pool to check.
 
         Returns:
-            bool    -   True if index pool with given pool_name is present else False
+            True if an index pool with the given name exists, otherwise False.
+
+        Example:
+            &gt;&gt;&gt; index_pools = IndexPools(commcell_object)
+            &gt;&gt;&gt; exists = index_pools.has_pool(&#34;DefaultIndexPool&#34;)
+            &gt;&gt;&gt; print(f&#34;Pool exists: {exists}&#34;)
+            # Output: Pool exists: True
+
         &#34;&#34;&#34;
         return pool_name.lower() in self.all_index_pools
 
-    def add(self, pool_name, node_names, hac_name):
-        &#34;&#34;&#34;Creates a new Index pool within the commcell
+    def add(self, pool_name: str, node_names: List[str], hac_name: str) -&gt; &#39;IndexPool&#39;:
+        &#34;&#34;&#34;Create a new Index pool within the Commcell.
+
+        This method creates an Index pool with the specified name, node names, and HAC cluster name.
+        It returns an IndexPool object representing the newly created pool.
 
         Args:
-            pool_name       (str)   --  Name for the index pool
-            node_names      (list)  --  List of strings of all the index pool node names
-            hac_name        (str)   --  Name of the HAC cluster to be used while creating pool
-
-        Raises:
-            SDKExecption:
-                Data type of the input(s) is not valid.
-
-                Response was not success.
-
-                Response was empty.
+            pool_name: The name to assign to the new index pool.
+            node_names: List of node names (as strings) to include in the index pool.
+            hac_name: The name of the HAC cluster to associate with the pool.
 
         Returns:
-            object  -   Returns a object of class IndexPool
+            IndexPool: An object representing the created index pool.
+
+        Raises:
+            SDKException: If the input data types are invalid, the response is unsuccessful, or the response is empty.
+
+        Example:
+            &gt;&gt;&gt; index_pools = IndexPools(commcell_object)
+            &gt;&gt;&gt; pool = index_pools.add(&#34;MyIndexPool&#34;, [&#34;NodeA&#34;, &#34;NodeB&#34;], &#34;HACCluster1&#34;)
+            &gt;&gt;&gt; print(f&#34;Created index pool: {pool}&#34;)
+            &gt;&gt;&gt; # The returned IndexPool object can be used for further pool management
 
         &#34;&#34;&#34;
         if not (isinstance(pool_name, str) and isinstance(node_names, list)
@@ -419,22 +509,23 @@ class IndexPools(object):
             raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         self._response_not_success(response)
 
-    def delete(self, pool_name):
-        &#34;&#34;&#34;Deletes an existing index pool cloud from commcell
+    def delete(self, pool_name: str) -&gt; None:
+        &#34;&#34;&#34;Delete an existing index pool cloud from the Commcell.
+
+        Removes the specified index pool cloud by its name. If the pool does not exist or the operation fails,
+        an exception is raised.
 
         Args:
-            pool_name       (str)   --  Index pool cloud name
-
-        Returns:
-            None
+            pool_name: The name of the index pool cloud to delete.
 
         Raises:
-              SDKExecption:
-                  Data type of the input(s) is not valid.
+            SDKException: If the input data type is invalid, the response is unsuccessful, or the response is empty.
 
-                  Response was not success.
+        Example:
+            &gt;&gt;&gt; index_pools = IndexPools(commcell_object)
+            &gt;&gt;&gt; index_pools.delete(&#34;MyIndexPool&#34;)
+            &gt;&gt;&gt; print(&#34;Index pool deleted successfully.&#34;)
 
-                  Response was empty.
         &#34;&#34;&#34;
         if not isinstance(pool_name, str):
             raise SDKException(&#39;IndexPools&#39;, &#39;101&#39;)
@@ -460,20 +551,37 @@ class IndexPools(object):
 
 
 class IndexPool(object):
-    &#34;&#34;&#34;Class for performing index pool operations on a specific index pool&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Class for managing and performing operations on a specific index pool.
 
-    def __init__(self, commcell_obj, pool_name, pool_id=None):
-        &#34;&#34;&#34;Initializes the IndexPool class instance
+    The IndexPool class provides an interface to interact with and manage index pools,
+    including retrieving node information, modifying node configurations, and refreshing
+    the pool state. It exposes several properties for accessing pool metadata and
+    supports operations for handling nodes within the pool.
+
+    Key Features:
+        - Initialize with commcell object, pool name, and pool ID
+        - Retrieve and display pool representation
+        - Check response status for pool operations
+        - Refresh the index pool state to reflect latest changes
+        - Retrieve information about specific nodes in the pool
+        - Modify node configurations and perform node operations
+        - Access pool metadata such as pool ID, cloud ID, pool name, node names, and HAC cluster
+
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_obj: &#39;Commcell&#39;, pool_name: str, pool_id: str = None) -&gt; None:
+        &#34;&#34;&#34;Initialize an IndexPool class instance.
 
         Args:
-            commcell_obj        (object)    --  Instance of class Commcell
-            pool_name           (str)       --  Index pool name
-            pool_id             (int)       --  Index pool client id
-                default:
-                    None
+            commcell_obj: Instance of the Commcell class representing the Commcell connection.
+            pool_name: Name of the index pool to manage.
+            pool_id: Optional index pool client ID. If not provided, it will be determined automatically.
 
-        Returns:
-            object  -   instance of the IndexPool class
+        Example:
+            &gt;&gt;&gt; commcell = Commcell(&#39;commcell_host&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; index_pool = IndexPool(commcell, &#39;DefaultIndexPool&#39;)
+            &gt;&gt;&gt; # The IndexPool instance is now ready for use
 
         &#34;&#34;&#34;
         self.commcell = commcell_obj
@@ -484,16 +592,42 @@ class IndexPool(object):
         self.pool_nodes = None
         self.refresh()
 
-    def __repr__(self):
-        &#34;&#34;&#34;Representation string for the instance of the IndexPool class.&#34;&#34;&#34;
+    def __repr__(self) -&gt; str:
+        &#34;&#34;&#34;Return the string representation of the IndexPool instance.
+
+        This method provides a developer-friendly string that represents the current
+        IndexPool object, typically including key identifying information.
+
+        Returns:
+            A string representation of the IndexPool instance.
+
+        Example:
+            &gt;&gt;&gt; pool = IndexPool()
+            &gt;&gt;&gt; print(repr(pool))
+            &lt;IndexPool object at 0x7f8b2c1d2e80&gt;
+
+        &#34;&#34;&#34;
         return &#34;IndexPool class instance for Commcell&#34;
 
-    def _response_not_success(self, response):
-        &#34;&#34;&#34;Helper method to raise exception when response is not 200 (ok)
+    def _response_not_success(self, response: object) -&gt; None:
+        &#34;&#34;&#34;Raise an exception if the HTTP response indicates failure (not status 200).
 
-                Raises:
-                    SDKException:
-                        Response was not success
+        This helper method should be called after making an HTTP request to check if the response
+        was successful. If the response does not indicate success (status code 200), an SDKException
+        is raised to signal the failure.
+
+        Args:
+            response: The HTTP response object to check.
+
+        Raises:
+            SDKException: If the response status code is not 200 (OK).
+
+        Example:
+            &gt;&gt;&gt; pool = IndexPool()
+            &gt;&gt;&gt; response = pool._make_request()
+            &gt;&gt;&gt; pool._response_not_success(response)
+            # If the response is not successful, an exception will be raised.
+
         &#34;&#34;&#34;
         raise SDKException(
             &#39;Response&#39;,
@@ -501,8 +635,19 @@ class IndexPool(object):
             self.commcell._update_response_(
                 response.text))
 
-    def refresh(self):
-        &#34;&#34;&#34;Refreshes properties of IndexPool class&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Reload the properties of the IndexPool instance.
+
+        This method updates the IndexPool object&#39;s properties to reflect the latest state 
+        from the underlying data source. Use this method to ensure that the IndexPool 
+        instance has up-to-date information.
+
+        Example:
+            &gt;&gt;&gt; index_pool = IndexPool()
+            &gt;&gt;&gt; index_pool.refresh()
+            &gt;&gt;&gt; print(&#34;IndexPool properties refreshed successfully&#34;)
+
+        &#34;&#34;&#34;
         self.commcell.clients.refresh()
         if not self.commcell.clients.has_client(self.pool_name):
             raise SDKException(&#39;IndexPools&#39;, &#39;102&#39;)
@@ -512,18 +657,23 @@ class IndexPool(object):
             properties[&#39;pseudoClientInfo&#39;][&#39;distributedClusterInstanceProperties&#39;][&#39;clusterConfig&#39;][&#39;cloudInfo&#39;]
         self.pool_nodes = self.pool_properties[&#39;cloudNodes&#39;]
 
-    def node_info(self, node_name):
-        &#34;&#34;&#34;Returns the index pool node information
+    def node_info(self, node_name: str) -&gt; dict:
+        &#34;&#34;&#34;Retrieve information for a specific index pool node.
 
-            Args:
-                node_name       (str)       --  index pool node name
+        Args:
+            node_name: The name of the index pool node to retrieve information for.
 
-            Returns:
-                dict    -   dictionary consisting details of index pool node
+        Returns:
+            A dictionary containing details of the specified index pool node.
 
-            Raises:
-                SDKException:
-                    Index pool node not found
+        Raises:
+            SDKException: If the specified index pool node is not found.
+
+        Example:
+            &gt;&gt;&gt; index_pool = IndexPool()
+            &gt;&gt;&gt; node_details = index_pool.node_info(&#34;NodeA&#34;)
+            &gt;&gt;&gt; print(node_details)
+            {&#39;nodeName&#39;: &#39;NodeA&#39;, &#39;status&#39;: &#39;Active&#39;, &#39;ip&#39;: &#39;192.168.1.10&#39;}
 
         &#34;&#34;&#34;
         for node_info in self.pool_nodes:
@@ -531,28 +681,44 @@ class IndexPool(object):
                 return node_info
         raise SDKException(&#39;IndexPools&#39;, &#39;103&#39;)
 
-    def modify_node(self, node_name,
-                    operation_type=IndexServerConstants.OPERATION_EDIT,
-                    node_params=None):
-        &#34;&#34;&#34;Method to modify the pool node details
+    def modify_node(self, node_name: str, operation_type: int = IndexServerConstants.OPERATION_EDIT, node_params: Optional[List[Dict[str, Any]]] = None) -&gt; None:
+        &#34;&#34;&#34;Modify the details of an index pool node.
+
+        This method allows you to add, remove, or edit a node in the index pool by specifying the node name,
+        the type of operation, and optional node parameters.
 
         Args:
-            node_name           (str)   --  index pool node name
-            operation_type      (int)   --  operation type (1, 2, 3)
-                                            1 - Adds a new node
-                                            2 - Removes existing node
-                                            3 - Edits the existing node (default)
-            node_params         (list)  --  list of all the properties for the index pool node
-                                            for example:
-                                                [{
-                                                    &#34;name&#34;: &lt;property_name&gt;,
-                                                    &#34;value&#34;: &lt;property_value&gt;
-                                                },
-                                                ]
+            node_name: The name of the index pool node to modify.
+            operation_type: The type of operation to perform:
+                1 - Add a new node
+                2 - Remove an existing node
+                3 - Edit an existing node (default)
+            node_params: Optional list of dictionaries containing properties for the index pool node.
+                Each dictionary should have the following structure:
+                    {
+                        &#34;name&#34;: &lt;property_name&gt;,
+                        &#34;value&#34;: &lt;property_value&gt;
+                    }
+
         Raises:
-            SDKException:
-                Response was not success.
-                Response was empty.
+            SDKException: If the response is not successful or is empty.
+
+        Example:
+            &gt;&gt;&gt; # Add a new node to the index pool
+            &gt;&gt;&gt; node_properties = [
+            ...     {&#34;name&#34;: &#34;ip_address&#34;, &#34;value&#34;: &#34;192.168.1.10&#34;},
+            ...     {&#34;name&#34;: &#34;port&#34;, &#34;value&#34;: 8400}
+            ... ]
+            &gt;&gt;&gt; index_pool.modify_node(&#34;NodeA&#34;, operation_type=1, node_params=node_properties)
+            &gt;&gt;&gt;
+            &gt;&gt;&gt; # Edit an existing node&#39;s properties
+            &gt;&gt;&gt; updated_properties = [
+            ...     {&#34;name&#34;: &#34;ip_address&#34;, &#34;value&#34;: &#34;192.168.1.20&#34;}
+            ... ]
+            &gt;&gt;&gt; index_pool.modify_node(&#34;NodeA&#34;, operation_type=3, node_params=updated_properties)
+            &gt;&gt;&gt;
+            &gt;&gt;&gt; # Remove a node from the index pool
+            &gt;&gt;&gt; index_pool.modify_node(&#34;NodeA&#34;, operation_type=2)
 
         &#34;&#34;&#34;
         req_json = {
@@ -582,31 +748,81 @@ class IndexPool(object):
         self._response_not_success(response)
 
     @property
-    def pool_id(self):
-        &#34;&#34;&#34;Returns the index pool client id&#34;&#34;&#34;
+    def pool_id(self) -&gt; str:
+        &#34;&#34;&#34;Get the client ID of the index pool.
+
+        Returns:
+            str: The unique client ID associated with the index pool.
+
+        Example:
+            &gt;&gt;&gt; index_pool = IndexPool()
+            &gt;&gt;&gt; pool_id = index_pool.pool_id  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Index pool client ID: {pool_id}&#34;)
+
+        &#34;&#34;&#34;
         return self._pool_id
 
     @property
-    def cloud_id(self):
-        &#34;&#34;&#34;Returns the index pool cloud id&#34;&#34;&#34;
+    def cloud_id(self) -&gt; int:
+        &#34;&#34;&#34;Get the cloud ID associated with the index pool.
+
+        Returns:
+            The cloud ID of the index pool as an integer.
+
+        Example:
+            &gt;&gt;&gt; index_pool = IndexPool()
+            &gt;&gt;&gt; cloud_id = index_pool.cloud_id  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Index pool cloud ID: {cloud_id}&#34;)
+
+        &#34;&#34;&#34;
         return self.pool_properties[&#39;cloudInfoEntity&#39;][&#39;cloudId&#39;]
 
     @property
-    def pool_name(self):
-        &#34;&#34;&#34;Returns index pool name&#34;&#34;&#34;
+    def pool_name(self) -&gt; str:
+        &#34;&#34;&#34;Get the name of the index pool.
+
+        Returns:
+            The name of the index pool as a string.
+
+        Example:
+            &gt;&gt;&gt; index_pool = IndexPool()
+            &gt;&gt;&gt; name = index_pool.pool_name  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Index pool name: {name}&#34;)
+
+        &#34;&#34;&#34;
         return self._pool_name
 
     @property
-    def node_names(self):
-        &#34;&#34;&#34;Returns a list of index pool node names&#34;&#34;&#34;
+    def node_names(self) -&gt; list:
+        &#34;&#34;&#34;Get the list of index pool node names.
+
+        Returns:
+            list: A list containing the names of all nodes in the index pool.
+
+        Example:
+            &gt;&gt;&gt; index_pool = IndexPool()
+            &gt;&gt;&gt; names = index_pool.node_names
+            &gt;&gt;&gt; print(f&#34;Index pool nodes: {names}&#34;)
+
+        &#34;&#34;&#34;
         result = []
         for node_info in self.pool_nodes:
             result.append(node_info[&#39;nodeClientEntity&#39;][&#39;clientName&#39;])
         return result
 
     @property
-    def hac_cluster(self):
-        &#34;&#34;&#34;Returns the hac cluster name assigned to the index pool&#34;&#34;&#34;
+    def hac_cluster(self) -&gt; str:
+        &#34;&#34;&#34;Get the HAC (High Availability Cluster) name assigned to the index pool.
+
+        Returns:
+            The name of the HAC cluster associated with this index pool as a string.
+
+        Example:
+            &gt;&gt;&gt; index_pool = IndexPool()
+            &gt;&gt;&gt; cluster_name = index_pool.hac_cluster  # Access the HAC cluster name property
+            &gt;&gt;&gt; print(f&#34;HAC Cluster Name: {cluster_name}&#34;)
+
+        &#34;&#34;&#34;
         return self.pool_properties[&#39;solrCloudPoolInfo&#39;][&#39;zookerEntity&#39;][&#39;clientGroupName&#39;]</code></pre>
 </details>
 </section>
@@ -621,50 +837,76 @@ class IndexPool(object):
 <dl>
 <dt id="cvpysdk.index_pools.IndexPool"><code class="flex name class">
 <span>class <span class="ident">IndexPool</span></span>
-<span>(</span><span>commcell_obj, pool_name, pool_id=None)</span>
+<span>(</span><span>commcell_obj: Commcell, pool_name: str, pool_id: str = None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for performing index pool operations on a specific index pool</p>
-<p>Initializes the IndexPool class instance</p>
-<h2 id="args">Args</h2>
-<p>commcell_obj
-(object)
-&ndash;
-Instance of class Commcell
-pool_name
-(str)
-&ndash;
-Index pool name
-pool_id
-(int)
-&ndash;
-Index pool client id
-default:
-None</p>
-<h2 id="returns">Returns</h2>
-<p>object
--
-instance of the IndexPool class</p></div>
+<div class="desc"><p>Class for managing and performing operations on a specific index pool.</p>
+<p>The IndexPool class provides an interface to interact with and manage index pools,
+including retrieving node information, modifying node configurations, and refreshing
+the pool state. It exposes several properties for accessing pool metadata and
+supports operations for handling nodes within the pool.</p>
+<p>Key Features:
+- Initialize with commcell object, pool name, and pool ID
+- Retrieve and display pool representation
+- Check response status for pool operations
+- Refresh the index pool state to reflect latest changes
+- Retrieve information about specific nodes in the pool
+- Modify node configurations and perform node operations
+- Access pool metadata such as pool ID, cloud ID, pool name, node names, and HAC cluster</p>
+<p>Initialize an IndexPool class instance.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>commcell_obj</code></strong></dt>
+<dd>Instance of the Commcell class representing the Commcell connection.</dd>
+<dt><strong><code>pool_name</code></strong></dt>
+<dd>Name of the index pool to manage.</dd>
+<dt><strong><code>pool_id</code></strong></dt>
+<dd>Optional index pool client ID. If not provided, it will be determined automatically.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; commcell = Commcell('commcell_host', 'username', 'password')
+&gt;&gt;&gt; index_pool = IndexPool(commcell, 'DefaultIndexPool')
+&gt;&gt;&gt; # The IndexPool instance is now ready for use
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/index_pools.py#L373-L521" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/index_pools.py#L477-L762" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class IndexPool(object):
-    &#34;&#34;&#34;Class for performing index pool operations on a specific index pool&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Class for managing and performing operations on a specific index pool.
 
-    def __init__(self, commcell_obj, pool_name, pool_id=None):
-        &#34;&#34;&#34;Initializes the IndexPool class instance
+    The IndexPool class provides an interface to interact with and manage index pools,
+    including retrieving node information, modifying node configurations, and refreshing
+    the pool state. It exposes several properties for accessing pool metadata and
+    supports operations for handling nodes within the pool.
+
+    Key Features:
+        - Initialize with commcell object, pool name, and pool ID
+        - Retrieve and display pool representation
+        - Check response status for pool operations
+        - Refresh the index pool state to reflect latest changes
+        - Retrieve information about specific nodes in the pool
+        - Modify node configurations and perform node operations
+        - Access pool metadata such as pool ID, cloud ID, pool name, node names, and HAC cluster
+
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_obj: &#39;Commcell&#39;, pool_name: str, pool_id: str = None) -&gt; None:
+        &#34;&#34;&#34;Initialize an IndexPool class instance.
 
         Args:
-            commcell_obj        (object)    --  Instance of class Commcell
-            pool_name           (str)       --  Index pool name
-            pool_id             (int)       --  Index pool client id
-                default:
-                    None
+            commcell_obj: Instance of the Commcell class representing the Commcell connection.
+            pool_name: Name of the index pool to manage.
+            pool_id: Optional index pool client ID. If not provided, it will be determined automatically.
 
-        Returns:
-            object  -   instance of the IndexPool class
+        Example:
+            &gt;&gt;&gt; commcell = Commcell(&#39;commcell_host&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; index_pool = IndexPool(commcell, &#39;DefaultIndexPool&#39;)
+            &gt;&gt;&gt; # The IndexPool instance is now ready for use
 
         &#34;&#34;&#34;
         self.commcell = commcell_obj
@@ -675,16 +917,42 @@ instance of the IndexPool class</p></div>
         self.pool_nodes = None
         self.refresh()
 
-    def __repr__(self):
-        &#34;&#34;&#34;Representation string for the instance of the IndexPool class.&#34;&#34;&#34;
+    def __repr__(self) -&gt; str:
+        &#34;&#34;&#34;Return the string representation of the IndexPool instance.
+
+        This method provides a developer-friendly string that represents the current
+        IndexPool object, typically including key identifying information.
+
+        Returns:
+            A string representation of the IndexPool instance.
+
+        Example:
+            &gt;&gt;&gt; pool = IndexPool()
+            &gt;&gt;&gt; print(repr(pool))
+            &lt;IndexPool object at 0x7f8b2c1d2e80&gt;
+
+        &#34;&#34;&#34;
         return &#34;IndexPool class instance for Commcell&#34;
 
-    def _response_not_success(self, response):
-        &#34;&#34;&#34;Helper method to raise exception when response is not 200 (ok)
+    def _response_not_success(self, response: object) -&gt; None:
+        &#34;&#34;&#34;Raise an exception if the HTTP response indicates failure (not status 200).
 
-                Raises:
-                    SDKException:
-                        Response was not success
+        This helper method should be called after making an HTTP request to check if the response
+        was successful. If the response does not indicate success (status code 200), an SDKException
+        is raised to signal the failure.
+
+        Args:
+            response: The HTTP response object to check.
+
+        Raises:
+            SDKException: If the response status code is not 200 (OK).
+
+        Example:
+            &gt;&gt;&gt; pool = IndexPool()
+            &gt;&gt;&gt; response = pool._make_request()
+            &gt;&gt;&gt; pool._response_not_success(response)
+            # If the response is not successful, an exception will be raised.
+
         &#34;&#34;&#34;
         raise SDKException(
             &#39;Response&#39;,
@@ -692,8 +960,19 @@ instance of the IndexPool class</p></div>
             self.commcell._update_response_(
                 response.text))
 
-    def refresh(self):
-        &#34;&#34;&#34;Refreshes properties of IndexPool class&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Reload the properties of the IndexPool instance.
+
+        This method updates the IndexPool object&#39;s properties to reflect the latest state 
+        from the underlying data source. Use this method to ensure that the IndexPool 
+        instance has up-to-date information.
+
+        Example:
+            &gt;&gt;&gt; index_pool = IndexPool()
+            &gt;&gt;&gt; index_pool.refresh()
+            &gt;&gt;&gt; print(&#34;IndexPool properties refreshed successfully&#34;)
+
+        &#34;&#34;&#34;
         self.commcell.clients.refresh()
         if not self.commcell.clients.has_client(self.pool_name):
             raise SDKException(&#39;IndexPools&#39;, &#39;102&#39;)
@@ -703,18 +982,23 @@ instance of the IndexPool class</p></div>
             properties[&#39;pseudoClientInfo&#39;][&#39;distributedClusterInstanceProperties&#39;][&#39;clusterConfig&#39;][&#39;cloudInfo&#39;]
         self.pool_nodes = self.pool_properties[&#39;cloudNodes&#39;]
 
-    def node_info(self, node_name):
-        &#34;&#34;&#34;Returns the index pool node information
+    def node_info(self, node_name: str) -&gt; dict:
+        &#34;&#34;&#34;Retrieve information for a specific index pool node.
 
-            Args:
-                node_name       (str)       --  index pool node name
+        Args:
+            node_name: The name of the index pool node to retrieve information for.
 
-            Returns:
-                dict    -   dictionary consisting details of index pool node
+        Returns:
+            A dictionary containing details of the specified index pool node.
 
-            Raises:
-                SDKException:
-                    Index pool node not found
+        Raises:
+            SDKException: If the specified index pool node is not found.
+
+        Example:
+            &gt;&gt;&gt; index_pool = IndexPool()
+            &gt;&gt;&gt; node_details = index_pool.node_info(&#34;NodeA&#34;)
+            &gt;&gt;&gt; print(node_details)
+            {&#39;nodeName&#39;: &#39;NodeA&#39;, &#39;status&#39;: &#39;Active&#39;, &#39;ip&#39;: &#39;192.168.1.10&#39;}
 
         &#34;&#34;&#34;
         for node_info in self.pool_nodes:
@@ -722,28 +1006,44 @@ instance of the IndexPool class</p></div>
                 return node_info
         raise SDKException(&#39;IndexPools&#39;, &#39;103&#39;)
 
-    def modify_node(self, node_name,
-                    operation_type=IndexServerConstants.OPERATION_EDIT,
-                    node_params=None):
-        &#34;&#34;&#34;Method to modify the pool node details
+    def modify_node(self, node_name: str, operation_type: int = IndexServerConstants.OPERATION_EDIT, node_params: Optional[List[Dict[str, Any]]] = None) -&gt; None:
+        &#34;&#34;&#34;Modify the details of an index pool node.
+
+        This method allows you to add, remove, or edit a node in the index pool by specifying the node name,
+        the type of operation, and optional node parameters.
 
         Args:
-            node_name           (str)   --  index pool node name
-            operation_type      (int)   --  operation type (1, 2, 3)
-                                            1 - Adds a new node
-                                            2 - Removes existing node
-                                            3 - Edits the existing node (default)
-            node_params         (list)  --  list of all the properties for the index pool node
-                                            for example:
-                                                [{
-                                                    &#34;name&#34;: &lt;property_name&gt;,
-                                                    &#34;value&#34;: &lt;property_value&gt;
-                                                },
-                                                ]
+            node_name: The name of the index pool node to modify.
+            operation_type: The type of operation to perform:
+                1 - Add a new node
+                2 - Remove an existing node
+                3 - Edit an existing node (default)
+            node_params: Optional list of dictionaries containing properties for the index pool node.
+                Each dictionary should have the following structure:
+                    {
+                        &#34;name&#34;: &lt;property_name&gt;,
+                        &#34;value&#34;: &lt;property_value&gt;
+                    }
+
         Raises:
-            SDKException:
-                Response was not success.
-                Response was empty.
+            SDKException: If the response is not successful or is empty.
+
+        Example:
+            &gt;&gt;&gt; # Add a new node to the index pool
+            &gt;&gt;&gt; node_properties = [
+            ...     {&#34;name&#34;: &#34;ip_address&#34;, &#34;value&#34;: &#34;192.168.1.10&#34;},
+            ...     {&#34;name&#34;: &#34;port&#34;, &#34;value&#34;: 8400}
+            ... ]
+            &gt;&gt;&gt; index_pool.modify_node(&#34;NodeA&#34;, operation_type=1, node_params=node_properties)
+            &gt;&gt;&gt;
+            &gt;&gt;&gt; # Edit an existing node&#39;s properties
+            &gt;&gt;&gt; updated_properties = [
+            ...     {&#34;name&#34;: &#34;ip_address&#34;, &#34;value&#34;: &#34;192.168.1.20&#34;}
+            ... ]
+            &gt;&gt;&gt; index_pool.modify_node(&#34;NodeA&#34;, operation_type=3, node_params=updated_properties)
+            &gt;&gt;&gt;
+            &gt;&gt;&gt; # Remove a node from the index pool
+            &gt;&gt;&gt; index_pool.modify_node(&#34;NodeA&#34;, operation_type=2)
 
         &#34;&#34;&#34;
         req_json = {
@@ -773,105 +1073,256 @@ instance of the IndexPool class</p></div>
         self._response_not_success(response)
 
     @property
-    def pool_id(self):
-        &#34;&#34;&#34;Returns the index pool client id&#34;&#34;&#34;
+    def pool_id(self) -&gt; str:
+        &#34;&#34;&#34;Get the client ID of the index pool.
+
+        Returns:
+            str: The unique client ID associated with the index pool.
+
+        Example:
+            &gt;&gt;&gt; index_pool = IndexPool()
+            &gt;&gt;&gt; pool_id = index_pool.pool_id  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Index pool client ID: {pool_id}&#34;)
+
+        &#34;&#34;&#34;
         return self._pool_id
 
     @property
-    def cloud_id(self):
-        &#34;&#34;&#34;Returns the index pool cloud id&#34;&#34;&#34;
+    def cloud_id(self) -&gt; int:
+        &#34;&#34;&#34;Get the cloud ID associated with the index pool.
+
+        Returns:
+            The cloud ID of the index pool as an integer.
+
+        Example:
+            &gt;&gt;&gt; index_pool = IndexPool()
+            &gt;&gt;&gt; cloud_id = index_pool.cloud_id  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Index pool cloud ID: {cloud_id}&#34;)
+
+        &#34;&#34;&#34;
         return self.pool_properties[&#39;cloudInfoEntity&#39;][&#39;cloudId&#39;]
 
     @property
-    def pool_name(self):
-        &#34;&#34;&#34;Returns index pool name&#34;&#34;&#34;
+    def pool_name(self) -&gt; str:
+        &#34;&#34;&#34;Get the name of the index pool.
+
+        Returns:
+            The name of the index pool as a string.
+
+        Example:
+            &gt;&gt;&gt; index_pool = IndexPool()
+            &gt;&gt;&gt; name = index_pool.pool_name  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Index pool name: {name}&#34;)
+
+        &#34;&#34;&#34;
         return self._pool_name
 
     @property
-    def node_names(self):
-        &#34;&#34;&#34;Returns a list of index pool node names&#34;&#34;&#34;
+    def node_names(self) -&gt; list:
+        &#34;&#34;&#34;Get the list of index pool node names.
+
+        Returns:
+            list: A list containing the names of all nodes in the index pool.
+
+        Example:
+            &gt;&gt;&gt; index_pool = IndexPool()
+            &gt;&gt;&gt; names = index_pool.node_names
+            &gt;&gt;&gt; print(f&#34;Index pool nodes: {names}&#34;)
+
+        &#34;&#34;&#34;
         result = []
         for node_info in self.pool_nodes:
             result.append(node_info[&#39;nodeClientEntity&#39;][&#39;clientName&#39;])
         return result
 
     @property
-    def hac_cluster(self):
-        &#34;&#34;&#34;Returns the hac cluster name assigned to the index pool&#34;&#34;&#34;
+    def hac_cluster(self) -&gt; str:
+        &#34;&#34;&#34;Get the HAC (High Availability Cluster) name assigned to the index pool.
+
+        Returns:
+            The name of the HAC cluster associated with this index pool as a string.
+
+        Example:
+            &gt;&gt;&gt; index_pool = IndexPool()
+            &gt;&gt;&gt; cluster_name = index_pool.hac_cluster  # Access the HAC cluster name property
+            &gt;&gt;&gt; print(f&#34;HAC Cluster Name: {cluster_name}&#34;)
+
+        &#34;&#34;&#34;
         return self.pool_properties[&#39;solrCloudPoolInfo&#39;][&#39;zookerEntity&#39;][&#39;clientGroupName&#39;]</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.index_pools.IndexPool.cloud_id"><code class="name">var <span class="ident">cloud_id</span></code></dt>
+<dt id="cvpysdk.index_pools.IndexPool.cloud_id"><code class="name">var <span class="ident">cloud_id</span> : int</code></dt>
 <dd>
-<div class="desc"><p>Returns the index pool cloud id</p></div>
+<div class="desc"><p>Get the cloud ID associated with the index pool.</p>
+<p>Returns
+-----=
+The cloud ID of the index pool as an integer.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; index_pool = IndexPool()
+&gt;&gt;&gt; cloud_id = index_pool.cloud_id  # Use dot notation for property access
+&gt;&gt;&gt; print(f&quot;Index pool cloud ID: {cloud_id}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/index_pools.py#L500-L503" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/index_pools.py#L697-L711" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def cloud_id(self):
-    &#34;&#34;&#34;Returns the index pool cloud id&#34;&#34;&#34;
+def cloud_id(self) -&gt; int:
+    &#34;&#34;&#34;Get the cloud ID associated with the index pool.
+
+    Returns:
+        The cloud ID of the index pool as an integer.
+
+    Example:
+        &gt;&gt;&gt; index_pool = IndexPool()
+        &gt;&gt;&gt; cloud_id = index_pool.cloud_id  # Use dot notation for property access
+        &gt;&gt;&gt; print(f&#34;Index pool cloud ID: {cloud_id}&#34;)
+
+    &#34;&#34;&#34;
     return self.pool_properties[&#39;cloudInfoEntity&#39;][&#39;cloudId&#39;]</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.index_pools.IndexPool.hac_cluster"><code class="name">var <span class="ident">hac_cluster</span></code></dt>
+<dt id="cvpysdk.index_pools.IndexPool.hac_cluster"><code class="name">var <span class="ident">hac_cluster</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the hac cluster name assigned to the index pool</p></div>
+<div class="desc"><p>Get the HAC (High Availability Cluster) name assigned to the index pool.</p>
+<p>Returns
+-----=
+The name of the HAC cluster associated with this index pool as a string.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; index_pool = IndexPool()
+&gt;&gt;&gt; cluster_name = index_pool.hac_cluster  # Access the HAC cluster name property
+&gt;&gt;&gt; print(f&quot;HAC Cluster Name: {cluster_name}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/index_pools.py#L518-L521" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/index_pools.py#L748-L762" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def hac_cluster(self):
-    &#34;&#34;&#34;Returns the hac cluster name assigned to the index pool&#34;&#34;&#34;
+def hac_cluster(self) -&gt; str:
+    &#34;&#34;&#34;Get the HAC (High Availability Cluster) name assigned to the index pool.
+
+    Returns:
+        The name of the HAC cluster associated with this index pool as a string.
+
+    Example:
+        &gt;&gt;&gt; index_pool = IndexPool()
+        &gt;&gt;&gt; cluster_name = index_pool.hac_cluster  # Access the HAC cluster name property
+        &gt;&gt;&gt; print(f&#34;HAC Cluster Name: {cluster_name}&#34;)
+
+    &#34;&#34;&#34;
     return self.pool_properties[&#39;solrCloudPoolInfo&#39;][&#39;zookerEntity&#39;][&#39;clientGroupName&#39;]</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.index_pools.IndexPool.node_names"><code class="name">var <span class="ident">node_names</span></code></dt>
+<dt id="cvpysdk.index_pools.IndexPool.node_names"><code class="name">var <span class="ident">node_names</span> : list</code></dt>
 <dd>
-<div class="desc"><p>Returns a list of index pool node names</p></div>
+<div class="desc"><p>Get the list of index pool node names.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>list</code></dt>
+<dd>A list containing the names of all nodes in the index pool.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; index_pool = IndexPool()
+&gt;&gt;&gt; names = index_pool.node_names
+&gt;&gt;&gt; print(f&quot;Index pool nodes: {names}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/index_pools.py#L510-L516" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/index_pools.py#L729-L746" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def node_names(self):
-    &#34;&#34;&#34;Returns a list of index pool node names&#34;&#34;&#34;
+def node_names(self) -&gt; list:
+    &#34;&#34;&#34;Get the list of index pool node names.
+
+    Returns:
+        list: A list containing the names of all nodes in the index pool.
+
+    Example:
+        &gt;&gt;&gt; index_pool = IndexPool()
+        &gt;&gt;&gt; names = index_pool.node_names
+        &gt;&gt;&gt; print(f&#34;Index pool nodes: {names}&#34;)
+
+    &#34;&#34;&#34;
     result = []
     for node_info in self.pool_nodes:
         result.append(node_info[&#39;nodeClientEntity&#39;][&#39;clientName&#39;])
     return result</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.index_pools.IndexPool.pool_id"><code class="name">var <span class="ident">pool_id</span></code></dt>
+<dt id="cvpysdk.index_pools.IndexPool.pool_id"><code class="name">var <span class="ident">pool_id</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the index pool client id</p></div>
+<div class="desc"><p>Get the client ID of the index pool.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>str</code></dt>
+<dd>The unique client ID associated with the index pool.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; index_pool = IndexPool()
+&gt;&gt;&gt; pool_id = index_pool.pool_id  # Use dot notation for property access
+&gt;&gt;&gt; print(f&quot;Index pool client ID: {pool_id}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/index_pools.py#L495-L498" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/index_pools.py#L681-L695" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def pool_id(self):
-    &#34;&#34;&#34;Returns the index pool client id&#34;&#34;&#34;
+def pool_id(self) -&gt; str:
+    &#34;&#34;&#34;Get the client ID of the index pool.
+
+    Returns:
+        str: The unique client ID associated with the index pool.
+
+    Example:
+        &gt;&gt;&gt; index_pool = IndexPool()
+        &gt;&gt;&gt; pool_id = index_pool.pool_id  # Use dot notation for property access
+        &gt;&gt;&gt; print(f&#34;Index pool client ID: {pool_id}&#34;)
+
+    &#34;&#34;&#34;
     return self._pool_id</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.index_pools.IndexPool.pool_name"><code class="name">var <span class="ident">pool_name</span></code></dt>
+<dt id="cvpysdk.index_pools.IndexPool.pool_name"><code class="name">var <span class="ident">pool_name</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns index pool name</p></div>
+<div class="desc"><p>Get the name of the index pool.</p>
+<p>Returns
+-----=
+The name of the index pool as a string.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; index_pool = IndexPool()
+&gt;&gt;&gt; name = index_pool.pool_name  # Use dot notation for property access
+&gt;&gt;&gt; print(f&quot;Index pool name: {name}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/index_pools.py#L505-L508" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/index_pools.py#L713-L727" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def pool_name(self):
-    &#34;&#34;&#34;Returns index pool name&#34;&#34;&#34;
+def pool_name(self) -&gt; str:
+    &#34;&#34;&#34;Get the name of the index pool.
+
+    Returns:
+        The name of the index pool as a string.
+
+    Example:
+        &gt;&gt;&gt; index_pool = IndexPool()
+        &gt;&gt;&gt; name = index_pool.pool_name  # Use dot notation for property access
+        &gt;&gt;&gt; print(f&#34;Index pool name: {name}&#34;)
+
+    &#34;&#34;&#34;
     return self._pool_name</code></pre>
 </details>
 </dd>
@@ -879,63 +1330,95 @@ def pool_name(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.index_pools.IndexPool.modify_node"><code class="name flex">
-<span>def <span class="ident">modify_node</span></span>(<span>self, node_name, operation_type=3, node_params=None)</span>
+<span>def <span class="ident">modify_node</span></span>(<span>self, node_name: str, operation_type: int = 3, node_params: Optional[List[Dict[str, Any]]] = None) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Method to modify the pool node details</p>
-<h2 id="args">Args</h2>
-<p>node_name
-(str)
-&ndash;
-index pool node name
-operation_type
-(int)
-&ndash;
-operation type (1, 2, 3)
-1 - Adds a new node
-2 - Removes existing node
-3 - Edits the existing node (default)
-node_params
-(list)
-&ndash;
-list of all the properties for the index pool node
-for example:
-[{
+<div class="desc"><p>Modify the details of an index pool node.</p>
+<p>This method allows you to add, remove, or edit a node in the index pool by specifying the node name,
+the type of operation, and optional node parameters.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>node_name</code></strong></dt>
+<dd>The name of the index pool node to modify.</dd>
+<dt><strong><code>operation_type</code></strong></dt>
+<dd>The type of operation to perform:
+1 - Add a new node
+2 - Remove an existing node
+3 - Edit an existing node (default)</dd>
+<dt><strong><code>node_params</code></strong></dt>
+<dd>Optional list of dictionaries containing properties for the index pool node.
+Each dictionary should have the following structure:
+{
 "name": <property_name>,
 "value": <property_value>
-},
-]</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-Response was not success.
-Response was empty.</p></div>
+}</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the response is not successful or is empty.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; # Add a new node to the index pool
+&gt;&gt;&gt; node_properties = [
+...     {&quot;name&quot;: &quot;ip_address&quot;, &quot;value&quot;: &quot;192.168.1.10&quot;},
+...     {&quot;name&quot;: &quot;port&quot;, &quot;value&quot;: 8400}
+... ]
+&gt;&gt;&gt; index_pool.modify_node(&quot;NodeA&quot;, operation_type=1, node_params=node_properties)
+&gt;&gt;&gt;
+&gt;&gt;&gt; # Edit an existing node's properties
+&gt;&gt;&gt; updated_properties = [
+...     {&quot;name&quot;: &quot;ip_address&quot;, &quot;value&quot;: &quot;192.168.1.20&quot;}
+... ]
+&gt;&gt;&gt; index_pool.modify_node(&quot;NodeA&quot;, operation_type=3, node_params=updated_properties)
+&gt;&gt;&gt;
+&gt;&gt;&gt; # Remove a node from the index pool
+&gt;&gt;&gt; index_pool.modify_node(&quot;NodeA&quot;, operation_type=2)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/index_pools.py#L445-L493" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/index_pools.py#L614-L679" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def modify_node(self, node_name,
-                operation_type=IndexServerConstants.OPERATION_EDIT,
-                node_params=None):
-    &#34;&#34;&#34;Method to modify the pool node details
+<pre><code class="python">def modify_node(self, node_name: str, operation_type: int = IndexServerConstants.OPERATION_EDIT, node_params: Optional[List[Dict[str, Any]]] = None) -&gt; None:
+    &#34;&#34;&#34;Modify the details of an index pool node.
+
+    This method allows you to add, remove, or edit a node in the index pool by specifying the node name,
+    the type of operation, and optional node parameters.
 
     Args:
-        node_name           (str)   --  index pool node name
-        operation_type      (int)   --  operation type (1, 2, 3)
-                                        1 - Adds a new node
-                                        2 - Removes existing node
-                                        3 - Edits the existing node (default)
-        node_params         (list)  --  list of all the properties for the index pool node
-                                        for example:
-                                            [{
-                                                &#34;name&#34;: &lt;property_name&gt;,
-                                                &#34;value&#34;: &lt;property_value&gt;
-                                            },
-                                            ]
+        node_name: The name of the index pool node to modify.
+        operation_type: The type of operation to perform:
+            1 - Add a new node
+            2 - Remove an existing node
+            3 - Edit an existing node (default)
+        node_params: Optional list of dictionaries containing properties for the index pool node.
+            Each dictionary should have the following structure:
+                {
+                    &#34;name&#34;: &lt;property_name&gt;,
+                    &#34;value&#34;: &lt;property_value&gt;
+                }
+
     Raises:
-        SDKException:
-            Response was not success.
-            Response was empty.
+        SDKException: If the response is not successful or is empty.
+
+    Example:
+        &gt;&gt;&gt; # Add a new node to the index pool
+        &gt;&gt;&gt; node_properties = [
+        ...     {&#34;name&#34;: &#34;ip_address&#34;, &#34;value&#34;: &#34;192.168.1.10&#34;},
+        ...     {&#34;name&#34;: &#34;port&#34;, &#34;value&#34;: 8400}
+        ... ]
+        &gt;&gt;&gt; index_pool.modify_node(&#34;NodeA&#34;, operation_type=1, node_params=node_properties)
+        &gt;&gt;&gt;
+        &gt;&gt;&gt; # Edit an existing node&#39;s properties
+        &gt;&gt;&gt; updated_properties = [
+        ...     {&#34;name&#34;: &#34;ip_address&#34;, &#34;value&#34;: &#34;192.168.1.20&#34;}
+        ... ]
+        &gt;&gt;&gt; index_pool.modify_node(&#34;NodeA&#34;, operation_type=3, node_params=updated_properties)
+        &gt;&gt;&gt;
+        &gt;&gt;&gt; # Remove a node from the index pool
+        &gt;&gt;&gt; index_pool.modify_node(&#34;NodeA&#34;, operation_type=2)
 
     &#34;&#34;&#34;
     req_json = {
@@ -966,39 +1449,54 @@ Response was empty.</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.index_pools.IndexPool.node_info"><code class="name flex">
-<span>def <span class="ident">node_info</span></span>(<span>self, node_name)</span>
+<span>def <span class="ident">node_info</span></span>(<span>self, node_name: str) ‑> dict</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Returns the index pool node information</p>
-<h2 id="args">Args</h2>
-<p>node_name
-(str)
-&ndash;
-index pool node name</p>
-<h2 id="returns">Returns</h2>
-<p>dict
--
-dictionary consisting details of index pool node</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-Index pool node not found</p></div>
+<div class="desc"><p>Retrieve information for a specific index pool node.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>node_name</code></strong></dt>
+<dd>The name of the index pool node to retrieve information for.</dd>
+</dl>
+<p>Returns
+-----=
+A dictionary containing details of the specified index pool node.</p>
+<dl>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the specified index pool node is not found.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; index_pool = IndexPool()
+&gt;&gt;&gt; node_details = index_pool.node_info(&quot;NodeA&quot;)
+&gt;&gt;&gt; print(node_details)
+{'nodeName': 'NodeA', 'status': 'Active', 'ip': '192.168.1.10'}
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/index_pools.py#L426-L443" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/index_pools.py#L589-L612" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def node_info(self, node_name):
-    &#34;&#34;&#34;Returns the index pool node information
+<pre><code class="python">def node_info(self, node_name: str) -&gt; dict:
+    &#34;&#34;&#34;Retrieve information for a specific index pool node.
 
-        Args:
-            node_name       (str)       --  index pool node name
+    Args:
+        node_name: The name of the index pool node to retrieve information for.
 
-        Returns:
-            dict    -   dictionary consisting details of index pool node
+    Returns:
+        A dictionary containing details of the specified index pool node.
 
-        Raises:
-            SDKException:
-                Index pool node not found
+    Raises:
+        SDKException: If the specified index pool node is not found.
+
+    Example:
+        &gt;&gt;&gt; index_pool = IndexPool()
+        &gt;&gt;&gt; node_details = index_pool.node_info(&#34;NodeA&#34;)
+        &gt;&gt;&gt; print(node_details)
+        {&#39;nodeName&#39;: &#39;NodeA&#39;, &#39;status&#39;: &#39;Active&#39;, &#39;ip&#39;: &#39;192.168.1.10&#39;}
 
     &#34;&#34;&#34;
     for node_info in self.pool_nodes:
@@ -1008,17 +1506,37 @@ Index pool node not found</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.index_pools.IndexPool.refresh"><code class="name flex">
-<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+<span>def <span class="ident">refresh</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Refreshes properties of IndexPool class</p></div>
+<div class="desc"><p>Reload the properties of the IndexPool instance.</p>
+<p>This method updates the IndexPool object's properties to reflect the latest state
+from the underlying data source. Use this method to ensure that the IndexPool
+instance has up-to-date information.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; index_pool = IndexPool()
+&gt;&gt;&gt; index_pool.refresh()
+&gt;&gt;&gt; print(&quot;IndexPool properties refreshed successfully&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/index_pools.py#L415-L424" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/index_pools.py#L566-L587" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def refresh(self):
-    &#34;&#34;&#34;Refreshes properties of IndexPool class&#34;&#34;&#34;
+<pre><code class="python">def refresh(self) -&gt; None:
+    &#34;&#34;&#34;Reload the properties of the IndexPool instance.
+
+    This method updates the IndexPool object&#39;s properties to reflect the latest state 
+    from the underlying data source. Use this method to ensure that the IndexPool 
+    instance has up-to-date information.
+
+    Example:
+        &gt;&gt;&gt; index_pool = IndexPool()
+        &gt;&gt;&gt; index_pool.refresh()
+        &gt;&gt;&gt; print(&#34;IndexPool properties refreshed successfully&#34;)
+
+    &#34;&#34;&#34;
     self.commcell.clients.refresh()
     if not self.commcell.clients.has_client(self.pool_name):
         raise SDKException(&#39;IndexPools&#39;, &#39;102&#39;)
@@ -1033,36 +1551,79 @@ Index pool node not found</p></div>
 </dd>
 <dt id="cvpysdk.index_pools.IndexPools"><code class="flex name class">
 <span>class <span class="ident">IndexPools</span></span>
-<span>(</span><span>commcell_object)</span>
+<span>(</span><span>commcell_object: Commcell)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for representing all the Index pools associated with the commcell</p>
-<p>Initialize object of the IndexPools class</p>
-<h2 id="args">Args</h2>
-<p>commcell_object
-(object)
-&ndash;
-instance of the Commcell class</p>
-<h2 id="returns">Returns</h2>
-<p>object
--
-instance of IndexPools class</p></div>
+<div class="desc"><p>Represents and manages all Index pools associated with a CommCell.</p>
+<p>The IndexPools class provides an interface to interact with, manage, and manipulate
+index pools within a CommCell environment. It allows users to retrieve, add, delete,
+and check the existence of index pools, as well as refresh and access all available
+index pools. The class supports dictionary-like access to individual pools and
+provides string representations for easy inspection.</p>
+<p>Key Features:
+- Retrieve all index pools associated with the CommCell
+- Access individual index pools by name or key
+- Add new index pools with specified nodes and HAC name
+- Delete existing index pools by name
+- Check for the existence of a specific index pool
+- Refresh the list of index pools to reflect current state
+- Access all index pools via a property
+- Handle unsuccessful responses from operations
+- Provides string and representation methods for easy display</p>
+<p>Initialize an IndexPools object with the given Commcell connection.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>commcell_object</code></strong></dt>
+<dd>An instance of the Commcell class representing the active Commcell connection.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; from cvpysdk.commcell import Commcell
+&gt;&gt;&gt; commcell = Commcell('commcell_host', 'username', 'password')
+&gt;&gt;&gt; index_pools = IndexPools(commcell)
+&gt;&gt;&gt; print(&quot;IndexPools object created successfully&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/index_pools.py#L95-L370" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/index_pools.py#L97-L474" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class IndexPools(object):
-    &#34;&#34;&#34;Class for representing all the Index pools associated with the commcell&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents and manages all Index pools associated with a CommCell.
 
-    def __init__(self, commcell_object):
-        &#34;&#34;&#34;Initialize object of the IndexPools class
+    The IndexPools class provides an interface to interact with, manage, and manipulate
+    index pools within a CommCell environment. It allows users to retrieve, add, delete,
+    and check the existence of index pools, as well as refresh and access all available
+    index pools. The class supports dictionary-like access to individual pools and
+    provides string representations for easy inspection.
 
-            Args:
-                commcell_object     (object)    --  instance of the Commcell class
+    Key Features:
+        - Retrieve all index pools associated with the CommCell
+        - Access individual index pools by name or key
+        - Add new index pools with specified nodes and HAC name
+        - Delete existing index pools by name
+        - Check for the existence of a specific index pool
+        - Refresh the list of index pools to reflect current state
+        - Access all index pools via a property
+        - Handle unsuccessful responses from operations
+        - Provides string and representation methods for easy display
 
-            Returns:
-                object  -   instance of IndexPools class
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_object: &#39;Commcell&#39;) -&gt; None:
+        &#34;&#34;&#34;Initialize an IndexPools object with the given Commcell connection.
+
+        Args:
+            commcell_object: An instance of the Commcell class representing the active Commcell connection.
+
+        Example:
+            &gt;&gt;&gt; from cvpysdk.commcell import Commcell
+            &gt;&gt;&gt; commcell = Commcell(&#39;commcell_host&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; index_pools = IndexPools(commcell)
+            &gt;&gt;&gt; print(&#34;IndexPools object created successfully&#34;)
+
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
         self._cvpysdk_object = commcell_object._cvpysdk_object
@@ -1071,11 +1632,19 @@ instance of IndexPools class</p></div>
         self._all_index_pools = None
         self.refresh()
 
-    def __str__(self):
-        &#34;&#34;&#34;Representation string consisting of all Index pools of the commcell.
+    def __str__(self) -&gt; str:
+        &#34;&#34;&#34;Return a string representation of all index pools associated with the Commcell.
 
-                Returns:
-                    str - string of all the index pools associated with the commcell
+        This method provides a human-readable summary of all index pools managed by the Commcell,
+        which can be useful for logging, debugging, or display purposes.
+
+        Returns:
+            A string listing all index pools associated with the Commcell.
+
+        Example:
+            &gt;&gt;&gt; index_pools = IndexPools(commcell_object)
+            &gt;&gt;&gt; print(str(index_pools))
+            IndexPool1, IndexPool2, IndexPool3
         &#34;&#34;&#34;
         representation_string = &#39;{:^5}\t{:^20}\n\n&#39;.format(&#39;S. No.&#39;, &#39;Index pool Name&#39;)
         index = 1
@@ -1085,35 +1654,57 @@ instance of IndexPools class</p></div>
             index += 1
         return representation_string
 
-    def __repr__(self):
-        &#34;&#34;&#34;Representation string for the instance of the IndexPools class.&#34;&#34;&#34;
+    def __repr__(self) -&gt; str:
+        &#34;&#34;&#34;Return the string representation of the IndexPools instance.
+
+        This method provides a developer-friendly string that represents the current
+        IndexPools object, which can be useful for debugging and logging purposes.
+
+        Returns:
+            A string representation of the IndexPools instance.
+
+        Example:
+            &gt;&gt;&gt; index_pools = IndexPools(commcell_object)
+            &gt;&gt;&gt; print(repr(index_pools))
+            &lt;IndexPools object at 0x7f8b2c1d2e80&gt;
+
+        &#34;&#34;&#34;
         return &#34;IndexPools class instance for Commcell&#34;
 
-    def __getitem__(self, value):
-        &#34;&#34;&#34;Returns the details of index pool for given index pool name
+    def __getitem__(self, value: str) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the details of an index pool by its name.
 
-            Args:
-                value   (str)       --  name of index pool
+        Args:
+            value: The name of the index pool to retrieve.
 
-            Returns:
-                dict    -   details of the index pool
+        Returns:
+            A dictionary containing the details of the specified index pool.
 
-            Raises:
-                Index pool not found
+        Raises:
+            KeyError: If the specified index pool name does not exist.
+
+        Example:
+            &gt;&gt;&gt; index_pools = IndexPools()
+            &gt;&gt;&gt; pool_details = index_pools[&#34;DefaultIndexPool&#34;]
+            &gt;&gt;&gt; print(pool_details)
+            {&#39;name&#39;: &#39;DefaultIndexPool&#39;, &#39;status&#39;: &#39;Active&#39;, ...}
+
         &#34;&#34;&#34;
         value = value.lower()
         if value in self.all_index_pools:
             return {&#34;pool_name&#34;: value, &#34;pool_id&#34;: self.all_index_pools[value]}
         raise SDKException(&#39;IndexPools&#39;, &#39;102&#39;)
 
-    def _get_all_index_pools(self):
-        &#34;&#34;&#34;Method to get details of all the index pools present in commcell
+    def _get_all_index_pools(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve details of all index pools present in the Commcell.
 
-            Raises:
-                SDKException:
-                    Response was not success
+        Raises:
+            SDKException: If the response from the Commcell is unsuccessful or empty.
 
-                    Response was empty
+        Example:
+            &gt;&gt;&gt; index_pools = index_pools_obj._get_all_index_pools()
+            &gt;&gt;&gt; for pool in index_pools:
+            ...     print(f&#34;Index Pool Name: {pool.get(&#39;name&#39;)}, ID: {pool.get(&#39;id&#39;)}&#34;)
         &#34;&#34;&#34;
         flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._services[&#39;GET_ALL_CLIENTS&#39;])
         if flag:
@@ -1128,14 +1719,21 @@ instance of IndexPools class</p></div>
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
-    def _response_not_success(self, response):
-        &#34;&#34;&#34;Helper method to raise exception when response is not 200 (ok)
-            Args:
-                response    (object)    -   response object
+    def _response_not_success(self, response: object) -&gt; None:
+        &#34;&#34;&#34;Raise an exception if the HTTP response is not successful (status code 200).
 
-            Raises:
-                SDKException:
-                    Response was not success
+        Args:
+            response: The response object to check for success.
+
+        Raises:
+            SDKException: If the response status code indicates failure.
+
+        Example:
+            &gt;&gt;&gt; index_pools = IndexPools()
+            &gt;&gt;&gt; response = some_http_request()
+            &gt;&gt;&gt; index_pools._response_not_success(response)
+            &gt;&gt;&gt; # If the response is not successful, an SDKException will be raised
+
         &#34;&#34;&#34;
         raise SDKException(
             &#39;Response&#39;,
@@ -1143,40 +1741,56 @@ instance of IndexPools class</p></div>
             self._update_response_(
                 response.text))
 
-    def refresh(self):
-        &#34;&#34;&#34;Refreshes the properties of IndexPools class&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Reload the properties and state of the IndexPools class.
+
+        This method refreshes the internal data of the IndexPools instance, ensuring that 
+        any changes made externally are reflected in the current object.
+
+        Example:
+            &gt;&gt;&gt; index_pools = IndexPools()
+            &gt;&gt;&gt; index_pools.refresh()
+            &gt;&gt;&gt; print(&#34;IndexPools properties refreshed successfully&#34;)
+
+        &#34;&#34;&#34;
         self._commcell_object.clients.refresh()
         self._all_index_pools = {}
         self._get_all_index_pools()
 
     @property
-    def all_index_pools(self):
-        &#34;&#34;&#34;Returns a dict consisting details of all index pools
+    def all_index_pools(self) -&gt; Dict[str, int]:
+        &#34;&#34;&#34;Get a dictionary containing details of all index pools.
 
-            Returns:
-                dict    -   dictionary consisting details for all index pools
-                Sample:
-                    {
-                        &lt;pool_name_1&gt; : &lt;pool_id_1&gt;,
-                        &lt;pool_name_2&gt; : &lt;pool_id_2&gt;
-                    }
+        Returns:
+            Dict[str, int]: A dictionary where each key is the name of an index pool and the value is its corresponding pool ID.
+
+        Example:
+            &gt;&gt;&gt; index_pools = IndexPools(commcell_object)
+            &gt;&gt;&gt; pools = index_pools.all_index_pools
+            &gt;&gt;&gt; print(pools)
+            {&#39;DefaultPool&#39;: 1, &#39;ArchivePool&#39;: 2}
+
         &#34;&#34;&#34;
         return self._all_index_pools
 
-    def get(self, pool_name):
-        &#34;&#34;&#34;Returns the IndexPool class object with given pool_name
+    def get(self, pool_name: str) -&gt; &#39;IndexPool&#39;:
+        &#34;&#34;&#34;Retrieve the IndexPool object for the specified pool name.
 
         Args:
-            pool_name       (int/str)       --  Index pool name present in commcell
+            pool_name: The name or ID of the index pool as a string. This should match an existing index pool in the Commcell.
 
         Returns:
-            object  -   instance of IndexPool class
+            IndexPool: An instance of the IndexPool class corresponding to the given pool name.
 
         Raises:
-            SDKExecption:
-                Data type of the input(s) is not valid
+            SDKException: If the input data type is invalid or if the specified index pool is not found.
 
-                Index pool not found
+        Example:
+            &gt;&gt;&gt; index_pools = IndexPools(commcell_object)
+            &gt;&gt;&gt; pool = index_pools.get(&#34;DefaultIndexPool&#34;)
+            &gt;&gt;&gt; print(f&#34;Retrieved index pool: {pool}&#34;)
+            &gt;&gt;&gt; # The returned IndexPool object can be used for further operations
+
         &#34;&#34;&#34;
         if isinstance(pool_name, int):
             for index_pool_name in self.all_index_pools:
@@ -1189,35 +1803,46 @@ instance of IndexPools class</p></div>
             raise SDKException(&#39;IndexPools&#39;, &#39;101&#39;)
         raise SDKException(&#39;IndexPools&#39;, &#39;102&#39;)
 
-    def has_pool(self, pool_name):
-        &#34;&#34;&#34;Returns whether a index pool is present in the commcell or not
+    def has_pool(self, pool_name: str) -&gt; bool:
+        &#34;&#34;&#34;Check if an index pool with the specified name exists in the Commcell.
 
         Args:
-            pool_name       (str)       --  Index pool name
+            pool_name: The name of the index pool to check.
 
         Returns:
-            bool    -   True if index pool with given pool_name is present else False
+            True if an index pool with the given name exists, otherwise False.
+
+        Example:
+            &gt;&gt;&gt; index_pools = IndexPools(commcell_object)
+            &gt;&gt;&gt; exists = index_pools.has_pool(&#34;DefaultIndexPool&#34;)
+            &gt;&gt;&gt; print(f&#34;Pool exists: {exists}&#34;)
+            # Output: Pool exists: True
+
         &#34;&#34;&#34;
         return pool_name.lower() in self.all_index_pools
 
-    def add(self, pool_name, node_names, hac_name):
-        &#34;&#34;&#34;Creates a new Index pool within the commcell
+    def add(self, pool_name: str, node_names: List[str], hac_name: str) -&gt; &#39;IndexPool&#39;:
+        &#34;&#34;&#34;Create a new Index pool within the Commcell.
+
+        This method creates an Index pool with the specified name, node names, and HAC cluster name.
+        It returns an IndexPool object representing the newly created pool.
 
         Args:
-            pool_name       (str)   --  Name for the index pool
-            node_names      (list)  --  List of strings of all the index pool node names
-            hac_name        (str)   --  Name of the HAC cluster to be used while creating pool
-
-        Raises:
-            SDKExecption:
-                Data type of the input(s) is not valid.
-
-                Response was not success.
-
-                Response was empty.
+            pool_name: The name to assign to the new index pool.
+            node_names: List of node names (as strings) to include in the index pool.
+            hac_name: The name of the HAC cluster to associate with the pool.
 
         Returns:
-            object  -   Returns a object of class IndexPool
+            IndexPool: An object representing the created index pool.
+
+        Raises:
+            SDKException: If the input data types are invalid, the response is unsuccessful, or the response is empty.
+
+        Example:
+            &gt;&gt;&gt; index_pools = IndexPools(commcell_object)
+            &gt;&gt;&gt; pool = index_pools.add(&#34;MyIndexPool&#34;, [&#34;NodeA&#34;, &#34;NodeB&#34;], &#34;HACCluster1&#34;)
+            &gt;&gt;&gt; print(f&#34;Created index pool: {pool}&#34;)
+            &gt;&gt;&gt; # The returned IndexPool object can be used for further pool management
 
         &#34;&#34;&#34;
         if not (isinstance(pool_name, str) and isinstance(node_names, list)
@@ -1290,22 +1915,23 @@ instance of IndexPools class</p></div>
             raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         self._response_not_success(response)
 
-    def delete(self, pool_name):
-        &#34;&#34;&#34;Deletes an existing index pool cloud from commcell
+    def delete(self, pool_name: str) -&gt; None:
+        &#34;&#34;&#34;Delete an existing index pool cloud from the Commcell.
+
+        Removes the specified index pool cloud by its name. If the pool does not exist or the operation fails,
+        an exception is raised.
 
         Args:
-            pool_name       (str)   --  Index pool cloud name
-
-        Returns:
-            None
+            pool_name: The name of the index pool cloud to delete.
 
         Raises:
-              SDKExecption:
-                  Data type of the input(s) is not valid.
+            SDKException: If the input data type is invalid, the response is unsuccessful, or the response is empty.
 
-                  Response was not success.
+        Example:
+            &gt;&gt;&gt; index_pools = IndexPools(commcell_object)
+            &gt;&gt;&gt; index_pools.delete(&#34;MyIndexPool&#34;)
+            &gt;&gt;&gt; print(&#34;Index pool deleted successfully.&#34;)
 
-                  Response was empty.
         &#34;&#34;&#34;
         if not isinstance(pool_name, str):
             raise SDKException(&#39;IndexPools&#39;, &#39;101&#39;)
@@ -1331,34 +1957,40 @@ instance of IndexPools class</p></div>
 </details>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.index_pools.IndexPools.all_index_pools"><code class="name">var <span class="ident">all_index_pools</span></code></dt>
+<dt id="cvpysdk.index_pools.IndexPools.all_index_pools"><code class="name">var <span class="ident">all_index_pools</span> : Dict[str, int]</code></dt>
 <dd>
-<div class="desc"><p>Returns a dict consisting details of all index pools</p>
-<h2 id="returns">Returns</h2>
-<p>dict
--
-dictionary consisting details for all index pools
-Sample:
-{
-<pool_name_1> : <pool_id_1>,
-<pool_name_2> : <pool_id_2>
-}</p></div>
+<div class="desc"><p>Get a dictionary containing details of all index pools.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Dict[str, int]</code></dt>
+<dd>A dictionary where each key is the name of an index pool and the value is its corresponding pool ID.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; index_pools = IndexPools(commcell_object)
+&gt;&gt;&gt; pools = index_pools.all_index_pools
+&gt;&gt;&gt; print(pools)
+{'DefaultPool': 1, 'ArchivePool': 2}
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/index_pools.py#L192-L204" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/index_pools.py#L273-L288" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def all_index_pools(self):
-    &#34;&#34;&#34;Returns a dict consisting details of all index pools
+def all_index_pools(self) -&gt; Dict[str, int]:
+    &#34;&#34;&#34;Get a dictionary containing details of all index pools.
 
-        Returns:
-            dict    -   dictionary consisting details for all index pools
-            Sample:
-                {
-                    &lt;pool_name_1&gt; : &lt;pool_id_1&gt;,
-                    &lt;pool_name_2&gt; : &lt;pool_id_2&gt;
-                }
+    Returns:
+        Dict[str, int]: A dictionary where each key is the name of an index pool and the value is its corresponding pool ID.
+
+    Example:
+        &gt;&gt;&gt; index_pools = IndexPools(commcell_object)
+        &gt;&gt;&gt; pools = index_pools.all_index_pools
+        &gt;&gt;&gt; print(pools)
+        {&#39;DefaultPool&#39;: 1, &#39;ArchivePool&#39;: 2}
+
     &#34;&#34;&#34;
     return self._all_index_pools</code></pre>
 </details>
@@ -1367,57 +1999,64 @@ def all_index_pools(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.index_pools.IndexPools.add"><code class="name flex">
-<span>def <span class="ident">add</span></span>(<span>self, pool_name, node_names, hac_name)</span>
+<span>def <span class="ident">add</span></span>(<span>self, pool_name: str, node_names: List[str], hac_name: str) ‑> <a title="cvpysdk.index_pools.IndexPool" href="#cvpysdk.index_pools.IndexPool">IndexPool</a></span>
 </code></dt>
 <dd>
-<div class="desc"><p>Creates a new Index pool within the commcell</p>
-<h2 id="args">Args</h2>
-<p>pool_name
-(str)
-&ndash;
-Name for the index pool
-node_names
-(list)
-&ndash;
-List of strings of all the index pool node names
-hac_name
-(str)
-&ndash;
-Name of the HAC cluster to be used while creating pool</p>
-<h2 id="raises">Raises</h2>
-<p>SDKExecption:
-Data type of the input(s) is not valid.</p>
-<pre><code>Response was not success.
-
-Response was empty.
-</code></pre>
-<h2 id="returns">Returns</h2>
-<p>object
--
-Returns a object of class IndexPool</p></div>
+<div class="desc"><p>Create a new Index pool within the Commcell.</p>
+<p>This method creates an Index pool with the specified name, node names, and HAC cluster name.
+It returns an IndexPool object representing the newly created pool.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>pool_name</code></strong></dt>
+<dd>The name to assign to the new index pool.</dd>
+<dt><strong><code>node_names</code></strong></dt>
+<dd>List of node names (as strings) to include in the index pool.</dd>
+<dt><strong><code>hac_name</code></strong></dt>
+<dd>The name of the HAC cluster to associate with the pool.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code><a title="cvpysdk.index_pools.IndexPool" href="#cvpysdk.index_pools.IndexPool">IndexPool</a></code></dt>
+<dd>An object representing the created index pool.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the input data types are invalid, the response is unsuccessful, or the response is empty.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; index_pools = IndexPools(commcell_object)
+&gt;&gt;&gt; pool = index_pools.add(&quot;MyIndexPool&quot;, [&quot;NodeA&quot;, &quot;NodeB&quot;], &quot;HACCluster1&quot;)
+&gt;&gt;&gt; print(f&quot;Created index pool: {pool}&quot;)
+&gt;&gt;&gt; # The returned IndexPool object can be used for further pool management
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/index_pools.py#L243-L331" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/index_pools.py#L340-L433" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def add(self, pool_name, node_names, hac_name):
-    &#34;&#34;&#34;Creates a new Index pool within the commcell
+<pre><code class="python">def add(self, pool_name: str, node_names: List[str], hac_name: str) -&gt; &#39;IndexPool&#39;:
+    &#34;&#34;&#34;Create a new Index pool within the Commcell.
+
+    This method creates an Index pool with the specified name, node names, and HAC cluster name.
+    It returns an IndexPool object representing the newly created pool.
 
     Args:
-        pool_name       (str)   --  Name for the index pool
-        node_names      (list)  --  List of strings of all the index pool node names
-        hac_name        (str)   --  Name of the HAC cluster to be used while creating pool
-
-    Raises:
-        SDKExecption:
-            Data type of the input(s) is not valid.
-
-            Response was not success.
-
-            Response was empty.
+        pool_name: The name to assign to the new index pool.
+        node_names: List of node names (as strings) to include in the index pool.
+        hac_name: The name of the HAC cluster to associate with the pool.
 
     Returns:
-        object  -   Returns a object of class IndexPool
+        IndexPool: An object representing the created index pool.
+
+    Raises:
+        SDKException: If the input data types are invalid, the response is unsuccessful, or the response is empty.
+
+    Example:
+        &gt;&gt;&gt; index_pools = IndexPools(commcell_object)
+        &gt;&gt;&gt; pool = index_pools.add(&#34;MyIndexPool&#34;, [&#34;NodeA&#34;, &#34;NodeB&#34;], &#34;HACCluster1&#34;)
+        &gt;&gt;&gt; print(f&#34;Created index pool: {pool}&#34;)
+        &gt;&gt;&gt; # The returned IndexPool object can be used for further pool management
 
     &#34;&#34;&#34;
     if not (isinstance(pool_name, str) and isinstance(node_names, list)
@@ -1492,45 +2131,50 @@ Returns a object of class IndexPool</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.index_pools.IndexPools.delete"><code class="name flex">
-<span>def <span class="ident">delete</span></span>(<span>self, pool_name)</span>
+<span>def <span class="ident">delete</span></span>(<span>self, pool_name: str) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Deletes an existing index pool cloud from commcell</p>
-<h2 id="args">Args</h2>
-<p>pool_name
-(str)
-&ndash;
-Index pool cloud name</p>
-<h2 id="returns">Returns</h2>
-<p>None</p>
-<h2 id="raises">Raises</h2>
-<p>SDKExecption:
-Data type of the input(s) is not valid.</p>
-<pre><code>Response was not success.
-
-Response was empty.
+<div class="desc"><p>Delete an existing index pool cloud from the Commcell.</p>
+<p>Removes the specified index pool cloud by its name. If the pool does not exist or the operation fails,
+an exception is raised.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>pool_name</code></strong></dt>
+<dd>The name of the index pool cloud to delete.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the input data type is invalid, the response is unsuccessful, or the response is empty.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; index_pools = IndexPools(commcell_object)
+&gt;&gt;&gt; index_pools.delete(&quot;MyIndexPool&quot;)
+&gt;&gt;&gt; print(&quot;Index pool deleted successfully.&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/index_pools.py#L333-L370" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/index_pools.py#L435-L474" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def delete(self, pool_name):
-    &#34;&#34;&#34;Deletes an existing index pool cloud from commcell
+<pre><code class="python">def delete(self, pool_name: str) -&gt; None:
+    &#34;&#34;&#34;Delete an existing index pool cloud from the Commcell.
+
+    Removes the specified index pool cloud by its name. If the pool does not exist or the operation fails,
+    an exception is raised.
 
     Args:
-        pool_name       (str)   --  Index pool cloud name
-
-    Returns:
-        None
+        pool_name: The name of the index pool cloud to delete.
 
     Raises:
-          SDKExecption:
-              Data type of the input(s) is not valid.
+        SDKException: If the input data type is invalid, the response is unsuccessful, or the response is empty.
 
-              Response was not success.
+    Example:
+        &gt;&gt;&gt; index_pools = IndexPools(commcell_object)
+        &gt;&gt;&gt; index_pools.delete(&#34;MyIndexPool&#34;)
+        &gt;&gt;&gt; print(&#34;Index pool deleted successfully.&#34;)
 
-              Response was empty.
     &#34;&#34;&#34;
     if not isinstance(pool_name, str):
         raise SDKException(&#39;IndexPools&#39;, &#39;101&#39;)
@@ -1556,43 +2200,54 @@ Response was empty.
 </details>
 </dd>
 <dt id="cvpysdk.index_pools.IndexPools.get"><code class="name flex">
-<span>def <span class="ident">get</span></span>(<span>self, pool_name)</span>
+<span>def <span class="ident">get</span></span>(<span>self, pool_name: str) ‑> <a title="cvpysdk.index_pools.IndexPool" href="#cvpysdk.index_pools.IndexPool">IndexPool</a></span>
 </code></dt>
 <dd>
-<div class="desc"><p>Returns the IndexPool class object with given pool_name</p>
-<h2 id="args">Args</h2>
-<p>pool_name
-(int/str)
-&ndash;
-Index pool name present in commcell</p>
-<h2 id="returns">Returns</h2>
-<p>object
--
-instance of IndexPool class</p>
-<h2 id="raises">Raises</h2>
-<p>SDKExecption:
-Data type of the input(s) is not valid</p>
-<pre><code>Index pool not found
+<div class="desc"><p>Retrieve the IndexPool object for the specified pool name.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>pool_name</code></strong></dt>
+<dd>The name or ID of the index pool as a string. This should match an existing index pool in the Commcell.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code><a title="cvpysdk.index_pools.IndexPool" href="#cvpysdk.index_pools.IndexPool">IndexPool</a></code></dt>
+<dd>An instance of the IndexPool class corresponding to the given pool name.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the input data type is invalid or if the specified index pool is not found.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; index_pools = IndexPools(commcell_object)
+&gt;&gt;&gt; pool = index_pools.get(&quot;DefaultIndexPool&quot;)
+&gt;&gt;&gt; print(f&quot;Retrieved index pool: {pool}&quot;)
+&gt;&gt;&gt; # The returned IndexPool object can be used for further operations
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/index_pools.py#L206-L230" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/index_pools.py#L290-L319" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def get(self, pool_name):
-    &#34;&#34;&#34;Returns the IndexPool class object with given pool_name
+<pre><code class="python">def get(self, pool_name: str) -&gt; &#39;IndexPool&#39;:
+    &#34;&#34;&#34;Retrieve the IndexPool object for the specified pool name.
 
     Args:
-        pool_name       (int/str)       --  Index pool name present in commcell
+        pool_name: The name or ID of the index pool as a string. This should match an existing index pool in the Commcell.
 
     Returns:
-        object  -   instance of IndexPool class
+        IndexPool: An instance of the IndexPool class corresponding to the given pool name.
 
     Raises:
-        SDKExecption:
-            Data type of the input(s) is not valid
+        SDKException: If the input data type is invalid or if the specified index pool is not found.
 
-            Index pool not found
+    Example:
+        &gt;&gt;&gt; index_pools = IndexPools(commcell_object)
+        &gt;&gt;&gt; pool = index_pools.get(&#34;DefaultIndexPool&#34;)
+        &gt;&gt;&gt; print(f&#34;Retrieved index pool: {pool}&#34;)
+        &gt;&gt;&gt; # The returned IndexPool object can be used for further operations
+
     &#34;&#34;&#34;
     if isinstance(pool_name, int):
         for index_pool_name in self.all_index_pools:
@@ -1607,48 +2262,80 @@ Data type of the input(s) is not valid</p>
 </details>
 </dd>
 <dt id="cvpysdk.index_pools.IndexPools.has_pool"><code class="name flex">
-<span>def <span class="ident">has_pool</span></span>(<span>self, pool_name)</span>
+<span>def <span class="ident">has_pool</span></span>(<span>self, pool_name: str) ‑> bool</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Returns whether a index pool is present in the commcell or not</p>
-<h2 id="args">Args</h2>
-<p>pool_name
-(str)
-&ndash;
-Index pool name</p>
-<h2 id="returns">Returns</h2>
-<p>bool
--
-True if index pool with given pool_name is present else False</p></div>
+<div class="desc"><p>Check if an index pool with the specified name exists in the Commcell.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>pool_name</code></strong></dt>
+<dd>The name of the index pool to check.</dd>
+</dl>
+<p>Returns
+-----=
+True if an index pool with the given name exists, otherwise False.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; index_pools = IndexPools(commcell_object)
+&gt;&gt;&gt; exists = index_pools.has_pool(&quot;DefaultIndexPool&quot;)
+&gt;&gt;&gt; print(f&quot;Pool exists: {exists}&quot;)
+# Output: Pool exists: True
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/index_pools.py#L232-L241" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/index_pools.py#L321-L338" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def has_pool(self, pool_name):
-    &#34;&#34;&#34;Returns whether a index pool is present in the commcell or not
+<pre><code class="python">def has_pool(self, pool_name: str) -&gt; bool:
+    &#34;&#34;&#34;Check if an index pool with the specified name exists in the Commcell.
 
     Args:
-        pool_name       (str)       --  Index pool name
+        pool_name: The name of the index pool to check.
 
     Returns:
-        bool    -   True if index pool with given pool_name is present else False
+        True if an index pool with the given name exists, otherwise False.
+
+    Example:
+        &gt;&gt;&gt; index_pools = IndexPools(commcell_object)
+        &gt;&gt;&gt; exists = index_pools.has_pool(&#34;DefaultIndexPool&#34;)
+        &gt;&gt;&gt; print(f&#34;Pool exists: {exists}&#34;)
+        # Output: Pool exists: True
+
     &#34;&#34;&#34;
     return pool_name.lower() in self.all_index_pools</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.index_pools.IndexPools.refresh"><code class="name flex">
-<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+<span>def <span class="ident">refresh</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Refreshes the properties of IndexPools class</p></div>
+<div class="desc"><p>Reload the properties and state of the IndexPools class.</p>
+<p>This method refreshes the internal data of the IndexPools instance, ensuring that
+any changes made externally are reflected in the current object.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; index_pools = IndexPools()
+&gt;&gt;&gt; index_pools.refresh()
+&gt;&gt;&gt; print(&quot;IndexPools properties refreshed successfully&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/index_pools.py#L186-L190" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/index_pools.py#L256-L271" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def refresh(self):
-    &#34;&#34;&#34;Refreshes the properties of IndexPools class&#34;&#34;&#34;
+<pre><code class="python">def refresh(self) -&gt; None:
+    &#34;&#34;&#34;Reload the properties and state of the IndexPools class.
+
+    This method refreshes the internal data of the IndexPools instance, ensuring that 
+    any changes made externally are reflected in the current object.
+
+    Example:
+        &gt;&gt;&gt; index_pools = IndexPools()
+        &gt;&gt;&gt; index_pools.refresh()
+        &gt;&gt;&gt; print(&#34;IndexPools properties refreshed successfully&#34;)
+
+    &#34;&#34;&#34;
     self._commcell_object.clients.refresh()
     self._all_index_pools = {}
     self._get_all_index_pools()</code></pre>

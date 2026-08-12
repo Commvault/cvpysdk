@@ -88,7 +88,7 @@ details
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/mysqlinstance.py#L1-L796" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/mysqlinstance.py#L1-L812" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -182,30 +182,49 @@ MYSQLInstance instance Attributes:
 &#34;&#34;&#34;
 
 from __future__ import unicode_literals
+
 from ..instance import Instance
 from ..exception import SDKException
-from ..credential_manager import Credential
+from ..job import Job
+
+from typing import Optional, TYPE_CHECKING
+if TYPE_CHECKING:
+    from ..agent import Agent
 
 
 class MYSQLInstance(Instance):
     &#34;&#34;&#34;
-    Class to represent a standalone MYSQL Instance
+    Represents a standalone MySQL instance with comprehensive management and restore capabilities.
+
+    This class encapsulates the configuration, properties, and operational controls for a MySQL database instance.
+    It provides access to key instance attributes such as port, usernames, configuration files, binary directories,
+    version information, and backup/restore options. The class supports both in-place and out-of-place restore operations,
+    including advanced options for table-level restores, cloning environments, and redirecting restore paths.
+
+    Key Features:
+        - Initialization with agent object, instance name, and instance ID
+        - Access to instance properties: port, MySQL/NT usernames, config file, binary directory, version, log directories
+        - Backup and restore details: log backup SP, command line SP, xtrabackup, MySQL Enterprise Backup
+        - Autodiscovery enablement and management
+        - Proxy options and SSL enablement
+        - No-lock status management
+        - Methods for retrieving instance properties and restoring from JSON configurations
+        - In-place and out-of-place restore operations with extensive customization options
+        - Support for table-level restore, cloning, redirection, and recurring restores
+        - Internal methods for handling restore options and administrative settings
+
+    This class is intended for use in environments where robust management and restoration of MySQL instances is required,
+    providing a programmatic interface for both configuration and operational tasks.
+
     &#34;&#34;&#34;
 
-    def __init__(self, agent_object, instance_name, instance_id=None):
-        &#34;&#34;&#34;Initialise the Subclient object.
+    def __init__(self, agent_object: &#39;Agent&#39;, instance_name: str, instance_id: int = None) -&gt; None:
+        &#34;&#34;&#34;Initialize a MYSQLInstance object.
 
-            Args:
-                agent_object    (object)  --  instance of the Agent class
-
-                instance_name   (str)     --  name of the instance
-
-                instance_id     (str)     --  id of the instance
-
-                    default: None
-
-            Returns:
-                object - instance of the MYSQLInstance class
+        Args:
+            agent_object: Instance of the Agent class associated with this MySQL instance.
+            instance_name: The name of the MySQL instance.
+            instance_id: The unique identifier for the MySQL instance. Defaults to None.
 
         &#34;&#34;&#34;
         self._browse_restore_json = None
@@ -218,82 +237,85 @@ class MYSQLInstance(Instance):
         super(MYSQLInstance, self).__init__(agent_object, instance_name, instance_id)
 
     @property
-    def port(self):
-        &#34;&#34;&#34;Returns the MySQL Server Port number.
+    def port(self) -&gt; str:
+        &#34;&#34;&#34;Get the MySQL Server port number for this instance.
 
         Returns:
-            (str)   --  MySql server port number
+            The port number used by the MySQL Server as a string.
 
         &#34;&#34;&#34;
         return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;port&#39;, None)
 
     @property
-    def mysql_username(self):
-        &#34;&#34;&#34;Returns the MySQL Server username.
+    def mysql_username(self) -&gt; str:
+        &#34;&#34;&#34;Get the MySQL Server username associated with this instance.
 
         Returns:
-            (str)   --  MySql server SA username
+            The MySQL server SA (System Administrator) username as a string.
 
         &#34;&#34;&#34;
-        credential_name = self._properties.get(&#39;credentialEntity&#39;, {}).get(&#39;credentialName&#39;, None)
-        return Credential(self._commcell_object, credential_name).credential_user_name
+        if self.credentials:
+            credential_obj = self._commcell_object.credentials.get(self.credentials)
+            if credential_obj:
+                return credential_obj._credential_properties.get(&#39;userName&#39;)
+        return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;SAUser&#39;, {}).get(&#39;userName&#39;, None)
 
     @property
-    def nt_username(self):
-        &#34;&#34;&#34;Returns the MySQL Server nt username.
+    def nt_username(self) -&gt; str:
+        &#34;&#34;&#34;Get the MySQL Server NT username associated with this instance.
 
         Returns:
-            (str)   --  MySql server NT username
+            The NT username used for MySQL Server authentication as a string.
 
         &#34;&#34;&#34;
         return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;NTUser&#39;, {}).get(&#39;userName&#39;, None)
 
     @property
-    def config_file(self):
-        &#34;&#34;&#34;Returns the MySQL Server Config File location.
+    def config_file(self) -&gt; str:
+        &#34;&#34;&#34;Get the location of the MySQL server configuration file.
 
         Returns:
-            (str)   --  MySql server config file location
+            The file path to the MySQL server&#39;s configuration file as a string.
 
         &#34;&#34;&#34;
         return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;ConfigFile&#39;, None)
 
     @property
-    def binary_directory(self):
-        &#34;&#34;&#34;Returns the MySQL Server Binary File location.
+    def binary_directory(self) -&gt; str:
+        &#34;&#34;&#34;Get the MySQL Server binary file directory location.
 
         Returns:
-            (str)   --  MySql server binary directory
+            The file system path to the MySQL server&#39;s binary directory as a string.
 
         &#34;&#34;&#34;
         return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;BinaryDirectory&#39;, None)
 
     @property
-    def version(self):
-        &#34;&#34;&#34;Returns the MySQL Server version number.
+    def version(self) -&gt; str:
+        &#34;&#34;&#34;Get the MySQL Server version number for this instance.
 
         Returns:
-            (str)   --  MySql server version
+            The version number of the MySQL server as a string.
 
         &#34;&#34;&#34;
         return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;version&#39;, None)
 
     @property
-    def log_data_directory(self):
-        &#34;&#34;&#34;Returns the MySQL Server log data directory.
+    def log_data_directory(self) -&gt; str:
+        &#34;&#34;&#34;Get the MySQL Server log data directory path.
 
         Returns:
-            (str)   --  MySql server log directory path
+            The file system path to the MySQL server&#39;s log data directory as a string.
 
         &#34;&#34;&#34;
         return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;LogDataDirectory&#39;, None)
 
     @property
-    def log_backup_sp_details(self):
-        &#34;&#34;&#34;Returns the MySQL Server Log backup SP details
+    def log_backup_sp_details(self) -&gt; dict:
+        &#34;&#34;&#34;Get the MySQL Server log backup storage policy details.
 
         Returns:
-            (dict)  --  MySql server log backup storage policy information
+            dict: A dictionary containing information about the storage policy used for MySQL Server log backups.
 
         &#34;&#34;&#34;
         log_storage_policy_name = self._properties.get(&#39;mySqlInstance&#39;, {}).get(
@@ -306,40 +328,40 @@ class MYSQLInstance(Instance):
         return log_sp
 
     @property
-    def command_line_sp_details(self):
-        &#34;&#34;&#34;Returns the MySQL Server commandline SP details.
+    def command_line_sp_details(self) -&gt; dict:
+        &#34;&#34;&#34;Get the MySQL Server command-line storage policy details.
 
         Returns:
-            (dict)  --  MySql server commnadline storage policy information
+            dict: A dictionary containing information about the MySQL server&#39;s command-line storage policy.
 
         &#34;&#34;&#34;
         cmd_storage_policy_name = self._properties.get(&#39;mySqlInstance&#39;, {}).get(
             &#39;mysqlStorageDevice&#39;, {}).get(&#39;commandLineStoragePolicy&#39;, {}).get(
-                &#39;storagePolicyName&#39;, None)
+            &#39;storagePolicyName&#39;, None)
         cmd_storage_policy_id = self._properties.get(&#39;mySqlInstance&#39;, {}).get(
             &#39;mysqlStorageDevice&#39;, {}).get(&#39;commandLineStoragePolicy&#39;, {}).get(
-                &#39;storagePolicyId&#39;, None)
+            &#39;storagePolicyId&#39;, None)
 
         command_sp = {&#34;storagePolicyName&#34;: cmd_storage_policy_name,
                       &#34;storagePolicyId&#34;: cmd_storage_policy_id}
         return command_sp
 
     @property
-    def autodiscovery_enabled(self):
-        &#34;&#34;&#34;Returns the MySQL Server auto discovery enabled flag
+    def autodiscovery_enabled(self) -&gt; bool:
+        &#34;&#34;&#34;Indicate whether MySQL Server auto discovery is enabled for this instance.
 
         Returns:
-            (bool)  --  True if auto discovery enabled
-                        False if auto discovery not enabled
+            True if auto discovery is enabled; False otherwise.
 
         &#34;&#34;&#34;
         return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;EnableAutoDiscovery&#39;, False)
 
     @autodiscovery_enabled.setter
-    def autodiscovery_enabled(self, value):
-        &#34;&#34;&#34;
-        Sets the auto discovery attribute to True or False
-        value (bool)   --  True or False
+    def autodiscovery_enabled(self, value: bool) -&gt; None:
+        &#34;&#34;&#34;Set the auto discovery attribute for the MYSQL instance.
+
+        Args:
+            value: Boolean value to enable (True) or disable (False) auto discovery.
 
         &#34;&#34;&#34;
         properties = self._properties
@@ -350,36 +372,31 @@ class MYSQLInstance(Instance):
         self.update_properties(properties)
 
     @property
-    def xtrabackup_bin_path(self):
-        &#34;&#34;&#34;Returns the MySQL Server xtrabackup bin path
+    def xtrabackup_bin_path(self) -&gt; str:
+        &#34;&#34;&#34;Get the path to the MySQL server xtrabackup binary.
 
         Returns:
-            (str)   --  MySql server xtrabackup binary path
+            The file system path to the xtrabackup binary used by the MySQL server.
 
         &#34;&#34;&#34;
-        return self._properties.get(
-            &#39;mySqlInstance&#39;, {}).get(
-                &#39;xtraBackupSettings&#39;, {}).get(&#39;xtraBackupBinPath&#39;, &#34;&#34;)
+        return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;xtraBackupSettings&#39;, {}).get(&#39;xtraBackupBinPath&#39;, &#34;&#34;)
 
     @property
-    def is_xtrabackup_enabled(self):
-        &#34;&#34;&#34;Returns the MySQL Server xtrabackup enabled flag
+    def is_xtrabackup_enabled(self) -&gt; bool:
+        &#34;&#34;&#34;Check if xtrabackup is enabled for the MySQL Server instance.
 
         Returns:
-            (bool)  --  True if xtrabackup is enabled
-                        False if xtrabackup is not enabled
+            True if xtrabackup is enabled; False otherwise.
 
         &#34;&#34;&#34;
-        return self._properties.get(
-            &#39;mySqlInstance&#39;, {}).get(
-                &#39;xtraBackupSettings&#39;, {}).get(&#39;enableXtraBackup&#39;, False)
+        return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;xtraBackupSettings&#39;, {}).get(&#39;enableXtraBackup&#39;, False)
 
     @property
-    def proxy_options(self):
-        &#34;&#34;&#34;Returns the MySQL Server proxy options
+    def proxy_options(self) -&gt; dict:
+        &#34;&#34;&#34;Get the MySQL Server proxy options for this instance.
 
         Returns:
-            (dict)  --  MySql server proxy information
+            dict: A dictionary containing MySQL server proxy information, such as proxy host, port, and authentication details.
 
         &#34;&#34;&#34;
         proxy_settings = self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;proxySettings&#39;, {})
@@ -394,23 +411,22 @@ class MYSQLInstance(Instance):
         return proxy_opt
 
     @property
-    def mysql_enterprise_backup_binary_path(self):
-        &#34;&#34;&#34; Returns the MySQL Enterprise backup binary path detail
+    def mysql_enterprise_backup_binary_path(self) -&gt; dict:
+        &#34;&#34;&#34;Get the MySQL Enterprise backup binary path details.
 
-            Return Type: dict
+        Returns:
+            dict: A dictionary containing details about the MySQL Enterprise backup binary path.
 
         &#34;&#34;&#34;
         meb_settings = self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;mebSettings&#39;, {})
         return meb_settings
 
     @mysql_enterprise_backup_binary_path.setter
-    def mysql_enterprise_backup_binary_path(self, value):
-        &#34;&#34;&#34; Setter for MySQL Enterprise backup binary path
+    def mysql_enterprise_backup_binary_path(self, value: str) -&gt; None:
+        &#34;&#34;&#34;Set the MySQL Enterprise backup binary path for the instance.
 
-            Args:
-
-                value (str)  -- Contains the MySQL Enterprise backup binary path to be updated
-                in MySQL Instance property
+        Args:
+            value: The file system path to the MySQL Enterprise backup binary to be set for this MySQL instance.
 
         &#34;&#34;&#34;
         if not isinstance(value, str):
@@ -424,24 +440,21 @@ class MYSQLInstance(Instance):
         self.update_properties(properties)
 
     @property
-    def no_lock_status(self):
-        &#34;&#34;&#34; Returns the status of No Lock Checkbox in MySQL Instance
+    def no_lock_status(self) -&gt; bool:
+        &#34;&#34;&#34;Get the status of the &#39;No Lock&#39; checkbox in the MySQL instance.
 
-            Returns:
-            (bool)  --  True if No Lock checkbox is enabled
-                        False if No Lock checkbox is disabled
+        Returns:
+            True if the &#39;No Lock&#39; checkbox is enabled, False if it is disabled.
 
         &#34;&#34;&#34;
         return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;EnableNoLocking&#39;, False)
 
     @no_lock_status.setter
-    def no_lock_status(self, value):
-        &#34;&#34;&#34; Setter for No Lock property in MySQL Instance
+    def no_lock_status(self, value: bool) -&gt; None:
+        &#34;&#34;&#34;Set the No Lock property for the MySQL Instance.
 
-            Args:
-
-                value (bool)  -- True or False to enable or disable the No Lock
-                property in MySQL Instance
+        Args:
+            value: Set to True to enable the No Lock property, or False to disable it.
 
         &#34;&#34;&#34;
         if not isinstance(value, bool):
@@ -451,18 +464,24 @@ class MYSQLInstance(Instance):
         self.update_properties(properties)
 
     @property
-    def ssl_enabled(self):
-        &#34;&#34;&#34; Returns(boolean) True/False based on SSL status &#34;&#34;&#34;
+    def ssl_enabled(self) -&gt; bool:
+        &#34;&#34;&#34;Check if SSL is enabled for the MySQL instance.
+
+        Returns:
+            True if SSL is enabled for the MySQL instance, False otherwise.
+
+        &#34;&#34;&#34;
         return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;sslEnabled&#39;, False)
 
-    def _get_instance_properties(self):
-        &#34;&#34;&#34;Gets the properties of this instance.
+    def _get_instance_properties(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve and update the properties of this MySQL instance.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        This method fetches the current configuration and properties for the MySQL instance
+        associated with this object. It updates the instance&#39;s internal state with the latest
+        information from the Commcell.
 
-                    if response is not success
+        Raises:
+            SDKException: If the response from the Commcell is empty or indicates a failure.
 
         &#34;&#34;&#34;
         super(MYSQLInstance, self)._get_instance_properties()
@@ -477,14 +496,18 @@ class MYSQLInstance(Instance):
             &#34;consumeLicense&#34;: True
         }
 
-    def _restore_json(self, **kwargs):
-        &#34;&#34;&#34;Returns the JSON request to pass to the API as per the options selected by the user.
+    def _restore_json(self, **kwargs) -&gt; dict:
+        &#34;&#34;&#34;Generate the JSON request payload for a restore operation based on user-selected options.
 
-            Args:
-                kwargs   (list)  --  list of options need to be set for restore
+        This method constructs and returns a dictionary representing the JSON request
+        to be sent to the API for a restore operation. The options for the restore
+        are provided as keyword arguments.
 
-            Returns:
-                dict - JSON request to pass to the API
+        Args:
+            **kwargs: Arbitrary keyword arguments representing restore options and their values.
+
+        Returns:
+            dict: The JSON request dictionary to be passed to the API.
 
         &#34;&#34;&#34;
         rest_json = super(MYSQLInstance, self)._restore_json(**kwargs)
@@ -511,133 +534,73 @@ class MYSQLInstance(Instance):
         return rest_json
 
     def restore_in_place(
-            self,
-            path=None,
-            staging=None,
-            dest_client_name=None,
-            dest_instance_name=None,
-            data_restore=True,
-            log_restore=False,
-            overwrite=True,
-            copy_precedence=None,
-            from_time=None,
-            to_time=None,
-            media_agent=None,
-            table_level_restore=False,
-            clone_env=False,
-            clone_options=None,
-            redirect_enabled=False,
-            redirect_path=None,
-            browse_jobid=None):
-        &#34;&#34;&#34;Restores the mysql data/log files specified in the input paths list to the same location.
+        self,
+        path: Optional[list] = None,
+        staging: Optional[str] = None,
+        dest_client_name: Optional[str] = None,
+        dest_instance_name: Optional[str] = None,
+        data_restore: bool = True,
+        log_restore: bool = False,
+        overwrite: bool = True,
+        copy_precedence: Optional[int] = None,
+        from_time: Optional[str] = None,
+        to_time: Optional[str] = None,
+        media_agent: Optional[str] = None,
+        table_level_restore: bool = False,
+        clone_env: bool = False,
+        clone_options: Optional[dict] = None,
+        redirect_enabled: bool = False,
+        redirect_path: Optional[str] = None,
+        browse_jobid: Optional[int] = None
+    ) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;Restore MySQL data and/or log files to their original location (in-place restore).
 
-            Args:
-                path                    (list)  --  list of database/databases to be restored
+        This method restores the specified MySQL databases or tables to the same location on the source or destination client.
+        It supports options for data-only, log-only, or combined restores, as well as advanced features like table-level restore,
+        cloning, and redirect restore.
 
-                    default: None
+        Args:
+            path: List of databases or tables to restore. If None, restores all available.
+            staging: Optional staging location for MySQL logs during restore.
+            dest_client_name: Name of the destination client for the restore. If None, uses the source client.
+            dest_instance_name: Name of the destination MySQL instance. If None, uses the source instance.
+            data_restore: If True, performs data or data+log restore. Default is True.
+            log_restore: If True, performs log or data+log restore. Default is False.
+            overwrite: If True, unconditionally overwrites files during restore. Default is True.
+            copy_precedence: Storage policy copy precedence value. If None, uses default.
+            from_time: Restore data after this time (format: &#39;YYYY-MM-DD HH:MM:SS&#39;). If None, restores from earliest.
+            to_time: Restore data before this time (format: &#39;YYYY-MM-DD HH:MM:SS&#39;). If None, restores up to latest.
+            media_agent: Name of the media agent to use for the restore. If None, uses default.
+            table_level_restore: If True, enables table-level restore. Default is False.
+            clone_env: If True, clones the database environment. Default is False.
+            clone_options: Dictionary of clone restore options. Example:
+                {
+                    &#34;stagingLocaion&#34;: &#34;/gk_snap&#34;,
+                    &#34;forceCleanup&#34;: True,
+                    &#34;port&#34;: &#34;5595&#34;,
+                    &#34;libDirectory&#34;: &#34;&#34;,
+                    &#34;isInstanceSelected&#34;: True,
+                    &#34;reservationPeriodS&#34;: 3600,
+                    &#34;user&#34;: &#34;&#34;,
+                    &#34;binaryDirectory&#34;: &#34;/usr/bin&#34;
+                }
+            redirect_enabled: If True, enables redirect restore. Default is False.
+            redirect_path: Path to use for redirect restore if enabled.
+            browse_jobid: Job ID to browse and restore from. If None, uses latest available.
 
-                staging                 (str)   --  staging location for mysql logs during restores
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                    default: None
-
-                dest_client_name        (str)   --  destination client name where files are to be
-                restored
-
-                    default: None
-
-                dest_instance_name      (str)   --  destination mysql instance name of destination
-                client
-
-                    default: None
-
-                data_restore            (bool)  --  for data only/data+log restore
-
-                    default: True
-
-                log_restore             (bool)  --  for log only/data+log restore
-
-                    default: False
-
-                overwrite               (bool)  --  unconditional overwrite files during restore
-
-                    default: True
-
-                copy_precedence         (int)   --  copy precedence value of storage policy copy
-
-                    default: None
-
-                from_time               (str)   --  time to retore the contents after
-                        format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                to_time                 (str)   --  time to retore the contents before
-                        format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                media_agent             (str)   --  media agent associated
-
-                    default: None
-
-                table_level_restore     (bool)  --  Table level restore flag
-
-                    default: False
-
-                clone_env               (bool)  --  boolean to specify whether the database
-                should be cloned or not
-
-                    default: False
-
-                clone_options           (dict)  --  clone restore options passed in a dict
-
-                    default: None
-
-                    Accepted format: {
-                                        &#34;stagingLocaion&#34;: &#34;/gk_snap&#34;,
-                                        &#34;forceCleanup&#34;: True,
-                                        &#34;port&#34;: &#34;5595&#34;,
-                                        &#34;libDirectory&#34;: &#34;&#34;,
-                                        &#34;isInstanceSelected&#34;: True,
-                                        &#34;reservationPeriodS&#34;: 3600,
-                                        &#34;user&#34;: &#34;&#34;,
-                                        &#34;binaryDirectory&#34;: &#34;/usr/bin&#34;
-
-                                     }
-
-                redirect_enabled         (bool)  --  boolean to specify if redirect restore is
-                enabled
-
-                    default: False
-
-                redirect_path           (str)   --  Path specified in advanced restore options
-                in order to perform redirect restore
-
-                    default: None
-
-                browse_jobid           (int)   --  Browse jobid to browse and restore from
-
-                    default: None
-
-            Returns:
-                object - instance of the Job class for this restore job
-
-            Raises:
-                SDKException:
-                    if paths is not a list
-
-                    if failed to initialize job
-
-                    if response is empty
-
-                    if response is not success
+        Raises:
+            SDKException: If the path argument is not a list, if the job fails to initialize,
+                if the response is empty, or if the restore operation is unsuccessful.
 
         &#34;&#34;&#34;
         if not (isinstance(path, list) and
                 isinstance(overwrite, bool)):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
 
-        if path == []:
+        if not path:
             raise SDKException(&#39;Instance&#39;, &#39;104&#39;)
 
         if dest_client_name is None:
@@ -668,73 +631,62 @@ class MYSQLInstance(Instance):
         return self._process_restore_response(request_json)
 
     def restore_out_of_place(
-            self,
-            path=None,
-            staging=None,
-            dest_client_name=None,
-            dest_instance_name=None,
-            data_restore=True,
-            log_restore=False,
-            overwrite=True,
-            copy_precedence=None,
-            from_time=None,
-            to_time=None,
-            media_agent=None,
-            table_level_restore=False,
-            clone_env=False,
-            clone_options=None,
-            redirect_enabled=False,
-            redirect_path=None,
-            browse_jobid=None,
-            recurringRestore=False):
-        &#34;&#34;&#34;
-        Method to perform out of place restore of MySQL data/log/recurring files to the destination client location.
+        self,
+        path: Optional[list] = None,
+        staging: Optional[str] = None,
+        dest_client_name: Optional[str] = None,
+        dest_instance_name: Optional[str] = None,
+        data_restore: bool = True,
+        log_restore: bool = False,
+        overwrite: bool = True,
+        copy_precedence: Optional[int] = None,
+        from_time: Optional[str] = None,
+        to_time: Optional[str] = None,
+        media_agent: Optional[str] = None,
+        table_level_restore: bool = False,
+        clone_env: bool = False,
+        clone_options: Optional[dict] = None,
+        redirect_enabled: bool = False,
+        redirect_path: Optional[str] = None,
+        browse_jobid: Optional[int] = None,
+        recurringRestore: bool = False
+    ) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;Perform an out-of-place restore of MySQL data, logs, or recurring files to a specified destination client and instance.
 
-            Args:
-                path                    (list)  --  list of database/databases to be restored
-                staging                 (str)   --  staging location for mysql logs during restores
-                dest_client_name        (str)   --  destination client name where files are to be restored
-                dest_instance_name      (str)   --  destination mysql instance name of destination client
-                data_restore            (bool)  --  for data only/data+log restore
-                log_restore             (bool)  --  for log only/data+log restore
-                overwrite               (bool)  --  unconditional overwrite files during restore
-                copy_precedence         (int)   --  copy precedence value of storage policy copy
-                from_time               (str)   --  time to restore the contents after
-                        format: YYYY-MM-DD HH:MM:SS
-                to_time                 (str)   --  time to restore the contents before
-                        format: YYYY-MM-DD HH:MM:SS
-                media_agent             (str)   --  media agent associated
-                table_level_restore     (bool)  --  Table level restore flag
-                clone_env               (bool)  --  boolean to specify whether the database should be cloned or not
-                clone_options           (dict)  --  clone restore options passed in a dict
-                redirect_enabled         (bool)  --  boolean to specify if redirect restore is enabled
-                redirect_path           (str)   --  Path specified in advanced restore options
-                in order to perform redirect restore
-                browse_jobid           (int)   --  Browse jobid to browse and restore from
-                recurringRestore       (bool)  --  for Recurring restore
+        This method allows you to restore MySQL databases or tables to a different client or instance, with options for data/log restore, table-level restore, cloning, and advanced restore settings.
 
-            Returns:
-                object - instance of the Job class for this restore job
+        Args:
+            path: List of database or table names to be restored. If None, restores all available.
+            staging: Staging location for MySQL logs during restore operations.
+            dest_client_name: Name of the destination client where the data will be restored.
+            dest_instance_name: Name of the destination MySQL instance on the destination client.
+            data_restore: If True, performs data or data+log restore. Defaults to True.
+            log_restore: If True, performs log or data+log restore. Defaults to False.
+            overwrite: If True, existing files at the destination will be overwritten. Defaults to True.
+            copy_precedence: Storage policy copy precedence value to use for restore.
+            from_time: Restore data backed up after this time (format: &#39;YYYY-MM-DD HH:MM:SS&#39;).
+            to_time: Restore data backed up before this time (format: &#39;YYYY-MM-DD HH:MM:SS&#39;).
+            media_agent: Name of the MediaAgent to use for the restore.
+            table_level_restore: If True, enables table-level restore. Defaults to False.
+            clone_env: If True, clones the database environment. Defaults to False.
+            clone_options: Dictionary of additional clone restore options.
+            redirect_enabled: If True, enables redirect restore. Defaults to False.
+            redirect_path: Path to redirect the restore to, used with redirect_enabled.
+            browse_jobid: Job ID to browse and restore from a specific backup job.
+            recurringRestore: If True, enables recurring restore. Defaults to False.
 
-            Raises:
-                SDKException:
-                    if paths is not a list
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                    if failed to initialize job
+        Raises:
+            SDKException: If the path is not a list, if job initialization fails, if destination client or instance name is empty, or if the restore response is empty or unsuccessful.
 
-                    if destination client name is empty
-
-                    if destination Instance name empty
-
-                    if response is empty
-
-                    if response is not success
         &#34;&#34;&#34;
         if not (isinstance(path, list) and
                 isinstance(overwrite, bool)):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
 
-        if path == []:
+        if not path:
             raise SDKException(&#39;Instance&#39;, &#39;104&#39;)
 
         if dest_client_name is None:
@@ -769,12 +721,19 @@ class MYSQLInstance(Instance):
 
         return self._process_restore_response(request_json)
 
-    def _restore_browse_option_json(self, value):
-        &#34;&#34;&#34;setter for the Browse options for restore in Json&#34;&#34;&#34;
+    def _restore_browse_option_json(self, value: dict) -&gt; None:
+        &#34;&#34;&#34;Set the browse options for restore operations in JSON format.
+
+        Args:
+            value: A dictionary containing the browse options to be used during restore.
+
+        &#34;&#34;&#34;
 
         if not isinstance(value, dict):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
+
         super(MYSQLInstance, self)._restore_browse_option_json(value)
+
         self._browse_restore_json[&#39;backupset&#39;] = {
             &#34;clientName&#34;: self._agent_object._client_object.client_name,
             &#34;backupsetName&#34;: &#34;defaultDummyBackupSet&#34;
@@ -784,11 +743,18 @@ class MYSQLInstance(Instance):
             self._browse_restore_json[&#39;browseJobId&#39;] = value.get(&#34;browse_jobid&#34;)
 
         if value.get(&#34;from_time&#34;) and value.get(&#34;to_time&#34;):
-            self._browse_restore_json[&#34;timeRange&#34;] = {&#34;fromTime&#34; : value.get(&#34;from_time&#34;),
-                                                      &#34;toTime&#34; : value.get(&#34;to_time&#34;)}
+            self._browse_restore_json[&#34;timeRange&#34;] = {
+                &#34;fromTime&#34;: value.get(&#34;from_time&#34;),
+                &#34;toTime&#34;: value.get(&#34;to_time&#34;)
+            }
 
-    def _restore_common_options_json(self, value):
-        &#34;&#34;&#34;setter for the Common options in restore JSON&#34;&#34;&#34;
+    def _restore_common_options_json(self, value: dict) -&gt; None:
+        &#34;&#34;&#34;Set the common options section in the restore JSON configuration.
+
+        Args:
+            value: A dictionary containing the common options to be set in the restore JSON.
+
+        &#34;&#34;&#34;
 
         if not isinstance(value, dict):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
@@ -800,8 +766,13 @@ class MYSQLInstance(Instance):
             &#34;syncRestore&#34;: False
         }
 
-    def _restore_destination_json(self, value):
-        &#34;&#34;&#34;setter for the MySQL Destination options in restore JSON&#34;&#34;&#34;
+    def _restore_destination_json(self, value: dict) -&gt; None:
+        &#34;&#34;&#34;Set the MySQL destination options in the restore JSON configuration.
+
+        Args:
+            value: A dictionary containing the MySQL destination options to be set in the restore JSON.
+
+        &#34;&#34;&#34;
 
         if not isinstance(value, dict):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
@@ -817,8 +788,13 @@ class MYSQLInstance(Instance):
             }
         }
 
-    def _restore_fileoption_json(self, value):
-        &#34;&#34;&#34;setter for the fileoption restore option in restore JSON&#34;&#34;&#34;
+    def _restore_fileoption_json(self, value: dict) -&gt; None:
+        &#34;&#34;&#34;Set the file option for the restore operation in the restore JSON.
+
+        Args:
+            value: A dictionary containing file option settings to be applied to the restore JSON.
+
+        &#34;&#34;&#34;
 
         if not isinstance(value, dict):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
@@ -827,8 +803,13 @@ class MYSQLInstance(Instance):
             &#34;sourceItem&#34;: value.get(&#34;paths&#34;, [])
         }
 
-    def _restore_admin_option_json(self, value):
-        &#34;&#34;&#34;setter for the admin restore option in restore JSON&#34;&#34;&#34;
+    def _restore_admin_option_json(self, value: dict) -&gt; None:
+        &#34;&#34;&#34;Set the admin restore option in the restore JSON configuration.
+
+        Args:
+            value: A dictionary containing the admin restore options to be set in the restore JSON.
+
+        &#34;&#34;&#34;
 
         if not isinstance(value, dict):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
@@ -839,8 +820,13 @@ class MYSQLInstance(Instance):
             }
         }
 
-    def _restore_mysql_option_json(self, value):
-        &#34;&#34;&#34;setter for the mysql restore option in restore JSON&#34;&#34;&#34;
+    def _restore_mysql_option_json(self, value: dict) -&gt; None:
+        &#34;&#34;&#34;Set the MySQL restore options in the restore JSON configuration.
+
+        Args:
+            value: A dictionary containing MySQL restore options to be set in the restore JSON.
+
+        &#34;&#34;&#34;
 
         if not isinstance(value, dict):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
@@ -875,17 +861,16 @@ class MYSQLInstance(Instance):
             self.mysql_restore_json[&#34;redirectItems&#34;] = [value.get(&#34;redirect_path&#34;)]
 
         if value.get(&#34;from_time&#34;):
-            self.mysql_restore_json[&#34;fromTime&#34;] = {&#34;time&#34; : value.get(&#34;to_time&#34;)}
+            self.mysql_restore_json[&#34;fromTime&#34;] = {&#34;time&#34;: value.get(&#34;to_time&#34;)}
 
         if value.get(&#34;to_time&#34;):
-            self.mysql_restore_json[&#34;refTime&#34;] = {&#34;time&#34; : value.get(&#34;to_time&#34;)}
+            self.mysql_restore_json[&#34;refTime&#34;] = {&#34;time&#34;: value.get(&#34;to_time&#34;)}
 
         if value.get(&#34;to_time&#34;):
-            self.mysql_restore_json[&#34;pointInTime&#34;] = {&#34;time&#34; : value.get(&#34;to_time&#34;)}
+            self.mysql_restore_json[&#34;pointInTime&#34;] = {&#34;time&#34;: value.get(&#34;to_time&#34;)}
 
         if value.get(&#34;dest_instance_name&#34;):
-            self.mysql_restore_json[&#34;destinationServer&#34;] = {&#34;name&#34;: value.get(
-                &#34;dest_instance_name&#34;)}</code></pre>
+            self.mysql_restore_json[&#34;destinationServer&#34;] = {&#34;name&#34;: value.get(&#34;dest_instance_name&#34;)}</code></pre>
 </details>
 </section>
 <section>
@@ -899,52 +884,76 @@ class MYSQLInstance(Instance):
 <dl>
 <dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance"><code class="flex name class">
 <span>class <span class="ident">MYSQLInstance</span></span>
-<span>(</span><span>agent_object, instance_name, instance_id=None)</span>
+<span>(</span><span>agent_object: Agent, instance_name: str, instance_id: int = None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class to represent a standalone MYSQL Instance</p>
-<p>Initialise the Subclient object.</p>
-<h2 id="args">Args</h2>
-<p>agent_object
-(object)
-&ndash;
-instance of the Agent class</p>
-<p>instance_name
-(str)
-&ndash;
-name of the instance</p>
-<p>instance_id
-(str)
-&ndash;
-id of the instance</p>
-<pre><code>default: None
-</code></pre>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the MYSQLInstance class</p></div>
+<div class="desc"><p>Represents a standalone MySQL instance with comprehensive management and restore capabilities.</p>
+<p>This class encapsulates the configuration, properties, and operational controls for a MySQL database instance.
+It provides access to key instance attributes such as port, usernames, configuration files, binary directories,
+version information, and backup/restore options. The class supports both in-place and out-of-place restore operations,
+including advanced options for table-level restores, cloning environments, and redirecting restore paths.</p>
+<p>Key Features:
+- Initialization with agent object, instance name, and instance ID
+- Access to instance properties: port, MySQL/NT usernames, config file, binary directory, version, log directories
+- Backup and restore details: log backup SP, command line SP, xtrabackup, MySQL Enterprise Backup
+- Autodiscovery enablement and management
+- Proxy options and SSL enablement
+- No-lock status management
+- Methods for retrieving instance properties and restoring from JSON configurations
+- In-place and out-of-place restore operations with extensive customization options
+- Support for table-level restore, cloning, redirection, and recurring restores
+- Internal methods for handling restore options and administrative settings</p>
+<p>This class is intended for use in environments where robust management and restoration of MySQL instances is required,
+providing a programmatic interface for both configuration and operational tasks.</p>
+<p>Initialize a MYSQLInstance object.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>agent_object</code></strong></dt>
+<dd>Instance of the Agent class associated with this MySQL instance.</dd>
+<dt><strong><code>instance_name</code></strong></dt>
+<dd>The name of the MySQL instance.</dd>
+<dt><strong><code>instance_id</code></strong></dt>
+<dd>The unique identifier for the MySQL instance. Defaults to None.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/mysqlinstance.py#L98-L796" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/mysqlinstance.py#L103-L812" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class MYSQLInstance(Instance):
     &#34;&#34;&#34;
-    Class to represent a standalone MYSQL Instance
+    Represents a standalone MySQL instance with comprehensive management and restore capabilities.
+
+    This class encapsulates the configuration, properties, and operational controls for a MySQL database instance.
+    It provides access to key instance attributes such as port, usernames, configuration files, binary directories,
+    version information, and backup/restore options. The class supports both in-place and out-of-place restore operations,
+    including advanced options for table-level restores, cloning environments, and redirecting restore paths.
+
+    Key Features:
+        - Initialization with agent object, instance name, and instance ID
+        - Access to instance properties: port, MySQL/NT usernames, config file, binary directory, version, log directories
+        - Backup and restore details: log backup SP, command line SP, xtrabackup, MySQL Enterprise Backup
+        - Autodiscovery enablement and management
+        - Proxy options and SSL enablement
+        - No-lock status management
+        - Methods for retrieving instance properties and restoring from JSON configurations
+        - In-place and out-of-place restore operations with extensive customization options
+        - Support for table-level restore, cloning, redirection, and recurring restores
+        - Internal methods for handling restore options and administrative settings
+
+    This class is intended for use in environments where robust management and restoration of MySQL instances is required,
+    providing a programmatic interface for both configuration and operational tasks.
+
     &#34;&#34;&#34;
 
-    def __init__(self, agent_object, instance_name, instance_id=None):
-        &#34;&#34;&#34;Initialise the Subclient object.
+    def __init__(self, agent_object: &#39;Agent&#39;, instance_name: str, instance_id: int = None) -&gt; None:
+        &#34;&#34;&#34;Initialize a MYSQLInstance object.
 
-            Args:
-                agent_object    (object)  --  instance of the Agent class
-
-                instance_name   (str)     --  name of the instance
-
-                instance_id     (str)     --  id of the instance
-
-                    default: None
-
-            Returns:
-                object - instance of the MYSQLInstance class
+        Args:
+            agent_object: Instance of the Agent class associated with this MySQL instance.
+            instance_name: The name of the MySQL instance.
+            instance_id: The unique identifier for the MySQL instance. Defaults to None.
 
         &#34;&#34;&#34;
         self._browse_restore_json = None
@@ -957,82 +966,85 @@ id of the instance</p>
         super(MYSQLInstance, self).__init__(agent_object, instance_name, instance_id)
 
     @property
-    def port(self):
-        &#34;&#34;&#34;Returns the MySQL Server Port number.
+    def port(self) -&gt; str:
+        &#34;&#34;&#34;Get the MySQL Server port number for this instance.
 
         Returns:
-            (str)   --  MySql server port number
+            The port number used by the MySQL Server as a string.
 
         &#34;&#34;&#34;
         return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;port&#39;, None)
 
     @property
-    def mysql_username(self):
-        &#34;&#34;&#34;Returns the MySQL Server username.
+    def mysql_username(self) -&gt; str:
+        &#34;&#34;&#34;Get the MySQL Server username associated with this instance.
 
         Returns:
-            (str)   --  MySql server SA username
+            The MySQL server SA (System Administrator) username as a string.
 
         &#34;&#34;&#34;
-        credential_name = self._properties.get(&#39;credentialEntity&#39;, {}).get(&#39;credentialName&#39;, None)
-        return Credential(self._commcell_object, credential_name).credential_user_name
+        if self.credentials:
+            credential_obj = self._commcell_object.credentials.get(self.credentials)
+            if credential_obj:
+                return credential_obj._credential_properties.get(&#39;userName&#39;)
+        return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;SAUser&#39;, {}).get(&#39;userName&#39;, None)
 
     @property
-    def nt_username(self):
-        &#34;&#34;&#34;Returns the MySQL Server nt username.
+    def nt_username(self) -&gt; str:
+        &#34;&#34;&#34;Get the MySQL Server NT username associated with this instance.
 
         Returns:
-            (str)   --  MySql server NT username
+            The NT username used for MySQL Server authentication as a string.
 
         &#34;&#34;&#34;
         return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;NTUser&#39;, {}).get(&#39;userName&#39;, None)
 
     @property
-    def config_file(self):
-        &#34;&#34;&#34;Returns the MySQL Server Config File location.
+    def config_file(self) -&gt; str:
+        &#34;&#34;&#34;Get the location of the MySQL server configuration file.
 
         Returns:
-            (str)   --  MySql server config file location
+            The file path to the MySQL server&#39;s configuration file as a string.
 
         &#34;&#34;&#34;
         return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;ConfigFile&#39;, None)
 
     @property
-    def binary_directory(self):
-        &#34;&#34;&#34;Returns the MySQL Server Binary File location.
+    def binary_directory(self) -&gt; str:
+        &#34;&#34;&#34;Get the MySQL Server binary file directory location.
 
         Returns:
-            (str)   --  MySql server binary directory
+            The file system path to the MySQL server&#39;s binary directory as a string.
 
         &#34;&#34;&#34;
         return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;BinaryDirectory&#39;, None)
 
     @property
-    def version(self):
-        &#34;&#34;&#34;Returns the MySQL Server version number.
+    def version(self) -&gt; str:
+        &#34;&#34;&#34;Get the MySQL Server version number for this instance.
 
         Returns:
-            (str)   --  MySql server version
+            The version number of the MySQL server as a string.
 
         &#34;&#34;&#34;
         return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;version&#39;, None)
 
     @property
-    def log_data_directory(self):
-        &#34;&#34;&#34;Returns the MySQL Server log data directory.
+    def log_data_directory(self) -&gt; str:
+        &#34;&#34;&#34;Get the MySQL Server log data directory path.
 
         Returns:
-            (str)   --  MySql server log directory path
+            The file system path to the MySQL server&#39;s log data directory as a string.
 
         &#34;&#34;&#34;
         return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;LogDataDirectory&#39;, None)
 
     @property
-    def log_backup_sp_details(self):
-        &#34;&#34;&#34;Returns the MySQL Server Log backup SP details
+    def log_backup_sp_details(self) -&gt; dict:
+        &#34;&#34;&#34;Get the MySQL Server log backup storage policy details.
 
         Returns:
-            (dict)  --  MySql server log backup storage policy information
+            dict: A dictionary containing information about the storage policy used for MySQL Server log backups.
 
         &#34;&#34;&#34;
         log_storage_policy_name = self._properties.get(&#39;mySqlInstance&#39;, {}).get(
@@ -1045,40 +1057,40 @@ id of the instance</p>
         return log_sp
 
     @property
-    def command_line_sp_details(self):
-        &#34;&#34;&#34;Returns the MySQL Server commandline SP details.
+    def command_line_sp_details(self) -&gt; dict:
+        &#34;&#34;&#34;Get the MySQL Server command-line storage policy details.
 
         Returns:
-            (dict)  --  MySql server commnadline storage policy information
+            dict: A dictionary containing information about the MySQL server&#39;s command-line storage policy.
 
         &#34;&#34;&#34;
         cmd_storage_policy_name = self._properties.get(&#39;mySqlInstance&#39;, {}).get(
             &#39;mysqlStorageDevice&#39;, {}).get(&#39;commandLineStoragePolicy&#39;, {}).get(
-                &#39;storagePolicyName&#39;, None)
+            &#39;storagePolicyName&#39;, None)
         cmd_storage_policy_id = self._properties.get(&#39;mySqlInstance&#39;, {}).get(
             &#39;mysqlStorageDevice&#39;, {}).get(&#39;commandLineStoragePolicy&#39;, {}).get(
-                &#39;storagePolicyId&#39;, None)
+            &#39;storagePolicyId&#39;, None)
 
         command_sp = {&#34;storagePolicyName&#34;: cmd_storage_policy_name,
                       &#34;storagePolicyId&#34;: cmd_storage_policy_id}
         return command_sp
 
     @property
-    def autodiscovery_enabled(self):
-        &#34;&#34;&#34;Returns the MySQL Server auto discovery enabled flag
+    def autodiscovery_enabled(self) -&gt; bool:
+        &#34;&#34;&#34;Indicate whether MySQL Server auto discovery is enabled for this instance.
 
         Returns:
-            (bool)  --  True if auto discovery enabled
-                        False if auto discovery not enabled
+            True if auto discovery is enabled; False otherwise.
 
         &#34;&#34;&#34;
         return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;EnableAutoDiscovery&#39;, False)
 
     @autodiscovery_enabled.setter
-    def autodiscovery_enabled(self, value):
-        &#34;&#34;&#34;
-        Sets the auto discovery attribute to True or False
-        value (bool)   --  True or False
+    def autodiscovery_enabled(self, value: bool) -&gt; None:
+        &#34;&#34;&#34;Set the auto discovery attribute for the MYSQL instance.
+
+        Args:
+            value: Boolean value to enable (True) or disable (False) auto discovery.
 
         &#34;&#34;&#34;
         properties = self._properties
@@ -1089,36 +1101,31 @@ id of the instance</p>
         self.update_properties(properties)
 
     @property
-    def xtrabackup_bin_path(self):
-        &#34;&#34;&#34;Returns the MySQL Server xtrabackup bin path
+    def xtrabackup_bin_path(self) -&gt; str:
+        &#34;&#34;&#34;Get the path to the MySQL server xtrabackup binary.
 
         Returns:
-            (str)   --  MySql server xtrabackup binary path
+            The file system path to the xtrabackup binary used by the MySQL server.
 
         &#34;&#34;&#34;
-        return self._properties.get(
-            &#39;mySqlInstance&#39;, {}).get(
-                &#39;xtraBackupSettings&#39;, {}).get(&#39;xtraBackupBinPath&#39;, &#34;&#34;)
+        return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;xtraBackupSettings&#39;, {}).get(&#39;xtraBackupBinPath&#39;, &#34;&#34;)
 
     @property
-    def is_xtrabackup_enabled(self):
-        &#34;&#34;&#34;Returns the MySQL Server xtrabackup enabled flag
+    def is_xtrabackup_enabled(self) -&gt; bool:
+        &#34;&#34;&#34;Check if xtrabackup is enabled for the MySQL Server instance.
 
         Returns:
-            (bool)  --  True if xtrabackup is enabled
-                        False if xtrabackup is not enabled
+            True if xtrabackup is enabled; False otherwise.
 
         &#34;&#34;&#34;
-        return self._properties.get(
-            &#39;mySqlInstance&#39;, {}).get(
-                &#39;xtraBackupSettings&#39;, {}).get(&#39;enableXtraBackup&#39;, False)
+        return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;xtraBackupSettings&#39;, {}).get(&#39;enableXtraBackup&#39;, False)
 
     @property
-    def proxy_options(self):
-        &#34;&#34;&#34;Returns the MySQL Server proxy options
+    def proxy_options(self) -&gt; dict:
+        &#34;&#34;&#34;Get the MySQL Server proxy options for this instance.
 
         Returns:
-            (dict)  --  MySql server proxy information
+            dict: A dictionary containing MySQL server proxy information, such as proxy host, port, and authentication details.
 
         &#34;&#34;&#34;
         proxy_settings = self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;proxySettings&#39;, {})
@@ -1133,23 +1140,22 @@ id of the instance</p>
         return proxy_opt
 
     @property
-    def mysql_enterprise_backup_binary_path(self):
-        &#34;&#34;&#34; Returns the MySQL Enterprise backup binary path detail
+    def mysql_enterprise_backup_binary_path(self) -&gt; dict:
+        &#34;&#34;&#34;Get the MySQL Enterprise backup binary path details.
 
-            Return Type: dict
+        Returns:
+            dict: A dictionary containing details about the MySQL Enterprise backup binary path.
 
         &#34;&#34;&#34;
         meb_settings = self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;mebSettings&#39;, {})
         return meb_settings
 
     @mysql_enterprise_backup_binary_path.setter
-    def mysql_enterprise_backup_binary_path(self, value):
-        &#34;&#34;&#34; Setter for MySQL Enterprise backup binary path
+    def mysql_enterprise_backup_binary_path(self, value: str) -&gt; None:
+        &#34;&#34;&#34;Set the MySQL Enterprise backup binary path for the instance.
 
-            Args:
-
-                value (str)  -- Contains the MySQL Enterprise backup binary path to be updated
-                in MySQL Instance property
+        Args:
+            value: The file system path to the MySQL Enterprise backup binary to be set for this MySQL instance.
 
         &#34;&#34;&#34;
         if not isinstance(value, str):
@@ -1163,24 +1169,21 @@ id of the instance</p>
         self.update_properties(properties)
 
     @property
-    def no_lock_status(self):
-        &#34;&#34;&#34; Returns the status of No Lock Checkbox in MySQL Instance
+    def no_lock_status(self) -&gt; bool:
+        &#34;&#34;&#34;Get the status of the &#39;No Lock&#39; checkbox in the MySQL instance.
 
-            Returns:
-            (bool)  --  True if No Lock checkbox is enabled
-                        False if No Lock checkbox is disabled
+        Returns:
+            True if the &#39;No Lock&#39; checkbox is enabled, False if it is disabled.
 
         &#34;&#34;&#34;
         return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;EnableNoLocking&#39;, False)
 
     @no_lock_status.setter
-    def no_lock_status(self, value):
-        &#34;&#34;&#34; Setter for No Lock property in MySQL Instance
+    def no_lock_status(self, value: bool) -&gt; None:
+        &#34;&#34;&#34;Set the No Lock property for the MySQL Instance.
 
-            Args:
-
-                value (bool)  -- True or False to enable or disable the No Lock
-                property in MySQL Instance
+        Args:
+            value: Set to True to enable the No Lock property, or False to disable it.
 
         &#34;&#34;&#34;
         if not isinstance(value, bool):
@@ -1190,18 +1193,24 @@ id of the instance</p>
         self.update_properties(properties)
 
     @property
-    def ssl_enabled(self):
-        &#34;&#34;&#34; Returns(boolean) True/False based on SSL status &#34;&#34;&#34;
+    def ssl_enabled(self) -&gt; bool:
+        &#34;&#34;&#34;Check if SSL is enabled for the MySQL instance.
+
+        Returns:
+            True if SSL is enabled for the MySQL instance, False otherwise.
+
+        &#34;&#34;&#34;
         return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;sslEnabled&#39;, False)
 
-    def _get_instance_properties(self):
-        &#34;&#34;&#34;Gets the properties of this instance.
+    def _get_instance_properties(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve and update the properties of this MySQL instance.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        This method fetches the current configuration and properties for the MySQL instance
+        associated with this object. It updates the instance&#39;s internal state with the latest
+        information from the Commcell.
 
-                    if response is not success
+        Raises:
+            SDKException: If the response from the Commcell is empty or indicates a failure.
 
         &#34;&#34;&#34;
         super(MYSQLInstance, self)._get_instance_properties()
@@ -1216,14 +1225,18 @@ id of the instance</p>
             &#34;consumeLicense&#34;: True
         }
 
-    def _restore_json(self, **kwargs):
-        &#34;&#34;&#34;Returns the JSON request to pass to the API as per the options selected by the user.
+    def _restore_json(self, **kwargs) -&gt; dict:
+        &#34;&#34;&#34;Generate the JSON request payload for a restore operation based on user-selected options.
 
-            Args:
-                kwargs   (list)  --  list of options need to be set for restore
+        This method constructs and returns a dictionary representing the JSON request
+        to be sent to the API for a restore operation. The options for the restore
+        are provided as keyword arguments.
 
-            Returns:
-                dict - JSON request to pass to the API
+        Args:
+            **kwargs: Arbitrary keyword arguments representing restore options and their values.
+
+        Returns:
+            dict: The JSON request dictionary to be passed to the API.
 
         &#34;&#34;&#34;
         rest_json = super(MYSQLInstance, self)._restore_json(**kwargs)
@@ -1250,133 +1263,73 @@ id of the instance</p>
         return rest_json
 
     def restore_in_place(
-            self,
-            path=None,
-            staging=None,
-            dest_client_name=None,
-            dest_instance_name=None,
-            data_restore=True,
-            log_restore=False,
-            overwrite=True,
-            copy_precedence=None,
-            from_time=None,
-            to_time=None,
-            media_agent=None,
-            table_level_restore=False,
-            clone_env=False,
-            clone_options=None,
-            redirect_enabled=False,
-            redirect_path=None,
-            browse_jobid=None):
-        &#34;&#34;&#34;Restores the mysql data/log files specified in the input paths list to the same location.
+        self,
+        path: Optional[list] = None,
+        staging: Optional[str] = None,
+        dest_client_name: Optional[str] = None,
+        dest_instance_name: Optional[str] = None,
+        data_restore: bool = True,
+        log_restore: bool = False,
+        overwrite: bool = True,
+        copy_precedence: Optional[int] = None,
+        from_time: Optional[str] = None,
+        to_time: Optional[str] = None,
+        media_agent: Optional[str] = None,
+        table_level_restore: bool = False,
+        clone_env: bool = False,
+        clone_options: Optional[dict] = None,
+        redirect_enabled: bool = False,
+        redirect_path: Optional[str] = None,
+        browse_jobid: Optional[int] = None
+    ) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;Restore MySQL data and/or log files to their original location (in-place restore).
 
-            Args:
-                path                    (list)  --  list of database/databases to be restored
+        This method restores the specified MySQL databases or tables to the same location on the source or destination client.
+        It supports options for data-only, log-only, or combined restores, as well as advanced features like table-level restore,
+        cloning, and redirect restore.
 
-                    default: None
+        Args:
+            path: List of databases or tables to restore. If None, restores all available.
+            staging: Optional staging location for MySQL logs during restore.
+            dest_client_name: Name of the destination client for the restore. If None, uses the source client.
+            dest_instance_name: Name of the destination MySQL instance. If None, uses the source instance.
+            data_restore: If True, performs data or data+log restore. Default is True.
+            log_restore: If True, performs log or data+log restore. Default is False.
+            overwrite: If True, unconditionally overwrites files during restore. Default is True.
+            copy_precedence: Storage policy copy precedence value. If None, uses default.
+            from_time: Restore data after this time (format: &#39;YYYY-MM-DD HH:MM:SS&#39;). If None, restores from earliest.
+            to_time: Restore data before this time (format: &#39;YYYY-MM-DD HH:MM:SS&#39;). If None, restores up to latest.
+            media_agent: Name of the media agent to use for the restore. If None, uses default.
+            table_level_restore: If True, enables table-level restore. Default is False.
+            clone_env: If True, clones the database environment. Default is False.
+            clone_options: Dictionary of clone restore options. Example:
+                {
+                    &#34;stagingLocaion&#34;: &#34;/gk_snap&#34;,
+                    &#34;forceCleanup&#34;: True,
+                    &#34;port&#34;: &#34;5595&#34;,
+                    &#34;libDirectory&#34;: &#34;&#34;,
+                    &#34;isInstanceSelected&#34;: True,
+                    &#34;reservationPeriodS&#34;: 3600,
+                    &#34;user&#34;: &#34;&#34;,
+                    &#34;binaryDirectory&#34;: &#34;/usr/bin&#34;
+                }
+            redirect_enabled: If True, enables redirect restore. Default is False.
+            redirect_path: Path to use for redirect restore if enabled.
+            browse_jobid: Job ID to browse and restore from. If None, uses latest available.
 
-                staging                 (str)   --  staging location for mysql logs during restores
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                    default: None
-
-                dest_client_name        (str)   --  destination client name where files are to be
-                restored
-
-                    default: None
-
-                dest_instance_name      (str)   --  destination mysql instance name of destination
-                client
-
-                    default: None
-
-                data_restore            (bool)  --  for data only/data+log restore
-
-                    default: True
-
-                log_restore             (bool)  --  for log only/data+log restore
-
-                    default: False
-
-                overwrite               (bool)  --  unconditional overwrite files during restore
-
-                    default: True
-
-                copy_precedence         (int)   --  copy precedence value of storage policy copy
-
-                    default: None
-
-                from_time               (str)   --  time to retore the contents after
-                        format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                to_time                 (str)   --  time to retore the contents before
-                        format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                media_agent             (str)   --  media agent associated
-
-                    default: None
-
-                table_level_restore     (bool)  --  Table level restore flag
-
-                    default: False
-
-                clone_env               (bool)  --  boolean to specify whether the database
-                should be cloned or not
-
-                    default: False
-
-                clone_options           (dict)  --  clone restore options passed in a dict
-
-                    default: None
-
-                    Accepted format: {
-                                        &#34;stagingLocaion&#34;: &#34;/gk_snap&#34;,
-                                        &#34;forceCleanup&#34;: True,
-                                        &#34;port&#34;: &#34;5595&#34;,
-                                        &#34;libDirectory&#34;: &#34;&#34;,
-                                        &#34;isInstanceSelected&#34;: True,
-                                        &#34;reservationPeriodS&#34;: 3600,
-                                        &#34;user&#34;: &#34;&#34;,
-                                        &#34;binaryDirectory&#34;: &#34;/usr/bin&#34;
-
-                                     }
-
-                redirect_enabled         (bool)  --  boolean to specify if redirect restore is
-                enabled
-
-                    default: False
-
-                redirect_path           (str)   --  Path specified in advanced restore options
-                in order to perform redirect restore
-
-                    default: None
-
-                browse_jobid           (int)   --  Browse jobid to browse and restore from
-
-                    default: None
-
-            Returns:
-                object - instance of the Job class for this restore job
-
-            Raises:
-                SDKException:
-                    if paths is not a list
-
-                    if failed to initialize job
-
-                    if response is empty
-
-                    if response is not success
+        Raises:
+            SDKException: If the path argument is not a list, if the job fails to initialize,
+                if the response is empty, or if the restore operation is unsuccessful.
 
         &#34;&#34;&#34;
         if not (isinstance(path, list) and
                 isinstance(overwrite, bool)):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
 
-        if path == []:
+        if not path:
             raise SDKException(&#39;Instance&#39;, &#39;104&#39;)
 
         if dest_client_name is None:
@@ -1407,73 +1360,62 @@ id of the instance</p>
         return self._process_restore_response(request_json)
 
     def restore_out_of_place(
-            self,
-            path=None,
-            staging=None,
-            dest_client_name=None,
-            dest_instance_name=None,
-            data_restore=True,
-            log_restore=False,
-            overwrite=True,
-            copy_precedence=None,
-            from_time=None,
-            to_time=None,
-            media_agent=None,
-            table_level_restore=False,
-            clone_env=False,
-            clone_options=None,
-            redirect_enabled=False,
-            redirect_path=None,
-            browse_jobid=None,
-            recurringRestore=False):
-        &#34;&#34;&#34;
-        Method to perform out of place restore of MySQL data/log/recurring files to the destination client location.
+        self,
+        path: Optional[list] = None,
+        staging: Optional[str] = None,
+        dest_client_name: Optional[str] = None,
+        dest_instance_name: Optional[str] = None,
+        data_restore: bool = True,
+        log_restore: bool = False,
+        overwrite: bool = True,
+        copy_precedence: Optional[int] = None,
+        from_time: Optional[str] = None,
+        to_time: Optional[str] = None,
+        media_agent: Optional[str] = None,
+        table_level_restore: bool = False,
+        clone_env: bool = False,
+        clone_options: Optional[dict] = None,
+        redirect_enabled: bool = False,
+        redirect_path: Optional[str] = None,
+        browse_jobid: Optional[int] = None,
+        recurringRestore: bool = False
+    ) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;Perform an out-of-place restore of MySQL data, logs, or recurring files to a specified destination client and instance.
 
-            Args:
-                path                    (list)  --  list of database/databases to be restored
-                staging                 (str)   --  staging location for mysql logs during restores
-                dest_client_name        (str)   --  destination client name where files are to be restored
-                dest_instance_name      (str)   --  destination mysql instance name of destination client
-                data_restore            (bool)  --  for data only/data+log restore
-                log_restore             (bool)  --  for log only/data+log restore
-                overwrite               (bool)  --  unconditional overwrite files during restore
-                copy_precedence         (int)   --  copy precedence value of storage policy copy
-                from_time               (str)   --  time to restore the contents after
-                        format: YYYY-MM-DD HH:MM:SS
-                to_time                 (str)   --  time to restore the contents before
-                        format: YYYY-MM-DD HH:MM:SS
-                media_agent             (str)   --  media agent associated
-                table_level_restore     (bool)  --  Table level restore flag
-                clone_env               (bool)  --  boolean to specify whether the database should be cloned or not
-                clone_options           (dict)  --  clone restore options passed in a dict
-                redirect_enabled         (bool)  --  boolean to specify if redirect restore is enabled
-                redirect_path           (str)   --  Path specified in advanced restore options
-                in order to perform redirect restore
-                browse_jobid           (int)   --  Browse jobid to browse and restore from
-                recurringRestore       (bool)  --  for Recurring restore
+        This method allows you to restore MySQL databases or tables to a different client or instance, with options for data/log restore, table-level restore, cloning, and advanced restore settings.
 
-            Returns:
-                object - instance of the Job class for this restore job
+        Args:
+            path: List of database or table names to be restored. If None, restores all available.
+            staging: Staging location for MySQL logs during restore operations.
+            dest_client_name: Name of the destination client where the data will be restored.
+            dest_instance_name: Name of the destination MySQL instance on the destination client.
+            data_restore: If True, performs data or data+log restore. Defaults to True.
+            log_restore: If True, performs log or data+log restore. Defaults to False.
+            overwrite: If True, existing files at the destination will be overwritten. Defaults to True.
+            copy_precedence: Storage policy copy precedence value to use for restore.
+            from_time: Restore data backed up after this time (format: &#39;YYYY-MM-DD HH:MM:SS&#39;).
+            to_time: Restore data backed up before this time (format: &#39;YYYY-MM-DD HH:MM:SS&#39;).
+            media_agent: Name of the MediaAgent to use for the restore.
+            table_level_restore: If True, enables table-level restore. Defaults to False.
+            clone_env: If True, clones the database environment. Defaults to False.
+            clone_options: Dictionary of additional clone restore options.
+            redirect_enabled: If True, enables redirect restore. Defaults to False.
+            redirect_path: Path to redirect the restore to, used with redirect_enabled.
+            browse_jobid: Job ID to browse and restore from a specific backup job.
+            recurringRestore: If True, enables recurring restore. Defaults to False.
 
-            Raises:
-                SDKException:
-                    if paths is not a list
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                    if failed to initialize job
+        Raises:
+            SDKException: If the path is not a list, if job initialization fails, if destination client or instance name is empty, or if the restore response is empty or unsuccessful.
 
-                    if destination client name is empty
-
-                    if destination Instance name empty
-
-                    if response is empty
-
-                    if response is not success
         &#34;&#34;&#34;
         if not (isinstance(path, list) and
                 isinstance(overwrite, bool)):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
 
-        if path == []:
+        if not path:
             raise SDKException(&#39;Instance&#39;, &#39;104&#39;)
 
         if dest_client_name is None:
@@ -1508,12 +1450,19 @@ id of the instance</p>
 
         return self._process_restore_response(request_json)
 
-    def _restore_browse_option_json(self, value):
-        &#34;&#34;&#34;setter for the Browse options for restore in Json&#34;&#34;&#34;
+    def _restore_browse_option_json(self, value: dict) -&gt; None:
+        &#34;&#34;&#34;Set the browse options for restore operations in JSON format.
+
+        Args:
+            value: A dictionary containing the browse options to be used during restore.
+
+        &#34;&#34;&#34;
 
         if not isinstance(value, dict):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
+
         super(MYSQLInstance, self)._restore_browse_option_json(value)
+
         self._browse_restore_json[&#39;backupset&#39;] = {
             &#34;clientName&#34;: self._agent_object._client_object.client_name,
             &#34;backupsetName&#34;: &#34;defaultDummyBackupSet&#34;
@@ -1523,11 +1472,18 @@ id of the instance</p>
             self._browse_restore_json[&#39;browseJobId&#39;] = value.get(&#34;browse_jobid&#34;)
 
         if value.get(&#34;from_time&#34;) and value.get(&#34;to_time&#34;):
-            self._browse_restore_json[&#34;timeRange&#34;] = {&#34;fromTime&#34; : value.get(&#34;from_time&#34;),
-                                                      &#34;toTime&#34; : value.get(&#34;to_time&#34;)}
+            self._browse_restore_json[&#34;timeRange&#34;] = {
+                &#34;fromTime&#34;: value.get(&#34;from_time&#34;),
+                &#34;toTime&#34;: value.get(&#34;to_time&#34;)
+            }
 
-    def _restore_common_options_json(self, value):
-        &#34;&#34;&#34;setter for the Common options in restore JSON&#34;&#34;&#34;
+    def _restore_common_options_json(self, value: dict) -&gt; None:
+        &#34;&#34;&#34;Set the common options section in the restore JSON configuration.
+
+        Args:
+            value: A dictionary containing the common options to be set in the restore JSON.
+
+        &#34;&#34;&#34;
 
         if not isinstance(value, dict):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
@@ -1539,8 +1495,13 @@ id of the instance</p>
             &#34;syncRestore&#34;: False
         }
 
-    def _restore_destination_json(self, value):
-        &#34;&#34;&#34;setter for the MySQL Destination options in restore JSON&#34;&#34;&#34;
+    def _restore_destination_json(self, value: dict) -&gt; None:
+        &#34;&#34;&#34;Set the MySQL destination options in the restore JSON configuration.
+
+        Args:
+            value: A dictionary containing the MySQL destination options to be set in the restore JSON.
+
+        &#34;&#34;&#34;
 
         if not isinstance(value, dict):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
@@ -1556,8 +1517,13 @@ id of the instance</p>
             }
         }
 
-    def _restore_fileoption_json(self, value):
-        &#34;&#34;&#34;setter for the fileoption restore option in restore JSON&#34;&#34;&#34;
+    def _restore_fileoption_json(self, value: dict) -&gt; None:
+        &#34;&#34;&#34;Set the file option for the restore operation in the restore JSON.
+
+        Args:
+            value: A dictionary containing file option settings to be applied to the restore JSON.
+
+        &#34;&#34;&#34;
 
         if not isinstance(value, dict):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
@@ -1566,8 +1532,13 @@ id of the instance</p>
             &#34;sourceItem&#34;: value.get(&#34;paths&#34;, [])
         }
 
-    def _restore_admin_option_json(self, value):
-        &#34;&#34;&#34;setter for the admin restore option in restore JSON&#34;&#34;&#34;
+    def _restore_admin_option_json(self, value: dict) -&gt; None:
+        &#34;&#34;&#34;Set the admin restore option in the restore JSON configuration.
+
+        Args:
+            value: A dictionary containing the admin restore options to be set in the restore JSON.
+
+        &#34;&#34;&#34;
 
         if not isinstance(value, dict):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
@@ -1578,8 +1549,13 @@ id of the instance</p>
             }
         }
 
-    def _restore_mysql_option_json(self, value):
-        &#34;&#34;&#34;setter for the mysql restore option in restore JSON&#34;&#34;&#34;
+    def _restore_mysql_option_json(self, value: dict) -&gt; None:
+        &#34;&#34;&#34;Set the MySQL restore options in the restore JSON configuration.
+
+        Args:
+            value: A dictionary containing MySQL restore options to be set in the restore JSON.
+
+        &#34;&#34;&#34;
 
         if not isinstance(value, dict):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
@@ -1614,17 +1590,16 @@ id of the instance</p>
             self.mysql_restore_json[&#34;redirectItems&#34;] = [value.get(&#34;redirect_path&#34;)]
 
         if value.get(&#34;from_time&#34;):
-            self.mysql_restore_json[&#34;fromTime&#34;] = {&#34;time&#34; : value.get(&#34;to_time&#34;)}
+            self.mysql_restore_json[&#34;fromTime&#34;] = {&#34;time&#34;: value.get(&#34;to_time&#34;)}
 
         if value.get(&#34;to_time&#34;):
-            self.mysql_restore_json[&#34;refTime&#34;] = {&#34;time&#34; : value.get(&#34;to_time&#34;)}
+            self.mysql_restore_json[&#34;refTime&#34;] = {&#34;time&#34;: value.get(&#34;to_time&#34;)}
 
         if value.get(&#34;to_time&#34;):
-            self.mysql_restore_json[&#34;pointInTime&#34;] = {&#34;time&#34; : value.get(&#34;to_time&#34;)}
+            self.mysql_restore_json[&#34;pointInTime&#34;] = {&#34;time&#34;: value.get(&#34;to_time&#34;)}
 
         if value.get(&#34;dest_instance_name&#34;):
-            self.mysql_restore_json[&#34;destinationServer&#34;] = {&#34;name&#34;: value.get(
-                &#34;dest_instance_name&#34;)}</code></pre>
+            self.mysql_restore_json[&#34;destinationServer&#34;] = {&#34;name&#34;: value.get(&#34;dest_instance_name&#34;)}</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -1632,154 +1607,148 @@ id of the instance</p>
 </ul>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.autodiscovery_enabled"><code class="name">var <span class="ident">autodiscovery_enabled</span></code></dt>
+<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.autodiscovery_enabled"><code class="name">var <span class="ident">autodiscovery_enabled</span> : bool</code></dt>
 <dd>
-<div class="desc"><p>Returns the MySQL Server auto discovery enabled flag</p>
-<h2 id="returns">Returns</h2>
-<p>(bool)
-&ndash;
-True if auto discovery enabled
-False if auto discovery not enabled</p></div>
+<div class="desc"><p>Indicate whether MySQL Server auto discovery is enabled for this instance.</p>
+<p>Returns
+-----=
+True if auto discovery is enabled; False otherwise.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/mysqlinstance.py#L235-L244" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/mysqlinstance.py#L268-L277" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def autodiscovery_enabled(self):
-    &#34;&#34;&#34;Returns the MySQL Server auto discovery enabled flag
+def autodiscovery_enabled(self) -&gt; bool:
+    &#34;&#34;&#34;Indicate whether MySQL Server auto discovery is enabled for this instance.
 
     Returns:
-        (bool)  --  True if auto discovery enabled
-                    False if auto discovery not enabled
+        True if auto discovery is enabled; False otherwise.
 
     &#34;&#34;&#34;
     return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;EnableAutoDiscovery&#39;, False)</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.binary_directory"><code class="name">var <span class="ident">binary_directory</span></code></dt>
+<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.binary_directory"><code class="name">var <span class="ident">binary_directory</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the MySQL Server Binary File location.</p>
-<h2 id="returns">Returns</h2>
-<p>(str)
-&ndash;
-MySql server binary directory</p></div>
+<div class="desc"><p>Get the MySQL Server binary file directory location.</p>
+<p>Returns
+-----=
+The file system path to the MySQL server's binary directory as a string.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/mysqlinstance.py#L169-L177" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/mysqlinstance.py#L197-L206" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def binary_directory(self):
-    &#34;&#34;&#34;Returns the MySQL Server Binary File location.
+def binary_directory(self) -&gt; str:
+    &#34;&#34;&#34;Get the MySQL Server binary file directory location.
 
     Returns:
-        (str)   --  MySql server binary directory
+        The file system path to the MySQL server&#39;s binary directory as a string.
 
     &#34;&#34;&#34;
     return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;BinaryDirectory&#39;, None)</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.command_line_sp_details"><code class="name">var <span class="ident">command_line_sp_details</span></code></dt>
+<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.command_line_sp_details"><code class="name">var <span class="ident">command_line_sp_details</span> : dict</code></dt>
 <dd>
-<div class="desc"><p>Returns the MySQL Server commandline SP details.</p>
-<h2 id="returns">Returns</h2>
-<p>(dict)
-&ndash;
-MySql server commnadline storage policy information</p></div>
+<div class="desc"><p>Get the MySQL Server command-line storage policy details.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>A dictionary containing information about the MySQL server's command-line storage policy.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/mysqlinstance.py#L216-L233" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/mysqlinstance.py#L248-L266" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def command_line_sp_details(self):
-    &#34;&#34;&#34;Returns the MySQL Server commandline SP details.
+def command_line_sp_details(self) -&gt; dict:
+    &#34;&#34;&#34;Get the MySQL Server command-line storage policy details.
 
     Returns:
-        (dict)  --  MySql server commnadline storage policy information
+        dict: A dictionary containing information about the MySQL server&#39;s command-line storage policy.
 
     &#34;&#34;&#34;
     cmd_storage_policy_name = self._properties.get(&#39;mySqlInstance&#39;, {}).get(
         &#39;mysqlStorageDevice&#39;, {}).get(&#39;commandLineStoragePolicy&#39;, {}).get(
-            &#39;storagePolicyName&#39;, None)
+        &#39;storagePolicyName&#39;, None)
     cmd_storage_policy_id = self._properties.get(&#39;mySqlInstance&#39;, {}).get(
         &#39;mysqlStorageDevice&#39;, {}).get(&#39;commandLineStoragePolicy&#39;, {}).get(
-            &#39;storagePolicyId&#39;, None)
+        &#39;storagePolicyId&#39;, None)
 
     command_sp = {&#34;storagePolicyName&#34;: cmd_storage_policy_name,
                   &#34;storagePolicyId&#34;: cmd_storage_policy_id}
     return command_sp</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.config_file"><code class="name">var <span class="ident">config_file</span></code></dt>
+<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.config_file"><code class="name">var <span class="ident">config_file</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the MySQL Server Config File location.</p>
-<h2 id="returns">Returns</h2>
-<p>(str)
-&ndash;
-MySql server config file location</p></div>
+<div class="desc"><p>Get the location of the MySQL server configuration file.</p>
+<p>Returns
+-----=
+The file path to the MySQL server's configuration file as a string.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/mysqlinstance.py#L159-L167" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/mysqlinstance.py#L186-L195" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def config_file(self):
-    &#34;&#34;&#34;Returns the MySQL Server Config File location.
+def config_file(self) -&gt; str:
+    &#34;&#34;&#34;Get the location of the MySQL server configuration file.
 
     Returns:
-        (str)   --  MySql server config file location
+        The file path to the MySQL server&#39;s configuration file as a string.
 
     &#34;&#34;&#34;
     return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;ConfigFile&#39;, None)</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.is_xtrabackup_enabled"><code class="name">var <span class="ident">is_xtrabackup_enabled</span></code></dt>
+<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.is_xtrabackup_enabled"><code class="name">var <span class="ident">is_xtrabackup_enabled</span> : bool</code></dt>
 <dd>
-<div class="desc"><p>Returns the MySQL Server xtrabackup enabled flag</p>
-<h2 id="returns">Returns</h2>
-<p>(bool)
-&ndash;
-True if xtrabackup is enabled
-False if xtrabackup is not enabled</p></div>
+<div class="desc"><p>Check if xtrabackup is enabled for the MySQL Server instance.</p>
+<p>Returns
+-----=
+True if xtrabackup is enabled; False otherwise.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/mysqlinstance.py#L272-L283" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/mysqlinstance.py#L306-L315" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def is_xtrabackup_enabled(self):
-    &#34;&#34;&#34;Returns the MySQL Server xtrabackup enabled flag
+def is_xtrabackup_enabled(self) -&gt; bool:
+    &#34;&#34;&#34;Check if xtrabackup is enabled for the MySQL Server instance.
 
     Returns:
-        (bool)  --  True if xtrabackup is enabled
-                    False if xtrabackup is not enabled
+        True if xtrabackup is enabled; False otherwise.
 
     &#34;&#34;&#34;
-    return self._properties.get(
-        &#39;mySqlInstance&#39;, {}).get(
-            &#39;xtraBackupSettings&#39;, {}).get(&#39;enableXtraBackup&#39;, False)</code></pre>
+    return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;xtraBackupSettings&#39;, {}).get(&#39;enableXtraBackup&#39;, False)</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.log_backup_sp_details"><code class="name">var <span class="ident">log_backup_sp_details</span></code></dt>
+<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.log_backup_sp_details"><code class="name">var <span class="ident">log_backup_sp_details</span> : dict</code></dt>
 <dd>
-<div class="desc"><p>Returns the MySQL Server Log backup SP details</p>
-<h2 id="returns">Returns</h2>
-<p>(dict)
-&ndash;
-MySql server log backup storage policy information</p></div>
+<div class="desc"><p>Get the MySQL Server log backup storage policy details.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>A dictionary containing information about the storage policy used for MySQL Server log backups.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/mysqlinstance.py#L199-L214" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/mysqlinstance.py#L230-L246" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def log_backup_sp_details(self):
-    &#34;&#34;&#34;Returns the MySQL Server Log backup SP details
+def log_backup_sp_details(self) -&gt; dict:
+    &#34;&#34;&#34;Get the MySQL Server log backup storage policy details.
 
     Returns:
-        (dict)  --  MySql server log backup storage policy information
+        dict: A dictionary containing information about the storage policy used for MySQL Server log backups.
 
     &#34;&#34;&#34;
     log_storage_policy_name = self._properties.get(&#39;mySqlInstance&#39;, {}).get(
@@ -1792,162 +1761,166 @@ def log_backup_sp_details(self):
     return log_sp</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.log_data_directory"><code class="name">var <span class="ident">log_data_directory</span></code></dt>
+<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.log_data_directory"><code class="name">var <span class="ident">log_data_directory</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the MySQL Server log data directory.</p>
-<h2 id="returns">Returns</h2>
-<p>(str)
-&ndash;
-MySql server log directory path</p></div>
+<div class="desc"><p>Get the MySQL Server log data directory path.</p>
+<p>Returns
+-----=
+The file system path to the MySQL server's log data directory as a string.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/mysqlinstance.py#L189-L197" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/mysqlinstance.py#L219-L228" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def log_data_directory(self):
-    &#34;&#34;&#34;Returns the MySQL Server log data directory.
+def log_data_directory(self) -&gt; str:
+    &#34;&#34;&#34;Get the MySQL Server log data directory path.
 
     Returns:
-        (str)   --  MySql server log directory path
+        The file system path to the MySQL server&#39;s log data directory as a string.
 
     &#34;&#34;&#34;
     return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;LogDataDirectory&#39;, None)</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.mysql_enterprise_backup_binary_path"><code class="name">var <span class="ident">mysql_enterprise_backup_binary_path</span></code></dt>
+<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.mysql_enterprise_backup_binary_path"><code class="name">var <span class="ident">mysql_enterprise_backup_binary_path</span> : dict</code></dt>
 <dd>
-<div class="desc"><p>Returns the MySQL Enterprise backup binary path detail</p>
-<p>Return Type: dict</p></div>
+<div class="desc"><p>Get the MySQL Enterprise backup binary path details.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>A dictionary containing details about the MySQL Enterprise backup binary path.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/mysqlinstance.py#L304-L312" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/mysqlinstance.py#L337-L347" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def mysql_enterprise_backup_binary_path(self):
-    &#34;&#34;&#34; Returns the MySQL Enterprise backup binary path detail
+def mysql_enterprise_backup_binary_path(self) -&gt; dict:
+    &#34;&#34;&#34;Get the MySQL Enterprise backup binary path details.
 
-        Return Type: dict
+    Returns:
+        dict: A dictionary containing details about the MySQL Enterprise backup binary path.
 
     &#34;&#34;&#34;
     meb_settings = self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;mebSettings&#39;, {})
     return meb_settings</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.mysql_username"><code class="name">var <span class="ident">mysql_username</span></code></dt>
+<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.mysql_username"><code class="name">var <span class="ident">mysql_username</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the MySQL Server username.</p>
-<h2 id="returns">Returns</h2>
-<p>(str)
-&ndash;
-MySql server SA username</p></div>
+<div class="desc"><p>Get the MySQL Server username associated with this instance.</p>
+<p>Returns
+-----=
+The MySQL server SA (System Administrator) username as a string.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/mysqlinstance.py#L138-L147" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/mysqlinstance.py#L160-L173" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def mysql_username(self):
-    &#34;&#34;&#34;Returns the MySQL Server username.
+def mysql_username(self) -&gt; str:
+    &#34;&#34;&#34;Get the MySQL Server username associated with this instance.
 
     Returns:
-        (str)   --  MySql server SA username
+        The MySQL server SA (System Administrator) username as a string.
 
     &#34;&#34;&#34;
-    credential_name = self._properties.get(&#39;credentialEntity&#39;, {}).get(&#39;credentialName&#39;, None)
-    return Credential(self._commcell_object, credential_name).credential_user_name</code></pre>
+    if self.credentials:
+        credential_obj = self._commcell_object.credentials.get(self.credentials)
+        if credential_obj:
+            return credential_obj._credential_properties.get(&#39;userName&#39;)
+    return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;SAUser&#39;, {}).get(&#39;userName&#39;, None)</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.no_lock_status"><code class="name">var <span class="ident">no_lock_status</span></code></dt>
+<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.no_lock_status"><code class="name">var <span class="ident">no_lock_status</span> : bool</code></dt>
 <dd>
-<div class="desc"><p>Returns the status of No Lock Checkbox in MySQL Instance</p>
-<p>Returns:
-(bool)
-&ndash;
-True if No Lock checkbox is enabled
-False if No Lock checkbox is disabled</p></div>
+<div class="desc"><p>Get the status of the 'No Lock' checkbox in the MySQL instance.</p>
+<p>Returns
+-----=
+True if the 'No Lock' checkbox is enabled, False if it is disabled.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/mysqlinstance.py#L334-L343" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/mysqlinstance.py#L368-L377" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def no_lock_status(self):
-    &#34;&#34;&#34; Returns the status of No Lock Checkbox in MySQL Instance
+def no_lock_status(self) -&gt; bool:
+    &#34;&#34;&#34;Get the status of the &#39;No Lock&#39; checkbox in the MySQL instance.
 
-        Returns:
-        (bool)  --  True if No Lock checkbox is enabled
-                    False if No Lock checkbox is disabled
+    Returns:
+        True if the &#39;No Lock&#39; checkbox is enabled, False if it is disabled.
 
     &#34;&#34;&#34;
     return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;EnableNoLocking&#39;, False)</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.nt_username"><code class="name">var <span class="ident">nt_username</span></code></dt>
+<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.nt_username"><code class="name">var <span class="ident">nt_username</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the MySQL Server nt username.</p>
-<h2 id="returns">Returns</h2>
-<p>(str)
-&ndash;
-MySql server NT username</p></div>
+<div class="desc"><p>Get the MySQL Server NT username associated with this instance.</p>
+<p>Returns
+-----=
+The NT username used for MySQL Server authentication as a string.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/mysqlinstance.py#L149-L157" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/mysqlinstance.py#L175-L184" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def nt_username(self):
-    &#34;&#34;&#34;Returns the MySQL Server nt username.
+def nt_username(self) -&gt; str:
+    &#34;&#34;&#34;Get the MySQL Server NT username associated with this instance.
 
     Returns:
-        (str)   --  MySql server NT username
+        The NT username used for MySQL Server authentication as a string.
 
     &#34;&#34;&#34;
     return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;NTUser&#39;, {}).get(&#39;userName&#39;, None)</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.port"><code class="name">var <span class="ident">port</span></code></dt>
+<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.port"><code class="name">var <span class="ident">port</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the MySQL Server Port number.</p>
-<h2 id="returns">Returns</h2>
-<p>(str)
-&ndash;
-MySql server port number</p></div>
+<div class="desc"><p>Get the MySQL Server port number for this instance.</p>
+<p>Returns
+-----=
+The port number used by the MySQL Server as a string.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/mysqlinstance.py#L128-L136" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/mysqlinstance.py#L149-L158" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def port(self):
-    &#34;&#34;&#34;Returns the MySQL Server Port number.
+def port(self) -&gt; str:
+    &#34;&#34;&#34;Get the MySQL Server port number for this instance.
 
     Returns:
-        (str)   --  MySql server port number
+        The port number used by the MySQL Server as a string.
 
     &#34;&#34;&#34;
     return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;port&#39;, None)</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.proxy_options"><code class="name">var <span class="ident">proxy_options</span></code></dt>
+<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.proxy_options"><code class="name">var <span class="ident">proxy_options</span> : dict</code></dt>
 <dd>
-<div class="desc"><p>Returns the MySQL Server proxy options</p>
-<h2 id="returns">Returns</h2>
-<p>(dict)
-&ndash;
-MySql server proxy information</p></div>
+<div class="desc"><p>Get the MySQL Server proxy options for this instance.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>A dictionary containing MySQL server proxy information, such as proxy host, port, and authentication details.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/mysqlinstance.py#L285-L302" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/mysqlinstance.py#L317-L335" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def proxy_options(self):
-    &#34;&#34;&#34;Returns the MySQL Server proxy options
+def proxy_options(self) -&gt; dict:
+    &#34;&#34;&#34;Get the MySQL Server proxy options for this instance.
 
     Returns:
-        (dict)  --  MySql server proxy information
+        dict: A dictionary containing MySQL server proxy information, such as proxy host, port, and authentication details.
 
     &#34;&#34;&#34;
     proxy_settings = self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;proxySettings&#39;, {})
@@ -1962,342 +1935,213 @@ def proxy_options(self):
     return proxy_opt</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.ssl_enabled"><code class="name">var <span class="ident">ssl_enabled</span></code></dt>
+<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.ssl_enabled"><code class="name">var <span class="ident">ssl_enabled</span> : bool</code></dt>
 <dd>
-<div class="desc"><p>Returns(boolean) True/False based on SSL status</p></div>
+<div class="desc"><p>Check if SSL is enabled for the MySQL instance.</p>
+<p>Returns
+-----=
+True if SSL is enabled for the MySQL instance, False otherwise.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/mysqlinstance.py#L361-L364" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/mysqlinstance.py#L394-L403" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def ssl_enabled(self):
-    &#34;&#34;&#34; Returns(boolean) True/False based on SSL status &#34;&#34;&#34;
+def ssl_enabled(self) -&gt; bool:
+    &#34;&#34;&#34;Check if SSL is enabled for the MySQL instance.
+
+    Returns:
+        True if SSL is enabled for the MySQL instance, False otherwise.
+
+    &#34;&#34;&#34;
     return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;sslEnabled&#39;, False)</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.version"><code class="name">var <span class="ident">version</span></code></dt>
+<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.version"><code class="name">var <span class="ident">version</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the MySQL Server version number.</p>
-<h2 id="returns">Returns</h2>
-<p>(str)
-&ndash;
-MySql server version</p></div>
+<div class="desc"><p>Get the MySQL Server version number for this instance.</p>
+<p>Returns
+-----=
+The version number of the MySQL server as a string.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/mysqlinstance.py#L179-L187" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/mysqlinstance.py#L208-L217" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def version(self):
-    &#34;&#34;&#34;Returns the MySQL Server version number.
+def version(self) -&gt; str:
+    &#34;&#34;&#34;Get the MySQL Server version number for this instance.
 
     Returns:
-        (str)   --  MySql server version
+        The version number of the MySQL server as a string.
 
     &#34;&#34;&#34;
     return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;version&#39;, None)</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.xtrabackup_bin_path"><code class="name">var <span class="ident">xtrabackup_bin_path</span></code></dt>
+<dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.xtrabackup_bin_path"><code class="name">var <span class="ident">xtrabackup_bin_path</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the MySQL Server xtrabackup bin path</p>
-<h2 id="returns">Returns</h2>
-<p>(str)
-&ndash;
-MySql server xtrabackup binary path</p></div>
+<div class="desc"><p>Get the path to the MySQL server xtrabackup binary.</p>
+<p>Returns
+-----=
+The file system path to the xtrabackup binary used by the MySQL server.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/mysqlinstance.py#L260-L270" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/mysqlinstance.py#L295-L304" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def xtrabackup_bin_path(self):
-    &#34;&#34;&#34;Returns the MySQL Server xtrabackup bin path
+def xtrabackup_bin_path(self) -&gt; str:
+    &#34;&#34;&#34;Get the path to the MySQL server xtrabackup binary.
 
     Returns:
-        (str)   --  MySql server xtrabackup binary path
+        The file system path to the xtrabackup binary used by the MySQL server.
 
     &#34;&#34;&#34;
-    return self._properties.get(
-        &#39;mySqlInstance&#39;, {}).get(
-            &#39;xtraBackupSettings&#39;, {}).get(&#39;xtraBackupBinPath&#39;, &#34;&#34;)</code></pre>
+    return self._properties.get(&#39;mySqlInstance&#39;, {}).get(&#39;xtraBackupSettings&#39;, {}).get(&#39;xtraBackupBinPath&#39;, &#34;&#34;)</code></pre>
 </details>
 </dd>
 </dl>
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.restore_in_place"><code class="name flex">
-<span>def <span class="ident">restore_in_place</span></span>(<span>self, path=None, staging=None, dest_client_name=None, dest_instance_name=None, data_restore=True, log_restore=False, overwrite=True, copy_precedence=None, from_time=None, to_time=None, media_agent=None, table_level_restore=False, clone_env=False, clone_options=None, redirect_enabled=False, redirect_path=None, browse_jobid=None)</span>
+<span>def <span class="ident">restore_in_place</span></span>(<span>self, path: Optional[list] = None, staging: Optional[str] = None, dest_client_name: Optional[str] = None, dest_instance_name: Optional[str] = None, data_restore: bool = True, log_restore: bool = False, overwrite: bool = True, copy_precedence: Optional[int] = None, from_time: Optional[str] = None, to_time: Optional[str] = None, media_agent: Optional[str] = None, table_level_restore: bool = False, clone_env: bool = False, clone_options: Optional[dict] = None, redirect_enabled: bool = False, redirect_path: Optional[str] = None, browse_jobid: Optional[int] = None) ‑> <a title="cvpysdk.job.Job" href="../job.html#cvpysdk.job.Job">Job</a></span>
 </code></dt>
 <dd>
-<div class="desc"><p>Restores the mysql data/log files specified in the input paths list to the same location.</p>
-<h2 id="args">Args</h2>
-<p>path
-(list)
-&ndash;
-list of database/databases to be restored</p>
-<pre><code>default: None
-</code></pre>
-<p>staging
-(str)
-&ndash;
-staging location for mysql logs during restores</p>
-<pre><code>default: None
-</code></pre>
-<p>dest_client_name
-(str)
-&ndash;
-destination client name where files are to be
-restored</p>
-<pre><code>default: None
-</code></pre>
-<p>dest_instance_name
-(str)
-&ndash;
-destination mysql instance name of destination
-client</p>
-<pre><code>default: None
-</code></pre>
-<p>data_restore
-(bool)
-&ndash;
-for data only/data+log restore</p>
-<pre><code>default: True
-</code></pre>
-<p>log_restore
-(bool)
-&ndash;
-for log only/data+log restore</p>
-<pre><code>default: False
-</code></pre>
-<p>overwrite
-(bool)
-&ndash;
-unconditional overwrite files during restore</p>
-<pre><code>default: True
-</code></pre>
-<p>copy_precedence
-(int)
-&ndash;
-copy precedence value of storage policy copy</p>
-<pre><code>default: None
-</code></pre>
-<p>from_time
-(str)
-&ndash;
-time to retore the contents after
-format: YYYY-MM-DD HH:MM:SS</p>
-<pre><code>default: None
-</code></pre>
-<p>to_time
-(str)
-&ndash;
-time to retore the contents before
-format: YYYY-MM-DD HH:MM:SS</p>
-<pre><code>default: None
-</code></pre>
-<p>media_agent
-(str)
-&ndash;
-media agent associated</p>
-<pre><code>default: None
-</code></pre>
-<p>table_level_restore
-(bool)
-&ndash;
-Table level restore flag</p>
-<pre><code>default: False
-</code></pre>
-<p>clone_env
-(bool)
-&ndash;
-boolean to specify whether the database
-should be cloned or not</p>
-<pre><code>default: False
-</code></pre>
-<p>clone_options
-(dict)
-&ndash;
-clone restore options passed in a dict</p>
-<pre><code>default: None
-
-Accepted format: {
-                    "stagingLocaion": "/gk_snap",
-                    "forceCleanup": True,
-                    "port": "5595",
-                    "libDirectory": "",
-                    "isInstanceSelected": True,
-                    "reservationPeriodS": 3600,
-                    "user": "",
-                    "binaryDirectory": "/usr/bin"
-
-                 }
-</code></pre>
-<p>redirect_enabled
-(bool)
-&ndash;
-boolean to specify if redirect restore is
-enabled</p>
-<pre><code>default: False
-</code></pre>
-<p>redirect_path
-(str)
-&ndash;
-Path specified in advanced restore options
-in order to perform redirect restore</p>
-<pre><code>default: None
-</code></pre>
-<p>browse_jobid
-(int)
-&ndash;
-Browse jobid to browse and restore from</p>
-<pre><code>default: None
-</code></pre>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this restore job</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if paths is not a list</p>
-<pre><code>if failed to initialize job
-
-if response is empty
-
-if response is not success
-</code></pre></div>
+<div class="desc"><p>Restore MySQL data and/or log files to their original location (in-place restore).</p>
+<p>This method restores the specified MySQL databases or tables to the same location on the source or destination client.
+It supports options for data-only, log-only, or combined restores, as well as advanced features like table-level restore,
+cloning, and redirect restore.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>path</code></strong></dt>
+<dd>List of databases or tables to restore. If None, restores all available.</dd>
+<dt><strong><code>staging</code></strong></dt>
+<dd>Optional staging location for MySQL logs during restore.</dd>
+<dt><strong><code>dest_client_name</code></strong></dt>
+<dd>Name of the destination client for the restore. If None, uses the source client.</dd>
+<dt><strong><code>dest_instance_name</code></strong></dt>
+<dd>Name of the destination MySQL instance. If None, uses the source instance.</dd>
+<dt><strong><code>data_restore</code></strong></dt>
+<dd>If True, performs data or data+log restore. Default is True.</dd>
+<dt><strong><code>log_restore</code></strong></dt>
+<dd>If True, performs log or data+log restore. Default is False.</dd>
+<dt><strong><code>overwrite</code></strong></dt>
+<dd>If True, unconditionally overwrites files during restore. Default is True.</dd>
+<dt><strong><code>copy_precedence</code></strong></dt>
+<dd>Storage policy copy precedence value. If None, uses default.</dd>
+<dt><strong><code>from_time</code></strong></dt>
+<dd>Restore data after this time (format: 'YYYY-MM-DD HH:MM:SS'). If None, restores from earliest.</dd>
+<dt><strong><code>to_time</code></strong></dt>
+<dd>Restore data before this time (format: 'YYYY-MM-DD HH:MM:SS'). If None, restores up to latest.</dd>
+<dt><strong><code>media_agent</code></strong></dt>
+<dd>Name of the media agent to use for the restore. If None, uses default.</dd>
+<dt><strong><code>table_level_restore</code></strong></dt>
+<dd>If True, enables table-level restore. Default is False.</dd>
+<dt><strong><code>clone_env</code></strong></dt>
+<dd>If True, clones the database environment. Default is False.</dd>
+<dt><strong><code>clone_options</code></strong></dt>
+<dd>Dictionary of clone restore options. Example:
+{
+"stagingLocaion": "/gk_snap",
+"forceCleanup": True,
+"port": "5595",
+"libDirectory": "",
+"isInstanceSelected": True,
+"reservationPeriodS": 3600,
+"user": "",
+"binaryDirectory": "/usr/bin"
+}</dd>
+<dt><strong><code>redirect_enabled</code></strong></dt>
+<dd>If True, enables redirect restore. Default is False.</dd>
+<dt><strong><code>redirect_path</code></strong></dt>
+<dd>Path to use for redirect restore if enabled.</dd>
+<dt><strong><code>browse_jobid</code></strong></dt>
+<dd>Job ID to browse and restore from. If None, uses latest available.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Job</code></dt>
+<dd>An instance of the Job class representing the restore job.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the path argument is not a list, if the job fails to initialize,
+if the response is empty, or if the restore operation is unsuccessful.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/mysqlinstance.py#L421-L576" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/mysqlinstance.py#L467-L563" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_in_place(
-        self,
-        path=None,
-        staging=None,
-        dest_client_name=None,
-        dest_instance_name=None,
-        data_restore=True,
-        log_restore=False,
-        overwrite=True,
-        copy_precedence=None,
-        from_time=None,
-        to_time=None,
-        media_agent=None,
-        table_level_restore=False,
-        clone_env=False,
-        clone_options=None,
-        redirect_enabled=False,
-        redirect_path=None,
-        browse_jobid=None):
-    &#34;&#34;&#34;Restores the mysql data/log files specified in the input paths list to the same location.
+    self,
+    path: Optional[list] = None,
+    staging: Optional[str] = None,
+    dest_client_name: Optional[str] = None,
+    dest_instance_name: Optional[str] = None,
+    data_restore: bool = True,
+    log_restore: bool = False,
+    overwrite: bool = True,
+    copy_precedence: Optional[int] = None,
+    from_time: Optional[str] = None,
+    to_time: Optional[str] = None,
+    media_agent: Optional[str] = None,
+    table_level_restore: bool = False,
+    clone_env: bool = False,
+    clone_options: Optional[dict] = None,
+    redirect_enabled: bool = False,
+    redirect_path: Optional[str] = None,
+    browse_jobid: Optional[int] = None
+) -&gt; &#39;Job&#39;:
+    &#34;&#34;&#34;Restore MySQL data and/or log files to their original location (in-place restore).
 
-        Args:
-            path                    (list)  --  list of database/databases to be restored
+    This method restores the specified MySQL databases or tables to the same location on the source or destination client.
+    It supports options for data-only, log-only, or combined restores, as well as advanced features like table-level restore,
+    cloning, and redirect restore.
 
-                default: None
+    Args:
+        path: List of databases or tables to restore. If None, restores all available.
+        staging: Optional staging location for MySQL logs during restore.
+        dest_client_name: Name of the destination client for the restore. If None, uses the source client.
+        dest_instance_name: Name of the destination MySQL instance. If None, uses the source instance.
+        data_restore: If True, performs data or data+log restore. Default is True.
+        log_restore: If True, performs log or data+log restore. Default is False.
+        overwrite: If True, unconditionally overwrites files during restore. Default is True.
+        copy_precedence: Storage policy copy precedence value. If None, uses default.
+        from_time: Restore data after this time (format: &#39;YYYY-MM-DD HH:MM:SS&#39;). If None, restores from earliest.
+        to_time: Restore data before this time (format: &#39;YYYY-MM-DD HH:MM:SS&#39;). If None, restores up to latest.
+        media_agent: Name of the media agent to use for the restore. If None, uses default.
+        table_level_restore: If True, enables table-level restore. Default is False.
+        clone_env: If True, clones the database environment. Default is False.
+        clone_options: Dictionary of clone restore options. Example:
+            {
+                &#34;stagingLocaion&#34;: &#34;/gk_snap&#34;,
+                &#34;forceCleanup&#34;: True,
+                &#34;port&#34;: &#34;5595&#34;,
+                &#34;libDirectory&#34;: &#34;&#34;,
+                &#34;isInstanceSelected&#34;: True,
+                &#34;reservationPeriodS&#34;: 3600,
+                &#34;user&#34;: &#34;&#34;,
+                &#34;binaryDirectory&#34;: &#34;/usr/bin&#34;
+            }
+        redirect_enabled: If True, enables redirect restore. Default is False.
+        redirect_path: Path to use for redirect restore if enabled.
+        browse_jobid: Job ID to browse and restore from. If None, uses latest available.
 
-            staging                 (str)   --  staging location for mysql logs during restores
+    Returns:
+        Job: An instance of the Job class representing the restore job.
 
-                default: None
-
-            dest_client_name        (str)   --  destination client name where files are to be
-            restored
-
-                default: None
-
-            dest_instance_name      (str)   --  destination mysql instance name of destination
-            client
-
-                default: None
-
-            data_restore            (bool)  --  for data only/data+log restore
-
-                default: True
-
-            log_restore             (bool)  --  for log only/data+log restore
-
-                default: False
-
-            overwrite               (bool)  --  unconditional overwrite files during restore
-
-                default: True
-
-            copy_precedence         (int)   --  copy precedence value of storage policy copy
-
-                default: None
-
-            from_time               (str)   --  time to retore the contents after
-                    format: YYYY-MM-DD HH:MM:SS
-
-                default: None
-
-            to_time                 (str)   --  time to retore the contents before
-                    format: YYYY-MM-DD HH:MM:SS
-
-                default: None
-
-            media_agent             (str)   --  media agent associated
-
-                default: None
-
-            table_level_restore     (bool)  --  Table level restore flag
-
-                default: False
-
-            clone_env               (bool)  --  boolean to specify whether the database
-            should be cloned or not
-
-                default: False
-
-            clone_options           (dict)  --  clone restore options passed in a dict
-
-                default: None
-
-                Accepted format: {
-                                    &#34;stagingLocaion&#34;: &#34;/gk_snap&#34;,
-                                    &#34;forceCleanup&#34;: True,
-                                    &#34;port&#34;: &#34;5595&#34;,
-                                    &#34;libDirectory&#34;: &#34;&#34;,
-                                    &#34;isInstanceSelected&#34;: True,
-                                    &#34;reservationPeriodS&#34;: 3600,
-                                    &#34;user&#34;: &#34;&#34;,
-                                    &#34;binaryDirectory&#34;: &#34;/usr/bin&#34;
-
-                                 }
-
-            redirect_enabled         (bool)  --  boolean to specify if redirect restore is
-            enabled
-
-                default: False
-
-            redirect_path           (str)   --  Path specified in advanced restore options
-            in order to perform redirect restore
-
-                default: None
-
-            browse_jobid           (int)   --  Browse jobid to browse and restore from
-
-                default: None
-
-        Returns:
-            object - instance of the Job class for this restore job
-
-        Raises:
-            SDKException:
-                if paths is not a list
-
-                if failed to initialize job
-
-                if response is empty
-
-                if response is not success
+    Raises:
+        SDKException: If the path argument is not a list, if the job fails to initialize,
+            if the response is empty, or if the restore operation is unsuccessful.
 
     &#34;&#34;&#34;
     if not (isinstance(path, list) and
             isinstance(overwrite, bool)):
         raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
 
-    if path == []:
+    if not path:
         raise SDKException(&#39;Instance&#39;, &#39;104&#39;)
 
     if dest_client_name is None:
@@ -2329,123 +2173,121 @@ if response is not success
 </details>
 </dd>
 <dt id="cvpysdk.instances.mysqlinstance.MYSQLInstance.restore_out_of_place"><code class="name flex">
-<span>def <span class="ident">restore_out_of_place</span></span>(<span>self, path=None, staging=None, dest_client_name=None, dest_instance_name=None, data_restore=True, log_restore=False, overwrite=True, copy_precedence=None, from_time=None, to_time=None, media_agent=None, table_level_restore=False, clone_env=False, clone_options=None, redirect_enabled=False, redirect_path=None, browse_jobid=None, recurringRestore=False)</span>
+<span>def <span class="ident">restore_out_of_place</span></span>(<span>self, path: Optional[list] = None, staging: Optional[str] = None, dest_client_name: Optional[str] = None, dest_instance_name: Optional[str] = None, data_restore: bool = True, log_restore: bool = False, overwrite: bool = True, copy_precedence: Optional[int] = None, from_time: Optional[str] = None, to_time: Optional[str] = None, media_agent: Optional[str] = None, table_level_restore: bool = False, clone_env: bool = False, clone_options: Optional[dict] = None, redirect_enabled: bool = False, redirect_path: Optional[str] = None, browse_jobid: Optional[int] = None, recurringRestore: bool = False) ‑> <a title="cvpysdk.job.Job" href="../job.html#cvpysdk.job.Job">Job</a></span>
 </code></dt>
 <dd>
-<div class="desc"><p>Method to perform out of place restore of MySQL data/log/recurring files to the destination client location.</p>
-<pre><code>Args:
-    path                    (list)  --  list of database/databases to be restored
-    staging                 (str)   --  staging location for mysql logs during restores
-    dest_client_name        (str)   --  destination client name where files are to be restored
-    dest_instance_name      (str)   --  destination mysql instance name of destination client
-    data_restore            (bool)  --  for data only/data+log restore
-    log_restore             (bool)  --  for log only/data+log restore
-    overwrite               (bool)  --  unconditional overwrite files during restore
-    copy_precedence         (int)   --  copy precedence value of storage policy copy
-    from_time               (str)   --  time to restore the contents after
-            format: YYYY-MM-DD HH:MM:SS
-    to_time                 (str)   --  time to restore the contents before
-            format: YYYY-MM-DD HH:MM:SS
-    media_agent             (str)   --  media agent associated
-    table_level_restore     (bool)  --  Table level restore flag
-    clone_env               (bool)  --  boolean to specify whether the database should be cloned or not
-    clone_options           (dict)  --  clone restore options passed in a dict
-    redirect_enabled         (bool)  --  boolean to specify if redirect restore is enabled
-    redirect_path           (str)   --  Path specified in advanced restore options
-    in order to perform redirect restore
-    browse_jobid           (int)   --  Browse jobid to browse and restore from
-    recurringRestore       (bool)  --  for Recurring restore
-
-Returns:
-    object - instance of the Job class for this restore job
-
-Raises:
-    SDKException:
-        if paths is not a list
-
-        if failed to initialize job
-
-        if destination client name is empty
-
-        if destination Instance name empty
-
-        if response is empty
-
-        if response is not success
-</code></pre></div>
+<div class="desc"><p>Perform an out-of-place restore of MySQL data, logs, or recurring files to a specified destination client and instance.</p>
+<p>This method allows you to restore MySQL databases or tables to a different client or instance, with options for data/log restore, table-level restore, cloning, and advanced restore settings.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>path</code></strong></dt>
+<dd>List of database or table names to be restored. If None, restores all available.</dd>
+<dt><strong><code>staging</code></strong></dt>
+<dd>Staging location for MySQL logs during restore operations.</dd>
+<dt><strong><code>dest_client_name</code></strong></dt>
+<dd>Name of the destination client where the data will be restored.</dd>
+<dt><strong><code>dest_instance_name</code></strong></dt>
+<dd>Name of the destination MySQL instance on the destination client.</dd>
+<dt><strong><code>data_restore</code></strong></dt>
+<dd>If True, performs data or data+log restore. Defaults to True.</dd>
+<dt><strong><code>log_restore</code></strong></dt>
+<dd>If True, performs log or data+log restore. Defaults to False.</dd>
+<dt><strong><code>overwrite</code></strong></dt>
+<dd>If True, existing files at the destination will be overwritten. Defaults to True.</dd>
+<dt><strong><code>copy_precedence</code></strong></dt>
+<dd>Storage policy copy precedence value to use for restore.</dd>
+<dt><strong><code>from_time</code></strong></dt>
+<dd>Restore data backed up after this time (format: 'YYYY-MM-DD HH:MM:SS').</dd>
+<dt><strong><code>to_time</code></strong></dt>
+<dd>Restore data backed up before this time (format: 'YYYY-MM-DD HH:MM:SS').</dd>
+<dt><strong><code>media_agent</code></strong></dt>
+<dd>Name of the MediaAgent to use for the restore.</dd>
+<dt><strong><code>table_level_restore</code></strong></dt>
+<dd>If True, enables table-level restore. Defaults to False.</dd>
+<dt><strong><code>clone_env</code></strong></dt>
+<dd>If True, clones the database environment. Defaults to False.</dd>
+<dt><strong><code>clone_options</code></strong></dt>
+<dd>Dictionary of additional clone restore options.</dd>
+<dt><strong><code>redirect_enabled</code></strong></dt>
+<dd>If True, enables redirect restore. Defaults to False.</dd>
+<dt><strong><code>redirect_path</code></strong></dt>
+<dd>Path to redirect the restore to, used with redirect_enabled.</dd>
+<dt><strong><code>browse_jobid</code></strong></dt>
+<dd>Job ID to browse and restore from a specific backup job.</dd>
+<dt><strong><code>recurringRestore</code></strong></dt>
+<dd>If True, enables recurring restore. Defaults to False.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Job</code></dt>
+<dd>An instance of the Job class representing the restore job.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the path is not a list, if job initialization fails, if destination client or instance name is empty, or if the restore response is empty or unsuccessful.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/mysqlinstance.py#L578-L678" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/mysqlinstance.py#L565-L655" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_out_of_place(
-        self,
-        path=None,
-        staging=None,
-        dest_client_name=None,
-        dest_instance_name=None,
-        data_restore=True,
-        log_restore=False,
-        overwrite=True,
-        copy_precedence=None,
-        from_time=None,
-        to_time=None,
-        media_agent=None,
-        table_level_restore=False,
-        clone_env=False,
-        clone_options=None,
-        redirect_enabled=False,
-        redirect_path=None,
-        browse_jobid=None,
-        recurringRestore=False):
-    &#34;&#34;&#34;
-    Method to perform out of place restore of MySQL data/log/recurring files to the destination client location.
+    self,
+    path: Optional[list] = None,
+    staging: Optional[str] = None,
+    dest_client_name: Optional[str] = None,
+    dest_instance_name: Optional[str] = None,
+    data_restore: bool = True,
+    log_restore: bool = False,
+    overwrite: bool = True,
+    copy_precedence: Optional[int] = None,
+    from_time: Optional[str] = None,
+    to_time: Optional[str] = None,
+    media_agent: Optional[str] = None,
+    table_level_restore: bool = False,
+    clone_env: bool = False,
+    clone_options: Optional[dict] = None,
+    redirect_enabled: bool = False,
+    redirect_path: Optional[str] = None,
+    browse_jobid: Optional[int] = None,
+    recurringRestore: bool = False
+) -&gt; &#39;Job&#39;:
+    &#34;&#34;&#34;Perform an out-of-place restore of MySQL data, logs, or recurring files to a specified destination client and instance.
 
-        Args:
-            path                    (list)  --  list of database/databases to be restored
-            staging                 (str)   --  staging location for mysql logs during restores
-            dest_client_name        (str)   --  destination client name where files are to be restored
-            dest_instance_name      (str)   --  destination mysql instance name of destination client
-            data_restore            (bool)  --  for data only/data+log restore
-            log_restore             (bool)  --  for log only/data+log restore
-            overwrite               (bool)  --  unconditional overwrite files during restore
-            copy_precedence         (int)   --  copy precedence value of storage policy copy
-            from_time               (str)   --  time to restore the contents after
-                    format: YYYY-MM-DD HH:MM:SS
-            to_time                 (str)   --  time to restore the contents before
-                    format: YYYY-MM-DD HH:MM:SS
-            media_agent             (str)   --  media agent associated
-            table_level_restore     (bool)  --  Table level restore flag
-            clone_env               (bool)  --  boolean to specify whether the database should be cloned or not
-            clone_options           (dict)  --  clone restore options passed in a dict
-            redirect_enabled         (bool)  --  boolean to specify if redirect restore is enabled
-            redirect_path           (str)   --  Path specified in advanced restore options
-            in order to perform redirect restore
-            browse_jobid           (int)   --  Browse jobid to browse and restore from
-            recurringRestore       (bool)  --  for Recurring restore
+    This method allows you to restore MySQL databases or tables to a different client or instance, with options for data/log restore, table-level restore, cloning, and advanced restore settings.
 
-        Returns:
-            object - instance of the Job class for this restore job
+    Args:
+        path: List of database or table names to be restored. If None, restores all available.
+        staging: Staging location for MySQL logs during restore operations.
+        dest_client_name: Name of the destination client where the data will be restored.
+        dest_instance_name: Name of the destination MySQL instance on the destination client.
+        data_restore: If True, performs data or data+log restore. Defaults to True.
+        log_restore: If True, performs log or data+log restore. Defaults to False.
+        overwrite: If True, existing files at the destination will be overwritten. Defaults to True.
+        copy_precedence: Storage policy copy precedence value to use for restore.
+        from_time: Restore data backed up after this time (format: &#39;YYYY-MM-DD HH:MM:SS&#39;).
+        to_time: Restore data backed up before this time (format: &#39;YYYY-MM-DD HH:MM:SS&#39;).
+        media_agent: Name of the MediaAgent to use for the restore.
+        table_level_restore: If True, enables table-level restore. Defaults to False.
+        clone_env: If True, clones the database environment. Defaults to False.
+        clone_options: Dictionary of additional clone restore options.
+        redirect_enabled: If True, enables redirect restore. Defaults to False.
+        redirect_path: Path to redirect the restore to, used with redirect_enabled.
+        browse_jobid: Job ID to browse and restore from a specific backup job.
+        recurringRestore: If True, enables recurring restore. Defaults to False.
 
-        Raises:
-            SDKException:
-                if paths is not a list
+    Returns:
+        Job: An instance of the Job class representing the restore job.
 
-                if failed to initialize job
+    Raises:
+        SDKException: If the path is not a list, if job initialization fails, if destination client or instance name is empty, or if the restore response is empty or unsuccessful.
 
-                if destination client name is empty
-
-                if destination Instance name empty
-
-                if response is empty
-
-                if response is not success
     &#34;&#34;&#34;
     if not (isinstance(path, list) and
             isinstance(overwrite, bool)):
         raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
 
-    if path == []:
+    if not path:
         raise SDKException(&#39;Instance&#39;, &#39;104&#39;)
 
     if dest_client_name is None:

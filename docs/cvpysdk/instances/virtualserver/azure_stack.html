@@ -44,7 +44,7 @@ _get_instance_properties_json()              -- get the all instance related
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/azure_stack.py#L1-L131" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/azure_stack.py#L1-L186" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -88,20 +88,43 @@ AzureStackInstance:         Derived class from VirtualServer
 
 from ..vsinstance import VirtualServerInstance
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ...agent import Agent
+
 
 class AzureStackInstance(VirtualServerInstance):
-    &#34;&#34;&#34;Class for representing Azure stack instance of the Virtual Server agent&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents an Azure Stack instance for the Virtual Server agent.
 
-    def __init__(self, agent, name, iid):
+    This class encapsulates the properties and behaviors specific to an Azure Stack
+    instance within the context of virtual server management. It provides mechanisms
+    to initialize the instance, retrieve its properties, and access key Azure Stack
+    identifiers such as server host name, subscription ID, and application ID.
 
-        &#34;&#34;&#34; Initialize the Instance object for the given Virtual Server instance
+    Key Features:
+        - Initialization with agent, name, and instance ID
+        - Retrieval of instance properties and their JSON representation
+        - Access to Azure Stack-specific properties:
+            - server_host_name
+            - subscriptionid
+            - applicationid
 
-            Args:
-                agent               (object)    --  the instance of the agent class
+    &#34;&#34;&#34;
 
-                name                (str)       --  the name of the instance
+    def __init__(self, agent: &#39;Agent&#39;, name: str, iid: str) -&gt; None:
+        &#34;&#34;&#34;Initialize the AzureStackInstance object for a given Virtual Server instance.
 
-                iid                 (int)       --  the instance id
+        Args:
+            agent: The agent class instance associated with this Azure Stack instance.
+            name: The name of the Azure Stack instance.
+            iid: The unique identifier (ID) for the instance.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(client_object, &#39;Virtual Server&#39;)
+            &gt;&gt;&gt; instance = AzureStackInstance(agent, &#39;MyAzureStackInstance&#39;, &#39;101&#39;)
+            &gt;&gt;&gt; print(instance)
+            &lt;AzureStackInstance: MyAzureStackInstance (ID: 101)&gt;
 
         &#34;&#34;&#34;
         self._subscriptionid = None
@@ -110,14 +133,15 @@ class AzureStackInstance(VirtualServerInstance):
         self._vendor_id = 403
         super(AzureStackInstance, self).__init__(agent, name, iid)
 
-    def _get_instance_properties(self):
-        &#34;&#34;&#34;
-        Get the properties of this instance
+    def _get_instance_properties(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve and update the properties of this AzureStackInstance.
 
-        Raise:
-            SDK Exception:
-                if response is not empty
-                if response is not success
+        This method fetches the latest properties for the current AzureStackInstance object
+        from the backend service and updates the instance accordingly.
+
+        Raises:
+            SDKException: If the response is not empty or the response indicates failure.
+
         &#34;&#34;&#34;
 
         super(AzureStackInstance, self)._get_instance_properties()
@@ -137,11 +161,11 @@ class AzureStackInstance(VirtualServerInstance):
                 if &#39;clientName&#39; in client.keys():
                     self._server_name.append(str(client[&#39;clientName&#39;]))
 
-    def _get_instance_properties_json(self):
-        &#34;&#34;&#34;get the all instance related properties of this subclient.
+    def _get_instance_properties_json(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve all instance-related properties for this subclient.
 
-          Returns:
-               dict - all instance properties put inside a dict
+        Returns:
+            dict: A dictionary containing all properties associated with the current instance.
 
         &#34;&#34;&#34;
         instance_json = {
@@ -159,22 +183,46 @@ class AzureStackInstance(VirtualServerInstance):
         return instance_json
 
     @property
-    def server_host_name(self):
-        &#34;&#34;&#34;return the associated clients with the instance&#34;&#34;&#34;
+    def server_host_name(self) -&gt; list:
+        &#34;&#34;&#34;Get the server host name associated with the Azure Stack instance.
+
+        Returns:
+            The server host name as a string.
+
+        Example:
+            &gt;&gt;&gt; instance = AzureStackInstance()
+            &gt;&gt;&gt; host_name = instance.server_host_name  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Server host name: {host_name}&#34;)
+
+        &#34;&#34;&#34;
         return self._server_name
 
     @property
-    def subscriptionid(self):
-        &#34;&#34;&#34;
-        returns the subcriptionID of the instance
+    def subscriptionid(self) -&gt; str:
+        &#34;&#34;&#34;Get the subscription ID of the Azure Stack instance.
 
+        Returns:
+            The subscription ID associated with this Azure Stack instance as a string.
+
+        Example:
+            &gt;&gt;&gt; instance = AzureStackInstance()
+            &gt;&gt;&gt; sub_id = instance.subscriptionid  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Subscription ID: {sub_id}&#34;)
         &#34;&#34;&#34;
         return self._subscriptionid
 
     @property
-    def applicationid(self):
-        &#34;&#34;&#34;
-        returns the applciationID of the instance
+    def applicationid(self) -&gt; str:
+        &#34;&#34;&#34;Get the application ID associated with this Azure Stack instance.
+
+        Returns:
+            The application ID (as a string) for the current Azure Stack instance.
+
+        Example:
+            &gt;&gt;&gt; instance = AzureStackInstance()
+            &gt;&gt;&gt; app_id = instance.applicationid  # Access the application ID property
+            &gt;&gt;&gt; print(f&#34;Application ID: {app_id}&#34;)
+
         &#34;&#34;&#34;
         return self._applicationid</code></pre>
 </details>
@@ -190,42 +238,76 @@ class AzureStackInstance(VirtualServerInstance):
 <dl>
 <dt id="cvpysdk.instances.virtualserver.azure_stack.AzureStackInstance"><code class="flex name class">
 <span>class <span class="ident">AzureStackInstance</span></span>
-<span>(</span><span>agent, name, iid)</span>
+<span>(</span><span>agent: Agent, name: str, iid: str)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for representing Azure stack instance of the Virtual Server agent</p>
-<p>Initialize the Instance object for the given Virtual Server instance</p>
-<h2 id="args">Args</h2>
-<p>agent
-(object)
-&ndash;
-the instance of the agent class</p>
-<p>name
-(str)
-&ndash;
-the name of the instance</p>
-<p>iid
-(int)
-&ndash;
-the instance id</p></div>
+<div class="desc"><p>Represents an Azure Stack instance for the Virtual Server agent.</p>
+<p>This class encapsulates the properties and behaviors specific to an Azure Stack
+instance within the context of virtual server management. It provides mechanisms
+to initialize the instance, retrieve its properties, and access key Azure Stack
+identifiers such as server host name, subscription ID, and application ID.</p>
+<p>Key Features:
+- Initialization with agent, name, and instance ID
+- Retrieval of instance properties and their JSON representation
+- Access to Azure Stack-specific properties:
+- server_host_name
+- subscriptionid
+- applicationid</p>
+<p>Initialize the AzureStackInstance object for a given Virtual Server instance.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>agent</code></strong></dt>
+<dd>The agent class instance associated with this Azure Stack instance.</dd>
+<dt><strong><code>name</code></strong></dt>
+<dd>The name of the Azure Stack instance.</dd>
+<dt><strong><code>iid</code></strong></dt>
+<dd>The unique identifier (ID) for the instance.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; agent = Agent(client_object, 'Virtual Server')
+&gt;&gt;&gt; instance = AzureStackInstance(agent, 'MyAzureStackInstance', '101')
+&gt;&gt;&gt; print(instance)
+&lt;AzureStackInstance: MyAzureStackInstance (ID: 101)&gt;
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/azure_stack.py#L44-L131" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/azure_stack.py#L48-L186" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class AzureStackInstance(VirtualServerInstance):
-    &#34;&#34;&#34;Class for representing Azure stack instance of the Virtual Server agent&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents an Azure Stack instance for the Virtual Server agent.
 
-    def __init__(self, agent, name, iid):
+    This class encapsulates the properties and behaviors specific to an Azure Stack
+    instance within the context of virtual server management. It provides mechanisms
+    to initialize the instance, retrieve its properties, and access key Azure Stack
+    identifiers such as server host name, subscription ID, and application ID.
 
-        &#34;&#34;&#34; Initialize the Instance object for the given Virtual Server instance
+    Key Features:
+        - Initialization with agent, name, and instance ID
+        - Retrieval of instance properties and their JSON representation
+        - Access to Azure Stack-specific properties:
+            - server_host_name
+            - subscriptionid
+            - applicationid
 
-            Args:
-                agent               (object)    --  the instance of the agent class
+    &#34;&#34;&#34;
 
-                name                (str)       --  the name of the instance
+    def __init__(self, agent: &#39;Agent&#39;, name: str, iid: str) -&gt; None:
+        &#34;&#34;&#34;Initialize the AzureStackInstance object for a given Virtual Server instance.
 
-                iid                 (int)       --  the instance id
+        Args:
+            agent: The agent class instance associated with this Azure Stack instance.
+            name: The name of the Azure Stack instance.
+            iid: The unique identifier (ID) for the instance.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(client_object, &#39;Virtual Server&#39;)
+            &gt;&gt;&gt; instance = AzureStackInstance(agent, &#39;MyAzureStackInstance&#39;, &#39;101&#39;)
+            &gt;&gt;&gt; print(instance)
+            &lt;AzureStackInstance: MyAzureStackInstance (ID: 101)&gt;
 
         &#34;&#34;&#34;
         self._subscriptionid = None
@@ -234,14 +316,15 @@ the instance id</p></div>
         self._vendor_id = 403
         super(AzureStackInstance, self).__init__(agent, name, iid)
 
-    def _get_instance_properties(self):
-        &#34;&#34;&#34;
-        Get the properties of this instance
+    def _get_instance_properties(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve and update the properties of this AzureStackInstance.
 
-        Raise:
-            SDK Exception:
-                if response is not empty
-                if response is not success
+        This method fetches the latest properties for the current AzureStackInstance object
+        from the backend service and updates the instance accordingly.
+
+        Raises:
+            SDKException: If the response is not empty or the response indicates failure.
+
         &#34;&#34;&#34;
 
         super(AzureStackInstance, self)._get_instance_properties()
@@ -261,11 +344,11 @@ the instance id</p></div>
                 if &#39;clientName&#39; in client.keys():
                     self._server_name.append(str(client[&#39;clientName&#39;]))
 
-    def _get_instance_properties_json(self):
-        &#34;&#34;&#34;get the all instance related properties of this subclient.
+    def _get_instance_properties_json(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve all instance-related properties for this subclient.
 
-          Returns:
-               dict - all instance properties put inside a dict
+        Returns:
+            dict: A dictionary containing all properties associated with the current instance.
 
         &#34;&#34;&#34;
         instance_json = {
@@ -283,22 +366,46 @@ the instance id</p></div>
         return instance_json
 
     @property
-    def server_host_name(self):
-        &#34;&#34;&#34;return the associated clients with the instance&#34;&#34;&#34;
+    def server_host_name(self) -&gt; list:
+        &#34;&#34;&#34;Get the server host name associated with the Azure Stack instance.
+
+        Returns:
+            The server host name as a string.
+
+        Example:
+            &gt;&gt;&gt; instance = AzureStackInstance()
+            &gt;&gt;&gt; host_name = instance.server_host_name  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Server host name: {host_name}&#34;)
+
+        &#34;&#34;&#34;
         return self._server_name
 
     @property
-    def subscriptionid(self):
-        &#34;&#34;&#34;
-        returns the subcriptionID of the instance
+    def subscriptionid(self) -&gt; str:
+        &#34;&#34;&#34;Get the subscription ID of the Azure Stack instance.
 
+        Returns:
+            The subscription ID associated with this Azure Stack instance as a string.
+
+        Example:
+            &gt;&gt;&gt; instance = AzureStackInstance()
+            &gt;&gt;&gt; sub_id = instance.subscriptionid  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Subscription ID: {sub_id}&#34;)
         &#34;&#34;&#34;
         return self._subscriptionid
 
     @property
-    def applicationid(self):
-        &#34;&#34;&#34;
-        returns the applciationID of the instance
+    def applicationid(self) -&gt; str:
+        &#34;&#34;&#34;Get the application ID associated with this Azure Stack instance.
+
+        Returns:
+            The application ID (as a string) for the current Azure Stack instance.
+
+        Example:
+            &gt;&gt;&gt; instance = AzureStackInstance()
+            &gt;&gt;&gt; app_id = instance.applicationid  # Access the application ID property
+            &gt;&gt;&gt; print(f&#34;Application ID: {app_id}&#34;)
+
         &#34;&#34;&#34;
         return self._applicationid</code></pre>
 </details>
@@ -309,49 +416,100 @@ the instance id</p></div>
 </ul>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.instances.virtualserver.azure_stack.AzureStackInstance.applicationid"><code class="name">var <span class="ident">applicationid</span></code></dt>
+<dt id="cvpysdk.instances.virtualserver.azure_stack.AzureStackInstance.applicationid"><code class="name">var <span class="ident">applicationid</span> : str</code></dt>
 <dd>
-<div class="desc"><p>returns the applciationID of the instance</p></div>
+<div class="desc"><p>Get the application ID associated with this Azure Stack instance.</p>
+<p>Returns
+-----=
+The application ID (as a string) for the current Azure Stack instance.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; instance = AzureStackInstance()
+&gt;&gt;&gt; app_id = instance.applicationid  # Access the application ID property
+&gt;&gt;&gt; print(f&quot;Application ID: {app_id}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/azure_stack.py#L126-L131" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/azure_stack.py#L172-L186" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def applicationid(self):
-    &#34;&#34;&#34;
-    returns the applciationID of the instance
+def applicationid(self) -&gt; str:
+    &#34;&#34;&#34;Get the application ID associated with this Azure Stack instance.
+
+    Returns:
+        The application ID (as a string) for the current Azure Stack instance.
+
+    Example:
+        &gt;&gt;&gt; instance = AzureStackInstance()
+        &gt;&gt;&gt; app_id = instance.applicationid  # Access the application ID property
+        &gt;&gt;&gt; print(f&#34;Application ID: {app_id}&#34;)
+
     &#34;&#34;&#34;
     return self._applicationid</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.virtualserver.azure_stack.AzureStackInstance.server_host_name"><code class="name">var <span class="ident">server_host_name</span></code></dt>
+<dt id="cvpysdk.instances.virtualserver.azure_stack.AzureStackInstance.server_host_name"><code class="name">var <span class="ident">server_host_name</span> : list</code></dt>
 <dd>
-<div class="desc"><p>return the associated clients with the instance</p></div>
+<div class="desc"><p>Get the server host name associated with the Azure Stack instance.</p>
+<p>Returns
+-----=
+The server host name as a string.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; instance = AzureStackInstance()
+&gt;&gt;&gt; host_name = instance.server_host_name  # Use dot notation for property access
+&gt;&gt;&gt; print(f&quot;Server host name: {host_name}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/azure_stack.py#L113-L116" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/azure_stack.py#L141-L155" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def server_host_name(self):
-    &#34;&#34;&#34;return the associated clients with the instance&#34;&#34;&#34;
+def server_host_name(self) -&gt; list:
+    &#34;&#34;&#34;Get the server host name associated with the Azure Stack instance.
+
+    Returns:
+        The server host name as a string.
+
+    Example:
+        &gt;&gt;&gt; instance = AzureStackInstance()
+        &gt;&gt;&gt; host_name = instance.server_host_name  # Use dot notation for property access
+        &gt;&gt;&gt; print(f&#34;Server host name: {host_name}&#34;)
+
+    &#34;&#34;&#34;
     return self._server_name</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.virtualserver.azure_stack.AzureStackInstance.subscriptionid"><code class="name">var <span class="ident">subscriptionid</span></code></dt>
+<dt id="cvpysdk.instances.virtualserver.azure_stack.AzureStackInstance.subscriptionid"><code class="name">var <span class="ident">subscriptionid</span> : str</code></dt>
 <dd>
-<div class="desc"><p>returns the subcriptionID of the instance</p></div>
+<div class="desc"><p>Get the subscription ID of the Azure Stack instance.</p>
+<p>Returns
+-----=
+The subscription ID associated with this Azure Stack instance as a string.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; instance = AzureStackInstance()
+&gt;&gt;&gt; sub_id = instance.subscriptionid  # Use dot notation for property access
+&gt;&gt;&gt; print(f&quot;Subscription ID: {sub_id}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/azure_stack.py#L118-L124" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/azure_stack.py#L157-L170" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def subscriptionid(self):
-    &#34;&#34;&#34;
-    returns the subcriptionID of the instance
+def subscriptionid(self) -&gt; str:
+    &#34;&#34;&#34;Get the subscription ID of the Azure Stack instance.
 
+    Returns:
+        The subscription ID associated with this Azure Stack instance as a string.
+
+    Example:
+        &gt;&gt;&gt; instance = AzureStackInstance()
+        &gt;&gt;&gt; sub_id = instance.subscriptionid  # Use dot notation for property access
+        &gt;&gt;&gt; print(f&#34;Subscription ID: {sub_id}&#34;)
     &#34;&#34;&#34;
     return self._subscriptionid</code></pre>
 </details>

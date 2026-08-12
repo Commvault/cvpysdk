@@ -27,7 +27,8 @@
 <p>NASBackupset is the only class defined in this file.</p>
 <p>NASBackupset: Derived class from Backupset Base class, representing a <strong>NAS / NDMP</strong> backupset,
 and to perform operations on that subclient</p>
-<h2 id="nasbackupset">Nasbackupset</h2>
+<p>Nasbackupset
+-----=</p>
 <p>_get_backupset_properties()
 &ndash;
 gets the properties of this subclient</p>
@@ -37,7 +38,7 @@ sets this backupset as image backupset</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/backupsets/nasbackupset.py#L1-L97" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/backupsets/nasbackupset.py#L1-L140" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -79,14 +80,35 @@ from ..exception import SDKException
 
 
 class NASBackupset(FSBackupset):
-    &#34;&#34;&#34;Derived class from Backupset Base class, representing a **NAS / NDMP** backupset,
-        and to perform operations on that backupset.
+    &#34;&#34;&#34;
+    Represents a NAS/NDMP backupset, derived from the Backupset base class.
+
+    This class provides specialized functionality for managing NAS (Network Attached Storage)
+    and NDMP (Network Data Management Protocol) backupsets. It enables users to perform
+    operations specific to NAS backupsets, including retrieving backupset properties and
+    managing image backupset settings.
+
+    Key Features:
+        - Retrieve NAS/NDMP backupset properties
+        - Check if the backupset is configured as an image backupset
+        - Set the backupset as an image backupset
 
     &#34;&#34;&#34;
 
-    def _get_backupset_properties(self):
-        &#34;&#34;&#34;Derived class from Backupset Base class, representing a nas backupset,
-            and to perform operations on that backupset.&#34;&#34;&#34;
+    def _get_backupset_properties(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve and set NAS backupset-specific properties.
+
+        This method overrides the base class implementation to extract NAS-specific
+        backupset properties, such as determining if the backupset is configured for
+        NetApp image backup. It updates internal state based on the backupset&#39;s configuration.
+
+        Example:
+            &gt;&gt;&gt; nas_backupset = NASBackupset(...)
+            &gt;&gt;&gt; nas_backupset._get_backupset_properties()
+            &gt;&gt;&gt; print(nas_backupset._is_image_backupset)
+            &gt;&gt;&gt; # The _is_image_backupset attribute will reflect whether NetApp image backup is enabled
+
+        &#34;&#34;&#34;
         super(NASBackupset, self)._get_backupset_properties()
 
         self._is_image_backupset = False
@@ -98,17 +120,35 @@ class NASBackupset(FSBackupset):
                 )
 
     @property
-    def is_image_backupset(self):
-        &#34;&#34;&#34;Treats is_image_backupset as a read-only property&#34;&#34;&#34;
+    def is_image_backupset(self) -&gt; bool:
+        &#34;&#34;&#34;Indicate whether this NAS backupset is configured as an image backupset.
+
+        Returns:
+            True if the backupset is an image backupset, False otherwise.
+
+        Example:
+            &gt;&gt;&gt; backupset = NASBackupset(...)
+            &gt;&gt;&gt; if backupset.is_image_backupset:
+            ...     print(&#34;This is an image backupset.&#34;)
+            ... else:
+            ...     print(&#34;This is a file-level backupset.&#34;)
+
+        &#34;&#34;&#34;
         return self._is_image_backupset
 
-    def set_image_backupset(self):
-        &#34;&#34;&#34;Sets the backupset represented by this Backupset class instance as the image backupset
-            if it is not the image backupset.
+    def set_image_backupset(self) -&gt; None:
+        &#34;&#34;&#34;Set this backupset as the image backupset if it is not already configured as such.
 
-            Raises:
-                SDKException:
-                    if failed to set this as the image backupset
+        This method updates the backupset properties to enable image backup functionality.
+        If the backupset is already set as an image backupset, no action is taken.
+
+        Raises:
+            SDKException: If the operation fails to set this backupset as the image backupset.
+
+        Example:
+            &gt;&gt;&gt; backupset = NASBackupset(...)
+            &gt;&gt;&gt; backupset.set_image_backupset()
+            &gt;&gt;&gt; print(&#34;Backupset is now configured for image backup.&#34;)
 
         &#34;&#34;&#34;
         if self.is_image_backupset is False:
@@ -149,42 +189,70 @@ class NASBackupset(FSBackupset):
 <dl>
 <dt id="cvpysdk.backupsets.nasbackupset.NASBackupset"><code class="flex name class">
 <span>class <span class="ident">NASBackupset</span></span>
-<span>(</span><span>instance_object, backupset_name, backupset_id=None)</span>
+<span>(</span><span>instance_object: object, backupset_name: str, backupset_id: str = None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Derived class from Backupset Base class, representing a <strong>NAS / NDMP</strong> backupset,
-and to perform operations on that backupset.</p>
-<p>Initialise the backupset object.</p>
-<h2 id="args">Args</h2>
-<p>instance_object
-(object)
-&ndash;
-instance of the Instance class</p>
-<p>backupset_name
-(str)
-&ndash;
-name of the backupset</p>
-<p>backupset_id
-(str)
-&ndash;
-id of the backupset
-default: None</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Backupset class</p></div>
+<div class="desc"><p>Represents a NAS/NDMP backupset, derived from the Backupset base class.</p>
+<p>This class provides specialized functionality for managing NAS (Network Attached Storage)
+and NDMP (Network Data Management Protocol) backupsets. It enables users to perform
+operations specific to NAS backupsets, including retrieving backupset properties and
+managing image backupset settings.</p>
+<p>Key Features:
+- Retrieve NAS/NDMP backupset properties
+- Check if the backupset is configured as an image backupset
+- Set the backupset as an image backupset</p>
+<p>Initialize a Backupset object.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>instance_object</code></strong></dt>
+<dd>An instance of the Instance class to which this backupset belongs.</dd>
+<dt><strong><code>backupset_name</code></strong></dt>
+<dd>The name of the backupset.</dd>
+<dt><strong><code>backupset_id</code></strong></dt>
+<dd>The unique identifier for the backupset. If not provided, it will be determined automatically.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; instance = Instance(commcell_object, &quot;FileSystem&quot;)
+&gt;&gt;&gt; backupset = Backupset(instance, &quot;defaultBackupSet&quot;)
+&gt;&gt;&gt; print(f&quot;Backupset created: {backupset}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/backupsets/nasbackupset.py#L40-L97" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/backupsets/nasbackupset.py#L40-L140" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class NASBackupset(FSBackupset):
-    &#34;&#34;&#34;Derived class from Backupset Base class, representing a **NAS / NDMP** backupset,
-        and to perform operations on that backupset.
+    &#34;&#34;&#34;
+    Represents a NAS/NDMP backupset, derived from the Backupset base class.
+
+    This class provides specialized functionality for managing NAS (Network Attached Storage)
+    and NDMP (Network Data Management Protocol) backupsets. It enables users to perform
+    operations specific to NAS backupsets, including retrieving backupset properties and
+    managing image backupset settings.
+
+    Key Features:
+        - Retrieve NAS/NDMP backupset properties
+        - Check if the backupset is configured as an image backupset
+        - Set the backupset as an image backupset
 
     &#34;&#34;&#34;
 
-    def _get_backupset_properties(self):
-        &#34;&#34;&#34;Derived class from Backupset Base class, representing a nas backupset,
-            and to perform operations on that backupset.&#34;&#34;&#34;
+    def _get_backupset_properties(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve and set NAS backupset-specific properties.
+
+        This method overrides the base class implementation to extract NAS-specific
+        backupset properties, such as determining if the backupset is configured for
+        NetApp image backup. It updates internal state based on the backupset&#39;s configuration.
+
+        Example:
+            &gt;&gt;&gt; nas_backupset = NASBackupset(...)
+            &gt;&gt;&gt; nas_backupset._get_backupset_properties()
+            &gt;&gt;&gt; print(nas_backupset._is_image_backupset)
+            &gt;&gt;&gt; # The _is_image_backupset attribute will reflect whether NetApp image backup is enabled
+
+        &#34;&#34;&#34;
         super(NASBackupset, self)._get_backupset_properties()
 
         self._is_image_backupset = False
@@ -196,17 +264,35 @@ default: None</p>
                 )
 
     @property
-    def is_image_backupset(self):
-        &#34;&#34;&#34;Treats is_image_backupset as a read-only property&#34;&#34;&#34;
+    def is_image_backupset(self) -&gt; bool:
+        &#34;&#34;&#34;Indicate whether this NAS backupset is configured as an image backupset.
+
+        Returns:
+            True if the backupset is an image backupset, False otherwise.
+
+        Example:
+            &gt;&gt;&gt; backupset = NASBackupset(...)
+            &gt;&gt;&gt; if backupset.is_image_backupset:
+            ...     print(&#34;This is an image backupset.&#34;)
+            ... else:
+            ...     print(&#34;This is a file-level backupset.&#34;)
+
+        &#34;&#34;&#34;
         return self._is_image_backupset
 
-    def set_image_backupset(self):
-        &#34;&#34;&#34;Sets the backupset represented by this Backupset class instance as the image backupset
-            if it is not the image backupset.
+    def set_image_backupset(self) -&gt; None:
+        &#34;&#34;&#34;Set this backupset as the image backupset if it is not already configured as such.
 
-            Raises:
-                SDKException:
-                    if failed to set this as the image backupset
+        This method updates the backupset properties to enable image backup functionality.
+        If the backupset is already set as an image backupset, no action is taken.
+
+        Raises:
+            SDKException: If the operation fails to set this backupset as the image backupset.
+
+        Example:
+            &gt;&gt;&gt; backupset = NASBackupset(...)
+            &gt;&gt;&gt; backupset.set_image_backupset()
+            &gt;&gt;&gt; print(&#34;Backupset is now configured for image backup.&#34;)
 
         &#34;&#34;&#34;
         if self.is_image_backupset is False:
@@ -242,17 +328,40 @@ default: None</p>
 </ul>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.backupsets.nasbackupset.NASBackupset.is_image_backupset"><code class="name">var <span class="ident">is_image_backupset</span></code></dt>
+<dt id="cvpysdk.backupsets.nasbackupset.NASBackupset.is_image_backupset"><code class="name">var <span class="ident">is_image_backupset</span> : bool</code></dt>
 <dd>
-<div class="desc"><p>Treats is_image_backupset as a read-only property</p></div>
+<div class="desc"><p>Indicate whether this NAS backupset is configured as an image backupset.</p>
+<p>Returns
+-----=
+True if the backupset is an image backupset, False otherwise.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; backupset = NASBackupset(...)
+&gt;&gt;&gt; if backupset.is_image_backupset:
+...     print(&quot;This is an image backupset.&quot;)
+... else:
+...     print(&quot;This is a file-level backupset.&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/backupsets/nasbackupset.py#L59-L62" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/backupsets/nasbackupset.py#L82-L98" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def is_image_backupset(self):
-    &#34;&#34;&#34;Treats is_image_backupset as a read-only property&#34;&#34;&#34;
+def is_image_backupset(self) -&gt; bool:
+    &#34;&#34;&#34;Indicate whether this NAS backupset is configured as an image backupset.
+
+    Returns:
+        True if the backupset is an image backupset, False otherwise.
+
+    Example:
+        &gt;&gt;&gt; backupset = NASBackupset(...)
+        &gt;&gt;&gt; if backupset.is_image_backupset:
+        ...     print(&#34;This is an image backupset.&#34;)
+        ... else:
+        ...     print(&#34;This is a file-level backupset.&#34;)
+
+    &#34;&#34;&#34;
     return self._is_image_backupset</code></pre>
 </details>
 </dd>
@@ -260,26 +369,42 @@ def is_image_backupset(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.backupsets.nasbackupset.NASBackupset.set_image_backupset"><code class="name flex">
-<span>def <span class="ident">set_image_backupset</span></span>(<span>self)</span>
+<span>def <span class="ident">set_image_backupset</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Sets the backupset represented by this Backupset class instance as the image backupset
-if it is not the image backupset.</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if failed to set this as the image backupset</p></div>
+<div class="desc"><p>Set this backupset as the image backupset if it is not already configured as such.</p>
+<p>This method updates the backupset properties to enable image backup functionality.
+If the backupset is already set as an image backupset, no action is taken.</p>
+<dl>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the operation fails to set this backupset as the image backupset.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; backupset = NASBackupset(...)
+&gt;&gt;&gt; backupset.set_image_backupset()
+&gt;&gt;&gt; print(&quot;Backupset is now configured for image backup.&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/backupsets/nasbackupset.py#L64-L97" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/backupsets/nasbackupset.py#L100-L140" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def set_image_backupset(self):
-    &#34;&#34;&#34;Sets the backupset represented by this Backupset class instance as the image backupset
-        if it is not the image backupset.
+<pre><code class="python">def set_image_backupset(self) -&gt; None:
+    &#34;&#34;&#34;Set this backupset as the image backupset if it is not already configured as such.
 
-        Raises:
-            SDKException:
-                if failed to set this as the image backupset
+    This method updates the backupset properties to enable image backup functionality.
+    If the backupset is already set as an image backupset, no action is taken.
+
+    Raises:
+        SDKException: If the operation fails to set this backupset as the image backupset.
+
+    Example:
+        &gt;&gt;&gt; backupset = NASBackupset(...)
+        &gt;&gt;&gt; backupset.set_image_backupset()
+        &gt;&gt;&gt; print(&#34;Backupset is now configured for image backup.&#34;)
 
     &#34;&#34;&#34;
     if self.is_image_backupset is False:

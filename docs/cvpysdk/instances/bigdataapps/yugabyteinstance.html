@@ -30,8 +30,9 @@ Derived class from BigDataAppsInstance Base class, representing a
 YugabyteInstance:
 Derived class from BigDataAppsInstance Base class, representing a
 YugabyteDB instance, and to perform operations on that instance</p>
-<h2 id="yugabyteinstance">Yugabyteinstance</h2>
-<p><strong>init</strong>()
+<p>Yugabyteinstance
+-----=
+<strong>init</strong>()
 &ndash;
 Initializes YugabyteDB instance object with associated
 agent_object, instance name and instance id
@@ -40,7 +41,7 @@ restore()
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/bigdataapps/yugabyteinstance.py#L1-L132" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/bigdataapps/yugabyteinstance.py#L1-L176" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 # --------------------------------------------------------------------------
@@ -68,23 +69,42 @@ YugabyteInstance:
 &#34;&#34;&#34;
 from __future__ import unicode_literals
 import time
+from typing import TYPE_CHECKING
+
 from ..bigdataappsinstance import BigDataAppsInstance
 from ...exception import SDKException
 
+if TYPE_CHECKING:
+    from ...job import Job
 
 class YugabyteInstance(BigDataAppsInstance):
     &#34;&#34;&#34;
-    Class for representing an Instance of the yugabyte instance
+    Represents an instance of a Yugabyte database within a big data application environment.
+
+    This class encapsulates the details and operations related to a Yugabyte instance,
+    including initialization with agent and instance metadata, and restoration of the
+    instance using specified restore options.
+
+    Key Features:
+        - Initialization with agent object, instance name, and instance ID
+        - Restoration of the Yugabyte instance using customizable restore options
+        - Inherits capabilities from BigDataAppsInstance for integration with big data applications
+
     &#34;&#34;&#34;
-    def __init__(self, agent_object, instance_name, instance_id=None):
-        &#34;&#34;&#34;Initializes the object of the YugabyteInstance class
-            Args:
-                agent_object    (object)  --  instance of the Agent class
-                instance_name   (str)     --  name of the instance
-                instance_id     (str)     --  id of the instance
-                    default: None
-            Returns:
-                object - instance of the Instance class
+    def __init__(self, agent_object: object, instance_name: str, instance_id: str = None) -&gt; None:
+        &#34;&#34;&#34;Initialize a new YugabyteInstance object.
+
+        Args:
+            agent_object: Instance of the Agent class associated with this Yugabyte instance.
+            instance_name: The name of the Yugabyte instance.
+            instance_id: Optional; the unique identifier for the instance. Defaults to None.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(commcell_object, &#34;Yugabyte&#34;)
+            &gt;&gt;&gt; yugabyte_instance = YugabyteInstance(agent, &#34;YB_Instance1&#34;)
+            &gt;&gt;&gt; # With instance ID
+            &gt;&gt;&gt; yugabyte_instance_with_id = YugabyteInstance(agent, &#34;YB_Instance2&#34;, &#34;12345&#34;)
+
         &#34;&#34;&#34;
         self._agent_object = agent_object
         self._browse_request = {}
@@ -96,34 +116,56 @@ class YugabyteInstance(BigDataAppsInstance):
                 instance_name,
                 instance_id)
 
-    def restore(self, restore_options):
-        &#34;&#34;&#34;
-            Restores the content of this instance content
-            Args:
-                restore_options : dict of keyword arguments needed to submit a yugabytedb restore:
+    def restore(self, restore_options: dict) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;Restore the content of this Yugabyte instance using the specified options.
 
-                    Example:
-                       restore_options = {
-                            &#39;no_of_streams&#39;: no_of_stream,
-                            &#39;multinode_restore&#39;: multinode_restore,
-                            &#39;destination_instance&#39;: &#39;destination_instance_name&#39;,
-                            &#39;destination_instance_id&#39;: destination_instance_id,
-                            &#39;paths&#39;: [&#39;paths_to_be_restored&#39;],
-                            &#39;destination_client_id&#39;: &#39;destination_client_id,
-                            &#39;destination_client_name&#39;: &#39;destination_client_name&#39;,
-                            &#39;client_type&#39;: client_type,
-                            &#39;destination_appTypeId&#39;: destination_appTypeId,
-                            &#39;backupset_name&#39;: &#39;backupset_name&#39;,
-                            &#39;sql_fromtable&#39;: &#39;sql_fromtable&#39;,
-                            &#39;cql_fromtable&#39;: &#39;cql_fromtable&#39;,
-                            &#39;sql_totable&#39;: &#39;sql_totable&#39;,
-                            &#39;cql_totable&#39;: &#39;cql_totable&#39;,
-                            &#39;accessnodes&#39;: [&#39;accessnodes&#39;],
-                            &#39;kms_config&#39;: &#39;kms_config&#39;,
-                            &#39;kmsconfigUUID&#39;: &#39;kmsconfigUUID
-                        }
-            Returns:
-                object - instance of the Job class for this restore job
+        Args:
+            restore_options: Dictionary containing keyword arguments required to submit a YugabyteDB restore job.
+                Common keys include:
+                    - &#39;no_of_streams&#39;: Number of streams to use for restore.
+                    - &#39;multinode_restore&#39;: Boolean indicating if multinode restore is enabled.
+                    - &#39;destination_instance&#39;: Name of the destination instance.
+                    - &#39;destination_instance_id&#39;: ID of the destination instance.
+                    - &#39;paths&#39;: List of paths to be restored.
+                    - &#39;destination_client_id&#39;: ID of the destination client.
+                    - &#39;destination_client_name&#39;: Name of the destination client.
+                    - &#39;client_type&#39;: Type of the client.
+                    - &#39;destination_appTypeId&#39;: Application type ID for the destination.
+                    - &#39;backupset_name&#39;: Name of the backup set.
+                    - &#39;sql_fromtable&#39;: Source SQL table name.
+                    - &#39;cql_fromtable&#39;: Source CQL table name.
+                    - &#39;sql_totable&#39;: Target SQL table name.
+                    - &#39;cql_totable&#39;: Target CQL table name.
+                    - &#39;accessnodes&#39;: List of access nodes.
+                    - &#39;kms_config&#39;: KMS configuration.
+                    - &#39;kmsconfigUUID&#39;: UUID for the KMS configuration.
+
+        Returns:
+            Job: An instance of the Job class representing the restore job.
+
+        Example:
+            &gt;&gt;&gt; restore_options = {
+            ...     &#39;no_of_streams&#39;: 4,
+            ...     &#39;multinode_restore&#39;: True,
+            ...     &#39;destination_instance&#39;: &#39;yb_instance_dest&#39;,
+            ...     &#39;destination_instance_id&#39;: 12345,
+            ...     &#39;paths&#39;: [&#39;/data/backup1&#39;, &#39;/data/backup2&#39;],
+            ...     &#39;destination_client_id&#39;: 67890,
+            ...     &#39;destination_client_name&#39;: &#39;yb_client_dest&#39;,
+            ...     &#39;client_type&#39;: 1,
+            ...     &#39;destination_appTypeId&#39;: 1001,
+            ...     &#39;backupset_name&#39;: &#39;daily_backup&#39;,
+            ...     &#39;sql_fromtable&#39;: &#39;public.table1&#39;,
+            ...     &#39;cql_fromtable&#39;: &#39;keyspace1.table2&#39;,
+            ...     &#39;sql_totable&#39;: &#39;public.table1_restored&#39;,
+            ...     &#39;cql_totable&#39;: &#39;keyspace1.table2_restored&#39;,
+            ...     &#39;accessnodes&#39;: [&#39;node1&#39;, &#39;node2&#39;],
+            ...     &#39;kms_config&#39;: &#39;default_kms&#39;,
+            ...     &#39;kmsconfigUUID&#39;: &#39;abc123-uuid&#39;
+            ... }
+            &gt;&gt;&gt; job = yugabyte_instance.restore(restore_options)
+            &gt;&gt;&gt; print(f&#34;Restore job started with ID: {job.job_id}&#34;)
+
         &#34;&#34;&#34;
         if not (isinstance(restore_options, dict)):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
@@ -187,45 +229,68 @@ class YugabyteInstance(BigDataAppsInstance):
 <dl>
 <dt id="cvpysdk.instances.bigdataapps.yugabyteinstance.YugabyteInstance"><code class="flex name class">
 <span>class <span class="ident">YugabyteInstance</span></span>
-<span>(</span><span>agent_object, instance_name, instance_id=None)</span>
+<span>(</span><span>agent_object: object, instance_name: str, instance_id: str = None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for representing an Instance of the yugabyte instance</p>
-<p>Initializes the object of the YugabyteInstance class</p>
-<h2 id="args">Args</h2>
-<p>agent_object
-(object)
-&ndash;
-instance of the Agent class
-instance_name
-(str)
-&ndash;
-name of the instance
-instance_id
-(str)
-&ndash;
-id of the instance
-default: None</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Instance class</p></div>
+<div class="desc"><p>Represents an instance of a Yugabyte database within a big data application environment.</p>
+<p>This class encapsulates the details and operations related to a Yugabyte instance,
+including initialization with agent and instance metadata, and restoration of the
+instance using specified restore options.</p>
+<p>Key Features:
+- Initialization with agent object, instance name, and instance ID
+- Restoration of the Yugabyte instance using customizable restore options
+- Inherits capabilities from BigDataAppsInstance for integration with big data applications</p>
+<p>Initialize a new YugabyteInstance object.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>agent_object</code></strong></dt>
+<dd>Instance of the Agent class associated with this Yugabyte instance.</dd>
+<dt><strong><code>instance_name</code></strong></dt>
+<dd>The name of the Yugabyte instance.</dd>
+<dt><strong><code>instance_id</code></strong></dt>
+<dd>Optional; the unique identifier for the instance. Defaults to None.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; agent = Agent(commcell_object, &quot;Yugabyte&quot;)
+&gt;&gt;&gt; yugabyte_instance = YugabyteInstance(agent, &quot;YB_Instance1&quot;)
+&gt;&gt;&gt; # With instance ID
+&gt;&gt;&gt; yugabyte_instance_with_id = YugabyteInstance(agent, &quot;YB_Instance2&quot;, &quot;12345&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/bigdataapps/yugabyteinstance.py#L31-L132" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/bigdataapps/yugabyteinstance.py#L35-L176" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class YugabyteInstance(BigDataAppsInstance):
     &#34;&#34;&#34;
-    Class for representing an Instance of the yugabyte instance
+    Represents an instance of a Yugabyte database within a big data application environment.
+
+    This class encapsulates the details and operations related to a Yugabyte instance,
+    including initialization with agent and instance metadata, and restoration of the
+    instance using specified restore options.
+
+    Key Features:
+        - Initialization with agent object, instance name, and instance ID
+        - Restoration of the Yugabyte instance using customizable restore options
+        - Inherits capabilities from BigDataAppsInstance for integration with big data applications
+
     &#34;&#34;&#34;
-    def __init__(self, agent_object, instance_name, instance_id=None):
-        &#34;&#34;&#34;Initializes the object of the YugabyteInstance class
-            Args:
-                agent_object    (object)  --  instance of the Agent class
-                instance_name   (str)     --  name of the instance
-                instance_id     (str)     --  id of the instance
-                    default: None
-            Returns:
-                object - instance of the Instance class
+    def __init__(self, agent_object: object, instance_name: str, instance_id: str = None) -&gt; None:
+        &#34;&#34;&#34;Initialize a new YugabyteInstance object.
+
+        Args:
+            agent_object: Instance of the Agent class associated with this Yugabyte instance.
+            instance_name: The name of the Yugabyte instance.
+            instance_id: Optional; the unique identifier for the instance. Defaults to None.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(commcell_object, &#34;Yugabyte&#34;)
+            &gt;&gt;&gt; yugabyte_instance = YugabyteInstance(agent, &#34;YB_Instance1&#34;)
+            &gt;&gt;&gt; # With instance ID
+            &gt;&gt;&gt; yugabyte_instance_with_id = YugabyteInstance(agent, &#34;YB_Instance2&#34;, &#34;12345&#34;)
+
         &#34;&#34;&#34;
         self._agent_object = agent_object
         self._browse_request = {}
@@ -237,34 +302,56 @@ default: None</p>
                 instance_name,
                 instance_id)
 
-    def restore(self, restore_options):
-        &#34;&#34;&#34;
-            Restores the content of this instance content
-            Args:
-                restore_options : dict of keyword arguments needed to submit a yugabytedb restore:
+    def restore(self, restore_options: dict) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;Restore the content of this Yugabyte instance using the specified options.
 
-                    Example:
-                       restore_options = {
-                            &#39;no_of_streams&#39;: no_of_stream,
-                            &#39;multinode_restore&#39;: multinode_restore,
-                            &#39;destination_instance&#39;: &#39;destination_instance_name&#39;,
-                            &#39;destination_instance_id&#39;: destination_instance_id,
-                            &#39;paths&#39;: [&#39;paths_to_be_restored&#39;],
-                            &#39;destination_client_id&#39;: &#39;destination_client_id,
-                            &#39;destination_client_name&#39;: &#39;destination_client_name&#39;,
-                            &#39;client_type&#39;: client_type,
-                            &#39;destination_appTypeId&#39;: destination_appTypeId,
-                            &#39;backupset_name&#39;: &#39;backupset_name&#39;,
-                            &#39;sql_fromtable&#39;: &#39;sql_fromtable&#39;,
-                            &#39;cql_fromtable&#39;: &#39;cql_fromtable&#39;,
-                            &#39;sql_totable&#39;: &#39;sql_totable&#39;,
-                            &#39;cql_totable&#39;: &#39;cql_totable&#39;,
-                            &#39;accessnodes&#39;: [&#39;accessnodes&#39;],
-                            &#39;kms_config&#39;: &#39;kms_config&#39;,
-                            &#39;kmsconfigUUID&#39;: &#39;kmsconfigUUID
-                        }
-            Returns:
-                object - instance of the Job class for this restore job
+        Args:
+            restore_options: Dictionary containing keyword arguments required to submit a YugabyteDB restore job.
+                Common keys include:
+                    - &#39;no_of_streams&#39;: Number of streams to use for restore.
+                    - &#39;multinode_restore&#39;: Boolean indicating if multinode restore is enabled.
+                    - &#39;destination_instance&#39;: Name of the destination instance.
+                    - &#39;destination_instance_id&#39;: ID of the destination instance.
+                    - &#39;paths&#39;: List of paths to be restored.
+                    - &#39;destination_client_id&#39;: ID of the destination client.
+                    - &#39;destination_client_name&#39;: Name of the destination client.
+                    - &#39;client_type&#39;: Type of the client.
+                    - &#39;destination_appTypeId&#39;: Application type ID for the destination.
+                    - &#39;backupset_name&#39;: Name of the backup set.
+                    - &#39;sql_fromtable&#39;: Source SQL table name.
+                    - &#39;cql_fromtable&#39;: Source CQL table name.
+                    - &#39;sql_totable&#39;: Target SQL table name.
+                    - &#39;cql_totable&#39;: Target CQL table name.
+                    - &#39;accessnodes&#39;: List of access nodes.
+                    - &#39;kms_config&#39;: KMS configuration.
+                    - &#39;kmsconfigUUID&#39;: UUID for the KMS configuration.
+
+        Returns:
+            Job: An instance of the Job class representing the restore job.
+
+        Example:
+            &gt;&gt;&gt; restore_options = {
+            ...     &#39;no_of_streams&#39;: 4,
+            ...     &#39;multinode_restore&#39;: True,
+            ...     &#39;destination_instance&#39;: &#39;yb_instance_dest&#39;,
+            ...     &#39;destination_instance_id&#39;: 12345,
+            ...     &#39;paths&#39;: [&#39;/data/backup1&#39;, &#39;/data/backup2&#39;],
+            ...     &#39;destination_client_id&#39;: 67890,
+            ...     &#39;destination_client_name&#39;: &#39;yb_client_dest&#39;,
+            ...     &#39;client_type&#39;: 1,
+            ...     &#39;destination_appTypeId&#39;: 1001,
+            ...     &#39;backupset_name&#39;: &#39;daily_backup&#39;,
+            ...     &#39;sql_fromtable&#39;: &#39;public.table1&#39;,
+            ...     &#39;cql_fromtable&#39;: &#39;keyspace1.table2&#39;,
+            ...     &#39;sql_totable&#39;: &#39;public.table1_restored&#39;,
+            ...     &#39;cql_totable&#39;: &#39;keyspace1.table2_restored&#39;,
+            ...     &#39;accessnodes&#39;: [&#39;node1&#39;, &#39;node2&#39;],
+            ...     &#39;kms_config&#39;: &#39;default_kms&#39;,
+            ...     &#39;kmsconfigUUID&#39;: &#39;abc123-uuid&#39;
+            ... }
+            &gt;&gt;&gt; job = yugabyte_instance.restore(restore_options)
+            &gt;&gt;&gt; print(f&#34;Restore job started with ID: {job.job_id}&#34;)
+
         &#34;&#34;&#34;
         if not (isinstance(restore_options, dict)):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
@@ -324,68 +411,117 @@ default: None</p>
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.instances.bigdataapps.yugabyteinstance.YugabyteInstance.restore"><code class="name flex">
-<span>def <span class="ident">restore</span></span>(<span>self, restore_options)</span>
+<span>def <span class="ident">restore</span></span>(<span>self, restore_options: dict) ‑> Job</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Restores the content of this instance content</p>
-<h2 id="args">Args</h2>
-<p>restore_options : dict of keyword arguments needed to submit a yugabytedb restore:</p>
-<pre><code>Example:
-   restore_options = {
-        'no_of_streams': no_of_stream,
-        'multinode_restore': multinode_restore,
-        'destination_instance': 'destination_instance_name',
-        'destination_instance_id': destination_instance_id,
-        'paths': ['paths_to_be_restored'],
-        'destination_client_id': 'destination_client_id,
-        'destination_client_name': 'destination_client_name',
-        'client_type': client_type,
-        'destination_appTypeId': destination_appTypeId,
-        'backupset_name': 'backupset_name',
-        'sql_fromtable': 'sql_fromtable',
-        'cql_fromtable': 'cql_fromtable',
-        'sql_totable': 'sql_totable',
-        'cql_totable': 'cql_totable',
-        'accessnodes': ['accessnodes'],
-        'kms_config': 'kms_config',
-        'kmsconfigUUID': 'kmsconfigUUID
-    }
-</code></pre>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this restore job</p></div>
+<div class="desc"><p>Restore the content of this Yugabyte instance using the specified options.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>restore_options</code></strong></dt>
+<dd>Dictionary containing keyword arguments required to submit a YugabyteDB restore job.
+Common keys include:
+- 'no_of_streams': Number of streams to use for restore.
+- 'multinode_restore': Boolean indicating if multinode restore is enabled.
+- 'destination_instance': Name of the destination instance.
+- 'destination_instance_id': ID of the destination instance.
+- 'paths': List of paths to be restored.
+- 'destination_client_id': ID of the destination client.
+- 'destination_client_name': Name of the destination client.
+- 'client_type': Type of the client.
+- 'destination_appTypeId': Application type ID for the destination.
+- 'backupset_name': Name of the backup set.
+- 'sql_fromtable': Source SQL table name.
+- 'cql_fromtable': Source CQL table name.
+- 'sql_totable': Target SQL table name.
+- 'cql_totable': Target CQL table name.
+- 'accessnodes': List of access nodes.
+- 'kms_config': KMS configuration.
+- 'kmsconfigUUID': UUID for the KMS configuration.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Job</code></dt>
+<dd>An instance of the Job class representing the restore job.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; restore_options = {
+...     'no_of_streams': 4,
+...     'multinode_restore': True,
+...     'destination_instance': 'yb_instance_dest',
+...     'destination_instance_id': 12345,
+...     'paths': ['/data/backup1', '/data/backup2'],
+...     'destination_client_id': 67890,
+...     'destination_client_name': 'yb_client_dest',
+...     'client_type': 1,
+...     'destination_appTypeId': 1001,
+...     'backupset_name': 'daily_backup',
+...     'sql_fromtable': 'public.table1',
+...     'cql_fromtable': 'keyspace1.table2',
+...     'sql_totable': 'public.table1_restored',
+...     'cql_totable': 'keyspace1.table2_restored',
+...     'accessnodes': ['node1', 'node2'],
+...     'kms_config': 'default_kms',
+...     'kmsconfigUUID': 'abc123-uuid'
+... }
+&gt;&gt;&gt; job = yugabyte_instance.restore(restore_options)
+&gt;&gt;&gt; print(f&quot;Restore job started with ID: {job.job_id}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/bigdataapps/yugabyteinstance.py#L55-L132" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/bigdataapps/yugabyteinstance.py#L76-L176" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def restore(self, restore_options):
-    &#34;&#34;&#34;
-        Restores the content of this instance content
-        Args:
-            restore_options : dict of keyword arguments needed to submit a yugabytedb restore:
+<pre><code class="python">def restore(self, restore_options: dict) -&gt; &#39;Job&#39;:
+    &#34;&#34;&#34;Restore the content of this Yugabyte instance using the specified options.
 
-                Example:
-                   restore_options = {
-                        &#39;no_of_streams&#39;: no_of_stream,
-                        &#39;multinode_restore&#39;: multinode_restore,
-                        &#39;destination_instance&#39;: &#39;destination_instance_name&#39;,
-                        &#39;destination_instance_id&#39;: destination_instance_id,
-                        &#39;paths&#39;: [&#39;paths_to_be_restored&#39;],
-                        &#39;destination_client_id&#39;: &#39;destination_client_id,
-                        &#39;destination_client_name&#39;: &#39;destination_client_name&#39;,
-                        &#39;client_type&#39;: client_type,
-                        &#39;destination_appTypeId&#39;: destination_appTypeId,
-                        &#39;backupset_name&#39;: &#39;backupset_name&#39;,
-                        &#39;sql_fromtable&#39;: &#39;sql_fromtable&#39;,
-                        &#39;cql_fromtable&#39;: &#39;cql_fromtable&#39;,
-                        &#39;sql_totable&#39;: &#39;sql_totable&#39;,
-                        &#39;cql_totable&#39;: &#39;cql_totable&#39;,
-                        &#39;accessnodes&#39;: [&#39;accessnodes&#39;],
-                        &#39;kms_config&#39;: &#39;kms_config&#39;,
-                        &#39;kmsconfigUUID&#39;: &#39;kmsconfigUUID
-                    }
-        Returns:
-            object - instance of the Job class for this restore job
+    Args:
+        restore_options: Dictionary containing keyword arguments required to submit a YugabyteDB restore job.
+            Common keys include:
+                - &#39;no_of_streams&#39;: Number of streams to use for restore.
+                - &#39;multinode_restore&#39;: Boolean indicating if multinode restore is enabled.
+                - &#39;destination_instance&#39;: Name of the destination instance.
+                - &#39;destination_instance_id&#39;: ID of the destination instance.
+                - &#39;paths&#39;: List of paths to be restored.
+                - &#39;destination_client_id&#39;: ID of the destination client.
+                - &#39;destination_client_name&#39;: Name of the destination client.
+                - &#39;client_type&#39;: Type of the client.
+                - &#39;destination_appTypeId&#39;: Application type ID for the destination.
+                - &#39;backupset_name&#39;: Name of the backup set.
+                - &#39;sql_fromtable&#39;: Source SQL table name.
+                - &#39;cql_fromtable&#39;: Source CQL table name.
+                - &#39;sql_totable&#39;: Target SQL table name.
+                - &#39;cql_totable&#39;: Target CQL table name.
+                - &#39;accessnodes&#39;: List of access nodes.
+                - &#39;kms_config&#39;: KMS configuration.
+                - &#39;kmsconfigUUID&#39;: UUID for the KMS configuration.
+
+    Returns:
+        Job: An instance of the Job class representing the restore job.
+
+    Example:
+        &gt;&gt;&gt; restore_options = {
+        ...     &#39;no_of_streams&#39;: 4,
+        ...     &#39;multinode_restore&#39;: True,
+        ...     &#39;destination_instance&#39;: &#39;yb_instance_dest&#39;,
+        ...     &#39;destination_instance_id&#39;: 12345,
+        ...     &#39;paths&#39;: [&#39;/data/backup1&#39;, &#39;/data/backup2&#39;],
+        ...     &#39;destination_client_id&#39;: 67890,
+        ...     &#39;destination_client_name&#39;: &#39;yb_client_dest&#39;,
+        ...     &#39;client_type&#39;: 1,
+        ...     &#39;destination_appTypeId&#39;: 1001,
+        ...     &#39;backupset_name&#39;: &#39;daily_backup&#39;,
+        ...     &#39;sql_fromtable&#39;: &#39;public.table1&#39;,
+        ...     &#39;cql_fromtable&#39;: &#39;keyspace1.table2&#39;,
+        ...     &#39;sql_totable&#39;: &#39;public.table1_restored&#39;,
+        ...     &#39;cql_totable&#39;: &#39;keyspace1.table2_restored&#39;,
+        ...     &#39;accessnodes&#39;: [&#39;node1&#39;, &#39;node2&#39;],
+        ...     &#39;kms_config&#39;: &#39;default_kms&#39;,
+        ...     &#39;kmsconfigUUID&#39;: &#39;abc123-uuid&#39;
+        ... }
+        &gt;&gt;&gt; job = yugabyte_instance.restore(restore_options)
+        &gt;&gt;&gt; print(f&#34;Restore job started with ID: {job.job_id}&#34;)
+
     &#34;&#34;&#34;
     if not (isinstance(restore_options, dict)):
         raise SDKException(&#39;Instance&#39;, &#39;101&#39;)

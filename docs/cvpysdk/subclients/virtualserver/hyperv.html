@@ -28,7 +28,8 @@
 <p>HyperVVirtualServerSubclient: Derived class from VirtualServerSubClient
 Base class, representing a
 Hyper-V Subclient, and to perform operations on that Subclient</p>
-<h2 id="hypervsubclient">Hypervsubclient</h2>
+<p>Hypervsubclient
+-----=</p>
 <p><strong>init</strong>(,backupset_object, subclient_name, subclient_id)
 &ndash;
 initialize object of hyper-v
@@ -51,7 +52,7 @@ user to the same location</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/virtualserver/hyperv.py#L1-L692" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/virtualserver/hyperv.py#L1-L696" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -148,7 +149,8 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
                      copy_precedence=0,
                      convert_to=None,
                      media_agent=None,
-                     snap_proxy=None):
+                     snap_proxy=None,
+                     unconditional_overwrite=False):
         &#34;&#34;&#34;Restores the disk specified in the input paths list to the same location
 
             Args:
@@ -175,7 +177,9 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
                                                     restores from snap
                     default :proxy in instance or subclient
 
-
+                unconditional_overwrite (bool)  -- specifies whether to overwrite existing 
+                                                    files unconditionally during restore
+                    default: False
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -247,7 +251,8 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
             destination_path=destination_path,
             paths=_src_item_list,
             media_agent=media_agent,
-            snap_proxy=snap_proxy
+            snap_proxy=snap_proxy,
+            unconditional_overwrite=unconditional_overwrite
         )
 
         request_json = self._prepare_disk_restore_json(_disk_restore_option)
@@ -774,7 +779,7 @@ backupset class, subclient name, subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/virtualserver/hyperv.py#L49-L692" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/virtualserver/hyperv.py#L49-L696" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class HyperVVirtualServerSubclient(VirtualServerSubclient):
     &#34;&#34;&#34;Derived class from VirtualServerSubclient  Base class, representing a
@@ -823,7 +828,8 @@ backupset class, subclient name, subclient id</p></div>
                      copy_precedence=0,
                      convert_to=None,
                      media_agent=None,
-                     snap_proxy=None):
+                     snap_proxy=None,
+                     unconditional_overwrite=False):
         &#34;&#34;&#34;Restores the disk specified in the input paths list to the same location
 
             Args:
@@ -850,7 +856,9 @@ backupset class, subclient name, subclient id</p></div>
                                                     restores from snap
                     default :proxy in instance or subclient
 
-
+                unconditional_overwrite (bool)  -- specifies whether to overwrite existing 
+                                                    files unconditionally during restore
+                    default: False
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -922,7 +930,8 @@ backupset class, subclient name, subclient id</p></div>
             destination_path=destination_path,
             paths=_src_item_list,
             media_agent=media_agent,
-            snap_proxy=snap_proxy
+            snap_proxy=snap_proxy,
+            unconditional_overwrite=unconditional_overwrite
         )
 
         request_json = self._prepare_disk_restore_json(_disk_restore_option)
@@ -1429,12 +1438,13 @@ backupset class, subclient name, subclient id</p></div>
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.subclients.virtualserver.hyperv.HyperVVirtualServerSubclient.disk_restore"><code class="name flex">
-<span>def <span class="ident">disk_restore</span></span>(<span>self, vm_name, destination_path, proxy_client=None, disk_name=None, copy_precedence=0, convert_to=None, media_agent=None, snap_proxy=None)</span>
+<span>def <span class="ident">disk_restore</span></span>(<span>self, vm_name, destination_path, proxy_client=None, disk_name=None, copy_precedence=0, convert_to=None, media_agent=None, snap_proxy=None, unconditional_overwrite=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Restores the disk specified in the input paths list to the same location</p>
-<h2 id="args">Args</h2>
-<p>vm_name
+<p>Args
+-----=
+vm_name
 (str)
 &ndash; VM from which disk is to be restored</p>
 <p>proxy_client
@@ -1468,10 +1478,16 @@ default :Storage policy MA</p>
 &ndash; proxy need to be used for disk
 restores from snap
 default :proxy in instance or subclient</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this restore job</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
+<p>unconditional_overwrite (bool)
+&ndash; specifies whether to overwrite existing
+files unconditionally during restore
+default: False</p>
+<p>Returns
+-----=
+object - instance of the Job class for this restore job</p>
+<p>Raises
+-----=
+SDKException:
 if destinationpath is not str</p>
 <pre><code>if client is not str or object
 
@@ -1484,7 +1500,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/virtualserver/hyperv.py#L88-L200" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/virtualserver/hyperv.py#L88-L204" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disk_restore(self,
                  vm_name,
@@ -1494,7 +1510,8 @@ if response is not success
                  copy_precedence=0,
                  convert_to=None,
                  media_agent=None,
-                 snap_proxy=None):
+                 snap_proxy=None,
+                 unconditional_overwrite=False):
     &#34;&#34;&#34;Restores the disk specified in the input paths list to the same location
 
         Args:
@@ -1521,7 +1538,9 @@ if response is not success
                                                 restores from snap
                 default :proxy in instance or subclient
 
-
+            unconditional_overwrite (bool)  -- specifies whether to overwrite existing 
+                                                files unconditionally during restore
+                default: False
 
         Returns:
             object - instance of the Job class for this restore job
@@ -1593,7 +1612,8 @@ if response is not success
         destination_path=destination_path,
         paths=_src_item_list,
         media_agent=media_agent,
-        snap_proxy=snap_proxy
+        snap_proxy=snap_proxy,
+        unconditional_overwrite=unconditional_overwrite
     )
 
     request_json = self._prepare_disk_restore_json(_disk_restore_option)
@@ -1606,15 +1626,17 @@ if response is not success
 </code></dt>
 <dd>
 <div class="desc"><p>This converts the Hyperv VM to AzureRM</p>
-<h2 id="args">Args</h2>
-<pre><code>vm_to_restore          (dict):     dict containing the VM name(s)
-                                   to restore as keys and the new
-                                   VM name(s) as their values.
-                                   Input empty string for default
-                                   VM name for restored VM.
-                                   default: {}
-
-azure_client    (str):      name of the AzureRM client
+<p>Args
+-----=
+vm_to_restore
+(dict):
+dict containing the VM name(s)
+to restore as keys and the new
+VM name(s) as their values.
+Input empty string for default
+VM name for restored VM.
+default: {}</p>
+<pre><code>azure_client    (str):      name of the AzureRM client
                                    where the VM should be
                                    restored.
 
@@ -1665,7 +1687,7 @@ if inputs are not of correct type as per definition</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/virtualserver/hyperv.py#L567-L692" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/virtualserver/hyperv.py#L571-L696" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_conversion_azurerm(
         self,
@@ -1800,14 +1822,17 @@ if inputs are not of correct type as per definition</p>
 </code></dt>
 <dd>
 <div class="desc"><p>This converts the Hyperv VM to VMware</p>
-<h2 id="args">Args</h2>
-<pre><code>vm_to_restore          (dict)  --  dict containing the VM name(s) to restore as
-                                   keys and the new VM name(s) as their values.
-                                   Input empty string for default VM name for
-                                   restored VM.
-                                    default: {}
-
-vcenter_client    (str) -- name of the vcenter client
+<p>Args
+-----=
+vm_to_restore
+(dict)
+&ndash;
+dict containing the VM name(s) to restore as
+keys and the new VM name(s) as their values.
+Input empty string for default VM name for
+restored VM.
+default: {}</p>
+<pre><code>vcenter_client    (str) -- name of the vcenter client
                                   where the VM should be
                                     restored.
 
@@ -1863,7 +1888,7 @@ if inputs are not of correct type as per definition</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/virtualserver/hyperv.py#L433-L565" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/virtualserver/hyperv.py#L437-L569" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_conversion_vmware(
         self,
@@ -2008,8 +2033,9 @@ if inputs are not of correct type as per definition</p>
 in the input
 list to the client,
 to the location same as source .</p>
-<h2 id="args">Args</h2>
-<p>vm_to_restore
+<p>Args
+-----=
+vm_to_restore
 (list)
 &ndash;
 provide the list of VM name(s) to restore</p>
@@ -2042,10 +2068,12 @@ v2_details
 (dict)
 &ndash; details for v2 subclient
 eg: check clients.vmclient.VMClient._child_job_subclient_details</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this restore job</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Returns
+-----=
+object - instance of the Job class for this restore job</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>if failed to initialize job
 
 if response is empty
@@ -2055,7 +2083,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/virtualserver/hyperv.py#L355-L431" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/virtualserver/hyperv.py#L359-L435" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_in_place(self,
                              vm_to_restore=None,
@@ -2234,7 +2262,7 @@ Raises:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/virtualserver/hyperv.py#L202-L353" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/virtualserver/hyperv.py#L206-L357" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_out_of_place(self,
                                  destination_client=None,
@@ -2395,10 +2423,12 @@ Raises:
 <ul class="hlist">
 <li><code><b><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient">VirtualServerSubclient</a></b></code>:
 <ul class="hlist">
+<li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.additional_settings" href="../../subclient.html#cvpysdk.subclient.Subclient.additional_settings">additional_settings</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.allow_multiple_readers" href="../../subclient.html#cvpysdk.subclient.Subclient.allow_multiple_readers">allow_multiple_readers</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.amazon_defaults" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.amazon_defaults">amazon_defaults</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.backup" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.backup">backup</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.browse" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.browse">browse</a></code></li>
+<li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.browse_Cosmos_Content" href="../../subclient.html#cvpysdk.subclient.Subclient.browse_Cosmos_Content">browse_Cosmos_Content</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.browse_in_time" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.browse_in_time">browse_in_time</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.cbtvalue" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.cbtvalue">cbtvalue</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.content" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.content">content</a></code></li>
@@ -2451,6 +2481,7 @@ Raises:
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.set_advanced_attach_disk_restore_options" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.set_advanced_attach_disk_restore_options">set_advanced_attach_disk_restore_options</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.set_advanced_vm_restore_options" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.set_advanced_vm_restore_options">set_advanced_vm_restore_options</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.set_backup_nodes" href="../../subclient.html#cvpysdk.subclient.Subclient.set_backup_nodes">set_backup_nodes</a></code></li>
+<li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.set_proxy_for_backup_copy" href="../../subclient.html#cvpysdk.subclient.Subclient.set_proxy_for_backup_copy">set_proxy_for_backup_copy</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.set_proxy_for_snap" href="../../subclient.html#cvpysdk.subclient.Subclient.set_proxy_for_snap">set_proxy_for_snap</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.snapshot_engine_name" href="../../subclient.html#cvpysdk.subclient.Subclient.snapshot_engine_name">snapshot_engine_name</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.snapshot_storage_type" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.snapshot_storage_type">snapshot_storage_type</a></code></li>
@@ -2462,7 +2493,9 @@ Raises:
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.subclient_id" href="../../subclient.html#cvpysdk.subclient.Subclient.subclient_id">subclient_id</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.subclient_name" href="../../subclient.html#cvpysdk.subclient.Subclient.subclient_name">subclient_name</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.subclient_proxy" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.subclient_proxy">subclient_proxy</a></code></li>
+<li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.unset_proxy_for_backup_copy" href="../../subclient.html#cvpysdk.subclient.Subclient.unset_proxy_for_backup_copy">unset_proxy_for_backup_copy</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.unset_proxy_for_snap" href="../../subclient.html#cvpysdk.subclient.Subclient.unset_proxy_for_snap">unset_proxy_for_snap</a></code></li>
+<li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.update_atlas_instance" href="../../subclient.html#cvpysdk.subclient.Subclient.update_atlas_instance">update_atlas_instance</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.update_properties" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.update_properties">update_properties</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_diskfilter" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_diskfilter">vm_diskfilter</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_files_browse" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_files_browse">vm_files_browse</a></code></li>

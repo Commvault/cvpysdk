@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.10.0" />
 <title>cvpysdk.instances.bigdataappsinstance API documentation</title>
-<meta name="description" content="File for operating with the a Big Data Apps Instance …" />
+<meta name="description" content="File for operating with Big Data Apps Instance …" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
 <link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
@@ -23,7 +23,7 @@
 <h1 class="title">Module <code>cvpysdk.instances.bigdataappsinstance</code></h1>
 </header>
 <section id="section-intro">
-<p>File for operating with the a Big Data Apps Instance.</p>
+<p>File for operating with Big Data Apps Instance.</p>
 <p>BigDataAppsInstance is the only class defined in this file.</p>
 <p>BigDataAppsInstance:
 Derived class from Instance Base class, representing a
@@ -34,7 +34,7 @@ bigdata apps instance, and to perform operations on that instance</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/bigdataappsinstance.py#L1-L83" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/bigdataappsinstance.py#L1-L104" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -55,7 +55,7 @@ bigdata apps instance, and to perform operations on that instance</p>
 # --------------------------------------------------------------------------
 
 &#34;&#34;&#34;
-File for operating with the a Big Data Apps Instance.
+File for operating with Big Data Apps Instance.
 
 BigDataAppsInstance is the only class defined in this file.
 
@@ -71,23 +71,43 @@ BigDataAppsInstance
 from ..instance import Instance
 from ..exception import SDKException
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ..agent import Agent
+
+
 class BigDataAppsInstance(Instance):
     &#34;&#34;&#34;
-    Class for representing an Instance of the BigDataApps agent
+    Represents an instance of the BigDataApps agent.
+
+    This class is designed to encapsulate the creation and management of a BigDataApps agent instance,
+    providing a structured way to associate an agent object with a unique instance name and identifier.
+
+    Key Features:
+        - Instantiates a BigDataApps agent instance using agent object, name, and ID
+        - Ensures proper initialization and association of instance metadata
+        - Inherits from the base Instance class for extended functionality
+
     &#34;&#34;&#34;
-    def __new__(cls, agent_object, instance_name, instance_id):
-        &#34;&#34;&#34;
-        Method for object creation based on cluster type of BigdataApps
+    def __new__(cls, agent_object: &#39;Agent&#39;, instance_name: str, instance_id: int) -&gt; object:
+        &#34;&#34;&#34;Create a new BigDataAppsInstance object based on the cluster type.
+
+        This method is responsible for instantiating the appropriate subclass of BigDataAppsInstance
+        depending on the cluster type associated with the provided agent object, instance name, and instance ID.
 
         Args:
-            agent_object    (object)    -- Object associated with the agent
-
-            instance_name   (str)       --  Name associated with the instance object
-
-            instance_id     (int)       --  Id associated with the instance object
+            agent_object: The agent object associated with the BigDataApps instance.
+            instance_name: The name of the instance to be created.
+            instance_id: The unique identifier for the instance.
 
         Returns:
-            object          (obj)       --  Object associated with the BigDataApps instance
+            An object representing the BigDataApps instance, which may be a specific subclass
+            depending on the cluster type.
+
+        Example:
+            &gt;&gt;&gt; instance = BigDataAppsInstance(agent_object, &#34;HadoopCluster01&#34;, 101)
+            &gt;&gt;&gt; print(f&#34;Created instance: {instance}&#34;)
+            &gt;&gt;&gt; # The returned object will be of the appropriate subclass for the cluster type
 
         &#34;&#34;&#34;
         from cvpysdk.instances.splunkinstance import SplunkInstance
@@ -111,8 +131,7 @@ class BigDataAppsInstance(Instance):
         else:
             raise SDKException(&#39;Instance&#39;, &#39;105&#39;)
 
-        bigdata_apps_cluster_type = properties.get(&#39;distributedClusterInstance&#39;, {}). \
-            get(&#39;clusterType&#39;, -1)
+        bigdata_apps_cluster_type = properties.get(&#39;distributedClusterInstance&#39;, {}).get(&#39;clusterType&#39;, -1)
 
         if bigdata_apps_cluster_type in instance_types.keys():
             instance_type = instance_types[bigdata_apps_cluster_type]
@@ -135,10 +154,17 @@ class BigDataAppsInstance(Instance):
 <span>(</span><span>agent_object, instance_name, instance_id=None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for representing an Instance of the BigDataApps agent</p>
+<div class="desc"><p>Represents an instance of the BigDataApps agent.</p>
+<p>This class is designed to encapsulate the creation and management of a BigDataApps agent instance,
+providing a structured way to associate an agent object with a unique instance name and identifier.</p>
+<p>Key Features:
+- Instantiates a BigDataApps agent instance using agent object, name, and ID
+- Ensures proper initialization and association of instance metadata
+- Inherits from the base Instance class for extended functionality</p>
 <p>Initialise the instance object.</p>
-<h2 id="args">Args</h2>
-<p>agent_object
+<p>Args
+-----=
+agent_object
 (object)
 &ndash;
 instance of the Agent class</p>
@@ -151,30 +177,46 @@ name of the instance</p>
 &ndash;
 id of the instance
 default: None</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Instance class</p></div>
+<p>Returns
+-----=
+object - instance of the Instance class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/bigdataappsinstance.py#L36-L83" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/bigdataappsinstance.py#L41-L104" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class BigDataAppsInstance(Instance):
     &#34;&#34;&#34;
-    Class for representing an Instance of the BigDataApps agent
+    Represents an instance of the BigDataApps agent.
+
+    This class is designed to encapsulate the creation and management of a BigDataApps agent instance,
+    providing a structured way to associate an agent object with a unique instance name and identifier.
+
+    Key Features:
+        - Instantiates a BigDataApps agent instance using agent object, name, and ID
+        - Ensures proper initialization and association of instance metadata
+        - Inherits from the base Instance class for extended functionality
+
     &#34;&#34;&#34;
-    def __new__(cls, agent_object, instance_name, instance_id):
-        &#34;&#34;&#34;
-        Method for object creation based on cluster type of BigdataApps
+    def __new__(cls, agent_object: &#39;Agent&#39;, instance_name: str, instance_id: int) -&gt; object:
+        &#34;&#34;&#34;Create a new BigDataAppsInstance object based on the cluster type.
+
+        This method is responsible for instantiating the appropriate subclass of BigDataAppsInstance
+        depending on the cluster type associated with the provided agent object, instance name, and instance ID.
 
         Args:
-            agent_object    (object)    -- Object associated with the agent
-
-            instance_name   (str)       --  Name associated with the instance object
-
-            instance_id     (int)       --  Id associated with the instance object
+            agent_object: The agent object associated with the BigDataApps instance.
+            instance_name: The name of the instance to be created.
+            instance_id: The unique identifier for the instance.
 
         Returns:
-            object          (obj)       --  Object associated with the BigDataApps instance
+            An object representing the BigDataApps instance, which may be a specific subclass
+            depending on the cluster type.
+
+        Example:
+            &gt;&gt;&gt; instance = BigDataAppsInstance(agent_object, &#34;HadoopCluster01&#34;, 101)
+            &gt;&gt;&gt; print(f&#34;Created instance: {instance}&#34;)
+            &gt;&gt;&gt; # The returned object will be of the appropriate subclass for the cluster type
 
         &#34;&#34;&#34;
         from cvpysdk.instances.splunkinstance import SplunkInstance
@@ -198,8 +240,7 @@ default: None</p>
         else:
             raise SDKException(&#39;Instance&#39;, &#39;105&#39;)
 
-        bigdata_apps_cluster_type = properties.get(&#39;distributedClusterInstance&#39;, {}). \
-            get(&#39;clusterType&#39;, -1)
+        bigdata_apps_cluster_type = properties.get(&#39;distributedClusterInstance&#39;, {}).get(&#39;clusterType&#39;, -1)
 
         if bigdata_apps_cluster_type in instance_types.keys():
             instance_type = instance_types[bigdata_apps_cluster_type]

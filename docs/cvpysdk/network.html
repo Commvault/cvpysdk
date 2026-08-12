@@ -24,7 +24,8 @@
 </header>
 <section id="section-intro">
 <p>Main file for performing network related operations on a client/client group</p>
-<h2 id="network">Network</h2>
+<p>Network
+-----=</p>
 <p><strong>init</strong>(class_object)
 &ndash;
 initialize object of the Network class</p>
@@ -134,7 +135,7 @@ client/client group</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network.py#L1-L922" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network.py#L1-L1154" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -237,19 +238,42 @@ Network:
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
+from typing import Any, Dict
+
 from .exception import SDKException
 
-
 class Network(object):
-    &#34;&#34;&#34;Class for performing network related operations on a client or client group&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Class for performing network related operations on a client or client group.
 
-    def __init__(self, class_object):
-        &#34;&#34;&#34;Initialize the Network class object
+    This class provides a comprehensive interface for managing and configuring
+    network settings for individual clients or groups of clients. It exposes
+    various properties and methods to control network behavior, security, and
+    connectivity options.
 
-            Args:
-                class_object (object)  --  instance of the client/client group class
+    Key Features:
+        - Retrieve network properties and advanced configuration details
+        - Configure network settings such as SSL enforcement, lockdown mode, and proxy usage
+        - Manage tunnel connection parameters including port and initialization timing
+        - Set trivial and roaming client configurations
+        - Bind open ports and manage additional ports for network communication
+        - Control incoming connections and outgoing routes
+        - Adjust keep-alive intervals for network sessions
+        - Apply TPPM (Third-Party Policy Management) settings
+        - Flexible property-based interface for dynamic network configuration
 
+    &#34;&#34;&#34;
 
+    def __init__(self, class_object: object) -&gt; None:
+        &#34;&#34;&#34;Initialize a Network class object with a client or client group instance.
+
+        Args:
+            class_object: An instance of the client or client group class to associate with the Network object.
+
+        Example:
+            &gt;&gt;&gt; client = Client(&#39;client_name&#39;)
+            &gt;&gt;&gt; network = Network(client)
+            &gt;&gt;&gt; # The Network object is now initialized with the specified client
 
         &#34;&#34;&#34;
         from .client import Client
@@ -310,9 +334,20 @@ class Network(object):
 
         self._get_network_properties()
 
-    def _get_network_properties(self):
-        &#34;&#34;&#34;Get all the existing network properties on a client/client group and retain each of them
+    def _get_network_properties(self) -&gt; Dict[str, Any]:
+        &#34;&#34;&#34;Retrieve all existing network properties for a client or client group.
 
+        This method gathers and returns the network properties associated with the current client or client group,
+        allowing you to inspect or process network configuration details.
+
+        Returns:
+            A dictionary containing the network properties, where keys are property names and values are their corresponding settings.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; properties = network._get_network_properties()
+            &gt;&gt;&gt; print(properties)
+            {&#39;ip_address&#39;: &#39;192.168.1.10&#39;, &#39;subnet&#39;: &#39;255.255.255.0&#39;, ...}
 
         &#34;&#34;&#34;
         if self.flag == &#34;CLIENT&#34;:
@@ -370,188 +405,326 @@ class Network(object):
                     &#39;firewallOptions&#39;][&#39;tppm&#39;])
 
     @property
-    def configure_network_settings(self):
-        &#34;&#34;&#34;Gets the value for configure firewall settings
+    def configure_network_settings(self) -&gt; bool:
+        &#34;&#34;&#34;Get the current value indicating whether firewall settings are configured.
 
-        :return:
-            boolean - configureFirewallSettings
+        Returns:
+            bool: True if firewall settings are configured, False otherwise.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; is_configured = network.configure_network_settings
+            &gt;&gt;&gt; print(f&#34;Firewall settings configured: {is_configured}&#34;)
+
         &#34;&#34;&#34;
         return self._config_network_settings
 
     @configure_network_settings.setter
-    def configure_network_settings(self, val):
-        &#34;&#34;&#34;Sets the value for configureFirewallSettings with the parameter provided
+    def configure_network_settings(self, val: bool) -&gt; None:
+        &#34;&#34;&#34;Set the value for configuring firewall settings on the network.
 
+        Args:
+            val: Boolean value indicating whether to enable (True) or disable (False) firewall settings.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; network.configure_network_settings = True  # Enable firewall settings
+            &gt;&gt;&gt; network.configure_network_settings = False  # Disable firewall settings
 
         &#34;&#34;&#34;
         self._config_network_settings = val
         self._advanced_network_config()
 
     @property
-    def trivial_config(self):
-        &#34;&#34;&#34;Gets the value for isTrivialConfig
+    def trivial_config(self) -&gt; bool:
+        &#34;&#34;&#34;Get the value indicating whether the network configuration is trivial.
 
-        :return:
-            boolean - isTrivialConfig
+        Returns:
+            bool: True if the network configuration is considered trivial, False otherwise.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; is_trivial = network.trivial_config  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Is network configuration trivial? {is_trivial}&#34;)
+
         &#34;&#34;&#34;
         return self._is_trivial_config
 
     @trivial_config.setter
-    def trivial_config(self, val):
-        &#34;&#34;&#34;Sets the value for isTrivialConfig with the parameter provided
+    def trivial_config(self, val: bool) -&gt; None:
+        &#34;&#34;&#34;Set the value for the isTrivialConfig property.
 
+        Args:
+            val: Boolean value to set for isTrivialConfig.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; network.trivial_config = True  # Enable trivial configuration
+            &gt;&gt;&gt; network.trivial_config = False  # Disable trivial configuration
 
         &#34;&#34;&#34;
         self._is_trivial_config = val
         self.enable_network_settings = True
 
     @property
-    def roaming_client(self):
-        &#34;&#34;&#34;Gets the value for isRoamingClient
+    def roaming_client(self) -&gt; bool:
+        &#34;&#34;&#34;Get the roaming client status for the network.
 
-        :return:
-            boolen - isRoamingClient
+        Returns:
+            bool: True if the network is configured as a roaming client, False otherwise.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; is_roaming = network.roaming_client
+            &gt;&gt;&gt; print(f&#34;Roaming client enabled: {is_roaming}&#34;)
+
         &#34;&#34;&#34;
         return self._is_roaming_client
 
     @roaming_client.setter
-    def roaming_client(self, val):
-        &#34;&#34;&#34;Sets the value for isRoamingClient with the parameter provided
+    def roaming_client(self, val: bool) -&gt; None:
+        &#34;&#34;&#34;Set the roaming client status for the network.
+
+        Args:
+            val: A boolean value indicating whether the client should be set as a roaming client (True) or not (False).
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; network.roaming_client = True  # Enable roaming client
+            &gt;&gt;&gt; network.roaming_client = False  # Disable roaming client
 
         &#34;&#34;&#34;
         self._is_roaming_client = val
         self.configure_network_settings = True
 
     @property
-    def tunnel_connection_port(self):
-        &#34;&#34;&#34;Gets the value for tunnel port on the client/client group
+    def tunnel_connection_port(self) -&gt; int:
+        &#34;&#34;&#34;Get the tunnel connection port value for the client or client group.
 
-        :return:
-            int - tunnelConnectionPort
+        Returns:
+            The tunnel connection port as an integer.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; port = network.tunnel_connection_port
+            &gt;&gt;&gt; print(f&#34;Tunnel connection port: {port}&#34;)
+
         &#34;&#34;&#34;
         return self._tunnel_connection_port
 
     @tunnel_connection_port.setter
-    def tunnel_connection_port(self, val):
-        &#34;&#34;&#34;Sets the value for tunnelConnectionPort with the parameter provided
+    def tunnel_connection_port(self, val: int) -&gt; None:
+        &#34;&#34;&#34;Set the value for the tunnel connection port.
+
+        Args:
+            val: The port number to be used for the tunnel connection.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; network.tunnel_connection_port = 8080  # Set the tunnel connection port to 8080
 
         &#34;&#34;&#34;
         self._tunnel_connection_port = val
         self.configure_network_settings = True
 
     @property
-    def force_ssl(self):
-        &#34;&#34;&#34;Gets the value for forceSSL
+    def force_ssl(self) -&gt; bool:
+        &#34;&#34;&#34;Get the current value of the forceSSL setting for the network.
 
-        :return:
-            boolean - forceSSL
+        Returns:
+            bool: True if SSL is enforced for network communication, False otherwise.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; is_ssl_forced = network.force_ssl
+            &gt;&gt;&gt; print(f&#34;SSL enforced: {is_ssl_forced}&#34;)
+
         &#34;&#34;&#34;
         return self._force_ssl
 
     @force_ssl.setter
-    def force_ssl(self, val):
-        &#34;&#34;&#34;Sets the value for forceSSL with the parameter provided
+    def force_ssl(self, val: bool) -&gt; None:
+        &#34;&#34;&#34;Set the forceSSL property for the network.
 
+        Args:
+            val: Boolean value indicating whether to force SSL (True) or not (False).
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; network.force_ssl = True  # Enable SSL enforcement
+            &gt;&gt;&gt; network.force_ssl = False  # Disable SSL enforcement
 
         &#34;&#34;&#34;
         self._force_ssl = val
         self.configure_network_settings = True
 
     @property
-    def tunnel_init_seconds(self):
-        &#34;&#34;&#34;Gets the tunnel init seconds
+    def tunnel_init_seconds(self) -&gt; int:
+        &#34;&#34;&#34;Get the number of seconds used for tunnel initialization.
 
-        :return:
-            int - tunnelInitSeconds
+        Returns:
+            The tunnel initialization time in seconds as an integer.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; init_time = network.tunnel_init_seconds
+            &gt;&gt;&gt; print(f&#34;Tunnel initialization time: {init_time} seconds&#34;)
+
         &#34;&#34;&#34;
         return self._tunnel_init_seconds
 
     @tunnel_init_seconds.setter
-    def tunnel_init_seconds(self, val):
-        &#34;&#34;&#34;Sets the tunnelInitSeconds with the parameter provided
+    def tunnel_init_seconds(self, val: int) -&gt; None:
+        &#34;&#34;&#34;Set the tunnel initialization timeout in seconds.
 
+        Args:
+            val: The number of seconds to set for tunnel initialization.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; network.tunnel_init_seconds = 30  # Set tunnel initialization to 30 seconds
 
         &#34;&#34;&#34;
         self._tunnel_init_seconds = val
         self.configure_network_settings = True
 
     @property
-    def lockdown(self):
-        &#34;&#34;&#34;Gets the value for lockdown
+    def lockdown(self) -&gt; bool:
+        &#34;&#34;&#34;Get the current lockdown status of the network.
 
-        :return:
-            boolean - lockdown
+        Returns:
+            True if the network is in lockdown mode, False otherwise.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; is_locked_down = network.lockdown  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Network lockdown status: {is_locked_down}&#34;)
+            &gt;&gt;&gt; # Output: Network lockdown status: True or False
+
         &#34;&#34;&#34;
         return self._lockdown
 
     @lockdown.setter
-    def lockdown(self, val):
-        &#34;&#34;&#34;Sets the lockdown with the parameter provided
+    def lockdown(self, val: bool) -&gt; None:
+        &#34;&#34;&#34;Set the network lockdown state.
 
+        Args:
+            val: A boolean value indicating whether to enable (True) or disable (False) network lockdown.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; network.lockdown = True  # Enable network lockdown
+            &gt;&gt;&gt; network.lockdown = False  # Disable network lockdown
 
         &#34;&#34;&#34;
         self._lockdown = val
         self.configure_network_settings = True
 
     @property
-    def bind_open_ports(self):
-        &#34;&#34;&#34;Gets the value for bindOpenports only
+    def bind_open_ports(self) -&gt; bool:
+        &#34;&#34;&#34;Get the value indicating whether only open ports are bound.
 
-        :return:
-            boolean - bindOpenPortsOnly
+        Returns:
+            bool: True if only open ports are bound; False otherwise.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; is_bind_open = network.bind_open_ports
+            &gt;&gt;&gt; print(f&#34;Bind only open ports: {is_bind_open}&#34;)
+
         &#34;&#34;&#34;
         return self._bind_open_ports_only
 
     @bind_open_ports.setter
-    def bind_open_ports(self, val):
-        &#34;&#34;&#34;Sets bindopenportsonly with the parameter provided
+    def bind_open_ports(self, val: bool) -&gt; None:
+        &#34;&#34;&#34;Set the &#39;bindopenportsonly&#39; property to control whether only open ports are bound.
 
+        Args:
+            val: A boolean value indicating whether to bind only open ports (True) or not (False).
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; network.bind_open_ports = True  # Enable binding only to open ports
+            &gt;&gt;&gt; network.bind_open_ports = False  # Disable the restriction
 
         &#34;&#34;&#34;
         self._bind_open_ports_only = val
         self.configure_network_settings = True
 
     @property
-    def proxy(self):
-        &#34;&#34;&#34;Gets the value for isDMZ
+    def proxy(self) -&gt; bool:
+        &#34;&#34;&#34;Get the value indicating whether the network is configured as a DMZ proxy.
 
-        :return:
-            boolean - isDMZ
+        Returns:
+            bool: True if the network is a DMZ proxy, False otherwise.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; is_dmz = network.proxy  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Is DMZ proxy: {is_dmz}&#34;)
+
         &#34;&#34;&#34;
         return self._is_dmz
 
     @proxy.setter
-    def proxy(self, val):
-        &#34;&#34;&#34;Sets the value for isDMZ with the parameter provided
+    def proxy(self, val: bool) -&gt; None:
+        &#34;&#34;&#34;Set the value for the isDMZ property using the provided parameter.
 
+        Args:
+            val: Boolean value to set the isDMZ property. Set to True if the network is a DMZ proxy, otherwise False.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; network.proxy = True  # Sets the network as a DMZ proxy
+            &gt;&gt;&gt; network.proxy = False  # Unsets the DMZ proxy status
 
         &#34;&#34;&#34;
         self._is_dmz = val
         self.configure_network_settings = True
 
     @property
-    def keep_alive_seconds(self):
-        &#34;&#34;&#34;Gets the value set for keep alive
+    def keep_alive_seconds(self) -&gt; int:
+        &#34;&#34;&#34;Get the configured keep-alive interval in seconds for the network.
 
-        :return:
-            int - keepAliveSeconds
+        Returns:
+            The keep-alive interval in seconds as an integer.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; interval = network.keep_alive_seconds
+            &gt;&gt;&gt; print(f&#34;Keep-alive interval: {interval} seconds&#34;)
+
         &#34;&#34;&#34;
         return self._keep_alive_seconds
 
     @keep_alive_seconds.setter
-    def keep_alive_seconds(self, val):
-        &#34;&#34;&#34;Sets the value for keep alive seconds with the parameter provided
+    def keep_alive_seconds(self, val: int) -&gt; None:
+        &#34;&#34;&#34;Set the keep-alive interval in seconds for the network connection.
+
+        Args:
+            val: The number of seconds to use for the keep-alive interval.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; network.keep_alive_seconds = 120  # Set keep-alive to 120 seconds
 
         &#34;&#34;&#34;
         self._keep_alive_seconds = val
         self.configure_network_settings = True
 
     @property
-    def incoming_connections(self):
-        &#34;&#34;&#34;Gets all the incoming connections on a client
+    def incoming_connections(self) -&gt; list:
+        &#34;&#34;&#34;Retrieve all incoming network connections on the client.
 
-        :return:
-            list - incoming connections
+        Returns:
+            list: A list containing information about each incoming connection.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; connections = network.incoming_connections
+            &gt;&gt;&gt; print(f&#34;Number of incoming connections: {len(connections)}&#34;)
+            &gt;&gt;&gt; # Each item in &#39;connections&#39; represents an incoming connection
+
         &#34;&#34;&#34;
 
         for incoming_connection in self._restriction_to:
@@ -561,32 +734,30 @@ class Network(object):
 
         return self._restriction_to
 
-    def set_incoming_connections(self, incoming_connections):
-        &#34;&#34;&#34;Sets the incoming connections on a client/client group with the list of values provided
+    def set_incoming_connections(self, incoming_connections: list[dict]) -&gt; None:
+        &#34;&#34;&#34;Set the incoming connections for a client or client group.
 
-         Args:
-                incoming_connections(list)  -- list of incoming connections should be
-                a list of dict containing incoming connection type, entity name and entity type.
-                [{&#39;state&#39;:val,&#39;entity&#39;:val,&#39;isClient&#39;:val}]
+        This method configures the allowed incoming connection states for specified entities,
+        such as clients or client groups, using a list of dictionaries. Each dictionary should
+        specify the connection state, the entity name, and whether the entity is a client.
 
-            Example:
-            [
-                {
-                &#39;state&#39;: &#39;RESTRICTED&#39;,
-                &#39;entity&#39;: &#39;centOS&#39;,
-                &#39;isClient&#39; : True
-                },
-
-                {
-                &#39;state&#39;: &#39;BLOCKED&#39;,
-                &#39;entity&#39;:  &#39;Edge Clients&#39;,
-                &#39;isClient&#39; : False
-                }
-            ]
+        Args:
+            incoming_connections: A list of dictionaries, each containing:
+                - &#39;state&#39; (str): The connection state, e.g., &#39;RESTRICTED&#39; or &#39;BLOCKED&#39;.
+                - &#39;entity&#39; (str): The name of the client or client group.
+                - &#39;isClient&#39; (bool): True if the entity is a client, False if it is a client group.
 
         Raises:
-                SDKException:
-                    if the required key is missing in the input value passed
+            SDKException: If a required key is missing in any of the input dictionaries.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; incoming = [
+            ...     {&#39;state&#39;: &#39;RESTRICTED&#39;, &#39;entity&#39;: &#39;centOS&#39;, &#39;isClient&#39;: True},
+            ...     {&#39;state&#39;: &#39;BLOCKED&#39;, &#39;entity&#39;: &#39;Edge Clients&#39;, &#39;isClient&#39;: False}
+            ... ]
+            &gt;&gt;&gt; network.set_incoming_connections(incoming)
+            &gt;&gt;&gt; print(&#34;Incoming connections updated successfully.&#34;)
 
         &#34;&#34;&#34;
         try:
@@ -616,38 +787,49 @@ class Network(object):
             raise SDKException(&#39;Client&#39;, &#39;102&#39;, &#39;{} not given in content&#39;.format(err))
 
     @property
-    def additional_ports(self):
-        &#34;&#34;&#34;Gets the additional ports
+    def additional_ports(self) -&gt; list:
+        &#34;&#34;&#34;Get the list of additional network ports configured for this Network.
 
-        :return:
-            list - ports
+        Returns:
+            list: A list of additional port numbers.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; ports = network.additional_ports
+            &gt;&gt;&gt; print(f&#34;Additional ports: {ports}&#34;)
+
         &#34;&#34;&#34;
         return self._port_range
 
-    def set_additional_ports(self, ports, tunnel_port=8403):
-        &#34;&#34;&#34;Sets additional incoming ports and tunnel port with the values provided as parameter
+    def set_additional_ports(self, ports: list[dict], tunnel_port: int = 8403) -&gt; None:
+        &#34;&#34;&#34;Set additional incoming ports and the tunnel port for the network.
 
-            Args:
-                tunnel_port (int) -- value to be set for tunnel port
-                ports(list)  -- list of ports should be a list of dict containing
-                start port and end port
-                [{&#39;startPort&#39;:val,&#39;endPort&#39;:val}]
+        This method configures additional incoming port ranges and sets the tunnel port
+        to the specified value. The `ports` parameter should be a list of dictionaries,
+        each containing &#39;startPort&#39; and &#39;endPort&#39; keys to define port ranges.
 
-            Example:
-            [
-                {
-                &#39;startPort&#39;: 1024,
-                &#39;endPort&#39;: 1030
-                },
-                {
-                &#39;startPort&#39;: 2000,
-                &#39;endPort&#39;:4000
-                }
-            ]
+        Args:
+            ports: A list of dictionaries specifying port ranges. Each dictionary must have
+                &#39;startPort&#39; and &#39;endPort&#39; integer keys.
+                Example:
+                    [
+                        {&#39;startPort&#39;: 1024, &#39;endPort&#39;: 1030},
+                        {&#39;startPort&#39;: 2000, &#39;endPort&#39;: 4000}
+                    ]
+            tunnel_port: The tunnel port to set (default is 8403).
 
-            Raises:
-                SDKException:
-                    if the required key is missing in the input value passed
+        Raises:
+            SDKException: If any required key is missing in the input dictionaries.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; port_ranges = [
+            ...     {&#39;startPort&#39;: 1024, &#39;endPort&#39;: 1030},
+            ...     {&#39;startPort&#39;: 2000, &#39;endPort&#39;: 4000}
+            ... ]
+            &gt;&gt;&gt; network.set_additional_ports(port_ranges, tunnel_port=8500)
+            &gt;&gt;&gt; # The network is now configured with the specified port ranges and tunnel port
+
         &#34;&#34;&#34;
         try:
             self._tunnel_connection_port = tunnel_port
@@ -665,11 +847,16 @@ class Network(object):
             raise SDKException(&#39;Client&#39;, &#39;102&#39;, &#39;{} not given in content&#39;.format(err))
 
     @property
-    def outgoing_routes(self):
-        &#34;&#34;&#34;Gets the list of all outgoing routes
+    def outgoing_routes(self) -&gt; list:
+        &#34;&#34;&#34;Retrieve the list of all outgoing network routes.
 
-            :return:
-                list - outgoing routes
+        Returns:
+            list: A list containing all outgoing routes configured for the network.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; routes = network.outgoing_routes
+            &gt;&gt;&gt; print(f&#34;Outgoing routes: {routes}&#34;)
 
         &#34;&#34;&#34;
 
@@ -686,78 +873,76 @@ class Network(object):
 
         return self._network_outgoing_routes
 
-    def set_outgoing_routes(self, outgoing_routes):
-        &#34;&#34;&#34;Sets outgoing routes on the client with the list of values provided as parameter
+    def set_outgoing_routes(self, outgoing_routes: list[dict]) -&gt; None:
+        &#34;&#34;&#34;Set outgoing routes on the client using the provided list of route definitions.
 
-            Args:
-                outgoing_routes(list)  -- list of outgoing routes should be a list of dict
-                containing route type, entity name, entity type, streams, gateway host,
-                gateway port, tunnel connection protocol and remote proxy based on route type.
+        Each outgoing route should be specified as a dictionary with required keys depending on the route type.
+        Supported route types are &#39;DIRECT&#39;, &#39;VIA_GATEWAY&#39;, and &#39;VIA_PROXY&#39;. The structure of each dictionary
+        varies based on the route type, as described below.
 
-                For routeType: DIRECT
-                [{&#39;routeType&#39;:&#39;DIRECT&#39;,
-                &#39;remoteEntity&#39;:val ,
-                &#39;streams&#39;:val,
-                &#39;isClient&#39;:val,
-                &#39;forceAllDataTraffic&#39;: True,
-                &#39;connectionProtocol&#39; : 0}]
+        Args:
+            outgoing_routes: A list of dictionaries, each representing an outgoing route configuration.
+                - For routeType &#39;DIRECT&#39;:
+                    {
+                        &#39;routeType&#39;: &#39;DIRECT&#39;,
+                        &#39;remoteEntity&#39;: &lt;str&gt;,
+                        &#39;streams&#39;: &lt;int&gt;,
+                        &#39;isClient&#39;: &lt;bool&gt;,
+                        &#39;forceAllDataTraffic&#39;: &lt;bool&gt;,
+                        &#39;connectionProtocol&#39;: &lt;int&gt;  # 0: HTTP, 1: HTTPS, 2: HTTPS_AuthOnly, 3: RAW_PROTOCOL
+                    }
+                - For routeType &#39;VIA_GATEWAY&#39;:
+                    {
+                        &#39;routeType&#39;: &#39;VIA_GATEWAY&#39;,
+                        &#39;remoteEntity&#39;: &lt;str&gt;,
+                        &#39;streams&#39;: &lt;int&gt;,
+                        &#39;gatewayPort&#39;: &lt;int&gt;,
+                        &#39;gatewayHost&#39;: &lt;str&gt;,
+                        &#39;isClient&#39;: &lt;bool&gt;,
+                        &#39;forceAllDataTraffic&#39;: &lt;bool&gt;,
+                        &#39;connectionProtocol&#39;: &lt;int&gt;
+                    }
+                - For routeType &#39;VIA_PROXY&#39;:
+                    {
+                        &#39;routeType&#39;: &#39;VIA_PROXY&#39;,
+                        &#39;remoteEntity&#39;: &lt;str&gt;,
+                        &#39;remoteProxy&#39;: &lt;str&gt;,
+                        &#39;isClient&#39;: &lt;bool&gt;
+                    }
 
-                For routeType: VIA_GATEWAY
-                [{&#39;routeType&#39;:&#39;VIA_GATEWAY&#39;,
-                &#39;remoteEntity&#39;:val,
-                &#39;streams&#39;:val,
-                &#39;gatewayPort&#39;:val,
-                &#39;gatewayHost&#39;: val,
-                &#39;isClient&#39;:val,
-                &#39;forceAllDataTraffic&#39;: False,
-                &#39;connectionProtocol&#39; : 3}]
+        Raises:
+            SDKException: If an invalid routeType is provided or if required keys are missing in any route dictionary.
 
-                For routeType: VIA_PROXY
-                [{&#39;routeType&#39;:&#39;VIA_PROXY&#39;,
-                &#39;remoteEntity&#39;:val,
-                &#39;remoteProxy&#39;:val,
-                &#39;isClient&#39;:val}]
-
-
-                Valid values for connectionProtocol:
-                0: &#39;HTTP&#39;,
-                1: &#39;HTTPS&#39;,
-                2: &#39;HTTPS_AuthOnly&#39;,
-                3: &#39;RAW_PROTOCOL&#39;
-
-            Example:
-            [
-                {
-                &#39;routeType&#39;: &#39;DIRECT&#39;,
-                &#39;remoteEntity&#39;:&#39;Testcs&#39; ,
-                &#39;streams&#39;: 1,
-                &#39;isClient&#39;: True,
-                &#39;forceAllDataTraffic&#39; : True
-                &#39;connectionProtocol&#39; : 0
-                },
-                {
-                &#39;routeType&#39;: &#39;VIA_GATEWAY&#39;,
-                &#39;remoteEntity&#39;: &#39;centOS&#39;,
-                &#39;streams&#39;: 2,
-                &#39;gatewayPort&#39;: 443,
-                &#39;gatewayHost&#39;: &#39;1.2.3.4&#39;,
-                &#39;isClient&#39;: True,
-                &#39;forceAllDataTraffic&#39; :False
-                &#39;connectionProtocol&#39; : 1
-                },
-                {
-                &#39;routeType&#39;: &#39;VIA_PROXY&#39;,
-                &#39;remoteEntity&#39;: &#39;Laptop Clients&#39;,
-                &#39;remoteProxy&#39;: &#39;TemplateRHEL65_4&#39;,
-                &#39;isClient&#39;: False
-                }
-            ]
-
-            Raises:
-                SDKException:
-                    if routeType is invalid in the input value passed
-
-                    if the required key is missing in the input value passed
+        Example:
+            &gt;&gt;&gt; routes = [
+            ...     {
+            ...         &#39;routeType&#39;: &#39;DIRECT&#39;,
+            ...         &#39;remoteEntity&#39;: &#39;Testcs&#39;,
+            ...         &#39;streams&#39;: 1,
+            ...         &#39;isClient&#39;: True,
+            ...         &#39;forceAllDataTraffic&#39;: True,
+            ...         &#39;connectionProtocol&#39;: 0
+            ...     },
+            ...     {
+            ...         &#39;routeType&#39;: &#39;VIA_GATEWAY&#39;,
+            ...         &#39;remoteEntity&#39;: &#39;centOS&#39;,
+            ...         &#39;streams&#39;: 2,
+            ...         &#39;gatewayPort&#39;: 443,
+            ...         &#39;gatewayHost&#39;: &#39;1.2.3.4&#39;,
+            ...         &#39;isClient&#39;: True,
+            ...         &#39;forceAllDataTraffic&#39;: False,
+            ...         &#39;connectionProtocol&#39;: 1
+            ...     },
+            ...     {
+            ...         &#39;routeType&#39;: &#39;VIA_PROXY&#39;,
+            ...         &#39;remoteEntity&#39;: &#39;Laptop Clients&#39;,
+            ...         &#39;remoteProxy&#39;: &#39;TemplateRHEL65_4&#39;,
+            ...         &#39;isClient&#39;: False
+            ...     }
+            ... ]
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; network.set_outgoing_routes(routes)
+            &gt;&gt;&gt; print(&#34;Outgoing routes set successfully.&#34;)
 
         &#34;&#34;&#34;
 
@@ -828,11 +1013,17 @@ class Network(object):
             raise SDKException(&#39;Client&#39;, &#39;102&#39;, &#39;{} not given in content&#39;.format(err))
 
     @property
-    def tppm_settings(self):
-        &#34;&#34;&#34;Gets the list of tppm settings on a client
+    def tppm_settings(self) -&gt; list:
+        &#34;&#34;&#34;Retrieve the list of TPPM (Third Party Patch Management) settings configured on the client.
 
-        :return:
-            list - tppm settings
+        Returns:
+            list: A list containing the TPPM settings for the client.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; settings = network.tppm_settings
+            &gt;&gt;&gt; print(f&#34;TPPM settings: {settings}&#34;)
+
         &#34;&#34;&#34;
 
         for tppm_setting in self._tppm_settings:
@@ -841,43 +1032,51 @@ class Network(object):
 
         return self._tppm_settings
 
-    def set_tppm_settings(self, tppm_settings):
-        &#34;&#34;&#34;Sets tppm on the client with the list of values provided as parameter
+    def set_tppm_settings(self, tppm_settings: list[dict]) -&gt; None:
+        &#34;&#34;&#34;Set TPPM (Third Party Proxy Management) settings on the client.
 
+        This method configures TPPM settings for the client using the provided list of settings.
+        Each setting should be a dictionary containing the TPPM type, port number, and proxy entity.
 
-            Note:  This is supported only on client level
+        Note:
+            This operation is supported only at the client level.
 
-            Args:
-                tppm_settings(list)  -- list of tppm settings should be a list of dict containing
-                tppm type, port number and proxy entity
-                [{&#39;tppmType&#39;:val, &#39;portNumber&#39;:val, &#39;proxyEntity&#39;:val}]
+        Args:
+            tppm_settings: A list of dictionaries, each specifying a TPPM configuration.
+                Each dictionary must contain the following keys:
+                    - &#39;tppmType&#39;: The type of TPPM. Valid values are:
+                        1. &#39;WEB_SERVER_FOR_IIS_SERVER&#39;
+                        2. &#39;COMMSERVE&#39;
+                        3. &#39;REPORTS&#39;
+                        4. &#39;CUSTOM_REPORT_ENGINE&#39;
+                    - &#39;portNumber&#39;: The port number to use (int).
+                    - &#39;proxyEntity&#39;: The proxy entity name (str).
 
-                Valid values for tppmType:
-                1. WEB_SERVER_FOR_IIS_SERVER
-                2. COMMSERVE
-                3. REPORTS
-                4. CUSTOM_REPORT_ENGINE
+                Example:
+                    [
+                        {
+                            &#39;tppmType&#39;: &#39;WEB_SERVER_FOR_IIS_SERVER&#39;,
+                            &#39;portNumber&#39;: 9999,
+                            &#39;proxyEntity&#39;: &#39;shezavm3&#39;
+                        },
+                        {
+                            &#39;tppmType&#39;: &#39;REPORTS&#39;,
+                            &#39;portNumber&#39;: 8888,
+                            &#39;proxyEntity&#39;: &#39;shezavm11&#39;
+                        }
+                    ]
 
-            Example:
-            [
-                {
-                &#39;tppmType&#39;: &#39;WEB_SERVER_FOR_IIS_SERVER&#39;,
-                &#39;portNumber&#39;:9999,
-                &#39;proxyEntity&#39; : &#39;shezavm3&#39;
-                },
+        Raises:
+            SDKException: If an invalid &#39;tppmType&#39; is provided or if any required key is missing in a setting.
 
-                {
-                &#39;tppmType&#39;: &#39;REPORTS&#39;,
-                &#39;portNumber&#39;:8888,
-                &#39;proxyEntity&#39; : &#39;shezavm11&#39;
-                }
-            ]
-
-            Raises:
-                SDKException:
-                    if tppmType is invalid in the input value passed
-
-                    if the required key is missing in the input value passed
+        Example:
+            &gt;&gt;&gt; tppm_settings = [
+            ...     {&#39;tppmType&#39;: &#39;COMMSERVE&#39;, &#39;portNumber&#39;: 8080, &#39;proxyEntity&#39;: &#39;proxy1&#39;},
+            ...     {&#39;tppmType&#39;: &#39;REPORTS&#39;, &#39;portNumber&#39;: 9090, &#39;proxyEntity&#39;: &#39;proxy2&#39;}
+            ... ]
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; network.set_tppm_settings(tppm_settings)
+            &gt;&gt;&gt; print(&#34;TPPM settings applied successfully.&#34;)
 
         &#34;&#34;&#34;
 
@@ -908,18 +1107,20 @@ class Network(object):
         except KeyError as err:
             raise SDKException(&#39;Client&#39;, &#39;102&#39;, &#39;{} not given in content&#39;.format(err))
 
-    def _advanced_network_config(self):
+    def _advanced_network_config(self) -&gt; None:
+        &#34;&#34;&#34;Configure advanced network properties for the client or client group.
 
-        &#34;&#34;&#34;Sets network properties on the client/client group with all the network properties
+        This method sets all relevant network properties on the associated client or client group.
+        It is typically used to apply advanced network configurations as required.
 
+        Raises:
+            SDKException: If the request was not successful, if invalid input was provided,
+                or if an empty response was received.
 
-            Raises:
-                SDKException:
-                    if  request was not successful
-
-                    if  invalid input was provided in the request
-
-                    if empty response was received
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; network._advanced_network_config()
+            &gt;&gt;&gt; print(&#34;Advanced network configuration applied successfully.&#34;)
 
         &#34;&#34;&#34;
 
@@ -1071,30 +1272,74 @@ class Network(object):
 <dl>
 <dt id="cvpysdk.network.Network"><code class="flex name class">
 <span>class <span class="ident">Network</span></span>
-<span>(</span><span>class_object)</span>
+<span>(</span><span>class_object: object)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for performing network related operations on a client or client group</p>
-<p>Initialize the Network class object</p>
-<h2 id="args">Args</h2>
-<p>class_object (object)
-&ndash;
-instance of the client/client group class</p></div>
+<div class="desc"><p>Class for performing network related operations on a client or client group.</p>
+<p>This class provides a comprehensive interface for managing and configuring
+network settings for individual clients or groups of clients. It exposes
+various properties and methods to control network behavior, security, and
+connectivity options.</p>
+<p>Key Features:
+- Retrieve network properties and advanced configuration details
+- Configure network settings such as SSL enforcement, lockdown mode, and proxy usage
+- Manage tunnel connection parameters including port and initialization timing
+- Set trivial and roaming client configurations
+- Bind open ports and manage additional ports for network communication
+- Control incoming connections and outgoing routes
+- Adjust keep-alive intervals for network sessions
+- Apply TPPM (Third-Party Policy Management) settings
+- Flexible property-based interface for dynamic network configuration</p>
+<p>Initialize a Network class object with a client or client group instance.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>class_object</code></strong></dt>
+<dd>An instance of the client or client group class to associate with the Network object.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; client = Client('client_name')
+&gt;&gt;&gt; network = Network(client)
+&gt;&gt;&gt; # The Network object is now initialized with the specified client
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network.py#L105-L922" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network.py#L106-L1154" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Network(object):
-    &#34;&#34;&#34;Class for performing network related operations on a client or client group&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Class for performing network related operations on a client or client group.
 
-    def __init__(self, class_object):
-        &#34;&#34;&#34;Initialize the Network class object
+    This class provides a comprehensive interface for managing and configuring
+    network settings for individual clients or groups of clients. It exposes
+    various properties and methods to control network behavior, security, and
+    connectivity options.
 
-            Args:
-                class_object (object)  --  instance of the client/client group class
+    Key Features:
+        - Retrieve network properties and advanced configuration details
+        - Configure network settings such as SSL enforcement, lockdown mode, and proxy usage
+        - Manage tunnel connection parameters including port and initialization timing
+        - Set trivial and roaming client configurations
+        - Bind open ports and manage additional ports for network communication
+        - Control incoming connections and outgoing routes
+        - Adjust keep-alive intervals for network sessions
+        - Apply TPPM (Third-Party Policy Management) settings
+        - Flexible property-based interface for dynamic network configuration
 
+    &#34;&#34;&#34;
 
+    def __init__(self, class_object: object) -&gt; None:
+        &#34;&#34;&#34;Initialize a Network class object with a client or client group instance.
+
+        Args:
+            class_object: An instance of the client or client group class to associate with the Network object.
+
+        Example:
+            &gt;&gt;&gt; client = Client(&#39;client_name&#39;)
+            &gt;&gt;&gt; network = Network(client)
+            &gt;&gt;&gt; # The Network object is now initialized with the specified client
 
         &#34;&#34;&#34;
         from .client import Client
@@ -1155,9 +1400,20 @@ instance of the client/client group class</p></div>
 
         self._get_network_properties()
 
-    def _get_network_properties(self):
-        &#34;&#34;&#34;Get all the existing network properties on a client/client group and retain each of them
+    def _get_network_properties(self) -&gt; Dict[str, Any]:
+        &#34;&#34;&#34;Retrieve all existing network properties for a client or client group.
 
+        This method gathers and returns the network properties associated with the current client or client group,
+        allowing you to inspect or process network configuration details.
+
+        Returns:
+            A dictionary containing the network properties, where keys are property names and values are their corresponding settings.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; properties = network._get_network_properties()
+            &gt;&gt;&gt; print(properties)
+            {&#39;ip_address&#39;: &#39;192.168.1.10&#39;, &#39;subnet&#39;: &#39;255.255.255.0&#39;, ...}
 
         &#34;&#34;&#34;
         if self.flag == &#34;CLIENT&#34;:
@@ -1215,188 +1471,326 @@ instance of the client/client group class</p></div>
                     &#39;firewallOptions&#39;][&#39;tppm&#39;])
 
     @property
-    def configure_network_settings(self):
-        &#34;&#34;&#34;Gets the value for configure firewall settings
+    def configure_network_settings(self) -&gt; bool:
+        &#34;&#34;&#34;Get the current value indicating whether firewall settings are configured.
 
-        :return:
-            boolean - configureFirewallSettings
+        Returns:
+            bool: True if firewall settings are configured, False otherwise.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; is_configured = network.configure_network_settings
+            &gt;&gt;&gt; print(f&#34;Firewall settings configured: {is_configured}&#34;)
+
         &#34;&#34;&#34;
         return self._config_network_settings
 
     @configure_network_settings.setter
-    def configure_network_settings(self, val):
-        &#34;&#34;&#34;Sets the value for configureFirewallSettings with the parameter provided
+    def configure_network_settings(self, val: bool) -&gt; None:
+        &#34;&#34;&#34;Set the value for configuring firewall settings on the network.
 
+        Args:
+            val: Boolean value indicating whether to enable (True) or disable (False) firewall settings.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; network.configure_network_settings = True  # Enable firewall settings
+            &gt;&gt;&gt; network.configure_network_settings = False  # Disable firewall settings
 
         &#34;&#34;&#34;
         self._config_network_settings = val
         self._advanced_network_config()
 
     @property
-    def trivial_config(self):
-        &#34;&#34;&#34;Gets the value for isTrivialConfig
+    def trivial_config(self) -&gt; bool:
+        &#34;&#34;&#34;Get the value indicating whether the network configuration is trivial.
 
-        :return:
-            boolean - isTrivialConfig
+        Returns:
+            bool: True if the network configuration is considered trivial, False otherwise.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; is_trivial = network.trivial_config  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Is network configuration trivial? {is_trivial}&#34;)
+
         &#34;&#34;&#34;
         return self._is_trivial_config
 
     @trivial_config.setter
-    def trivial_config(self, val):
-        &#34;&#34;&#34;Sets the value for isTrivialConfig with the parameter provided
+    def trivial_config(self, val: bool) -&gt; None:
+        &#34;&#34;&#34;Set the value for the isTrivialConfig property.
 
+        Args:
+            val: Boolean value to set for isTrivialConfig.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; network.trivial_config = True  # Enable trivial configuration
+            &gt;&gt;&gt; network.trivial_config = False  # Disable trivial configuration
 
         &#34;&#34;&#34;
         self._is_trivial_config = val
         self.enable_network_settings = True
 
     @property
-    def roaming_client(self):
-        &#34;&#34;&#34;Gets the value for isRoamingClient
+    def roaming_client(self) -&gt; bool:
+        &#34;&#34;&#34;Get the roaming client status for the network.
 
-        :return:
-            boolen - isRoamingClient
+        Returns:
+            bool: True if the network is configured as a roaming client, False otherwise.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; is_roaming = network.roaming_client
+            &gt;&gt;&gt; print(f&#34;Roaming client enabled: {is_roaming}&#34;)
+
         &#34;&#34;&#34;
         return self._is_roaming_client
 
     @roaming_client.setter
-    def roaming_client(self, val):
-        &#34;&#34;&#34;Sets the value for isRoamingClient with the parameter provided
+    def roaming_client(self, val: bool) -&gt; None:
+        &#34;&#34;&#34;Set the roaming client status for the network.
+
+        Args:
+            val: A boolean value indicating whether the client should be set as a roaming client (True) or not (False).
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; network.roaming_client = True  # Enable roaming client
+            &gt;&gt;&gt; network.roaming_client = False  # Disable roaming client
 
         &#34;&#34;&#34;
         self._is_roaming_client = val
         self.configure_network_settings = True
 
     @property
-    def tunnel_connection_port(self):
-        &#34;&#34;&#34;Gets the value for tunnel port on the client/client group
+    def tunnel_connection_port(self) -&gt; int:
+        &#34;&#34;&#34;Get the tunnel connection port value for the client or client group.
 
-        :return:
-            int - tunnelConnectionPort
+        Returns:
+            The tunnel connection port as an integer.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; port = network.tunnel_connection_port
+            &gt;&gt;&gt; print(f&#34;Tunnel connection port: {port}&#34;)
+
         &#34;&#34;&#34;
         return self._tunnel_connection_port
 
     @tunnel_connection_port.setter
-    def tunnel_connection_port(self, val):
-        &#34;&#34;&#34;Sets the value for tunnelConnectionPort with the parameter provided
+    def tunnel_connection_port(self, val: int) -&gt; None:
+        &#34;&#34;&#34;Set the value for the tunnel connection port.
+
+        Args:
+            val: The port number to be used for the tunnel connection.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; network.tunnel_connection_port = 8080  # Set the tunnel connection port to 8080
 
         &#34;&#34;&#34;
         self._tunnel_connection_port = val
         self.configure_network_settings = True
 
     @property
-    def force_ssl(self):
-        &#34;&#34;&#34;Gets the value for forceSSL
+    def force_ssl(self) -&gt; bool:
+        &#34;&#34;&#34;Get the current value of the forceSSL setting for the network.
 
-        :return:
-            boolean - forceSSL
+        Returns:
+            bool: True if SSL is enforced for network communication, False otherwise.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; is_ssl_forced = network.force_ssl
+            &gt;&gt;&gt; print(f&#34;SSL enforced: {is_ssl_forced}&#34;)
+
         &#34;&#34;&#34;
         return self._force_ssl
 
     @force_ssl.setter
-    def force_ssl(self, val):
-        &#34;&#34;&#34;Sets the value for forceSSL with the parameter provided
+    def force_ssl(self, val: bool) -&gt; None:
+        &#34;&#34;&#34;Set the forceSSL property for the network.
 
+        Args:
+            val: Boolean value indicating whether to force SSL (True) or not (False).
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; network.force_ssl = True  # Enable SSL enforcement
+            &gt;&gt;&gt; network.force_ssl = False  # Disable SSL enforcement
 
         &#34;&#34;&#34;
         self._force_ssl = val
         self.configure_network_settings = True
 
     @property
-    def tunnel_init_seconds(self):
-        &#34;&#34;&#34;Gets the tunnel init seconds
+    def tunnel_init_seconds(self) -&gt; int:
+        &#34;&#34;&#34;Get the number of seconds used for tunnel initialization.
 
-        :return:
-            int - tunnelInitSeconds
+        Returns:
+            The tunnel initialization time in seconds as an integer.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; init_time = network.tunnel_init_seconds
+            &gt;&gt;&gt; print(f&#34;Tunnel initialization time: {init_time} seconds&#34;)
+
         &#34;&#34;&#34;
         return self._tunnel_init_seconds
 
     @tunnel_init_seconds.setter
-    def tunnel_init_seconds(self, val):
-        &#34;&#34;&#34;Sets the tunnelInitSeconds with the parameter provided
+    def tunnel_init_seconds(self, val: int) -&gt; None:
+        &#34;&#34;&#34;Set the tunnel initialization timeout in seconds.
 
+        Args:
+            val: The number of seconds to set for tunnel initialization.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; network.tunnel_init_seconds = 30  # Set tunnel initialization to 30 seconds
 
         &#34;&#34;&#34;
         self._tunnel_init_seconds = val
         self.configure_network_settings = True
 
     @property
-    def lockdown(self):
-        &#34;&#34;&#34;Gets the value for lockdown
+    def lockdown(self) -&gt; bool:
+        &#34;&#34;&#34;Get the current lockdown status of the network.
 
-        :return:
-            boolean - lockdown
+        Returns:
+            True if the network is in lockdown mode, False otherwise.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; is_locked_down = network.lockdown  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Network lockdown status: {is_locked_down}&#34;)
+            &gt;&gt;&gt; # Output: Network lockdown status: True or False
+
         &#34;&#34;&#34;
         return self._lockdown
 
     @lockdown.setter
-    def lockdown(self, val):
-        &#34;&#34;&#34;Sets the lockdown with the parameter provided
+    def lockdown(self, val: bool) -&gt; None:
+        &#34;&#34;&#34;Set the network lockdown state.
 
+        Args:
+            val: A boolean value indicating whether to enable (True) or disable (False) network lockdown.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; network.lockdown = True  # Enable network lockdown
+            &gt;&gt;&gt; network.lockdown = False  # Disable network lockdown
 
         &#34;&#34;&#34;
         self._lockdown = val
         self.configure_network_settings = True
 
     @property
-    def bind_open_ports(self):
-        &#34;&#34;&#34;Gets the value for bindOpenports only
+    def bind_open_ports(self) -&gt; bool:
+        &#34;&#34;&#34;Get the value indicating whether only open ports are bound.
 
-        :return:
-            boolean - bindOpenPortsOnly
+        Returns:
+            bool: True if only open ports are bound; False otherwise.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; is_bind_open = network.bind_open_ports
+            &gt;&gt;&gt; print(f&#34;Bind only open ports: {is_bind_open}&#34;)
+
         &#34;&#34;&#34;
         return self._bind_open_ports_only
 
     @bind_open_ports.setter
-    def bind_open_ports(self, val):
-        &#34;&#34;&#34;Sets bindopenportsonly with the parameter provided
+    def bind_open_ports(self, val: bool) -&gt; None:
+        &#34;&#34;&#34;Set the &#39;bindopenportsonly&#39; property to control whether only open ports are bound.
 
+        Args:
+            val: A boolean value indicating whether to bind only open ports (True) or not (False).
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; network.bind_open_ports = True  # Enable binding only to open ports
+            &gt;&gt;&gt; network.bind_open_ports = False  # Disable the restriction
 
         &#34;&#34;&#34;
         self._bind_open_ports_only = val
         self.configure_network_settings = True
 
     @property
-    def proxy(self):
-        &#34;&#34;&#34;Gets the value for isDMZ
+    def proxy(self) -&gt; bool:
+        &#34;&#34;&#34;Get the value indicating whether the network is configured as a DMZ proxy.
 
-        :return:
-            boolean - isDMZ
+        Returns:
+            bool: True if the network is a DMZ proxy, False otherwise.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; is_dmz = network.proxy  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Is DMZ proxy: {is_dmz}&#34;)
+
         &#34;&#34;&#34;
         return self._is_dmz
 
     @proxy.setter
-    def proxy(self, val):
-        &#34;&#34;&#34;Sets the value for isDMZ with the parameter provided
+    def proxy(self, val: bool) -&gt; None:
+        &#34;&#34;&#34;Set the value for the isDMZ property using the provided parameter.
 
+        Args:
+            val: Boolean value to set the isDMZ property. Set to True if the network is a DMZ proxy, otherwise False.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; network.proxy = True  # Sets the network as a DMZ proxy
+            &gt;&gt;&gt; network.proxy = False  # Unsets the DMZ proxy status
 
         &#34;&#34;&#34;
         self._is_dmz = val
         self.configure_network_settings = True
 
     @property
-    def keep_alive_seconds(self):
-        &#34;&#34;&#34;Gets the value set for keep alive
+    def keep_alive_seconds(self) -&gt; int:
+        &#34;&#34;&#34;Get the configured keep-alive interval in seconds for the network.
 
-        :return:
-            int - keepAliveSeconds
+        Returns:
+            The keep-alive interval in seconds as an integer.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; interval = network.keep_alive_seconds
+            &gt;&gt;&gt; print(f&#34;Keep-alive interval: {interval} seconds&#34;)
+
         &#34;&#34;&#34;
         return self._keep_alive_seconds
 
     @keep_alive_seconds.setter
-    def keep_alive_seconds(self, val):
-        &#34;&#34;&#34;Sets the value for keep alive seconds with the parameter provided
+    def keep_alive_seconds(self, val: int) -&gt; None:
+        &#34;&#34;&#34;Set the keep-alive interval in seconds for the network connection.
+
+        Args:
+            val: The number of seconds to use for the keep-alive interval.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; network.keep_alive_seconds = 120  # Set keep-alive to 120 seconds
 
         &#34;&#34;&#34;
         self._keep_alive_seconds = val
         self.configure_network_settings = True
 
     @property
-    def incoming_connections(self):
-        &#34;&#34;&#34;Gets all the incoming connections on a client
+    def incoming_connections(self) -&gt; list:
+        &#34;&#34;&#34;Retrieve all incoming network connections on the client.
 
-        :return:
-            list - incoming connections
+        Returns:
+            list: A list containing information about each incoming connection.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; connections = network.incoming_connections
+            &gt;&gt;&gt; print(f&#34;Number of incoming connections: {len(connections)}&#34;)
+            &gt;&gt;&gt; # Each item in &#39;connections&#39; represents an incoming connection
+
         &#34;&#34;&#34;
 
         for incoming_connection in self._restriction_to:
@@ -1406,32 +1800,30 @@ instance of the client/client group class</p></div>
 
         return self._restriction_to
 
-    def set_incoming_connections(self, incoming_connections):
-        &#34;&#34;&#34;Sets the incoming connections on a client/client group with the list of values provided
+    def set_incoming_connections(self, incoming_connections: list[dict]) -&gt; None:
+        &#34;&#34;&#34;Set the incoming connections for a client or client group.
 
-         Args:
-                incoming_connections(list)  -- list of incoming connections should be
-                a list of dict containing incoming connection type, entity name and entity type.
-                [{&#39;state&#39;:val,&#39;entity&#39;:val,&#39;isClient&#39;:val}]
+        This method configures the allowed incoming connection states for specified entities,
+        such as clients or client groups, using a list of dictionaries. Each dictionary should
+        specify the connection state, the entity name, and whether the entity is a client.
 
-            Example:
-            [
-                {
-                &#39;state&#39;: &#39;RESTRICTED&#39;,
-                &#39;entity&#39;: &#39;centOS&#39;,
-                &#39;isClient&#39; : True
-                },
-
-                {
-                &#39;state&#39;: &#39;BLOCKED&#39;,
-                &#39;entity&#39;:  &#39;Edge Clients&#39;,
-                &#39;isClient&#39; : False
-                }
-            ]
+        Args:
+            incoming_connections: A list of dictionaries, each containing:
+                - &#39;state&#39; (str): The connection state, e.g., &#39;RESTRICTED&#39; or &#39;BLOCKED&#39;.
+                - &#39;entity&#39; (str): The name of the client or client group.
+                - &#39;isClient&#39; (bool): True if the entity is a client, False if it is a client group.
 
         Raises:
-                SDKException:
-                    if the required key is missing in the input value passed
+            SDKException: If a required key is missing in any of the input dictionaries.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; incoming = [
+            ...     {&#39;state&#39;: &#39;RESTRICTED&#39;, &#39;entity&#39;: &#39;centOS&#39;, &#39;isClient&#39;: True},
+            ...     {&#39;state&#39;: &#39;BLOCKED&#39;, &#39;entity&#39;: &#39;Edge Clients&#39;, &#39;isClient&#39;: False}
+            ... ]
+            &gt;&gt;&gt; network.set_incoming_connections(incoming)
+            &gt;&gt;&gt; print(&#34;Incoming connections updated successfully.&#34;)
 
         &#34;&#34;&#34;
         try:
@@ -1461,38 +1853,49 @@ instance of the client/client group class</p></div>
             raise SDKException(&#39;Client&#39;, &#39;102&#39;, &#39;{} not given in content&#39;.format(err))
 
     @property
-    def additional_ports(self):
-        &#34;&#34;&#34;Gets the additional ports
+    def additional_ports(self) -&gt; list:
+        &#34;&#34;&#34;Get the list of additional network ports configured for this Network.
 
-        :return:
-            list - ports
+        Returns:
+            list: A list of additional port numbers.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; ports = network.additional_ports
+            &gt;&gt;&gt; print(f&#34;Additional ports: {ports}&#34;)
+
         &#34;&#34;&#34;
         return self._port_range
 
-    def set_additional_ports(self, ports, tunnel_port=8403):
-        &#34;&#34;&#34;Sets additional incoming ports and tunnel port with the values provided as parameter
+    def set_additional_ports(self, ports: list[dict], tunnel_port: int = 8403) -&gt; None:
+        &#34;&#34;&#34;Set additional incoming ports and the tunnel port for the network.
 
-            Args:
-                tunnel_port (int) -- value to be set for tunnel port
-                ports(list)  -- list of ports should be a list of dict containing
-                start port and end port
-                [{&#39;startPort&#39;:val,&#39;endPort&#39;:val}]
+        This method configures additional incoming port ranges and sets the tunnel port
+        to the specified value. The `ports` parameter should be a list of dictionaries,
+        each containing &#39;startPort&#39; and &#39;endPort&#39; keys to define port ranges.
 
-            Example:
-            [
-                {
-                &#39;startPort&#39;: 1024,
-                &#39;endPort&#39;: 1030
-                },
-                {
-                &#39;startPort&#39;: 2000,
-                &#39;endPort&#39;:4000
-                }
-            ]
+        Args:
+            ports: A list of dictionaries specifying port ranges. Each dictionary must have
+                &#39;startPort&#39; and &#39;endPort&#39; integer keys.
+                Example:
+                    [
+                        {&#39;startPort&#39;: 1024, &#39;endPort&#39;: 1030},
+                        {&#39;startPort&#39;: 2000, &#39;endPort&#39;: 4000}
+                    ]
+            tunnel_port: The tunnel port to set (default is 8403).
 
-            Raises:
-                SDKException:
-                    if the required key is missing in the input value passed
+        Raises:
+            SDKException: If any required key is missing in the input dictionaries.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; port_ranges = [
+            ...     {&#39;startPort&#39;: 1024, &#39;endPort&#39;: 1030},
+            ...     {&#39;startPort&#39;: 2000, &#39;endPort&#39;: 4000}
+            ... ]
+            &gt;&gt;&gt; network.set_additional_ports(port_ranges, tunnel_port=8500)
+            &gt;&gt;&gt; # The network is now configured with the specified port ranges and tunnel port
+
         &#34;&#34;&#34;
         try:
             self._tunnel_connection_port = tunnel_port
@@ -1510,11 +1913,16 @@ instance of the client/client group class</p></div>
             raise SDKException(&#39;Client&#39;, &#39;102&#39;, &#39;{} not given in content&#39;.format(err))
 
     @property
-    def outgoing_routes(self):
-        &#34;&#34;&#34;Gets the list of all outgoing routes
+    def outgoing_routes(self) -&gt; list:
+        &#34;&#34;&#34;Retrieve the list of all outgoing network routes.
 
-            :return:
-                list - outgoing routes
+        Returns:
+            list: A list containing all outgoing routes configured for the network.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; routes = network.outgoing_routes
+            &gt;&gt;&gt; print(f&#34;Outgoing routes: {routes}&#34;)
 
         &#34;&#34;&#34;
 
@@ -1531,78 +1939,76 @@ instance of the client/client group class</p></div>
 
         return self._network_outgoing_routes
 
-    def set_outgoing_routes(self, outgoing_routes):
-        &#34;&#34;&#34;Sets outgoing routes on the client with the list of values provided as parameter
+    def set_outgoing_routes(self, outgoing_routes: list[dict]) -&gt; None:
+        &#34;&#34;&#34;Set outgoing routes on the client using the provided list of route definitions.
 
-            Args:
-                outgoing_routes(list)  -- list of outgoing routes should be a list of dict
-                containing route type, entity name, entity type, streams, gateway host,
-                gateway port, tunnel connection protocol and remote proxy based on route type.
+        Each outgoing route should be specified as a dictionary with required keys depending on the route type.
+        Supported route types are &#39;DIRECT&#39;, &#39;VIA_GATEWAY&#39;, and &#39;VIA_PROXY&#39;. The structure of each dictionary
+        varies based on the route type, as described below.
 
-                For routeType: DIRECT
-                [{&#39;routeType&#39;:&#39;DIRECT&#39;,
-                &#39;remoteEntity&#39;:val ,
-                &#39;streams&#39;:val,
-                &#39;isClient&#39;:val,
-                &#39;forceAllDataTraffic&#39;: True,
-                &#39;connectionProtocol&#39; : 0}]
+        Args:
+            outgoing_routes: A list of dictionaries, each representing an outgoing route configuration.
+                - For routeType &#39;DIRECT&#39;:
+                    {
+                        &#39;routeType&#39;: &#39;DIRECT&#39;,
+                        &#39;remoteEntity&#39;: &lt;str&gt;,
+                        &#39;streams&#39;: &lt;int&gt;,
+                        &#39;isClient&#39;: &lt;bool&gt;,
+                        &#39;forceAllDataTraffic&#39;: &lt;bool&gt;,
+                        &#39;connectionProtocol&#39;: &lt;int&gt;  # 0: HTTP, 1: HTTPS, 2: HTTPS_AuthOnly, 3: RAW_PROTOCOL
+                    }
+                - For routeType &#39;VIA_GATEWAY&#39;:
+                    {
+                        &#39;routeType&#39;: &#39;VIA_GATEWAY&#39;,
+                        &#39;remoteEntity&#39;: &lt;str&gt;,
+                        &#39;streams&#39;: &lt;int&gt;,
+                        &#39;gatewayPort&#39;: &lt;int&gt;,
+                        &#39;gatewayHost&#39;: &lt;str&gt;,
+                        &#39;isClient&#39;: &lt;bool&gt;,
+                        &#39;forceAllDataTraffic&#39;: &lt;bool&gt;,
+                        &#39;connectionProtocol&#39;: &lt;int&gt;
+                    }
+                - For routeType &#39;VIA_PROXY&#39;:
+                    {
+                        &#39;routeType&#39;: &#39;VIA_PROXY&#39;,
+                        &#39;remoteEntity&#39;: &lt;str&gt;,
+                        &#39;remoteProxy&#39;: &lt;str&gt;,
+                        &#39;isClient&#39;: &lt;bool&gt;
+                    }
 
-                For routeType: VIA_GATEWAY
-                [{&#39;routeType&#39;:&#39;VIA_GATEWAY&#39;,
-                &#39;remoteEntity&#39;:val,
-                &#39;streams&#39;:val,
-                &#39;gatewayPort&#39;:val,
-                &#39;gatewayHost&#39;: val,
-                &#39;isClient&#39;:val,
-                &#39;forceAllDataTraffic&#39;: False,
-                &#39;connectionProtocol&#39; : 3}]
+        Raises:
+            SDKException: If an invalid routeType is provided or if required keys are missing in any route dictionary.
 
-                For routeType: VIA_PROXY
-                [{&#39;routeType&#39;:&#39;VIA_PROXY&#39;,
-                &#39;remoteEntity&#39;:val,
-                &#39;remoteProxy&#39;:val,
-                &#39;isClient&#39;:val}]
-
-
-                Valid values for connectionProtocol:
-                0: &#39;HTTP&#39;,
-                1: &#39;HTTPS&#39;,
-                2: &#39;HTTPS_AuthOnly&#39;,
-                3: &#39;RAW_PROTOCOL&#39;
-
-            Example:
-            [
-                {
-                &#39;routeType&#39;: &#39;DIRECT&#39;,
-                &#39;remoteEntity&#39;:&#39;Testcs&#39; ,
-                &#39;streams&#39;: 1,
-                &#39;isClient&#39;: True,
-                &#39;forceAllDataTraffic&#39; : True
-                &#39;connectionProtocol&#39; : 0
-                },
-                {
-                &#39;routeType&#39;: &#39;VIA_GATEWAY&#39;,
-                &#39;remoteEntity&#39;: &#39;centOS&#39;,
-                &#39;streams&#39;: 2,
-                &#39;gatewayPort&#39;: 443,
-                &#39;gatewayHost&#39;: &#39;1.2.3.4&#39;,
-                &#39;isClient&#39;: True,
-                &#39;forceAllDataTraffic&#39; :False
-                &#39;connectionProtocol&#39; : 1
-                },
-                {
-                &#39;routeType&#39;: &#39;VIA_PROXY&#39;,
-                &#39;remoteEntity&#39;: &#39;Laptop Clients&#39;,
-                &#39;remoteProxy&#39;: &#39;TemplateRHEL65_4&#39;,
-                &#39;isClient&#39;: False
-                }
-            ]
-
-            Raises:
-                SDKException:
-                    if routeType is invalid in the input value passed
-
-                    if the required key is missing in the input value passed
+        Example:
+            &gt;&gt;&gt; routes = [
+            ...     {
+            ...         &#39;routeType&#39;: &#39;DIRECT&#39;,
+            ...         &#39;remoteEntity&#39;: &#39;Testcs&#39;,
+            ...         &#39;streams&#39;: 1,
+            ...         &#39;isClient&#39;: True,
+            ...         &#39;forceAllDataTraffic&#39;: True,
+            ...         &#39;connectionProtocol&#39;: 0
+            ...     },
+            ...     {
+            ...         &#39;routeType&#39;: &#39;VIA_GATEWAY&#39;,
+            ...         &#39;remoteEntity&#39;: &#39;centOS&#39;,
+            ...         &#39;streams&#39;: 2,
+            ...         &#39;gatewayPort&#39;: 443,
+            ...         &#39;gatewayHost&#39;: &#39;1.2.3.4&#39;,
+            ...         &#39;isClient&#39;: True,
+            ...         &#39;forceAllDataTraffic&#39;: False,
+            ...         &#39;connectionProtocol&#39;: 1
+            ...     },
+            ...     {
+            ...         &#39;routeType&#39;: &#39;VIA_PROXY&#39;,
+            ...         &#39;remoteEntity&#39;: &#39;Laptop Clients&#39;,
+            ...         &#39;remoteProxy&#39;: &#39;TemplateRHEL65_4&#39;,
+            ...         &#39;isClient&#39;: False
+            ...     }
+            ... ]
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; network.set_outgoing_routes(routes)
+            &gt;&gt;&gt; print(&#34;Outgoing routes set successfully.&#34;)
 
         &#34;&#34;&#34;
 
@@ -1673,11 +2079,17 @@ instance of the client/client group class</p></div>
             raise SDKException(&#39;Client&#39;, &#39;102&#39;, &#39;{} not given in content&#39;.format(err))
 
     @property
-    def tppm_settings(self):
-        &#34;&#34;&#34;Gets the list of tppm settings on a client
+    def tppm_settings(self) -&gt; list:
+        &#34;&#34;&#34;Retrieve the list of TPPM (Third Party Patch Management) settings configured on the client.
 
-        :return:
-            list - tppm settings
+        Returns:
+            list: A list containing the TPPM settings for the client.
+
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; settings = network.tppm_settings
+            &gt;&gt;&gt; print(f&#34;TPPM settings: {settings}&#34;)
+
         &#34;&#34;&#34;
 
         for tppm_setting in self._tppm_settings:
@@ -1686,43 +2098,51 @@ instance of the client/client group class</p></div>
 
         return self._tppm_settings
 
-    def set_tppm_settings(self, tppm_settings):
-        &#34;&#34;&#34;Sets tppm on the client with the list of values provided as parameter
+    def set_tppm_settings(self, tppm_settings: list[dict]) -&gt; None:
+        &#34;&#34;&#34;Set TPPM (Third Party Proxy Management) settings on the client.
 
+        This method configures TPPM settings for the client using the provided list of settings.
+        Each setting should be a dictionary containing the TPPM type, port number, and proxy entity.
 
-            Note:  This is supported only on client level
+        Note:
+            This operation is supported only at the client level.
 
-            Args:
-                tppm_settings(list)  -- list of tppm settings should be a list of dict containing
-                tppm type, port number and proxy entity
-                [{&#39;tppmType&#39;:val, &#39;portNumber&#39;:val, &#39;proxyEntity&#39;:val}]
+        Args:
+            tppm_settings: A list of dictionaries, each specifying a TPPM configuration.
+                Each dictionary must contain the following keys:
+                    - &#39;tppmType&#39;: The type of TPPM. Valid values are:
+                        1. &#39;WEB_SERVER_FOR_IIS_SERVER&#39;
+                        2. &#39;COMMSERVE&#39;
+                        3. &#39;REPORTS&#39;
+                        4. &#39;CUSTOM_REPORT_ENGINE&#39;
+                    - &#39;portNumber&#39;: The port number to use (int).
+                    - &#39;proxyEntity&#39;: The proxy entity name (str).
 
-                Valid values for tppmType:
-                1. WEB_SERVER_FOR_IIS_SERVER
-                2. COMMSERVE
-                3. REPORTS
-                4. CUSTOM_REPORT_ENGINE
+                Example:
+                    [
+                        {
+                            &#39;tppmType&#39;: &#39;WEB_SERVER_FOR_IIS_SERVER&#39;,
+                            &#39;portNumber&#39;: 9999,
+                            &#39;proxyEntity&#39;: &#39;shezavm3&#39;
+                        },
+                        {
+                            &#39;tppmType&#39;: &#39;REPORTS&#39;,
+                            &#39;portNumber&#39;: 8888,
+                            &#39;proxyEntity&#39;: &#39;shezavm11&#39;
+                        }
+                    ]
 
-            Example:
-            [
-                {
-                &#39;tppmType&#39;: &#39;WEB_SERVER_FOR_IIS_SERVER&#39;,
-                &#39;portNumber&#39;:9999,
-                &#39;proxyEntity&#39; : &#39;shezavm3&#39;
-                },
+        Raises:
+            SDKException: If an invalid &#39;tppmType&#39; is provided or if any required key is missing in a setting.
 
-                {
-                &#39;tppmType&#39;: &#39;REPORTS&#39;,
-                &#39;portNumber&#39;:8888,
-                &#39;proxyEntity&#39; : &#39;shezavm11&#39;
-                }
-            ]
-
-            Raises:
-                SDKException:
-                    if tppmType is invalid in the input value passed
-
-                    if the required key is missing in the input value passed
+        Example:
+            &gt;&gt;&gt; tppm_settings = [
+            ...     {&#39;tppmType&#39;: &#39;COMMSERVE&#39;, &#39;portNumber&#39;: 8080, &#39;proxyEntity&#39;: &#39;proxy1&#39;},
+            ...     {&#39;tppmType&#39;: &#39;REPORTS&#39;, &#39;portNumber&#39;: 9090, &#39;proxyEntity&#39;: &#39;proxy2&#39;}
+            ... ]
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; network.set_tppm_settings(tppm_settings)
+            &gt;&gt;&gt; print(&#34;TPPM settings applied successfully.&#34;)
 
         &#34;&#34;&#34;
 
@@ -1753,18 +2173,20 @@ instance of the client/client group class</p></div>
         except KeyError as err:
             raise SDKException(&#39;Client&#39;, &#39;102&#39;, &#39;{} not given in content&#39;.format(err))
 
-    def _advanced_network_config(self):
+    def _advanced_network_config(self) -&gt; None:
+        &#34;&#34;&#34;Configure advanced network properties for the client or client group.
 
-        &#34;&#34;&#34;Sets network properties on the client/client group with all the network properties
+        This method sets all relevant network properties on the associated client or client group.
+        It is typically used to apply advanced network configurations as required.
 
+        Raises:
+            SDKException: If the request was not successful, if invalid input was provided,
+                or if an empty response was received.
 
-            Raises:
-                SDKException:
-                    if  request was not successful
-
-                    if  invalid input was provided in the request
-
-                    if empty response was received
+        Example:
+            &gt;&gt;&gt; network = Network()
+            &gt;&gt;&gt; network._advanced_network_config()
+            &gt;&gt;&gt; print(&#34;Advanced network configuration applied successfully.&#34;)
 
         &#34;&#34;&#34;
 
@@ -1906,102 +2328,184 @@ instance of the client/client group class</p></div>
 </details>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.network.Network.additional_ports"><code class="name">var <span class="ident">additional_ports</span></code></dt>
+<dt id="cvpysdk.network.Network.additional_ports"><code class="name">var <span class="ident">additional_ports</span> : list</code></dt>
 <dd>
-<div class="desc"><p>Gets the additional ports</p>
-<p>:return:
-list - ports</p></div>
+<div class="desc"><p>Get the list of additional network ports configured for this Network.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>list</code></dt>
+<dd>A list of additional port numbers.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; network = Network()
+&gt;&gt;&gt; ports = network.additional_ports
+&gt;&gt;&gt; print(f&quot;Additional ports: {ports}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network.py#L480-L487" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network.py#L675-L689" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def additional_ports(self):
-    &#34;&#34;&#34;Gets the additional ports
+def additional_ports(self) -&gt; list:
+    &#34;&#34;&#34;Get the list of additional network ports configured for this Network.
 
-    :return:
-        list - ports
+    Returns:
+        list: A list of additional port numbers.
+
+    Example:
+        &gt;&gt;&gt; network = Network()
+        &gt;&gt;&gt; ports = network.additional_ports
+        &gt;&gt;&gt; print(f&#34;Additional ports: {ports}&#34;)
+
     &#34;&#34;&#34;
     return self._port_range</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.network.Network.bind_open_ports"><code class="name">var <span class="ident">bind_open_ports</span></code></dt>
+<dt id="cvpysdk.network.Network.bind_open_ports"><code class="name">var <span class="ident">bind_open_ports</span> : bool</code></dt>
 <dd>
-<div class="desc"><p>Gets the value for bindOpenports only</p>
-<p>:return:
-boolean - bindOpenPortsOnly</p></div>
+<div class="desc"><p>Get the value indicating whether only open ports are bound.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>bool</code></dt>
+<dd>True if only open ports are bound; False otherwise.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; network = Network()
+&gt;&gt;&gt; is_bind_open = network.bind_open_ports
+&gt;&gt;&gt; print(f&quot;Bind only open ports: {is_bind_open}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network.py#L358-L365" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network.py#L501-L515" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def bind_open_ports(self):
-    &#34;&#34;&#34;Gets the value for bindOpenports only
+def bind_open_ports(self) -&gt; bool:
+    &#34;&#34;&#34;Get the value indicating whether only open ports are bound.
 
-    :return:
-        boolean - bindOpenPortsOnly
+    Returns:
+        bool: True if only open ports are bound; False otherwise.
+
+    Example:
+        &gt;&gt;&gt; network = Network()
+        &gt;&gt;&gt; is_bind_open = network.bind_open_ports
+        &gt;&gt;&gt; print(f&#34;Bind only open ports: {is_bind_open}&#34;)
+
     &#34;&#34;&#34;
     return self._bind_open_ports_only</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.network.Network.configure_network_settings"><code class="name">var <span class="ident">configure_network_settings</span></code></dt>
+<dt id="cvpysdk.network.Network.configure_network_settings"><code class="name">var <span class="ident">configure_network_settings</span> : bool</code></dt>
 <dd>
-<div class="desc"><p>Gets the value for configure firewall settings</p>
-<p>:return:
-boolean - configureFirewallSettings</p></div>
+<div class="desc"><p>Get the current value indicating whether firewall settings are configured.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>bool</code></dt>
+<dd>True if firewall settings are configured, False otherwise.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; network = Network()
+&gt;&gt;&gt; is_configured = network.configure_network_settings
+&gt;&gt;&gt; print(f&quot;Firewall settings configured: {is_configured}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network.py#L234-L241" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network.py#L271-L285" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def configure_network_settings(self):
-    &#34;&#34;&#34;Gets the value for configure firewall settings
+def configure_network_settings(self) -&gt; bool:
+    &#34;&#34;&#34;Get the current value indicating whether firewall settings are configured.
 
-    :return:
-        boolean - configureFirewallSettings
+    Returns:
+        bool: True if firewall settings are configured, False otherwise.
+
+    Example:
+        &gt;&gt;&gt; network = Network()
+        &gt;&gt;&gt; is_configured = network.configure_network_settings
+        &gt;&gt;&gt; print(f&#34;Firewall settings configured: {is_configured}&#34;)
+
     &#34;&#34;&#34;
     return self._config_network_settings</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.network.Network.force_ssl"><code class="name">var <span class="ident">force_ssl</span></code></dt>
+<dt id="cvpysdk.network.Network.force_ssl"><code class="name">var <span class="ident">force_ssl</span> : bool</code></dt>
 <dd>
-<div class="desc"><p>Gets the value for forceSSL</p>
-<p>:return:
-boolean - forceSSL</p></div>
+<div class="desc"><p>Get the current value of the forceSSL setting for the network.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>bool</code></dt>
+<dd>True if SSL is enforced for network communication, False otherwise.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; network = Network()
+&gt;&gt;&gt; is_ssl_forced = network.force_ssl
+&gt;&gt;&gt; print(f&quot;SSL enforced: {is_ssl_forced}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network.py#L304-L311" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network.py#L402-L416" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def force_ssl(self):
-    &#34;&#34;&#34;Gets the value for forceSSL
+def force_ssl(self) -&gt; bool:
+    &#34;&#34;&#34;Get the current value of the forceSSL setting for the network.
 
-    :return:
-        boolean - forceSSL
+    Returns:
+        bool: True if SSL is enforced for network communication, False otherwise.
+
+    Example:
+        &gt;&gt;&gt; network = Network()
+        &gt;&gt;&gt; is_ssl_forced = network.force_ssl
+        &gt;&gt;&gt; print(f&#34;SSL enforced: {is_ssl_forced}&#34;)
+
     &#34;&#34;&#34;
     return self._force_ssl</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.network.Network.incoming_connections"><code class="name">var <span class="ident">incoming_connections</span></code></dt>
+<dt id="cvpysdk.network.Network.incoming_connections"><code class="name">var <span class="ident">incoming_connections</span> : list</code></dt>
 <dd>
-<div class="desc"><p>Gets all the incoming connections on a client</p>
-<p>:return:
-list - incoming connections</p></div>
+<div class="desc"><p>Retrieve all incoming network connections on the client.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>list</code></dt>
+<dd>A list containing information about each incoming connection.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; network = Network()
+&gt;&gt;&gt; connections = network.incoming_connections
+&gt;&gt;&gt; print(f&quot;Number of incoming connections: {len(connections)}&quot;)
+&gt;&gt;&gt; # Each item in 'connections' represents an incoming connection
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network.py#L411-L424" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network.py#L599-L620" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def incoming_connections(self):
-    &#34;&#34;&#34;Gets all the incoming connections on a client
+def incoming_connections(self) -&gt; list:
+    &#34;&#34;&#34;Retrieve all incoming network connections on the client.
 
-    :return:
-        list - incoming connections
+    Returns:
+        list: A list containing information about each incoming connection.
+
+    Example:
+        &gt;&gt;&gt; network = Network()
+        &gt;&gt;&gt; connections = network.incoming_connections
+        &gt;&gt;&gt; print(f&#34;Number of incoming connections: {len(connections)}&#34;)
+        &gt;&gt;&gt; # Each item in &#39;connections&#39; represents an incoming connection
+
     &#34;&#34;&#34;
 
     for incoming_connection in self._restriction_to:
@@ -2012,62 +2516,105 @@ def incoming_connections(self):
     return self._restriction_to</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.network.Network.keep_alive_seconds"><code class="name">var <span class="ident">keep_alive_seconds</span></code></dt>
+<dt id="cvpysdk.network.Network.keep_alive_seconds"><code class="name">var <span class="ident">keep_alive_seconds</span> : int</code></dt>
 <dd>
-<div class="desc"><p>Gets the value set for keep alive</p>
-<p>:return:
-int - keepAliveSeconds</p></div>
+<div class="desc"><p>Get the configured keep-alive interval in seconds for the network.</p>
+<p>Returns
+-----=
+The keep-alive interval in seconds as an integer.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; network = Network()
+&gt;&gt;&gt; interval = network.keep_alive_seconds
+&gt;&gt;&gt; print(f&quot;Keep-alive interval: {interval} seconds&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network.py#L394-L401" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network.py#L567-L581" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def keep_alive_seconds(self):
-    &#34;&#34;&#34;Gets the value set for keep alive
+def keep_alive_seconds(self) -&gt; int:
+    &#34;&#34;&#34;Get the configured keep-alive interval in seconds for the network.
 
-    :return:
-        int - keepAliveSeconds
+    Returns:
+        The keep-alive interval in seconds as an integer.
+
+    Example:
+        &gt;&gt;&gt; network = Network()
+        &gt;&gt;&gt; interval = network.keep_alive_seconds
+        &gt;&gt;&gt; print(f&#34;Keep-alive interval: {interval} seconds&#34;)
+
     &#34;&#34;&#34;
     return self._keep_alive_seconds</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.network.Network.lockdown"><code class="name">var <span class="ident">lockdown</span></code></dt>
+<dt id="cvpysdk.network.Network.lockdown"><code class="name">var <span class="ident">lockdown</span> : bool</code></dt>
 <dd>
-<div class="desc"><p>Gets the value for lockdown</p>
-<p>:return:
-boolean - lockdown</p></div>
+<div class="desc"><p>Get the current lockdown status of the network.</p>
+<p>Returns
+-----=
+True if the network is in lockdown mode, False otherwise.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; network = Network()
+&gt;&gt;&gt; is_locked_down = network.lockdown  # Use dot notation for property access
+&gt;&gt;&gt; print(f&quot;Network lockdown status: {is_locked_down}&quot;)
+&gt;&gt;&gt; # Output: Network lockdown status: True or False
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network.py#L340-L347" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network.py#L467-L482" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def lockdown(self):
-    &#34;&#34;&#34;Gets the value for lockdown
+def lockdown(self) -&gt; bool:
+    &#34;&#34;&#34;Get the current lockdown status of the network.
 
-    :return:
-        boolean - lockdown
+    Returns:
+        True if the network is in lockdown mode, False otherwise.
+
+    Example:
+        &gt;&gt;&gt; network = Network()
+        &gt;&gt;&gt; is_locked_down = network.lockdown  # Use dot notation for property access
+        &gt;&gt;&gt; print(f&#34;Network lockdown status: {is_locked_down}&#34;)
+        &gt;&gt;&gt; # Output: Network lockdown status: True or False
+
     &#34;&#34;&#34;
     return self._lockdown</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.network.Network.outgoing_routes"><code class="name">var <span class="ident">outgoing_routes</span></code></dt>
+<dt id="cvpysdk.network.Network.outgoing_routes"><code class="name">var <span class="ident">outgoing_routes</span> : list</code></dt>
 <dd>
-<div class="desc"><p>Gets the list of all outgoing routes</p>
-<p>:return:
-list - outgoing routes</p></div>
+<div class="desc"><p>Retrieve the list of all outgoing network routes.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>list</code></dt>
+<dd>A list containing all outgoing routes configured for the network.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; network = Network()
+&gt;&gt;&gt; routes = network.outgoing_routes
+&gt;&gt;&gt; print(f&quot;Outgoing routes: {routes}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network.py#L529-L549" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network.py#L737-L763" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def outgoing_routes(self):
-    &#34;&#34;&#34;Gets the list of all outgoing routes
+def outgoing_routes(self) -&gt; list:
+    &#34;&#34;&#34;Retrieve the list of all outgoing network routes.
 
-        :return:
-            list - outgoing routes
+    Returns:
+        list: A list containing all outgoing routes configured for the network.
+
+    Example:
+        &gt;&gt;&gt; network = Network()
+        &gt;&gt;&gt; routes = network.outgoing_routes
+        &gt;&gt;&gt; print(f&#34;Outgoing routes: {routes}&#34;)
 
     &#34;&#34;&#34;
 
@@ -2085,62 +2632,110 @@ def outgoing_routes(self):
     return self._network_outgoing_routes</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.network.Network.proxy"><code class="name">var <span class="ident">proxy</span></code></dt>
+<dt id="cvpysdk.network.Network.proxy"><code class="name">var <span class="ident">proxy</span> : bool</code></dt>
 <dd>
-<div class="desc"><p>Gets the value for isDMZ</p>
-<p>:return:
-boolean - isDMZ</p></div>
+<div class="desc"><p>Get the value indicating whether the network is configured as a DMZ proxy.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>bool</code></dt>
+<dd>True if the network is a DMZ proxy, False otherwise.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; network = Network()
+&gt;&gt;&gt; is_dmz = network.proxy  # Use dot notation for property access
+&gt;&gt;&gt; print(f&quot;Is DMZ proxy: {is_dmz}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network.py#L376-L383" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network.py#L534-L548" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def proxy(self):
-    &#34;&#34;&#34;Gets the value for isDMZ
+def proxy(self) -&gt; bool:
+    &#34;&#34;&#34;Get the value indicating whether the network is configured as a DMZ proxy.
 
-    :return:
-        boolean - isDMZ
+    Returns:
+        bool: True if the network is a DMZ proxy, False otherwise.
+
+    Example:
+        &gt;&gt;&gt; network = Network()
+        &gt;&gt;&gt; is_dmz = network.proxy  # Use dot notation for property access
+        &gt;&gt;&gt; print(f&#34;Is DMZ proxy: {is_dmz}&#34;)
+
     &#34;&#34;&#34;
     return self._is_dmz</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.network.Network.roaming_client"><code class="name">var <span class="ident">roaming_client</span></code></dt>
+<dt id="cvpysdk.network.Network.roaming_client"><code class="name">var <span class="ident">roaming_client</span> : bool</code></dt>
 <dd>
-<div class="desc"><p>Gets the value for isRoamingClient</p>
-<p>:return:
-boolen - isRoamingClient</p></div>
+<div class="desc"><p>Get the roaming client status for the network.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>bool</code></dt>
+<dd>True if the network is configured as a roaming client, False otherwise.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; network = Network()
+&gt;&gt;&gt; is_roaming = network.roaming_client
+&gt;&gt;&gt; print(f&quot;Roaming client enabled: {is_roaming}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network.py#L270-L277" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network.py#L337-L351" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def roaming_client(self):
-    &#34;&#34;&#34;Gets the value for isRoamingClient
+def roaming_client(self) -&gt; bool:
+    &#34;&#34;&#34;Get the roaming client status for the network.
 
-    :return:
-        boolen - isRoamingClient
+    Returns:
+        bool: True if the network is configured as a roaming client, False otherwise.
+
+    Example:
+        &gt;&gt;&gt; network = Network()
+        &gt;&gt;&gt; is_roaming = network.roaming_client
+        &gt;&gt;&gt; print(f&#34;Roaming client enabled: {is_roaming}&#34;)
+
     &#34;&#34;&#34;
     return self._is_roaming_client</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.network.Network.tppm_settings"><code class="name">var <span class="ident">tppm_settings</span></code></dt>
+<dt id="cvpysdk.network.Network.tppm_settings"><code class="name">var <span class="ident">tppm_settings</span> : list</code></dt>
 <dd>
-<div class="desc"><p>Gets the list of tppm settings on a client</p>
-<p>:return:
-list - tppm settings</p></div>
+<div class="desc"><p>Retrieve the list of TPPM (Third Party Patch Management) settings configured on the client.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>list</code></dt>
+<dd>A list containing the TPPM settings for the client.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; network = Network()
+&gt;&gt;&gt; settings = network.tppm_settings
+&gt;&gt;&gt; print(f&quot;TPPM settings: {settings}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network.py#L692-L704" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network.py#L905-L924" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def tppm_settings(self):
-    &#34;&#34;&#34;Gets the list of tppm settings on a client
+def tppm_settings(self) -&gt; list:
+    &#34;&#34;&#34;Retrieve the list of TPPM (Third Party Patch Management) settings configured on the client.
 
-    :return:
-        list - tppm settings
+    Returns:
+        list: A list containing the TPPM settings for the client.
+
+    Example:
+        &gt;&gt;&gt; network = Network()
+        &gt;&gt;&gt; settings = network.tppm_settings
+        &gt;&gt;&gt; print(f&#34;TPPM settings: {settings}&#34;)
+
     &#34;&#34;&#34;
 
     for tppm_setting in self._tppm_settings:
@@ -2150,62 +2745,104 @@ def tppm_settings(self):
     return self._tppm_settings</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.network.Network.trivial_config"><code class="name">var <span class="ident">trivial_config</span></code></dt>
+<dt id="cvpysdk.network.Network.trivial_config"><code class="name">var <span class="ident">trivial_config</span> : bool</code></dt>
 <dd>
-<div class="desc"><p>Gets the value for isTrivialConfig</p>
-<p>:return:
-boolean - isTrivialConfig</p></div>
+<div class="desc"><p>Get the value indicating whether the network configuration is trivial.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>bool</code></dt>
+<dd>True if the network configuration is considered trivial, False otherwise.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; network = Network()
+&gt;&gt;&gt; is_trivial = network.trivial_config  # Use dot notation for property access
+&gt;&gt;&gt; print(f&quot;Is network configuration trivial? {is_trivial}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network.py#L252-L259" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network.py#L304-L318" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def trivial_config(self):
-    &#34;&#34;&#34;Gets the value for isTrivialConfig
+def trivial_config(self) -&gt; bool:
+    &#34;&#34;&#34;Get the value indicating whether the network configuration is trivial.
 
-    :return:
-        boolean - isTrivialConfig
+    Returns:
+        bool: True if the network configuration is considered trivial, False otherwise.
+
+    Example:
+        &gt;&gt;&gt; network = Network()
+        &gt;&gt;&gt; is_trivial = network.trivial_config  # Use dot notation for property access
+        &gt;&gt;&gt; print(f&#34;Is network configuration trivial? {is_trivial}&#34;)
+
     &#34;&#34;&#34;
     return self._is_trivial_config</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.network.Network.tunnel_connection_port"><code class="name">var <span class="ident">tunnel_connection_port</span></code></dt>
+<dt id="cvpysdk.network.Network.tunnel_connection_port"><code class="name">var <span class="ident">tunnel_connection_port</span> : int</code></dt>
 <dd>
-<div class="desc"><p>Gets the value for tunnel port on the client/client group</p>
-<p>:return:
-int - tunnelConnectionPort</p></div>
+<div class="desc"><p>Get the tunnel connection port value for the client or client group.</p>
+<p>Returns
+-----=
+The tunnel connection port as an integer.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; network = Network()
+&gt;&gt;&gt; port = network.tunnel_connection_port
+&gt;&gt;&gt; print(f&quot;Tunnel connection port: {port}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network.py#L287-L294" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network.py#L370-L384" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def tunnel_connection_port(self):
-    &#34;&#34;&#34;Gets the value for tunnel port on the client/client group
+def tunnel_connection_port(self) -&gt; int:
+    &#34;&#34;&#34;Get the tunnel connection port value for the client or client group.
 
-    :return:
-        int - tunnelConnectionPort
+    Returns:
+        The tunnel connection port as an integer.
+
+    Example:
+        &gt;&gt;&gt; network = Network()
+        &gt;&gt;&gt; port = network.tunnel_connection_port
+        &gt;&gt;&gt; print(f&#34;Tunnel connection port: {port}&#34;)
+
     &#34;&#34;&#34;
     return self._tunnel_connection_port</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.network.Network.tunnel_init_seconds"><code class="name">var <span class="ident">tunnel_init_seconds</span></code></dt>
+<dt id="cvpysdk.network.Network.tunnel_init_seconds"><code class="name">var <span class="ident">tunnel_init_seconds</span> : int</code></dt>
 <dd>
-<div class="desc"><p>Gets the tunnel init seconds</p>
-<p>:return:
-int - tunnelInitSeconds</p></div>
+<div class="desc"><p>Get the number of seconds used for tunnel initialization.</p>
+<p>Returns
+-----=
+The tunnel initialization time in seconds as an integer.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; network = Network()
+&gt;&gt;&gt; init_time = network.tunnel_init_seconds
+&gt;&gt;&gt; print(f&quot;Tunnel initialization time: {init_time} seconds&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network.py#L322-L329" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network.py#L435-L449" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def tunnel_init_seconds(self):
-    &#34;&#34;&#34;Gets the tunnel init seconds
+def tunnel_init_seconds(self) -&gt; int:
+    &#34;&#34;&#34;Get the number of seconds used for tunnel initialization.
 
-    :return:
-        int - tunnelInitSeconds
+    Returns:
+        The tunnel initialization time in seconds as an integer.
+
+    Example:
+        &gt;&gt;&gt; network = Network()
+        &gt;&gt;&gt; init_time = network.tunnel_init_seconds
+        &gt;&gt;&gt; print(f&#34;Tunnel initialization time: {init_time} seconds&#34;)
+
     &#34;&#34;&#34;
     return self._tunnel_init_seconds</code></pre>
 </details>
@@ -2214,59 +2851,75 @@ def tunnel_init_seconds(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.network.Network.set_additional_ports"><code class="name flex">
-<span>def <span class="ident">set_additional_ports</span></span>(<span>self, ports, tunnel_port=8403)</span>
+<span>def <span class="ident">set_additional_ports</span></span>(<span>self, ports: list[dict], tunnel_port: int = 8403) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Sets additional incoming ports and tunnel port with the values provided as parameter</p>
-<h2 id="args">Args</h2>
-<p>tunnel_port (int) &ndash; value to be set for tunnel port
-ports(list)
-&ndash; list of ports should be a list of dict containing
-start port and end port
-[{'startPort':val,'endPort':val}]
+<div class="desc"><p>Set additional incoming ports and the tunnel port for the network.</p>
+<p>This method configures additional incoming port ranges and sets the tunnel port
+to the specified value. The <code>ports</code> parameter should be a list of dictionaries,
+each containing 'startPort' and 'endPort' keys to define port ranges.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>ports</code></strong></dt>
+<dd>A list of dictionaries specifying port ranges. Each dictionary must have
+'startPort' and 'endPort' integer keys.
 Example:
 [
-{
-'startPort': 1024,
-'endPort': 1030
-},
-{
-'startPort': 2000,
-'endPort':4000
-}
-]</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if the required key is missing in the input value passed</p></div>
+{'startPort': 1024, 'endPort': 1030},
+{'startPort': 2000, 'endPort': 4000}
+]</dd>
+<dt><strong><code>tunnel_port</code></strong></dt>
+<dd>The tunnel port to set (default is 8403).</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If any required key is missing in the input dictionaries.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; network = Network()
+&gt;&gt;&gt; port_ranges = [
+...     {'startPort': 1024, 'endPort': 1030},
+...     {'startPort': 2000, 'endPort': 4000}
+... ]
+&gt;&gt;&gt; network.set_additional_ports(port_ranges, tunnel_port=8500)
+&gt;&gt;&gt; # The network is now configured with the specified port ranges and tunnel port
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network.py#L489-L527" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network.py#L691-L735" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def set_additional_ports(self, ports, tunnel_port=8403):
-    &#34;&#34;&#34;Sets additional incoming ports and tunnel port with the values provided as parameter
+<pre><code class="python">def set_additional_ports(self, ports: list[dict], tunnel_port: int = 8403) -&gt; None:
+    &#34;&#34;&#34;Set additional incoming ports and the tunnel port for the network.
 
-        Args:
-            tunnel_port (int) -- value to be set for tunnel port
-            ports(list)  -- list of ports should be a list of dict containing
-            start port and end port
-            [{&#39;startPort&#39;:val,&#39;endPort&#39;:val}]
+    This method configures additional incoming port ranges and sets the tunnel port
+    to the specified value. The `ports` parameter should be a list of dictionaries,
+    each containing &#39;startPort&#39; and &#39;endPort&#39; keys to define port ranges.
 
-        Example:
-        [
-            {
-            &#39;startPort&#39;: 1024,
-            &#39;endPort&#39;: 1030
-            },
-            {
-            &#39;startPort&#39;: 2000,
-            &#39;endPort&#39;:4000
-            }
-        ]
+    Args:
+        ports: A list of dictionaries specifying port ranges. Each dictionary must have
+            &#39;startPort&#39; and &#39;endPort&#39; integer keys.
+            Example:
+                [
+                    {&#39;startPort&#39;: 1024, &#39;endPort&#39;: 1030},
+                    {&#39;startPort&#39;: 2000, &#39;endPort&#39;: 4000}
+                ]
+        tunnel_port: The tunnel port to set (default is 8403).
 
-        Raises:
-            SDKException:
-                if the required key is missing in the input value passed
+    Raises:
+        SDKException: If any required key is missing in the input dictionaries.
+
+    Example:
+        &gt;&gt;&gt; network = Network()
+        &gt;&gt;&gt; port_ranges = [
+        ...     {&#39;startPort&#39;: 1024, &#39;endPort&#39;: 1030},
+        ...     {&#39;startPort&#39;: 2000, &#39;endPort&#39;: 4000}
+        ... ]
+        &gt;&gt;&gt; network.set_additional_ports(port_ranges, tunnel_port=8500)
+        &gt;&gt;&gt; # The network is now configured with the specified port ranges and tunnel port
+
     &#34;&#34;&#34;
     try:
         self._tunnel_connection_port = tunnel_port
@@ -2285,64 +2938,65 @@ if the required key is missing in the input value passed</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.network.Network.set_incoming_connections"><code class="name flex">
-<span>def <span class="ident">set_incoming_connections</span></span>(<span>self, incoming_connections)</span>
+<span>def <span class="ident">set_incoming_connections</span></span>(<span>self, incoming_connections: list[dict]) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Sets the incoming connections on a client/client group with the list of values provided</p>
-<p>Args:
-incoming_connections(list)
-&ndash; list of incoming connections should be
-a list of dict containing incoming connection type, entity name and entity type.
-[{'state':val,'entity':val,'isClient':val}]</p>
-<pre><code>Example:
-[
-    {
-    'state': 'RESTRICTED',
-    'entity': 'centOS',
-    'isClient' : True
-    },
-
-    {
-    'state': 'BLOCKED',
-    'entity':  'Edge Clients',
-    'isClient' : False
-    }
-]
-</code></pre>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if the required key is missing in the input value passed</p></div>
+<div class="desc"><p>Set the incoming connections for a client or client group.</p>
+<p>This method configures the allowed incoming connection states for specified entities,
+such as clients or client groups, using a list of dictionaries. Each dictionary should
+specify the connection state, the entity name, and whether the entity is a client.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>incoming_connections</code></strong></dt>
+<dd>A list of dictionaries, each containing:
+- 'state' (str): The connection state, e.g., 'RESTRICTED' or 'BLOCKED'.
+- 'entity' (str): The name of the client or client group.
+- 'isClient' (bool): True if the entity is a client, False if it is a client group.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If a required key is missing in any of the input dictionaries.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; network = Network()
+&gt;&gt;&gt; incoming = [
+...     {'state': 'RESTRICTED', 'entity': 'centOS', 'isClient': True},
+...     {'state': 'BLOCKED', 'entity': 'Edge Clients', 'isClient': False}
+... ]
+&gt;&gt;&gt; network.set_incoming_connections(incoming)
+&gt;&gt;&gt; print(&quot;Incoming connections updated successfully.&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network.py#L426-L478" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network.py#L622-L673" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def set_incoming_connections(self, incoming_connections):
-    &#34;&#34;&#34;Sets the incoming connections on a client/client group with the list of values provided
+<pre><code class="python">def set_incoming_connections(self, incoming_connections: list[dict]) -&gt; None:
+    &#34;&#34;&#34;Set the incoming connections for a client or client group.
 
-     Args:
-            incoming_connections(list)  -- list of incoming connections should be
-            a list of dict containing incoming connection type, entity name and entity type.
-            [{&#39;state&#39;:val,&#39;entity&#39;:val,&#39;isClient&#39;:val}]
+    This method configures the allowed incoming connection states for specified entities,
+    such as clients or client groups, using a list of dictionaries. Each dictionary should
+    specify the connection state, the entity name, and whether the entity is a client.
 
-        Example:
-        [
-            {
-            &#39;state&#39;: &#39;RESTRICTED&#39;,
-            &#39;entity&#39;: &#39;centOS&#39;,
-            &#39;isClient&#39; : True
-            },
-
-            {
-            &#39;state&#39;: &#39;BLOCKED&#39;,
-            &#39;entity&#39;:  &#39;Edge Clients&#39;,
-            &#39;isClient&#39; : False
-            }
-        ]
+    Args:
+        incoming_connections: A list of dictionaries, each containing:
+            - &#39;state&#39; (str): The connection state, e.g., &#39;RESTRICTED&#39; or &#39;BLOCKED&#39;.
+            - &#39;entity&#39; (str): The name of the client or client group.
+            - &#39;isClient&#39; (bool): True if the entity is a client, False if it is a client group.
 
     Raises:
-            SDKException:
-                if the required key is missing in the input value passed
+        SDKException: If a required key is missing in any of the input dictionaries.
+
+    Example:
+        &gt;&gt;&gt; network = Network()
+        &gt;&gt;&gt; incoming = [
+        ...     {&#39;state&#39;: &#39;RESTRICTED&#39;, &#39;entity&#39;: &#39;centOS&#39;, &#39;isClient&#39;: True},
+        ...     {&#39;state&#39;: &#39;BLOCKED&#39;, &#39;entity&#39;: &#39;Edge Clients&#39;, &#39;isClient&#39;: False}
+        ... ]
+        &gt;&gt;&gt; network.set_incoming_connections(incoming)
+        &gt;&gt;&gt; print(&#34;Incoming connections updated successfully.&#34;)
 
     &#34;&#34;&#34;
     try:
@@ -2373,156 +3027,158 @@ if the required key is missing in the input value passed</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.network.Network.set_outgoing_routes"><code class="name flex">
-<span>def <span class="ident">set_outgoing_routes</span></span>(<span>self, outgoing_routes)</span>
+<span>def <span class="ident">set_outgoing_routes</span></span>(<span>self, outgoing_routes: list[dict]) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Sets outgoing routes on the client with the list of values provided as parameter</p>
-<h2 id="args">Args</h2>
-<p>outgoing_routes(list)
-&ndash; list of outgoing routes should be a list of dict
-containing route type, entity name, entity type, streams, gateway host,
-gateway port, tunnel connection protocol and remote proxy based on route type.</p>
-<p>For routeType: DIRECT
-[{'routeType':'DIRECT',
-'remoteEntity':val ,
-'streams':val,
-'isClient':val,
-'forceAllDataTraffic': True,
-'connectionProtocol' : 0}]</p>
-<p>For routeType: VIA_GATEWAY
-[{'routeType':'VIA_GATEWAY',
-'remoteEntity':val,
-'streams':val,
-'gatewayPort':val,
-'gatewayHost': val,
-'isClient':val,
-'forceAllDataTraffic': False,
-'connectionProtocol' : 3}]</p>
-<p>For routeType: VIA_PROXY
-[{'routeType':'VIA_PROXY',
-'remoteEntity':val,
-'remoteProxy':val,
-'isClient':val}]</p>
+<div class="desc"><p>Set outgoing routes on the client using the provided list of route definitions.</p>
+<p>Each outgoing route should be specified as a dictionary with required keys depending on the route type.
+Supported route types are 'DIRECT', 'VIA_GATEWAY', and 'VIA_PROXY'. The structure of each dictionary
+varies based on the route type, as described below.</p>
 <dl>
-<dt>Valid values for connectionProtocol:</dt>
-<dt><strong><code>0</code></strong></dt>
-<dd>'HTTP',</dd>
-<dt><strong><code>1</code></strong></dt>
-<dd>'HTTPS',</dd>
-<dt><strong><code>2</code></strong></dt>
-<dd>'HTTPS_AuthOnly',</dd>
-<dt><strong><code>3</code></strong></dt>
-<dd>'RAW_PROTOCOL'</dd>
-</dl>
-<p>Example:
-[
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>outgoing_routes</code></strong></dt>
+<dd>A list of dictionaries, each representing an outgoing route configuration.
+- For routeType 'DIRECT':
 {
 'routeType': 'DIRECT',
-'remoteEntity':'Testcs' ,
-'streams': 1,
-'isClient': True,
-'forceAllDataTraffic' : True
-'connectionProtocol' : 0
-},
+'remoteEntity': <str>,
+'streams': <int>,
+'isClient': <bool>,
+'forceAllDataTraffic': <bool>,
+'connectionProtocol': <int>
+# 0: HTTP, 1: HTTPS, 2: HTTPS_AuthOnly, 3: RAW_PROTOCOL
+}
+- For routeType 'VIA_GATEWAY':
 {
 'routeType': 'VIA_GATEWAY',
-'remoteEntity': 'centOS',
-'streams': 2,
-'gatewayPort': 443,
-'gatewayHost': '1.2.3.4',
-'isClient': True,
-'forceAllDataTraffic' :False
-'connectionProtocol' : 1
-},
+'remoteEntity': <str>,
+'streams': <int>,
+'gatewayPort': <int>,
+'gatewayHost': <str>,
+'isClient': <bool>,
+'forceAllDataTraffic': <bool>,
+'connectionProtocol': <int>
+}
+- For routeType 'VIA_PROXY':
 {
 'routeType': 'VIA_PROXY',
-'remoteEntity': 'Laptop Clients',
-'remoteProxy': 'TemplateRHEL65_4',
-'isClient': False
-}
-]</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if routeType is invalid in the input value passed</p>
-<pre><code>if the required key is missing in the input value passed
+'remoteEntity': <str>,
+'remoteProxy': <str>,
+'isClient': <bool>
+}</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If an invalid routeType is provided or if required keys are missing in any route dictionary.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; routes = [
+...     {
+...         'routeType': 'DIRECT',
+...         'remoteEntity': 'Testcs',
+...         'streams': 1,
+...         'isClient': True,
+...         'forceAllDataTraffic': True,
+...         'connectionProtocol': 0
+...     },
+...     {
+...         'routeType': 'VIA_GATEWAY',
+...         'remoteEntity': 'centOS',
+...         'streams': 2,
+...         'gatewayPort': 443,
+...         'gatewayHost': '1.2.3.4',
+...         'isClient': True,
+...         'forceAllDataTraffic': False,
+...         'connectionProtocol': 1
+...     },
+...     {
+...         'routeType': 'VIA_PROXY',
+...         'remoteEntity': 'Laptop Clients',
+...         'remoteProxy': 'TemplateRHEL65_4',
+...         'isClient': False
+...     }
+... ]
+&gt;&gt;&gt; network = Network()
+&gt;&gt;&gt; network.set_outgoing_routes(routes)
+&gt;&gt;&gt; print(&quot;Outgoing routes set successfully.&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network.py#L551-L690" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network.py#L765-L903" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def set_outgoing_routes(self, outgoing_routes):
-    &#34;&#34;&#34;Sets outgoing routes on the client with the list of values provided as parameter
+<pre><code class="python">def set_outgoing_routes(self, outgoing_routes: list[dict]) -&gt; None:
+    &#34;&#34;&#34;Set outgoing routes on the client using the provided list of route definitions.
 
-        Args:
-            outgoing_routes(list)  -- list of outgoing routes should be a list of dict
-            containing route type, entity name, entity type, streams, gateway host,
-            gateway port, tunnel connection protocol and remote proxy based on route type.
+    Each outgoing route should be specified as a dictionary with required keys depending on the route type.
+    Supported route types are &#39;DIRECT&#39;, &#39;VIA_GATEWAY&#39;, and &#39;VIA_PROXY&#39;. The structure of each dictionary
+    varies based on the route type, as described below.
 
-            For routeType: DIRECT
-            [{&#39;routeType&#39;:&#39;DIRECT&#39;,
-            &#39;remoteEntity&#39;:val ,
-            &#39;streams&#39;:val,
-            &#39;isClient&#39;:val,
-            &#39;forceAllDataTraffic&#39;: True,
-            &#39;connectionProtocol&#39; : 0}]
+    Args:
+        outgoing_routes: A list of dictionaries, each representing an outgoing route configuration.
+            - For routeType &#39;DIRECT&#39;:
+                {
+                    &#39;routeType&#39;: &#39;DIRECT&#39;,
+                    &#39;remoteEntity&#39;: &lt;str&gt;,
+                    &#39;streams&#39;: &lt;int&gt;,
+                    &#39;isClient&#39;: &lt;bool&gt;,
+                    &#39;forceAllDataTraffic&#39;: &lt;bool&gt;,
+                    &#39;connectionProtocol&#39;: &lt;int&gt;  # 0: HTTP, 1: HTTPS, 2: HTTPS_AuthOnly, 3: RAW_PROTOCOL
+                }
+            - For routeType &#39;VIA_GATEWAY&#39;:
+                {
+                    &#39;routeType&#39;: &#39;VIA_GATEWAY&#39;,
+                    &#39;remoteEntity&#39;: &lt;str&gt;,
+                    &#39;streams&#39;: &lt;int&gt;,
+                    &#39;gatewayPort&#39;: &lt;int&gt;,
+                    &#39;gatewayHost&#39;: &lt;str&gt;,
+                    &#39;isClient&#39;: &lt;bool&gt;,
+                    &#39;forceAllDataTraffic&#39;: &lt;bool&gt;,
+                    &#39;connectionProtocol&#39;: &lt;int&gt;
+                }
+            - For routeType &#39;VIA_PROXY&#39;:
+                {
+                    &#39;routeType&#39;: &#39;VIA_PROXY&#39;,
+                    &#39;remoteEntity&#39;: &lt;str&gt;,
+                    &#39;remoteProxy&#39;: &lt;str&gt;,
+                    &#39;isClient&#39;: &lt;bool&gt;
+                }
 
-            For routeType: VIA_GATEWAY
-            [{&#39;routeType&#39;:&#39;VIA_GATEWAY&#39;,
-            &#39;remoteEntity&#39;:val,
-            &#39;streams&#39;:val,
-            &#39;gatewayPort&#39;:val,
-            &#39;gatewayHost&#39;: val,
-            &#39;isClient&#39;:val,
-            &#39;forceAllDataTraffic&#39;: False,
-            &#39;connectionProtocol&#39; : 3}]
+    Raises:
+        SDKException: If an invalid routeType is provided or if required keys are missing in any route dictionary.
 
-            For routeType: VIA_PROXY
-            [{&#39;routeType&#39;:&#39;VIA_PROXY&#39;,
-            &#39;remoteEntity&#39;:val,
-            &#39;remoteProxy&#39;:val,
-            &#39;isClient&#39;:val}]
-
-
-            Valid values for connectionProtocol:
-            0: &#39;HTTP&#39;,
-            1: &#39;HTTPS&#39;,
-            2: &#39;HTTPS_AuthOnly&#39;,
-            3: &#39;RAW_PROTOCOL&#39;
-
-        Example:
-        [
-            {
-            &#39;routeType&#39;: &#39;DIRECT&#39;,
-            &#39;remoteEntity&#39;:&#39;Testcs&#39; ,
-            &#39;streams&#39;: 1,
-            &#39;isClient&#39;: True,
-            &#39;forceAllDataTraffic&#39; : True
-            &#39;connectionProtocol&#39; : 0
-            },
-            {
-            &#39;routeType&#39;: &#39;VIA_GATEWAY&#39;,
-            &#39;remoteEntity&#39;: &#39;centOS&#39;,
-            &#39;streams&#39;: 2,
-            &#39;gatewayPort&#39;: 443,
-            &#39;gatewayHost&#39;: &#39;1.2.3.4&#39;,
-            &#39;isClient&#39;: True,
-            &#39;forceAllDataTraffic&#39; :False
-            &#39;connectionProtocol&#39; : 1
-            },
-            {
-            &#39;routeType&#39;: &#39;VIA_PROXY&#39;,
-            &#39;remoteEntity&#39;: &#39;Laptop Clients&#39;,
-            &#39;remoteProxy&#39;: &#39;TemplateRHEL65_4&#39;,
-            &#39;isClient&#39;: False
-            }
-        ]
-
-        Raises:
-            SDKException:
-                if routeType is invalid in the input value passed
-
-                if the required key is missing in the input value passed
+    Example:
+        &gt;&gt;&gt; routes = [
+        ...     {
+        ...         &#39;routeType&#39;: &#39;DIRECT&#39;,
+        ...         &#39;remoteEntity&#39;: &#39;Testcs&#39;,
+        ...         &#39;streams&#39;: 1,
+        ...         &#39;isClient&#39;: True,
+        ...         &#39;forceAllDataTraffic&#39;: True,
+        ...         &#39;connectionProtocol&#39;: 0
+        ...     },
+        ...     {
+        ...         &#39;routeType&#39;: &#39;VIA_GATEWAY&#39;,
+        ...         &#39;remoteEntity&#39;: &#39;centOS&#39;,
+        ...         &#39;streams&#39;: 2,
+        ...         &#39;gatewayPort&#39;: 443,
+        ...         &#39;gatewayHost&#39;: &#39;1.2.3.4&#39;,
+        ...         &#39;isClient&#39;: True,
+        ...         &#39;forceAllDataTraffic&#39;: False,
+        ...         &#39;connectionProtocol&#39;: 1
+        ...     },
+        ...     {
+        ...         &#39;routeType&#39;: &#39;VIA_PROXY&#39;,
+        ...         &#39;remoteEntity&#39;: &#39;Laptop Clients&#39;,
+        ...         &#39;remoteProxy&#39;: &#39;TemplateRHEL65_4&#39;,
+        ...         &#39;isClient&#39;: False
+        ...     }
+        ... ]
+        &gt;&gt;&gt; network = Network()
+        &gt;&gt;&gt; network.set_outgoing_routes(routes)
+        &gt;&gt;&gt; print(&#34;Outgoing routes set successfully.&#34;)
 
     &#34;&#34;&#34;
 
@@ -2594,83 +3250,108 @@ if routeType is invalid in the input value passed</p>
 </details>
 </dd>
 <dt id="cvpysdk.network.Network.set_tppm_settings"><code class="name flex">
-<span>def <span class="ident">set_tppm_settings</span></span>(<span>self, tppm_settings)</span>
+<span>def <span class="ident">set_tppm_settings</span></span>(<span>self, tppm_settings: list[dict]) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Sets tppm on the client with the list of values provided as parameter</p>
-<p>Note:
-This is supported only on client level</p>
-<h2 id="args">Args</h2>
-<p>tppm_settings(list)
-&ndash; list of tppm settings should be a list of dict containing
-tppm type, port number and proxy entity
-[{'tppmType':val, 'portNumber':val, 'proxyEntity':val}]</p>
-<p>Valid values for tppmType:
-1. WEB_SERVER_FOR_IIS_SERVER
-2. COMMSERVE
-3. REPORTS
-4. CUSTOM_REPORT_ENGINE
-Example:
+<div class="desc"><p>Set TPPM (Third Party Proxy Management) settings on the client.</p>
+<p>This method configures TPPM settings for the client using the provided list of settings.
+Each setting should be a dictionary containing the TPPM type, port number, and proxy entity.</p>
+<p>Note
+-----=
+This operation is supported only at the client level.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>tppm_settings</code></strong></dt>
+<dd>
+<p>A list of dictionaries, each specifying a TPPM configuration.
+Each dictionary must contain the following keys:
+- 'tppmType': The type of TPPM. Valid values are:
+1. 'WEB_SERVER_FOR_IIS_SERVER'
+2. 'COMMSERVE'
+3. 'REPORTS'
+4. 'CUSTOM_REPORT_ENGINE'
+- 'portNumber': The port number to use (int).
+- 'proxyEntity': The proxy entity name (str).</p>
+<p>Example:
 [
 {
 'tppmType': 'WEB_SERVER_FOR_IIS_SERVER',
-'portNumber':9999,
-'proxyEntity' : 'shezavm3'
-},</p>
-<pre><code>{
+'portNumber': 9999,
+'proxyEntity': 'shezavm3'
+},
+{
 'tppmType': 'REPORTS',
-'portNumber':8888,
-'proxyEntity' : 'shezavm11'
+'portNumber': 8888,
+'proxyEntity': 'shezavm11'
 }
-</code></pre>
-<p>]</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if tppmType is invalid in the input value passed</p>
-<pre><code>if the required key is missing in the input value passed
+]</p>
+</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If an invalid 'tppmType' is provided or if any required key is missing in a setting.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; tppm_settings = [
+...     {'tppmType': 'COMMSERVE', 'portNumber': 8080, 'proxyEntity': 'proxy1'},
+...     {'tppmType': 'REPORTS', 'portNumber': 9090, 'proxyEntity': 'proxy2'}
+... ]
+&gt;&gt;&gt; network = Network()
+&gt;&gt;&gt; network.set_tppm_settings(tppm_settings)
+&gt;&gt;&gt; print(&quot;TPPM settings applied successfully.&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/network.py#L706-L771" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/network.py#L926-L1000" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def set_tppm_settings(self, tppm_settings):
-    &#34;&#34;&#34;Sets tppm on the client with the list of values provided as parameter
+<pre><code class="python">def set_tppm_settings(self, tppm_settings: list[dict]) -&gt; None:
+    &#34;&#34;&#34;Set TPPM (Third Party Proxy Management) settings on the client.
 
+    This method configures TPPM settings for the client using the provided list of settings.
+    Each setting should be a dictionary containing the TPPM type, port number, and proxy entity.
 
-        Note:  This is supported only on client level
+    Note:
+        This operation is supported only at the client level.
 
-        Args:
-            tppm_settings(list)  -- list of tppm settings should be a list of dict containing
-            tppm type, port number and proxy entity
-            [{&#39;tppmType&#39;:val, &#39;portNumber&#39;:val, &#39;proxyEntity&#39;:val}]
+    Args:
+        tppm_settings: A list of dictionaries, each specifying a TPPM configuration.
+            Each dictionary must contain the following keys:
+                - &#39;tppmType&#39;: The type of TPPM. Valid values are:
+                    1. &#39;WEB_SERVER_FOR_IIS_SERVER&#39;
+                    2. &#39;COMMSERVE&#39;
+                    3. &#39;REPORTS&#39;
+                    4. &#39;CUSTOM_REPORT_ENGINE&#39;
+                - &#39;portNumber&#39;: The port number to use (int).
+                - &#39;proxyEntity&#39;: The proxy entity name (str).
 
-            Valid values for tppmType:
-            1. WEB_SERVER_FOR_IIS_SERVER
-            2. COMMSERVE
-            3. REPORTS
-            4. CUSTOM_REPORT_ENGINE
+            Example:
+                [
+                    {
+                        &#39;tppmType&#39;: &#39;WEB_SERVER_FOR_IIS_SERVER&#39;,
+                        &#39;portNumber&#39;: 9999,
+                        &#39;proxyEntity&#39;: &#39;shezavm3&#39;
+                    },
+                    {
+                        &#39;tppmType&#39;: &#39;REPORTS&#39;,
+                        &#39;portNumber&#39;: 8888,
+                        &#39;proxyEntity&#39;: &#39;shezavm11&#39;
+                    }
+                ]
 
-        Example:
-        [
-            {
-            &#39;tppmType&#39;: &#39;WEB_SERVER_FOR_IIS_SERVER&#39;,
-            &#39;portNumber&#39;:9999,
-            &#39;proxyEntity&#39; : &#39;shezavm3&#39;
-            },
+    Raises:
+        SDKException: If an invalid &#39;tppmType&#39; is provided or if any required key is missing in a setting.
 
-            {
-            &#39;tppmType&#39;: &#39;REPORTS&#39;,
-            &#39;portNumber&#39;:8888,
-            &#39;proxyEntity&#39; : &#39;shezavm11&#39;
-            }
-        ]
-
-        Raises:
-            SDKException:
-                if tppmType is invalid in the input value passed
-
-                if the required key is missing in the input value passed
+    Example:
+        &gt;&gt;&gt; tppm_settings = [
+        ...     {&#39;tppmType&#39;: &#39;COMMSERVE&#39;, &#39;portNumber&#39;: 8080, &#39;proxyEntity&#39;: &#39;proxy1&#39;},
+        ...     {&#39;tppmType&#39;: &#39;REPORTS&#39;, &#39;portNumber&#39;: 9090, &#39;proxyEntity&#39;: &#39;proxy2&#39;}
+        ... ]
+        &gt;&gt;&gt; network = Network()
+        &gt;&gt;&gt; network.set_tppm_settings(tppm_settings)
+        &gt;&gt;&gt; print(&#34;TPPM settings applied successfully.&#34;)
 
     &#34;&#34;&#34;
 

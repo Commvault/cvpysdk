@@ -24,8 +24,9 @@
 </header>
 <section id="section-intro">
 <p>File for handling all the exceptions for the CVPySDK python package.</p>
-<h2 id="exception_dict">Exception_Dict</h2>
-<p>A python dictionary for holding all the exception messages for a specific event or class.</p>
+<p>Exception_Dict
+-----=
+A python dictionary for holding all the exception messages for a specific event or class.</p>
 <p>Any exceptions to be raised from the SDK in a module should be added to this dictionary.</p>
 <p>where,</p>
 <pre><code>-   the key is the module name or the class name where the exception is raised
@@ -37,8 +38,9 @@
     -   value is the exception message
 </code></pre>
 <p>|</p>
-<h2 id="sdkexception">Sdkexception</h2>
-<p>Class inheriting the "Exception" Base class for raising
+<p>Sdkexception
+-----=
+Class inheriting the "Exception" Base class for raising
 a specific exception for the CVPySDK python package.</p>
 <p>The user should create an instance of the SDKException class:</p>
 <pre><code>**SDKException(exception_module, exception_id, exception_message)**
@@ -77,7 +79,7 @@ where the user given message is appended to the original message joined by new l
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/exception.py#L1-L688" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/exception.py#L1-L763" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -166,6 +168,8 @@ EXCEPTION_DICT = {
     &#39;Response&#39;: {
         &#39;101&#39;: &#39;Response was not success&#39;,
         &#39;102&#39;: &#39;Response received is empty&#39;,
+        &#39;103&#39;: &#39;Unable to parse response json&#39;,
+        &#39;104&#39;: &#39;Unexpected response not handled properly&#39;,
         &#39;500&#39;: &#39;Unable to perform the requested method&#39;
     },
     &#39;Commcell&#39;: {
@@ -185,7 +189,8 @@ EXCEPTION_DICT = {
         &#39;104&#39;: &#39;This session has expired. Please login again&#39;,
         &#39;105&#39;: &#39;Script Type is not valid&#39;,
         &#39;106&#39;: &#39;The token has expired. Please login again&#39;,
-        &#39;107&#39;: &#39;No mapping exists for the given token for any user&#39;
+        &#39;107&#39;: &#39;No mapping exists for the given token for any user&#39;,
+        &#39;108&#39;: &#39;Failed to refresh the user token&#39;,
     },
     &#39;DisasterRecovery&#39;: {
         &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
@@ -215,7 +220,8 @@ EXCEPTION_DICT = {
         &#39;104&#39;: &#39;Invalid pruning type. Valid inputs &#34;days_based&#34; or &#34;cycles_based&#34;.&#39;,
         &#39;105&#39;: &#39;Invalid days/cycles value. Please provide an integer value &gt;= 2.&#39;,
         &#39;106&#39;: &#39;IndexServer value should be a client object&#39;,
-        &#39;107&#39;: &#39;No result found for the given input&#39;
+        &#39;107&#39;: &#39;No result found for the given input&#39;,
+        &#39;108&#39;: &#39;No data found at the path specified&#39;,
     },
     &#39;Instance&#39;: {
         &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
@@ -265,7 +271,8 @@ EXCEPTION_DICT = {
         &#39;105&#39;: &#39;Failed to get the Job Details&#39;,
         &#39;106&#39;: &#39;Unexpected response received from server&#39;,
         &#39;107&#39;: &#39;Job Info Type not passed from AdvancedJobDetailType enum&#39;,
-        &#39;108&#39;: &#39;Data type of input(s) is not valid&#39;
+        &#39;108&#39;: &#39;Data type of input(s) is not valid&#39;,
+        &#39;109&#39;: &#39;Failed to fetch active jobs summary&#39;
     },
     &#39;Storage&#39;: {
         &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
@@ -349,6 +356,14 @@ EXCEPTION_DICT = {
         &#39;102&#39;: &#39;&#39;,
         &#39;103&#39;: &#39;Failed to get ContentAnalyzer cloud details&#39;
     },
+    &#39;ScaleTarget&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;,
+        &#39;103&#39;: &#39;Failed to get Scale Target details&#39;,
+        &#39;104&#39;: &#39;Failed to create Scale Target&#39;,
+        &#39;105&#39;: &#39;Failed to delete Scale Target&#39;,
+        &#39;106&#39;: &#39;Failed to update Scale Target&#39;
+    },
     &#39;ActivateEntity&#39;: {
         &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
         &#39;102&#39;: &#39;&#39;,
@@ -356,7 +371,8 @@ EXCEPTION_DICT = {
         &#39;104&#39;: &#39;Unable to create regex entity in the commcell&#39;,
         &#39;105&#39;: &#39;Unable to delete regex entity in the commcell&#39;,
         &#39;106&#39;: &#39;Unable to modify regex entity in the commcell&#39;,
-        &#39;107&#39;: &#39;Failed to get entity container details from commcell&#39;
+        &#39;107&#39;: &#39;Failed to get entity container details from commcell&#39;,
+        &#39;108&#39;: &#39;Failed to get entity sensitivity details from commcell&#39;
     },
     &#39;Classifier&#39;: {
         &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
@@ -368,6 +384,26 @@ EXCEPTION_DICT = {
         &#39;107&#39;: &#39;Training model data zip file not exists in given path&#39;,
         &#39;108&#39;: &#39;Model Data Training failed on this classifier&#39;,
         &#39;109&#39;: &#39;Cancel Training failed on this classifier&#39;
+    },
+    &#39;YaraRule&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;,
+        &#39;103&#39;: &#39;Failed to get yara rule details from commcell&#39;,
+        &#39;104&#39;: &#39;Unable to create yara rule in the commcell&#39;,
+        &#39;105&#39;: &#39;Unable to delete yara rule in the commcell&#39;,
+        &#39;106&#39;: &#39;Unable to modify yara rule in the commcell&#39;,
+        &#39;107&#39;: &#39;Failed to get yara rule container details from commcell&#39;,
+        &#39;108&#39;: &#39;Failed to find yara rule from commcell&#39;
+    },
+    &#39;HashFeed&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;,
+        &#39;103&#39;: &#39;Failed to get hash feed details from commcell&#39;,
+        &#39;104&#39;: &#39;Unable to create hash feed in the commcell&#39;,
+        &#39;105&#39;: &#39;Unable to delete hash feed in the commcell&#39;,
+        &#39;106&#39;: &#39;Unable to modify hash feed in the commcell&#39;,
+        &#39;107&#39;: &#39;Failed to get hash feed container details from commcell&#39;,
+        &#39;108&#39;: &#39;Failed to find hash feed from commcell&#39;
     },
     &#39;Tags&#39;: {
         &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
@@ -474,7 +510,8 @@ EXCEPTION_DICT = {
         &#39;106&#39;: &#39;Export Set not found&#39;,
         &#39;107&#39;: &#39;Invalid Application type provided&#39;,
         &#39;108&#39;: &#39;Invalid export type provided&#39;,
-        &#39;109&#39;: &#39;CosmosDB file download fail&#39;
+        &#39;109&#39;: &#39;CosmosDB file download fail&#39;,
+        &#39;110&#39;: &#39;Missing fileName or requestId in response&#39;
     },
     &#39;Salesforce&#39;: {
         &#39;101&#39;: &#39;Neither Sync Database enabled nor user provided database details for restore&#39;,
@@ -553,23 +590,11 @@ EXCEPTION_DICT = {
         &#39;114&#39;: &#39;Input is not provided in expected manner&#39;,
         &#39;115&#39;: &#39;Failed to extend organization&#39;
     },
-    &#39;RemoteOrganization&#39;: {
-        &#39;101&#39;: &#39;Failed to update organization operators remotely&#39;,
-        &#39;102&#39;: &#39;Failed to activate organization remotely&#39;,
-        &#39;103&#39;: &#39;Failed to deactivate organization remotely&#39;,
-        &#39;104&#39;: &#39;Failed to update organization tags remotely&#39;,
-        &#39;105&#39;: &#39;Data type of the input(s) is not valid&#39;,
-        &#39;106&#39;: &#39;&#39;,
-        &#39;107&#39;: &#39;Email address is not valid&#39;,
-        &#39;108&#39;: &#39;Organization already exists&#39;,
-        &#39;109&#39;: &#39;Failed to add organization remotely&#39;,
-        &#39;110&#39;: &#39;No organization exists with the given name in workloads or idp&#39;,
-        &#39;111&#39;: &#39;Failed to extend organization remotely&#39;
-    },
     &#39;StoragePool&#39;: {
         &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
         &#39;102&#39;: &#39;&#39;,
         &#39;103&#39;: &#39;No storage pool exists with the given name&#39;,
+        &#39;104&#39;: &#39;Failed to add/remove media agent to storage pool&#39;,
     },
     &#39;Monitoring&#39;: {
         &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
@@ -671,7 +696,8 @@ EXCEPTION_DICT = {
         &#39;102&#39;: &#39;&#39;,
         &#39;103&#39;: &#39;Failed to unregister commcell&#39;,
         &#39;104&#39;: &#39;Datatype of the input is not valid&#39;,
-        &#39;105&#39;: &#39;Failed to set commcell properties&#39;
+        &#39;105&#39;: &#39;Failed to set commcell properties&#39;,
+        &#39;106&#39;: &#39;Failed to re-register commcell&#39;,
     },
     &#39;LiveSync&#39;: {
         &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
@@ -726,13 +752,64 @@ EXCEPTION_DICT = {
     },
     &#39;RecoveryGroup&#39;: {
         &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
-        &#39;102&#39;: &#39;&#39;
+        &#39;102&#39;: &#39;Entity does not exist&#39;
+    },
+    &#39;RecoveryTarget&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;Entity does not exist&#39;
     },
     &#39;CommserveRecovery&#39;: {
         &#39;101&#39;: &#39;User is not authorized&#39;,
         &#39;102&#39;: &#39;Given commcell does not have an active license&#39;,
         &#39;103&#39;: &#39;Given request id is not in active requests&#39;,
-        &#39;104&#39;: &#39;Requested backupset is not available for recovery&#39;
+        &#39;104&#39;: &#39;Requested backupset is not available for recovery&#39;,
+        &#39;105&#39;: &#39;Failed to initialize CommserveRecovery properties&#39;,
+    },
+    &#39;CostAssessment&#39;: {
+        &#39;101&#39;: &#39;The response does not contain the discovery criteria.Please verify the credentials&#39;,
+        &#39;102&#39;: &#39;Assessment execution failed. Please verify the credentials&#39;,
+        &#39;103&#39;: &#39;Vendor type is not supported&#39;
+    },
+
+    &#39;AdditionalSettings&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;
+    },
+    &#39;ServiceCommcells&#39;: {
+        &#39;101&#39;: &#39;&#39;,
+        &#39;102&#39;: &#39;Failed to add service commcell&#39;,
+        &#39;103&#39;: &#39;Failed to delete service commcell&#39;,
+        &#39;104&#39;: &#39;Failed to get service commcells list&#39;,
+        &#39;105&#39;: &#39;Failed to fetch service commcell details&#39;,
+        &#39;106&#39;: &#39;Failed to update service commcell properties&#39;,
+        &#39;107&#39;: &#39;Failed to reregister service commcell&#39;,
+        &#39;108&#39;: &#39;Failed to sync service commcell properties&#39;,
+        &#39;109&#39;: &#39;Failed to get service commcell associations&#39;,
+        &#39;110&#39;: &#39;Failed to add service commcell association&#39;,
+        &#39;111&#39;: &#39;Failed to delete service commcell association&#39;,
+    },
+    &#39;ResourceGroup&#39;: {
+        &#39;101&#39;: &#39;Data type of the input(s) is not valid&#39;,
+        &#39;102&#39;: &#39;&#39;,
+        &#39;103&#39;: &#39;Time Value should be greater than current time&#39;,
+        &#39;104&#39;: &#39;Time Value entered is not of correct format&#39;
+    },
+    &#39;Discovery&#39;: {
+        &#39;101&#39;: &#39;The response does not contain the discovery Job.Please verify the connection&#39;,
+        &#39;102&#39;: &#39;The response does not contain the discovery criteria.Please verify the connection&#39;,
+        &#39;103&#39;: &#39;Failed to get resources&#39;,
+        &#39;104&#39;: &#39;Unsupported cloud type&#39;,
+        &#39;105&#39;: &#39;The response does not contain the discovery schedule task ID. Please verify the datasource ID&#39;
+    },
+    &#39;Connections&#39;: {
+        &#39;101&#39;: &#39;&#39;,
+        &#39;102&#39;: &#39;Failed to delete the connection&#39;,
+        &#39;103&#39;: &#39;Connection does not exists&#39;,
+        &#39;104&#39;: &#39;Failed to start discovery job&#39;,
+        &#39;105&#39;: &#39;Failed to validate account id&#39;,
+        &#39;106&#39;: &#39;Failed to get connection details&#39;,
+        &#39;107&#39;: &#39;Failed to add connection&#39;,
+        &#39;108&#39;: &#39;Failed to get AWSStackInfo&#39;
     }
 }
 
@@ -785,8 +862,9 @@ class SDKException(Exception):
 <dd>
 <div class="desc"><p>Exception class for raising exception specific to a module.</p>
 <p>Initialize the SDKException class instance for the exception.</p>
-<h2 id="args">Args</h2>
-<p>exception_module
+<p>Args
+-----=
+exception_module
 (str)
 &ndash;
 name of the module where the exception was raised</p>
@@ -797,14 +875,15 @@ id of the exception specific to the exception_module</p>
 <p>exception_message (str)
 &ndash;
 additional message about the exception</p>
-<h2 id="returns">Returns</h2>
-<p>object
+<p>Returns
+-----=
+object
 -
 instance of the SDKException class of type Exception</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/exception.py#L659-L688" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/exception.py#L734-L763" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class SDKException(Exception):
     &#34;&#34;&#34;Exception class for raising exception specific to a module.&#34;&#34;&#34;

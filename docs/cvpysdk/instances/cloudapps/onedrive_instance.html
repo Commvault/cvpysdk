@@ -27,7 +27,8 @@
 <p>OneDriveInstance is the only class defined in this file.</p>
 <p>OneDriveInstance: Derived class from CloudAppsInstance Base class, representing a
 OneDrive instance,and to perform operations on that instance</p>
-<h2 id="onedriveinstance">Onedriveinstance</h2>
+<p>Onedriveinstance
+-----=</p>
 <p>_prepare_advsearchgrp_onedrive_for_business_client() &ndash;
 Utility function to prepare advsearchgrp json for restore
 job for OneDrive for business clients</p>
@@ -59,7 +60,7 @@ browsing and recovery</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/cloudapps/onedrive_instance.py#L1-L907" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/cloudapps/onedrive_instance.py#L1-L1097" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -113,23 +114,50 @@ OneDriveInstance:
 &#34;&#34;&#34;
 
 from __future__ import unicode_literals
+from base64 import b64encode
+from typing import Any, List, Union
+
+from ...constants import AppIDAType
 from ...exception import SDKException
 from ..cainstance import CloudAppsInstance
-from ...constants import AppIDAType
-from base64 import b64encode
-
+from ...job import Job
 
 class OneDriveInstance(CloudAppsInstance):
-    &#34;&#34;&#34;Class for representing an Instance of the OneDrive instance type.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents an instance of the OneDrive cloud application within a cloud management framework.
 
-    def _get_instance_properties(self):
-        &#34;&#34;&#34;Gets the properties of this instance.
+    This class provides comprehensive management and operational capabilities for OneDrive instances,
+    including configuration, content management, auto-discovery, advanced search, restore, and deletion
+    operations. It exposes properties for accessing instance-specific details and methods for modifying
+    connection settings, access nodes, and index servers. The class also supports advanced operations
+    such as out-of-place restore, data deletion, and preparation of search and restore queries.
 
-            Raises:
-                SDKException:
-                    if response is empty
+    Key Features:
+        - Access OneDrive instance properties and configuration details
+        - Manage content automatically and control auto-discovery settings
+        - Retrieve client, tenant, and proxy information for OneDrive
+        - Prepare advanced search and restore queries for OneDrive for Business clients
+        - Restore data out-of-place with flexible options (overwrite, ACL, time range, etc.)
+        - Enable and configure auto-discovery modes
+        - Modify index server, access nodes, and connection settings securely
+        - Delete data from OneDrive with support for item GUIDs and folder targeting
+        - Generate and retrieve instance properties in JSON format
 
-                    if response is not success
+    &#34;&#34;&#34;
+
+    def _get_instance_properties(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve and update the properties of this OneDrive instance.
+
+        This method fetches the latest properties for the OneDrive instance from the server
+        and updates the instance&#39;s internal state accordingly.
+
+        Raises:
+            SDKException: If the response from the server is empty or indicates a failure.
+
+        Example:
+            &gt;&gt;&gt; instance = OneDriveInstance(commcell_object, instance_name)
+            &gt;&gt;&gt; instance._get_instance_properties()
+            &gt;&gt;&gt; # The instance properties are now refreshed with the latest values
 
         &#34;&#34;&#34;
         super(OneDriveInstance, self)._get_instance_properties()
@@ -156,6 +184,8 @@ class OneDriveInstance(CloudAppsInstance):
                 if &#39;clientId&#39; in onedrive_instance:
                     self._client_id = onedrive_instance.get(&#39;clientId&#39;)
                     self._tenant = onedrive_instance.get(&#39;tenant&#39;)
+                elif &#34;credentialEntity&#34; in onedrive_instance[&#34;azureAppList&#34;][&#34;azureApps&#34;][0]:
+                    self._client_id = self._properties[&#34;instance&#34;][&#34;clientId&#34;]
                 else:
                     self._client_id = onedrive_instance.get(
                         &#39;azureAppList&#39;, {}).get(&#39;azureApps&#39;, [{}])[0].get(&#39;azureAppId&#39;)
@@ -182,54 +212,136 @@ class OneDriveInstance(CloudAppsInstance):
                     raise SDKException(&#39;Instance&#39;, &#39;102&#39;, &#39;Access Node has not been configured&#39;)
 
     @property
-    def ca_instance_type(self):
-        &#34;&#34;&#34;Returns the CloudApps instance type&#34;&#34;&#34;
+    def ca_instance_type(self) -&gt; str:
+        &#34;&#34;&#34;Get the CloudApps instance type for this OneDrive instance.
+
+        Returns:
+            The type of the CloudApps instance as a string.
+
+        Example:
+            &gt;&gt;&gt; onedrive_instance = OneDriveInstance()
+            &gt;&gt;&gt; instance_type = onedrive_instance.ca_instance_type
+            &gt;&gt;&gt; print(f&#34;CloudApps instance type: {instance_type}&#34;)
+
+        &#34;&#34;&#34;
         if self._ca_instance_type == 7:
             return &#39;ONEDRIVE&#39;
         return self._ca_instance_type
 
     @property
-    def manage_content_automatically(self):
-        &#34;&#34;&#34;Returns the CloudApps Manage Content Automatically property&#34;&#34;&#34;
+    def manage_content_automatically(self) -&gt; bool:
+        &#34;&#34;&#34;Get the status of the &#39;Manage Content Automatically&#39; property for CloudApps.
+
+        Returns:
+            bool: True if content is managed automatically, False otherwise.
+
+        Example:
+            &gt;&gt;&gt; instance = OneDriveInstance()
+            &gt;&gt;&gt; auto_manage = instance.manage_content_automatically
+            &gt;&gt;&gt; print(f&#34;Automatic content management enabled: {auto_manage}&#34;)
+
+        &#34;&#34;&#34;
         return self._manage_content_automatically
 
     @property
-    def auto_discovery_status(self):
-        &#34;&#34;&#34;Treats the Auto discovery property as a read-only attribute.&#34;&#34;&#34;
+    def auto_discovery_status(self) -&gt; bool:
+        &#34;&#34;&#34;Get the current status of the Auto Discovery property for the OneDrive instance.
+
+        This property allows you to check whether Auto Discovery is enabled or disabled
+        for the OneDrive instance. It is a read-only attribute.
+
+        Returns:
+            bool: True if Auto Discovery is enabled, False otherwise.
+
+        Example:
+            &gt;&gt;&gt; instance = OneDriveInstance()
+            &gt;&gt;&gt; status = instance.auto_discovery_status
+            &gt;&gt;&gt; print(f&#34;Auto Discovery Enabled: {status}&#34;)
+
+        &#34;&#34;&#34;
         return self._auto_discovery_enabled
 
     @property
-    def auto_discovery_mode(self):
-        &#34;&#34;&#34;Returns the Auto discovery mode property&#34;&#34;&#34;
+    def auto_discovery_mode(self) -&gt; str:
+        &#34;&#34;&#34;Get the auto discovery mode property for the OneDrive instance.
+
+        Returns:
+            The current auto discovery mode as a string.
+
+        Example:
+            &gt;&gt;&gt; instance = OneDriveInstance()
+            &gt;&gt;&gt; mode = instance.auto_discovery_mode
+            &gt;&gt;&gt; print(f&#34;Auto discovery mode: {mode}&#34;)
+
+        &#34;&#34;&#34;
         return self._auto_discovery_mode
 
     @property
-    def onedrive_client_id(self):
-        &#34;&#34;&#34;Returns the OneDrive app client id&#34;&#34;&#34;
+    def onedrive_client_id(self) -&gt; str:
+        &#34;&#34;&#34;Get the OneDrive app client ID associated with this instance.
+
+        Returns:
+            The client ID string used for OneDrive app authentication.
+
+        Example:
+            &gt;&gt;&gt; instance = OneDriveInstance()
+            &gt;&gt;&gt; client_id = instance.onedrive_client_id
+            &gt;&gt;&gt; print(f&#34;OneDrive Client ID: {client_id}&#34;)
+
+        &#34;&#34;&#34;
         return self._client_id
 
     @property
-    def onedrive_tenant(self):
-        &#34;&#34;&#34;Returns the OneDrive tenant id&#34;&#34;&#34;
+    def onedrive_tenant(self) -&gt; str:
+        &#34;&#34;&#34;Get the OneDrive tenant ID associated with this instance.
+
+        Returns:
+            The OneDrive tenant ID as a string.
+
+        Example:
+            &gt;&gt;&gt; instance = OneDriveInstance()
+            &gt;&gt;&gt; tenant_id = instance.onedrive_tenant  # Access the tenant ID using the property
+            &gt;&gt;&gt; print(f&#34;OneDrive tenant ID: {tenant_id}&#34;)
+
+        &#34;&#34;&#34;
         return self._tenant
 
     @property
-    def proxy_client(self):
-        &#34;&#34;&#34;Returns the proxy client name to this instance&#34;&#34;&#34;
+    def proxy_client(self) -&gt; str:
+        &#34;&#34;&#34;Get the name of the proxy client associated with this OneDrive instance.
+
+        Returns:
+            The name of the proxy client as a string.
+
+        Example:
+            &gt;&gt;&gt; instance = OneDriveInstance()
+            &gt;&gt;&gt; proxy_name = instance.proxy_client
+            &gt;&gt;&gt; print(f&#34;Proxy client name: {proxy_name}&#34;)
+
+        &#34;&#34;&#34;
         return self._proxy_client
 
 
-    def _prepare_advsearchgrp_onedrive_for_business_client(self, source_item_list, subclient_id):
-        &#34;&#34;&#34;
-                    Utility function to prepare advsearchgrp json for restore job for OneDrive for business clients
+    def _prepare_advsearchgrp_onedrive_for_business_client(self, source_item_list: list, subclient_id: int) -&gt; dict:
+        &#34;&#34;&#34;Prepare the advsearchgrp JSON structure for a OneDrive for Business restore job.
 
-                    Args:
-                        source_item_list (list)         --  list of user GUID to process in restore
+        This utility function generates the required advsearchgrp JSON payload for restoring
+        OneDrive for Business clients, based on the provided list of user GUIDs and the subclient ID.
 
-                        subclient_id                    --  subclient id of the client
+        Args:
+            source_item_list: List of user GUIDs to include in the restore operation.
+            subclient_id: The subclient ID associated with the OneDrive for Business client.
 
-                    Returns:
-                        advsearchgrp (dict) - advsearchgrp json for restore job
+        Returns:
+            A dictionary representing the advsearchgrp JSON structure for the restore job.
+
+        Example:
+            &gt;&gt;&gt; user_guids = [&#39;guid1&#39;, &#39;guid2&#39;, &#39;guid3&#39;]
+            &gt;&gt;&gt; subclient_id = 12345
+            &gt;&gt;&gt; advsearchgrp_json = instance._prepare_advsearchgrp_onedrive_for_business_client(user_guids, subclient_id)
+            &gt;&gt;&gt; print(advsearchgrp_json)
+            # Output will be a dictionary suitable for use in a restore job request
+
         &#34;&#34;&#34;
 
 
@@ -337,17 +449,25 @@ class OneDriveInstance(CloudAppsInstance):
 
         return advsearchgrp
 
-    def _prepare_findquery_onedrive_for_business_client(self, source_item_list, subclient_id):
-        &#34;&#34;&#34;
-            Utility function to prepare findquery json for restore job for OneDrive for bussiness clients
+    def _prepare_findquery_onedrive_for_business_client(self, source_item_list: list, subclient_id: int) -&gt; dict:
+        &#34;&#34;&#34;Prepare the findquery JSON payload for a OneDrive for Business restore job.
 
-            Args:
-                source_item_list (list)         --  list of user GUID to process in restore
+        This utility function constructs the findquery JSON required to initiate a restore job
+        for OneDrive for Business clients, based on the provided list of user GUIDs and the subclient ID.
 
-                subclient_id                    --  subclient id of the client
+        Args:
+            source_item_list: List of user GUIDs to be processed in the restore operation.
+            subclient_id: The subclient ID associated with the OneDrive for Business client.
 
-            Returns:
-                findquery (dict) - findquery json for restore job
+        Returns:
+            A dictionary representing the findquery JSON payload for the restore job.
+
+        Example:
+            &gt;&gt;&gt; user_guids = [&#39;1234-abcd-5678-efgh&#39;, &#39;2345-bcde-6789-fghi&#39;]
+            &gt;&gt;&gt; subclient_id = 101
+            &gt;&gt;&gt; findquery = instance._prepare_findquery_onedrive_for_business_client(user_guids, subclient_id)
+            &gt;&gt;&gt; print(findquery)
+            {&#39;subclientId&#39;: 101, &#39;userGuids&#39;: [&#39;1234-abcd-5678-efgh&#39;, &#39;2345-bcde-6789-fghi&#39;]}
         &#34;&#34;&#34;
 
         findquery = {
@@ -404,39 +524,43 @@ class OneDriveInstance(CloudAppsInstance):
 
 
 
-    def _prepare_restore_json_onedrive_for_business_client(self, source_item_list, **kwargs):
+    def _prepare_restore_json_onedrive_for_business_client(self, source_item_list: list, **kwargs: object) -&gt; dict:
+        &#34;&#34;&#34;Prepare the user-level restore JSON for OneDrive for Business clients.
 
-        &#34;&#34;&#34; Utility function to prepare user level restore json for OneDrive for bussiness clients
+        This utility function constructs the request JSON required to initiate a restore job for OneDrive for Business users.
+        The function supports both in-place and out-of-place restores, as well as disk restores, and allows for various
+        customization options via keyword arguments.
 
-            Args:
-                source_item_list (list)         --  list of user GUID to process in restore
+        Args:
+            source_item_list: List of user GUIDs to process in the restore operation.
 
-            Kwargs:
+        Keyword Args:
+            out_of_place (bool, optional): If True, perform an out-of-place restore.
+            disk_restore (bool, optional): If True, perform a restore to disk.
+            destination_path (str, optional): Destination path for out-of-place and disk restores.
+            destination_client (object, optional): Destination client for disk restore.
+            overwrite (bool, optional): If True, overwrite files at the destination if they already exist.
+            restore_as_copy (bool, optional): If True, restore files as copies if they already exist.
+            skip_file_permissions (bool, optional): If True, skip restoring file permissions.
+            include_deleted_items (bool, optional): If True, include deleted items in the restore.
+            restore_to_blob (bool, optional):  If True, performs restore to azure blob storage
 
-                out_of_place (bool)             --  If True, out of place restore will be performed
+        Returns:
+            dict: The request JSON for the restore job.
 
-                disk_restore (bool)             --  If True, restore to disk will be performed
+        Raises:
+            SDKException: If the destination client with the given name does not exist, or if any parameter type is invalid.
 
-                destination_path (str)          --  destination path for oop and disk restores
-
-                destination_client              -- destination client for disk restore
-
-                overwrite (bool)                --  If True, files will be overwritten in destination if already exists
-
-                restore_as_copy (bool)          --  If True, files will be restored as copy if already exists
-
-                skip_file_permissions (bool)    --  If True, file permissions will be restored
-
-                include_deleted_items  (bool)   --  If True, deleted items will be included
-
-            Returns:
-                request_json (dict) - request json for restore job
-
-            Raises:
-                SDKException:
-                    if destination client with given name does not exist
-
-                    if type of parameter is invalid
+        Example:
+            &gt;&gt;&gt; user_guids = [&#39;user-guid-1&#39;, &#39;user-guid-2&#39;]
+            &gt;&gt;&gt; restore_json = instance._prepare_restore_json_onedrive_for_business_client(
+            ...     user_guids,
+            ...     out_of_place=True,
+            ...     destination_path=&#39;/restore/location&#39;,
+            ...     overwrite=True
+            ... )
+            &gt;&gt;&gt; print(restore_json)
+            # The returned dictionary can be used to submit a restore job.
 
         &#34;&#34;&#34;
 
@@ -448,6 +572,7 @@ class OneDriveInstance(CloudAppsInstance):
         restore_as_copy = kwargs.get(&#39;restore_as_copy&#39;, False)
         skip_file_permissions = kwargs.get(&#39;skip_file_permissions&#39;, True)
         include_deleted_items = kwargs.get(&#39;include_deleted_items&#39;, False)
+        restore_to_blob = kwargs.get(&#39;restore_to_blob&#39;, False)
 
 
         if destination_client:
@@ -522,12 +647,14 @@ class OneDriveInstance(CloudAppsInstance):
         del restore_options[&#39;virtualServerRstOption&#39;]
 
         associations = request_json[&#39;taskInfo&#39;][&#39;associations&#39;][0]
-        subclient_id = associations[&#39;subclientId&#39;]
+        associations[&#39;subclientId&#39;] = subclient_id = int(self.subclients[&#39;default&#39;][&#39;id&#39;])
 
         cloudAppsRestoreOptions = restore_options[&#39;cloudAppsRestoreOptions&#39;]
-        cloudAppsRestoreOptions[&#39;googleRestoreOptions&#39;][&#39;findQuery&#39;] = self._prepare_findquery_onedrive_for_business_client(source_item_list, subclient_id)
+        cloudAppsRestoreOptions[&#39;googleRestoreOptions&#39;][
+            &#39;findQuery&#39;] = self._prepare_findquery_onedrive_for_business_client(source_item_list, subclient_id)
         if include_deleted_items:
-            cloudAppsRestoreOptions[&#39;googleRestoreOptions&#39;][&#39;findQuery&#39;][&#39;advSearchGrp&#39;][&#39;commonFilter&#39;][0][&#39;filter&#39;][&#39;filters&#39;][0][&#39;fieldValues&#39;][&#39;values&#39;].extend([&#34;3333&#34;,&#34;3334&#34;,&#34;3335&#34;])
+            cloudAppsRestoreOptions[&#39;googleRestoreOptions&#39;][&#39;findQuery&#39;][&#39;advSearchGrp&#39;][&#39;commonFilter&#39;][0][&#39;filter&#39;][
+                &#39;filters&#39;][0][&#39;fieldValues&#39;][&#39;values&#39;].extend([&#34;3333&#34;, &#34;3334&#34;, &#34;3335&#34;])
 
         destination_option = &#34;Destination&#34;
         destination_value = &#34;Original location&#34;
@@ -537,80 +664,92 @@ class OneDriveInstance(CloudAppsInstance):
         if disk_restore:
             destination_option = &#34;Destination server&#34;
             destination_value = destination_client
-
+        if restore_to_blob:
+            restore_options[&#39;cloudAppsRestoreOptions&#39;][&#39;googleRestoreOptions&#39;][&#39;blobContainerId&#39;] = kwargs.get(
+                &#39;blob_container_id&#39;)
+            restore_options[&#39;cloudAppsRestoreOptions&#39;][&#39;googleRestoreOptions&#39;][&#39;googleRestoreChoice&#39;] = 4
+            destination_option = &#34;Destination Azure Blob Storage&#34;
+            destination_value = &#34;&#34;
 
         options[&#34;commonOpts&#34;] = {
             &#34;notifyUserOnJobCompletion&#34;: False,
             &#34;jobMetadata&#34;: [
-              {
-                &#34;selectedItems&#34;: [
-                  {
-                    &#34;itemName&#34;: source_item_list[0],
-                    &#34;itemType&#34;: &#34;User&#34;
-                  }
-                ],
-                &#34;jobOptionItems&#34;: [
-                  {
-                    &#34;option&#34;: &#34;Restore destination&#34;,
-                    &#34;value&#34;: &#34;OneDrive for Business&#34;
-                  },
-                  {
-                    &#34;option&#34;: &#34;Source&#34;,
-                    &#34;value&#34;: source_item_list[0]
-                  },
-                  {
-                    &#34;option&#34;: destination_option,
-                    &#34;value&#34;: destination_value
-                  },
-                  {
-                    &#34;option&#34;: &#34;If the file exists&#34;,
-                    &#34;value&#34;: &#34;Restore as a copy&#34; if restore_as_copy and not overwrite else &#34;Unconditionally overwrite&#34; if overwrite else &#34;Skip&#34;
+                {
+                    &#34;selectedItems&#34;: [
+                        {
+                            &#34;itemName&#34;: source_item_list[0],
+                            &#34;itemType&#34;: &#34;User&#34;
+                        }
+                    ],
+                    &#34;jobOptionItems&#34;: [
+                        {
+                            &#34;option&#34;: &#34;Restore destination&#34;,
+                            &#34;value&#34;: &#34;Azure Blob Storage&#34; if restore_to_blob else &#34;OneDrive for Business&#34;
+                        },
+                        {
+                            &#34;option&#34;: &#34;Source&#34;,
+                            &#34;value&#34;: source_item_list[0]
+                        },
+                        {
+                            &#34;option&#34;: destination_option,
+                            &#34;value&#34;: destination_value
+                        },
+                        {
+                            &#34;option&#34;: &#34;If the file exists&#34;,
+                            &#34;value&#34;: &#34;Restore as a copy&#34; if restore_as_copy and not overwrite else &#34;Unconditionally overwrite&#34; if overwrite else &#34;Skip&#34;
 
-                  },
-                  {
-                    &#34;option&#34;: &#34;Skip file permissions&#34;,
-                    &#34;value&#34;: &#34;Enabled&#34; if skip_file_permissions else &#34;Disabled&#34;
-                  },
-                  {
-                    &#34;option&#34;: &#34;Include deleted items&#34;,
-                    &#34;value&#34;: &#34;Enabled&#34; if include_deleted_items else &#34;Disabled&#34;
-                  }
-                ]
-              }
+                        },
+                        {
+                            &#34;option&#34;: &#34;Skip file permissions&#34;,
+                            &#34;value&#34;: &#34;Enabled&#34; if skip_file_permissions else &#34;Disabled&#34;
+                        },
+                        {
+                            &#34;option&#34;: &#34;Include deleted items&#34;,
+                            &#34;value&#34;: &#34;Enabled&#34; if include_deleted_items else &#34;Disabled&#34;
+                        }
+                    ]
+                }
             ]
-          }
+        }
 
         joboptionitems = options[&#39;commonOpts&#39;][&#39;jobMetadata&#39;][0][&#39;jobOptionItems&#39;]
 
         if out_of_place:
-            joboptionitems.append({&#34;option&#34;: &#34;Destination client&#34;,&#34;value&#34;: destination_client })
+            joboptionitems.append({&#34;option&#34;: &#34;Destination client&#34;, &#34;value&#34;: destination_client})
         if disk_restore:
             joboptionitems.append({&#34;option&#34;: &#34;Destination path&#34;, &#34;value&#34;: destination_path})
 
         return request_json
 
-    def _prepare_delete_json_onedrive_v2(self, item_guids, **kwargs):
-        &#34;&#34;&#34; Utility function to prepare delete documents json for OneDrive for bussiness clients
+    def _prepare_delete_json_onedrive_v2(self, item_guids: list, **kwargs: dict) -&gt; dict:
+        &#34;&#34;&#34;Prepare the JSON payload for deleting documents in OneDrive for Business clients.
 
-            Args:
-                item_guid (str)         --  item GUID to delete in browse
+        This utility function constructs the request JSON required to delete one or more items 
+        (documents or folders) from OneDrive for Business clients, based on the provided item GUIDs.
+        Additional options can be specified using keyword arguments.
 
-                Kwargs:
+        Args:
+            item_guids: A list of item GUIDs (str) representing the documents or folders to delete.
+            **kwargs: Optional keyword arguments to modify the delete operation.
+                - include_deleted_items (bool): If True, include deleted items in the search.
 
-                    include_deleted_items (bool)             --  If True, deleted items will be included in search
+        Returns:
+            A dictionary representing the request JSON for the delete document operation.
 
-            Returns:
-                request_json (dict) - request json for delete document
+        Raises:
+            SDKException: If the destination client with the given item does not exist, or if any 
+                parameter type is invalid.
 
-            Raises:
-                SDKException:
-                    if destination client with given item does not exist
+        Example:
+            &gt;&gt;&gt; item_guids = [&#39;1234-5678-90ab-cdef&#39;, &#39;abcd-ef12-3456-7890&#39;]
+            &gt;&gt;&gt; delete_json = onedrive_instance._prepare_delete_json_onedrive_v2(item_guids, include_deleted_items=True)
+            &gt;&gt;&gt; print(delete_json)
+            # The returned dictionary can be used as the payload for a delete request.
 
-                    if type of parameter is invalid
         &#34;&#34;&#34;
         folder = kwargs.get(&#39;folder&#39;, False)
         include_deleted_items = kwargs.get(&#39;include_deleted_items&#39;, False)
-        subclient_id = self.subclients[&#39;default&#39;][&#39;id&#39;]
+        subclient_id = int(self.subclients[&#39;default&#39;][&#39;id&#39;])
 
         if isinstance(item_guids, str):
             source_item_list = [item_guids]
@@ -662,64 +801,56 @@ class OneDriveInstance(CloudAppsInstance):
 
     def restore_out_of_place(
             self,
-            client,
-            destination_path,
-            paths,
-            overwrite=True,
-            restore_data_and_acl=True,
-            copy_precedence=None,
-            from_time=None,
-            to_time=None,
-            to_disk=False):
-        &#34;&#34;&#34;Restores the files/folders specified in the input paths list to the input client,
-            at the specified destionation location.
+            client: object,
+            destination_path: str,
+            paths: list,
+            overwrite: bool = True,
+            restore_data_and_acl: bool = True,
+            copy_precedence: int = None,
+            from_time: str = None,
+            to_time: str = None,
+            to_disk: bool = False
+        ) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;Restore specified files or folders to a different client and/or location.
 
-            Args:
-                client                (str/object) --  either the name of the client or
-                                                           the instance of the Client
+        This method restores the files and folders listed in `paths` to the given `destination_path`
+        on the specified `client`. The restore can optionally overwrite existing files, restore
+        data and ACLs, and be filtered by time range or copy precedence. The restore can also
+        be performed to disk if required.
 
-                destination_path      (str)        --  full path of the restore location on client
+        Args:
+            client: The target client for restore. Can be a client name (str) or a Client object.
+            destination_path: Full path to the restore location on the target client.
+            paths: List of full file or folder paths to restore.
+            overwrite: If True, existing files at the destination will be overwritten. Default is True.
+            restore_data_and_acl: If True, both data and ACLs will be restored. Default is True.
+            copy_precedence: Optional copy precedence value for the storage policy copy. Default is None.
+            from_time: Optional lower bound for restore time window (format: &#39;YYYY-MM-DD HH:MM:SS&#39;). Default is None.
+            to_time: Optional upper bound for restore time window (format: &#39;YYYY-MM-DD HH:MM:SS&#39;). Default is None.
+            to_disk: If True, perform a restore to disk operation. Default is False.
 
-                paths                 (list)       --  list of full paths of
-                                                           files/folders to restore
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                overwrite             (bool)       --  unconditional overwrite files during restore
-                    default: True
+        Raises:
+            SDKException: If any of the following conditions are met:
+                - `client` is not a string or Client instance
+                - `destination_path` is not a string
+                - `paths` is not a list
+                - Failed to initialize the restore job
+                - The response is empty or not successful
 
-                restore_data_and_acl  (bool)       --  restore data and ACL files
-                    default: True
+        Example:
+            &gt;&gt;&gt; # Restore files to a different client and location
+            &gt;&gt;&gt; job = onedrive_instance.restore_out_of_place(
+            ...     client=&#39;TargetClient&#39;,
+            ...     destination_path=&#39;C:\\Restore\\Data&#39;,
+            ...     paths=[&#39;/user/docs/file1.txt&#39;, &#39;/user/docs/file2.txt&#39;],
+            ...     overwrite=True,
+            ...     restore_data_and_acl=True
+            ... )
+            &gt;&gt;&gt; print(f&#34;Restore job started with ID: {job.job_id}&#34;)
 
-                copy_precedence         (int)   --  copy precedence value of storage policy copy
-                    default: None
-
-                from_time           (str)       --  time to retore the contents after
-                        format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                to_time           (str)         --  time to retore the contents before
-                        format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                to_disk             (bool)       --  If True, restore to disk will be performed
-
-            Returns:
-                object - instance of the Job class for this restore job
-
-            Raises:
-                SDKException:
-                    if client is not a string or Client instance
-
-                    if destination_path is not a string
-
-                    if paths is not a list
-
-                    if failed to initialize job
-
-                    if response is empty
-
-                    if response is not success
         &#34;&#34;&#34;
         from cvpysdk.client import Client
 
@@ -775,17 +906,21 @@ class OneDriveInstance(CloudAppsInstance):
         }
         return self._process_restore_response(request_json)
 
-    def enable_auto_discovery(self, mode=&#39;REGEX&#39;):
-        &#34;&#34;&#34;Enables auto discovery on instance.
+    def enable_auto_discovery(self, mode: str = &#39;REGEX&#39;) -&gt; None:
+        &#34;&#34;&#34;Enable auto discovery on the OneDrive instance.
 
-           Args:
+        This method enables automatic discovery of OneDrive users or groups based on the specified mode.
 
-                mode    (str)   -- Auto Discovery mode
+        Args:
+            mode: The auto discovery mode to use. Valid values are:
+                - &#39;REGEX&#39;: Enables discovery using regular expressions.
+                - &#39;GROUP&#39;: Enables discovery based on group membership.
+                Default is &#39;REGEX&#39;.
 
-                Valid Values:
-
-                    REGEX
-                    GROUP
+        Example:
+            &gt;&gt;&gt; instance = OneDriveInstance()
+            &gt;&gt;&gt; instance.enable_auto_discovery()  # Enables auto discovery in REGEX mode
+            &gt;&gt;&gt; instance.enable_auto_discovery(mode=&#39;GROUP&#39;)  # Enables auto discovery in GROUP mode
 
         &#34;&#34;&#34;
         auto_discovery_dict = {
@@ -809,17 +944,33 @@ class OneDriveInstance(CloudAppsInstance):
         self._set_instance_properties(&#34;_properties[&#39;cloudAppsInstance&#39;]&#34;, instance_prop)
         self.refresh()
 
-    def _get_instance_properties_json(self):
-        &#34;&#34;&#34;Returns the instance properties json.&#34;&#34;&#34;
+    def _get_instance_properties_json(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the instance properties as a JSON dictionary.
+
+        Returns:
+            dict: A dictionary containing the properties of the OneDrive instance in JSON format.
+
+        Example:
+            &gt;&gt;&gt; instance = OneDriveInstance()
+            &gt;&gt;&gt; properties_json = instance._get_instance_properties_json()
+            &gt;&gt;&gt; print(properties_json)
+            &gt;&gt;&gt; # Output will be a dictionary with instance property details
+
+        &#34;&#34;&#34;
 
         return {&#39;instanceProperties&#39;: self._properties}
 
-    def modify_index_server(self, modified_index_server):
-        &#34;&#34;&#34;
-            Method to modify the index server
+    def modify_index_server(self, modified_index_server: str) -&gt; None:
+        &#34;&#34;&#34;Modify the index server for the OneDrive instance.
 
-            Arguments:
-                modified_index_server        (str)--     new index server name
+        Args:
+            modified_index_server: The name of the new index server to be set.
+
+        Example:
+            &gt;&gt;&gt; onedrive_instance = OneDriveInstance()
+            &gt;&gt;&gt; onedrive_instance.modify_index_server(&#34;NewIndexServer01&#34;)
+            &gt;&gt;&gt; print(&#34;Index server updated successfully.&#34;)
+
         &#34;&#34;&#34;
         update_dict = {
             &#34;instance&#34;: {
@@ -841,14 +992,22 @@ class OneDriveInstance(CloudAppsInstance):
 
         self.update_properties(properties_dict=update_dict)
 
-    def modify_accessnodes(self,modified_accessnodes_list,modified_user_name,modified_user_password):
-        &#34;&#34;&#34;
-                   Method to modify accessnodes
+    def modify_accessnodes(self, modified_accessnodes_list: list, modified_user_name: str, modified_user_password: str) -&gt; None:
+        &#34;&#34;&#34;Modify the access nodes for the OneDrive instance.
 
-                   Arguments:
-                       modified_accessnodes_list     (list)  --     list of new accessnodes
-                       modified_user_name            (str)   --     new user account name
-                       modified_user_password        (str)   --     new user account password
+        This method updates the list of access nodes and the associated user credentials
+        for the OneDrive instance.
+
+        Args:
+            modified_accessnodes_list: List of new access nodes to be assigned to the instance.
+            modified_user_name: The new user account name to associate with the access nodes.
+            modified_user_password: The new user account password for the specified user.
+
+        Example:
+            &gt;&gt;&gt; accessnodes = [&#39;node1&#39;, &#39;node2&#39;]
+            &gt;&gt;&gt; instance.modify_accessnodes(accessnodes, &#39;new_user&#39;, &#39;new_password&#39;)
+            &gt;&gt;&gt; print(&#34;Access nodes and credentials updated successfully.&#34;)
+
         &#34;&#34;&#34;
         member_servers=[]
         for client in modified_accessnodes_list:
@@ -888,25 +1047,28 @@ class OneDriveInstance(CloudAppsInstance):
 
         self.update_properties(properties_dict=update_dict)
 
-    def modify_connection_settings(self, azure_app_id, azure_dir_id, azure_app_secret):
-        &#34;&#34;&#34;
-                   Method to modify OneDrive connection settings
+    def modify_connection_settings(self, azure_app_id: str, azure_dir_id: str, azure_app_secret: str) -&gt; None:
+        &#34;&#34;&#34;Modify the OneDrive connection settings with new Azure credentials.
 
-                   Arguments:
-                       azure_app_id         (str)   --      new azure application id
-                       azure_dir_id         (str)   --      new azure directory id
-                       azure_app_secret        (str)   --     new azure app password
+        Updates the Azure application ID, directory ID, and application secret used for connecting to OneDrive.
 
-                  Returns:
-                       None
+        Args:
+            azure_app_id: The new Azure application (client) ID.
+            azure_dir_id: The new Azure directory (tenant) ID.
+            azure_app_secret: The new Azure application secret (password).
 
-                  Raises:
-                      SDKException:
-                            if failed to add
+        Raises:
+            SDKException: If the update fails, the response is empty, or the response code is not as expected.
 
-                            if response is empty
+        Example:
+            &gt;&gt;&gt; instance = OneDriveInstance()
+            &gt;&gt;&gt; instance.modify_connection_settings(
+            ...     azure_app_id=&#34;your-app-id&#34;,
+            ...     azure_dir_id=&#34;your-dir-id&#34;,
+            ...     azure_app_secret=&#34;your-app-secret&#34;
+            ... )
+            &gt;&gt;&gt; print(&#34;Connection settings updated successfully.&#34;)
 
-                            if response code is not as expected
         &#34;&#34;&#34;
 
         if not isinstance(azure_app_id, str) or not azure_app_id:
@@ -936,26 +1098,35 @@ class OneDriveInstance(CloudAppsInstance):
 
         self.update_properties(properties_dict=update_dict)
 
-    def delete_data_from_browse(self, item_guids, include_deleted_items=False, folder=False):
-        &#34;&#34;&#34;
-        Deletes items for the backupset in the Index and makes them unavailable for browsing and recovery
+    def delete_data_from_browse(self, item_guids: &#39;Union[str, List[str]]&#39;, include_deleted_items: bool = False, folder: bool = False) -&gt; &#39;Union[None, Any]&#39;:
+        &#34;&#34;&#34;Delete items from the backupset index, making them unavailable for browsing and recovery.
 
-            Args:
-                item_guids       (str/list)      --      The guids of items to be deleted from browse
-                include_deleted_items (bool)     --      If True, deleted items will be included in browse
-                folder           (bool)          --      If True, item to be deleted is Folder
+        This method removes specified items (files or folders) from the backupset&#39;s index. 
+        Once deleted, these items cannot be browsed or recovered through the standard interface.
 
-            Returns:
-                None        --      If delete request is sent successfully for file
-                jobIds      --      If delete request is sent successfully for folder
+        Args:
+            item_guids: A single GUID (str) or a list of GUIDs (List[str]) representing the items to delete from browse.
+            include_deleted_items: If True, also includes items that are already deleted in the browse operation.
+            folder: If True, indicates that the item(s) to be deleted are folders.
 
-            Raises:
-                SDKException:
-                    if failed to delete
+        Returns:
+            None if the delete request is sent successfully for files.
+            jobIds if the delete request is sent successfully for folders.
 
-                    if response is empty
+        Raises:
+            SDKException: If the deletion fails, the response is empty, or the response code is not as expected.
 
-                    if response code is not as expected
+        Example:
+            &gt;&gt;&gt; # Delete a single file by GUID
+            &gt;&gt;&gt; instance = OneDriveInstance()
+            &gt;&gt;&gt; instance.delete_data_from_browse(&#39;file-guid-123&#39;)
+            &gt;&gt;&gt; 
+            &gt;&gt;&gt; # Delete multiple files by GUIDs
+            &gt;&gt;&gt; instance.delete_data_from_browse([&#39;file-guid-123&#39;, &#39;file-guid-456&#39;])
+            &gt;&gt;&gt; 
+            &gt;&gt;&gt; # Delete a folder by GUID and get job IDs
+            &gt;&gt;&gt; job_ids = instance.delete_data_from_browse(&#39;folder-guid-789&#39;, folder=True)
+            &gt;&gt;&gt; print(f&#34;Delete job IDs: {job_ids}&#34;)
 
         &#34;&#34;&#34;
         if not isinstance(item_guids, str) or not item_guids:
@@ -984,40 +1155,74 @@ class OneDriveInstance(CloudAppsInstance):
 <span>(</span><span>agent_object, instance_name, instance_id=None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for representing an Instance of the OneDrive instance type.</p>
-<p>Initialise the instance object.</p>
-<h2 id="args">Args</h2>
-<p>agent_object
-(object)
-&ndash;
-instance of the Agent class</p>
-<p>instance_name
-(str)
-&ndash;
-name of the instance</p>
-<p>instance_id
-(str)
-&ndash;
-id of the instance
-default: None</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Instance class</p></div>
+<div class="desc"><p>Represents an instance of the OneDrive cloud application within a cloud management framework.</p>
+<p>This class provides comprehensive management and operational capabilities for OneDrive instances,
+including configuration, content management, auto-discovery, advanced search, restore, and deletion
+operations. It exposes properties for accessing instance-specific details and methods for modifying
+connection settings, access nodes, and index servers. The class also supports advanced operations
+such as out-of-place restore, data deletion, and preparation of search and restore queries.</p>
+<p>Key Features:
+- Access OneDrive instance properties and configuration details
+- Manage content automatically and control auto-discovery settings
+- Retrieve client, tenant, and proxy information for OneDrive
+- Prepare advanced search and restore queries for OneDrive for Business clients
+- Restore data out-of-place with flexible options (overwrite, ACL, time range, etc.)
+- Enable and configure auto-discovery modes
+- Modify index server, access nodes, and connection settings securely
+- Delete data from OneDrive with support for item GUIDs and folder targeting
+- Generate and retrieve instance properties in JSON format</p>
+<p>Initialize a CloudAppsInstance object.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>agent_object</code></strong></dt>
+<dd>The agent object associated with this instance.</dd>
+<dt><strong><code>instance_name</code></strong></dt>
+<dd>The name of the cloud application instance.</dd>
+<dt><strong><code>instance_id</code></strong></dt>
+<dd>Optional unique identifier for the instance.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/cloudapps/onedrive_instance.py#L59-L907" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/cloudapps/onedrive_instance.py#L61-L1097" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class OneDriveInstance(CloudAppsInstance):
-    &#34;&#34;&#34;Class for representing an Instance of the OneDrive instance type.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents an instance of the OneDrive cloud application within a cloud management framework.
 
-    def _get_instance_properties(self):
-        &#34;&#34;&#34;Gets the properties of this instance.
+    This class provides comprehensive management and operational capabilities for OneDrive instances,
+    including configuration, content management, auto-discovery, advanced search, restore, and deletion
+    operations. It exposes properties for accessing instance-specific details and methods for modifying
+    connection settings, access nodes, and index servers. The class also supports advanced operations
+    such as out-of-place restore, data deletion, and preparation of search and restore queries.
 
-            Raises:
-                SDKException:
-                    if response is empty
+    Key Features:
+        - Access OneDrive instance properties and configuration details
+        - Manage content automatically and control auto-discovery settings
+        - Retrieve client, tenant, and proxy information for OneDrive
+        - Prepare advanced search and restore queries for OneDrive for Business clients
+        - Restore data out-of-place with flexible options (overwrite, ACL, time range, etc.)
+        - Enable and configure auto-discovery modes
+        - Modify index server, access nodes, and connection settings securely
+        - Delete data from OneDrive with support for item GUIDs and folder targeting
+        - Generate and retrieve instance properties in JSON format
 
-                    if response is not success
+    &#34;&#34;&#34;
+
+    def _get_instance_properties(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve and update the properties of this OneDrive instance.
+
+        This method fetches the latest properties for the OneDrive instance from the server
+        and updates the instance&#39;s internal state accordingly.
+
+        Raises:
+            SDKException: If the response from the server is empty or indicates a failure.
+
+        Example:
+            &gt;&gt;&gt; instance = OneDriveInstance(commcell_object, instance_name)
+            &gt;&gt;&gt; instance._get_instance_properties()
+            &gt;&gt;&gt; # The instance properties are now refreshed with the latest values
 
         &#34;&#34;&#34;
         super(OneDriveInstance, self)._get_instance_properties()
@@ -1044,6 +1249,8 @@ default: None</p>
                 if &#39;clientId&#39; in onedrive_instance:
                     self._client_id = onedrive_instance.get(&#39;clientId&#39;)
                     self._tenant = onedrive_instance.get(&#39;tenant&#39;)
+                elif &#34;credentialEntity&#34; in onedrive_instance[&#34;azureAppList&#34;][&#34;azureApps&#34;][0]:
+                    self._client_id = self._properties[&#34;instance&#34;][&#34;clientId&#34;]
                 else:
                     self._client_id = onedrive_instance.get(
                         &#39;azureAppList&#39;, {}).get(&#39;azureApps&#39;, [{}])[0].get(&#39;azureAppId&#39;)
@@ -1070,54 +1277,136 @@ default: None</p>
                     raise SDKException(&#39;Instance&#39;, &#39;102&#39;, &#39;Access Node has not been configured&#39;)
 
     @property
-    def ca_instance_type(self):
-        &#34;&#34;&#34;Returns the CloudApps instance type&#34;&#34;&#34;
+    def ca_instance_type(self) -&gt; str:
+        &#34;&#34;&#34;Get the CloudApps instance type for this OneDrive instance.
+
+        Returns:
+            The type of the CloudApps instance as a string.
+
+        Example:
+            &gt;&gt;&gt; onedrive_instance = OneDriveInstance()
+            &gt;&gt;&gt; instance_type = onedrive_instance.ca_instance_type
+            &gt;&gt;&gt; print(f&#34;CloudApps instance type: {instance_type}&#34;)
+
+        &#34;&#34;&#34;
         if self._ca_instance_type == 7:
             return &#39;ONEDRIVE&#39;
         return self._ca_instance_type
 
     @property
-    def manage_content_automatically(self):
-        &#34;&#34;&#34;Returns the CloudApps Manage Content Automatically property&#34;&#34;&#34;
+    def manage_content_automatically(self) -&gt; bool:
+        &#34;&#34;&#34;Get the status of the &#39;Manage Content Automatically&#39; property for CloudApps.
+
+        Returns:
+            bool: True if content is managed automatically, False otherwise.
+
+        Example:
+            &gt;&gt;&gt; instance = OneDriveInstance()
+            &gt;&gt;&gt; auto_manage = instance.manage_content_automatically
+            &gt;&gt;&gt; print(f&#34;Automatic content management enabled: {auto_manage}&#34;)
+
+        &#34;&#34;&#34;
         return self._manage_content_automatically
 
     @property
-    def auto_discovery_status(self):
-        &#34;&#34;&#34;Treats the Auto discovery property as a read-only attribute.&#34;&#34;&#34;
+    def auto_discovery_status(self) -&gt; bool:
+        &#34;&#34;&#34;Get the current status of the Auto Discovery property for the OneDrive instance.
+
+        This property allows you to check whether Auto Discovery is enabled or disabled
+        for the OneDrive instance. It is a read-only attribute.
+
+        Returns:
+            bool: True if Auto Discovery is enabled, False otherwise.
+
+        Example:
+            &gt;&gt;&gt; instance = OneDriveInstance()
+            &gt;&gt;&gt; status = instance.auto_discovery_status
+            &gt;&gt;&gt; print(f&#34;Auto Discovery Enabled: {status}&#34;)
+
+        &#34;&#34;&#34;
         return self._auto_discovery_enabled
 
     @property
-    def auto_discovery_mode(self):
-        &#34;&#34;&#34;Returns the Auto discovery mode property&#34;&#34;&#34;
+    def auto_discovery_mode(self) -&gt; str:
+        &#34;&#34;&#34;Get the auto discovery mode property for the OneDrive instance.
+
+        Returns:
+            The current auto discovery mode as a string.
+
+        Example:
+            &gt;&gt;&gt; instance = OneDriveInstance()
+            &gt;&gt;&gt; mode = instance.auto_discovery_mode
+            &gt;&gt;&gt; print(f&#34;Auto discovery mode: {mode}&#34;)
+
+        &#34;&#34;&#34;
         return self._auto_discovery_mode
 
     @property
-    def onedrive_client_id(self):
-        &#34;&#34;&#34;Returns the OneDrive app client id&#34;&#34;&#34;
+    def onedrive_client_id(self) -&gt; str:
+        &#34;&#34;&#34;Get the OneDrive app client ID associated with this instance.
+
+        Returns:
+            The client ID string used for OneDrive app authentication.
+
+        Example:
+            &gt;&gt;&gt; instance = OneDriveInstance()
+            &gt;&gt;&gt; client_id = instance.onedrive_client_id
+            &gt;&gt;&gt; print(f&#34;OneDrive Client ID: {client_id}&#34;)
+
+        &#34;&#34;&#34;
         return self._client_id
 
     @property
-    def onedrive_tenant(self):
-        &#34;&#34;&#34;Returns the OneDrive tenant id&#34;&#34;&#34;
+    def onedrive_tenant(self) -&gt; str:
+        &#34;&#34;&#34;Get the OneDrive tenant ID associated with this instance.
+
+        Returns:
+            The OneDrive tenant ID as a string.
+
+        Example:
+            &gt;&gt;&gt; instance = OneDriveInstance()
+            &gt;&gt;&gt; tenant_id = instance.onedrive_tenant  # Access the tenant ID using the property
+            &gt;&gt;&gt; print(f&#34;OneDrive tenant ID: {tenant_id}&#34;)
+
+        &#34;&#34;&#34;
         return self._tenant
 
     @property
-    def proxy_client(self):
-        &#34;&#34;&#34;Returns the proxy client name to this instance&#34;&#34;&#34;
+    def proxy_client(self) -&gt; str:
+        &#34;&#34;&#34;Get the name of the proxy client associated with this OneDrive instance.
+
+        Returns:
+            The name of the proxy client as a string.
+
+        Example:
+            &gt;&gt;&gt; instance = OneDriveInstance()
+            &gt;&gt;&gt; proxy_name = instance.proxy_client
+            &gt;&gt;&gt; print(f&#34;Proxy client name: {proxy_name}&#34;)
+
+        &#34;&#34;&#34;
         return self._proxy_client
 
 
-    def _prepare_advsearchgrp_onedrive_for_business_client(self, source_item_list, subclient_id):
-        &#34;&#34;&#34;
-                    Utility function to prepare advsearchgrp json for restore job for OneDrive for business clients
+    def _prepare_advsearchgrp_onedrive_for_business_client(self, source_item_list: list, subclient_id: int) -&gt; dict:
+        &#34;&#34;&#34;Prepare the advsearchgrp JSON structure for a OneDrive for Business restore job.
 
-                    Args:
-                        source_item_list (list)         --  list of user GUID to process in restore
+        This utility function generates the required advsearchgrp JSON payload for restoring
+        OneDrive for Business clients, based on the provided list of user GUIDs and the subclient ID.
 
-                        subclient_id                    --  subclient id of the client
+        Args:
+            source_item_list: List of user GUIDs to include in the restore operation.
+            subclient_id: The subclient ID associated with the OneDrive for Business client.
 
-                    Returns:
-                        advsearchgrp (dict) - advsearchgrp json for restore job
+        Returns:
+            A dictionary representing the advsearchgrp JSON structure for the restore job.
+
+        Example:
+            &gt;&gt;&gt; user_guids = [&#39;guid1&#39;, &#39;guid2&#39;, &#39;guid3&#39;]
+            &gt;&gt;&gt; subclient_id = 12345
+            &gt;&gt;&gt; advsearchgrp_json = instance._prepare_advsearchgrp_onedrive_for_business_client(user_guids, subclient_id)
+            &gt;&gt;&gt; print(advsearchgrp_json)
+            # Output will be a dictionary suitable for use in a restore job request
+
         &#34;&#34;&#34;
 
 
@@ -1225,17 +1514,25 @@ default: None</p>
 
         return advsearchgrp
 
-    def _prepare_findquery_onedrive_for_business_client(self, source_item_list, subclient_id):
-        &#34;&#34;&#34;
-            Utility function to prepare findquery json for restore job for OneDrive for bussiness clients
+    def _prepare_findquery_onedrive_for_business_client(self, source_item_list: list, subclient_id: int) -&gt; dict:
+        &#34;&#34;&#34;Prepare the findquery JSON payload for a OneDrive for Business restore job.
 
-            Args:
-                source_item_list (list)         --  list of user GUID to process in restore
+        This utility function constructs the findquery JSON required to initiate a restore job
+        for OneDrive for Business clients, based on the provided list of user GUIDs and the subclient ID.
 
-                subclient_id                    --  subclient id of the client
+        Args:
+            source_item_list: List of user GUIDs to be processed in the restore operation.
+            subclient_id: The subclient ID associated with the OneDrive for Business client.
 
-            Returns:
-                findquery (dict) - findquery json for restore job
+        Returns:
+            A dictionary representing the findquery JSON payload for the restore job.
+
+        Example:
+            &gt;&gt;&gt; user_guids = [&#39;1234-abcd-5678-efgh&#39;, &#39;2345-bcde-6789-fghi&#39;]
+            &gt;&gt;&gt; subclient_id = 101
+            &gt;&gt;&gt; findquery = instance._prepare_findquery_onedrive_for_business_client(user_guids, subclient_id)
+            &gt;&gt;&gt; print(findquery)
+            {&#39;subclientId&#39;: 101, &#39;userGuids&#39;: [&#39;1234-abcd-5678-efgh&#39;, &#39;2345-bcde-6789-fghi&#39;]}
         &#34;&#34;&#34;
 
         findquery = {
@@ -1292,39 +1589,43 @@ default: None</p>
 
 
 
-    def _prepare_restore_json_onedrive_for_business_client(self, source_item_list, **kwargs):
+    def _prepare_restore_json_onedrive_for_business_client(self, source_item_list: list, **kwargs: object) -&gt; dict:
+        &#34;&#34;&#34;Prepare the user-level restore JSON for OneDrive for Business clients.
 
-        &#34;&#34;&#34; Utility function to prepare user level restore json for OneDrive for bussiness clients
+        This utility function constructs the request JSON required to initiate a restore job for OneDrive for Business users.
+        The function supports both in-place and out-of-place restores, as well as disk restores, and allows for various
+        customization options via keyword arguments.
 
-            Args:
-                source_item_list (list)         --  list of user GUID to process in restore
+        Args:
+            source_item_list: List of user GUIDs to process in the restore operation.
 
-            Kwargs:
+        Keyword Args:
+            out_of_place (bool, optional): If True, perform an out-of-place restore.
+            disk_restore (bool, optional): If True, perform a restore to disk.
+            destination_path (str, optional): Destination path for out-of-place and disk restores.
+            destination_client (object, optional): Destination client for disk restore.
+            overwrite (bool, optional): If True, overwrite files at the destination if they already exist.
+            restore_as_copy (bool, optional): If True, restore files as copies if they already exist.
+            skip_file_permissions (bool, optional): If True, skip restoring file permissions.
+            include_deleted_items (bool, optional): If True, include deleted items in the restore.
+            restore_to_blob (bool, optional):  If True, performs restore to azure blob storage
 
-                out_of_place (bool)             --  If True, out of place restore will be performed
+        Returns:
+            dict: The request JSON for the restore job.
 
-                disk_restore (bool)             --  If True, restore to disk will be performed
+        Raises:
+            SDKException: If the destination client with the given name does not exist, or if any parameter type is invalid.
 
-                destination_path (str)          --  destination path for oop and disk restores
-
-                destination_client              -- destination client for disk restore
-
-                overwrite (bool)                --  If True, files will be overwritten in destination if already exists
-
-                restore_as_copy (bool)          --  If True, files will be restored as copy if already exists
-
-                skip_file_permissions (bool)    --  If True, file permissions will be restored
-
-                include_deleted_items  (bool)   --  If True, deleted items will be included
-
-            Returns:
-                request_json (dict) - request json for restore job
-
-            Raises:
-                SDKException:
-                    if destination client with given name does not exist
-
-                    if type of parameter is invalid
+        Example:
+            &gt;&gt;&gt; user_guids = [&#39;user-guid-1&#39;, &#39;user-guid-2&#39;]
+            &gt;&gt;&gt; restore_json = instance._prepare_restore_json_onedrive_for_business_client(
+            ...     user_guids,
+            ...     out_of_place=True,
+            ...     destination_path=&#39;/restore/location&#39;,
+            ...     overwrite=True
+            ... )
+            &gt;&gt;&gt; print(restore_json)
+            # The returned dictionary can be used to submit a restore job.
 
         &#34;&#34;&#34;
 
@@ -1336,6 +1637,7 @@ default: None</p>
         restore_as_copy = kwargs.get(&#39;restore_as_copy&#39;, False)
         skip_file_permissions = kwargs.get(&#39;skip_file_permissions&#39;, True)
         include_deleted_items = kwargs.get(&#39;include_deleted_items&#39;, False)
+        restore_to_blob = kwargs.get(&#39;restore_to_blob&#39;, False)
 
 
         if destination_client:
@@ -1410,12 +1712,14 @@ default: None</p>
         del restore_options[&#39;virtualServerRstOption&#39;]
 
         associations = request_json[&#39;taskInfo&#39;][&#39;associations&#39;][0]
-        subclient_id = associations[&#39;subclientId&#39;]
+        associations[&#39;subclientId&#39;] = subclient_id = int(self.subclients[&#39;default&#39;][&#39;id&#39;])
 
         cloudAppsRestoreOptions = restore_options[&#39;cloudAppsRestoreOptions&#39;]
-        cloudAppsRestoreOptions[&#39;googleRestoreOptions&#39;][&#39;findQuery&#39;] = self._prepare_findquery_onedrive_for_business_client(source_item_list, subclient_id)
+        cloudAppsRestoreOptions[&#39;googleRestoreOptions&#39;][
+            &#39;findQuery&#39;] = self._prepare_findquery_onedrive_for_business_client(source_item_list, subclient_id)
         if include_deleted_items:
-            cloudAppsRestoreOptions[&#39;googleRestoreOptions&#39;][&#39;findQuery&#39;][&#39;advSearchGrp&#39;][&#39;commonFilter&#39;][0][&#39;filter&#39;][&#39;filters&#39;][0][&#39;fieldValues&#39;][&#39;values&#39;].extend([&#34;3333&#34;,&#34;3334&#34;,&#34;3335&#34;])
+            cloudAppsRestoreOptions[&#39;googleRestoreOptions&#39;][&#39;findQuery&#39;][&#39;advSearchGrp&#39;][&#39;commonFilter&#39;][0][&#39;filter&#39;][
+                &#39;filters&#39;][0][&#39;fieldValues&#39;][&#39;values&#39;].extend([&#34;3333&#34;, &#34;3334&#34;, &#34;3335&#34;])
 
         destination_option = &#34;Destination&#34;
         destination_value = &#34;Original location&#34;
@@ -1425,80 +1729,92 @@ default: None</p>
         if disk_restore:
             destination_option = &#34;Destination server&#34;
             destination_value = destination_client
-
+        if restore_to_blob:
+            restore_options[&#39;cloudAppsRestoreOptions&#39;][&#39;googleRestoreOptions&#39;][&#39;blobContainerId&#39;] = kwargs.get(
+                &#39;blob_container_id&#39;)
+            restore_options[&#39;cloudAppsRestoreOptions&#39;][&#39;googleRestoreOptions&#39;][&#39;googleRestoreChoice&#39;] = 4
+            destination_option = &#34;Destination Azure Blob Storage&#34;
+            destination_value = &#34;&#34;
 
         options[&#34;commonOpts&#34;] = {
             &#34;notifyUserOnJobCompletion&#34;: False,
             &#34;jobMetadata&#34;: [
-              {
-                &#34;selectedItems&#34;: [
-                  {
-                    &#34;itemName&#34;: source_item_list[0],
-                    &#34;itemType&#34;: &#34;User&#34;
-                  }
-                ],
-                &#34;jobOptionItems&#34;: [
-                  {
-                    &#34;option&#34;: &#34;Restore destination&#34;,
-                    &#34;value&#34;: &#34;OneDrive for Business&#34;
-                  },
-                  {
-                    &#34;option&#34;: &#34;Source&#34;,
-                    &#34;value&#34;: source_item_list[0]
-                  },
-                  {
-                    &#34;option&#34;: destination_option,
-                    &#34;value&#34;: destination_value
-                  },
-                  {
-                    &#34;option&#34;: &#34;If the file exists&#34;,
-                    &#34;value&#34;: &#34;Restore as a copy&#34; if restore_as_copy and not overwrite else &#34;Unconditionally overwrite&#34; if overwrite else &#34;Skip&#34;
+                {
+                    &#34;selectedItems&#34;: [
+                        {
+                            &#34;itemName&#34;: source_item_list[0],
+                            &#34;itemType&#34;: &#34;User&#34;
+                        }
+                    ],
+                    &#34;jobOptionItems&#34;: [
+                        {
+                            &#34;option&#34;: &#34;Restore destination&#34;,
+                            &#34;value&#34;: &#34;Azure Blob Storage&#34; if restore_to_blob else &#34;OneDrive for Business&#34;
+                        },
+                        {
+                            &#34;option&#34;: &#34;Source&#34;,
+                            &#34;value&#34;: source_item_list[0]
+                        },
+                        {
+                            &#34;option&#34;: destination_option,
+                            &#34;value&#34;: destination_value
+                        },
+                        {
+                            &#34;option&#34;: &#34;If the file exists&#34;,
+                            &#34;value&#34;: &#34;Restore as a copy&#34; if restore_as_copy and not overwrite else &#34;Unconditionally overwrite&#34; if overwrite else &#34;Skip&#34;
 
-                  },
-                  {
-                    &#34;option&#34;: &#34;Skip file permissions&#34;,
-                    &#34;value&#34;: &#34;Enabled&#34; if skip_file_permissions else &#34;Disabled&#34;
-                  },
-                  {
-                    &#34;option&#34;: &#34;Include deleted items&#34;,
-                    &#34;value&#34;: &#34;Enabled&#34; if include_deleted_items else &#34;Disabled&#34;
-                  }
-                ]
-              }
+                        },
+                        {
+                            &#34;option&#34;: &#34;Skip file permissions&#34;,
+                            &#34;value&#34;: &#34;Enabled&#34; if skip_file_permissions else &#34;Disabled&#34;
+                        },
+                        {
+                            &#34;option&#34;: &#34;Include deleted items&#34;,
+                            &#34;value&#34;: &#34;Enabled&#34; if include_deleted_items else &#34;Disabled&#34;
+                        }
+                    ]
+                }
             ]
-          }
+        }
 
         joboptionitems = options[&#39;commonOpts&#39;][&#39;jobMetadata&#39;][0][&#39;jobOptionItems&#39;]
 
         if out_of_place:
-            joboptionitems.append({&#34;option&#34;: &#34;Destination client&#34;,&#34;value&#34;: destination_client })
+            joboptionitems.append({&#34;option&#34;: &#34;Destination client&#34;, &#34;value&#34;: destination_client})
         if disk_restore:
             joboptionitems.append({&#34;option&#34;: &#34;Destination path&#34;, &#34;value&#34;: destination_path})
 
         return request_json
 
-    def _prepare_delete_json_onedrive_v2(self, item_guids, **kwargs):
-        &#34;&#34;&#34; Utility function to prepare delete documents json for OneDrive for bussiness clients
+    def _prepare_delete_json_onedrive_v2(self, item_guids: list, **kwargs: dict) -&gt; dict:
+        &#34;&#34;&#34;Prepare the JSON payload for deleting documents in OneDrive for Business clients.
 
-            Args:
-                item_guid (str)         --  item GUID to delete in browse
+        This utility function constructs the request JSON required to delete one or more items 
+        (documents or folders) from OneDrive for Business clients, based on the provided item GUIDs.
+        Additional options can be specified using keyword arguments.
 
-                Kwargs:
+        Args:
+            item_guids: A list of item GUIDs (str) representing the documents or folders to delete.
+            **kwargs: Optional keyword arguments to modify the delete operation.
+                - include_deleted_items (bool): If True, include deleted items in the search.
 
-                    include_deleted_items (bool)             --  If True, deleted items will be included in search
+        Returns:
+            A dictionary representing the request JSON for the delete document operation.
 
-            Returns:
-                request_json (dict) - request json for delete document
+        Raises:
+            SDKException: If the destination client with the given item does not exist, or if any 
+                parameter type is invalid.
 
-            Raises:
-                SDKException:
-                    if destination client with given item does not exist
+        Example:
+            &gt;&gt;&gt; item_guids = [&#39;1234-5678-90ab-cdef&#39;, &#39;abcd-ef12-3456-7890&#39;]
+            &gt;&gt;&gt; delete_json = onedrive_instance._prepare_delete_json_onedrive_v2(item_guids, include_deleted_items=True)
+            &gt;&gt;&gt; print(delete_json)
+            # The returned dictionary can be used as the payload for a delete request.
 
-                    if type of parameter is invalid
         &#34;&#34;&#34;
         folder = kwargs.get(&#39;folder&#39;, False)
         include_deleted_items = kwargs.get(&#39;include_deleted_items&#39;, False)
-        subclient_id = self.subclients[&#39;default&#39;][&#39;id&#39;]
+        subclient_id = int(self.subclients[&#39;default&#39;][&#39;id&#39;])
 
         if isinstance(item_guids, str):
             source_item_list = [item_guids]
@@ -1550,64 +1866,56 @@ default: None</p>
 
     def restore_out_of_place(
             self,
-            client,
-            destination_path,
-            paths,
-            overwrite=True,
-            restore_data_and_acl=True,
-            copy_precedence=None,
-            from_time=None,
-            to_time=None,
-            to_disk=False):
-        &#34;&#34;&#34;Restores the files/folders specified in the input paths list to the input client,
-            at the specified destionation location.
+            client: object,
+            destination_path: str,
+            paths: list,
+            overwrite: bool = True,
+            restore_data_and_acl: bool = True,
+            copy_precedence: int = None,
+            from_time: str = None,
+            to_time: str = None,
+            to_disk: bool = False
+        ) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;Restore specified files or folders to a different client and/or location.
 
-            Args:
-                client                (str/object) --  either the name of the client or
-                                                           the instance of the Client
+        This method restores the files and folders listed in `paths` to the given `destination_path`
+        on the specified `client`. The restore can optionally overwrite existing files, restore
+        data and ACLs, and be filtered by time range or copy precedence. The restore can also
+        be performed to disk if required.
 
-                destination_path      (str)        --  full path of the restore location on client
+        Args:
+            client: The target client for restore. Can be a client name (str) or a Client object.
+            destination_path: Full path to the restore location on the target client.
+            paths: List of full file or folder paths to restore.
+            overwrite: If True, existing files at the destination will be overwritten. Default is True.
+            restore_data_and_acl: If True, both data and ACLs will be restored. Default is True.
+            copy_precedence: Optional copy precedence value for the storage policy copy. Default is None.
+            from_time: Optional lower bound for restore time window (format: &#39;YYYY-MM-DD HH:MM:SS&#39;). Default is None.
+            to_time: Optional upper bound for restore time window (format: &#39;YYYY-MM-DD HH:MM:SS&#39;). Default is None.
+            to_disk: If True, perform a restore to disk operation. Default is False.
 
-                paths                 (list)       --  list of full paths of
-                                                           files/folders to restore
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                overwrite             (bool)       --  unconditional overwrite files during restore
-                    default: True
+        Raises:
+            SDKException: If any of the following conditions are met:
+                - `client` is not a string or Client instance
+                - `destination_path` is not a string
+                - `paths` is not a list
+                - Failed to initialize the restore job
+                - The response is empty or not successful
 
-                restore_data_and_acl  (bool)       --  restore data and ACL files
-                    default: True
+        Example:
+            &gt;&gt;&gt; # Restore files to a different client and location
+            &gt;&gt;&gt; job = onedrive_instance.restore_out_of_place(
+            ...     client=&#39;TargetClient&#39;,
+            ...     destination_path=&#39;C:\\Restore\\Data&#39;,
+            ...     paths=[&#39;/user/docs/file1.txt&#39;, &#39;/user/docs/file2.txt&#39;],
+            ...     overwrite=True,
+            ...     restore_data_and_acl=True
+            ... )
+            &gt;&gt;&gt; print(f&#34;Restore job started with ID: {job.job_id}&#34;)
 
-                copy_precedence         (int)   --  copy precedence value of storage policy copy
-                    default: None
-
-                from_time           (str)       --  time to retore the contents after
-                        format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                to_time           (str)         --  time to retore the contents before
-                        format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                to_disk             (bool)       --  If True, restore to disk will be performed
-
-            Returns:
-                object - instance of the Job class for this restore job
-
-            Raises:
-                SDKException:
-                    if client is not a string or Client instance
-
-                    if destination_path is not a string
-
-                    if paths is not a list
-
-                    if failed to initialize job
-
-                    if response is empty
-
-                    if response is not success
         &#34;&#34;&#34;
         from cvpysdk.client import Client
 
@@ -1663,17 +1971,21 @@ default: None</p>
         }
         return self._process_restore_response(request_json)
 
-    def enable_auto_discovery(self, mode=&#39;REGEX&#39;):
-        &#34;&#34;&#34;Enables auto discovery on instance.
+    def enable_auto_discovery(self, mode: str = &#39;REGEX&#39;) -&gt; None:
+        &#34;&#34;&#34;Enable auto discovery on the OneDrive instance.
 
-           Args:
+        This method enables automatic discovery of OneDrive users or groups based on the specified mode.
 
-                mode    (str)   -- Auto Discovery mode
+        Args:
+            mode: The auto discovery mode to use. Valid values are:
+                - &#39;REGEX&#39;: Enables discovery using regular expressions.
+                - &#39;GROUP&#39;: Enables discovery based on group membership.
+                Default is &#39;REGEX&#39;.
 
-                Valid Values:
-
-                    REGEX
-                    GROUP
+        Example:
+            &gt;&gt;&gt; instance = OneDriveInstance()
+            &gt;&gt;&gt; instance.enable_auto_discovery()  # Enables auto discovery in REGEX mode
+            &gt;&gt;&gt; instance.enable_auto_discovery(mode=&#39;GROUP&#39;)  # Enables auto discovery in GROUP mode
 
         &#34;&#34;&#34;
         auto_discovery_dict = {
@@ -1697,17 +2009,33 @@ default: None</p>
         self._set_instance_properties(&#34;_properties[&#39;cloudAppsInstance&#39;]&#34;, instance_prop)
         self.refresh()
 
-    def _get_instance_properties_json(self):
-        &#34;&#34;&#34;Returns the instance properties json.&#34;&#34;&#34;
+    def _get_instance_properties_json(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the instance properties as a JSON dictionary.
+
+        Returns:
+            dict: A dictionary containing the properties of the OneDrive instance in JSON format.
+
+        Example:
+            &gt;&gt;&gt; instance = OneDriveInstance()
+            &gt;&gt;&gt; properties_json = instance._get_instance_properties_json()
+            &gt;&gt;&gt; print(properties_json)
+            &gt;&gt;&gt; # Output will be a dictionary with instance property details
+
+        &#34;&#34;&#34;
 
         return {&#39;instanceProperties&#39;: self._properties}
 
-    def modify_index_server(self, modified_index_server):
-        &#34;&#34;&#34;
-            Method to modify the index server
+    def modify_index_server(self, modified_index_server: str) -&gt; None:
+        &#34;&#34;&#34;Modify the index server for the OneDrive instance.
 
-            Arguments:
-                modified_index_server        (str)--     new index server name
+        Args:
+            modified_index_server: The name of the new index server to be set.
+
+        Example:
+            &gt;&gt;&gt; onedrive_instance = OneDriveInstance()
+            &gt;&gt;&gt; onedrive_instance.modify_index_server(&#34;NewIndexServer01&#34;)
+            &gt;&gt;&gt; print(&#34;Index server updated successfully.&#34;)
+
         &#34;&#34;&#34;
         update_dict = {
             &#34;instance&#34;: {
@@ -1729,14 +2057,22 @@ default: None</p>
 
         self.update_properties(properties_dict=update_dict)
 
-    def modify_accessnodes(self,modified_accessnodes_list,modified_user_name,modified_user_password):
-        &#34;&#34;&#34;
-                   Method to modify accessnodes
+    def modify_accessnodes(self, modified_accessnodes_list: list, modified_user_name: str, modified_user_password: str) -&gt; None:
+        &#34;&#34;&#34;Modify the access nodes for the OneDrive instance.
 
-                   Arguments:
-                       modified_accessnodes_list     (list)  --     list of new accessnodes
-                       modified_user_name            (str)   --     new user account name
-                       modified_user_password        (str)   --     new user account password
+        This method updates the list of access nodes and the associated user credentials
+        for the OneDrive instance.
+
+        Args:
+            modified_accessnodes_list: List of new access nodes to be assigned to the instance.
+            modified_user_name: The new user account name to associate with the access nodes.
+            modified_user_password: The new user account password for the specified user.
+
+        Example:
+            &gt;&gt;&gt; accessnodes = [&#39;node1&#39;, &#39;node2&#39;]
+            &gt;&gt;&gt; instance.modify_accessnodes(accessnodes, &#39;new_user&#39;, &#39;new_password&#39;)
+            &gt;&gt;&gt; print(&#34;Access nodes and credentials updated successfully.&#34;)
+
         &#34;&#34;&#34;
         member_servers=[]
         for client in modified_accessnodes_list:
@@ -1776,25 +2112,28 @@ default: None</p>
 
         self.update_properties(properties_dict=update_dict)
 
-    def modify_connection_settings(self, azure_app_id, azure_dir_id, azure_app_secret):
-        &#34;&#34;&#34;
-                   Method to modify OneDrive connection settings
+    def modify_connection_settings(self, azure_app_id: str, azure_dir_id: str, azure_app_secret: str) -&gt; None:
+        &#34;&#34;&#34;Modify the OneDrive connection settings with new Azure credentials.
 
-                   Arguments:
-                       azure_app_id         (str)   --      new azure application id
-                       azure_dir_id         (str)   --      new azure directory id
-                       azure_app_secret        (str)   --     new azure app password
+        Updates the Azure application ID, directory ID, and application secret used for connecting to OneDrive.
 
-                  Returns:
-                       None
+        Args:
+            azure_app_id: The new Azure application (client) ID.
+            azure_dir_id: The new Azure directory (tenant) ID.
+            azure_app_secret: The new Azure application secret (password).
 
-                  Raises:
-                      SDKException:
-                            if failed to add
+        Raises:
+            SDKException: If the update fails, the response is empty, or the response code is not as expected.
 
-                            if response is empty
+        Example:
+            &gt;&gt;&gt; instance = OneDriveInstance()
+            &gt;&gt;&gt; instance.modify_connection_settings(
+            ...     azure_app_id=&#34;your-app-id&#34;,
+            ...     azure_dir_id=&#34;your-dir-id&#34;,
+            ...     azure_app_secret=&#34;your-app-secret&#34;
+            ... )
+            &gt;&gt;&gt; print(&#34;Connection settings updated successfully.&#34;)
 
-                            if response code is not as expected
         &#34;&#34;&#34;
 
         if not isinstance(azure_app_id, str) or not azure_app_id:
@@ -1824,26 +2163,35 @@ default: None</p>
 
         self.update_properties(properties_dict=update_dict)
 
-    def delete_data_from_browse(self, item_guids, include_deleted_items=False, folder=False):
-        &#34;&#34;&#34;
-        Deletes items for the backupset in the Index and makes them unavailable for browsing and recovery
+    def delete_data_from_browse(self, item_guids: &#39;Union[str, List[str]]&#39;, include_deleted_items: bool = False, folder: bool = False) -&gt; &#39;Union[None, Any]&#39;:
+        &#34;&#34;&#34;Delete items from the backupset index, making them unavailable for browsing and recovery.
 
-            Args:
-                item_guids       (str/list)      --      The guids of items to be deleted from browse
-                include_deleted_items (bool)     --      If True, deleted items will be included in browse
-                folder           (bool)          --      If True, item to be deleted is Folder
+        This method removes specified items (files or folders) from the backupset&#39;s index. 
+        Once deleted, these items cannot be browsed or recovered through the standard interface.
 
-            Returns:
-                None        --      If delete request is sent successfully for file
-                jobIds      --      If delete request is sent successfully for folder
+        Args:
+            item_guids: A single GUID (str) or a list of GUIDs (List[str]) representing the items to delete from browse.
+            include_deleted_items: If True, also includes items that are already deleted in the browse operation.
+            folder: If True, indicates that the item(s) to be deleted are folders.
 
-            Raises:
-                SDKException:
-                    if failed to delete
+        Returns:
+            None if the delete request is sent successfully for files.
+            jobIds if the delete request is sent successfully for folders.
 
-                    if response is empty
+        Raises:
+            SDKException: If the deletion fails, the response is empty, or the response code is not as expected.
 
-                    if response code is not as expected
+        Example:
+            &gt;&gt;&gt; # Delete a single file by GUID
+            &gt;&gt;&gt; instance = OneDriveInstance()
+            &gt;&gt;&gt; instance.delete_data_from_browse(&#39;file-guid-123&#39;)
+            &gt;&gt;&gt; 
+            &gt;&gt;&gt; # Delete multiple files by GUIDs
+            &gt;&gt;&gt; instance.delete_data_from_browse([&#39;file-guid-123&#39;, &#39;file-guid-456&#39;])
+            &gt;&gt;&gt; 
+            &gt;&gt;&gt; # Delete a folder by GUID and get job IDs
+            &gt;&gt;&gt; job_ids = instance.delete_data_from_browse(&#39;folder-guid-789&#39;, folder=True)
+            &gt;&gt;&gt; print(f&#34;Delete job IDs: {job_ids}&#34;)
 
         &#34;&#34;&#34;
         if not isinstance(item_guids, str) or not item_guids:
@@ -1864,103 +2212,247 @@ default: None</p>
 </ul>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.auto_discovery_mode"><code class="name">var <span class="ident">auto_discovery_mode</span></code></dt>
+<dt id="cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.auto_discovery_mode"><code class="name">var <span class="ident">auto_discovery_mode</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the Auto discovery mode property</p></div>
+<div class="desc"><p>Get the auto discovery mode property for the OneDrive instance.</p>
+<p>Returns
+-----=
+The current auto discovery mode as a string.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; instance = OneDriveInstance()
+&gt;&gt;&gt; mode = instance.auto_discovery_mode
+&gt;&gt;&gt; print(f&quot;Auto discovery mode: {mode}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/cloudapps/onedrive_instance.py#L138-L141" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/cloudapps/onedrive_instance.py#L205-L219" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def auto_discovery_mode(self):
-    &#34;&#34;&#34;Returns the Auto discovery mode property&#34;&#34;&#34;
+def auto_discovery_mode(self) -&gt; str:
+    &#34;&#34;&#34;Get the auto discovery mode property for the OneDrive instance.
+
+    Returns:
+        The current auto discovery mode as a string.
+
+    Example:
+        &gt;&gt;&gt; instance = OneDriveInstance()
+        &gt;&gt;&gt; mode = instance.auto_discovery_mode
+        &gt;&gt;&gt; print(f&#34;Auto discovery mode: {mode}&#34;)
+
+    &#34;&#34;&#34;
     return self._auto_discovery_mode</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.auto_discovery_status"><code class="name">var <span class="ident">auto_discovery_status</span></code></dt>
+<dt id="cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.auto_discovery_status"><code class="name">var <span class="ident">auto_discovery_status</span> : bool</code></dt>
 <dd>
-<div class="desc"><p>Treats the Auto discovery property as a read-only attribute.</p></div>
+<div class="desc"><p>Get the current status of the Auto Discovery property for the OneDrive instance.</p>
+<p>This property allows you to check whether Auto Discovery is enabled or disabled
+for the OneDrive instance. It is a read-only attribute.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>bool</code></dt>
+<dd>True if Auto Discovery is enabled, False otherwise.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; instance = OneDriveInstance()
+&gt;&gt;&gt; status = instance.auto_discovery_status
+&gt;&gt;&gt; print(f&quot;Auto Discovery Enabled: {status}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/cloudapps/onedrive_instance.py#L133-L136" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/cloudapps/onedrive_instance.py#L186-L203" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def auto_discovery_status(self):
-    &#34;&#34;&#34;Treats the Auto discovery property as a read-only attribute.&#34;&#34;&#34;
+def auto_discovery_status(self) -&gt; bool:
+    &#34;&#34;&#34;Get the current status of the Auto Discovery property for the OneDrive instance.
+
+    This property allows you to check whether Auto Discovery is enabled or disabled
+    for the OneDrive instance. It is a read-only attribute.
+
+    Returns:
+        bool: True if Auto Discovery is enabled, False otherwise.
+
+    Example:
+        &gt;&gt;&gt; instance = OneDriveInstance()
+        &gt;&gt;&gt; status = instance.auto_discovery_status
+        &gt;&gt;&gt; print(f&#34;Auto Discovery Enabled: {status}&#34;)
+
+    &#34;&#34;&#34;
     return self._auto_discovery_enabled</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.ca_instance_type"><code class="name">var <span class="ident">ca_instance_type</span></code></dt>
+<dt id="cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.ca_instance_type"><code class="name">var <span class="ident">ca_instance_type</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the CloudApps instance type</p></div>
+<div class="desc"><p>Get the CloudApps instance type for this OneDrive instance.</p>
+<p>Returns
+-----=
+The type of the CloudApps instance as a string.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; onedrive_instance = OneDriveInstance()
+&gt;&gt;&gt; instance_type = onedrive_instance.ca_instance_type
+&gt;&gt;&gt; print(f&quot;CloudApps instance type: {instance_type}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/cloudapps/onedrive_instance.py#L121-L126" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/cloudapps/onedrive_instance.py#L152-L168" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def ca_instance_type(self):
-    &#34;&#34;&#34;Returns the CloudApps instance type&#34;&#34;&#34;
+def ca_instance_type(self) -&gt; str:
+    &#34;&#34;&#34;Get the CloudApps instance type for this OneDrive instance.
+
+    Returns:
+        The type of the CloudApps instance as a string.
+
+    Example:
+        &gt;&gt;&gt; onedrive_instance = OneDriveInstance()
+        &gt;&gt;&gt; instance_type = onedrive_instance.ca_instance_type
+        &gt;&gt;&gt; print(f&#34;CloudApps instance type: {instance_type}&#34;)
+
+    &#34;&#34;&#34;
     if self._ca_instance_type == 7:
         return &#39;ONEDRIVE&#39;
     return self._ca_instance_type</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.manage_content_automatically"><code class="name">var <span class="ident">manage_content_automatically</span></code></dt>
+<dt id="cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.manage_content_automatically"><code class="name">var <span class="ident">manage_content_automatically</span> : bool</code></dt>
 <dd>
-<div class="desc"><p>Returns the CloudApps Manage Content Automatically property</p></div>
+<div class="desc"><p>Get the status of the 'Manage Content Automatically' property for CloudApps.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>bool</code></dt>
+<dd>True if content is managed automatically, False otherwise.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; instance = OneDriveInstance()
+&gt;&gt;&gt; auto_manage = instance.manage_content_automatically
+&gt;&gt;&gt; print(f&quot;Automatic content management enabled: {auto_manage}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/cloudapps/onedrive_instance.py#L128-L131" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/cloudapps/onedrive_instance.py#L170-L184" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def manage_content_automatically(self):
-    &#34;&#34;&#34;Returns the CloudApps Manage Content Automatically property&#34;&#34;&#34;
+def manage_content_automatically(self) -&gt; bool:
+    &#34;&#34;&#34;Get the status of the &#39;Manage Content Automatically&#39; property for CloudApps.
+
+    Returns:
+        bool: True if content is managed automatically, False otherwise.
+
+    Example:
+        &gt;&gt;&gt; instance = OneDriveInstance()
+        &gt;&gt;&gt; auto_manage = instance.manage_content_automatically
+        &gt;&gt;&gt; print(f&#34;Automatic content management enabled: {auto_manage}&#34;)
+
+    &#34;&#34;&#34;
     return self._manage_content_automatically</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.onedrive_client_id"><code class="name">var <span class="ident">onedrive_client_id</span></code></dt>
+<dt id="cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.onedrive_client_id"><code class="name">var <span class="ident">onedrive_client_id</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the OneDrive app client id</p></div>
+<div class="desc"><p>Get the OneDrive app client ID associated with this instance.</p>
+<p>Returns
+-----=
+The client ID string used for OneDrive app authentication.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; instance = OneDriveInstance()
+&gt;&gt;&gt; client_id = instance.onedrive_client_id
+&gt;&gt;&gt; print(f&quot;OneDrive Client ID: {client_id}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/cloudapps/onedrive_instance.py#L143-L146" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/cloudapps/onedrive_instance.py#L221-L235" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def onedrive_client_id(self):
-    &#34;&#34;&#34;Returns the OneDrive app client id&#34;&#34;&#34;
+def onedrive_client_id(self) -&gt; str:
+    &#34;&#34;&#34;Get the OneDrive app client ID associated with this instance.
+
+    Returns:
+        The client ID string used for OneDrive app authentication.
+
+    Example:
+        &gt;&gt;&gt; instance = OneDriveInstance()
+        &gt;&gt;&gt; client_id = instance.onedrive_client_id
+        &gt;&gt;&gt; print(f&#34;OneDrive Client ID: {client_id}&#34;)
+
+    &#34;&#34;&#34;
     return self._client_id</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.onedrive_tenant"><code class="name">var <span class="ident">onedrive_tenant</span></code></dt>
+<dt id="cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.onedrive_tenant"><code class="name">var <span class="ident">onedrive_tenant</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the OneDrive tenant id</p></div>
+<div class="desc"><p>Get the OneDrive tenant ID associated with this instance.</p>
+<p>Returns
+-----=
+The OneDrive tenant ID as a string.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; instance = OneDriveInstance()
+&gt;&gt;&gt; tenant_id = instance.onedrive_tenant  # Access the tenant ID using the property
+&gt;&gt;&gt; print(f&quot;OneDrive tenant ID: {tenant_id}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/cloudapps/onedrive_instance.py#L148-L151" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/cloudapps/onedrive_instance.py#L237-L251" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def onedrive_tenant(self):
-    &#34;&#34;&#34;Returns the OneDrive tenant id&#34;&#34;&#34;
+def onedrive_tenant(self) -&gt; str:
+    &#34;&#34;&#34;Get the OneDrive tenant ID associated with this instance.
+
+    Returns:
+        The OneDrive tenant ID as a string.
+
+    Example:
+        &gt;&gt;&gt; instance = OneDriveInstance()
+        &gt;&gt;&gt; tenant_id = instance.onedrive_tenant  # Access the tenant ID using the property
+        &gt;&gt;&gt; print(f&#34;OneDrive tenant ID: {tenant_id}&#34;)
+
+    &#34;&#34;&#34;
     return self._tenant</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.proxy_client"><code class="name">var <span class="ident">proxy_client</span></code></dt>
+<dt id="cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.proxy_client"><code class="name">var <span class="ident">proxy_client</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the proxy client name to this instance</p></div>
+<div class="desc"><p>Get the name of the proxy client associated with this OneDrive instance.</p>
+<p>Returns
+-----=
+The name of the proxy client as a string.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; instance = OneDriveInstance()
+&gt;&gt;&gt; proxy_name = instance.proxy_client
+&gt;&gt;&gt; print(f&quot;Proxy client name: {proxy_name}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/cloudapps/onedrive_instance.py#L153-L156" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/cloudapps/onedrive_instance.py#L253-L267" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def proxy_client(self):
-    &#34;&#34;&#34;Returns the proxy client name to this instance&#34;&#34;&#34;
+def proxy_client(self) -&gt; str:
+    &#34;&#34;&#34;Get the name of the proxy client associated with this OneDrive instance.
+
+    Returns:
+        The name of the proxy client as a string.
+
+    Example:
+        &gt;&gt;&gt; instance = OneDriveInstance()
+        &gt;&gt;&gt; proxy_name = instance.proxy_client
+        &gt;&gt;&gt; print(f&#34;Proxy client name: {proxy_name}&#34;)
+
+    &#34;&#34;&#34;
     return self._proxy_client</code></pre>
 </details>
 </dd>
@@ -1968,52 +2460,79 @@ def proxy_client(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.delete_data_from_browse"><code class="name flex">
-<span>def <span class="ident">delete_data_from_browse</span></span>(<span>self, item_guids, include_deleted_items=False, folder=False)</span>
+<span>def <span class="ident">delete_data_from_browse</span></span>(<span>self, item_guids: Union[str, List[str]], include_deleted_items: bool = False, folder: bool = False) ‑> Optional[None]</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Deletes items for the backupset in the Index and makes them unavailable for browsing and recovery</p>
-<pre><code>Args:
-    item_guids       (str/list)      --      The guids of items to be deleted from browse
-    include_deleted_items (bool)     --      If True, deleted items will be included in browse
-    folder           (bool)          --      If True, item to be deleted is Folder
-
-Returns:
-    None        --      If delete request is sent successfully for file
-    jobIds      --      If delete request is sent successfully for folder
-
-Raises:
-    SDKException:
-        if failed to delete
-
-        if response is empty
-
-        if response code is not as expected
+<div class="desc"><p>Delete items from the backupset index, making them unavailable for browsing and recovery.</p>
+<p>This method removes specified items (files or folders) from the backupset's index.
+Once deleted, these items cannot be browsed or recovered through the standard interface.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>item_guids</code></strong></dt>
+<dd>A single GUID (str) or a list of GUIDs (List[str]) representing the items to delete from browse.</dd>
+<dt><strong><code>include_deleted_items</code></strong></dt>
+<dd>If True, also includes items that are already deleted in the browse operation.</dd>
+<dt><strong><code>folder</code></strong></dt>
+<dd>If True, indicates that the item(s) to be deleted are folders.</dd>
+</dl>
+<p>Returns
+-----=
+None if the delete request is sent successfully for files.
+jobIds if the delete request is sent successfully for folders.</p>
+<dl>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the deletion fails, the response is empty, or the response code is not as expected.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; # Delete a single file by GUID
+&gt;&gt;&gt; instance = OneDriveInstance()
+&gt;&gt;&gt; instance.delete_data_from_browse('file-guid-123')
+&gt;&gt;&gt; 
+&gt;&gt;&gt; # Delete multiple files by GUIDs
+&gt;&gt;&gt; instance.delete_data_from_browse(['file-guid-123', 'file-guid-456'])
+&gt;&gt;&gt; 
+&gt;&gt;&gt; # Delete a folder by GUID and get job IDs
+&gt;&gt;&gt; job_ids = instance.delete_data_from_browse('folder-guid-789', folder=True)
+&gt;&gt;&gt; print(f&quot;Delete job IDs: {job_ids}&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/cloudapps/onedrive_instance.py#L876-L907" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/cloudapps/onedrive_instance.py#L1056-L1097" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def delete_data_from_browse(self, item_guids, include_deleted_items=False, folder=False):
-    &#34;&#34;&#34;
-    Deletes items for the backupset in the Index and makes them unavailable for browsing and recovery
+<pre><code class="python">def delete_data_from_browse(self, item_guids: &#39;Union[str, List[str]]&#39;, include_deleted_items: bool = False, folder: bool = False) -&gt; &#39;Union[None, Any]&#39;:
+    &#34;&#34;&#34;Delete items from the backupset index, making them unavailable for browsing and recovery.
 
-        Args:
-            item_guids       (str/list)      --      The guids of items to be deleted from browse
-            include_deleted_items (bool)     --      If True, deleted items will be included in browse
-            folder           (bool)          --      If True, item to be deleted is Folder
+    This method removes specified items (files or folders) from the backupset&#39;s index. 
+    Once deleted, these items cannot be browsed or recovered through the standard interface.
 
-        Returns:
-            None        --      If delete request is sent successfully for file
-            jobIds      --      If delete request is sent successfully for folder
+    Args:
+        item_guids: A single GUID (str) or a list of GUIDs (List[str]) representing the items to delete from browse.
+        include_deleted_items: If True, also includes items that are already deleted in the browse operation.
+        folder: If True, indicates that the item(s) to be deleted are folders.
 
-        Raises:
-            SDKException:
-                if failed to delete
+    Returns:
+        None if the delete request is sent successfully for files.
+        jobIds if the delete request is sent successfully for folders.
 
-                if response is empty
+    Raises:
+        SDKException: If the deletion fails, the response is empty, or the response code is not as expected.
 
-                if response code is not as expected
+    Example:
+        &gt;&gt;&gt; # Delete a single file by GUID
+        &gt;&gt;&gt; instance = OneDriveInstance()
+        &gt;&gt;&gt; instance.delete_data_from_browse(&#39;file-guid-123&#39;)
+        &gt;&gt;&gt; 
+        &gt;&gt;&gt; # Delete multiple files by GUIDs
+        &gt;&gt;&gt; instance.delete_data_from_browse([&#39;file-guid-123&#39;, &#39;file-guid-456&#39;])
+        &gt;&gt;&gt; 
+        &gt;&gt;&gt; # Delete a folder by GUID and get job IDs
+        &gt;&gt;&gt; job_ids = instance.delete_data_from_browse(&#39;folder-guid-789&#39;, folder=True)
+        &gt;&gt;&gt; print(f&#34;Delete job IDs: {job_ids}&#34;)
 
     &#34;&#34;&#34;
     if not isinstance(item_guids, str) or not item_guids:
@@ -2029,34 +2548,46 @@ Raises:
 </details>
 </dd>
 <dt id="cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.enable_auto_discovery"><code class="name flex">
-<span>def <span class="ident">enable_auto_discovery</span></span>(<span>self, mode='REGEX')</span>
+<span>def <span class="ident">enable_auto_discovery</span></span>(<span>self, mode: str = 'REGEX') ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Enables auto discovery on instance.</p>
-<h2 id="args">Args</h2>
-<p>mode
-(str)
-&ndash; Auto Discovery mode</p>
-<p>Valid Values:</p>
-<pre><code>REGEX
-GROUP
+<div class="desc"><p>Enable auto discovery on the OneDrive instance.</p>
+<p>This method enables automatic discovery of OneDrive users or groups based on the specified mode.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>mode</code></strong></dt>
+<dd>The auto discovery mode to use. Valid values are:
+- 'REGEX': Enables discovery using regular expressions.
+- 'GROUP': Enables discovery based on group membership.
+Default is 'REGEX'.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; instance = OneDriveInstance()
+&gt;&gt;&gt; instance.enable_auto_discovery()  # Enables auto discovery in REGEX mode
+&gt;&gt;&gt; instance.enable_auto_discovery(mode='GROUP')  # Enables auto discovery in GROUP mode
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/cloudapps/onedrive_instance.py#L715-L747" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/cloudapps/onedrive_instance.py#L859-L896" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def enable_auto_discovery(self, mode=&#39;REGEX&#39;):
-    &#34;&#34;&#34;Enables auto discovery on instance.
+<pre><code class="python">def enable_auto_discovery(self, mode: str = &#39;REGEX&#39;) -&gt; None:
+    &#34;&#34;&#34;Enable auto discovery on the OneDrive instance.
 
-       Args:
+    This method enables automatic discovery of OneDrive users or groups based on the specified mode.
 
-            mode    (str)   -- Auto Discovery mode
+    Args:
+        mode: The auto discovery mode to use. Valid values are:
+            - &#39;REGEX&#39;: Enables discovery using regular expressions.
+            - &#39;GROUP&#39;: Enables discovery based on group membership.
+            Default is &#39;REGEX&#39;.
 
-            Valid Values:
-
-                REGEX
-                GROUP
+    Example:
+        &gt;&gt;&gt; instance = OneDriveInstance()
+        &gt;&gt;&gt; instance.enable_auto_discovery()  # Enables auto discovery in REGEX mode
+        &gt;&gt;&gt; instance.enable_auto_discovery(mode=&#39;GROUP&#39;)  # Enables auto discovery in GROUP mode
 
     &#34;&#34;&#34;
     auto_discovery_dict = {
@@ -2082,36 +2613,49 @@ GROUP
 </details>
 </dd>
 <dt id="cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.modify_accessnodes"><code class="name flex">
-<span>def <span class="ident">modify_accessnodes</span></span>(<span>self, modified_accessnodes_list, modified_user_name, modified_user_password)</span>
+<span>def <span class="ident">modify_accessnodes</span></span>(<span>self, modified_accessnodes_list: list, modified_user_name: str, modified_user_password: str) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Method to modify accessnodes</p>
-<h2 id="arguments">Arguments</h2>
-<p>modified_accessnodes_list
-(list)
-&ndash;
-list of new accessnodes
-modified_user_name
-(str)
-&ndash;
-new user account name
-modified_user_password
-(str)
-&ndash;
-new user account password</p></div>
+<div class="desc"><p>Modify the access nodes for the OneDrive instance.</p>
+<p>This method updates the list of access nodes and the associated user credentials
+for the OneDrive instance.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>modified_accessnodes_list</code></strong></dt>
+<dd>List of new access nodes to be assigned to the instance.</dd>
+<dt><strong><code>modified_user_name</code></strong></dt>
+<dd>The new user account name to associate with the access nodes.</dd>
+<dt><strong><code>modified_user_password</code></strong></dt>
+<dd>The new user account password for the specified user.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; accessnodes = ['node1', 'node2']
+&gt;&gt;&gt; instance.modify_accessnodes(accessnodes, 'new_user', 'new_password')
+&gt;&gt;&gt; print(&quot;Access nodes and credentials updated successfully.&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/cloudapps/onedrive_instance.py#L781-L826" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/cloudapps/onedrive_instance.py#L948-L1002" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def modify_accessnodes(self,modified_accessnodes_list,modified_user_name,modified_user_password):
-    &#34;&#34;&#34;
-               Method to modify accessnodes
+<pre><code class="python">def modify_accessnodes(self, modified_accessnodes_list: list, modified_user_name: str, modified_user_password: str) -&gt; None:
+    &#34;&#34;&#34;Modify the access nodes for the OneDrive instance.
 
-               Arguments:
-                   modified_accessnodes_list     (list)  --     list of new accessnodes
-                   modified_user_name            (str)   --     new user account name
-                   modified_user_password        (str)   --     new user account password
+    This method updates the list of access nodes and the associated user credentials
+    for the OneDrive instance.
+
+    Args:
+        modified_accessnodes_list: List of new access nodes to be assigned to the instance.
+        modified_user_name: The new user account name to associate with the access nodes.
+        modified_user_password: The new user account password for the specified user.
+
+    Example:
+        &gt;&gt;&gt; accessnodes = [&#39;node1&#39;, &#39;node2&#39;]
+        &gt;&gt;&gt; instance.modify_accessnodes(accessnodes, &#39;new_user&#39;, &#39;new_password&#39;)
+        &gt;&gt;&gt; print(&#34;Access nodes and credentials updated successfully.&#34;)
+
     &#34;&#34;&#34;
     member_servers=[]
     for client in modified_accessnodes_list:
@@ -2153,56 +2697,62 @@ new user account password</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.modify_connection_settings"><code class="name flex">
-<span>def <span class="ident">modify_connection_settings</span></span>(<span>self, azure_app_id, azure_dir_id, azure_app_secret)</span>
+<span>def <span class="ident">modify_connection_settings</span></span>(<span>self, azure_app_id: str, azure_dir_id: str, azure_app_secret: str) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Method to modify OneDrive connection settings</p>
-<p>Arguments:
-azure_app_id
-(str)
-&ndash;
-new azure application id
-azure_dir_id
-(str)
-&ndash;
-new azure directory id
-azure_app_secret
-(str)
-&ndash;
-new azure app password</p>
-<h2 id="returns">Returns</h2>
-<p>None</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if failed to add</p>
-<pre><code>  if response is empty
-
-  if response code is not as expected
+<div class="desc"><p>Modify the OneDrive connection settings with new Azure credentials.</p>
+<p>Updates the Azure application ID, directory ID, and application secret used for connecting to OneDrive.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>azure_app_id</code></strong></dt>
+<dd>The new Azure application (client) ID.</dd>
+<dt><strong><code>azure_dir_id</code></strong></dt>
+<dd>The new Azure directory (tenant) ID.</dd>
+<dt><strong><code>azure_app_secret</code></strong></dt>
+<dd>The new Azure application secret (password).</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the update fails, the response is empty, or the response code is not as expected.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; instance = OneDriveInstance()
+&gt;&gt;&gt; instance.modify_connection_settings(
+...     azure_app_id=&quot;your-app-id&quot;,
+...     azure_dir_id=&quot;your-dir-id&quot;,
+...     azure_app_secret=&quot;your-app-secret&quot;
+... )
+&gt;&gt;&gt; print(&quot;Connection settings updated successfully.&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/cloudapps/onedrive_instance.py#L828-L874" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/cloudapps/onedrive_instance.py#L1004-L1054" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def modify_connection_settings(self, azure_app_id, azure_dir_id, azure_app_secret):
-    &#34;&#34;&#34;
-               Method to modify OneDrive connection settings
+<pre><code class="python">def modify_connection_settings(self, azure_app_id: str, azure_dir_id: str, azure_app_secret: str) -&gt; None:
+    &#34;&#34;&#34;Modify the OneDrive connection settings with new Azure credentials.
 
-               Arguments:
-                   azure_app_id         (str)   --      new azure application id
-                   azure_dir_id         (str)   --      new azure directory id
-                   azure_app_secret        (str)   --     new azure app password
+    Updates the Azure application ID, directory ID, and application secret used for connecting to OneDrive.
 
-              Returns:
-                   None
+    Args:
+        azure_app_id: The new Azure application (client) ID.
+        azure_dir_id: The new Azure directory (tenant) ID.
+        azure_app_secret: The new Azure application secret (password).
 
-              Raises:
-                  SDKException:
-                        if failed to add
+    Raises:
+        SDKException: If the update fails, the response is empty, or the response code is not as expected.
 
-                        if response is empty
+    Example:
+        &gt;&gt;&gt; instance = OneDriveInstance()
+        &gt;&gt;&gt; instance.modify_connection_settings(
+        ...     azure_app_id=&#34;your-app-id&#34;,
+        ...     azure_dir_id=&#34;your-dir-id&#34;,
+        ...     azure_app_secret=&#34;your-app-secret&#34;
+        ... )
+        &gt;&gt;&gt; print(&#34;Connection settings updated successfully.&#34;)
 
-                        if response code is not as expected
     &#34;&#34;&#34;
 
     if not isinstance(azure_app_id, str) or not azure_app_id:
@@ -2234,25 +2784,38 @@ if failed to add</p>
 </details>
 </dd>
 <dt id="cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.modify_index_server"><code class="name flex">
-<span>def <span class="ident">modify_index_server</span></span>(<span>self, modified_index_server)</span>
+<span>def <span class="ident">modify_index_server</span></span>(<span>self, modified_index_server: str) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Method to modify the index server</p>
-<h2 id="arguments">Arguments</h2>
-<p>modified_index_server
-(str)&ndash;
-new index server name</p></div>
+<div class="desc"><p>Modify the index server for the OneDrive instance.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>modified_index_server</code></strong></dt>
+<dd>The name of the new index server to be set.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; onedrive_instance = OneDriveInstance()
+&gt;&gt;&gt; onedrive_instance.modify_index_server(&quot;NewIndexServer01&quot;)
+&gt;&gt;&gt; print(&quot;Index server updated successfully.&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/cloudapps/onedrive_instance.py#L754-L779" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/cloudapps/onedrive_instance.py#L915-L946" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def modify_index_server(self, modified_index_server):
-    &#34;&#34;&#34;
-        Method to modify the index server
+<pre><code class="python">def modify_index_server(self, modified_index_server: str) -&gt; None:
+    &#34;&#34;&#34;Modify the index server for the OneDrive instance.
 
-        Arguments:
-            modified_index_server        (str)--     new index server name
+    Args:
+        modified_index_server: The name of the new index server to be set.
+
+    Example:
+        &gt;&gt;&gt; onedrive_instance = OneDriveInstance()
+        &gt;&gt;&gt; onedrive_instance.modify_index_server(&#34;NewIndexServer01&#34;)
+        &gt;&gt;&gt; print(&#34;Index server updated successfully.&#34;)
+
     &#34;&#34;&#34;
     update_dict = {
         &#34;instance&#34;: {
@@ -2276,138 +2839,118 @@ new index server name</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.instances.cloudapps.onedrive_instance.OneDriveInstance.restore_out_of_place"><code class="name flex">
-<span>def <span class="ident">restore_out_of_place</span></span>(<span>self, client, destination_path, paths, overwrite=True, restore_data_and_acl=True, copy_precedence=None, from_time=None, to_time=None, to_disk=False)</span>
+<span>def <span class="ident">restore_out_of_place</span></span>(<span>self, client: object, destination_path: str, paths: list, overwrite: bool = True, restore_data_and_acl: bool = True, copy_precedence: int = None, from_time: str = None, to_time: str = None, to_disk: bool = False) ‑> <a title="cvpysdk.job.Job" href="../../job.html#cvpysdk.job.Job">Job</a></span>
 </code></dt>
 <dd>
-<div class="desc"><p>Restores the files/folders specified in the input paths list to the input client,
-at the specified destionation location.</p>
-<h2 id="args">Args</h2>
-<p>client
-(str/object) &ndash;
-either the name of the client or
-the instance of the Client</p>
-<p>destination_path
-(str)
-&ndash;
-full path of the restore location on client</p>
-<p>paths
-(list)
-&ndash;
-list of full paths of
-files/folders to restore</p>
-<p>overwrite
-(bool)
-&ndash;
-unconditional overwrite files during restore
-default: True</p>
-<p>restore_data_and_acl
-(bool)
-&ndash;
-restore data and ACL files
-default: True</p>
-<p>copy_precedence
-(int)
-&ndash;
-copy precedence value of storage policy copy
-default: None</p>
-<p>from_time
-(str)
-&ndash;
-time to retore the contents after
-format: YYYY-MM-DD HH:MM:SS</p>
-<pre><code>default: None
-</code></pre>
-<p>to_time
-(str)
-&ndash;
-time to retore the contents before
-format: YYYY-MM-DD HH:MM:SS</p>
-<pre><code>default: None
-</code></pre>
-<p>to_disk
-(bool)
-&ndash;
-If True, restore to disk will be performed</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this restore job</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if client is not a string or Client instance</p>
-<pre><code>if destination_path is not a string
-
-if paths is not a list
-
-if failed to initialize job
-
-if response is empty
-
-if response is not success
+<div class="desc"><p>Restore specified files or folders to a different client and/or location.</p>
+<p>This method restores the files and folders listed in <code>paths</code> to the given <code>destination_path</code>
+on the specified <code>client</code>. The restore can optionally overwrite existing files, restore
+data and ACLs, and be filtered by time range or copy precedence. The restore can also
+be performed to disk if required.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>client</code></strong></dt>
+<dd>The target client for restore. Can be a client name (str) or a Client object.</dd>
+<dt><strong><code>destination_path</code></strong></dt>
+<dd>Full path to the restore location on the target client.</dd>
+<dt><strong><code>paths</code></strong></dt>
+<dd>List of full file or folder paths to restore.</dd>
+<dt><strong><code>overwrite</code></strong></dt>
+<dd>If True, existing files at the destination will be overwritten. Default is True.</dd>
+<dt><strong><code>restore_data_and_acl</code></strong></dt>
+<dd>If True, both data and ACLs will be restored. Default is True.</dd>
+<dt><strong><code>copy_precedence</code></strong></dt>
+<dd>Optional copy precedence value for the storage policy copy. Default is None.</dd>
+<dt><strong><code>from_time</code></strong></dt>
+<dd>Optional lower bound for restore time window (format: 'YYYY-MM-DD HH:MM:SS'). Default is None.</dd>
+<dt><strong><code>to_time</code></strong></dt>
+<dd>Optional upper bound for restore time window (format: 'YYYY-MM-DD HH:MM:SS'). Default is None.</dd>
+<dt><strong><code>to_disk</code></strong></dt>
+<dd>If True, perform a restore to disk operation. Default is False.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Job</code></dt>
+<dd>An instance of the Job class representing the restore job.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If any of the following conditions are met:
+- <code>client</code> is not a string or Client instance
+- <code>destination_path</code> is not a string
+- <code>paths</code> is not a list
+- Failed to initialize the restore job
+- The response is empty or not successful</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; # Restore files to a different client and location
+&gt;&gt;&gt; job = onedrive_instance.restore_out_of_place(
+...     client='TargetClient',
+...     destination_path='C:\Restore\Data',
+...     paths=['/user/docs/file1.txt', '/user/docs/file2.txt'],
+...     overwrite=True,
+...     restore_data_and_acl=True
+... )
+&gt;&gt;&gt; print(f&quot;Restore job started with ID: {job.job_id}&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/cloudapps/onedrive_instance.py#L600-L713" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/cloudapps/onedrive_instance.py#L751-L857" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_out_of_place(
         self,
-        client,
-        destination_path,
-        paths,
-        overwrite=True,
-        restore_data_and_acl=True,
-        copy_precedence=None,
-        from_time=None,
-        to_time=None,
-        to_disk=False):
-    &#34;&#34;&#34;Restores the files/folders specified in the input paths list to the input client,
-        at the specified destionation location.
+        client: object,
+        destination_path: str,
+        paths: list,
+        overwrite: bool = True,
+        restore_data_and_acl: bool = True,
+        copy_precedence: int = None,
+        from_time: str = None,
+        to_time: str = None,
+        to_disk: bool = False
+    ) -&gt; &#39;Job&#39;:
+    &#34;&#34;&#34;Restore specified files or folders to a different client and/or location.
 
-        Args:
-            client                (str/object) --  either the name of the client or
-                                                       the instance of the Client
+    This method restores the files and folders listed in `paths` to the given `destination_path`
+    on the specified `client`. The restore can optionally overwrite existing files, restore
+    data and ACLs, and be filtered by time range or copy precedence. The restore can also
+    be performed to disk if required.
 
-            destination_path      (str)        --  full path of the restore location on client
+    Args:
+        client: The target client for restore. Can be a client name (str) or a Client object.
+        destination_path: Full path to the restore location on the target client.
+        paths: List of full file or folder paths to restore.
+        overwrite: If True, existing files at the destination will be overwritten. Default is True.
+        restore_data_and_acl: If True, both data and ACLs will be restored. Default is True.
+        copy_precedence: Optional copy precedence value for the storage policy copy. Default is None.
+        from_time: Optional lower bound for restore time window (format: &#39;YYYY-MM-DD HH:MM:SS&#39;). Default is None.
+        to_time: Optional upper bound for restore time window (format: &#39;YYYY-MM-DD HH:MM:SS&#39;). Default is None.
+        to_disk: If True, perform a restore to disk operation. Default is False.
 
-            paths                 (list)       --  list of full paths of
-                                                       files/folders to restore
+    Returns:
+        Job: An instance of the Job class representing the restore job.
 
-            overwrite             (bool)       --  unconditional overwrite files during restore
-                default: True
+    Raises:
+        SDKException: If any of the following conditions are met:
+            - `client` is not a string or Client instance
+            - `destination_path` is not a string
+            - `paths` is not a list
+            - Failed to initialize the restore job
+            - The response is empty or not successful
 
-            restore_data_and_acl  (bool)       --  restore data and ACL files
-                default: True
+    Example:
+        &gt;&gt;&gt; # Restore files to a different client and location
+        &gt;&gt;&gt; job = onedrive_instance.restore_out_of_place(
+        ...     client=&#39;TargetClient&#39;,
+        ...     destination_path=&#39;C:\\Restore\\Data&#39;,
+        ...     paths=[&#39;/user/docs/file1.txt&#39;, &#39;/user/docs/file2.txt&#39;],
+        ...     overwrite=True,
+        ...     restore_data_and_acl=True
+        ... )
+        &gt;&gt;&gt; print(f&#34;Restore job started with ID: {job.job_id}&#34;)
 
-            copy_precedence         (int)   --  copy precedence value of storage policy copy
-                default: None
-
-            from_time           (str)       --  time to retore the contents after
-                    format: YYYY-MM-DD HH:MM:SS
-
-                default: None
-
-            to_time           (str)         --  time to retore the contents before
-                    format: YYYY-MM-DD HH:MM:SS
-
-                default: None
-
-            to_disk             (bool)       --  If True, restore to disk will be performed
-
-        Returns:
-            object - instance of the Job class for this restore job
-
-        Raises:
-            SDKException:
-                if client is not a string or Client instance
-
-                if destination_path is not a string
-
-                if paths is not a list
-
-                if failed to initialize job
-
-                if response is empty
-
-                if response is not success
     &#34;&#34;&#34;
     from cvpysdk.client import Client
 
@@ -2469,13 +3012,17 @@ if response is not success
 <ul class="hlist">
 <li><code><b><a title="cvpysdk.instances.cainstance.CloudAppsInstance" href="../cainstance.html#cvpysdk.instances.cainstance.CloudAppsInstance">CloudAppsInstance</a></b></code>:
 <ul class="hlist">
+<li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.account_name" href="../cainstance.html#cvpysdk.instances.cainstance.CloudAppsInstance.account_name">account_name</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.backupsets" href="../../instance.html#cvpysdk.instance.Instance.backupsets">backupsets</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.browse" href="../../instance.html#cvpysdk.instance.Instance.browse">browse</a></code></li>
+<li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.credential_id" href="../cainstance.html#cvpysdk.instances.cainstance.CloudAppsInstance.credential_id">credential_id</a></code></li>
+<li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.credential_name" href="../cainstance.html#cvpysdk.instances.cainstance.CloudAppsInstance.credential_name">credential_name</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.credentials" href="../../instance.html#cvpysdk.instance.Instance.credentials">credentials</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.find" href="../../instance.html#cvpysdk.instance.Instance.find">find</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.instance_id" href="../../instance.html#cvpysdk.instance.Instance.instance_id">instance_id</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.instance_name" href="../../instance.html#cvpysdk.instance.Instance.instance_name">instance_name</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.name" href="../../instance.html#cvpysdk.instance.Instance.name">name</a></code></li>
+<li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.plan_name" href="../cainstance.html#cvpysdk.instances.cainstance.CloudAppsInstance.plan_name">plan_name</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.properties" href="../../instance.html#cvpysdk.instance.Instance.properties">properties</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.refresh" href="../../instance.html#cvpysdk.instance.Instance.refresh">refresh</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.subclients" href="../../instance.html#cvpysdk.instance.Instance.subclients">subclients</a></code></li>

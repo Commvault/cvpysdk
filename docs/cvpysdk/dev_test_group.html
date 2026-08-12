@@ -26,15 +26,16 @@
 <p>Main file for performing virtual lab restore operations on the Commcell.</p>
 <p>Dev_Test_Group : Class for representing all the Virtual Lab creation associated
 with the Commcell.</p>
-<h2 id="dev_test_group">Dev_Test_Group</h2>
-<p><strong>init</strong>(commcell_object)
+<p>Dev_Test_Group
+-----=
+<strong>init</strong>(commcell_object)
 &ndash;
 initialize the VirtualMachinePolicies instance for
 the Commcell</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/dev_test_group.py#L1-L170" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/dev_test_group.py#L1-L249" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -64,35 +65,62 @@ Dev_Test_Group:
                                                     the Commcell
 &#34;&#34;&#34;
 import json
+from typing import Optional
+
 from .job import Job
+from .schedules import Schedules
+from .exception import SDKException
 
 class Dev_Test_Group(object):
+    &#34;&#34;&#34;
+    Class for managing Virtual Lab restore operations with the Commcell.
 
-    &#34;&#34;&#34; Class for Virtual Lab restore opreation with the Commcell&#34;&#34;&#34;
+    This class provides an interface to perform and manage virtual lab restore operations
+    within a Commcell environment. It allows users to generate and process restore tasks,
+    handle virtual application properties, and access various JSON representations of tasks
+    and subtasks related to the restore process.
 
-    def __init__(self, commcell_object):
-        &#34;&#34;&#34;Initialize object of the VirtualMachinePolicies class.
+    Key Features:
+        - Initialization with a Commcell object for context
+        - Generation of virtual lab restore JSON using virtual application properties
+        - Access to JSON representations of restore tasks, virtual subtasks, and provision options
+        - Internal processing of restore responses from JSON requests
 
-            Args:
-                commcell_object (object)  --  instance of the Commcell class
+    &#34;&#34;&#34;
 
-            Returns:
-                object - instance of the Dev_Test_Group class
+    def __init__(self, commcell_object: object) -&gt; None:
+        &#34;&#34;&#34;Initialize an instance of the Dev_Test_Group class.
+
+        Args:
+            commcell_object: An instance of the Commcell class used to interact with the Commcell environment.
+
+        Example:
+            &gt;&gt;&gt; from cvpysdk.commcell import Commcell
+            &gt;&gt;&gt; commcell = Commcell(&#39;commcell_host&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; dev_test_group = Dev_Test_Group(commcell)
+            &gt;&gt;&gt; print(type(dev_test_group))
+            &lt;class &#39;Dev_Test_Group&#39;&gt;
+
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
         self._cvpysdk_object = self._commcell_object._cvpysdk_object
         self._services = self._commcell_object._services
         self._update_response_ = self._commcell_object._update_response_
 
-    def dev_test_lab_json(self, vapp_prop=None):
-        &#34;&#34;&#34;
-        Runs Virtual Lab job for the Dev-Test-Group at Commcell Level.
+    def dev_test_lab_json(self, vapp_prop: Optional[dict] = None) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;Run a Virtual Lab job for the Dev-Test-Group at the Commcell level.
 
-        vapp_prop (dict) -- options like vappName and vappId to be include while making
-                            the request
+        Args:
+            vapp_prop: Optional dictionary containing properties such as &#39;vappName&#39; and &#39;vappId&#39;
+                to include in the Virtual Lab job request.
 
         Returns:
-                object - instance of the Job class for the Virtual Lab job
+            Job: An instance of the Job class representing the initiated Virtual Lab job.
+
+        Example:
+            &gt;&gt;&gt; group = Dev_Test_Group(commcell)
+            &gt;&gt;&gt; job = group.dev_test_lab_json({&#39;vappName&#39;: &#39;TestApp&#39;, &#39;vappId&#39;: 12345})
+            &gt;&gt;&gt; print(f&#34;Virtual Lab job started with ID: {job.job_id}&#34;)
 
         &#34;&#34;&#34;
 
@@ -125,8 +153,19 @@ class Dev_Test_Group(object):
         return self._process_restore_response(request_json)
 
     @property
-    def _json_task(self):
-        &#34;&#34;&#34;getter for the task information in JSON&#34;&#34;&#34;
+    def _json_task(self) -&gt; dict:
+        &#34;&#34;&#34;Get the task information for this Dev_Test_Group as a JSON dictionary.
+
+        Returns:
+            dict: A dictionary containing the task information in JSON format.
+
+        Example:
+            &gt;&gt;&gt; group = Dev_Test_Group()
+            &gt;&gt;&gt; task_info = group._json_task
+            &gt;&gt;&gt; print(task_info)
+            &gt;&gt;&gt; # Output will be a dictionary with task details in JSON structure
+
+        &#34;&#34;&#34;
 
         _taks_option_json = {
             &#34;initiatedFrom&#34;: 1,
@@ -140,8 +179,24 @@ class Dev_Test_Group(object):
         return _taks_option_json
 
     @property
-    def _json_virtual_subtasks(self):
-        &#34;&#34;&#34;getter for the subtask in restore JSON . It is read only attribute&#34;&#34;&#34;
+    def _json_virtual_subtasks(self) -&gt; dict:
+        &#34;&#34;&#34;Get the list of virtual subtasks from the restore JSON.
+
+        This property provides read-only access to the subtasks defined in the restore JSON
+        for the Dev_Test_Group. The returned list contains the details of each subtask.
+
+        Returns:
+            list: A list of virtual subtask dictionaries from the restore JSON.
+
+        Example:
+            &gt;&gt;&gt; group = Dev_Test_Group()
+            &gt;&gt;&gt; subtasks = group._json_virtual_subtasks
+            &gt;&gt;&gt; print(f&#34;Number of virtual subtasks: {len(subtasks)}&#34;)
+            &gt;&gt;&gt; # Access details of the first subtask
+            &gt;&gt;&gt; if subtasks:
+            &gt;&gt;&gt;     print(subtasks[0])
+
+        &#34;&#34;&#34;
 
         _virtual_subtask = {
             &#34;subTaskType&#34;: 1,
@@ -151,8 +206,23 @@ class Dev_Test_Group(object):
         return _virtual_subtask
 
     @property
-    def _json_provision_Option(self):
-        &#34;&#34;&#34;getter for the subtask in restore JSON . It is read only attribute&#34;&#34;&#34;
+    def _json_provision_Option(self) -&gt; dict:
+        &#34;&#34;&#34;Get the provision option subtask from the restore JSON.
+
+        This property provides read-only access to the subtask information used in the restore JSON
+        for the Dev_Test_Group. It is intended for internal use when constructing or inspecting
+        restore operations.
+
+        Returns:
+            dict: The subtask dictionary from the restore JSON.
+
+        Example:
+            &gt;&gt;&gt; group = Dev_Test_Group()
+            &gt;&gt;&gt; provision_option = group._json_provision_Option
+            &gt;&gt;&gt; print(provision_option)
+            {&#39;subtaskType&#39;: &#39;RESTORE&#39;, &#39;options&#39;: {...}}
+
+        &#34;&#34;&#34;
 
         _provision_Option = {
             &#34;powerOnVM&#34;: True,
@@ -163,23 +233,26 @@ class Dev_Test_Group(object):
 
         return _provision_Option
 
-    def _process_restore_response(self, request_json):
-        &#34;&#34;&#34;Runs the CreateTask API with the request JSON provided for Virtual Lab,
-            and returns the contents after parsing the response.
+    def _process_restore_response(self, request_json: dict) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;Execute the CreateTask API for Virtual Lab restore and process the response.
 
-            Args:
-                request_json    (dict)  --  JSON request to run for the API
+        This method sends the provided JSON request to the CreateTask API to initiate a Virtual Lab restore job.
+        It parses the API response and returns an instance of the Job class representing the restore job.
 
-            Returns:
-                object - instance of the Job class for this restore job
+        Args:
+            request_json: Dictionary containing the JSON request payload for the CreateTask API.
 
-            Raises:
-                SDKException:
-                    if restore job failed
+        Returns:
+            Job: An instance of the Job class representing the initiated restore job.
 
-                    if response is empty
+        Raises:
+            SDKException: If the restore job fails, the response is empty, or the response indicates failure.
 
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; request_payload = {...}  # Construct the appropriate request JSON
+            &gt;&gt;&gt; job = dev_test_group._process_restore_response(request_payload)
+            &gt;&gt;&gt; print(f&#34;Restore job ID: {job.job_id}&#34;)
+
         &#34;&#34;&#34;
         self._RESTORE = self._services[&#39;RESTORE&#39;]
         flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._RESTORE, request_json)
@@ -216,49 +289,89 @@ class Dev_Test_Group(object):
 <dl>
 <dt id="cvpysdk.dev_test_group.Dev_Test_Group"><code class="flex name class">
 <span>class <span class="ident">Dev_Test_Group</span></span>
-<span>(</span><span>commcell_object)</span>
+<span>(</span><span>commcell_object: object)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for Virtual Lab restore opreation with the Commcell</p>
-<p>Initialize object of the VirtualMachinePolicies class.</p>
-<h2 id="args">Args</h2>
-<p>commcell_object (object)
-&ndash;
-instance of the Commcell class</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Dev_Test_Group class</p></div>
+<div class="desc"><p>Class for managing Virtual Lab restore operations with the Commcell.</p>
+<p>This class provides an interface to perform and manage virtual lab restore operations
+within a Commcell environment. It allows users to generate and process restore tasks,
+handle virtual application properties, and access various JSON representations of tasks
+and subtasks related to the restore process.</p>
+<p>Key Features:
+- Initialization with a Commcell object for context
+- Generation of virtual lab restore JSON using virtual application properties
+- Access to JSON representations of restore tasks, virtual subtasks, and provision options
+- Internal processing of restore responses from JSON requests</p>
+<p>Initialize an instance of the Dev_Test_Group class.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>commcell_object</code></strong></dt>
+<dd>An instance of the Commcell class used to interact with the Commcell environment.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; from cvpysdk.commcell import Commcell
+&gt;&gt;&gt; commcell = Commcell('commcell_host', 'username', 'password')
+&gt;&gt;&gt; dev_test_group = Dev_Test_Group(commcell)
+&gt;&gt;&gt; print(type(dev_test_group))
+&lt;class 'Dev_Test_Group'&gt;
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/dev_test_group.py#L31-L167" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/dev_test_group.py#L35-L246" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Dev_Test_Group(object):
+    &#34;&#34;&#34;
+    Class for managing Virtual Lab restore operations with the Commcell.
 
-    &#34;&#34;&#34; Class for Virtual Lab restore opreation with the Commcell&#34;&#34;&#34;
+    This class provides an interface to perform and manage virtual lab restore operations
+    within a Commcell environment. It allows users to generate and process restore tasks,
+    handle virtual application properties, and access various JSON representations of tasks
+    and subtasks related to the restore process.
 
-    def __init__(self, commcell_object):
-        &#34;&#34;&#34;Initialize object of the VirtualMachinePolicies class.
+    Key Features:
+        - Initialization with a Commcell object for context
+        - Generation of virtual lab restore JSON using virtual application properties
+        - Access to JSON representations of restore tasks, virtual subtasks, and provision options
+        - Internal processing of restore responses from JSON requests
 
-            Args:
-                commcell_object (object)  --  instance of the Commcell class
+    &#34;&#34;&#34;
 
-            Returns:
-                object - instance of the Dev_Test_Group class
+    def __init__(self, commcell_object: object) -&gt; None:
+        &#34;&#34;&#34;Initialize an instance of the Dev_Test_Group class.
+
+        Args:
+            commcell_object: An instance of the Commcell class used to interact with the Commcell environment.
+
+        Example:
+            &gt;&gt;&gt; from cvpysdk.commcell import Commcell
+            &gt;&gt;&gt; commcell = Commcell(&#39;commcell_host&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; dev_test_group = Dev_Test_Group(commcell)
+            &gt;&gt;&gt; print(type(dev_test_group))
+            &lt;class &#39;Dev_Test_Group&#39;&gt;
+
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
         self._cvpysdk_object = self._commcell_object._cvpysdk_object
         self._services = self._commcell_object._services
         self._update_response_ = self._commcell_object._update_response_
 
-    def dev_test_lab_json(self, vapp_prop=None):
-        &#34;&#34;&#34;
-        Runs Virtual Lab job for the Dev-Test-Group at Commcell Level.
+    def dev_test_lab_json(self, vapp_prop: Optional[dict] = None) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;Run a Virtual Lab job for the Dev-Test-Group at the Commcell level.
 
-        vapp_prop (dict) -- options like vappName and vappId to be include while making
-                            the request
+        Args:
+            vapp_prop: Optional dictionary containing properties such as &#39;vappName&#39; and &#39;vappId&#39;
+                to include in the Virtual Lab job request.
 
         Returns:
-                object - instance of the Job class for the Virtual Lab job
+            Job: An instance of the Job class representing the initiated Virtual Lab job.
+
+        Example:
+            &gt;&gt;&gt; group = Dev_Test_Group(commcell)
+            &gt;&gt;&gt; job = group.dev_test_lab_json({&#39;vappName&#39;: &#39;TestApp&#39;, &#39;vappId&#39;: 12345})
+            &gt;&gt;&gt; print(f&#34;Virtual Lab job started with ID: {job.job_id}&#34;)
 
         &#34;&#34;&#34;
 
@@ -291,8 +404,19 @@ instance of the Commcell class</p>
         return self._process_restore_response(request_json)
 
     @property
-    def _json_task(self):
-        &#34;&#34;&#34;getter for the task information in JSON&#34;&#34;&#34;
+    def _json_task(self) -&gt; dict:
+        &#34;&#34;&#34;Get the task information for this Dev_Test_Group as a JSON dictionary.
+
+        Returns:
+            dict: A dictionary containing the task information in JSON format.
+
+        Example:
+            &gt;&gt;&gt; group = Dev_Test_Group()
+            &gt;&gt;&gt; task_info = group._json_task
+            &gt;&gt;&gt; print(task_info)
+            &gt;&gt;&gt; # Output will be a dictionary with task details in JSON structure
+
+        &#34;&#34;&#34;
 
         _taks_option_json = {
             &#34;initiatedFrom&#34;: 1,
@@ -306,8 +430,24 @@ instance of the Commcell class</p>
         return _taks_option_json
 
     @property
-    def _json_virtual_subtasks(self):
-        &#34;&#34;&#34;getter for the subtask in restore JSON . It is read only attribute&#34;&#34;&#34;
+    def _json_virtual_subtasks(self) -&gt; dict:
+        &#34;&#34;&#34;Get the list of virtual subtasks from the restore JSON.
+
+        This property provides read-only access to the subtasks defined in the restore JSON
+        for the Dev_Test_Group. The returned list contains the details of each subtask.
+
+        Returns:
+            list: A list of virtual subtask dictionaries from the restore JSON.
+
+        Example:
+            &gt;&gt;&gt; group = Dev_Test_Group()
+            &gt;&gt;&gt; subtasks = group._json_virtual_subtasks
+            &gt;&gt;&gt; print(f&#34;Number of virtual subtasks: {len(subtasks)}&#34;)
+            &gt;&gt;&gt; # Access details of the first subtask
+            &gt;&gt;&gt; if subtasks:
+            &gt;&gt;&gt;     print(subtasks[0])
+
+        &#34;&#34;&#34;
 
         _virtual_subtask = {
             &#34;subTaskType&#34;: 1,
@@ -317,8 +457,23 @@ instance of the Commcell class</p>
         return _virtual_subtask
 
     @property
-    def _json_provision_Option(self):
-        &#34;&#34;&#34;getter for the subtask in restore JSON . It is read only attribute&#34;&#34;&#34;
+    def _json_provision_Option(self) -&gt; dict:
+        &#34;&#34;&#34;Get the provision option subtask from the restore JSON.
+
+        This property provides read-only access to the subtask information used in the restore JSON
+        for the Dev_Test_Group. It is intended for internal use when constructing or inspecting
+        restore operations.
+
+        Returns:
+            dict: The subtask dictionary from the restore JSON.
+
+        Example:
+            &gt;&gt;&gt; group = Dev_Test_Group()
+            &gt;&gt;&gt; provision_option = group._json_provision_Option
+            &gt;&gt;&gt; print(provision_option)
+            {&#39;subtaskType&#39;: &#39;RESTORE&#39;, &#39;options&#39;: {...}}
+
+        &#34;&#34;&#34;
 
         _provision_Option = {
             &#34;powerOnVM&#34;: True,
@@ -329,23 +484,26 @@ instance of the Commcell class</p>
 
         return _provision_Option
 
-    def _process_restore_response(self, request_json):
-        &#34;&#34;&#34;Runs the CreateTask API with the request JSON provided for Virtual Lab,
-            and returns the contents after parsing the response.
+    def _process_restore_response(self, request_json: dict) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;Execute the CreateTask API for Virtual Lab restore and process the response.
 
-            Args:
-                request_json    (dict)  --  JSON request to run for the API
+        This method sends the provided JSON request to the CreateTask API to initiate a Virtual Lab restore job.
+        It parses the API response and returns an instance of the Job class representing the restore job.
 
-            Returns:
-                object - instance of the Job class for this restore job
+        Args:
+            request_json: Dictionary containing the JSON request payload for the CreateTask API.
 
-            Raises:
-                SDKException:
-                    if restore job failed
+        Returns:
+            Job: An instance of the Job class representing the initiated restore job.
 
-                    if response is empty
+        Raises:
+            SDKException: If the restore job fails, the response is empty, or the response indicates failure.
 
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; request_payload = {...}  # Construct the appropriate request JSON
+            &gt;&gt;&gt; job = dev_test_group._process_restore_response(request_payload)
+            &gt;&gt;&gt; print(f&#34;Restore job ID: {job.job_id}&#34;)
+
         &#34;&#34;&#34;
         self._RESTORE = self._services[&#39;RESTORE&#39;]
         flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._RESTORE, request_json)
@@ -373,28 +531,46 @@ instance of the Commcell class</p>
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.dev_test_group.Dev_Test_Group.dev_test_lab_json"><code class="name flex">
-<span>def <span class="ident">dev_test_lab_json</span></span>(<span>self, vapp_prop=None)</span>
+<span>def <span class="ident">dev_test_lab_json</span></span>(<span>self, vapp_prop: Optional[dict] = None) ‑> <a title="cvpysdk.job.Job" href="job.html#cvpysdk.job.Job">Job</a></span>
 </code></dt>
 <dd>
-<div class="desc"><p>Runs Virtual Lab job for the Dev-Test-Group at Commcell Level.</p>
-<p>vapp_prop (dict) &ndash; options like vappName and vappId to be include while making
-the request</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for the Virtual Lab job</p></div>
+<div class="desc"><p>Run a Virtual Lab job for the Dev-Test-Group at the Commcell level.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>vapp_prop</code></strong></dt>
+<dd>Optional dictionary containing properties such as 'vappName' and 'vappId'
+to include in the Virtual Lab job request.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Job</code></dt>
+<dd>An instance of the Job class representing the initiated Virtual Lab job.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; group = Dev_Test_Group(commcell)
+&gt;&gt;&gt; job = group.dev_test_lab_json({'vappName': 'TestApp', 'vappId': 12345})
+&gt;&gt;&gt; print(f&quot;Virtual Lab job started with ID: {job.job_id}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/dev_test_group.py#L49-L87" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/dev_test_group.py#L73-L117" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def dev_test_lab_json(self, vapp_prop=None):
-    &#34;&#34;&#34;
-    Runs Virtual Lab job for the Dev-Test-Group at Commcell Level.
+<pre><code class="python">def dev_test_lab_json(self, vapp_prop: Optional[dict] = None) -&gt; &#39;Job&#39;:
+    &#34;&#34;&#34;Run a Virtual Lab job for the Dev-Test-Group at the Commcell level.
 
-    vapp_prop (dict) -- options like vappName and vappId to be include while making
-                        the request
+    Args:
+        vapp_prop: Optional dictionary containing properties such as &#39;vappName&#39; and &#39;vappId&#39;
+            to include in the Virtual Lab job request.
 
     Returns:
-            object - instance of the Job class for the Virtual Lab job
+        Job: An instance of the Job class representing the initiated Virtual Lab job.
+
+    Example:
+        &gt;&gt;&gt; group = Dev_Test_Group(commcell)
+        &gt;&gt;&gt; job = group.dev_test_lab_json({&#39;vappName&#39;: &#39;TestApp&#39;, &#39;vappId&#39;: 12345})
+        &gt;&gt;&gt; print(f&#34;Virtual Lab job started with ID: {job.job_id}&#34;)
 
     &#34;&#34;&#34;
 

@@ -26,7 +26,8 @@
 <p>Class to perform all the CommCell Migration operations on commcell</p>
 <p>CommCellMigration, GlobalRepositoryCell are the only classes defined in this file.</p>
 <p>CommCellMigration: Helper class to perform CommCell Import &amp; Export operations.</p>
-<h2 id="commcellmigration">Commcellmigration</h2>
+<p>Commcellmigration
+-----=</p>
 <p><strong>init</strong>()
 &ndash;
 initializes CommCellMigration helper object.</p>
@@ -40,7 +41,8 @@ function to run CCM Import operation.</p>
 &ndash;
 function to run tape import operation.</p>
 <p>GlobalRepositoryCell: Helper class to perform GRC related operations</p>
-<h2 id="globalrepositorycell">Globalrepositorycell</h2>
+<p>Globalrepositorycell
+-----=</p>
 <p><strong>init</strong>()
 &ndash;
 initializes GlobalRepositoryCell object</p>
@@ -56,7 +58,7 @@ overwrites imported clients in podcell grc schedule</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/commcell_migration.py#L1-L853" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/commcell_migration.py#L1-L953" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 # --------------------------------------------------------------------------
@@ -107,22 +109,44 @@ GlobalRepositoryCell:
 import html
 import xml.etree.ElementTree as ET
 from base64 import b64encode
-from .job import Job
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
+
 from .client import Client
 from .exception import SDKException
+from .job import Job
 
+if TYPE_CHECKING:
+    from .commcell import Commcell
 
 class CommCellMigration(object):
-    &#34;&#34;&#34;Class for representing the commcell export &amp; import operations from commcell. &#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Class for managing CommCell export and import operations.
 
-    def __init__(self, commcell_object):
-        &#34;&#34;&#34;Initializes object of the CommCellMigration class.
+    This class provides a comprehensive interface for handling the migration of data and configurations
+    between CommCell environments. It supports exporting CommCell data, importing data back into a CommCell,
+    and importing tapes into the system. The class is initialized with a CommCell object and offers flexible
+    options for specifying export/import locations, client lists, and additional entities or options.
 
-            Args:
-               commcell_object (object) -instance of the commcell class
+    Key Features:
+        - Export CommCell data to a specified location with customizable options and client/entity selection
+        - Import CommCell data from a given location with configurable options
+        - Import tapes into the CommCell using library, media, and drive pool identifiers
+        - Centralized management of CommCell migration tasks
 
-            Returns:
-               object - instance of the CommCellMigration class
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_object: &#39;Commcell&#39;) -&gt; None:
+        &#34;&#34;&#34;Initialize a new instance of the CommCellMigration class.
+
+        Args:
+            commcell_object: An instance of the Commcell class representing the source or target Commcell.
+
+        Example:
+            &gt;&gt;&gt; from cvpysdk.commcell import Commcell
+            &gt;&gt;&gt; commcell = Commcell(&#39;commcell_host&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; migration = CommCellMigration(commcell)
+            &gt;&gt;&gt; print(&#34;CommCellMigration object created successfully&#34;)
+
         &#34;&#34;&#34;
 
         self._commcell_object = commcell_object
@@ -132,73 +156,67 @@ class CommCellMigration(object):
         self._commcell_name = self._commcell_object.commserv_name
         self._path_type = 0
 
-    def commcell_export(self, export_location, client_list=None, options_dictionary=None, other_entities=None):
-        &#34;&#34;&#34; Starts the Commcell Export job.
+    def commcell_export(
+        self,
+        export_location: str,
+        client_list: Optional[List[str]] = None,
+        options_dictionary: Optional[Dict[str, Any]] = None,
+        other_entities: Optional[List[str]] = None
+    ) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;Start a Commcell Export job to export configuration and client data.
 
-            Args:
-                export_location     ( str )         --  Location to export generated dumps.
+        This method initiates a Commcell Export job, which exports configuration data, client information,
+        and other selected entities to the specified export location. You can customize the export by
+        specifying a list of clients, additional export options, and other entities to include.
 
-                client_list         ( list )        --  Contains list of clients used for export.
-                    [
-                        &#34;Server_1&#34;,&#34;Client1&#34;,&#34;Client2&#34;
-                    ]
-
-                options_dictionary  ( dict )        --  Contains options used to perform CCM Export.
+        Args:
+            export_location: The file system path where the exported dumps will be saved.
+            client_list: Optional list of client names to include in the export.
+                Example: [&#34;Server_1&#34;, &#34;Client1&#34;, &#34;Client2&#34;]
+            options_dictionary: Optional dictionary of export options to control export behavior.
+                Example:
                     {
-                        &#34;pathType&#34;:&#34;Local&#34;,
-
-                        &#34;otherSqlInstance&#34;:True,
-
-                        &#34;userName&#34;:&#34;UserName&#34;,
-
-                        &#34;password&#34;:&#34;...&#34;,
-
-                        &#34;otherSqlInstance&#34;: False,
-
-                        &#34;sqlInstanceName&#34;:&#34;SQLInstanceName&#34;,
-
-                        &#34;sqlUserName&#34;:&#34;SQLUserName&#34;,
-
-                        &#34;sqlPassword&#34;:&#34;...&#34;,
-
-                        &#34;Database&#34;:&#34;commserv&#34;,
-
-                        &#34;captureMediaAgents&#34;:True,
-                        
-                        &#34;captureSchedules&#34;:True,
-
-                        &#34;captureActivityControl&#34;:True,
-
-                        &#34;captureOperationWindow&#34;:True,
-
-                        &#34;captureHolidays&#34;:True,
-
-                        &#34;csName&#34;: &#34;CommservName&#34;,  # host cs for using sql instance export
-
-                        &#34;clientIds&#34;: [client_id1, client_id2],  # required only when exporting clients using sql instance
-
-                        &#34;autopickCluster&#34;:False
+                        &#34;pathType&#34;: &#34;Local&#34;,
+                        &#34;otherSqlInstance&#34;: True,
+                        &#34;userName&#34;: &#34;UserName&#34;,
+                        &#34;password&#34;: &#34;...&#34;,
+                        &#34;sqlInstanceName&#34;: &#34;SQLInstanceName&#34;,
+                        &#34;sqlUserName&#34;: &#34;SQLUserName&#34;,
+                        &#34;sqlPassword&#34;: &#34;...&#34;,
+                        &#34;Database&#34;: &#34;commserv&#34;,
+                        &#34;captureMediaAgents&#34;: True,
+                        &#34;captureSchedules&#34;: True,
+                        &#34;captureActivityControl&#34;: True,
+                        &#34;captureOperationWindow&#34;: True,
+                        &#34;captureHolidays&#34;: True,
+                        &#34;csName&#34;: &#34;CommservName&#34;,
+                        &#34;clientIds&#34;: [123, 456],
+                        &#34;autopickCluster&#34;: False
                     }
-                
-                other_entities      ( list )        --  list of other entities to be exporteddd
-                    [
-                        &#34;schedule_policies&#34;,
+            other_entities: Optional list of additional entities to export, such as schedule policies,
+                users and user groups, or alerts.
+                Example: [&#34;schedule_policies&#34;, &#34;users_and_user_groups&#34;, &#34;alerts&#34;]
 
-                        &#34;users_and_user_groups&#34;,
+        Returns:
+            Job: An instance representing the initiated Commcell Export job.
 
-                        &#34;alerts&#34;
-                    ]   
+        Raises:
+            SDKException: If input types are invalid, required inputs are missing, or invalid values are provided.
 
-            Returns:
-                CCM Export Job instance             --  returns the CCM Export job instance.
+        Example:
+            &gt;&gt;&gt; export_options = {
+            ...     &#34;pathType&#34;: &#34;Local&#34;,
+            ...     &#34;captureMediaAgents&#34;: True,
+            ...     &#34;captureSchedules&#34;: True
+            ... }
+            &gt;&gt;&gt; job = commcell_migration.commcell_export(
+            ...     export_location=&#34;/exports/commcell&#34;,
+            ...     client_list=[&#34;ClientA&#34;, &#34;ClientB&#34;],
+            ...     options_dictionary=export_options,
+            ...     other_entities=[&#34;alerts&#34;]
+            ... )
+            &gt;&gt;&gt; print(f&#34;Export job started with ID: {job.job_id}&#34;)
 
-            Raises:
-                SDKException:
-                    if type of the input is not valid.
-
-                    if all the required inputs are not provided.
-
-                    if invalid inputs are passed.
         &#34;&#34;&#34;
 
         if client_list is None and other_entities is None:
@@ -394,39 +412,48 @@ class CommCellMigration(object):
             response_string = self._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def commcell_import(self, import_location, options_dictionary):
-        &#34;&#34;&#34; Starts the Commcell Import job.
+    def commcell_import(self, import_location: str, options_dictionary: dict) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;Start a Commcell Import job using the specified import location and options.
 
-            Args:
-                import_location     ( str )         --  Location to import the generated dumps.
+        This method initiates the Commcell Import process, importing generated dumps from the given location
+        with the provided options. The options dictionary allows customization of the import behavior, such as
+        overwriting existing entities, merging schedules, and specifying authentication details.
 
-                options_dictionary  ( dict )        --  Contains list of options used for CCMImport and default values.
-                    {
-                        &#34;pathType&#34;: &#34;Network&#34;,
-                        &#34;userName&#34; : &#34;username&#34;,
-                        &#34;password&#34;: &#34;...&#34;,
-                        &#34;forceOverwrite&#34;: False,
-                        &#34;failIfEntityAlreadyExists&#34;: False,
-                        &#34;deleteEntitiesNotPresent&#34;: False,
-                        &#34;deleteEntitiesIfOnlyfromSource&#34;: False,
-                        &#34;forceOverwriteHolidays&#34;: False,
-                        &#34;mergeHolidays&#34;: True,
-                        &#34;forceOverwriteOperationWindow&#34;: False,
-                        &#34;mergeOperationWindow&#34;: False,
-                        &#34;forceOverwriteSchedule&#34;: False,
-                        &#34;mergeSchedules&#34;: True
-                    }
+        Args:
+            import_location: The file system or network path where the generated dumps are located for import.
+            options_dictionary: A dictionary containing options for the import job. Example keys include:
+                - &#34;pathType&#34;: Type of the path (e.g., &#34;Network&#34;).
+                - &#34;userName&#34;: Username for authentication.
+                - &#34;password&#34;: Password for authentication.
+                - &#34;forceOverwrite&#34;: Whether to force overwrite existing entities.
+                - &#34;failIfEntityAlreadyExists&#34;: Fail if the entity already exists.
+                - &#34;deleteEntitiesNotPresent&#34;: Delete entities not present in the import.
+                - &#34;deleteEntitiesIfOnlyfromSource&#34;: Delete entities only if present in the source.
+                - &#34;forceOverwriteHolidays&#34;: Force overwrite holidays.
+                - &#34;mergeHolidays&#34;: Merge holidays.
+                - &#34;forceOverwriteOperationWindow&#34;: Force overwrite operation window.
+                - &#34;mergeOperationWindow&#34;: Merge operation window.
+                - &#34;forceOverwriteSchedule&#34;: Force overwrite schedule.
+                - &#34;mergeSchedules&#34;: Merge schedules.
 
-            Returns:
-                CCM Import Job instance             --  returns the CCM Import job instance.
+        Returns:
+            Job: An instance representing the initiated Commcell Import job.
 
-            Raises:
-                SDKException:
-                    if type of the input is not valid.
+        Raises:
+            SDKException: If the input types are invalid, required inputs are missing, or invalid options are provided.
 
-                    if all the required inputs are not provided.
+        Example:
+            &gt;&gt;&gt; import_options = {
+            ...     &#34;pathType&#34;: &#34;Network&#34;,
+            ...     &#34;userName&#34;: &#34;admin&#34;,
+            ...     &#34;password&#34;: &#34;password123&#34;,
+            ...     &#34;forceOverwrite&#34;: True,
+            ...     &#34;mergeSchedules&#34;: True
+            ... }
+            &gt;&gt;&gt; migration = CommCellMigration(commcell_object)
+            &gt;&gt;&gt; job = migration.commcell_import(&#34;/mnt/ccm_dumps&#34;, import_options)
+            &gt;&gt;&gt; print(f&#34;Started import job with ID: {job.job_id}&#34;)
 
-                    if invalid inputs are passed.
         &#34;&#34;&#34;
         path_type = options_dictionary.get(&#34;pathType&#34;, &#34;Local&#34;)
         network_user_name = options_dictionary.get(&#34;userName&#34;, &#34;&#34;)
@@ -539,19 +566,22 @@ class CommCellMigration(object):
             response_string = self._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def tape_import(self, library_id, medias_id, drive_pool_id):
+    def tape_import(self, library_id: int, medias_id: list, drive_pool_id: int) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;Perform a tape import operation for the specified tape.
 
-        &#34;&#34;&#34; performs the tape import import operation for the specified tape.
+        Args:
+            library_id: The ID of the tape library to use for the import.
+            medias_id: A list of tape media IDs to be imported.
+            drive_pool_id: The ID of the drive pool to use for the import operation.
 
-            Args:
-                library_id      (int)       --      tape library id.
+        Returns:
+            Job: An instance representing the initiated tape import job.
 
-                medias_id        (list)       --      tape id.
+        Example:
+            &gt;&gt;&gt; migration = CommCellMigration()
+            &gt;&gt;&gt; job = migration.tape_import(library_id=5, medias_id=[101, 102], drive_pool_id=2)
+            &gt;&gt;&gt; print(f&#34;Tape import job started: {job}&#34;)
 
-                drive_pool_id   (int)       --      drive pool id
-
-            Returns:
-                Tape import job instance
         &#34;&#34;&#34;
 
         tape_import_json = {
@@ -622,42 +652,68 @@ class CommCellMigration(object):
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
 class GlobalRepositoryCell:
-    &#34;&#34;&#34;Class for representing the GRC feature from commcell&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents the Global Repository Cell (GRC) feature within a Commcell environment.
 
-    def __init__(self, commcell_object):
-        &#34;&#34;&#34;
-        Initializes the object of GlobalRepositoryCell class
+    This class provides an interface for managing and interacting with GRC-related
+    entities and operations in a Commcell. It enables retrieval and modification of
+    podcell properties, task details, and monitored clients, as well as facilitating
+    client migration processes.
+
+    Key Features:
+        - Initialize with a Commcell object for context
+        - Retrieve details of specific tasks by task ID
+        - Obtain Commcell information using Commcell ID
+        - Modify properties of tasks and podcells using provided configurations
+        - Fetch entities and properties associated with podcells
+        - Get clients eligible for migration within a podcell
+        - Modify the list of monitored clients for a podcell
+
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_object: &#39;Commcell&#39;) -&gt; None:
+        &#34;&#34;&#34;Initialize a new instance of the GlobalRepositoryCell class.
 
         Args:
-            commcell_object (Commcell)  -   Commcell class instance
+            commcell_object: An instance of the Commcell class representing the Commcell connection.
 
-        Returns:
-            grc (GlobalRepositoryCell) - instance of the GlobalRepositoryCell class
+        Example:
+            &gt;&gt;&gt; from cvpysdk.commcell import Commcell
+            &gt;&gt;&gt; commcell = Commcell(&#39;commcell_host&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; grc = GlobalRepositoryCell(commcell)
+            &gt;&gt;&gt; print(f&#34;GlobalRepositoryCell object created: {grc}&#34;)
+
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
         self._cvpysdk_object = self._commcell_object._cvpysdk_object
         self._services = self._commcell_object._services
         self._commcell_name = self._commcell_object.commserv_name
 
-    def _get_task_details(self, task_id):
-        &#34;&#34;&#34;
-        Util for getting XML of GRC schedule task (required for generating more XMLs)
+    def _get_task_details(self, task_id: int) -&gt; str:
+        &#34;&#34;&#34;Retrieve the XML details of a Global Repository Cell (GRC) schedule task.
+
+        This utility method fetches the XML representation of a GRC schedule task, which is 
+        required for generating additional XMLs or for further processing of schedule details.
 
         Args:
-            task_id     (int)   -   id of grc schedule&#39;s task
+            task_id: The unique identifier (ID) of the GRC schedule&#39;s task.
 
         Returns:
-            task_xml    (str)   -   xml form string with grc schedule details
-            Example:
-                &lt;TMMsg_GetTaskDetailResp&gt;
-                        &lt;taskInfo&gt;
-                                &lt;task taskId=&#34;&#34; taskName=&#34;&#34; &gt; ... &lt;/task&gt;
-                        &lt;appGroup/&gt;
-                        &lt;subTasks&gt;
-                            &lt;subTask subTaskId=&#34;&#34; subTaskType=&#34;&#34; ...&gt;
+            A string containing the XML representation of the GRC schedule task details.
+
+        Example:
+            &gt;&gt;&gt; grc_cell = GlobalRepositoryCell()
+            &gt;&gt;&gt; xml_details = grc_cell._get_task_details(12345)
+            &gt;&gt;&gt; print(xml_details)
+            &lt;TMMsg_GetTaskDetailResp&gt;
+                &lt;taskInfo&gt;
+                    &lt;task taskId=&#34;12345&#34; taskName=&#34;DailyBackup&#34;&gt; ... &lt;/task&gt;
+                    &lt;appGroup/&gt;
+                    &lt;subTasks&gt;
+                        &lt;subTask subTaskId=&#34;67890&#34; subTaskType=&#34;Backup&#34; ...&gt;
                             &lt;options&gt;
-                                &lt;backupOpts backupLevel=&#34;&#34;&gt;
-                                    &lt;dataOpt autoCopy=&#34;&#34;/&gt;
+                                &lt;backupOpts backupLevel=&#34;Full&#34;&gt;
+                                    &lt;dataOpt autoCopy=&#34;true&#34;/&gt;
                                 &lt;/backupOpts&gt;
                                 &lt;adminOpts&gt;
                                     &lt;ccmOption&gt;
@@ -669,37 +725,55 @@ class GlobalRepositoryCell:
                                 &lt;/adminOpts&gt;
                             &lt;/options&gt;
                             &lt;pattern ...&gt;...&lt;/pattern&gt;
-                        &lt;/subTasks&gt;
-                    &lt;/taskInfo&gt;
-                &lt;/TMMsg_GetTaskDetailResp&gt;
+                        &lt;/subTask&gt;
+                    &lt;/subTasks&gt;
+                &lt;/taskInfo&gt;
+            &lt;/TMMsg_GetTaskDetailResp&gt;
+
         &#34;&#34;&#34;
         get_task_xml = f&#39;&lt;TMMsg_GetTaskDetailReq taskId=&#34;{task_id}&#34;/&gt;&#39;
         return self._commcell_object.qoperation_execute(get_task_xml, return_xml=True)
 
-    def _get_commcell_from_id(self, commcell_id):
-        &#34;&#34;&#34;
-        Util to get registered commcell name from given commcell id
+    def _get_commcell_from_id(self, commcell_id: int) -&gt; str:
+        &#34;&#34;&#34;Retrieve the registered Commcell name corresponding to the given Commcell ID.
 
         Args:
-            commcell_id (int)   -   id of commcell
+            commcell_id: The unique integer identifier of the Commcell.
 
         Returns:
-            commcell_name   (str)   -   name of commcell
+            The name of the Commcell as a string.
+
+        Example:
+            &gt;&gt;&gt; grc = GlobalRepositoryCell()
+            &gt;&gt;&gt; commcell_name = grc._get_commcell_from_id(1024)
+            &gt;&gt;&gt; print(f&#34;Commcell name: {commcell_name}&#34;)
+
         &#34;&#34;&#34;
         for commcell_name, commcell_data in self._commcell_object.registered_commcells.items():
             if commcell_data.get(&#39;commCell&#39;, {}).get(&#39;commCellId&#39;) == commcell_id:
                 return commcell_name
 
-    def _modify_task_props(self, podcell_properties, task_xml):
-        &#34;&#34;&#34;
-        Util for modifying task properties, after grc properties are updated
+    def _modify_task_props(self, podcell_properties: dict, task_xml: str) -&gt; dict:
+        &#34;&#34;&#34;Modify task properties after Global Repository Cell (GRC) properties are updated.
+
+        This utility updates the task properties using the provided podcell properties and task XML.
+        It is typically used after GRC properties have been changed to ensure the associated task
+        reflects the latest configuration.
 
         Args:
-            podcell_properties  (dict)  -   the dict returned by get_podcell_properties
-            task_xml    (str)           -   the xml returned for grc schedule&#39;s task info
+            podcell_properties: Dictionary containing properties returned by `get_podcell_properties`.
+            task_xml: XML string representing the task information for the GRC schedule.
 
         Returns:
-            response    (dict)   -   the response from execute qoperation
+            Dictionary containing the response from the qoperation execution.
+
+        Example:
+            &gt;&gt;&gt; podcell_props = grc.get_podcell_properties()
+            &gt;&gt;&gt; task_xml = grc.get_task_xml()
+            &gt;&gt;&gt; response = grc._modify_task_props(podcell_props, task_xml)
+            &gt;&gt;&gt; print(response)
+            {&#39;status&#39;: &#39;success&#39;, &#39;taskId&#39;: 1234}
+
         &#34;&#34;&#34;
         grc_schedule_xml = ET.fromstring(podcell_properties[&#39;schedule_xml&#39;])
         task_info_xml = ET.fromstring(task_xml)
@@ -722,38 +796,32 @@ class GlobalRepositoryCell:
         )
         return self._commcell_object.qoperation_execute(modify_task_xml)
 
-    def _get_podcell_entities(self, podcell_name: str = None, podcell_id: int = None, podcell_guid: str = None):
-        &#34;&#34;&#34;
-        Gets the entities in podcell available for monitoring via GRC
+    def _get_podcell_entities(self, podcell_name: str = None, podcell_id: int = None, podcell_guid: str = None) -&gt; str:
+        &#34;&#34;&#34;Retrieve the entities within a specified podcell that are available for monitoring via the Global Repository Cell (GRC).
+
+        At least one of `podcell_name`, `podcell_id`, or `podcell_guid` should be provided to identify the target podcell.
+        The returned data is an XML string describing all entities (clients, groups, applications, etc.) within the podcell.
 
         Args:
-            podcell_name    (str)   -   name of pod cell
-            podcell_id      (int)   -   id of podcell
-            podcell_guid    (str)   -   guid of podcell (Optional)
+            podcell_name: The name of the podcell to query. Optional if `podcell_id` or `podcell_guid` is provided.
+            podcell_id: The unique integer ID of the podcell. Optional if `podcell_name` or `podcell_guid` is provided.
+            podcell_guid: The GUID of the podcell. Optional if `podcell_name` or `podcell_id` is provided.
 
         Returns:
-            monitor_entities    (str)   -   all entities of pod cell in XML format
-            Example:
-                &lt;EVGui_CCMCommCellInfo commcellName=&#34;&#34; commcellNumber=&#34;&#34; commcellId=&#34;&#34;&gt;
-                    &lt;clientEntityLst clientId=&#34;&#34; clientName=&#34;&#34;&gt;
-                        ...
-                    &lt;/clientEntityLst&gt;
-                    &lt;clientEntityLst clientId=&#34;&#34; clientName=&#34;&#34;&gt;
-                        ...
-                    &lt;/clientEntityLst&gt;
-                    &lt;clientEntityLst clientId=&#34;&#34; ...&gt;
-                        &lt;appTypeEntityList ... appTypeId=&#34;&#34;&gt;
-                            &lt;instanceList ... instanceId=&#34;&#34;&gt;
-                                &lt;backupSetList ... backupsetId=&#34;&#34;&gt;
-                                    &lt;subclientList ... subclientId=&#34;&#34;/&gt;
-                                &lt;/backupSetList&gt;
-                            &lt;/instanceList&gt;
-                        &lt;/appTypeEntityList&gt;
-                    &lt;/clientEntityLst&gt;
-                    &lt;clientComputerGrp clientGroupId=&#34;&#34; clientGroupName=&#34;&#34;/&gt;
+            An XML string containing all entities of the specified podcell, structured for monitoring purposes.
+
+        Example:
+            &gt;&gt;&gt; grc = GlobalRepositoryCell()
+            &gt;&gt;&gt; xml_entities = grc._get_podcell_entities(podcell_name=&#34;PodCellA&#34;)
+            &gt;&gt;&gt; print(xml_entities)
+            &lt;EVGui_CCMCommCellInfo commcellName=&#34;PodCellA&#34; commcellNumber=&#34;...&#34; commcellId=&#34;...&#34;&gt;
+                &lt;clientEntityLst clientId=&#34;...&#34; clientName=&#34;...&#34;&gt;
                     ...
-                    &lt;clientComputerGrp clientGroupId=&#34;&#34; clientGroupName=&#34;&#34;/&gt;
-                &lt;/EVGui_CCMCommCellInfo&gt;
+                &lt;/clientEntityLst&gt;
+                &lt;clientComputerGrp clientGroupId=&#34;...&#34; clientGroupName=&#34;...&#34;/&gt;
+                ...
+            &lt;/EVGui_CCMCommCellInfo&gt;
+
         &#34;&#34;&#34;
         if podcell_id is None:
             if podcell_name is None:
@@ -778,23 +846,23 @@ class GlobalRepositoryCell:
         resp = self._commcell_object.qoperation_execute(exec_xml)
         return resp.get(&#39;strXmlInfo&#39;)
 
-    def get_clients_for_migration(self, podcell_name: str = None, podcell_id: int = None, podcell_guid: str = None):
-        &#34;&#34;&#34;
-        Gets the podcell clients that can be migrated
-        
+    def get_clients_for_migration(self, podcell_name: Optional[str] = None, podcell_id: Optional[int] = None, podcell_guid: Optional[str] = None) -&gt; Dict[int, str]:
+        &#34;&#34;&#34;Retrieve the clients from a specified podcell that are eligible for migration.
+
         Args:
-            podcell_name    (str)   -   name of pod cell
-            podcell_id      (int)   -   id of podcell
-            podcell_guid    (str)   -   guid of podcell (Optional)
-        
+            podcell_name: The name of the podcell from which to retrieve clients. Optional if podcell_id or podcell_guid is provided.
+            podcell_id: The unique identifier of the podcell. Optional if podcell_name or podcell_guid is provided.
+            podcell_guid: The GUID of the podcell. Optional if podcell_name or podcell_id is provided.
+
         Returns:
-            clients_dict    (dict)  -   dict with client ID as key and client name value
-            Example:
-                {
-                    X: &#34;clientA&#34;,
-                    Y: &#34;clientB&#34;,
-                    Z: &#34;clienta&#34;
-                }
+            A dictionary mapping client IDs (as integers) to client names (as strings) for clients that can be migrated.
+
+        Example:
+            &gt;&gt;&gt; grc = GlobalRepositoryCell()
+            &gt;&gt;&gt; clients = grc.get_clients_for_migration(podcell_name=&#34;PodCell1&#34;)
+            &gt;&gt;&gt; print(clients)
+            {101: &#34;clientA&#34;, 102: &#34;clientB&#34;, 103: &#34;clientC&#34;}
+
         &#34;&#34;&#34;
         clients_dict = {}
         entities_xml = self._get_podcell_entities(
@@ -809,16 +877,27 @@ class GlobalRepositoryCell:
             clients_dict[cl_id] = cl_name
         return clients_dict
 
-    def _get_podcell_properties(self, podcell_name: str = None, podcell_id: int = None):
-        &#34;&#34;&#34;
-        Gets the GRC properties of given pod cell
+    def _get_podcell_properties(self, podcell_name: Optional[str] = None, podcell_id: Optional[int] = None) -&gt; Dict[str, Any]:
+        &#34;&#34;&#34;Retrieve the Global Repository Cell (GRC) properties for a specified pod cell.
+
+        This method fetches various properties of a pod cell, either by its name or ID. The returned
+        dictionary contains property values, which may include XML-formatted data.
 
         Args:
-            podcell_name    (str)   -   name of pod cell
-            podcell_id      (int)   -   id of podcell
+            podcell_name: Optional; The name of the pod cell to retrieve properties for.
+            podcell_id: Optional; The unique identifier of the pod cell.
 
         Returns:
-            podcell_properties  (dict)  -   different properties of pod cell in dict format with xml values
+            Dictionary containing the properties of the specified pod cell, with values in XML format.
+
+        Example:
+            &gt;&gt;&gt; grc = GlobalRepositoryCell()
+            &gt;&gt;&gt; properties = grc._get_podcell_properties(podcell_name=&#34;PodCellA&#34;)
+            &gt;&gt;&gt; print(properties)
+            &gt;&gt;&gt; # Or fetch by ID
+            &gt;&gt;&gt; properties = grc._get_podcell_properties(podcell_id=12345)
+            &gt;&gt;&gt; print(properties)
+
         &#34;&#34;&#34;
         # TODO: Update grc properties map
         grc_prop_map = {
@@ -843,18 +922,27 @@ class GlobalRepositoryCell:
         }
         return podcell_properties
 
-    def modify_monitored_clients(self, podcell_name: str = None, podcell_id: int = None, clients: list = None):
-        &#34;&#34;&#34;
-        Modifies (overwrites) the monitored clients in grc properties for given podcell
+    def modify_monitored_clients(self, podcell_name: Optional[str] = None, podcell_id: Optional[int] = None, clients: Optional[list] = None) -&gt; None:
+        &#34;&#34;&#34;Modify (overwrite) the monitored clients in the Global Repository Cell (GRC) properties for a specified pod cell.
+
+        This method updates the list of monitored clients for the given pod cell, replacing any existing monitored clients with the provided list.
 
         Args:
-            podcell_name    (str)   -   name of pod cell
-            podcell_id      (int)   -   id of podcell
-            client_ids      (list)  -   list of client ids, names
-                                        or Client objects (of pod cell)
+            podcell_name: The name of the pod cell to update. Optional if podcell_id is provided.
+            podcell_id: The ID of the pod cell to update. Optional if podcell_name is provided.
+            clients: A list containing client IDs, client names, or Client objects (belonging to the pod cell) to set as monitored.
 
-        Returns:
-            None
+        Example:
+            &gt;&gt;&gt; grc = GlobalRepositoryCell()
+            &gt;&gt;&gt; # Overwrite monitored clients using podcell name and client names
+            &gt;&gt;&gt; grc.modify_monitored_clients(podcell_name=&#34;PodCellA&#34;, clients=[&#34;client1&#34;, &#34;client2&#34;])
+            &gt;&gt;&gt;
+            &gt;&gt;&gt; # Overwrite monitored clients using podcell ID and client IDs
+            &gt;&gt;&gt; grc.modify_monitored_clients(podcell_id=123, clients=[101, 102, 103])
+            &gt;&gt;&gt;
+            &gt;&gt;&gt; # Overwrite monitored clients using Client objects
+            &gt;&gt;&gt; grc.modify_monitored_clients(podcell_name=&#34;PodCellB&#34;, clients=[client_obj1, client_obj2])
+
         &#34;&#34;&#34;
         if podcell_id is None:
             if podcell_name is None:
@@ -924,31 +1012,67 @@ class GlobalRepositoryCell:
 <dl>
 <dt id="cvpysdk.commcell_migration.CommCellMigration"><code class="flex name class">
 <span>class <span class="ident">CommCellMigration</span></span>
-<span>(</span><span>commcell_object)</span>
+<span>(</span><span>commcell_object: Commcell)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for representing the commcell export &amp; import operations from commcell. </p>
-<p>Initializes object of the CommCellMigration class.</p>
-<h2 id="args">Args</h2>
-<p>commcell_object (object) -instance of the commcell class</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the CommCellMigration class</p></div>
+<div class="desc"><p>Class for managing CommCell export and import operations.</p>
+<p>This class provides a comprehensive interface for handling the migration of data and configurations
+between CommCell environments. It supports exporting CommCell data, importing data back into a CommCell,
+and importing tapes into the system. The class is initialized with a CommCell object and offers flexible
+options for specifying export/import locations, client lists, and additional entities or options.</p>
+<p>Key Features:
+- Export CommCell data to a specified location with customizable options and client/entity selection
+- Import CommCell data from a given location with configurable options
+- Import tapes into the CommCell using library, media, and drive pool identifiers
+- Centralized management of CommCell migration tasks</p>
+<p>Initialize a new instance of the CommCellMigration class.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>commcell_object</code></strong></dt>
+<dd>An instance of the Commcell class representing the source or target Commcell.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; from cvpysdk.commcell import Commcell
+&gt;&gt;&gt; commcell = Commcell('commcell_host', 'username', 'password')
+&gt;&gt;&gt; migration = CommCellMigration(commcell)
+&gt;&gt;&gt; print(&quot;CommCellMigration object created successfully&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/commcell_migration.py#L55-L562" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/commcell_migration.py#L59-L595" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class CommCellMigration(object):
-    &#34;&#34;&#34;Class for representing the commcell export &amp; import operations from commcell. &#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Class for managing CommCell export and import operations.
 
-    def __init__(self, commcell_object):
-        &#34;&#34;&#34;Initializes object of the CommCellMigration class.
+    This class provides a comprehensive interface for handling the migration of data and configurations
+    between CommCell environments. It supports exporting CommCell data, importing data back into a CommCell,
+    and importing tapes into the system. The class is initialized with a CommCell object and offers flexible
+    options for specifying export/import locations, client lists, and additional entities or options.
 
-            Args:
-               commcell_object (object) -instance of the commcell class
+    Key Features:
+        - Export CommCell data to a specified location with customizable options and client/entity selection
+        - Import CommCell data from a given location with configurable options
+        - Import tapes into the CommCell using library, media, and drive pool identifiers
+        - Centralized management of CommCell migration tasks
 
-            Returns:
-               object - instance of the CommCellMigration class
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_object: &#39;Commcell&#39;) -&gt; None:
+        &#34;&#34;&#34;Initialize a new instance of the CommCellMigration class.
+
+        Args:
+            commcell_object: An instance of the Commcell class representing the source or target Commcell.
+
+        Example:
+            &gt;&gt;&gt; from cvpysdk.commcell import Commcell
+            &gt;&gt;&gt; commcell = Commcell(&#39;commcell_host&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; migration = CommCellMigration(commcell)
+            &gt;&gt;&gt; print(&#34;CommCellMigration object created successfully&#34;)
+
         &#34;&#34;&#34;
 
         self._commcell_object = commcell_object
@@ -958,73 +1082,67 @@ class GlobalRepositoryCell:
         self._commcell_name = self._commcell_object.commserv_name
         self._path_type = 0
 
-    def commcell_export(self, export_location, client_list=None, options_dictionary=None, other_entities=None):
-        &#34;&#34;&#34; Starts the Commcell Export job.
+    def commcell_export(
+        self,
+        export_location: str,
+        client_list: Optional[List[str]] = None,
+        options_dictionary: Optional[Dict[str, Any]] = None,
+        other_entities: Optional[List[str]] = None
+    ) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;Start a Commcell Export job to export configuration and client data.
 
-            Args:
-                export_location     ( str )         --  Location to export generated dumps.
+        This method initiates a Commcell Export job, which exports configuration data, client information,
+        and other selected entities to the specified export location. You can customize the export by
+        specifying a list of clients, additional export options, and other entities to include.
 
-                client_list         ( list )        --  Contains list of clients used for export.
-                    [
-                        &#34;Server_1&#34;,&#34;Client1&#34;,&#34;Client2&#34;
-                    ]
-
-                options_dictionary  ( dict )        --  Contains options used to perform CCM Export.
+        Args:
+            export_location: The file system path where the exported dumps will be saved.
+            client_list: Optional list of client names to include in the export.
+                Example: [&#34;Server_1&#34;, &#34;Client1&#34;, &#34;Client2&#34;]
+            options_dictionary: Optional dictionary of export options to control export behavior.
+                Example:
                     {
-                        &#34;pathType&#34;:&#34;Local&#34;,
-
-                        &#34;otherSqlInstance&#34;:True,
-
-                        &#34;userName&#34;:&#34;UserName&#34;,
-
-                        &#34;password&#34;:&#34;...&#34;,
-
-                        &#34;otherSqlInstance&#34;: False,
-
-                        &#34;sqlInstanceName&#34;:&#34;SQLInstanceName&#34;,
-
-                        &#34;sqlUserName&#34;:&#34;SQLUserName&#34;,
-
-                        &#34;sqlPassword&#34;:&#34;...&#34;,
-
-                        &#34;Database&#34;:&#34;commserv&#34;,
-
-                        &#34;captureMediaAgents&#34;:True,
-                        
-                        &#34;captureSchedules&#34;:True,
-
-                        &#34;captureActivityControl&#34;:True,
-
-                        &#34;captureOperationWindow&#34;:True,
-
-                        &#34;captureHolidays&#34;:True,
-
-                        &#34;csName&#34;: &#34;CommservName&#34;,  # host cs for using sql instance export
-
-                        &#34;clientIds&#34;: [client_id1, client_id2],  # required only when exporting clients using sql instance
-
-                        &#34;autopickCluster&#34;:False
+                        &#34;pathType&#34;: &#34;Local&#34;,
+                        &#34;otherSqlInstance&#34;: True,
+                        &#34;userName&#34;: &#34;UserName&#34;,
+                        &#34;password&#34;: &#34;...&#34;,
+                        &#34;sqlInstanceName&#34;: &#34;SQLInstanceName&#34;,
+                        &#34;sqlUserName&#34;: &#34;SQLUserName&#34;,
+                        &#34;sqlPassword&#34;: &#34;...&#34;,
+                        &#34;Database&#34;: &#34;commserv&#34;,
+                        &#34;captureMediaAgents&#34;: True,
+                        &#34;captureSchedules&#34;: True,
+                        &#34;captureActivityControl&#34;: True,
+                        &#34;captureOperationWindow&#34;: True,
+                        &#34;captureHolidays&#34;: True,
+                        &#34;csName&#34;: &#34;CommservName&#34;,
+                        &#34;clientIds&#34;: [123, 456],
+                        &#34;autopickCluster&#34;: False
                     }
-                
-                other_entities      ( list )        --  list of other entities to be exporteddd
-                    [
-                        &#34;schedule_policies&#34;,
+            other_entities: Optional list of additional entities to export, such as schedule policies,
+                users and user groups, or alerts.
+                Example: [&#34;schedule_policies&#34;, &#34;users_and_user_groups&#34;, &#34;alerts&#34;]
 
-                        &#34;users_and_user_groups&#34;,
+        Returns:
+            Job: An instance representing the initiated Commcell Export job.
 
-                        &#34;alerts&#34;
-                    ]   
+        Raises:
+            SDKException: If input types are invalid, required inputs are missing, or invalid values are provided.
 
-            Returns:
-                CCM Export Job instance             --  returns the CCM Export job instance.
+        Example:
+            &gt;&gt;&gt; export_options = {
+            ...     &#34;pathType&#34;: &#34;Local&#34;,
+            ...     &#34;captureMediaAgents&#34;: True,
+            ...     &#34;captureSchedules&#34;: True
+            ... }
+            &gt;&gt;&gt; job = commcell_migration.commcell_export(
+            ...     export_location=&#34;/exports/commcell&#34;,
+            ...     client_list=[&#34;ClientA&#34;, &#34;ClientB&#34;],
+            ...     options_dictionary=export_options,
+            ...     other_entities=[&#34;alerts&#34;]
+            ... )
+            &gt;&gt;&gt; print(f&#34;Export job started with ID: {job.job_id}&#34;)
 
-            Raises:
-                SDKException:
-                    if type of the input is not valid.
-
-                    if all the required inputs are not provided.
-
-                    if invalid inputs are passed.
         &#34;&#34;&#34;
 
         if client_list is None and other_entities is None:
@@ -1220,39 +1338,48 @@ class GlobalRepositoryCell:
             response_string = self._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def commcell_import(self, import_location, options_dictionary):
-        &#34;&#34;&#34; Starts the Commcell Import job.
+    def commcell_import(self, import_location: str, options_dictionary: dict) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;Start a Commcell Import job using the specified import location and options.
 
-            Args:
-                import_location     ( str )         --  Location to import the generated dumps.
+        This method initiates the Commcell Import process, importing generated dumps from the given location
+        with the provided options. The options dictionary allows customization of the import behavior, such as
+        overwriting existing entities, merging schedules, and specifying authentication details.
 
-                options_dictionary  ( dict )        --  Contains list of options used for CCMImport and default values.
-                    {
-                        &#34;pathType&#34;: &#34;Network&#34;,
-                        &#34;userName&#34; : &#34;username&#34;,
-                        &#34;password&#34;: &#34;...&#34;,
-                        &#34;forceOverwrite&#34;: False,
-                        &#34;failIfEntityAlreadyExists&#34;: False,
-                        &#34;deleteEntitiesNotPresent&#34;: False,
-                        &#34;deleteEntitiesIfOnlyfromSource&#34;: False,
-                        &#34;forceOverwriteHolidays&#34;: False,
-                        &#34;mergeHolidays&#34;: True,
-                        &#34;forceOverwriteOperationWindow&#34;: False,
-                        &#34;mergeOperationWindow&#34;: False,
-                        &#34;forceOverwriteSchedule&#34;: False,
-                        &#34;mergeSchedules&#34;: True
-                    }
+        Args:
+            import_location: The file system or network path where the generated dumps are located for import.
+            options_dictionary: A dictionary containing options for the import job. Example keys include:
+                - &#34;pathType&#34;: Type of the path (e.g., &#34;Network&#34;).
+                - &#34;userName&#34;: Username for authentication.
+                - &#34;password&#34;: Password for authentication.
+                - &#34;forceOverwrite&#34;: Whether to force overwrite existing entities.
+                - &#34;failIfEntityAlreadyExists&#34;: Fail if the entity already exists.
+                - &#34;deleteEntitiesNotPresent&#34;: Delete entities not present in the import.
+                - &#34;deleteEntitiesIfOnlyfromSource&#34;: Delete entities only if present in the source.
+                - &#34;forceOverwriteHolidays&#34;: Force overwrite holidays.
+                - &#34;mergeHolidays&#34;: Merge holidays.
+                - &#34;forceOverwriteOperationWindow&#34;: Force overwrite operation window.
+                - &#34;mergeOperationWindow&#34;: Merge operation window.
+                - &#34;forceOverwriteSchedule&#34;: Force overwrite schedule.
+                - &#34;mergeSchedules&#34;: Merge schedules.
 
-            Returns:
-                CCM Import Job instance             --  returns the CCM Import job instance.
+        Returns:
+            Job: An instance representing the initiated Commcell Import job.
 
-            Raises:
-                SDKException:
-                    if type of the input is not valid.
+        Raises:
+            SDKException: If the input types are invalid, required inputs are missing, or invalid options are provided.
 
-                    if all the required inputs are not provided.
+        Example:
+            &gt;&gt;&gt; import_options = {
+            ...     &#34;pathType&#34;: &#34;Network&#34;,
+            ...     &#34;userName&#34;: &#34;admin&#34;,
+            ...     &#34;password&#34;: &#34;password123&#34;,
+            ...     &#34;forceOverwrite&#34;: True,
+            ...     &#34;mergeSchedules&#34;: True
+            ... }
+            &gt;&gt;&gt; migration = CommCellMigration(commcell_object)
+            &gt;&gt;&gt; job = migration.commcell_import(&#34;/mnt/ccm_dumps&#34;, import_options)
+            &gt;&gt;&gt; print(f&#34;Started import job with ID: {job.job_id}&#34;)
 
-                    if invalid inputs are passed.
         &#34;&#34;&#34;
         path_type = options_dictionary.get(&#34;pathType&#34;, &#34;Local&#34;)
         network_user_name = options_dictionary.get(&#34;userName&#34;, &#34;&#34;)
@@ -1365,19 +1492,22 @@ class GlobalRepositoryCell:
             response_string = self._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def tape_import(self, library_id, medias_id, drive_pool_id):
+    def tape_import(self, library_id: int, medias_id: list, drive_pool_id: int) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;Perform a tape import operation for the specified tape.
 
-        &#34;&#34;&#34; performs the tape import import operation for the specified tape.
+        Args:
+            library_id: The ID of the tape library to use for the import.
+            medias_id: A list of tape media IDs to be imported.
+            drive_pool_id: The ID of the drive pool to use for the import operation.
 
-            Args:
-                library_id      (int)       --      tape library id.
+        Returns:
+            Job: An instance representing the initiated tape import job.
 
-                medias_id        (list)       --      tape id.
+        Example:
+            &gt;&gt;&gt; migration = CommCellMigration()
+            &gt;&gt;&gt; job = migration.tape_import(library_id=5, medias_id=[101, 102], drive_pool_id=2)
+            &gt;&gt;&gt; print(f&#34;Tape import job started: {job}&#34;)
 
-                drive_pool_id   (int)       --      drive pool id
-
-            Returns:
-                Tape import job instance
         &#34;&#34;&#34;
 
         tape_import_json = {
@@ -1450,155 +1580,136 @@ class GlobalRepositoryCell:
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.commcell_migration.CommCellMigration.commcell_export"><code class="name flex">
-<span>def <span class="ident">commcell_export</span></span>(<span>self, export_location, client_list=None, options_dictionary=None, other_entities=None)</span>
+<span>def <span class="ident">commcell_export</span></span>(<span>self, export_location: str, client_list: Optional[List[str]] = None, options_dictionary: Optional[Dict[str, Any]] = None, other_entities: Optional[List[str]] = None) ‑> <a title="cvpysdk.job.Job" href="job.html#cvpysdk.job.Job">Job</a></span>
 </code></dt>
 <dd>
-<div class="desc"><p>Starts the Commcell Export job.</p>
-<h2 id="args">Args</h2>
-<p>export_location
-( str )
-&ndash;
-Location to export generated dumps.</p>
-<p>client_list
-( list )
-&ndash;
-Contains list of clients used for export.
-[
-"Server_1","Client1","Client2"
-]</p>
-<p>options_dictionary
-( dict )
-&ndash;
-Contains options used to perform CCM Export.
+<div class="desc"><p>Start a Commcell Export job to export configuration and client data.</p>
+<p>This method initiates a Commcell Export job, which exports configuration data, client information,
+and other selected entities to the specified export location. You can customize the export by
+specifying a list of clients, additional export options, and other entities to include.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>export_location</code></strong></dt>
+<dd>The file system path where the exported dumps will be saved.</dd>
+<dt><strong><code>client_list</code></strong></dt>
+<dd>Optional list of client names to include in the export.
+Example: ["Server_1", "Client1", "Client2"]</dd>
+<dt><strong><code>options_dictionary</code></strong></dt>
+<dd>Optional dictionary of export options to control export behavior.
+Example:
 {
-"pathType":"Local",</p>
-<pre><code>    "otherSqlInstance":True,
-
-    "userName":"UserName",
-
-    "password":"...",
-
-    "otherSqlInstance": False,
-
-    "sqlInstanceName":"SQLInstanceName",
-
-    "sqlUserName":"SQLUserName",
-
-    "sqlPassword":"...",
-
-    "Database":"commserv",
-
-    "captureMediaAgents":True,
-
-    "captureSchedules":True,
-
-    "captureActivityControl":True,
-
-    "captureOperationWindow":True,
-
-    "captureHolidays":True,
-
-    "csName": "CommservName",  # host cs for using sql instance export
-
-    "clientIds": [client_id1, client_id2],  # required only when exporting clients using sql instance
-
-    "autopickCluster":False
-}
-</code></pre>
-<p>other_entities
-( list )
-&ndash;
-list of other entities to be exporteddd
-[
-"schedule_policies",</p>
-<pre><code>    "users_and_user_groups",
-
-    "alerts"
-]
-</code></pre>
-<h2 id="returns">Returns</h2>
-<p>CCM Export Job instance
-&ndash;
-returns the CCM Export job instance.</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if type of the input is not valid.</p>
-<pre><code>if all the required inputs are not provided.
-
-if invalid inputs are passed.
+"pathType": "Local",
+"otherSqlInstance": True,
+"userName": "UserName",
+"password": "&hellip;",
+"sqlInstanceName": "SQLInstanceName",
+"sqlUserName": "SQLUserName",
+"sqlPassword": "&hellip;",
+"Database": "commserv",
+"captureMediaAgents": True,
+"captureSchedules": True,
+"captureActivityControl": True,
+"captureOperationWindow": True,
+"captureHolidays": True,
+"csName": "CommservName",
+"clientIds": [123, 456],
+"autopickCluster": False
+}</dd>
+<dt><strong><code>other_entities</code></strong></dt>
+<dd>Optional list of additional entities to export, such as schedule policies,
+users and user groups, or alerts.
+Example: ["schedule_policies", "users_and_user_groups", "alerts"]</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Job</code></dt>
+<dd>An instance representing the initiated Commcell Export job.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If input types are invalid, required inputs are missing, or invalid values are provided.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; export_options = {
+...     &quot;pathType&quot;: &quot;Local&quot;,
+...     &quot;captureMediaAgents&quot;: True,
+...     &quot;captureSchedules&quot;: True
+... }
+&gt;&gt;&gt; job = commcell_migration.commcell_export(
+...     export_location=&quot;/exports/commcell&quot;,
+...     client_list=[&quot;ClientA&quot;, &quot;ClientB&quot;],
+...     options_dictionary=export_options,
+...     other_entities=[&quot;alerts&quot;]
+... )
+&gt;&gt;&gt; print(f&quot;Export job started with ID: {job.job_id}&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/commcell_migration.py#L75-L335" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/commcell_migration.py#L99-L354" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def commcell_export(self, export_location, client_list=None, options_dictionary=None, other_entities=None):
-    &#34;&#34;&#34; Starts the Commcell Export job.
+<pre><code class="python">def commcell_export(
+    self,
+    export_location: str,
+    client_list: Optional[List[str]] = None,
+    options_dictionary: Optional[Dict[str, Any]] = None,
+    other_entities: Optional[List[str]] = None
+) -&gt; &#39;Job&#39;:
+    &#34;&#34;&#34;Start a Commcell Export job to export configuration and client data.
 
-        Args:
-            export_location     ( str )         --  Location to export generated dumps.
+    This method initiates a Commcell Export job, which exports configuration data, client information,
+    and other selected entities to the specified export location. You can customize the export by
+    specifying a list of clients, additional export options, and other entities to include.
 
-            client_list         ( list )        --  Contains list of clients used for export.
-                [
-                    &#34;Server_1&#34;,&#34;Client1&#34;,&#34;Client2&#34;
-                ]
-
-            options_dictionary  ( dict )        --  Contains options used to perform CCM Export.
+    Args:
+        export_location: The file system path where the exported dumps will be saved.
+        client_list: Optional list of client names to include in the export.
+            Example: [&#34;Server_1&#34;, &#34;Client1&#34;, &#34;Client2&#34;]
+        options_dictionary: Optional dictionary of export options to control export behavior.
+            Example:
                 {
-                    &#34;pathType&#34;:&#34;Local&#34;,
-
-                    &#34;otherSqlInstance&#34;:True,
-
-                    &#34;userName&#34;:&#34;UserName&#34;,
-
-                    &#34;password&#34;:&#34;...&#34;,
-
-                    &#34;otherSqlInstance&#34;: False,
-
-                    &#34;sqlInstanceName&#34;:&#34;SQLInstanceName&#34;,
-
-                    &#34;sqlUserName&#34;:&#34;SQLUserName&#34;,
-
-                    &#34;sqlPassword&#34;:&#34;...&#34;,
-
-                    &#34;Database&#34;:&#34;commserv&#34;,
-
-                    &#34;captureMediaAgents&#34;:True,
-                    
-                    &#34;captureSchedules&#34;:True,
-
-                    &#34;captureActivityControl&#34;:True,
-
-                    &#34;captureOperationWindow&#34;:True,
-
-                    &#34;captureHolidays&#34;:True,
-
-                    &#34;csName&#34;: &#34;CommservName&#34;,  # host cs for using sql instance export
-
-                    &#34;clientIds&#34;: [client_id1, client_id2],  # required only when exporting clients using sql instance
-
-                    &#34;autopickCluster&#34;:False
+                    &#34;pathType&#34;: &#34;Local&#34;,
+                    &#34;otherSqlInstance&#34;: True,
+                    &#34;userName&#34;: &#34;UserName&#34;,
+                    &#34;password&#34;: &#34;...&#34;,
+                    &#34;sqlInstanceName&#34;: &#34;SQLInstanceName&#34;,
+                    &#34;sqlUserName&#34;: &#34;SQLUserName&#34;,
+                    &#34;sqlPassword&#34;: &#34;...&#34;,
+                    &#34;Database&#34;: &#34;commserv&#34;,
+                    &#34;captureMediaAgents&#34;: True,
+                    &#34;captureSchedules&#34;: True,
+                    &#34;captureActivityControl&#34;: True,
+                    &#34;captureOperationWindow&#34;: True,
+                    &#34;captureHolidays&#34;: True,
+                    &#34;csName&#34;: &#34;CommservName&#34;,
+                    &#34;clientIds&#34;: [123, 456],
+                    &#34;autopickCluster&#34;: False
                 }
-            
-            other_entities      ( list )        --  list of other entities to be exporteddd
-                [
-                    &#34;schedule_policies&#34;,
+        other_entities: Optional list of additional entities to export, such as schedule policies,
+            users and user groups, or alerts.
+            Example: [&#34;schedule_policies&#34;, &#34;users_and_user_groups&#34;, &#34;alerts&#34;]
 
-                    &#34;users_and_user_groups&#34;,
+    Returns:
+        Job: An instance representing the initiated Commcell Export job.
 
-                    &#34;alerts&#34;
-                ]   
+    Raises:
+        SDKException: If input types are invalid, required inputs are missing, or invalid values are provided.
 
-        Returns:
-            CCM Export Job instance             --  returns the CCM Export job instance.
+    Example:
+        &gt;&gt;&gt; export_options = {
+        ...     &#34;pathType&#34;: &#34;Local&#34;,
+        ...     &#34;captureMediaAgents&#34;: True,
+        ...     &#34;captureSchedules&#34;: True
+        ... }
+        &gt;&gt;&gt; job = commcell_migration.commcell_export(
+        ...     export_location=&#34;/exports/commcell&#34;,
+        ...     client_list=[&#34;ClientA&#34;, &#34;ClientB&#34;],
+        ...     options_dictionary=export_options,
+        ...     other_entities=[&#34;alerts&#34;]
+        ... )
+        &gt;&gt;&gt; print(f&#34;Export job started with ID: {job.job_id}&#34;)
 
-        Raises:
-            SDKException:
-                if type of the input is not valid.
-
-                if all the required inputs are not provided.
-
-                if invalid inputs are passed.
     &#34;&#34;&#34;
 
     if client_list is None and other_entities is None:
@@ -1796,83 +1907,102 @@ if invalid inputs are passed.
 </details>
 </dd>
 <dt id="cvpysdk.commcell_migration.CommCellMigration.commcell_import"><code class="name flex">
-<span>def <span class="ident">commcell_import</span></span>(<span>self, import_location, options_dictionary)</span>
+<span>def <span class="ident">commcell_import</span></span>(<span>self, import_location: str, options_dictionary: dict) ‑> <a title="cvpysdk.job.Job" href="job.html#cvpysdk.job.Job">Job</a></span>
 </code></dt>
 <dd>
-<div class="desc"><p>Starts the Commcell Import job.</p>
-<h2 id="args">Args</h2>
-<p>import_location
-( str )
-&ndash;
-Location to import the generated dumps.</p>
-<p>options_dictionary
-( dict )
-&ndash;
-Contains list of options used for CCMImport and default values.
-{
-"pathType": "Network",
-"userName" : "username",
-"password": "&hellip;",
-"forceOverwrite": False,
-"failIfEntityAlreadyExists": False,
-"deleteEntitiesNotPresent": False,
-"deleteEntitiesIfOnlyfromSource": False,
-"forceOverwriteHolidays": False,
-"mergeHolidays": True,
-"forceOverwriteOperationWindow": False,
-"mergeOperationWindow": False,
-"forceOverwriteSchedule": False,
-"mergeSchedules": True
-}</p>
-<h2 id="returns">Returns</h2>
-<p>CCM Import Job instance
-&ndash;
-returns the CCM Import job instance.</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if type of the input is not valid.</p>
-<pre><code>if all the required inputs are not provided.
-
-if invalid inputs are passed.
+<div class="desc"><p>Start a Commcell Import job using the specified import location and options.</p>
+<p>This method initiates the Commcell Import process, importing generated dumps from the given location
+with the provided options. The options dictionary allows customization of the import behavior, such as
+overwriting existing entities, merging schedules, and specifying authentication details.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>import_location</code></strong></dt>
+<dd>The file system or network path where the generated dumps are located for import.</dd>
+<dt><strong><code>options_dictionary</code></strong></dt>
+<dd>A dictionary containing options for the import job. Example keys include:
+- "pathType": Type of the path (e.g., "Network").
+- "userName": Username for authentication.
+- "password": Password for authentication.
+- "forceOverwrite": Whether to force overwrite existing entities.
+- "failIfEntityAlreadyExists": Fail if the entity already exists.
+- "deleteEntitiesNotPresent": Delete entities not present in the import.
+- "deleteEntitiesIfOnlyfromSource": Delete entities only if present in the source.
+- "forceOverwriteHolidays": Force overwrite holidays.
+- "mergeHolidays": Merge holidays.
+- "forceOverwriteOperationWindow": Force overwrite operation window.
+- "mergeOperationWindow": Merge operation window.
+- "forceOverwriteSchedule": Force overwrite schedule.
+- "mergeSchedules": Merge schedules.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Job</code></dt>
+<dd>An instance representing the initiated Commcell Import job.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the input types are invalid, required inputs are missing, or invalid options are provided.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; import_options = {
+...     &quot;pathType&quot;: &quot;Network&quot;,
+...     &quot;userName&quot;: &quot;admin&quot;,
+...     &quot;password&quot;: &quot;password123&quot;,
+...     &quot;forceOverwrite&quot;: True,
+...     &quot;mergeSchedules&quot;: True
+... }
+&gt;&gt;&gt; migration = CommCellMigration(commcell_object)
+&gt;&gt;&gt; job = migration.commcell_import(&quot;/mnt/ccm_dumps&quot;, import_options)
+&gt;&gt;&gt; print(f&quot;Started import job with ID: {job.job_id}&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/commcell_migration.py#L337-L480" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/commcell_migration.py#L356-L509" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def commcell_import(self, import_location, options_dictionary):
-    &#34;&#34;&#34; Starts the Commcell Import job.
+<pre><code class="python">def commcell_import(self, import_location: str, options_dictionary: dict) -&gt; &#39;Job&#39;:
+    &#34;&#34;&#34;Start a Commcell Import job using the specified import location and options.
 
-        Args:
-            import_location     ( str )         --  Location to import the generated dumps.
+    This method initiates the Commcell Import process, importing generated dumps from the given location
+    with the provided options. The options dictionary allows customization of the import behavior, such as
+    overwriting existing entities, merging schedules, and specifying authentication details.
 
-            options_dictionary  ( dict )        --  Contains list of options used for CCMImport and default values.
-                {
-                    &#34;pathType&#34;: &#34;Network&#34;,
-                    &#34;userName&#34; : &#34;username&#34;,
-                    &#34;password&#34;: &#34;...&#34;,
-                    &#34;forceOverwrite&#34;: False,
-                    &#34;failIfEntityAlreadyExists&#34;: False,
-                    &#34;deleteEntitiesNotPresent&#34;: False,
-                    &#34;deleteEntitiesIfOnlyfromSource&#34;: False,
-                    &#34;forceOverwriteHolidays&#34;: False,
-                    &#34;mergeHolidays&#34;: True,
-                    &#34;forceOverwriteOperationWindow&#34;: False,
-                    &#34;mergeOperationWindow&#34;: False,
-                    &#34;forceOverwriteSchedule&#34;: False,
-                    &#34;mergeSchedules&#34;: True
-                }
+    Args:
+        import_location: The file system or network path where the generated dumps are located for import.
+        options_dictionary: A dictionary containing options for the import job. Example keys include:
+            - &#34;pathType&#34;: Type of the path (e.g., &#34;Network&#34;).
+            - &#34;userName&#34;: Username for authentication.
+            - &#34;password&#34;: Password for authentication.
+            - &#34;forceOverwrite&#34;: Whether to force overwrite existing entities.
+            - &#34;failIfEntityAlreadyExists&#34;: Fail if the entity already exists.
+            - &#34;deleteEntitiesNotPresent&#34;: Delete entities not present in the import.
+            - &#34;deleteEntitiesIfOnlyfromSource&#34;: Delete entities only if present in the source.
+            - &#34;forceOverwriteHolidays&#34;: Force overwrite holidays.
+            - &#34;mergeHolidays&#34;: Merge holidays.
+            - &#34;forceOverwriteOperationWindow&#34;: Force overwrite operation window.
+            - &#34;mergeOperationWindow&#34;: Merge operation window.
+            - &#34;forceOverwriteSchedule&#34;: Force overwrite schedule.
+            - &#34;mergeSchedules&#34;: Merge schedules.
 
-        Returns:
-            CCM Import Job instance             --  returns the CCM Import job instance.
+    Returns:
+        Job: An instance representing the initiated Commcell Import job.
 
-        Raises:
-            SDKException:
-                if type of the input is not valid.
+    Raises:
+        SDKException: If the input types are invalid, required inputs are missing, or invalid options are provided.
 
-                if all the required inputs are not provided.
+    Example:
+        &gt;&gt;&gt; import_options = {
+        ...     &#34;pathType&#34;: &#34;Network&#34;,
+        ...     &#34;userName&#34;: &#34;admin&#34;,
+        ...     &#34;password&#34;: &#34;password123&#34;,
+        ...     &#34;forceOverwrite&#34;: True,
+        ...     &#34;mergeSchedules&#34;: True
+        ... }
+        &gt;&gt;&gt; migration = CommCellMigration(commcell_object)
+        &gt;&gt;&gt; job = migration.commcell_import(&#34;/mnt/ccm_dumps&#34;, import_options)
+        &gt;&gt;&gt; print(f&#34;Started import job with ID: {job.job_id}&#34;)
 
-                if invalid inputs are passed.
     &#34;&#34;&#34;
     path_type = options_dictionary.get(&#34;pathType&#34;, &#34;Local&#34;)
     network_user_name = options_dictionary.get(&#34;userName&#34;, &#34;&#34;)
@@ -1987,43 +2117,51 @@ if invalid inputs are passed.
 </details>
 </dd>
 <dt id="cvpysdk.commcell_migration.CommCellMigration.tape_import"><code class="name flex">
-<span>def <span class="ident">tape_import</span></span>(<span>self, library_id, medias_id, drive_pool_id)</span>
+<span>def <span class="ident">tape_import</span></span>(<span>self, library_id: int, medias_id: list, drive_pool_id: int) ‑> <a title="cvpysdk.job.Job" href="job.html#cvpysdk.job.Job">Job</a></span>
 </code></dt>
 <dd>
-<div class="desc"><p>performs the tape import import operation for the specified tape.</p>
-<h2 id="args">Args</h2>
-<p>library_id
-(int)
-&ndash;
-tape library id.</p>
-<p>medias_id
-(list)
-&ndash;
-tape id.</p>
-<p>drive_pool_id
-(int)
-&ndash;
-drive pool id</p>
-<h2 id="returns">Returns</h2>
-<p>Tape import job instance</p></div>
+<div class="desc"><p>Perform a tape import operation for the specified tape.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>library_id</code></strong></dt>
+<dd>The ID of the tape library to use for the import.</dd>
+<dt><strong><code>medias_id</code></strong></dt>
+<dd>A list of tape media IDs to be imported.</dd>
+<dt><strong><code>drive_pool_id</code></strong></dt>
+<dd>The ID of the drive pool to use for the import operation.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Job</code></dt>
+<dd>An instance representing the initiated tape import job.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; migration = CommCellMigration()
+&gt;&gt;&gt; job = migration.tape_import(library_id=5, medias_id=[101, 102], drive_pool_id=2)
+&gt;&gt;&gt; print(f&quot;Tape import job started: {job}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/commcell_migration.py#L482-L562" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/commcell_migration.py#L511-L595" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def tape_import(self, library_id, medias_id, drive_pool_id):
+<pre><code class="python">def tape_import(self, library_id: int, medias_id: list, drive_pool_id: int) -&gt; &#39;Job&#39;:
+    &#34;&#34;&#34;Perform a tape import operation for the specified tape.
 
-    &#34;&#34;&#34; performs the tape import import operation for the specified tape.
+    Args:
+        library_id: The ID of the tape library to use for the import.
+        medias_id: A list of tape media IDs to be imported.
+        drive_pool_id: The ID of the drive pool to use for the import operation.
 
-        Args:
-            library_id      (int)       --      tape library id.
+    Returns:
+        Job: An instance representing the initiated tape import job.
 
-            medias_id        (list)       --      tape id.
+    Example:
+        &gt;&gt;&gt; migration = CommCellMigration()
+        &gt;&gt;&gt; job = migration.tape_import(library_id=5, medias_id=[101, 102], drive_pool_id=2)
+        &gt;&gt;&gt; print(f&#34;Tape import job started: {job}&#34;)
 
-            drive_pool_id   (int)       --      drive pool id
-
-        Returns:
-            Tape import job instance
     &#34;&#34;&#34;
 
     tape_import_json = {
@@ -2098,59 +2236,104 @@ drive pool id</p>
 </dd>
 <dt id="cvpysdk.commcell_migration.GlobalRepositoryCell"><code class="flex name class">
 <span>class <span class="ident">GlobalRepositoryCell</span></span>
-<span>(</span><span>commcell_object)</span>
+<span>(</span><span>commcell_object: Commcell)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for representing the GRC feature from commcell</p>
-<p>Initializes the object of GlobalRepositoryCell class</p>
-<h2 id="args">Args</h2>
-<p>commcell_object (Commcell)
--
-Commcell class instance</p>
-<h2 id="returns">Returns</h2>
-<p>grc (GlobalRepositoryCell) - instance of the GlobalRepositoryCell class</p></div>
+<div class="desc"><p>Represents the Global Repository Cell (GRC) feature within a Commcell environment.</p>
+<p>This class provides an interface for managing and interacting with GRC-related
+entities and operations in a Commcell. It enables retrieval and modification of
+podcell properties, task details, and monitored clients, as well as facilitating
+client migration processes.</p>
+<p>Key Features:
+- Initialize with a Commcell object for context
+- Retrieve details of specific tasks by task ID
+- Obtain Commcell information using Commcell ID
+- Modify properties of tasks and podcells using provided configurations
+- Fetch entities and properties associated with podcells
+- Get clients eligible for migration within a podcell
+- Modify the list of monitored clients for a podcell</p>
+<p>Initialize a new instance of the GlobalRepositoryCell class.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>commcell_object</code></strong></dt>
+<dd>An instance of the Commcell class representing the Commcell connection.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; from cvpysdk.commcell import Commcell
+&gt;&gt;&gt; commcell = Commcell('commcell_host', 'username', 'password')
+&gt;&gt;&gt; grc = GlobalRepositoryCell(commcell)
+&gt;&gt;&gt; print(f&quot;GlobalRepositoryCell object created: {grc}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/commcell_migration.py#L564-L853" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/commcell_migration.py#L597-L953" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class GlobalRepositoryCell:
-    &#34;&#34;&#34;Class for representing the GRC feature from commcell&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents the Global Repository Cell (GRC) feature within a Commcell environment.
 
-    def __init__(self, commcell_object):
-        &#34;&#34;&#34;
-        Initializes the object of GlobalRepositoryCell class
+    This class provides an interface for managing and interacting with GRC-related
+    entities and operations in a Commcell. It enables retrieval and modification of
+    podcell properties, task details, and monitored clients, as well as facilitating
+    client migration processes.
+
+    Key Features:
+        - Initialize with a Commcell object for context
+        - Retrieve details of specific tasks by task ID
+        - Obtain Commcell information using Commcell ID
+        - Modify properties of tasks and podcells using provided configurations
+        - Fetch entities and properties associated with podcells
+        - Get clients eligible for migration within a podcell
+        - Modify the list of monitored clients for a podcell
+
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_object: &#39;Commcell&#39;) -&gt; None:
+        &#34;&#34;&#34;Initialize a new instance of the GlobalRepositoryCell class.
 
         Args:
-            commcell_object (Commcell)  -   Commcell class instance
+            commcell_object: An instance of the Commcell class representing the Commcell connection.
 
-        Returns:
-            grc (GlobalRepositoryCell) - instance of the GlobalRepositoryCell class
+        Example:
+            &gt;&gt;&gt; from cvpysdk.commcell import Commcell
+            &gt;&gt;&gt; commcell = Commcell(&#39;commcell_host&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; grc = GlobalRepositoryCell(commcell)
+            &gt;&gt;&gt; print(f&#34;GlobalRepositoryCell object created: {grc}&#34;)
+
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
         self._cvpysdk_object = self._commcell_object._cvpysdk_object
         self._services = self._commcell_object._services
         self._commcell_name = self._commcell_object.commserv_name
 
-    def _get_task_details(self, task_id):
-        &#34;&#34;&#34;
-        Util for getting XML of GRC schedule task (required for generating more XMLs)
+    def _get_task_details(self, task_id: int) -&gt; str:
+        &#34;&#34;&#34;Retrieve the XML details of a Global Repository Cell (GRC) schedule task.
+
+        This utility method fetches the XML representation of a GRC schedule task, which is 
+        required for generating additional XMLs or for further processing of schedule details.
 
         Args:
-            task_id     (int)   -   id of grc schedule&#39;s task
+            task_id: The unique identifier (ID) of the GRC schedule&#39;s task.
 
         Returns:
-            task_xml    (str)   -   xml form string with grc schedule details
-            Example:
-                &lt;TMMsg_GetTaskDetailResp&gt;
-                        &lt;taskInfo&gt;
-                                &lt;task taskId=&#34;&#34; taskName=&#34;&#34; &gt; ... &lt;/task&gt;
-                        &lt;appGroup/&gt;
-                        &lt;subTasks&gt;
-                            &lt;subTask subTaskId=&#34;&#34; subTaskType=&#34;&#34; ...&gt;
+            A string containing the XML representation of the GRC schedule task details.
+
+        Example:
+            &gt;&gt;&gt; grc_cell = GlobalRepositoryCell()
+            &gt;&gt;&gt; xml_details = grc_cell._get_task_details(12345)
+            &gt;&gt;&gt; print(xml_details)
+            &lt;TMMsg_GetTaskDetailResp&gt;
+                &lt;taskInfo&gt;
+                    &lt;task taskId=&#34;12345&#34; taskName=&#34;DailyBackup&#34;&gt; ... &lt;/task&gt;
+                    &lt;appGroup/&gt;
+                    &lt;subTasks&gt;
+                        &lt;subTask subTaskId=&#34;67890&#34; subTaskType=&#34;Backup&#34; ...&gt;
                             &lt;options&gt;
-                                &lt;backupOpts backupLevel=&#34;&#34;&gt;
-                                    &lt;dataOpt autoCopy=&#34;&#34;/&gt;
+                                &lt;backupOpts backupLevel=&#34;Full&#34;&gt;
+                                    &lt;dataOpt autoCopy=&#34;true&#34;/&gt;
                                 &lt;/backupOpts&gt;
                                 &lt;adminOpts&gt;
                                     &lt;ccmOption&gt;
@@ -2162,37 +2345,55 @@ Commcell class instance</p>
                                 &lt;/adminOpts&gt;
                             &lt;/options&gt;
                             &lt;pattern ...&gt;...&lt;/pattern&gt;
-                        &lt;/subTasks&gt;
-                    &lt;/taskInfo&gt;
-                &lt;/TMMsg_GetTaskDetailResp&gt;
+                        &lt;/subTask&gt;
+                    &lt;/subTasks&gt;
+                &lt;/taskInfo&gt;
+            &lt;/TMMsg_GetTaskDetailResp&gt;
+
         &#34;&#34;&#34;
         get_task_xml = f&#39;&lt;TMMsg_GetTaskDetailReq taskId=&#34;{task_id}&#34;/&gt;&#39;
         return self._commcell_object.qoperation_execute(get_task_xml, return_xml=True)
 
-    def _get_commcell_from_id(self, commcell_id):
-        &#34;&#34;&#34;
-        Util to get registered commcell name from given commcell id
+    def _get_commcell_from_id(self, commcell_id: int) -&gt; str:
+        &#34;&#34;&#34;Retrieve the registered Commcell name corresponding to the given Commcell ID.
 
         Args:
-            commcell_id (int)   -   id of commcell
+            commcell_id: The unique integer identifier of the Commcell.
 
         Returns:
-            commcell_name   (str)   -   name of commcell
+            The name of the Commcell as a string.
+
+        Example:
+            &gt;&gt;&gt; grc = GlobalRepositoryCell()
+            &gt;&gt;&gt; commcell_name = grc._get_commcell_from_id(1024)
+            &gt;&gt;&gt; print(f&#34;Commcell name: {commcell_name}&#34;)
+
         &#34;&#34;&#34;
         for commcell_name, commcell_data in self._commcell_object.registered_commcells.items():
             if commcell_data.get(&#39;commCell&#39;, {}).get(&#39;commCellId&#39;) == commcell_id:
                 return commcell_name
 
-    def _modify_task_props(self, podcell_properties, task_xml):
-        &#34;&#34;&#34;
-        Util for modifying task properties, after grc properties are updated
+    def _modify_task_props(self, podcell_properties: dict, task_xml: str) -&gt; dict:
+        &#34;&#34;&#34;Modify task properties after Global Repository Cell (GRC) properties are updated.
+
+        This utility updates the task properties using the provided podcell properties and task XML.
+        It is typically used after GRC properties have been changed to ensure the associated task
+        reflects the latest configuration.
 
         Args:
-            podcell_properties  (dict)  -   the dict returned by get_podcell_properties
-            task_xml    (str)           -   the xml returned for grc schedule&#39;s task info
+            podcell_properties: Dictionary containing properties returned by `get_podcell_properties`.
+            task_xml: XML string representing the task information for the GRC schedule.
 
         Returns:
-            response    (dict)   -   the response from execute qoperation
+            Dictionary containing the response from the qoperation execution.
+
+        Example:
+            &gt;&gt;&gt; podcell_props = grc.get_podcell_properties()
+            &gt;&gt;&gt; task_xml = grc.get_task_xml()
+            &gt;&gt;&gt; response = grc._modify_task_props(podcell_props, task_xml)
+            &gt;&gt;&gt; print(response)
+            {&#39;status&#39;: &#39;success&#39;, &#39;taskId&#39;: 1234}
+
         &#34;&#34;&#34;
         grc_schedule_xml = ET.fromstring(podcell_properties[&#39;schedule_xml&#39;])
         task_info_xml = ET.fromstring(task_xml)
@@ -2215,38 +2416,32 @@ Commcell class instance</p>
         )
         return self._commcell_object.qoperation_execute(modify_task_xml)
 
-    def _get_podcell_entities(self, podcell_name: str = None, podcell_id: int = None, podcell_guid: str = None):
-        &#34;&#34;&#34;
-        Gets the entities in podcell available for monitoring via GRC
+    def _get_podcell_entities(self, podcell_name: str = None, podcell_id: int = None, podcell_guid: str = None) -&gt; str:
+        &#34;&#34;&#34;Retrieve the entities within a specified podcell that are available for monitoring via the Global Repository Cell (GRC).
+
+        At least one of `podcell_name`, `podcell_id`, or `podcell_guid` should be provided to identify the target podcell.
+        The returned data is an XML string describing all entities (clients, groups, applications, etc.) within the podcell.
 
         Args:
-            podcell_name    (str)   -   name of pod cell
-            podcell_id      (int)   -   id of podcell
-            podcell_guid    (str)   -   guid of podcell (Optional)
+            podcell_name: The name of the podcell to query. Optional if `podcell_id` or `podcell_guid` is provided.
+            podcell_id: The unique integer ID of the podcell. Optional if `podcell_name` or `podcell_guid` is provided.
+            podcell_guid: The GUID of the podcell. Optional if `podcell_name` or `podcell_id` is provided.
 
         Returns:
-            monitor_entities    (str)   -   all entities of pod cell in XML format
-            Example:
-                &lt;EVGui_CCMCommCellInfo commcellName=&#34;&#34; commcellNumber=&#34;&#34; commcellId=&#34;&#34;&gt;
-                    &lt;clientEntityLst clientId=&#34;&#34; clientName=&#34;&#34;&gt;
-                        ...
-                    &lt;/clientEntityLst&gt;
-                    &lt;clientEntityLst clientId=&#34;&#34; clientName=&#34;&#34;&gt;
-                        ...
-                    &lt;/clientEntityLst&gt;
-                    &lt;clientEntityLst clientId=&#34;&#34; ...&gt;
-                        &lt;appTypeEntityList ... appTypeId=&#34;&#34;&gt;
-                            &lt;instanceList ... instanceId=&#34;&#34;&gt;
-                                &lt;backupSetList ... backupsetId=&#34;&#34;&gt;
-                                    &lt;subclientList ... subclientId=&#34;&#34;/&gt;
-                                &lt;/backupSetList&gt;
-                            &lt;/instanceList&gt;
-                        &lt;/appTypeEntityList&gt;
-                    &lt;/clientEntityLst&gt;
-                    &lt;clientComputerGrp clientGroupId=&#34;&#34; clientGroupName=&#34;&#34;/&gt;
+            An XML string containing all entities of the specified podcell, structured for monitoring purposes.
+
+        Example:
+            &gt;&gt;&gt; grc = GlobalRepositoryCell()
+            &gt;&gt;&gt; xml_entities = grc._get_podcell_entities(podcell_name=&#34;PodCellA&#34;)
+            &gt;&gt;&gt; print(xml_entities)
+            &lt;EVGui_CCMCommCellInfo commcellName=&#34;PodCellA&#34; commcellNumber=&#34;...&#34; commcellId=&#34;...&#34;&gt;
+                &lt;clientEntityLst clientId=&#34;...&#34; clientName=&#34;...&#34;&gt;
                     ...
-                    &lt;clientComputerGrp clientGroupId=&#34;&#34; clientGroupName=&#34;&#34;/&gt;
-                &lt;/EVGui_CCMCommCellInfo&gt;
+                &lt;/clientEntityLst&gt;
+                &lt;clientComputerGrp clientGroupId=&#34;...&#34; clientGroupName=&#34;...&#34;/&gt;
+                ...
+            &lt;/EVGui_CCMCommCellInfo&gt;
+
         &#34;&#34;&#34;
         if podcell_id is None:
             if podcell_name is None:
@@ -2271,23 +2466,23 @@ Commcell class instance</p>
         resp = self._commcell_object.qoperation_execute(exec_xml)
         return resp.get(&#39;strXmlInfo&#39;)
 
-    def get_clients_for_migration(self, podcell_name: str = None, podcell_id: int = None, podcell_guid: str = None):
-        &#34;&#34;&#34;
-        Gets the podcell clients that can be migrated
-        
+    def get_clients_for_migration(self, podcell_name: Optional[str] = None, podcell_id: Optional[int] = None, podcell_guid: Optional[str] = None) -&gt; Dict[int, str]:
+        &#34;&#34;&#34;Retrieve the clients from a specified podcell that are eligible for migration.
+
         Args:
-            podcell_name    (str)   -   name of pod cell
-            podcell_id      (int)   -   id of podcell
-            podcell_guid    (str)   -   guid of podcell (Optional)
-        
+            podcell_name: The name of the podcell from which to retrieve clients. Optional if podcell_id or podcell_guid is provided.
+            podcell_id: The unique identifier of the podcell. Optional if podcell_name or podcell_guid is provided.
+            podcell_guid: The GUID of the podcell. Optional if podcell_name or podcell_id is provided.
+
         Returns:
-            clients_dict    (dict)  -   dict with client ID as key and client name value
-            Example:
-                {
-                    X: &#34;clientA&#34;,
-                    Y: &#34;clientB&#34;,
-                    Z: &#34;clienta&#34;
-                }
+            A dictionary mapping client IDs (as integers) to client names (as strings) for clients that can be migrated.
+
+        Example:
+            &gt;&gt;&gt; grc = GlobalRepositoryCell()
+            &gt;&gt;&gt; clients = grc.get_clients_for_migration(podcell_name=&#34;PodCell1&#34;)
+            &gt;&gt;&gt; print(clients)
+            {101: &#34;clientA&#34;, 102: &#34;clientB&#34;, 103: &#34;clientC&#34;}
+
         &#34;&#34;&#34;
         clients_dict = {}
         entities_xml = self._get_podcell_entities(
@@ -2302,16 +2497,27 @@ Commcell class instance</p>
             clients_dict[cl_id] = cl_name
         return clients_dict
 
-    def _get_podcell_properties(self, podcell_name: str = None, podcell_id: int = None):
-        &#34;&#34;&#34;
-        Gets the GRC properties of given pod cell
+    def _get_podcell_properties(self, podcell_name: Optional[str] = None, podcell_id: Optional[int] = None) -&gt; Dict[str, Any]:
+        &#34;&#34;&#34;Retrieve the Global Repository Cell (GRC) properties for a specified pod cell.
+
+        This method fetches various properties of a pod cell, either by its name or ID. The returned
+        dictionary contains property values, which may include XML-formatted data.
 
         Args:
-            podcell_name    (str)   -   name of pod cell
-            podcell_id      (int)   -   id of podcell
+            podcell_name: Optional; The name of the pod cell to retrieve properties for.
+            podcell_id: Optional; The unique identifier of the pod cell.
 
         Returns:
-            podcell_properties  (dict)  -   different properties of pod cell in dict format with xml values
+            Dictionary containing the properties of the specified pod cell, with values in XML format.
+
+        Example:
+            &gt;&gt;&gt; grc = GlobalRepositoryCell()
+            &gt;&gt;&gt; properties = grc._get_podcell_properties(podcell_name=&#34;PodCellA&#34;)
+            &gt;&gt;&gt; print(properties)
+            &gt;&gt;&gt; # Or fetch by ID
+            &gt;&gt;&gt; properties = grc._get_podcell_properties(podcell_id=12345)
+            &gt;&gt;&gt; print(properties)
+
         &#34;&#34;&#34;
         # TODO: Update grc properties map
         grc_prop_map = {
@@ -2336,18 +2542,27 @@ Commcell class instance</p>
         }
         return podcell_properties
 
-    def modify_monitored_clients(self, podcell_name: str = None, podcell_id: int = None, clients: list = None):
-        &#34;&#34;&#34;
-        Modifies (overwrites) the monitored clients in grc properties for given podcell
+    def modify_monitored_clients(self, podcell_name: Optional[str] = None, podcell_id: Optional[int] = None, clients: Optional[list] = None) -&gt; None:
+        &#34;&#34;&#34;Modify (overwrite) the monitored clients in the Global Repository Cell (GRC) properties for a specified pod cell.
+
+        This method updates the list of monitored clients for the given pod cell, replacing any existing monitored clients with the provided list.
 
         Args:
-            podcell_name    (str)   -   name of pod cell
-            podcell_id      (int)   -   id of podcell
-            client_ids      (list)  -   list of client ids, names
-                                        or Client objects (of pod cell)
+            podcell_name: The name of the pod cell to update. Optional if podcell_id is provided.
+            podcell_id: The ID of the pod cell to update. Optional if podcell_name is provided.
+            clients: A list containing client IDs, client names, or Client objects (belonging to the pod cell) to set as monitored.
 
-        Returns:
-            None
+        Example:
+            &gt;&gt;&gt; grc = GlobalRepositoryCell()
+            &gt;&gt;&gt; # Overwrite monitored clients using podcell name and client names
+            &gt;&gt;&gt; grc.modify_monitored_clients(podcell_name=&#34;PodCellA&#34;, clients=[&#34;client1&#34;, &#34;client2&#34;])
+            &gt;&gt;&gt;
+            &gt;&gt;&gt; # Overwrite monitored clients using podcell ID and client IDs
+            &gt;&gt;&gt; grc.modify_monitored_clients(podcell_id=123, clients=[101, 102, 103])
+            &gt;&gt;&gt;
+            &gt;&gt;&gt; # Overwrite monitored clients using Client objects
+            &gt;&gt;&gt; grc.modify_monitored_clients(podcell_name=&#34;PodCellB&#34;, clients=[client_obj1, client_obj2])
+
         &#34;&#34;&#34;
         if podcell_id is None:
             if podcell_name is None:
@@ -2408,60 +2623,52 @@ Commcell class instance</p>
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.commcell_migration.GlobalRepositoryCell.get_clients_for_migration"><code class="name flex">
-<span>def <span class="ident">get_clients_for_migration</span></span>(<span>self, podcell_name: str = None, podcell_id: int = None, podcell_guid: str = None)</span>
+<span>def <span class="ident">get_clients_for_migration</span></span>(<span>self, podcell_name: Optional[str] = None, podcell_id: Optional[int] = None, podcell_guid: Optional[str] = None) ‑> Dict[int, str]</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Gets the podcell clients that can be migrated</p>
-<h2 id="args">Args</h2>
-<p>podcell_name
-(str)
--
-name of pod cell
-podcell_id
-(int)
--
-id of podcell
-podcell_guid
-(str)
--
-guid of podcell (Optional)</p>
-<h2 id="returns">Returns</h2>
+<div class="desc"><p>Retrieve the clients from a specified podcell that are eligible for migration.</p>
 <dl>
-<dt>clients_dict
-(dict)
--
-dict with client ID as key and client name value</dt>
-<dt>Example:</dt>
-<dt>{</dt>
-<dt><code>
-X</code></dt>
-<dd>"clientA",
-Y: "clientB",
-Z: "clienta"
-}</dd>
-</dl></div>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>podcell_name</code></strong></dt>
+<dd>The name of the podcell from which to retrieve clients. Optional if podcell_id or podcell_guid is provided.</dd>
+<dt><strong><code>podcell_id</code></strong></dt>
+<dd>The unique identifier of the podcell. Optional if podcell_name or podcell_guid is provided.</dd>
+<dt><strong><code>podcell_guid</code></strong></dt>
+<dd>The GUID of the podcell. Optional if podcell_name or podcell_id is provided.</dd>
+</dl>
+<p>Returns
+-----=
+A dictionary mapping client IDs (as integers) to client names (as strings) for clients that can be migrated.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; grc = GlobalRepositoryCell()
+&gt;&gt;&gt; clients = grc.get_clients_for_migration(podcell_name=&quot;PodCell1&quot;)
+&gt;&gt;&gt; print(clients)
+{101: &quot;clientA&quot;, 102: &quot;clientB&quot;, 103: &quot;clientC&quot;}
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/commcell_migration.py#L721-L750" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/commcell_migration.py#L798-L828" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def get_clients_for_migration(self, podcell_name: str = None, podcell_id: int = None, podcell_guid: str = None):
-    &#34;&#34;&#34;
-    Gets the podcell clients that can be migrated
-    
+<pre><code class="python">def get_clients_for_migration(self, podcell_name: Optional[str] = None, podcell_id: Optional[int] = None, podcell_guid: Optional[str] = None) -&gt; Dict[int, str]:
+    &#34;&#34;&#34;Retrieve the clients from a specified podcell that are eligible for migration.
+
     Args:
-        podcell_name    (str)   -   name of pod cell
-        podcell_id      (int)   -   id of podcell
-        podcell_guid    (str)   -   guid of podcell (Optional)
-    
+        podcell_name: The name of the podcell from which to retrieve clients. Optional if podcell_id or podcell_guid is provided.
+        podcell_id: The unique identifier of the podcell. Optional if podcell_name or podcell_guid is provided.
+        podcell_guid: The GUID of the podcell. Optional if podcell_name or podcell_id is provided.
+
     Returns:
-        clients_dict    (dict)  -   dict with client ID as key and client name value
-        Example:
-            {
-                X: &#34;clientA&#34;,
-                Y: &#34;clientB&#34;,
-                Z: &#34;clienta&#34;
-            }
+        A dictionary mapping client IDs (as integers) to client names (as strings) for clients that can be migrated.
+
+    Example:
+        &gt;&gt;&gt; grc = GlobalRepositoryCell()
+        &gt;&gt;&gt; clients = grc.get_clients_for_migration(podcell_name=&#34;PodCell1&#34;)
+        &gt;&gt;&gt; print(clients)
+        {101: &#34;clientA&#34;, 102: &#34;clientB&#34;, 103: &#34;clientC&#34;}
+
     &#34;&#34;&#34;
     clients_dict = {}
     entities_xml = self._get_podcell_entities(
@@ -2478,43 +2685,59 @@ Z: "clienta"
 </details>
 </dd>
 <dt id="cvpysdk.commcell_migration.GlobalRepositoryCell.modify_monitored_clients"><code class="name flex">
-<span>def <span class="ident">modify_monitored_clients</span></span>(<span>self, podcell_name: str = None, podcell_id: int = None, clients: list = None)</span>
+<span>def <span class="ident">modify_monitored_clients</span></span>(<span>self, podcell_name: Optional[str] = None, podcell_id: Optional[int] = None, clients: Optional[list] = None) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Modifies (overwrites) the monitored clients in grc properties for given podcell</p>
-<h2 id="args">Args</h2>
-<p>podcell_name
-(str)
--
-name of pod cell
-podcell_id
-(int)
--
-id of podcell
-client_ids
-(list)
--
-list of client ids, names
-or Client objects (of pod cell)</p>
-<h2 id="returns">Returns</h2>
-<p>None</p></div>
+<div class="desc"><p>Modify (overwrite) the monitored clients in the Global Repository Cell (GRC) properties for a specified pod cell.</p>
+<p>This method updates the list of monitored clients for the given pod cell, replacing any existing monitored clients with the provided list.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>podcell_name</code></strong></dt>
+<dd>The name of the pod cell to update. Optional if podcell_id is provided.</dd>
+<dt><strong><code>podcell_id</code></strong></dt>
+<dd>The ID of the pod cell to update. Optional if podcell_name is provided.</dd>
+<dt><strong><code>clients</code></strong></dt>
+<dd>A list containing client IDs, client names, or Client objects (belonging to the pod cell) to set as monitored.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; grc = GlobalRepositoryCell()
+&gt;&gt;&gt; # Overwrite monitored clients using podcell name and client names
+&gt;&gt;&gt; grc.modify_monitored_clients(podcell_name=&quot;PodCellA&quot;, clients=[&quot;client1&quot;, &quot;client2&quot;])
+&gt;&gt;&gt;
+&gt;&gt;&gt; # Overwrite monitored clients using podcell ID and client IDs
+&gt;&gt;&gt; grc.modify_monitored_clients(podcell_id=123, clients=[101, 102, 103])
+&gt;&gt;&gt;
+&gt;&gt;&gt; # Overwrite monitored clients using Client objects
+&gt;&gt;&gt; grc.modify_monitored_clients(podcell_name=&quot;PodCellB&quot;, clients=[client_obj1, client_obj2])
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/commcell_migration.py#L786-L853" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/commcell_migration.py#L876-L953" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def modify_monitored_clients(self, podcell_name: str = None, podcell_id: int = None, clients: list = None):
-    &#34;&#34;&#34;
-    Modifies (overwrites) the monitored clients in grc properties for given podcell
+<pre><code class="python">def modify_monitored_clients(self, podcell_name: Optional[str] = None, podcell_id: Optional[int] = None, clients: Optional[list] = None) -&gt; None:
+    &#34;&#34;&#34;Modify (overwrite) the monitored clients in the Global Repository Cell (GRC) properties for a specified pod cell.
+
+    This method updates the list of monitored clients for the given pod cell, replacing any existing monitored clients with the provided list.
 
     Args:
-        podcell_name    (str)   -   name of pod cell
-        podcell_id      (int)   -   id of podcell
-        client_ids      (list)  -   list of client ids, names
-                                    or Client objects (of pod cell)
+        podcell_name: The name of the pod cell to update. Optional if podcell_id is provided.
+        podcell_id: The ID of the pod cell to update. Optional if podcell_name is provided.
+        clients: A list containing client IDs, client names, or Client objects (belonging to the pod cell) to set as monitored.
 
-    Returns:
-        None
+    Example:
+        &gt;&gt;&gt; grc = GlobalRepositoryCell()
+        &gt;&gt;&gt; # Overwrite monitored clients using podcell name and client names
+        &gt;&gt;&gt; grc.modify_monitored_clients(podcell_name=&#34;PodCellA&#34;, clients=[&#34;client1&#34;, &#34;client2&#34;])
+        &gt;&gt;&gt;
+        &gt;&gt;&gt; # Overwrite monitored clients using podcell ID and client IDs
+        &gt;&gt;&gt; grc.modify_monitored_clients(podcell_id=123, clients=[101, 102, 103])
+        &gt;&gt;&gt;
+        &gt;&gt;&gt; # Overwrite monitored clients using Client objects
+        &gt;&gt;&gt; grc.modify_monitored_clients(podcell_name=&#34;PodCellB&#34;, clients=[client_obj1, client_obj2])
+
     &#34;&#34;&#34;
     if podcell_id is None:
         if podcell_name is None:

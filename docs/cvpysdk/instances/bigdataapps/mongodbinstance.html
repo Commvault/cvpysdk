@@ -30,19 +30,27 @@ Derived class from BigDataAppsInstance Base class, representing a
 MongoDBInstance :
 Derived class from BigDataAppsInstance Base class, representing a
 MongoDBInstance instance and to perform operations on that instance</p>
-<h2 id="mongodbinstance">Mongodbinstance</h2>
-<p><strong>init</strong>()
+<p>Mongodbinstance
+-----=
+<strong>init</strong>()
 &ndash;
 Initializes MongoDB instance object with associated
 agent_object, instance name and instance id
 restore()
 &ndash; Submits a restore request based on restore options
 restore_collection()
-&ndash; collection based restore.</p>
+&ndash; collection based restore.
+get_restore_json_for_out_of_place() &ndash; Get restore JSON for out-of-place restore
+restore_out_of_place()
+&ndash; Out-of-place restore for MongoDB instance
+discover_mongodb_nodes()
+&ndash; Runs machine calss discovery
+refresh_mongo_instance()
+&ndash; Refresh mongoDB call by yaking machine response as input</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/bigdataapps/mongodbinstance.py#L1-L223" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/bigdataapps/mongodbinstance.py#L1-L683" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 # --------------------------------------------------------------------------
@@ -68,26 +76,48 @@ MongoDBInstance:
     agent_object, instance name and instance id
     restore()                       -- Submits a restore request based on restore options
     restore_collection()            -- collection based restore.
+    get_restore_json_for_out_of_place() -- Get restore JSON for out-of-place restore
+    restore_out_of_place()          -- Out-of-place restore for MongoDB instance
+    discover_mongodb_nodes()        -- Runs machine calss discovery
+    refresh_mongo_instance()        -- Refresh mongoDB call by yaking machine response as input
 
 &#34;&#34;&#34;
 from __future__ import unicode_literals
+
+from typing import Any, Dict
+
 from ..bigdataappsinstance import BigDataAppsInstance
 from ...exception import SDKException
-
+from ...job import Job
 
 class MongoDBInstance(BigDataAppsInstance):
     &#34;&#34;&#34;
-    Class for representing an Instance of the MongoDB  instance
+    Represents an instance of a MongoDB database within a big data application environment.
+
+    This class provides functionality to manage and interact with MongoDB instances,
+    including initialization with agent and instance details, and performing restore
+    operations at both the database and collection levels.
+
+    Key Features:
+        - Initialization with agent object, instance name, and instance ID
+        - Restore entire MongoDB instance using customizable restore options
+        - Restore specific MongoDB collections with targeted restore options
+
     &#34;&#34;&#34;
-    def __init__(self, agent_object, instance_name, instance_id=None):
-        &#34;&#34;&#34;Initializes the object of the Mongo DB class
-            Args:
-                agent_object    (object)  --  instance of the Agent class
-                instance_name   (str)     --  name of the instance
-                instance_id     (str)     --  id of the instance
-                    default: None
-            Returns:
-                object - instance of the Instance class
+    def __init__(self, agent_object: object, instance_name: str, instance_id: str = None) -&gt; None:
+        &#34;&#34;&#34;Initialize a MongoDBInstance object.
+
+        Args:
+            agent_object: Instance of the Agent class associated with this MongoDB instance.
+            instance_name: The name of the MongoDB instance.
+            instance_id: Optional; the unique identifier for the MongoDB instance. Defaults to None.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(commcell_object, &#34;MongoDB&#34;)
+            &gt;&gt;&gt; mongo_instance = MongoDBInstance(agent, &#34;MongoInstance1&#34;)
+            &gt;&gt;&gt; # Optionally, provide an instance ID
+            &gt;&gt;&gt; mongo_instance_with_id = MongoDBInstance(agent, &#34;MongoInstance2&#34;, &#34;12345&#34;)
+
         &#34;&#34;&#34;
         self._agent_object = agent_object
         self._browse_request = {}
@@ -99,43 +129,77 @@ class MongoDBInstance(BigDataAppsInstance):
                 instance_name,
                 instance_id)
 
-    def restore(self, restore_options):
-        &#34;&#34;&#34;
-            Restores the content of this instance content
-            Args:
-                restore_options : dict of keyword arguments needed to submit a MongoDB restore:
-                    Example:
-                       restore_options = {
-                        restore_dict = {}
-                            restore_dict[&#34;no_of_streams&#34;] = 2
-                            restore_dict[&#34;multinode_restore&#34;] = True
-                            restore_dict[&#34;destination_instance&#34;] = self.client_name
-                            restore_dict[&#34;destination_instance_id&#34;] = self._instance_object.instance_id
-                            restore_dict[&#34;paths&#34;] = [&#34;/&#34;]
-                            restore_dict[&#34;mongodb_restore&#34;] = True
-                            restore_dict[&#34;destination_client_id&#34;] = self._client_obj.client_id
-                            restore_dict[&#34;destination_client_name&#34;] = self._client_obj.client_name
-                            restore_dict[&#34;overwrite&#34;] = True
-                            restore_dict[&#34;client_type&#34;] = 29
-                            restore_dict[&#34;destination_appTypeId&#34;] = 64
-                            restore_dict[&#34;backupset_name&#34;] = self.backupsetname
-                            restore_dict[&#34;_type_&#34;] = 5
-                            restore_dict[&#34;subclient_id&#34;] = -1
-                            restore_dict[&#34;source_shard_name&#34;] = self.replicaset
-                            restore_dict[&#34;destination_shard_name&#34;] = self.replicaset
-                            restore_dict[&#34;hostname&#34;] = self.primary_host
-                            restore_dict[&#34;clientName&#34;] = self.master_node
-                            restore_dict[&#34;desthostName&#34;] = self.primary_host
-                            restore_dict[&#34;destclientName&#34;] = self.master_node
-                            restore_dict[&#34;destPortNumber&#34;] = self.port
-                            restore_dict[&#34;destDataDir&#34;] = self.bin_path
-                            restore_dict[&#34;bkpDataDir&#34;] = self.bkp_dir_path
-                            restore_dict[&#34;backupPortNumber&#34;] = self.port
-                            restore_dict[&#34;restoreDataDir&#34;] = self.bkp_dir_path
-                            restore_dict[&#34;primaryPort&#34;] = self.port
-                        }
-            Returns:
-                object - instance of the Job class for this restore job
+    def restore(self, restore_options: Dict[str, Any]) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;Restore the content of this MongoDB instance using the specified options.
+
+        Args:
+            restore_options: Dictionary of keyword arguments required to submit a MongoDB restore job.
+                The dictionary should include keys such as:
+                    - &#34;no_of_streams&#34;: Number of streams to use for restore (int)
+                    - &#34;multinode_restore&#34;: Whether to perform a multinode restore (bool)
+                    - &#34;destination_instance&#34;: Name of the destination instance (str)
+                    - &#34;destination_instance_id&#34;: ID of the destination instance (int)
+                    - &#34;paths&#34;: List of paths to restore (list of str)
+                    - &#34;mongodb_restore&#34;: Flag to indicate MongoDB restore (bool)
+                    - &#34;destination_client_id&#34;: ID of the destination client (int)
+                    - &#34;destination_client_name&#34;: Name of the destination client (str)
+                    - &#34;overwrite&#34;: Whether to overwrite existing data (bool)
+                    - &#34;client_type&#34;: Type of client (int)
+                    - &#34;destination_appTypeId&#34;: Application type ID for destination (int)
+                    - &#34;backupset_name&#34;: Name of the backup set (str)
+                    - &#34;_type_&#34;: Type identifier (int)
+                    - &#34;subclient_id&#34;: Subclient ID (int)
+                    - &#34;source_shard_name&#34;: Name of the source shard (str)
+                    - &#34;destination_shard_name&#34;: Name of the destination shard (str)
+                    - &#34;hostname&#34;: Hostname for restore (str)
+                    - &#34;clientName&#34;: Client name for restore (str)
+                    - &#34;desthostName&#34;: Destination host name (str)
+                    - &#34;destclientName&#34;: Destination client name (str)
+                    - &#34;destPortNumber&#34;: Destination port number (int)
+                    - &#34;destDataDir&#34;: Destination data directory (str)
+                    - &#34;bkpDataDir&#34;: Backup data directory (str)
+                    - &#34;backupPortNumber&#34;: Backup port number (int)
+                    - &#34;restoreDataDir&#34;: Restore data directory (str)
+                    - &#34;primaryPort&#34;: Primary port number (int)
+                    - &#34;clusterConfig&#34;: Cluster configuration data (Any)
+
+        Returns:
+            Job: An instance of the Job class representing the submitted restore job.
+
+        Example:
+            &gt;&gt;&gt; restore_options = {
+            ...     &#34;no_of_streams&#34;: 2,
+            ...     &#34;multinode_restore&#34;: True,
+            ...     &#34;destination_instance&#34;: &#34;MongoDB_Instance_01&#34;,
+            ...     &#34;destination_instance_id&#34;: 123,
+            ...     &#34;paths&#34;: [&#34;/&#34;],
+            ...     &#34;mongodb_restore&#34;: True,
+            ...     &#34;destination_client_id&#34;: 456,
+            ...     &#34;destination_client_name&#34;: &#34;MongoDB_Client_01&#34;,
+            ...     &#34;overwrite&#34;: True,
+            ...     &#34;client_type&#34;: 29,
+            ...     &#34;destination_appTypeId&#34;: 64,
+            ...     &#34;backupset_name&#34;: &#34;DailyBackupSet&#34;,
+            ...     &#34;_type_&#34;: 5,
+            ...     &#34;subclient_id&#34;: -1,
+            ...     &#34;source_shard_name&#34;: &#34;shard01&#34;,
+            ...     &#34;destination_shard_name&#34;: &#34;shard01&#34;,
+            ...     &#34;hostname&#34;: &#34;mongo-primary.example.com&#34;,
+            ...     &#34;clientName&#34;: &#34;mongo-master&#34;,
+            ...     &#34;desthostName&#34;: &#34;mongo-primary.example.com&#34;,
+            ...     &#34;destclientName&#34;: &#34;mongo-master&#34;,
+            ...     &#34;destPortNumber&#34;: 27017,
+            ...     &#34;destDataDir&#34;: &#34;/data/db&#34;,
+            ...     &#34;bkpDataDir&#34;: &#34;/backup/db&#34;,
+            ...     &#34;backupPortNumber&#34;: 27017,
+            ...     &#34;restoreDataDir&#34;: &#34;/backup/db&#34;,
+            ...     &#34;primaryPort&#34;: 27017,
+            ...     &#34;clusterConfig&#34;: {&#34;replicaSet&#34;: &#34;rs0&#34;}
+            ... }
+            &gt;&gt;&gt; job = mongodb_instance.restore(restore_options)
+            &gt;&gt;&gt; print(f&#34;Restore job submitted: {job}&#34;)
+            &gt;&gt;&gt; # The returned Job object can be used to monitor restore progress
+
         &#34;&#34;&#34;
         if not (isinstance(restore_options, dict)):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
@@ -155,30 +219,9 @@ class MongoDBInstance(BigDataAppsInstance):
 
         client_object_source = self._commcell_object.clients.get(restore_options[&#39;clientName&#39;])
         client_object_destination = self._commcell_object.clients.get(restore_options[&#39;destclientName&#39;])
+
         distributed_restore_json[&#34;mongoDBRestoreOptions&#34;] = {
                 &#34;destShardList&#34;: [
-                    {
-                        &#34;srcShardName&#34;:  restore_options.get(&#34;source_shard_name&#34;, False),
-                        &#34;destShardName&#34;: restore_options.get(&#34;destination_shard_name&#34;, False),
-                        &#34;target&#34;: {
-                            &#34;hostName&#34;: restore_options.get(&#34;hostname&#34;, False),
-                            &#34;clientName&#34;: restore_options.get(&#34;clientName&#34;, False),
-                            &#34;clientId&#34;: int(client_object_source.client_id)
-                        },
-                        &#34;destHostName&#34;: restore_options.get(&#34;desthostName&#34;, False),
-                        &#34;destPortNumber&#34;: restore_options.get(&#34;destPortNumber&#34;, False),
-                        &#34;destDataDir&#34;:  restore_options.get(&#34;restoreDataDir&#34;, False),
-                        &#34;bkpSecondary&#34;: {
-                            &#34;clientName&#34;: restore_options.get(&#34;clientName&#34;, False),
-                            &#34;hostName&#34;: restore_options.get(&#34;hostname&#34;, False),
-                            &#34;clientId&#34;: int(client_object_source.client_id)
-                        },
-                        &#34;bkpHostName&#34;: restore_options.get(&#34;hostname&#34;, False),
-                        &#34;bkpPortNumber&#34;: restore_options.get(&#34;backupPortNumber&#34;, False),
-                        &#34;bkpDataDir&#34;: restore_options.get(&#34;bkpDataDir&#34;, False),
-                        &#34;useDestAsSecondary&#34;: False,
-                        &#34;primaryPortNumber&#34;:restore_options.get(&#34;primaryPort&#34;, False),
-                    }
                 ],
                 &#34;restoreFilesOnly&#34;: False,
                 &#34;recover&#34;: True,
@@ -190,47 +233,306 @@ class MongoDBInstance(BigDataAppsInstance):
                 &#34;isInplaceRestore&#34;: True
             }
 
+        if restore_options.get(&#34;clusterConfig&#34;):
+            for host_info in restore_options.get(&#34;clusterConfig&#34;):
+                shard_name = host_info.get(&#34;replSet&#34;, &#34;&#34;)
+                hostname = host_info.get(&#34;host&#34;, &#34;&#34;)
+                port = int(host_info.get(&#34;port&#34;, &#34;&#34;))
+                clientname = host_info.get(&#34;clientname&#34;, &#34;&#34;)
+                clientid = int(host_info.get(&#34;clientid&#34;, &#34;&#34;))
+                dbpath =  host_info.get(&#34;dbpath&#34;, &#34;&#34;)
+
+                shard_entry = {
+                    &#34;srcShardName&#34;: shard_name,
+                    &#34;destShardName&#34;: shard_name,
+                    &#34;target&#34;: {
+                        &#34;hostName&#34;: hostname,
+                        &#34;clientName&#34;: clientname,
+                        &#34;clientId&#34;: clientid
+                    },
+                    &#34;destHostName&#34;: hostname,
+                    &#34;destPortNumber&#34;: port,
+                    &#34;destDataDir&#34;: dbpath,
+                    &#34;bkpSecondary&#34;: {
+                        &#34;clientName&#34;: clientname,
+                        &#34;hostName&#34;: hostname,
+                        &#34;clientId&#34;: clientid
+                    },
+                    &#34;bkpHostName&#34;: hostname,
+                    &#34;bkpPortNumber&#34;: port,
+                    &#34;bkpDataDir&#34;: dbpath,
+                    &#34;useDestAsSecondary&#34;: False,
+                    &#34;primaryPortNumber&#34;: port
+                }
+
+                distributed_restore_json[&#34;mongoDBRestoreOptions&#34;][&#34;destShardList&#34;].append(shard_entry)
+
         request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][
                 &#34;distributedAppsRestoreOptions&#34;] = distributed_restore_json
         return self._process_restore_response(request_json)
-
-    def restore_collection(self, restore_options):
+    
+    def get_restore_json_for_out_of_place(self, restore_options: Dict[str, Any]) -&gt; Dict[str, Any]:
         &#34;&#34;&#34;
-            Restores the content of this instance content for collection restore inplace.
-            Args:
-                restore_options : dict of keyword arguments needed to submit a MongoDB restore:
-                    Example:
-                       restore_options = {
-                        restore_dict = {}
-                            restore_dict[&#34;no_of_streams&#34;] = 2
-                            restore_dict[&#34;multinode_restore&#34;] = True
-                            restore_dict[&#34;destination_instance&#34;] = self.client_name
-                            restore_dict[&#34;destination_instance_id&#34;] = self._instance_object.instance_id
-                            restore_dict[&#34;paths&#34;] = [&#34;/&#34;]
-                            restore_dict[&#34;mongodb_restore&#34;] = True
-                            restore_dict[&#34;destination_client_id&#34;] = self._client_obj.client_id
-                            restore_dict[&#34;destination_client_name&#34;] = self._client_obj.client_name
-                            restore_dict[&#34;overwrite&#34;] = True
-                            restore_dict[&#34;client_type&#34;] = 29
-                            restore_dict[&#34;destination_appTypeId&#34;] = 64
-                            restore_dict[&#34;backupset_name&#34;] = self.backupsetname
-                            restore_dict[&#34;_type_&#34;] = 5
-                            restore_dict[&#34;subclient_id&#34;] = subclientid
-                            restore_dict[&#34;source_shard_name&#34;] = self.replicaset
-                            restore_dict[&#34;destination_shard_name&#34;] = self.replicaset
-                            restore_dict[&#34;hostname&#34;] = self.primary_host
-                            restore_dict[&#34;clientName&#34;] = self.master_node
-                            restore_dict[&#34;desthostName&#34;] = self.primary_host
-                            restore_dict[&#34;destclientName&#34;] = self.master_node
-                            restore_dict[&#34;destPortNumber&#34;] = self.port
-                            restore_dict[&#34;destDataDir&#34;] = self.bin_path
-                            restore_dict[&#34;bkpDataDir&#34;] = self.bkp_dir_path
-                            restore_dict[&#34;backupPortNumber&#34;] = self.port
-                            restore_dict[&#34;restoreDataDir&#34;] = self.bkp_dir_path
-                            restore_dict[&#34;primaryPort&#34;] = self.port
+        Get the JSON payload for an out-of-place restore operation based on the provided restore options.
+
+        Args:
+            restore_options: Dictionary of keyword arguments required to submit a MongoDB restore job.
+                The dictionary should include keys such as:
+                    &#34;subclient_id&#34;: ID of the subclient (int),
+                    &#34;backupset_id&#34;: ID of the backupset (int),
+
+                    &#34;src_client_id&#34;: ID of the source client (int),
+                    &#34;src_client_name&#34;: Name of the source client (str),
+                    &#34;src_instance_id&#34;: ID of the source instance (int),
+                    &#34;src_instance_name&#34;: Name of the source instance (str),
+                    &#34;src_shard_name&#34;: Name of the source shard (str),
+                    &#34;src_host_name&#34;: Hostname of the source (str),
+                    &#34;src_port&#34;: Port number of the source (int),
+                    &#34;src_dbpath&#34;: Database path of the source (str),
+                    &#34;src_client_id_secondary&#34;: ID of the secondary source client (int),
+
+                    &#34;dest_client_id&#34;: ID of the destination client (int),
+                    &#34;dest_client_name&#34;: Name of the destination client (str),
+                    &#34;dest_instance_id&#34;: ID of the destination instance (int),
+                    &#34;dest_instance_name&#34;: Name of the destination instance (str),
+                    &#34;dest_cluster_config&#34;: Configuration of the destination cluster (dict),
+
+                    &#34;recover&#34;: recover_db,
+                    &#34;auto_db_shutdown&#34;: auto_restore
+
+        Returns:
+            dict: Returns a dictionary representing the JSON payload for the restore operation, which can be used to submit an out-of-place restore job.
+
+        &#34;&#34;&#34;
+
+        request_json = {
+            &#34;taskInfo&#34;: {
+                &#34;associations&#34;: [
+                    {
+                        &#34;subclientId&#34;: int(restore_options.get(&#34;subclient_id&#34;, -1)),
+                        &#34;applicationId&#34;: 64,
+                        &#34;clientName&#34;: restore_options.get(&#34;src_instance_name&#34;),
+                        &#34;backupsetId&#34;: int(restore_options.get(&#34;backupset_id&#34;)),
+                        &#34;instanceId&#34;: int(restore_options.get(&#34;src_instance_id&#34;)),
+                        &#34;clientId&#34;: int(restore_options.get(&#34;src_client_id&#34;)),
+                        &#34;commCellId&#34;: 2,
+                        &#34;_type_&#34;: 5
+                    }
+                ],
+                &#34;task&#34;: {
+                    &#34;taskType&#34;: 1,
+                    &#34;initiatedFrom&#34;: 2
+                },
+                &#34;subTasks&#34;: [
+                    {
+                        &#34;subTask&#34;: {
+                            &#34;subTaskType&#34;: &#34;RESTORE&#34;,
+                            &#34;operationType&#34;: &#34;RESTORE&#34;
+                        },
+                        &#34;options&#34;: {
+                            &#34;restoreOptions&#34;: {
+                                &#34;commonOptions&#34;: {
+                                    &#34;unconditionalOverwrite&#34;: False
+                                },
+                                &#34;browseOption&#34;: {
+                                    &#34;commCellId&#34;: 2,
+                                    &#34;backupset&#34;: {
+                                        &#34;backupsetId&#34;: int(restore_options.get(&#34;backupset_id&#34;)),
+                                        &#34;clientId&#34;: int(restore_options.get(&#34;src_client_id&#34;)),
+                                    },
+                                    &#34;timeRange&#34;: {}
+                                },
+                                &#34;destination&#34;: {
+                                    &#34;noOfStreams&#34;: 2,
+                                    &#34;destClient&#34;: {
+                                        &#34;clientId&#34;: int(restore_options.get(&#34;dest_client_id&#34;)),
+                                        &#34;clientName&#34;: restore_options.get(&#34;dest_instance_name&#34;)
+                                    },
+                                    &#34;destinationInstance&#34;: {
+                                        &#34;clientId&#34;: int(restore_options.get(&#34;dest_client_id&#34;)),
+                                        &#34;clientName&#34;: restore_options.get(&#34;dest_instance_name&#34;),
+                                        &#34;applicationId&#34;: 64,
+                                        &#34;appName&#34;: &#34;Big Data Apps&#34;,
+                                        &#34;instanceId&#34;: int(restore_options.get(&#34;dest_instance_id&#34;)),
+                                        &#34;instanceName&#34;: restore_options.get(&#34;dest_instance_name&#34;)
+                                    }
+                                },
+                                &#34;fileOption&#34;: {
+                                    &#34;sourceItem&#34;: [
+                                        &#34;/&#34;
+                                    ]
+                                },
+                                &#34;distributedAppsRestoreOptions&#34;: {
+                                    &#34;distributedRestore&#34;: True,
+                                    &#34;mongoDBRestoreOptions&#34;: {
+                                        &#34;destShardList&#34;: [],
+                                        &#34;destGranularEntityList&#34;: [],
+                                        &#34;recover&#34;: restore_options.get(&#34;recover&#34;, True),
+                                        &#34;latestOpLogSync&#34;: True,
+                                        &#34;pointInTimeToEndOfBackup&#34;: True,
+                                        &#34;latestEndOfBackup&#34;: True,
+                                        &#34;isGranularRecovery&#34;: False,
+                                        &#34;autoDBShutDown&#34;: restore_options.get(&#34;auto_db_shutdown&#34;, True)
+                                    }
+                                },
+                                &#34;qrOption&#34;: {
+                                    &#34;destAppTypeId&#34;: 64
+                                }
+                            },
+                            &#34;commonOpts&#34;: {
+                                &#34;notifyUserOnJobCompletion&#34;: True,
+                            }
                         }
-            Returns:
-                object - instance of the Job class for this restore job
+                    }
+                ]
+            }
+        }
+
+        if restore_options.get(&#34;dest_cluster_config&#34;):
+            for host_info in restore_options.get(&#34;dest_cluster_config&#34;):
+                shard_name = host_info.get(&#34;replSet&#34;, &#34;&#34;)
+                hostname = host_info.get(&#34;host&#34;, &#34;&#34;)
+                port = int(host_info.get(&#34;port&#34;, &#34;&#34;))
+                clientname = host_info.get(&#34;clientname&#34;, &#34;&#34;)
+                clientid = int(host_info.get(&#34;clientid&#34;, &#34;&#34;))
+                dbpath =  host_info.get(&#34;dbpath&#34;, &#34;&#34;)
+
+                shard_entry = {
+                    &#34;srcShardName&#34;: restore_options.get(&#34;src_shard_name&#34;),
+                    &#34;destShardName&#34;: shard_name,
+                    &#34;target&#34;: {
+                        &#34;hostName&#34;: hostname,
+                        &#34;clientName&#34;: clientname,
+                        &#34;clientId&#34;: int(clientid)
+                    },
+                    &#34;destHostName&#34;: hostname,
+                    &#34;destPortNumber&#34;: int(port),
+                    &#34;destDataDir&#34;: dbpath,
+                    &#34;bkpSecondary&#34;: {
+                        &#34;clientName&#34;: restore_options.get(&#34;src_client_name&#34;),
+                        &#34;hostName&#34;: restore_options.get(&#34;src_hostname&#34;),
+                        &#34;clientId&#34;: int(restore_options.get(&#34;src_client_id_secondary&#34;))
+                    },
+                    &#34;bkpHostName&#34;: restore_options.get(&#34;src_hostname&#34;),
+                    &#34;bkpPortNumber&#34;: int(restore_options.get(&#34;src_port&#34;)),
+                    &#34;bkpDataDir&#34;: restore_options.get(&#34;src_dbpath&#34;),
+                    &#34;useDestAsSecondary&#34;: False,
+                    &#34;primaryPortNumber&#34;: int(restore_options.get(&#34;src_port&#34;))
+                }
+
+                request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][
+                    &#34;distributedAppsRestoreOptions&#34;][&#34;mongoDBRestoreOptions&#34;][&#34;destShardList&#34;].append(shard_entry)
+
+
+        return request_json
+    
+    def restore_out_of_place(self, restore_options: Dict[str, Any]) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;
+        Restore the content of this MongoDB instance to a different location using the specified options.
+
+        Args:
+            restore_options: Dictionary of keyword arguments required to submit a MongoDB restore job.
+                The dictionary should include keys such as:
+                    &#34;subclient_id&#34;: ID of the subclient (int),
+                    &#34;backupset_id&#34;: ID of the backupset (int),
+
+                    &#34;src_client_id&#34;: ID of the source client (int),
+                    &#34;src_client_name&#34;: Name of the source client (str),
+                    &#34;src_instance_id&#34;: ID of the source instance (int),
+                    &#34;src_instance_name&#34;: Name of the source instance (str),
+                    &#34;src_shard_name&#34;: Name of the source shard (str),
+                    &#34;src_host_name&#34;: Hostname of the source (str),
+                    &#34;src_port&#34;: Port number of the source (int),
+                    &#34;src_dbpath&#34;: Database path of the source (str),
+                    &#34;src_client_id_secondary&#34;: ID of the secondary source client (int),
+
+                    &#34;dest_client_id&#34;: ID of the destination client (int),
+                    &#34;dest_client_name&#34;: Name of the destination client (str),
+                    &#34;dest_instance_id&#34;: ID of the destination instance (int),
+                    &#34;dest_instance_name&#34;: Name of the destination instance (str),
+                    &#34;dest_cluster_config&#34;: Configuration of the destination cluster (dict),
+
+                    &#34;recover&#34;: recover_db,
+                    &#34;auto_db_shutdown&#34;: auto_restore
+
+        Returns:
+            Job: An instance of the Job class representing the submitted restore job.
+        &#34;&#34;&#34;
+        if not (isinstance(restore_options, dict)):
+            raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
+        
+        request_json = self.get_restore_json_for_out_of_place(restore_options)
+
+        return self._process_restore_response(request_json)
+
+    def restore_collection(self, restore_options: dict) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;Restore the content of this MongoDB instance for an in-place collection restore.
+
+        Args:
+            restore_options: A dictionary containing the required options for the MongoDB restore job.
+                The dictionary should include keys such as:
+                    - &#34;no_of_streams&#34;: int, number of streams to use for restore
+                    - &#34;multinode_restore&#34;: bool, whether to use multinode restore
+                    - &#34;destination_instance&#34;: str, name of the destination instance
+                    - &#34;destination_instance_id&#34;: int, ID of the destination instance
+                    - &#34;paths&#34;: list, list of collection paths to restore
+                    - &#34;mongodb_restore&#34;: bool, set to True for MongoDB restore
+                    - &#34;destination_client_id&#34;: int, ID of the destination client
+                    - &#34;destination_client_name&#34;: str, name of the destination client
+                    - &#34;overwrite&#34;: bool, whether to overwrite existing data
+                    - &#34;client_type&#34;: int, client type identifier
+                    - &#34;destination_appTypeId&#34;: int, application type ID for destination
+                    - &#34;backupset_name&#34;: str, name of the backup set
+                    - &#34;_type_&#34;: int, type identifier
+                    - &#34;subclient_id&#34;: int, ID of the subclient
+                    - &#34;source_shard_name&#34;: str, name of the source shard
+                    - &#34;destination_shard_name&#34;: str, name of the destination shard
+                    - &#34;hostname&#34;: str, host name for restore
+                    - &#34;clientName&#34;: str, client name for restore
+                    - &#34;desthostName&#34;: str, destination host name
+                    - &#34;destclientName&#34;: str, destination client name
+                    - &#34;destPortNumber&#34;: int, destination port number
+                    - &#34;destDataDir&#34;: str, destination data directory
+                    - &#34;bkpDataDir&#34;: str, backup data directory
+                    - &#34;backupPortNumber&#34;: int, backup port number
+                    - &#34;restoreDataDir&#34;: str, restore data directory
+                    - &#34;primaryPort&#34;: int, primary port number
+
+        Returns:
+            Job: An instance of the Job class representing the restore job.
+
+        Example:
+            &gt;&gt;&gt; restore_options = {
+            ...     &#34;no_of_streams&#34;: 2,
+            ...     &#34;multinode_restore&#34;: True,
+            ...     &#34;destination_instance&#34;: &#34;MongoDB_Instance1&#34;,
+            ...     &#34;destination_instance_id&#34;: 101,
+            ...     &#34;paths&#34;: [&#34;/&#34;],
+            ...     &#34;mongodb_restore&#34;: True,
+            ...     &#34;destination_client_id&#34;: 201,
+            ...     &#34;destination_client_name&#34;: &#34;MongoDB_Client1&#34;,
+            ...     &#34;overwrite&#34;: True,
+            ...     &#34;client_type&#34;: 29,
+            ...     &#34;destination_appTypeId&#34;: 64,
+            ...     &#34;backupset_name&#34;: &#34;defaultBackupSet&#34;,
+            ...     &#34;_type_&#34;: 5,
+            ...     &#34;subclient_id&#34;: 301,
+            ...     &#34;source_shard_name&#34;: &#34;shard1&#34;,
+            ...     &#34;destination_shard_name&#34;: &#34;shard1&#34;,
+            ...     &#34;hostname&#34;: &#34;mongo-primary&#34;,
+            ...     &#34;clientName&#34;: &#34;mongo-master&#34;,
+            ...     &#34;desthostName&#34;: &#34;mongo-primary&#34;,
+            ...     &#34;destclientName&#34;: &#34;mongo-master&#34;,
+            ...     &#34;destPortNumber&#34;: 27017,
+            ...     &#34;destDataDir&#34;: &#34;/data/db&#34;,
+            ...     &#34;bkpDataDir&#34;: &#34;/backup/db&#34;,
+            ...     &#34;backupPortNumber&#34;: 27017,
+            ...     &#34;restoreDataDir&#34;: &#34;/backup/db&#34;,
+            ...     &#34;primaryPort&#34;: 27017
+            ... }
+            &gt;&gt;&gt; job = mongodb_instance.restore_collection(restore_options)
+            &gt;&gt;&gt; print(f&#34;Restore job started with ID: {job.job_id}&#34;)
+
         &#34;&#34;&#34;
         if not (isinstance(restore_options, dict)):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
@@ -266,7 +568,167 @@ class MongoDBInstance(BigDataAppsInstance):
             }
         request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][
                 &#34;distributedAppsRestoreOptions&#34;] = distributed_restore_json
-        return self._process_restore_response(request_json)</code></pre>
+        return self._process_restore_response(request_json)
+
+    def discover_mongo_nodes(self, options: dict):
+        &#34;&#34;&#34;
+        Discovers MongoDB member nodes associated with instance
+
+        Args:
+            options (dict): Dictionary with all required arguments.
+
+            Required keys:
+                instance_id         (int)   --  Instance ID of MongoDB instance
+                master_node         (str)   --  Master of MongoDB Instance
+                master_hostname     (str)   --  Hostname of master node
+                master_client_id    (int)   --  Client ID of master Node
+                port                (int)   --  Port where mongos / mongod services are running
+                bin_path            (str)   --  Binary path for MongoDB installation
+                db_user             (str)   --  Database user
+                os_user             (str)   --  OS user to contact and run command
+                db_credential_id    (int)   --  Database credential ID
+                ssl_credential_id   (int)   --  SSL credential ID
+
+        Returns:
+            tuple: (flag, response) received from Discover API
+        &#34;&#34;&#34;
+
+        required = [
+            &#34;instance_id&#34;, &#34;master_node&#34;, &#34;master_hostname&#34;, &#34;master_client_id&#34;,
+            &#34;port&#34;, &#34;bin_path&#34;, &#34;os_user&#34;, &#34;db_credential_id&#34;, &#34;ssl_credential_id&#34;
+        ]
+
+        # check for missing keys
+        missing = [key for key in required if key not in options or options[key] in (None, &#34;&#34;)]
+        if missing:
+            raise ValueError(f&#34;Missing required parameters: {missing}&#34;)
+
+        # build request payload
+        request_json = {
+            &#34;distAppsProperties&#34;: {
+                &#34;clusterType&#34;: 8,  # MongoDB cluster type
+                &#34;subclient&#34;: {
+                    &#34;instanceId&#34;: options[&#34;instance_id&#34;]
+                },
+                &#34;clusterConfig&#34;: {
+                    &#34;mdbConfig&#34;: {
+                        &#34;mdbServerType&#34;: &#34;STATUS_UNKNOWN&#34;,
+                        &#34;masterNode&#34;: {
+                            &#34;hostName&#34;: options[&#34;master_hostname&#34;],
+                            &#34;osUser&#34;: options[&#34;os_user&#34;],
+                            &#34;portNumber&#34;: options[&#34;port&#34;],
+                            &#34;binPath&#34;: options[&#34;bin_path&#34;],
+                            &#34;client&#34;: {
+                                &#34;clientId&#34;: options[&#34;master_client_id&#34;],
+                                &#34;clientName&#34;: options[&#34;master_node&#34;]
+                            }
+                        },
+                        &#34;sslCMCredInfo&#34;: {
+                            &#34;credentialId&#34;: options[&#34;ssl_credential_id&#34;],
+                            &#34;credentialName&#34;: &#34;&#34;
+                        },
+                        &#34;authCMCredInfo&#34;: {
+                            &#34;credentialId&#34;: options[&#34;db_credential_id&#34;],
+                            &#34;credentialName&#34;: &#34;&#34;
+                        }
+                    }
+                }
+            },
+            &#34;path&#34;: &#34;/&#34;,
+            &#34;foldersOnly&#34;: True,
+            &#34;clientEntity&#34;: {
+                &#34;clientId&#34;: options[&#34;master_client_id&#34;]
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;,
+            self._services[&#39;MACHINE_BROWSE&#39;] % (options[&#34;master_client_id&#34;]),
+            request_json
+        )
+
+        return flag, response
+        
+
+    def refresh_mongo_instance(self, options: dict):
+        &#34;&#34;&#34;
+        Refreshes a MongoDB instance configuration with new cluster details.
+
+        Args:
+            options (dict): Dictionary containing required arguments.
+
+            Required keys:
+                config (dict): Response JSON from MachineBrowse containing updated
+                               MongoDB configuration.
+                               Expected format:
+                                   {
+                                       &#34;browseItems&#34;: [
+                                           {
+                                               &#34;mdbItem&#34;: {
+                                                   &#34;mdbConfig&#34;: { ... }
+                                               }
+                                           }
+                                       ]
+                                   }
+                instance_id (int): ID of the MongoDB instance to refresh.
+
+        Returns:
+            dict: Updated instance JSON if successful.
+
+        Raises:
+            ValueError: If required keys are missing or config format is invalid.
+            Exception: If fetching or updating the instance properties fails.
+        &#34;&#34;&#34;
+
+        # Step 1: Validate required keys
+        required = [&#34;config&#34;, &#34;instance_id&#34;]
+        missing = [key for key in required if key not in options or options[key] in (None, &#34;&#34;)]
+        if missing:
+            raise ValueError(f&#34;Missing required parameters: {missing}&#34;)
+
+        config = options[&#34;config&#34;]
+        instance_id = options[&#34;instance_id&#34;]
+
+        # Step 2: Fetch current instance properties
+        flag, inst_response = self._cvpysdk_object.make_request(
+            &#39;GET&#39;,
+            self._services[&#39;INSTANCE&#39;] % (instance_id)
+        )
+        if not flag:
+            raise Exception(&#34;Failed to get instance properties&#34;)
+
+        instance_json = inst_response.json()
+
+        # Step 3: Extract new mdbConfig from MachineBrowse response
+        try:
+            new_mdb_config = config[&#39;browseItems&#39;][0][&#39;mdbItem&#39;][&#39;mdbConfig&#39;]
+        except (KeyError, IndexError, TypeError):
+            raise ValueError(&#34;Invalid config format. &#39;browseItems[0].mdbItem.mdbConfig&#39; not found.&#34;)
+
+        props = instance_json.get(&#39;instanceProperties&#39;)
+        if isinstance(props, list):
+            props = props[0]  # Take the first element if wrapped in a list
+
+        # Step 4: Preserve critical values from old mdbConfig
+        old_mdb_config = props[&#39;distributedClusterInstance&#39;][&#39;clusterConfig&#39;][&#39;mdbConfig&#39;]
+        for key in (&#34;sslCMCredInfo&#34;, &#34;authCMCredInfo&#34;, &#34;masterNode&#34;):
+            if key in old_mdb_config:
+                new_mdb_config[key] = old_mdb_config[key]
+
+        # Step 5: Replace mdbConfig in instance JSON
+        props[&#39;distributedClusterInstance&#39;][&#39;clusterConfig&#39;][&#39;mdbConfig&#39;] = new_mdb_config
+        request_json = {&#34;instanceProperties&#34;: props}
+
+        # Step 6: Submit updated config
+        flag, update_response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;,
+            self._services[&#39;INSTANCE&#39;] % (instance_id),
+            request_json
+        )
+        if not flag:
+            raise Exception(f&#34;Update Failed: {update_response.text}&#34;)
+
+        return update_response.json()</code></pre>
 </details>
 </section>
 <section>
@@ -280,46 +742,68 @@ class MongoDBInstance(BigDataAppsInstance):
 <dl>
 <dt id="cvpysdk.instances.bigdataapps.mongodbinstance.MongoDBInstance"><code class="flex name class">
 <span>class <span class="ident">MongoDBInstance</span></span>
-<span>(</span><span>agent_object, instance_name, instance_id=None)</span>
+<span>(</span><span>agent_object: object, instance_name: str, instance_id: str = None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for representing an Instance of the MongoDB
-instance</p>
-<p>Initializes the object of the Mongo DB class</p>
-<h2 id="args">Args</h2>
-<p>agent_object
-(object)
-&ndash;
-instance of the Agent class
-instance_name
-(str)
-&ndash;
-name of the instance
-instance_id
-(str)
-&ndash;
-id of the instance
-default: None</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Instance class</p></div>
+<div class="desc"><p>Represents an instance of a MongoDB database within a big data application environment.</p>
+<p>This class provides functionality to manage and interact with MongoDB instances,
+including initialization with agent and instance details, and performing restore
+operations at both the database and collection levels.</p>
+<p>Key Features:
+- Initialization with agent object, instance name, and instance ID
+- Restore entire MongoDB instance using customizable restore options
+- Restore specific MongoDB collections with targeted restore options</p>
+<p>Initialize a MongoDBInstance object.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>agent_object</code></strong></dt>
+<dd>Instance of the Agent class associated with this MongoDB instance.</dd>
+<dt><strong><code>instance_name</code></strong></dt>
+<dd>The name of the MongoDB instance.</dd>
+<dt><strong><code>instance_id</code></strong></dt>
+<dd>Optional; the unique identifier for the MongoDB instance. Defaults to None.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; agent = Agent(commcell_object, &quot;MongoDB&quot;)
+&gt;&gt;&gt; mongo_instance = MongoDBInstance(agent, &quot;MongoInstance1&quot;)
+&gt;&gt;&gt; # Optionally, provide an instance ID
+&gt;&gt;&gt; mongo_instance_with_id = MongoDBInstance(agent, &quot;MongoInstance2&quot;, &quot;12345&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/bigdataapps/mongodbinstance.py#L32-L223" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/bigdataapps/mongodbinstance.py#L39-L681" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class MongoDBInstance(BigDataAppsInstance):
     &#34;&#34;&#34;
-    Class for representing an Instance of the MongoDB  instance
+    Represents an instance of a MongoDB database within a big data application environment.
+
+    This class provides functionality to manage and interact with MongoDB instances,
+    including initialization with agent and instance details, and performing restore
+    operations at both the database and collection levels.
+
+    Key Features:
+        - Initialization with agent object, instance name, and instance ID
+        - Restore entire MongoDB instance using customizable restore options
+        - Restore specific MongoDB collections with targeted restore options
+
     &#34;&#34;&#34;
-    def __init__(self, agent_object, instance_name, instance_id=None):
-        &#34;&#34;&#34;Initializes the object of the Mongo DB class
-            Args:
-                agent_object    (object)  --  instance of the Agent class
-                instance_name   (str)     --  name of the instance
-                instance_id     (str)     --  id of the instance
-                    default: None
-            Returns:
-                object - instance of the Instance class
+    def __init__(self, agent_object: object, instance_name: str, instance_id: str = None) -&gt; None:
+        &#34;&#34;&#34;Initialize a MongoDBInstance object.
+
+        Args:
+            agent_object: Instance of the Agent class associated with this MongoDB instance.
+            instance_name: The name of the MongoDB instance.
+            instance_id: Optional; the unique identifier for the MongoDB instance. Defaults to None.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(commcell_object, &#34;MongoDB&#34;)
+            &gt;&gt;&gt; mongo_instance = MongoDBInstance(agent, &#34;MongoInstance1&#34;)
+            &gt;&gt;&gt; # Optionally, provide an instance ID
+            &gt;&gt;&gt; mongo_instance_with_id = MongoDBInstance(agent, &#34;MongoInstance2&#34;, &#34;12345&#34;)
+
         &#34;&#34;&#34;
         self._agent_object = agent_object
         self._browse_request = {}
@@ -331,43 +815,77 @@ default: None</p>
                 instance_name,
                 instance_id)
 
-    def restore(self, restore_options):
-        &#34;&#34;&#34;
-            Restores the content of this instance content
-            Args:
-                restore_options : dict of keyword arguments needed to submit a MongoDB restore:
-                    Example:
-                       restore_options = {
-                        restore_dict = {}
-                            restore_dict[&#34;no_of_streams&#34;] = 2
-                            restore_dict[&#34;multinode_restore&#34;] = True
-                            restore_dict[&#34;destination_instance&#34;] = self.client_name
-                            restore_dict[&#34;destination_instance_id&#34;] = self._instance_object.instance_id
-                            restore_dict[&#34;paths&#34;] = [&#34;/&#34;]
-                            restore_dict[&#34;mongodb_restore&#34;] = True
-                            restore_dict[&#34;destination_client_id&#34;] = self._client_obj.client_id
-                            restore_dict[&#34;destination_client_name&#34;] = self._client_obj.client_name
-                            restore_dict[&#34;overwrite&#34;] = True
-                            restore_dict[&#34;client_type&#34;] = 29
-                            restore_dict[&#34;destination_appTypeId&#34;] = 64
-                            restore_dict[&#34;backupset_name&#34;] = self.backupsetname
-                            restore_dict[&#34;_type_&#34;] = 5
-                            restore_dict[&#34;subclient_id&#34;] = -1
-                            restore_dict[&#34;source_shard_name&#34;] = self.replicaset
-                            restore_dict[&#34;destination_shard_name&#34;] = self.replicaset
-                            restore_dict[&#34;hostname&#34;] = self.primary_host
-                            restore_dict[&#34;clientName&#34;] = self.master_node
-                            restore_dict[&#34;desthostName&#34;] = self.primary_host
-                            restore_dict[&#34;destclientName&#34;] = self.master_node
-                            restore_dict[&#34;destPortNumber&#34;] = self.port
-                            restore_dict[&#34;destDataDir&#34;] = self.bin_path
-                            restore_dict[&#34;bkpDataDir&#34;] = self.bkp_dir_path
-                            restore_dict[&#34;backupPortNumber&#34;] = self.port
-                            restore_dict[&#34;restoreDataDir&#34;] = self.bkp_dir_path
-                            restore_dict[&#34;primaryPort&#34;] = self.port
-                        }
-            Returns:
-                object - instance of the Job class for this restore job
+    def restore(self, restore_options: Dict[str, Any]) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;Restore the content of this MongoDB instance using the specified options.
+
+        Args:
+            restore_options: Dictionary of keyword arguments required to submit a MongoDB restore job.
+                The dictionary should include keys such as:
+                    - &#34;no_of_streams&#34;: Number of streams to use for restore (int)
+                    - &#34;multinode_restore&#34;: Whether to perform a multinode restore (bool)
+                    - &#34;destination_instance&#34;: Name of the destination instance (str)
+                    - &#34;destination_instance_id&#34;: ID of the destination instance (int)
+                    - &#34;paths&#34;: List of paths to restore (list of str)
+                    - &#34;mongodb_restore&#34;: Flag to indicate MongoDB restore (bool)
+                    - &#34;destination_client_id&#34;: ID of the destination client (int)
+                    - &#34;destination_client_name&#34;: Name of the destination client (str)
+                    - &#34;overwrite&#34;: Whether to overwrite existing data (bool)
+                    - &#34;client_type&#34;: Type of client (int)
+                    - &#34;destination_appTypeId&#34;: Application type ID for destination (int)
+                    - &#34;backupset_name&#34;: Name of the backup set (str)
+                    - &#34;_type_&#34;: Type identifier (int)
+                    - &#34;subclient_id&#34;: Subclient ID (int)
+                    - &#34;source_shard_name&#34;: Name of the source shard (str)
+                    - &#34;destination_shard_name&#34;: Name of the destination shard (str)
+                    - &#34;hostname&#34;: Hostname for restore (str)
+                    - &#34;clientName&#34;: Client name for restore (str)
+                    - &#34;desthostName&#34;: Destination host name (str)
+                    - &#34;destclientName&#34;: Destination client name (str)
+                    - &#34;destPortNumber&#34;: Destination port number (int)
+                    - &#34;destDataDir&#34;: Destination data directory (str)
+                    - &#34;bkpDataDir&#34;: Backup data directory (str)
+                    - &#34;backupPortNumber&#34;: Backup port number (int)
+                    - &#34;restoreDataDir&#34;: Restore data directory (str)
+                    - &#34;primaryPort&#34;: Primary port number (int)
+                    - &#34;clusterConfig&#34;: Cluster configuration data (Any)
+
+        Returns:
+            Job: An instance of the Job class representing the submitted restore job.
+
+        Example:
+            &gt;&gt;&gt; restore_options = {
+            ...     &#34;no_of_streams&#34;: 2,
+            ...     &#34;multinode_restore&#34;: True,
+            ...     &#34;destination_instance&#34;: &#34;MongoDB_Instance_01&#34;,
+            ...     &#34;destination_instance_id&#34;: 123,
+            ...     &#34;paths&#34;: [&#34;/&#34;],
+            ...     &#34;mongodb_restore&#34;: True,
+            ...     &#34;destination_client_id&#34;: 456,
+            ...     &#34;destination_client_name&#34;: &#34;MongoDB_Client_01&#34;,
+            ...     &#34;overwrite&#34;: True,
+            ...     &#34;client_type&#34;: 29,
+            ...     &#34;destination_appTypeId&#34;: 64,
+            ...     &#34;backupset_name&#34;: &#34;DailyBackupSet&#34;,
+            ...     &#34;_type_&#34;: 5,
+            ...     &#34;subclient_id&#34;: -1,
+            ...     &#34;source_shard_name&#34;: &#34;shard01&#34;,
+            ...     &#34;destination_shard_name&#34;: &#34;shard01&#34;,
+            ...     &#34;hostname&#34;: &#34;mongo-primary.example.com&#34;,
+            ...     &#34;clientName&#34;: &#34;mongo-master&#34;,
+            ...     &#34;desthostName&#34;: &#34;mongo-primary.example.com&#34;,
+            ...     &#34;destclientName&#34;: &#34;mongo-master&#34;,
+            ...     &#34;destPortNumber&#34;: 27017,
+            ...     &#34;destDataDir&#34;: &#34;/data/db&#34;,
+            ...     &#34;bkpDataDir&#34;: &#34;/backup/db&#34;,
+            ...     &#34;backupPortNumber&#34;: 27017,
+            ...     &#34;restoreDataDir&#34;: &#34;/backup/db&#34;,
+            ...     &#34;primaryPort&#34;: 27017,
+            ...     &#34;clusterConfig&#34;: {&#34;replicaSet&#34;: &#34;rs0&#34;}
+            ... }
+            &gt;&gt;&gt; job = mongodb_instance.restore(restore_options)
+            &gt;&gt;&gt; print(f&#34;Restore job submitted: {job}&#34;)
+            &gt;&gt;&gt; # The returned Job object can be used to monitor restore progress
+
         &#34;&#34;&#34;
         if not (isinstance(restore_options, dict)):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
@@ -387,30 +905,9 @@ default: None</p>
 
         client_object_source = self._commcell_object.clients.get(restore_options[&#39;clientName&#39;])
         client_object_destination = self._commcell_object.clients.get(restore_options[&#39;destclientName&#39;])
+
         distributed_restore_json[&#34;mongoDBRestoreOptions&#34;] = {
                 &#34;destShardList&#34;: [
-                    {
-                        &#34;srcShardName&#34;:  restore_options.get(&#34;source_shard_name&#34;, False),
-                        &#34;destShardName&#34;: restore_options.get(&#34;destination_shard_name&#34;, False),
-                        &#34;target&#34;: {
-                            &#34;hostName&#34;: restore_options.get(&#34;hostname&#34;, False),
-                            &#34;clientName&#34;: restore_options.get(&#34;clientName&#34;, False),
-                            &#34;clientId&#34;: int(client_object_source.client_id)
-                        },
-                        &#34;destHostName&#34;: restore_options.get(&#34;desthostName&#34;, False),
-                        &#34;destPortNumber&#34;: restore_options.get(&#34;destPortNumber&#34;, False),
-                        &#34;destDataDir&#34;:  restore_options.get(&#34;restoreDataDir&#34;, False),
-                        &#34;bkpSecondary&#34;: {
-                            &#34;clientName&#34;: restore_options.get(&#34;clientName&#34;, False),
-                            &#34;hostName&#34;: restore_options.get(&#34;hostname&#34;, False),
-                            &#34;clientId&#34;: int(client_object_source.client_id)
-                        },
-                        &#34;bkpHostName&#34;: restore_options.get(&#34;hostname&#34;, False),
-                        &#34;bkpPortNumber&#34;: restore_options.get(&#34;backupPortNumber&#34;, False),
-                        &#34;bkpDataDir&#34;: restore_options.get(&#34;bkpDataDir&#34;, False),
-                        &#34;useDestAsSecondary&#34;: False,
-                        &#34;primaryPortNumber&#34;:restore_options.get(&#34;primaryPort&#34;, False),
-                    }
                 ],
                 &#34;restoreFilesOnly&#34;: False,
                 &#34;recover&#34;: True,
@@ -422,47 +919,306 @@ default: None</p>
                 &#34;isInplaceRestore&#34;: True
             }
 
+        if restore_options.get(&#34;clusterConfig&#34;):
+            for host_info in restore_options.get(&#34;clusterConfig&#34;):
+                shard_name = host_info.get(&#34;replSet&#34;, &#34;&#34;)
+                hostname = host_info.get(&#34;host&#34;, &#34;&#34;)
+                port = int(host_info.get(&#34;port&#34;, &#34;&#34;))
+                clientname = host_info.get(&#34;clientname&#34;, &#34;&#34;)
+                clientid = int(host_info.get(&#34;clientid&#34;, &#34;&#34;))
+                dbpath =  host_info.get(&#34;dbpath&#34;, &#34;&#34;)
+
+                shard_entry = {
+                    &#34;srcShardName&#34;: shard_name,
+                    &#34;destShardName&#34;: shard_name,
+                    &#34;target&#34;: {
+                        &#34;hostName&#34;: hostname,
+                        &#34;clientName&#34;: clientname,
+                        &#34;clientId&#34;: clientid
+                    },
+                    &#34;destHostName&#34;: hostname,
+                    &#34;destPortNumber&#34;: port,
+                    &#34;destDataDir&#34;: dbpath,
+                    &#34;bkpSecondary&#34;: {
+                        &#34;clientName&#34;: clientname,
+                        &#34;hostName&#34;: hostname,
+                        &#34;clientId&#34;: clientid
+                    },
+                    &#34;bkpHostName&#34;: hostname,
+                    &#34;bkpPortNumber&#34;: port,
+                    &#34;bkpDataDir&#34;: dbpath,
+                    &#34;useDestAsSecondary&#34;: False,
+                    &#34;primaryPortNumber&#34;: port
+                }
+
+                distributed_restore_json[&#34;mongoDBRestoreOptions&#34;][&#34;destShardList&#34;].append(shard_entry)
+
         request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][
                 &#34;distributedAppsRestoreOptions&#34;] = distributed_restore_json
         return self._process_restore_response(request_json)
-
-    def restore_collection(self, restore_options):
+    
+    def get_restore_json_for_out_of_place(self, restore_options: Dict[str, Any]) -&gt; Dict[str, Any]:
         &#34;&#34;&#34;
-            Restores the content of this instance content for collection restore inplace.
-            Args:
-                restore_options : dict of keyword arguments needed to submit a MongoDB restore:
-                    Example:
-                       restore_options = {
-                        restore_dict = {}
-                            restore_dict[&#34;no_of_streams&#34;] = 2
-                            restore_dict[&#34;multinode_restore&#34;] = True
-                            restore_dict[&#34;destination_instance&#34;] = self.client_name
-                            restore_dict[&#34;destination_instance_id&#34;] = self._instance_object.instance_id
-                            restore_dict[&#34;paths&#34;] = [&#34;/&#34;]
-                            restore_dict[&#34;mongodb_restore&#34;] = True
-                            restore_dict[&#34;destination_client_id&#34;] = self._client_obj.client_id
-                            restore_dict[&#34;destination_client_name&#34;] = self._client_obj.client_name
-                            restore_dict[&#34;overwrite&#34;] = True
-                            restore_dict[&#34;client_type&#34;] = 29
-                            restore_dict[&#34;destination_appTypeId&#34;] = 64
-                            restore_dict[&#34;backupset_name&#34;] = self.backupsetname
-                            restore_dict[&#34;_type_&#34;] = 5
-                            restore_dict[&#34;subclient_id&#34;] = subclientid
-                            restore_dict[&#34;source_shard_name&#34;] = self.replicaset
-                            restore_dict[&#34;destination_shard_name&#34;] = self.replicaset
-                            restore_dict[&#34;hostname&#34;] = self.primary_host
-                            restore_dict[&#34;clientName&#34;] = self.master_node
-                            restore_dict[&#34;desthostName&#34;] = self.primary_host
-                            restore_dict[&#34;destclientName&#34;] = self.master_node
-                            restore_dict[&#34;destPortNumber&#34;] = self.port
-                            restore_dict[&#34;destDataDir&#34;] = self.bin_path
-                            restore_dict[&#34;bkpDataDir&#34;] = self.bkp_dir_path
-                            restore_dict[&#34;backupPortNumber&#34;] = self.port
-                            restore_dict[&#34;restoreDataDir&#34;] = self.bkp_dir_path
-                            restore_dict[&#34;primaryPort&#34;] = self.port
+        Get the JSON payload for an out-of-place restore operation based on the provided restore options.
+
+        Args:
+            restore_options: Dictionary of keyword arguments required to submit a MongoDB restore job.
+                The dictionary should include keys such as:
+                    &#34;subclient_id&#34;: ID of the subclient (int),
+                    &#34;backupset_id&#34;: ID of the backupset (int),
+
+                    &#34;src_client_id&#34;: ID of the source client (int),
+                    &#34;src_client_name&#34;: Name of the source client (str),
+                    &#34;src_instance_id&#34;: ID of the source instance (int),
+                    &#34;src_instance_name&#34;: Name of the source instance (str),
+                    &#34;src_shard_name&#34;: Name of the source shard (str),
+                    &#34;src_host_name&#34;: Hostname of the source (str),
+                    &#34;src_port&#34;: Port number of the source (int),
+                    &#34;src_dbpath&#34;: Database path of the source (str),
+                    &#34;src_client_id_secondary&#34;: ID of the secondary source client (int),
+
+                    &#34;dest_client_id&#34;: ID of the destination client (int),
+                    &#34;dest_client_name&#34;: Name of the destination client (str),
+                    &#34;dest_instance_id&#34;: ID of the destination instance (int),
+                    &#34;dest_instance_name&#34;: Name of the destination instance (str),
+                    &#34;dest_cluster_config&#34;: Configuration of the destination cluster (dict),
+
+                    &#34;recover&#34;: recover_db,
+                    &#34;auto_db_shutdown&#34;: auto_restore
+
+        Returns:
+            dict: Returns a dictionary representing the JSON payload for the restore operation, which can be used to submit an out-of-place restore job.
+
+        &#34;&#34;&#34;
+
+        request_json = {
+            &#34;taskInfo&#34;: {
+                &#34;associations&#34;: [
+                    {
+                        &#34;subclientId&#34;: int(restore_options.get(&#34;subclient_id&#34;, -1)),
+                        &#34;applicationId&#34;: 64,
+                        &#34;clientName&#34;: restore_options.get(&#34;src_instance_name&#34;),
+                        &#34;backupsetId&#34;: int(restore_options.get(&#34;backupset_id&#34;)),
+                        &#34;instanceId&#34;: int(restore_options.get(&#34;src_instance_id&#34;)),
+                        &#34;clientId&#34;: int(restore_options.get(&#34;src_client_id&#34;)),
+                        &#34;commCellId&#34;: 2,
+                        &#34;_type_&#34;: 5
+                    }
+                ],
+                &#34;task&#34;: {
+                    &#34;taskType&#34;: 1,
+                    &#34;initiatedFrom&#34;: 2
+                },
+                &#34;subTasks&#34;: [
+                    {
+                        &#34;subTask&#34;: {
+                            &#34;subTaskType&#34;: &#34;RESTORE&#34;,
+                            &#34;operationType&#34;: &#34;RESTORE&#34;
+                        },
+                        &#34;options&#34;: {
+                            &#34;restoreOptions&#34;: {
+                                &#34;commonOptions&#34;: {
+                                    &#34;unconditionalOverwrite&#34;: False
+                                },
+                                &#34;browseOption&#34;: {
+                                    &#34;commCellId&#34;: 2,
+                                    &#34;backupset&#34;: {
+                                        &#34;backupsetId&#34;: int(restore_options.get(&#34;backupset_id&#34;)),
+                                        &#34;clientId&#34;: int(restore_options.get(&#34;src_client_id&#34;)),
+                                    },
+                                    &#34;timeRange&#34;: {}
+                                },
+                                &#34;destination&#34;: {
+                                    &#34;noOfStreams&#34;: 2,
+                                    &#34;destClient&#34;: {
+                                        &#34;clientId&#34;: int(restore_options.get(&#34;dest_client_id&#34;)),
+                                        &#34;clientName&#34;: restore_options.get(&#34;dest_instance_name&#34;)
+                                    },
+                                    &#34;destinationInstance&#34;: {
+                                        &#34;clientId&#34;: int(restore_options.get(&#34;dest_client_id&#34;)),
+                                        &#34;clientName&#34;: restore_options.get(&#34;dest_instance_name&#34;),
+                                        &#34;applicationId&#34;: 64,
+                                        &#34;appName&#34;: &#34;Big Data Apps&#34;,
+                                        &#34;instanceId&#34;: int(restore_options.get(&#34;dest_instance_id&#34;)),
+                                        &#34;instanceName&#34;: restore_options.get(&#34;dest_instance_name&#34;)
+                                    }
+                                },
+                                &#34;fileOption&#34;: {
+                                    &#34;sourceItem&#34;: [
+                                        &#34;/&#34;
+                                    ]
+                                },
+                                &#34;distributedAppsRestoreOptions&#34;: {
+                                    &#34;distributedRestore&#34;: True,
+                                    &#34;mongoDBRestoreOptions&#34;: {
+                                        &#34;destShardList&#34;: [],
+                                        &#34;destGranularEntityList&#34;: [],
+                                        &#34;recover&#34;: restore_options.get(&#34;recover&#34;, True),
+                                        &#34;latestOpLogSync&#34;: True,
+                                        &#34;pointInTimeToEndOfBackup&#34;: True,
+                                        &#34;latestEndOfBackup&#34;: True,
+                                        &#34;isGranularRecovery&#34;: False,
+                                        &#34;autoDBShutDown&#34;: restore_options.get(&#34;auto_db_shutdown&#34;, True)
+                                    }
+                                },
+                                &#34;qrOption&#34;: {
+                                    &#34;destAppTypeId&#34;: 64
+                                }
+                            },
+                            &#34;commonOpts&#34;: {
+                                &#34;notifyUserOnJobCompletion&#34;: True,
+                            }
                         }
-            Returns:
-                object - instance of the Job class for this restore job
+                    }
+                ]
+            }
+        }
+
+        if restore_options.get(&#34;dest_cluster_config&#34;):
+            for host_info in restore_options.get(&#34;dest_cluster_config&#34;):
+                shard_name = host_info.get(&#34;replSet&#34;, &#34;&#34;)
+                hostname = host_info.get(&#34;host&#34;, &#34;&#34;)
+                port = int(host_info.get(&#34;port&#34;, &#34;&#34;))
+                clientname = host_info.get(&#34;clientname&#34;, &#34;&#34;)
+                clientid = int(host_info.get(&#34;clientid&#34;, &#34;&#34;))
+                dbpath =  host_info.get(&#34;dbpath&#34;, &#34;&#34;)
+
+                shard_entry = {
+                    &#34;srcShardName&#34;: restore_options.get(&#34;src_shard_name&#34;),
+                    &#34;destShardName&#34;: shard_name,
+                    &#34;target&#34;: {
+                        &#34;hostName&#34;: hostname,
+                        &#34;clientName&#34;: clientname,
+                        &#34;clientId&#34;: int(clientid)
+                    },
+                    &#34;destHostName&#34;: hostname,
+                    &#34;destPortNumber&#34;: int(port),
+                    &#34;destDataDir&#34;: dbpath,
+                    &#34;bkpSecondary&#34;: {
+                        &#34;clientName&#34;: restore_options.get(&#34;src_client_name&#34;),
+                        &#34;hostName&#34;: restore_options.get(&#34;src_hostname&#34;),
+                        &#34;clientId&#34;: int(restore_options.get(&#34;src_client_id_secondary&#34;))
+                    },
+                    &#34;bkpHostName&#34;: restore_options.get(&#34;src_hostname&#34;),
+                    &#34;bkpPortNumber&#34;: int(restore_options.get(&#34;src_port&#34;)),
+                    &#34;bkpDataDir&#34;: restore_options.get(&#34;src_dbpath&#34;),
+                    &#34;useDestAsSecondary&#34;: False,
+                    &#34;primaryPortNumber&#34;: int(restore_options.get(&#34;src_port&#34;))
+                }
+
+                request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][
+                    &#34;distributedAppsRestoreOptions&#34;][&#34;mongoDBRestoreOptions&#34;][&#34;destShardList&#34;].append(shard_entry)
+
+
+        return request_json
+    
+    def restore_out_of_place(self, restore_options: Dict[str, Any]) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;
+        Restore the content of this MongoDB instance to a different location using the specified options.
+
+        Args:
+            restore_options: Dictionary of keyword arguments required to submit a MongoDB restore job.
+                The dictionary should include keys such as:
+                    &#34;subclient_id&#34;: ID of the subclient (int),
+                    &#34;backupset_id&#34;: ID of the backupset (int),
+
+                    &#34;src_client_id&#34;: ID of the source client (int),
+                    &#34;src_client_name&#34;: Name of the source client (str),
+                    &#34;src_instance_id&#34;: ID of the source instance (int),
+                    &#34;src_instance_name&#34;: Name of the source instance (str),
+                    &#34;src_shard_name&#34;: Name of the source shard (str),
+                    &#34;src_host_name&#34;: Hostname of the source (str),
+                    &#34;src_port&#34;: Port number of the source (int),
+                    &#34;src_dbpath&#34;: Database path of the source (str),
+                    &#34;src_client_id_secondary&#34;: ID of the secondary source client (int),
+
+                    &#34;dest_client_id&#34;: ID of the destination client (int),
+                    &#34;dest_client_name&#34;: Name of the destination client (str),
+                    &#34;dest_instance_id&#34;: ID of the destination instance (int),
+                    &#34;dest_instance_name&#34;: Name of the destination instance (str),
+                    &#34;dest_cluster_config&#34;: Configuration of the destination cluster (dict),
+
+                    &#34;recover&#34;: recover_db,
+                    &#34;auto_db_shutdown&#34;: auto_restore
+
+        Returns:
+            Job: An instance of the Job class representing the submitted restore job.
+        &#34;&#34;&#34;
+        if not (isinstance(restore_options, dict)):
+            raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
+        
+        request_json = self.get_restore_json_for_out_of_place(restore_options)
+
+        return self._process_restore_response(request_json)
+
+    def restore_collection(self, restore_options: dict) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;Restore the content of this MongoDB instance for an in-place collection restore.
+
+        Args:
+            restore_options: A dictionary containing the required options for the MongoDB restore job.
+                The dictionary should include keys such as:
+                    - &#34;no_of_streams&#34;: int, number of streams to use for restore
+                    - &#34;multinode_restore&#34;: bool, whether to use multinode restore
+                    - &#34;destination_instance&#34;: str, name of the destination instance
+                    - &#34;destination_instance_id&#34;: int, ID of the destination instance
+                    - &#34;paths&#34;: list, list of collection paths to restore
+                    - &#34;mongodb_restore&#34;: bool, set to True for MongoDB restore
+                    - &#34;destination_client_id&#34;: int, ID of the destination client
+                    - &#34;destination_client_name&#34;: str, name of the destination client
+                    - &#34;overwrite&#34;: bool, whether to overwrite existing data
+                    - &#34;client_type&#34;: int, client type identifier
+                    - &#34;destination_appTypeId&#34;: int, application type ID for destination
+                    - &#34;backupset_name&#34;: str, name of the backup set
+                    - &#34;_type_&#34;: int, type identifier
+                    - &#34;subclient_id&#34;: int, ID of the subclient
+                    - &#34;source_shard_name&#34;: str, name of the source shard
+                    - &#34;destination_shard_name&#34;: str, name of the destination shard
+                    - &#34;hostname&#34;: str, host name for restore
+                    - &#34;clientName&#34;: str, client name for restore
+                    - &#34;desthostName&#34;: str, destination host name
+                    - &#34;destclientName&#34;: str, destination client name
+                    - &#34;destPortNumber&#34;: int, destination port number
+                    - &#34;destDataDir&#34;: str, destination data directory
+                    - &#34;bkpDataDir&#34;: str, backup data directory
+                    - &#34;backupPortNumber&#34;: int, backup port number
+                    - &#34;restoreDataDir&#34;: str, restore data directory
+                    - &#34;primaryPort&#34;: int, primary port number
+
+        Returns:
+            Job: An instance of the Job class representing the restore job.
+
+        Example:
+            &gt;&gt;&gt; restore_options = {
+            ...     &#34;no_of_streams&#34;: 2,
+            ...     &#34;multinode_restore&#34;: True,
+            ...     &#34;destination_instance&#34;: &#34;MongoDB_Instance1&#34;,
+            ...     &#34;destination_instance_id&#34;: 101,
+            ...     &#34;paths&#34;: [&#34;/&#34;],
+            ...     &#34;mongodb_restore&#34;: True,
+            ...     &#34;destination_client_id&#34;: 201,
+            ...     &#34;destination_client_name&#34;: &#34;MongoDB_Client1&#34;,
+            ...     &#34;overwrite&#34;: True,
+            ...     &#34;client_type&#34;: 29,
+            ...     &#34;destination_appTypeId&#34;: 64,
+            ...     &#34;backupset_name&#34;: &#34;defaultBackupSet&#34;,
+            ...     &#34;_type_&#34;: 5,
+            ...     &#34;subclient_id&#34;: 301,
+            ...     &#34;source_shard_name&#34;: &#34;shard1&#34;,
+            ...     &#34;destination_shard_name&#34;: &#34;shard1&#34;,
+            ...     &#34;hostname&#34;: &#34;mongo-primary&#34;,
+            ...     &#34;clientName&#34;: &#34;mongo-master&#34;,
+            ...     &#34;desthostName&#34;: &#34;mongo-primary&#34;,
+            ...     &#34;destclientName&#34;: &#34;mongo-master&#34;,
+            ...     &#34;destPortNumber&#34;: 27017,
+            ...     &#34;destDataDir&#34;: &#34;/data/db&#34;,
+            ...     &#34;bkpDataDir&#34;: &#34;/backup/db&#34;,
+            ...     &#34;backupPortNumber&#34;: 27017,
+            ...     &#34;restoreDataDir&#34;: &#34;/backup/db&#34;,
+            ...     &#34;primaryPort&#34;: 27017
+            ... }
+            &gt;&gt;&gt; job = mongodb_instance.restore_collection(restore_options)
+            &gt;&gt;&gt; print(f&#34;Restore job started with ID: {job.job_id}&#34;)
+
         &#34;&#34;&#34;
         if not (isinstance(restore_options, dict)):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
@@ -498,7 +1254,167 @@ default: None</p>
             }
         request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][
                 &#34;distributedAppsRestoreOptions&#34;] = distributed_restore_json
-        return self._process_restore_response(request_json)</code></pre>
+        return self._process_restore_response(request_json)
+
+    def discover_mongo_nodes(self, options: dict):
+        &#34;&#34;&#34;
+        Discovers MongoDB member nodes associated with instance
+
+        Args:
+            options (dict): Dictionary with all required arguments.
+
+            Required keys:
+                instance_id         (int)   --  Instance ID of MongoDB instance
+                master_node         (str)   --  Master of MongoDB Instance
+                master_hostname     (str)   --  Hostname of master node
+                master_client_id    (int)   --  Client ID of master Node
+                port                (int)   --  Port where mongos / mongod services are running
+                bin_path            (str)   --  Binary path for MongoDB installation
+                db_user             (str)   --  Database user
+                os_user             (str)   --  OS user to contact and run command
+                db_credential_id    (int)   --  Database credential ID
+                ssl_credential_id   (int)   --  SSL credential ID
+
+        Returns:
+            tuple: (flag, response) received from Discover API
+        &#34;&#34;&#34;
+
+        required = [
+            &#34;instance_id&#34;, &#34;master_node&#34;, &#34;master_hostname&#34;, &#34;master_client_id&#34;,
+            &#34;port&#34;, &#34;bin_path&#34;, &#34;os_user&#34;, &#34;db_credential_id&#34;, &#34;ssl_credential_id&#34;
+        ]
+
+        # check for missing keys
+        missing = [key for key in required if key not in options or options[key] in (None, &#34;&#34;)]
+        if missing:
+            raise ValueError(f&#34;Missing required parameters: {missing}&#34;)
+
+        # build request payload
+        request_json = {
+            &#34;distAppsProperties&#34;: {
+                &#34;clusterType&#34;: 8,  # MongoDB cluster type
+                &#34;subclient&#34;: {
+                    &#34;instanceId&#34;: options[&#34;instance_id&#34;]
+                },
+                &#34;clusterConfig&#34;: {
+                    &#34;mdbConfig&#34;: {
+                        &#34;mdbServerType&#34;: &#34;STATUS_UNKNOWN&#34;,
+                        &#34;masterNode&#34;: {
+                            &#34;hostName&#34;: options[&#34;master_hostname&#34;],
+                            &#34;osUser&#34;: options[&#34;os_user&#34;],
+                            &#34;portNumber&#34;: options[&#34;port&#34;],
+                            &#34;binPath&#34;: options[&#34;bin_path&#34;],
+                            &#34;client&#34;: {
+                                &#34;clientId&#34;: options[&#34;master_client_id&#34;],
+                                &#34;clientName&#34;: options[&#34;master_node&#34;]
+                            }
+                        },
+                        &#34;sslCMCredInfo&#34;: {
+                            &#34;credentialId&#34;: options[&#34;ssl_credential_id&#34;],
+                            &#34;credentialName&#34;: &#34;&#34;
+                        },
+                        &#34;authCMCredInfo&#34;: {
+                            &#34;credentialId&#34;: options[&#34;db_credential_id&#34;],
+                            &#34;credentialName&#34;: &#34;&#34;
+                        }
+                    }
+                }
+            },
+            &#34;path&#34;: &#34;/&#34;,
+            &#34;foldersOnly&#34;: True,
+            &#34;clientEntity&#34;: {
+                &#34;clientId&#34;: options[&#34;master_client_id&#34;]
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;,
+            self._services[&#39;MACHINE_BROWSE&#39;] % (options[&#34;master_client_id&#34;]),
+            request_json
+        )
+
+        return flag, response
+        
+
+    def refresh_mongo_instance(self, options: dict):
+        &#34;&#34;&#34;
+        Refreshes a MongoDB instance configuration with new cluster details.
+
+        Args:
+            options (dict): Dictionary containing required arguments.
+
+            Required keys:
+                config (dict): Response JSON from MachineBrowse containing updated
+                               MongoDB configuration.
+                               Expected format:
+                                   {
+                                       &#34;browseItems&#34;: [
+                                           {
+                                               &#34;mdbItem&#34;: {
+                                                   &#34;mdbConfig&#34;: { ... }
+                                               }
+                                           }
+                                       ]
+                                   }
+                instance_id (int): ID of the MongoDB instance to refresh.
+
+        Returns:
+            dict: Updated instance JSON if successful.
+
+        Raises:
+            ValueError: If required keys are missing or config format is invalid.
+            Exception: If fetching or updating the instance properties fails.
+        &#34;&#34;&#34;
+
+        # Step 1: Validate required keys
+        required = [&#34;config&#34;, &#34;instance_id&#34;]
+        missing = [key for key in required if key not in options or options[key] in (None, &#34;&#34;)]
+        if missing:
+            raise ValueError(f&#34;Missing required parameters: {missing}&#34;)
+
+        config = options[&#34;config&#34;]
+        instance_id = options[&#34;instance_id&#34;]
+
+        # Step 2: Fetch current instance properties
+        flag, inst_response = self._cvpysdk_object.make_request(
+            &#39;GET&#39;,
+            self._services[&#39;INSTANCE&#39;] % (instance_id)
+        )
+        if not flag:
+            raise Exception(&#34;Failed to get instance properties&#34;)
+
+        instance_json = inst_response.json()
+
+        # Step 3: Extract new mdbConfig from MachineBrowse response
+        try:
+            new_mdb_config = config[&#39;browseItems&#39;][0][&#39;mdbItem&#39;][&#39;mdbConfig&#39;]
+        except (KeyError, IndexError, TypeError):
+            raise ValueError(&#34;Invalid config format. &#39;browseItems[0].mdbItem.mdbConfig&#39; not found.&#34;)
+
+        props = instance_json.get(&#39;instanceProperties&#39;)
+        if isinstance(props, list):
+            props = props[0]  # Take the first element if wrapped in a list
+
+        # Step 4: Preserve critical values from old mdbConfig
+        old_mdb_config = props[&#39;distributedClusterInstance&#39;][&#39;clusterConfig&#39;][&#39;mdbConfig&#39;]
+        for key in (&#34;sslCMCredInfo&#34;, &#34;authCMCredInfo&#34;, &#34;masterNode&#34;):
+            if key in old_mdb_config:
+                new_mdb_config[key] = old_mdb_config[key]
+
+        # Step 5: Replace mdbConfig in instance JSON
+        props[&#39;distributedClusterInstance&#39;][&#39;clusterConfig&#39;][&#39;mdbConfig&#39;] = new_mdb_config
+        request_json = {&#34;instanceProperties&#34;: props}
+
+        # Step 6: Submit updated config
+        flag, update_response = self._cvpysdk_object.make_request(
+            &#39;POST&#39;,
+            self._services[&#39;INSTANCE&#39;] % (instance_id),
+            request_json
+        )
+        if not flag:
+            raise Exception(f&#34;Update Failed: {update_response.text}&#34;)
+
+        return update_response.json()</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -507,87 +1423,624 @@ default: None</p>
 </ul>
 <h3>Methods</h3>
 <dl>
-<dt id="cvpysdk.instances.bigdataapps.mongodbinstance.MongoDBInstance.restore"><code class="name flex">
-<span>def <span class="ident">restore</span></span>(<span>self, restore_options)</span>
+<dt id="cvpysdk.instances.bigdataapps.mongodbinstance.MongoDBInstance.discover_mongo_nodes"><code class="name flex">
+<span>def <span class="ident">discover_mongo_nodes</span></span>(<span>self, options: dict)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Restores the content of this instance content</p>
-<h2 id="args">Args</h2>
-<p>restore_options : dict of keyword arguments needed to submit a MongoDB restore:
-Example:
-restore_options = {
-restore_dict = {}
-restore_dict["no_of_streams"] = 2
-restore_dict["multinode_restore"] = True
-restore_dict["destination_instance"] = self.client_name
-restore_dict["destination_instance_id"] = self.<em>instance_object.instance_id
-restore_dict["paths"] = ["/"]
-restore_dict["mongodb_restore"] = True
-restore_dict["destination_client_id"] = self._client_obj.client_id
-restore_dict["destination_client_name"] = self._client_obj.client_name
-restore_dict["overwrite"] = True
-restore_dict["client_type"] = 29
-restore_dict["destination_appTypeId"] = 64
-restore_dict["backupset_name"] = self.backupsetname
-restore_dict["_type</em>"] = 5
-restore_dict["subclient_id"] = -1
-restore_dict["source_shard_name"] = self.replicaset
-restore_dict["destination_shard_name"] = self.replicaset
-restore_dict["hostname"] = self.primary_host
-restore_dict["clientName"] = self.master_node
-restore_dict["desthostName"] = self.primary_host
-restore_dict["destclientName"] = self.master_node
-restore_dict["destPortNumber"] = self.port
-restore_dict["destDataDir"] = self.bin_path
-restore_dict["bkpDataDir"] = self.bkp_dir_path
-restore_dict["backupPortNumber"] = self.port
-restore_dict["restoreDataDir"] = self.bkp_dir_path
-restore_dict["primaryPort"] = self.port
-}</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this restore job</p></div>
+<div class="desc"><p>Discovers MongoDB member nodes associated with instance</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>options</code></strong> :&ensp;<code>dict</code></dt>
+<dd>Dictionary with all required arguments.</dd>
+</dl>
+<p>Required keys:
+instance_id
+(int)
+&ndash;
+Instance ID of MongoDB instance
+master_node
+(str)
+&ndash;
+Master of MongoDB Instance
+master_hostname
+(str)
+&ndash;
+Hostname of master node
+master_client_id
+(int)
+&ndash;
+Client ID of master Node
+port
+(int)
+&ndash;
+Port where mongos / mongod services are running
+bin_path
+(str)
+&ndash;
+Binary path for MongoDB installation
+db_user
+(str)
+&ndash;
+Database user
+os_user
+(str)
+&ndash;
+OS user to contact and run command
+db_credential_id
+(int)
+&ndash;
+Database credential ID
+ssl_credential_id
+(int)
+&ndash;
+SSL credential ID</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>tuple</code></dt>
+<dd>(flag, response) received from Discover API</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/bigdataapps/mongodbinstance.py#L56-L149" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/bigdataapps/mongodbinstance.py#L523-L600" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def restore(self, restore_options):
+<pre><code class="python">def discover_mongo_nodes(self, options: dict):
     &#34;&#34;&#34;
-        Restores the content of this instance content
-        Args:
-            restore_options : dict of keyword arguments needed to submit a MongoDB restore:
-                Example:
-                   restore_options = {
-                    restore_dict = {}
-                        restore_dict[&#34;no_of_streams&#34;] = 2
-                        restore_dict[&#34;multinode_restore&#34;] = True
-                        restore_dict[&#34;destination_instance&#34;] = self.client_name
-                        restore_dict[&#34;destination_instance_id&#34;] = self._instance_object.instance_id
-                        restore_dict[&#34;paths&#34;] = [&#34;/&#34;]
-                        restore_dict[&#34;mongodb_restore&#34;] = True
-                        restore_dict[&#34;destination_client_id&#34;] = self._client_obj.client_id
-                        restore_dict[&#34;destination_client_name&#34;] = self._client_obj.client_name
-                        restore_dict[&#34;overwrite&#34;] = True
-                        restore_dict[&#34;client_type&#34;] = 29
-                        restore_dict[&#34;destination_appTypeId&#34;] = 64
-                        restore_dict[&#34;backupset_name&#34;] = self.backupsetname
-                        restore_dict[&#34;_type_&#34;] = 5
-                        restore_dict[&#34;subclient_id&#34;] = -1
-                        restore_dict[&#34;source_shard_name&#34;] = self.replicaset
-                        restore_dict[&#34;destination_shard_name&#34;] = self.replicaset
-                        restore_dict[&#34;hostname&#34;] = self.primary_host
-                        restore_dict[&#34;clientName&#34;] = self.master_node
-                        restore_dict[&#34;desthostName&#34;] = self.primary_host
-                        restore_dict[&#34;destclientName&#34;] = self.master_node
-                        restore_dict[&#34;destPortNumber&#34;] = self.port
-                        restore_dict[&#34;destDataDir&#34;] = self.bin_path
-                        restore_dict[&#34;bkpDataDir&#34;] = self.bkp_dir_path
-                        restore_dict[&#34;backupPortNumber&#34;] = self.port
-                        restore_dict[&#34;restoreDataDir&#34;] = self.bkp_dir_path
-                        restore_dict[&#34;primaryPort&#34;] = self.port
+    Discovers MongoDB member nodes associated with instance
+
+    Args:
+        options (dict): Dictionary with all required arguments.
+
+        Required keys:
+            instance_id         (int)   --  Instance ID of MongoDB instance
+            master_node         (str)   --  Master of MongoDB Instance
+            master_hostname     (str)   --  Hostname of master node
+            master_client_id    (int)   --  Client ID of master Node
+            port                (int)   --  Port where mongos / mongod services are running
+            bin_path            (str)   --  Binary path for MongoDB installation
+            db_user             (str)   --  Database user
+            os_user             (str)   --  OS user to contact and run command
+            db_credential_id    (int)   --  Database credential ID
+            ssl_credential_id   (int)   --  SSL credential ID
+
+    Returns:
+        tuple: (flag, response) received from Discover API
+    &#34;&#34;&#34;
+
+    required = [
+        &#34;instance_id&#34;, &#34;master_node&#34;, &#34;master_hostname&#34;, &#34;master_client_id&#34;,
+        &#34;port&#34;, &#34;bin_path&#34;, &#34;os_user&#34;, &#34;db_credential_id&#34;, &#34;ssl_credential_id&#34;
+    ]
+
+    # check for missing keys
+    missing = [key for key in required if key not in options or options[key] in (None, &#34;&#34;)]
+    if missing:
+        raise ValueError(f&#34;Missing required parameters: {missing}&#34;)
+
+    # build request payload
+    request_json = {
+        &#34;distAppsProperties&#34;: {
+            &#34;clusterType&#34;: 8,  # MongoDB cluster type
+            &#34;subclient&#34;: {
+                &#34;instanceId&#34;: options[&#34;instance_id&#34;]
+            },
+            &#34;clusterConfig&#34;: {
+                &#34;mdbConfig&#34;: {
+                    &#34;mdbServerType&#34;: &#34;STATUS_UNKNOWN&#34;,
+                    &#34;masterNode&#34;: {
+                        &#34;hostName&#34;: options[&#34;master_hostname&#34;],
+                        &#34;osUser&#34;: options[&#34;os_user&#34;],
+                        &#34;portNumber&#34;: options[&#34;port&#34;],
+                        &#34;binPath&#34;: options[&#34;bin_path&#34;],
+                        &#34;client&#34;: {
+                            &#34;clientId&#34;: options[&#34;master_client_id&#34;],
+                            &#34;clientName&#34;: options[&#34;master_node&#34;]
+                        }
+                    },
+                    &#34;sslCMCredInfo&#34;: {
+                        &#34;credentialId&#34;: options[&#34;ssl_credential_id&#34;],
+                        &#34;credentialName&#34;: &#34;&#34;
+                    },
+                    &#34;authCMCredInfo&#34;: {
+                        &#34;credentialId&#34;: options[&#34;db_credential_id&#34;],
+                        &#34;credentialName&#34;: &#34;&#34;
                     }
-        Returns:
-            object - instance of the Job class for this restore job
+                }
+            }
+        },
+        &#34;path&#34;: &#34;/&#34;,
+        &#34;foldersOnly&#34;: True,
+        &#34;clientEntity&#34;: {
+            &#34;clientId&#34;: options[&#34;master_client_id&#34;]
+        }
+    }
+
+    flag, response = self._cvpysdk_object.make_request(
+        &#39;POST&#39;,
+        self._services[&#39;MACHINE_BROWSE&#39;] % (options[&#34;master_client_id&#34;]),
+        request_json
+    )
+
+    return flag, response</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.instances.bigdataapps.mongodbinstance.MongoDBInstance.get_restore_json_for_out_of_place"><code class="name flex">
+<span>def <span class="ident">get_restore_json_for_out_of_place</span></span>(<span>self, restore_options: Dict[str, Any]) ‑> Dict[str, Any]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get the JSON payload for an out-of-place restore operation based on the provided restore options.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>restore_options</code></strong></dt>
+<dd>Dictionary of keyword arguments required to submit a MongoDB restore job.
+The dictionary should include keys such as:
+"subclient_id": ID of the subclient (int),
+"backupset_id": ID of the backupset (int),<pre><code>"src_client_id": ID of the source client (int),
+"src_client_name": Name of the source client (str),
+"src_instance_id": ID of the source instance (int),
+"src_instance_name": Name of the source instance (str),
+"src_shard_name": Name of the source shard (str),
+"src_host_name": Hostname of the source (str),
+"src_port": Port number of the source (int),
+"src_dbpath": Database path of the source (str),
+"src_client_id_secondary": ID of the secondary source client (int),
+
+"dest_client_id": ID of the destination client (int),
+"dest_client_name": Name of the destination client (str),
+"dest_instance_id": ID of the destination instance (int),
+"dest_instance_name": Name of the destination instance (str),
+"dest_cluster_config": Configuration of the destination cluster (dict),
+
+"recover": recover_db,
+"auto_db_shutdown": auto_restore
+</code></pre>
+</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>Returns a dictionary representing the JSON payload for the restore operation, which can be used to submit an out-of-place restore job.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/bigdataapps/mongodbinstance.py#L223-L376" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get_restore_json_for_out_of_place(self, restore_options: Dict[str, Any]) -&gt; Dict[str, Any]:
+    &#34;&#34;&#34;
+    Get the JSON payload for an out-of-place restore operation based on the provided restore options.
+
+    Args:
+        restore_options: Dictionary of keyword arguments required to submit a MongoDB restore job.
+            The dictionary should include keys such as:
+                &#34;subclient_id&#34;: ID of the subclient (int),
+                &#34;backupset_id&#34;: ID of the backupset (int),
+
+                &#34;src_client_id&#34;: ID of the source client (int),
+                &#34;src_client_name&#34;: Name of the source client (str),
+                &#34;src_instance_id&#34;: ID of the source instance (int),
+                &#34;src_instance_name&#34;: Name of the source instance (str),
+                &#34;src_shard_name&#34;: Name of the source shard (str),
+                &#34;src_host_name&#34;: Hostname of the source (str),
+                &#34;src_port&#34;: Port number of the source (int),
+                &#34;src_dbpath&#34;: Database path of the source (str),
+                &#34;src_client_id_secondary&#34;: ID of the secondary source client (int),
+
+                &#34;dest_client_id&#34;: ID of the destination client (int),
+                &#34;dest_client_name&#34;: Name of the destination client (str),
+                &#34;dest_instance_id&#34;: ID of the destination instance (int),
+                &#34;dest_instance_name&#34;: Name of the destination instance (str),
+                &#34;dest_cluster_config&#34;: Configuration of the destination cluster (dict),
+
+                &#34;recover&#34;: recover_db,
+                &#34;auto_db_shutdown&#34;: auto_restore
+
+    Returns:
+        dict: Returns a dictionary representing the JSON payload for the restore operation, which can be used to submit an out-of-place restore job.
+
+    &#34;&#34;&#34;
+
+    request_json = {
+        &#34;taskInfo&#34;: {
+            &#34;associations&#34;: [
+                {
+                    &#34;subclientId&#34;: int(restore_options.get(&#34;subclient_id&#34;, -1)),
+                    &#34;applicationId&#34;: 64,
+                    &#34;clientName&#34;: restore_options.get(&#34;src_instance_name&#34;),
+                    &#34;backupsetId&#34;: int(restore_options.get(&#34;backupset_id&#34;)),
+                    &#34;instanceId&#34;: int(restore_options.get(&#34;src_instance_id&#34;)),
+                    &#34;clientId&#34;: int(restore_options.get(&#34;src_client_id&#34;)),
+                    &#34;commCellId&#34;: 2,
+                    &#34;_type_&#34;: 5
+                }
+            ],
+            &#34;task&#34;: {
+                &#34;taskType&#34;: 1,
+                &#34;initiatedFrom&#34;: 2
+            },
+            &#34;subTasks&#34;: [
+                {
+                    &#34;subTask&#34;: {
+                        &#34;subTaskType&#34;: &#34;RESTORE&#34;,
+                        &#34;operationType&#34;: &#34;RESTORE&#34;
+                    },
+                    &#34;options&#34;: {
+                        &#34;restoreOptions&#34;: {
+                            &#34;commonOptions&#34;: {
+                                &#34;unconditionalOverwrite&#34;: False
+                            },
+                            &#34;browseOption&#34;: {
+                                &#34;commCellId&#34;: 2,
+                                &#34;backupset&#34;: {
+                                    &#34;backupsetId&#34;: int(restore_options.get(&#34;backupset_id&#34;)),
+                                    &#34;clientId&#34;: int(restore_options.get(&#34;src_client_id&#34;)),
+                                },
+                                &#34;timeRange&#34;: {}
+                            },
+                            &#34;destination&#34;: {
+                                &#34;noOfStreams&#34;: 2,
+                                &#34;destClient&#34;: {
+                                    &#34;clientId&#34;: int(restore_options.get(&#34;dest_client_id&#34;)),
+                                    &#34;clientName&#34;: restore_options.get(&#34;dest_instance_name&#34;)
+                                },
+                                &#34;destinationInstance&#34;: {
+                                    &#34;clientId&#34;: int(restore_options.get(&#34;dest_client_id&#34;)),
+                                    &#34;clientName&#34;: restore_options.get(&#34;dest_instance_name&#34;),
+                                    &#34;applicationId&#34;: 64,
+                                    &#34;appName&#34;: &#34;Big Data Apps&#34;,
+                                    &#34;instanceId&#34;: int(restore_options.get(&#34;dest_instance_id&#34;)),
+                                    &#34;instanceName&#34;: restore_options.get(&#34;dest_instance_name&#34;)
+                                }
+                            },
+                            &#34;fileOption&#34;: {
+                                &#34;sourceItem&#34;: [
+                                    &#34;/&#34;
+                                ]
+                            },
+                            &#34;distributedAppsRestoreOptions&#34;: {
+                                &#34;distributedRestore&#34;: True,
+                                &#34;mongoDBRestoreOptions&#34;: {
+                                    &#34;destShardList&#34;: [],
+                                    &#34;destGranularEntityList&#34;: [],
+                                    &#34;recover&#34;: restore_options.get(&#34;recover&#34;, True),
+                                    &#34;latestOpLogSync&#34;: True,
+                                    &#34;pointInTimeToEndOfBackup&#34;: True,
+                                    &#34;latestEndOfBackup&#34;: True,
+                                    &#34;isGranularRecovery&#34;: False,
+                                    &#34;autoDBShutDown&#34;: restore_options.get(&#34;auto_db_shutdown&#34;, True)
+                                }
+                            },
+                            &#34;qrOption&#34;: {
+                                &#34;destAppTypeId&#34;: 64
+                            }
+                        },
+                        &#34;commonOpts&#34;: {
+                            &#34;notifyUserOnJobCompletion&#34;: True,
+                        }
+                    }
+                }
+            ]
+        }
+    }
+
+    if restore_options.get(&#34;dest_cluster_config&#34;):
+        for host_info in restore_options.get(&#34;dest_cluster_config&#34;):
+            shard_name = host_info.get(&#34;replSet&#34;, &#34;&#34;)
+            hostname = host_info.get(&#34;host&#34;, &#34;&#34;)
+            port = int(host_info.get(&#34;port&#34;, &#34;&#34;))
+            clientname = host_info.get(&#34;clientname&#34;, &#34;&#34;)
+            clientid = int(host_info.get(&#34;clientid&#34;, &#34;&#34;))
+            dbpath =  host_info.get(&#34;dbpath&#34;, &#34;&#34;)
+
+            shard_entry = {
+                &#34;srcShardName&#34;: restore_options.get(&#34;src_shard_name&#34;),
+                &#34;destShardName&#34;: shard_name,
+                &#34;target&#34;: {
+                    &#34;hostName&#34;: hostname,
+                    &#34;clientName&#34;: clientname,
+                    &#34;clientId&#34;: int(clientid)
+                },
+                &#34;destHostName&#34;: hostname,
+                &#34;destPortNumber&#34;: int(port),
+                &#34;destDataDir&#34;: dbpath,
+                &#34;bkpSecondary&#34;: {
+                    &#34;clientName&#34;: restore_options.get(&#34;src_client_name&#34;),
+                    &#34;hostName&#34;: restore_options.get(&#34;src_hostname&#34;),
+                    &#34;clientId&#34;: int(restore_options.get(&#34;src_client_id_secondary&#34;))
+                },
+                &#34;bkpHostName&#34;: restore_options.get(&#34;src_hostname&#34;),
+                &#34;bkpPortNumber&#34;: int(restore_options.get(&#34;src_port&#34;)),
+                &#34;bkpDataDir&#34;: restore_options.get(&#34;src_dbpath&#34;),
+                &#34;useDestAsSecondary&#34;: False,
+                &#34;primaryPortNumber&#34;: int(restore_options.get(&#34;src_port&#34;))
+            }
+
+            request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][
+                &#34;distributedAppsRestoreOptions&#34;][&#34;mongoDBRestoreOptions&#34;][&#34;destShardList&#34;].append(shard_entry)
+
+
+    return request_json</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.instances.bigdataapps.mongodbinstance.MongoDBInstance.refresh_mongo_instance"><code class="name flex">
+<span>def <span class="ident">refresh_mongo_instance</span></span>(<span>self, options: dict)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Refreshes a MongoDB instance configuration with new cluster details.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>options</code></strong> :&ensp;<code>dict</code></dt>
+<dd>Dictionary containing required arguments.</dd>
+</dl>
+<p>Required keys:
+config (dict): Response JSON from MachineBrowse containing updated
+MongoDB configuration.
+Expected format:
+{
+"browseItems": [
+{
+"mdbItem": {
+"mdbConfig": { &hellip; }
+}
+}
+]
+}
+instance_id (int): ID of the MongoDB instance to refresh.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>Updated instance JSON if successful.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>ValueError</code></dt>
+<dd>If required keys are missing or config format is invalid.</dd>
+<dt><code>Exception</code></dt>
+<dd>If fetching or updating the instance properties fails.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/bigdataapps/mongodbinstance.py#L603-L681" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def refresh_mongo_instance(self, options: dict):
+    &#34;&#34;&#34;
+    Refreshes a MongoDB instance configuration with new cluster details.
+
+    Args:
+        options (dict): Dictionary containing required arguments.
+
+        Required keys:
+            config (dict): Response JSON from MachineBrowse containing updated
+                           MongoDB configuration.
+                           Expected format:
+                               {
+                                   &#34;browseItems&#34;: [
+                                       {
+                                           &#34;mdbItem&#34;: {
+                                               &#34;mdbConfig&#34;: { ... }
+                                           }
+                                       }
+                                   ]
+                               }
+            instance_id (int): ID of the MongoDB instance to refresh.
+
+    Returns:
+        dict: Updated instance JSON if successful.
+
+    Raises:
+        ValueError: If required keys are missing or config format is invalid.
+        Exception: If fetching or updating the instance properties fails.
+    &#34;&#34;&#34;
+
+    # Step 1: Validate required keys
+    required = [&#34;config&#34;, &#34;instance_id&#34;]
+    missing = [key for key in required if key not in options or options[key] in (None, &#34;&#34;)]
+    if missing:
+        raise ValueError(f&#34;Missing required parameters: {missing}&#34;)
+
+    config = options[&#34;config&#34;]
+    instance_id = options[&#34;instance_id&#34;]
+
+    # Step 2: Fetch current instance properties
+    flag, inst_response = self._cvpysdk_object.make_request(
+        &#39;GET&#39;,
+        self._services[&#39;INSTANCE&#39;] % (instance_id)
+    )
+    if not flag:
+        raise Exception(&#34;Failed to get instance properties&#34;)
+
+    instance_json = inst_response.json()
+
+    # Step 3: Extract new mdbConfig from MachineBrowse response
+    try:
+        new_mdb_config = config[&#39;browseItems&#39;][0][&#39;mdbItem&#39;][&#39;mdbConfig&#39;]
+    except (KeyError, IndexError, TypeError):
+        raise ValueError(&#34;Invalid config format. &#39;browseItems[0].mdbItem.mdbConfig&#39; not found.&#34;)
+
+    props = instance_json.get(&#39;instanceProperties&#39;)
+    if isinstance(props, list):
+        props = props[0]  # Take the first element if wrapped in a list
+
+    # Step 4: Preserve critical values from old mdbConfig
+    old_mdb_config = props[&#39;distributedClusterInstance&#39;][&#39;clusterConfig&#39;][&#39;mdbConfig&#39;]
+    for key in (&#34;sslCMCredInfo&#34;, &#34;authCMCredInfo&#34;, &#34;masterNode&#34;):
+        if key in old_mdb_config:
+            new_mdb_config[key] = old_mdb_config[key]
+
+    # Step 5: Replace mdbConfig in instance JSON
+    props[&#39;distributedClusterInstance&#39;][&#39;clusterConfig&#39;][&#39;mdbConfig&#39;] = new_mdb_config
+    request_json = {&#34;instanceProperties&#34;: props}
+
+    # Step 6: Submit updated config
+    flag, update_response = self._cvpysdk_object.make_request(
+        &#39;POST&#39;,
+        self._services[&#39;INSTANCE&#39;] % (instance_id),
+        request_json
+    )
+    if not flag:
+        raise Exception(f&#34;Update Failed: {update_response.text}&#34;)
+
+    return update_response.json()</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.instances.bigdataapps.mongodbinstance.MongoDBInstance.restore"><code class="name flex">
+<span>def <span class="ident">restore</span></span>(<span>self, restore_options: Dict[str, Any]) ‑> <a title="cvpysdk.job.Job" href="../../job.html#cvpysdk.job.Job">Job</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Restore the content of this MongoDB instance using the specified options.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>restore_options</code></strong></dt>
+<dd>Dictionary of keyword arguments required to submit a MongoDB restore job.
+The dictionary should include keys such as:
+- "no_of_streams": Number of streams to use for restore (int)
+- "multinode_restore": Whether to perform a multinode restore (bool)
+- "destination_instance": Name of the destination instance (str)
+- "destination_instance_id": ID of the destination instance (int)
+- "paths": List of paths to restore (list of str)
+- "mongodb_restore": Flag to indicate MongoDB restore (bool)
+- "destination_client_id": ID of the destination client (int)
+- "destination_client_name": Name of the destination client (str)
+- "overwrite": Whether to overwrite existing data (bool)
+- "client_type": Type of client (int)
+- "destination_appTypeId": Application type ID for destination (int)
+- "backupset_name": Name of the backup set (str)
+- "<em>type</em>": Type identifier (int)
+- "subclient_id": Subclient ID (int)
+- "source_shard_name": Name of the source shard (str)
+- "destination_shard_name": Name of the destination shard (str)
+- "hostname": Hostname for restore (str)
+- "clientName": Client name for restore (str)
+- "desthostName": Destination host name (str)
+- "destclientName": Destination client name (str)
+- "destPortNumber": Destination port number (int)
+- "destDataDir": Destination data directory (str)
+- "bkpDataDir": Backup data directory (str)
+- "backupPortNumber": Backup port number (int)
+- "restoreDataDir": Restore data directory (str)
+- "primaryPort": Primary port number (int)
+- "clusterConfig": Cluster configuration data (Any)</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Job</code></dt>
+<dd>An instance of the Job class representing the submitted restore job.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; restore_options = {
+...     &quot;no_of_streams&quot;: 2,
+...     &quot;multinode_restore&quot;: True,
+...     &quot;destination_instance&quot;: &quot;MongoDB_Instance_01&quot;,
+...     &quot;destination_instance_id&quot;: 123,
+...     &quot;paths&quot;: [&quot;/&quot;],
+...     &quot;mongodb_restore&quot;: True,
+...     &quot;destination_client_id&quot;: 456,
+...     &quot;destination_client_name&quot;: &quot;MongoDB_Client_01&quot;,
+...     &quot;overwrite&quot;: True,
+...     &quot;client_type&quot;: 29,
+...     &quot;destination_appTypeId&quot;: 64,
+...     &quot;backupset_name&quot;: &quot;DailyBackupSet&quot;,
+...     &quot;_type_&quot;: 5,
+...     &quot;subclient_id&quot;: -1,
+...     &quot;source_shard_name&quot;: &quot;shard01&quot;,
+...     &quot;destination_shard_name&quot;: &quot;shard01&quot;,
+...     &quot;hostname&quot;: &quot;mongo-primary.example.com&quot;,
+...     &quot;clientName&quot;: &quot;mongo-master&quot;,
+...     &quot;desthostName&quot;: &quot;mongo-primary.example.com&quot;,
+...     &quot;destclientName&quot;: &quot;mongo-master&quot;,
+...     &quot;destPortNumber&quot;: 27017,
+...     &quot;destDataDir&quot;: &quot;/data/db&quot;,
+...     &quot;bkpDataDir&quot;: &quot;/backup/db&quot;,
+...     &quot;backupPortNumber&quot;: 27017,
+...     &quot;restoreDataDir&quot;: &quot;/backup/db&quot;,
+...     &quot;primaryPort&quot;: 27017,
+...     &quot;clusterConfig&quot;: {&quot;replicaSet&quot;: &quot;rs0&quot;}
+... }
+&gt;&gt;&gt; job = mongodb_instance.restore(restore_options)
+&gt;&gt;&gt; print(f&quot;Restore job submitted: {job}&quot;)
+&gt;&gt;&gt; # The returned Job object can be used to monitor restore progress
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/bigdataapps/mongodbinstance.py#L80-L221" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def restore(self, restore_options: Dict[str, Any]) -&gt; &#39;Job&#39;:
+    &#34;&#34;&#34;Restore the content of this MongoDB instance using the specified options.
+
+    Args:
+        restore_options: Dictionary of keyword arguments required to submit a MongoDB restore job.
+            The dictionary should include keys such as:
+                - &#34;no_of_streams&#34;: Number of streams to use for restore (int)
+                - &#34;multinode_restore&#34;: Whether to perform a multinode restore (bool)
+                - &#34;destination_instance&#34;: Name of the destination instance (str)
+                - &#34;destination_instance_id&#34;: ID of the destination instance (int)
+                - &#34;paths&#34;: List of paths to restore (list of str)
+                - &#34;mongodb_restore&#34;: Flag to indicate MongoDB restore (bool)
+                - &#34;destination_client_id&#34;: ID of the destination client (int)
+                - &#34;destination_client_name&#34;: Name of the destination client (str)
+                - &#34;overwrite&#34;: Whether to overwrite existing data (bool)
+                - &#34;client_type&#34;: Type of client (int)
+                - &#34;destination_appTypeId&#34;: Application type ID for destination (int)
+                - &#34;backupset_name&#34;: Name of the backup set (str)
+                - &#34;_type_&#34;: Type identifier (int)
+                - &#34;subclient_id&#34;: Subclient ID (int)
+                - &#34;source_shard_name&#34;: Name of the source shard (str)
+                - &#34;destination_shard_name&#34;: Name of the destination shard (str)
+                - &#34;hostname&#34;: Hostname for restore (str)
+                - &#34;clientName&#34;: Client name for restore (str)
+                - &#34;desthostName&#34;: Destination host name (str)
+                - &#34;destclientName&#34;: Destination client name (str)
+                - &#34;destPortNumber&#34;: Destination port number (int)
+                - &#34;destDataDir&#34;: Destination data directory (str)
+                - &#34;bkpDataDir&#34;: Backup data directory (str)
+                - &#34;backupPortNumber&#34;: Backup port number (int)
+                - &#34;restoreDataDir&#34;: Restore data directory (str)
+                - &#34;primaryPort&#34;: Primary port number (int)
+                - &#34;clusterConfig&#34;: Cluster configuration data (Any)
+
+    Returns:
+        Job: An instance of the Job class representing the submitted restore job.
+
+    Example:
+        &gt;&gt;&gt; restore_options = {
+        ...     &#34;no_of_streams&#34;: 2,
+        ...     &#34;multinode_restore&#34;: True,
+        ...     &#34;destination_instance&#34;: &#34;MongoDB_Instance_01&#34;,
+        ...     &#34;destination_instance_id&#34;: 123,
+        ...     &#34;paths&#34;: [&#34;/&#34;],
+        ...     &#34;mongodb_restore&#34;: True,
+        ...     &#34;destination_client_id&#34;: 456,
+        ...     &#34;destination_client_name&#34;: &#34;MongoDB_Client_01&#34;,
+        ...     &#34;overwrite&#34;: True,
+        ...     &#34;client_type&#34;: 29,
+        ...     &#34;destination_appTypeId&#34;: 64,
+        ...     &#34;backupset_name&#34;: &#34;DailyBackupSet&#34;,
+        ...     &#34;_type_&#34;: 5,
+        ...     &#34;subclient_id&#34;: -1,
+        ...     &#34;source_shard_name&#34;: &#34;shard01&#34;,
+        ...     &#34;destination_shard_name&#34;: &#34;shard01&#34;,
+        ...     &#34;hostname&#34;: &#34;mongo-primary.example.com&#34;,
+        ...     &#34;clientName&#34;: &#34;mongo-master&#34;,
+        ...     &#34;desthostName&#34;: &#34;mongo-primary.example.com&#34;,
+        ...     &#34;destclientName&#34;: &#34;mongo-master&#34;,
+        ...     &#34;destPortNumber&#34;: 27017,
+        ...     &#34;destDataDir&#34;: &#34;/data/db&#34;,
+        ...     &#34;bkpDataDir&#34;: &#34;/backup/db&#34;,
+        ...     &#34;backupPortNumber&#34;: 27017,
+        ...     &#34;restoreDataDir&#34;: &#34;/backup/db&#34;,
+        ...     &#34;primaryPort&#34;: 27017,
+        ...     &#34;clusterConfig&#34;: {&#34;replicaSet&#34;: &#34;rs0&#34;}
+        ... }
+        &gt;&gt;&gt; job = mongodb_instance.restore(restore_options)
+        &gt;&gt;&gt; print(f&#34;Restore job submitted: {job}&#34;)
+        &gt;&gt;&gt; # The returned Job object can be used to monitor restore progress
+
     &#34;&#34;&#34;
     if not (isinstance(restore_options, dict)):
         raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
@@ -607,30 +2060,9 @@ restore_dict["primaryPort"] = self.port
 
     client_object_source = self._commcell_object.clients.get(restore_options[&#39;clientName&#39;])
     client_object_destination = self._commcell_object.clients.get(restore_options[&#39;destclientName&#39;])
+
     distributed_restore_json[&#34;mongoDBRestoreOptions&#34;] = {
             &#34;destShardList&#34;: [
-                {
-                    &#34;srcShardName&#34;:  restore_options.get(&#34;source_shard_name&#34;, False),
-                    &#34;destShardName&#34;: restore_options.get(&#34;destination_shard_name&#34;, False),
-                    &#34;target&#34;: {
-                        &#34;hostName&#34;: restore_options.get(&#34;hostname&#34;, False),
-                        &#34;clientName&#34;: restore_options.get(&#34;clientName&#34;, False),
-                        &#34;clientId&#34;: int(client_object_source.client_id)
-                    },
-                    &#34;destHostName&#34;: restore_options.get(&#34;desthostName&#34;, False),
-                    &#34;destPortNumber&#34;: restore_options.get(&#34;destPortNumber&#34;, False),
-                    &#34;destDataDir&#34;:  restore_options.get(&#34;restoreDataDir&#34;, False),
-                    &#34;bkpSecondary&#34;: {
-                        &#34;clientName&#34;: restore_options.get(&#34;clientName&#34;, False),
-                        &#34;hostName&#34;: restore_options.get(&#34;hostname&#34;, False),
-                        &#34;clientId&#34;: int(client_object_source.client_id)
-                    },
-                    &#34;bkpHostName&#34;: restore_options.get(&#34;hostname&#34;, False),
-                    &#34;bkpPortNumber&#34;: restore_options.get(&#34;backupPortNumber&#34;, False),
-                    &#34;bkpDataDir&#34;: restore_options.get(&#34;bkpDataDir&#34;, False),
-                    &#34;useDestAsSecondary&#34;: False,
-                    &#34;primaryPortNumber&#34;:restore_options.get(&#34;primaryPort&#34;, False),
-                }
             ],
             &#34;restoreFilesOnly&#34;: False,
             &#34;recover&#34;: True,
@@ -642,92 +2074,193 @@ restore_dict["primaryPort"] = self.port
             &#34;isInplaceRestore&#34;: True
         }
 
+    if restore_options.get(&#34;clusterConfig&#34;):
+        for host_info in restore_options.get(&#34;clusterConfig&#34;):
+            shard_name = host_info.get(&#34;replSet&#34;, &#34;&#34;)
+            hostname = host_info.get(&#34;host&#34;, &#34;&#34;)
+            port = int(host_info.get(&#34;port&#34;, &#34;&#34;))
+            clientname = host_info.get(&#34;clientname&#34;, &#34;&#34;)
+            clientid = int(host_info.get(&#34;clientid&#34;, &#34;&#34;))
+            dbpath =  host_info.get(&#34;dbpath&#34;, &#34;&#34;)
+
+            shard_entry = {
+                &#34;srcShardName&#34;: shard_name,
+                &#34;destShardName&#34;: shard_name,
+                &#34;target&#34;: {
+                    &#34;hostName&#34;: hostname,
+                    &#34;clientName&#34;: clientname,
+                    &#34;clientId&#34;: clientid
+                },
+                &#34;destHostName&#34;: hostname,
+                &#34;destPortNumber&#34;: port,
+                &#34;destDataDir&#34;: dbpath,
+                &#34;bkpSecondary&#34;: {
+                    &#34;clientName&#34;: clientname,
+                    &#34;hostName&#34;: hostname,
+                    &#34;clientId&#34;: clientid
+                },
+                &#34;bkpHostName&#34;: hostname,
+                &#34;bkpPortNumber&#34;: port,
+                &#34;bkpDataDir&#34;: dbpath,
+                &#34;useDestAsSecondary&#34;: False,
+                &#34;primaryPortNumber&#34;: port
+            }
+
+            distributed_restore_json[&#34;mongoDBRestoreOptions&#34;][&#34;destShardList&#34;].append(shard_entry)
+
     request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][
             &#34;distributedAppsRestoreOptions&#34;] = distributed_restore_json
     return self._process_restore_response(request_json)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.instances.bigdataapps.mongodbinstance.MongoDBInstance.restore_collection"><code class="name flex">
-<span>def <span class="ident">restore_collection</span></span>(<span>self, restore_options)</span>
+<span>def <span class="ident">restore_collection</span></span>(<span>self, restore_options: dict) ‑> <a title="cvpysdk.job.Job" href="../../job.html#cvpysdk.job.Job">Job</a></span>
 </code></dt>
 <dd>
-<div class="desc"><p>Restores the content of this instance content for collection restore inplace.</p>
-<h2 id="args">Args</h2>
-<p>restore_options : dict of keyword arguments needed to submit a MongoDB restore:
-Example:
-restore_options = {
-restore_dict = {}
-restore_dict["no_of_streams"] = 2
-restore_dict["multinode_restore"] = True
-restore_dict["destination_instance"] = self.client_name
-restore_dict["destination_instance_id"] = self.<em>instance_object.instance_id
-restore_dict["paths"] = ["/"]
-restore_dict["mongodb_restore"] = True
-restore_dict["destination_client_id"] = self._client_obj.client_id
-restore_dict["destination_client_name"] = self._client_obj.client_name
-restore_dict["overwrite"] = True
-restore_dict["client_type"] = 29
-restore_dict["destination_appTypeId"] = 64
-restore_dict["backupset_name"] = self.backupsetname
-restore_dict["_type</em>"] = 5
-restore_dict["subclient_id"] = subclientid
-restore_dict["source_shard_name"] = self.replicaset
-restore_dict["destination_shard_name"] = self.replicaset
-restore_dict["hostname"] = self.primary_host
-restore_dict["clientName"] = self.master_node
-restore_dict["desthostName"] = self.primary_host
-restore_dict["destclientName"] = self.master_node
-restore_dict["destPortNumber"] = self.port
-restore_dict["destDataDir"] = self.bin_path
-restore_dict["bkpDataDir"] = self.bkp_dir_path
-restore_dict["backupPortNumber"] = self.port
-restore_dict["restoreDataDir"] = self.bkp_dir_path
-restore_dict["primaryPort"] = self.port
-}</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this restore job</p></div>
+<div class="desc"><p>Restore the content of this MongoDB instance for an in-place collection restore.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>restore_options</code></strong></dt>
+<dd>A dictionary containing the required options for the MongoDB restore job.
+The dictionary should include keys such as:
+- "no_of_streams": int, number of streams to use for restore
+- "multinode_restore": bool, whether to use multinode restore
+- "destination_instance": str, name of the destination instance
+- "destination_instance_id": int, ID of the destination instance
+- "paths": list, list of collection paths to restore
+- "mongodb_restore": bool, set to True for MongoDB restore
+- "destination_client_id": int, ID of the destination client
+- "destination_client_name": str, name of the destination client
+- "overwrite": bool, whether to overwrite existing data
+- "client_type": int, client type identifier
+- "destination_appTypeId": int, application type ID for destination
+- "backupset_name": str, name of the backup set
+- "<em>type</em>": int, type identifier
+- "subclient_id": int, ID of the subclient
+- "source_shard_name": str, name of the source shard
+- "destination_shard_name": str, name of the destination shard
+- "hostname": str, host name for restore
+- "clientName": str, client name for restore
+- "desthostName": str, destination host name
+- "destclientName": str, destination client name
+- "destPortNumber": int, destination port number
+- "destDataDir": str, destination data directory
+- "bkpDataDir": str, backup data directory
+- "backupPortNumber": int, backup port number
+- "restoreDataDir": str, restore data directory
+- "primaryPort": int, primary port number</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Job</code></dt>
+<dd>An instance of the Job class representing the restore job.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; restore_options = {
+...     &quot;no_of_streams&quot;: 2,
+...     &quot;multinode_restore&quot;: True,
+...     &quot;destination_instance&quot;: &quot;MongoDB_Instance1&quot;,
+...     &quot;destination_instance_id&quot;: 101,
+...     &quot;paths&quot;: [&quot;/&quot;],
+...     &quot;mongodb_restore&quot;: True,
+...     &quot;destination_client_id&quot;: 201,
+...     &quot;destination_client_name&quot;: &quot;MongoDB_Client1&quot;,
+...     &quot;overwrite&quot;: True,
+...     &quot;client_type&quot;: 29,
+...     &quot;destination_appTypeId&quot;: 64,
+...     &quot;backupset_name&quot;: &quot;defaultBackupSet&quot;,
+...     &quot;_type_&quot;: 5,
+...     &quot;subclient_id&quot;: 301,
+...     &quot;source_shard_name&quot;: &quot;shard1&quot;,
+...     &quot;destination_shard_name&quot;: &quot;shard1&quot;,
+...     &quot;hostname&quot;: &quot;mongo-primary&quot;,
+...     &quot;clientName&quot;: &quot;mongo-master&quot;,
+...     &quot;desthostName&quot;: &quot;mongo-primary&quot;,
+...     &quot;destclientName&quot;: &quot;mongo-master&quot;,
+...     &quot;destPortNumber&quot;: 27017,
+...     &quot;destDataDir&quot;: &quot;/data/db&quot;,
+...     &quot;bkpDataDir&quot;: &quot;/backup/db&quot;,
+...     &quot;backupPortNumber&quot;: 27017,
+...     &quot;restoreDataDir&quot;: &quot;/backup/db&quot;,
+...     &quot;primaryPort&quot;: 27017
+... }
+&gt;&gt;&gt; job = mongodb_instance.restore_collection(restore_options)
+&gt;&gt;&gt; print(f&quot;Restore job started with ID: {job.job_id}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/bigdataapps/mongodbinstance.py#L151-L223" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/bigdataapps/mongodbinstance.py#L417-L521" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def restore_collection(self, restore_options):
-    &#34;&#34;&#34;
-        Restores the content of this instance content for collection restore inplace.
-        Args:
-            restore_options : dict of keyword arguments needed to submit a MongoDB restore:
-                Example:
-                   restore_options = {
-                    restore_dict = {}
-                        restore_dict[&#34;no_of_streams&#34;] = 2
-                        restore_dict[&#34;multinode_restore&#34;] = True
-                        restore_dict[&#34;destination_instance&#34;] = self.client_name
-                        restore_dict[&#34;destination_instance_id&#34;] = self._instance_object.instance_id
-                        restore_dict[&#34;paths&#34;] = [&#34;/&#34;]
-                        restore_dict[&#34;mongodb_restore&#34;] = True
-                        restore_dict[&#34;destination_client_id&#34;] = self._client_obj.client_id
-                        restore_dict[&#34;destination_client_name&#34;] = self._client_obj.client_name
-                        restore_dict[&#34;overwrite&#34;] = True
-                        restore_dict[&#34;client_type&#34;] = 29
-                        restore_dict[&#34;destination_appTypeId&#34;] = 64
-                        restore_dict[&#34;backupset_name&#34;] = self.backupsetname
-                        restore_dict[&#34;_type_&#34;] = 5
-                        restore_dict[&#34;subclient_id&#34;] = subclientid
-                        restore_dict[&#34;source_shard_name&#34;] = self.replicaset
-                        restore_dict[&#34;destination_shard_name&#34;] = self.replicaset
-                        restore_dict[&#34;hostname&#34;] = self.primary_host
-                        restore_dict[&#34;clientName&#34;] = self.master_node
-                        restore_dict[&#34;desthostName&#34;] = self.primary_host
-                        restore_dict[&#34;destclientName&#34;] = self.master_node
-                        restore_dict[&#34;destPortNumber&#34;] = self.port
-                        restore_dict[&#34;destDataDir&#34;] = self.bin_path
-                        restore_dict[&#34;bkpDataDir&#34;] = self.bkp_dir_path
-                        restore_dict[&#34;backupPortNumber&#34;] = self.port
-                        restore_dict[&#34;restoreDataDir&#34;] = self.bkp_dir_path
-                        restore_dict[&#34;primaryPort&#34;] = self.port
-                    }
-        Returns:
-            object - instance of the Job class for this restore job
+<pre><code class="python">def restore_collection(self, restore_options: dict) -&gt; &#39;Job&#39;:
+    &#34;&#34;&#34;Restore the content of this MongoDB instance for an in-place collection restore.
+
+    Args:
+        restore_options: A dictionary containing the required options for the MongoDB restore job.
+            The dictionary should include keys such as:
+                - &#34;no_of_streams&#34;: int, number of streams to use for restore
+                - &#34;multinode_restore&#34;: bool, whether to use multinode restore
+                - &#34;destination_instance&#34;: str, name of the destination instance
+                - &#34;destination_instance_id&#34;: int, ID of the destination instance
+                - &#34;paths&#34;: list, list of collection paths to restore
+                - &#34;mongodb_restore&#34;: bool, set to True for MongoDB restore
+                - &#34;destination_client_id&#34;: int, ID of the destination client
+                - &#34;destination_client_name&#34;: str, name of the destination client
+                - &#34;overwrite&#34;: bool, whether to overwrite existing data
+                - &#34;client_type&#34;: int, client type identifier
+                - &#34;destination_appTypeId&#34;: int, application type ID for destination
+                - &#34;backupset_name&#34;: str, name of the backup set
+                - &#34;_type_&#34;: int, type identifier
+                - &#34;subclient_id&#34;: int, ID of the subclient
+                - &#34;source_shard_name&#34;: str, name of the source shard
+                - &#34;destination_shard_name&#34;: str, name of the destination shard
+                - &#34;hostname&#34;: str, host name for restore
+                - &#34;clientName&#34;: str, client name for restore
+                - &#34;desthostName&#34;: str, destination host name
+                - &#34;destclientName&#34;: str, destination client name
+                - &#34;destPortNumber&#34;: int, destination port number
+                - &#34;destDataDir&#34;: str, destination data directory
+                - &#34;bkpDataDir&#34;: str, backup data directory
+                - &#34;backupPortNumber&#34;: int, backup port number
+                - &#34;restoreDataDir&#34;: str, restore data directory
+                - &#34;primaryPort&#34;: int, primary port number
+
+    Returns:
+        Job: An instance of the Job class representing the restore job.
+
+    Example:
+        &gt;&gt;&gt; restore_options = {
+        ...     &#34;no_of_streams&#34;: 2,
+        ...     &#34;multinode_restore&#34;: True,
+        ...     &#34;destination_instance&#34;: &#34;MongoDB_Instance1&#34;,
+        ...     &#34;destination_instance_id&#34;: 101,
+        ...     &#34;paths&#34;: [&#34;/&#34;],
+        ...     &#34;mongodb_restore&#34;: True,
+        ...     &#34;destination_client_id&#34;: 201,
+        ...     &#34;destination_client_name&#34;: &#34;MongoDB_Client1&#34;,
+        ...     &#34;overwrite&#34;: True,
+        ...     &#34;client_type&#34;: 29,
+        ...     &#34;destination_appTypeId&#34;: 64,
+        ...     &#34;backupset_name&#34;: &#34;defaultBackupSet&#34;,
+        ...     &#34;_type_&#34;: 5,
+        ...     &#34;subclient_id&#34;: 301,
+        ...     &#34;source_shard_name&#34;: &#34;shard1&#34;,
+        ...     &#34;destination_shard_name&#34;: &#34;shard1&#34;,
+        ...     &#34;hostname&#34;: &#34;mongo-primary&#34;,
+        ...     &#34;clientName&#34;: &#34;mongo-master&#34;,
+        ...     &#34;desthostName&#34;: &#34;mongo-primary&#34;,
+        ...     &#34;destclientName&#34;: &#34;mongo-master&#34;,
+        ...     &#34;destPortNumber&#34;: 27017,
+        ...     &#34;destDataDir&#34;: &#34;/data/db&#34;,
+        ...     &#34;bkpDataDir&#34;: &#34;/backup/db&#34;,
+        ...     &#34;backupPortNumber&#34;: 27017,
+        ...     &#34;restoreDataDir&#34;: &#34;/backup/db&#34;,
+        ...     &#34;primaryPort&#34;: 27017
+        ... }
+        &gt;&gt;&gt; job = mongodb_instance.restore_collection(restore_options)
+        &gt;&gt;&gt; print(f&#34;Restore job started with ID: {job.job_id}&#34;)
+
     &#34;&#34;&#34;
     if not (isinstance(restore_options, dict)):
         raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
@@ -763,6 +2296,88 @@ restore_dict["primaryPort"] = self.port
         }
     request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;restoreOptions&#34;][
             &#34;distributedAppsRestoreOptions&#34;] = distributed_restore_json
+    return self._process_restore_response(request_json)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.instances.bigdataapps.mongodbinstance.MongoDBInstance.restore_out_of_place"><code class="name flex">
+<span>def <span class="ident">restore_out_of_place</span></span>(<span>self, restore_options: Dict[str, Any]) ‑> <a title="cvpysdk.job.Job" href="../../job.html#cvpysdk.job.Job">Job</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Restore the content of this MongoDB instance to a different location using the specified options.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>restore_options</code></strong></dt>
+<dd>Dictionary of keyword arguments required to submit a MongoDB restore job.
+The dictionary should include keys such as:
+"subclient_id": ID of the subclient (int),
+"backupset_id": ID of the backupset (int),<pre><code>"src_client_id": ID of the source client (int),
+"src_client_name": Name of the source client (str),
+"src_instance_id": ID of the source instance (int),
+"src_instance_name": Name of the source instance (str),
+"src_shard_name": Name of the source shard (str),
+"src_host_name": Hostname of the source (str),
+"src_port": Port number of the source (int),
+"src_dbpath": Database path of the source (str),
+"src_client_id_secondary": ID of the secondary source client (int),
+
+"dest_client_id": ID of the destination client (int),
+"dest_client_name": Name of the destination client (str),
+"dest_instance_id": ID of the destination instance (int),
+"dest_instance_name": Name of the destination instance (str),
+"dest_cluster_config": Configuration of the destination cluster (dict),
+
+"recover": recover_db,
+"auto_db_shutdown": auto_restore
+</code></pre>
+</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Job</code></dt>
+<dd>An instance of the Job class representing the submitted restore job.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/bigdataapps/mongodbinstance.py#L378-L415" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def restore_out_of_place(self, restore_options: Dict[str, Any]) -&gt; &#39;Job&#39;:
+    &#34;&#34;&#34;
+    Restore the content of this MongoDB instance to a different location using the specified options.
+
+    Args:
+        restore_options: Dictionary of keyword arguments required to submit a MongoDB restore job.
+            The dictionary should include keys such as:
+                &#34;subclient_id&#34;: ID of the subclient (int),
+                &#34;backupset_id&#34;: ID of the backupset (int),
+
+                &#34;src_client_id&#34;: ID of the source client (int),
+                &#34;src_client_name&#34;: Name of the source client (str),
+                &#34;src_instance_id&#34;: ID of the source instance (int),
+                &#34;src_instance_name&#34;: Name of the source instance (str),
+                &#34;src_shard_name&#34;: Name of the source shard (str),
+                &#34;src_host_name&#34;: Hostname of the source (str),
+                &#34;src_port&#34;: Port number of the source (int),
+                &#34;src_dbpath&#34;: Database path of the source (str),
+                &#34;src_client_id_secondary&#34;: ID of the secondary source client (int),
+
+                &#34;dest_client_id&#34;: ID of the destination client (int),
+                &#34;dest_client_name&#34;: Name of the destination client (str),
+                &#34;dest_instance_id&#34;: ID of the destination instance (int),
+                &#34;dest_instance_name&#34;: Name of the destination instance (str),
+                &#34;dest_cluster_config&#34;: Configuration of the destination cluster (dict),
+
+                &#34;recover&#34;: recover_db,
+                &#34;auto_db_shutdown&#34;: auto_restore
+
+    Returns:
+        Job: An instance of the Job class representing the submitted restore job.
+    &#34;&#34;&#34;
+    if not (isinstance(restore_options, dict)):
+        raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
+    
+    request_json = self.get_restore_json_for_out_of_place(restore_options)
+
     return self._process_restore_response(request_json)</code></pre>
 </details>
 </dd>
@@ -857,8 +2472,12 @@ setTimeout(() => input.focus(), 100);
 <li>
 <h4><code><a title="cvpysdk.instances.bigdataapps.mongodbinstance.MongoDBInstance" href="#cvpysdk.instances.bigdataapps.mongodbinstance.MongoDBInstance">MongoDBInstance</a></code></h4>
 <ul class="">
+<li><code><a title="cvpysdk.instances.bigdataapps.mongodbinstance.MongoDBInstance.discover_mongo_nodes" href="#cvpysdk.instances.bigdataapps.mongodbinstance.MongoDBInstance.discover_mongo_nodes">discover_mongo_nodes</a></code></li>
+<li><code><a title="cvpysdk.instances.bigdataapps.mongodbinstance.MongoDBInstance.get_restore_json_for_out_of_place" href="#cvpysdk.instances.bigdataapps.mongodbinstance.MongoDBInstance.get_restore_json_for_out_of_place">get_restore_json_for_out_of_place</a></code></li>
+<li><code><a title="cvpysdk.instances.bigdataapps.mongodbinstance.MongoDBInstance.refresh_mongo_instance" href="#cvpysdk.instances.bigdataapps.mongodbinstance.MongoDBInstance.refresh_mongo_instance">refresh_mongo_instance</a></code></li>
 <li><code><a title="cvpysdk.instances.bigdataapps.mongodbinstance.MongoDBInstance.restore" href="#cvpysdk.instances.bigdataapps.mongodbinstance.MongoDBInstance.restore">restore</a></code></li>
 <li><code><a title="cvpysdk.instances.bigdataapps.mongodbinstance.MongoDBInstance.restore_collection" href="#cvpysdk.instances.bigdataapps.mongodbinstance.MongoDBInstance.restore_collection">restore_collection</a></code></li>
+<li><code><a title="cvpysdk.instances.bigdataapps.mongodbinstance.MongoDBInstance.restore_out_of_place" href="#cvpysdk.instances.bigdataapps.mongodbinstance.MongoDBInstance.restore_out_of_place">restore_out_of_place</a></code></li>
 </ul>
 </li>
 </ul>

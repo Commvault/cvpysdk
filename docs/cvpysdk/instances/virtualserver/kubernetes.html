@@ -29,7 +29,8 @@
 Derived class from VirtualServer
 Base class, representing a
 Kubernetes instance, and to perform operations on that instance</p>
-<h2 id="kubernetesinstance">Kubernetesinstance</h2>
+<p>Kubernetesinstance
+-----=</p>
 <p><strong>init</strong>(
 agent_object,
 instance_name,
@@ -52,14 +53,14 @@ related properties of this subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/kubernetes.py#L1-L121" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/kubernetes.py#L1-L139" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the &#34;License&#34;);
+# Licensed under the Apache License, Inc. 2.0 (the &#34;License&#34;);
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
@@ -78,7 +79,6 @@ KubernetesInstance is the only class defined in this file.
 
 KubernetesInstance:     Derived class from VirtualServer  Base class, representing a
                         Kubernetes instance, and to perform operations on that instance
-
 
 KubernetesInstance:
 
@@ -104,20 +104,37 @@ KubernetesInstance:
 
 from ..vsinstance import VirtualServerInstance
 
+from typing import TYPE_CHECKING, Optional
+if TYPE_CHECKING:
+    from ...agent import Agent
+
 
 class KubernetesInstance(VirtualServerInstance):
-    &#34;&#34;&#34;Class for representing VMWare instance of the Virtual Server agent.&#34;&#34;&#34;
+    &#34;&#34;&#34;Class for representing Kubernetes instance of the Virtual Server agent.
 
-    def __init__(self, agent_object, instance_name, instance_id=None):
+    Attributes:
+        _vendor_id (int): Vendor ID.
+        _vmwarvendor (dict): VMware vendor details.
+        _server_name (list): List of server names.
+        _server_host_name (list): List of server hostnames.
+
+    Usage:
+        &gt;&gt;&gt; agent = commcell.agents.get(&#39;virtualization&#39;)
+        &gt;&gt;&gt; instance = KubernetesInstance(agent, &#39;instance_name&#39;)
+
+    &#34;&#34;&#34;
+
+    def __init__(self, agent_object: &#39;Agent&#39;, instance_name: str, instance_id: Optional[int] = None) -&gt; None:
         &#34;&#34;&#34;Initialize the Instance object for the given Virtual Server instance.
 
-            Args:
-                agent_object    (object)    --  instance of the Agent class
+        Args:
+            agent_object    (Agent):  instance of the Agent class
+            instance_name   (str):    instance name
+            instance_id     (int):    instance id
 
-                instance_name   (str)       --  instance name
-
-                instance_id     (int)       --  instance id
-
+        Usage:
+            &gt;&gt;&gt; agent = commcell.agents.get(&#39;virtualization&#39;)
+            &gt;&gt;&gt; instance = KubernetesInstance(agent, &#39;instance001&#39;)
         &#34;&#34;&#34;
         self._vendor_id = 1
         self._vmwarvendor = None
@@ -125,14 +142,14 @@ class KubernetesInstance(VirtualServerInstance):
         self._server_host_name = []
         super(KubernetesInstance, self).__init__(agent_object, instance_name, instance_id)
 
-    def _get_instance_properties(self):
+    def _get_instance_properties(self) -&gt; None:
         &#34;&#34;&#34;Gets the properties of this instance.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException:
+                if response is empty
 
-                    if response is not success
+                if response is not success
 
         &#34;&#34;&#34;
         super(KubernetesInstance, self)._get_instance_properties()
@@ -144,11 +161,11 @@ class KubernetesInstance(VirtualServerInstance):
 
             self._server_host_name.append(self._vmwarvendor.get(&#34;domainName&#34;, &#39;&#39;))
 
-    def _get_instance_properties_json(self):
-        &#34;&#34;&#34;get the all instance related properties of this subclient.
+    def _get_instance_properties_json(self) -&gt; dict:
+        &#34;&#34;&#34;Gets all instance related properties of this subclient.
 
-           Returns:
-                dict - all instance properties put inside a dict
+        Returns:
+            dict: A dictionary containing all properties associated with the instance.
 
         &#34;&#34;&#34;
         instance_json = {
@@ -167,13 +184,13 @@ class KubernetesInstance(VirtualServerInstance):
         return instance_json
 
     @property
-    def server_host_name(self):
-        &#34;&#34;&#34;getter for the domain name in the Kubernetes vendor json&#34;&#34;&#34;
+    def server_host_name(self) -&gt; list:
+        &#34;&#34;&#34;Getter for the domain name in the Kubernetes vendor json&#34;&#34;&#34;
         return self._server_host_name
 
     @property
-    def server_name(self):
-        &#34;&#34;&#34;getter for the domain name in the Kubernetes vendor json&#34;&#34;&#34;
+    def server_name(self) -&gt; list:
+        &#34;&#34;&#34;Getter for the domain name in the Kubernetes vendor json&#34;&#34;&#34;
         return self._server_name</code></pre>
 </details>
 </section>
@@ -188,42 +205,75 @@ class KubernetesInstance(VirtualServerInstance):
 <dl>
 <dt id="cvpysdk.instances.virtualserver.kubernetes.KubernetesInstance"><code class="flex name class">
 <span>class <span class="ident">KubernetesInstance</span></span>
-<span>(</span><span>agent_object, instance_name, instance_id=None)</span>
+<span>(</span><span>agent_object: Agent, instance_name: str, instance_id: Optional[int] = None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for representing VMWare instance of the Virtual Server agent.</p>
+<div class="desc"><p>Class for representing Kubernetes instance of the Virtual Server agent.</p>
+<dl>
+<dt>Attributes</dt>
+<dt>-----=</dt>
+<dt><strong><code>_vendor_id</code></strong> :&ensp;<code>int</code></dt>
+<dd>Vendor ID.</dd>
+<dt><strong><code>_vmwarvendor</code></strong> :&ensp;<code>dict</code></dt>
+<dd>VMware vendor details.</dd>
+<dt><strong><code>_server_name</code></strong> :&ensp;<code>list</code></dt>
+<dd>List of server names.</dd>
+<dt><strong><code>_server_host_name</code></strong> :&ensp;<code>list</code></dt>
+<dd>List of server hostnames.</dd>
+</dl>
+<p>Usage
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; agent = commcell.agents.get('virtualization')
+&gt;&gt;&gt; instance = KubernetesInstance(agent, 'instance_name')
+</code></pre>
 <p>Initialize the Instance object for the given Virtual Server instance.</p>
-<h2 id="args">Args</h2>
-<p>agent_object
-(object)
-&ndash;
-instance of the Agent class</p>
-<p>instance_name
-(str)
-&ndash;
-instance name</p>
-<p>instance_id
-(int)
-&ndash;
-instance id</p></div>
+<p>Args
+-----=
+agent_object
+(Agent):
+instance of the Agent class
+instance_name
+(str):
+instance name
+instance_id
+(int):
+instance id</p>
+<p>Usage
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; agent = commcell.agents.get('virtualization')
+&gt;&gt;&gt; instance = KubernetesInstance(agent, 'instance001')
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/kubernetes.py#L52-L121" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/kubernetes.py#L55-L139" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class KubernetesInstance(VirtualServerInstance):
-    &#34;&#34;&#34;Class for representing VMWare instance of the Virtual Server agent.&#34;&#34;&#34;
+    &#34;&#34;&#34;Class for representing Kubernetes instance of the Virtual Server agent.
 
-    def __init__(self, agent_object, instance_name, instance_id=None):
+    Attributes:
+        _vendor_id (int): Vendor ID.
+        _vmwarvendor (dict): VMware vendor details.
+        _server_name (list): List of server names.
+        _server_host_name (list): List of server hostnames.
+
+    Usage:
+        &gt;&gt;&gt; agent = commcell.agents.get(&#39;virtualization&#39;)
+        &gt;&gt;&gt; instance = KubernetesInstance(agent, &#39;instance_name&#39;)
+
+    &#34;&#34;&#34;
+
+    def __init__(self, agent_object: &#39;Agent&#39;, instance_name: str, instance_id: Optional[int] = None) -&gt; None:
         &#34;&#34;&#34;Initialize the Instance object for the given Virtual Server instance.
 
-            Args:
-                agent_object    (object)    --  instance of the Agent class
+        Args:
+            agent_object    (Agent):  instance of the Agent class
+            instance_name   (str):    instance name
+            instance_id     (int):    instance id
 
-                instance_name   (str)       --  instance name
-
-                instance_id     (int)       --  instance id
-
+        Usage:
+            &gt;&gt;&gt; agent = commcell.agents.get(&#39;virtualization&#39;)
+            &gt;&gt;&gt; instance = KubernetesInstance(agent, &#39;instance001&#39;)
         &#34;&#34;&#34;
         self._vendor_id = 1
         self._vmwarvendor = None
@@ -231,14 +281,14 @@ instance id</p></div>
         self._server_host_name = []
         super(KubernetesInstance, self).__init__(agent_object, instance_name, instance_id)
 
-    def _get_instance_properties(self):
+    def _get_instance_properties(self) -&gt; None:
         &#34;&#34;&#34;Gets the properties of this instance.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException:
+                if response is empty
 
-                    if response is not success
+                if response is not success
 
         &#34;&#34;&#34;
         super(KubernetesInstance, self)._get_instance_properties()
@@ -250,11 +300,11 @@ instance id</p></div>
 
             self._server_host_name.append(self._vmwarvendor.get(&#34;domainName&#34;, &#39;&#39;))
 
-    def _get_instance_properties_json(self):
-        &#34;&#34;&#34;get the all instance related properties of this subclient.
+    def _get_instance_properties_json(self) -&gt; dict:
+        &#34;&#34;&#34;Gets all instance related properties of this subclient.
 
-           Returns:
-                dict - all instance properties put inside a dict
+        Returns:
+            dict: A dictionary containing all properties associated with the instance.
 
         &#34;&#34;&#34;
         instance_json = {
@@ -273,13 +323,13 @@ instance id</p></div>
         return instance_json
 
     @property
-    def server_host_name(self):
-        &#34;&#34;&#34;getter for the domain name in the Kubernetes vendor json&#34;&#34;&#34;
+    def server_host_name(self) -&gt; list:
+        &#34;&#34;&#34;Getter for the domain name in the Kubernetes vendor json&#34;&#34;&#34;
         return self._server_host_name
 
     @property
-    def server_name(self):
-        &#34;&#34;&#34;getter for the domain name in the Kubernetes vendor json&#34;&#34;&#34;
+    def server_name(self) -&gt; list:
+        &#34;&#34;&#34;Getter for the domain name in the Kubernetes vendor json&#34;&#34;&#34;
         return self._server_name</code></pre>
 </details>
 <h3>Ancestors</h3>
@@ -289,31 +339,31 @@ instance id</p></div>
 </ul>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.instances.virtualserver.kubernetes.KubernetesInstance.server_host_name"><code class="name">var <span class="ident">server_host_name</span></code></dt>
+<dt id="cvpysdk.instances.virtualserver.kubernetes.KubernetesInstance.server_host_name"><code class="name">var <span class="ident">server_host_name</span> : list</code></dt>
 <dd>
-<div class="desc"><p>getter for the domain name in the Kubernetes vendor json</p></div>
+<div class="desc"><p>Getter for the domain name in the Kubernetes vendor json</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/kubernetes.py#L113-L116" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/kubernetes.py#L131-L134" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def server_host_name(self):
-    &#34;&#34;&#34;getter for the domain name in the Kubernetes vendor json&#34;&#34;&#34;
+def server_host_name(self) -&gt; list:
+    &#34;&#34;&#34;Getter for the domain name in the Kubernetes vendor json&#34;&#34;&#34;
     return self._server_host_name</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.virtualserver.kubernetes.KubernetesInstance.server_name"><code class="name">var <span class="ident">server_name</span></code></dt>
+<dt id="cvpysdk.instances.virtualserver.kubernetes.KubernetesInstance.server_name"><code class="name">var <span class="ident">server_name</span> : list</code></dt>
 <dd>
-<div class="desc"><p>getter for the domain name in the Kubernetes vendor json</p></div>
+<div class="desc"><p>Getter for the domain name in the Kubernetes vendor json</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/kubernetes.py#L118-L121" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/kubernetes.py#L136-L139" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def server_name(self):
-    &#34;&#34;&#34;getter for the domain name in the Kubernetes vendor json&#34;&#34;&#34;
+def server_name(self) -&gt; list:
+    &#34;&#34;&#34;Getter for the domain name in the Kubernetes vendor json&#34;&#34;&#34;
     return self._server_name</code></pre>
 </details>
 </dd>

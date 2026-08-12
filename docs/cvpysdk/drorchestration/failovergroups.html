@@ -30,8 +30,9 @@ Class for getting information of all failover groups in the commcell</p>
 <p>FailoverGroup:
 Class for a failover group that gives us all the live sync pairs associated to in,
 with addition to the clients/hypervisors associated</p>
-<h2 id="failovergroups">Failovergroups</h2>
-<p>FailoverGroupSourceTypes
+<p>Failovergroups
+-----=
+FailoverGroupSourceTypes
 &ndash;
 Enum to represent all type of sources for failover groups
 FailoverGroupTypes
@@ -66,8 +67,9 @@ Internal call to get information of all failover groups in commcell</p>
 <p>failover_groups
 &ndash;
 Returns the dictionary of all failover groups and their info</p>
-<h2 id="failovergroup">Failovergroup</h2>
-<p><strong>init</strong>(commcell_object,
+<p>Failovergroup
+-----=
+<strong>init</strong>(commcell_object,
 failover_group_name)
 &ndash;
 Initialize object of FailoverGroup with the given name</p>
@@ -148,7 +150,7 @@ for approval</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/drorchestration/failovergroups.py#L1-L502" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/drorchestration/failovergroups.py#L1-L496" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -406,9 +408,7 @@ class FailoverGroups:
         failover_groups = {}
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            &#39;GET&#39;, (self._services[&#39;FAILOVER_GROUPS&#39;]
-                    if self._commcell_object.commserv_version &gt; 30
-                    else self._services[&#39;DR_GROUPS&#39;]))
+            &#39;GET&#39;, self._services[&#39;FAILOVER_GROUPS&#39;])
         if flag:
             if &#39;vApp&#39; in response.json():
                 for failover_group in response.json().get(&#39;vApp&#39;, []):
@@ -505,11 +505,7 @@ class FailoverGroup:
                     if response is not success
         &#34;&#34;&#34;
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            &#39;GET&#39;,
-            (self._services[&#39;GET_FAILOVER_GROUP&#39;]
-             if self._commcell_object.commserv_version &gt; 30
-             else self._services[&#39;GET_DR_GROUP&#39;]) % str(self.failover_group_id)
-        )
+            &#39;GET&#39;, self._services[&#39;GET_FAILOVER_GROUP&#39;] % str(self.failover_group_id))
         if flag:
             if &#39;vApp&#39; in response.json():
                 return response.json().get(&#39;vApp&#39;, [{}])[0]
@@ -670,8 +666,9 @@ class FailoverGroup:
 <dd>
 <div class="desc"><p>Class for representing a failover group </p>
 <p>Initialise the FailoverGroup object for the given group name</p>
-<h2 id="args">Args</h2>
-<p>commcell_object (Commcell)
+<p>Args
+-----=
+commcell_object (Commcell)
 &ndash;
 instance of the Commcell class
 failover_group_name (str)
@@ -680,7 +677,7 @@ name of the failover group</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/drorchestration/failovergroups.py#L292-L502" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/drorchestration/failovergroups.py#L290-L496" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class FailoverGroup:
     &#34;&#34;&#34; Class for representing a failover group &#34;&#34;&#34;
@@ -746,11 +743,7 @@ name of the failover group</p></div>
                     if response is not success
         &#34;&#34;&#34;
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            &#39;GET&#39;,
-            (self._services[&#39;GET_FAILOVER_GROUP&#39;]
-             if self._commcell_object.commserv_version &gt; 30
-             else self._services[&#39;GET_DR_GROUP&#39;]) % str(self.failover_group_id)
-        )
+            &#39;GET&#39;, self._services[&#39;GET_FAILOVER_GROUP&#39;] % str(self.failover_group_id))
         if flag:
             if &#39;vApp&#39; in response.json():
                 return response.json().get(&#39;vApp&#39;, [{}])[0]
@@ -902,7 +895,7 @@ name of the failover group</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/drorchestration/failovergroups.py#L475-L478" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/drorchestration/failovergroups.py#L469-L472" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def destination_agent(self):
@@ -916,7 +909,7 @@ def destination_agent(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/drorchestration/failovergroups.py#L470-L473" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/drorchestration/failovergroups.py#L464-L467" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def destination_client(self):
@@ -930,7 +923,7 @@ def destination_client(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/drorchestration/failovergroups.py#L480-L487" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/drorchestration/failovergroups.py#L474-L481" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def destination_instance(self):
@@ -948,7 +941,7 @@ def destination_instance(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/drorchestration/failovergroups.py#L373-L376" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/drorchestration/failovergroups.py#L367-L370" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def failover_group_id(self):
@@ -962,7 +955,7 @@ def failover_group_id(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/drorchestration/failovergroups.py#L378-L381" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/drorchestration/failovergroups.py#L372-L375" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def failover_group_name(self):
@@ -976,7 +969,7 @@ def failover_group_name(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/drorchestration/failovergroups.py#L388-L391" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/drorchestration/failovergroups.py#L382-L385" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def group_type(self):
@@ -992,7 +985,7 @@ false: if approval not set in failover group</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/drorchestration/failovergroups.py#L489-L495" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/drorchestration/failovergroups.py#L483-L489" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_approval_required(self):
@@ -1009,7 +1002,7 @@ def is_approval_required(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/drorchestration/failovergroups.py#L398-L401" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/drorchestration/failovergroups.py#L392-L395" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def is_client_group(self):
@@ -1023,7 +1016,7 @@ def is_client_group(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/drorchestration/failovergroups.py#L437-L441" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/drorchestration/failovergroups.py#L431-L435" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def replication_groups(self):
@@ -1039,7 +1032,7 @@ Note: Implemented only for live sync failover groups</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/drorchestration/failovergroups.py#L403-L413" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/drorchestration/failovergroups.py#L397-L407" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def replication_pairs(self):
@@ -1060,7 +1053,7 @@ def replication_pairs(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/drorchestration/failovergroups.py#L383-L386" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/drorchestration/failovergroups.py#L377-L380" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def replication_type(self):
@@ -1074,7 +1067,7 @@ def replication_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/drorchestration/failovergroups.py#L451-L454" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/drorchestration/failovergroups.py#L445-L448" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def source_agent(self):
@@ -1088,7 +1081,7 @@ def source_agent(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/drorchestration/failovergroups.py#L443-L449" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/drorchestration/failovergroups.py#L437-L443" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def source_client(self):
@@ -1105,7 +1098,7 @@ def source_client(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/drorchestration/failovergroups.py#L456-L468" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/drorchestration/failovergroups.py#L450-L462" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def source_instance(self):
@@ -1128,7 +1121,7 @@ def source_instance(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/drorchestration/failovergroups.py#L393-L396" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/drorchestration/failovergroups.py#L387-L390" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def source_type(self):
@@ -1142,7 +1135,7 @@ def source_type(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/drorchestration/failovergroups.py#L497-L502" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/drorchestration/failovergroups.py#L491-L496" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def user_for_approval(self):
@@ -1158,7 +1151,7 @@ def user_for_approval(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/drorchestration/failovergroups.py#L415-L418" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/drorchestration/failovergroups.py#L409-L412" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def vm_pair_ids(self):
@@ -1177,7 +1170,7 @@ eg:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/drorchestration/failovergroups.py#L420-L435" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/drorchestration/failovergroups.py#L414-L429" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def vm_pairs(self):
@@ -1208,7 +1201,7 @@ def vm_pairs(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/drorchestration/failovergroups.py#L368-L371" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/drorchestration/failovergroups.py#L362-L365" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34; Refresh the failover group properties &#34;&#34;&#34;
@@ -1225,14 +1218,15 @@ def vm_pairs(self):
 <dd>
 <div class="desc"><p>Class for getting all the failover groups in commcell.</p>
 <p>Initialize object of the Failover groups</p>
-<h2 id="args">Args</h2>
-<p>commcell_object (Commcell)
+<p>Args
+-----=
+commcell_object (Commcell)
 &ndash;
 instance of the Commcell class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/drorchestration/failovergroups.py#L114-L289" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/drorchestration/failovergroups.py#L114-L287" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class FailoverGroups:
     &#34;&#34;&#34;Class for getting all the failover groups in commcell.&#34;&#34;&#34;
@@ -1377,9 +1371,7 @@ instance of the Commcell class</p></div>
         failover_groups = {}
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            &#39;GET&#39;, (self._services[&#39;FAILOVER_GROUPS&#39;]
-                    if self._commcell_object.commserv_version &gt; 30
-                    else self._services[&#39;DR_GROUPS&#39;]))
+            &#39;GET&#39;, self._services[&#39;FAILOVER_GROUPS&#39;])
         if flag:
             if &#39;vApp&#39; in response.json():
                 for failover_group in response.json().get(&#39;vApp&#39;, []):
@@ -1419,7 +1411,56 @@ instance of the Commcell class</p></div>
 </dd>
 <dt id="cvpysdk.drorchestration.failovergroups.FailoverGroups.FailoverGroupSourceTypes"><code class="name">var <span class="ident">FailoverGroupSourceTypes</span></code></dt>
 <dd>
-<div class="desc"><p>An enumeration.</p></div>
+<div class="desc"><p>Create a collection of name/value pairs.</p>
+<p>Example enumeration:</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; class Color(Enum):
+...     RED = 1
+...     BLUE = 2
+...     GREEN = 3
+</code></pre>
+<p>Access them by:</p>
+<ul>
+<li>attribute access:</li>
+</ul>
+<blockquote>
+<blockquote>
+<blockquote>
+<p>Color.RED
+<Color.RED: 1></p>
+</blockquote>
+</blockquote>
+</blockquote>
+<ul>
+<li>value lookup:</li>
+</ul>
+<blockquote>
+<blockquote>
+<blockquote>
+<p>Color(1)
+<Color.RED: 1></p>
+</blockquote>
+</blockquote>
+</blockquote>
+<ul>
+<li>name lookup:</li>
+</ul>
+<blockquote>
+<blockquote>
+<blockquote>
+<p>Color['RED']
+<Color.RED: 1></p>
+</blockquote>
+</blockquote>
+</blockquote>
+<p>Enumerations can be iterated over, and know how many members they have:</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; len(Color)
+3
+</code></pre>
+<pre><code class="language-python-repl">&gt;&gt;&gt; list(Color)
+[&lt;Color.RED: 1&gt;, &lt;Color.BLUE: 2&gt;, &lt;Color.GREEN: 3&gt;]
+</code></pre>
+<p>Methods can be added to enumerations, and members can have their own
+attributes &ndash; see the documentation for details.</p></div>
 </dd>
 <dt id="cvpysdk.drorchestration.failovergroups.FailoverGroups.FailoverGroupTypes"><code class="name">var <span class="ident">FailoverGroupTypes</span></code></dt>
 <dd>
@@ -1442,7 +1483,7 @@ Raises:</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/drorchestration/failovergroups.py#L213-L226" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/drorchestration/failovergroups.py#L213-L226" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def failover_groups(self):
@@ -1468,20 +1509,23 @@ def failover_groups(self):
 </code></dt>
 <dd>
 <div class="desc"><p>Returns a failover group object of the specified failover group name.</p>
-<h2 id="args">Args</h2>
-<p>failover_group_name (str)
+<p>Args
+-----=
+failover_group_name (str)
 &ndash;
 name of the failover group</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the FailoverGroup class for the given failover group name</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
+<p>Returns
+-----=
+object - instance of the FailoverGroup class for the given failover group name</p>
+<p>Raises
+-----=
+SDKException:
 if proper inputs are not provided
 If Failover group doesnt exists with given name</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/drorchestration/failovergroups.py#L192-L211" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/drorchestration/failovergroups.py#L192-L211" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, failover_group_name):
     &#34;&#34;&#34;Returns a failover group object of the specified failover group name.
@@ -1510,19 +1554,22 @@ If Failover group doesnt exists with given name</p></div>
 </code></dt>
 <dd>
 <div class="desc"><p>Checks if failover group exists or not</p>
-<h2 id="args">Args</h2>
-<p>failover_group_name (str)
+<p>Args
+-----=
+failover_group_name (str)
 &ndash;
 name of the failover group</p>
-<h2 id="returns">Returns</h2>
-<p>bool - boolean output whether failover group exists or not</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
+<p>Returns
+-----=
+bool - boolean output whether failover group exists or not</p>
+<p>Raises
+-----=
+SDKException:
 if proper inputs are not provided</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/drorchestration/failovergroups.py#L174-L190" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/drorchestration/failovergroups.py#L174-L190" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_failover_group(self, failover_group_name):
     &#34;&#34;&#34;Checks if failover group exists or not
@@ -1554,7 +1601,7 @@ Args:</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/drorchestration/failovergroups.py#L280-L289" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/drorchestration/failovergroups.py#L278-L287" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34; Refresh the failover groups created in the commcell.

@@ -104,7 +104,7 @@ download_export()                   --  Method to download the exported items to
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/compliance_utils.py#L1-L836" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/compliance_utils.py#L1-L877" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -300,6 +300,7 @@ class ComplianceSearchUtils():
         if app_type in ComplianceConstants.FILE_TYPES:
             search_request[&#34;advSearchGrp&#34;][&#34;galaxyFilter&#34;][0][&#34;applicationType&#34;] = ComplianceConstants.FILE_TYPE
             search_request[&#34;advSearchGrp&#34;][ComplianceConstants.FILE_FILTERS_KEY] = ComplianceConstants.FILE_FILTERS
+            search_request[&#34;advSearchGrp&#34;][ComplianceConstants.COMMON_FILTER] = ComplianceConstants.COMMON_FILTERS
             custom_facet = copy.deepcopy(ComplianceConstants.FILE_FACET)
             if app_type != ComplianceConstants.AppTypes.FILE_SYSTEM:
                 custom_facet = copy.deepcopy(ComplianceConstants.CUSTOM_FACET)
@@ -309,6 +310,13 @@ class ComplianceSearchUtils():
                         {
                             &#34;param&#34;: &#34;RESPONSE_FIELD_LIST&#34;,
                             &#34;value&#34;: ComplianceConstants.RESPONSE_FIELD_LIST
+                        },
+                    )
+                if app_type == ComplianceConstants.AppTypes.SHAREPOINT:
+                    search_request[&#34;searchProcessingInfo&#34;][&#34;queryParams&#34;].append(
+                        {
+                            &#34;param&#34;: &#34;RESPONSE_FIELD_LIST&#34;,
+                            &#34;value&#34;: ComplianceConstants.RESPONSE_FIELD_LIST_SHAREPOINT
                         },
                     )
                 custom_facet[1][&#34;stringParameter&#34;][0][&#34;name&#34;] = ComplianceConstants.CUSTOM_FACETS[app_type]
@@ -867,6 +875,7 @@ class Export():
         self._update_response_ = None
         self._user_guid = None
         self._download_file_api = None
+        self._download_via_stream = None
         self._download_file_json_req = None
         self.refresh()
 
@@ -891,6 +900,7 @@ class Export():
         self._update_response_ = self._commcell._update_response_
         self._user_guid = self._commcell.users.get(self._commcell.commcell_username).user_guid
         self._download_file_api = self._services[&#39;DOWNLOAD_EXPORT_ITEMS&#39;]
+        self._download_via_stream = self._services[&#39;DOWNLOAD_VIA_STREAM&#39;]
         self._download_file_json_req = \
             {
                 &#34;appTypeId&#34;: 200,
@@ -922,26 +932,57 @@ class Export():
 
         &#34;&#34;&#34;
         flag, response = self._cvpysdk_object.make_request(
-            method=&#34;POST&#34;, url=self._download_file_api, payload=self._download_file_json_req)
-        if flag:
-            if response.json() and &#34;fileContent&#34; in response.json():
-                file_content = response.json()[&#39;fileContent&#39;]
-                download_file = os.path.join(download_folder, file_content[&#39;fileName&#39;])
-                if &#39;cloudUrl&#39; in response.json():
-                    url = response.json()[&#39;cloudUrl&#39;]
-                    cloud_file = requests.get(url)
-                    if cloud_file.status_code == 200:
-                        file_data = cloud_file.content
-                    else:
-                        raise SDKException(&#39;ComplianceSearch&#39;, &#39;109&#39;)
+            method=&#34;POST&#34;, url=self._download_file_api, payload=self._download_file_json_req
+        )
+
+        if not flag or not response.json() or not response.json().get(&#34;fileContent&#34;):
+            self._response_not_success(response)
+
+        file_content = response.json().get(&#34;fileContent&#34;, {})
+        download_file = os.path.join(download_folder, file_content.get(&#34;fileName&#34;, &#34;&#34;))
+        req_id = file_content.get(&#34;requestId&#34;)
+
+        if not download_file or not req_id:
+            raise SDKException(&#39;ComplianceSearch&#39;, &#39;110&#39;)
+
+        # Handle response with &#39;cloudUrl&#39; or &#39;data&#39;
+        if &#39;cloudUrl&#39; in response.json() or &#39;data&#39; in file_content:
+            if &#39;cloudUrl&#39; in response.json():
+                url = response.json().get(&#39;cloudUrl&#39;)
+                cloud_file = requests.get(url)
+                if cloud_file.status_code == 200:
+                    file_data = cloud_file.content
                 else:
-                    file_data = base64.b64decode(file_content[&#39;data&#39;])
-                with open(download_file, &#34;wb&#34;) as f:
-                    f.write(file_data)
-                return download_file
-            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+                    raise SDKException(&#39;ComplianceSearch&#39;, &#39;109&#39;)
+            else:
+                file_data = base64.b64decode(file_content[&#39;data&#39;])
+            with open(download_file, &#34;wb&#34;) as f:
+                f.write(file_data)
+            return download_file
         else:
-            self._response_not_success(response)</code></pre>
+            # Handle download via stream API
+            self._download_file_json_req.update({
+                &#34;requestId&#34;: req_id,
+                &#34;userInformation&#34;: {
+                    &#34;userGuid&#34;: self._user_guid,
+                    &#34;userName&#34;: self._commcell.commcell_username,
+                }
+            })
+
+            flag, response = self._cvpysdk_object.make_request(
+                method=&#34;POST&#34;, url=self._download_via_stream, payload=self._download_file_json_req, stream=True
+            )
+
+            if flag:
+                try:
+                    with open(download_file, &#34;wb&#34;) as f:
+                        for content in response.iter_content():
+                            f.write(content)
+                except Exception:
+                    raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+                return download_file
+            else:
+                self._response_not_success(response)</code></pre>
 </details>
 </section>
 <section>
@@ -963,7 +1004,7 @@ class Export():
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/compliance_utils.py#L124-L231" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/compliance_utils.py#L124-L239" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ComplianceSearchUtils():
     &#34;&#34;&#34;Class for compliance search related operations support&#34;&#34;&#34;
@@ -1036,6 +1077,7 @@ class Export():
         if app_type in ComplianceConstants.FILE_TYPES:
             search_request[&#34;advSearchGrp&#34;][&#34;galaxyFilter&#34;][0][&#34;applicationType&#34;] = ComplianceConstants.FILE_TYPE
             search_request[&#34;advSearchGrp&#34;][ComplianceConstants.FILE_FILTERS_KEY] = ComplianceConstants.FILE_FILTERS
+            search_request[&#34;advSearchGrp&#34;][ComplianceConstants.COMMON_FILTER] = ComplianceConstants.COMMON_FILTERS
             custom_facet = copy.deepcopy(ComplianceConstants.FILE_FACET)
             if app_type != ComplianceConstants.AppTypes.FILE_SYSTEM:
                 custom_facet = copy.deepcopy(ComplianceConstants.CUSTOM_FACET)
@@ -1045,6 +1087,13 @@ class Export():
                         {
                             &#34;param&#34;: &#34;RESPONSE_FIELD_LIST&#34;,
                             &#34;value&#34;: ComplianceConstants.RESPONSE_FIELD_LIST
+                        },
+                    )
+                if app_type == ComplianceConstants.AppTypes.SHAREPOINT:
+                    search_request[&#34;searchProcessingInfo&#34;][&#34;queryParams&#34;].append(
+                        {
+                            &#34;param&#34;: &#34;RESPONSE_FIELD_LIST&#34;,
+                            &#34;value&#34;: ComplianceConstants.RESPONSE_FIELD_LIST_SHAREPOINT
                         },
                     )
                 custom_facet[1][&#34;stringParameter&#34;][0][&#34;name&#34;] = ComplianceConstants.CUSTOM_FACETS[app_type]
@@ -1081,8 +1130,9 @@ class Export():
 </code></dt>
 <dd>
 <div class="desc"><p>Method to run a compliance search with the search text provided</p>
-<h2 id="args">Args</h2>
-<p>search_text
+<p>Args
+-----=
+search_text
 (str)
 -
 Search text to be searched on the Compliance search
@@ -1100,8 +1150,9 @@ app_type
 -
 ComplianceConstants.AppTypes Enum values
 Default: FILE_SYSTEM</p>
-<h2 id="returns">Returns</h2>
-<p>(list)
+<p>Returns
+-----=
+(list)
 -
 List of all the search result items with the metadata and SOLR fields
 Example :
@@ -1115,13 +1166,14 @@ Example :
 "SizeKB": <size>&hellip;,
 <name>: <key>
 }&hellip; ]</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
+<p>Raises
+-----=
+SDKException:
 Response was not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/compliance_utils.py#L151-L231" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/compliance_utils.py#L151-L239" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def do_compliance_search(self, search_text, index_server_name=None,
                          page_size=50, app_type=ComplianceConstants.AppTypes.FILE_SYSTEM):
@@ -1167,6 +1219,7 @@ Response was not success</p></div>
     if app_type in ComplianceConstants.FILE_TYPES:
         search_request[&#34;advSearchGrp&#34;][&#34;galaxyFilter&#34;][0][&#34;applicationType&#34;] = ComplianceConstants.FILE_TYPE
         search_request[&#34;advSearchGrp&#34;][ComplianceConstants.FILE_FILTERS_KEY] = ComplianceConstants.FILE_FILTERS
+        search_request[&#34;advSearchGrp&#34;][ComplianceConstants.COMMON_FILTER] = ComplianceConstants.COMMON_FILTERS
         custom_facet = copy.deepcopy(ComplianceConstants.FILE_FACET)
         if app_type != ComplianceConstants.AppTypes.FILE_SYSTEM:
             custom_facet = copy.deepcopy(ComplianceConstants.CUSTOM_FACET)
@@ -1176,6 +1229,13 @@ Response was not success</p></div>
                     {
                         &#34;param&#34;: &#34;RESPONSE_FIELD_LIST&#34;,
                         &#34;value&#34;: ComplianceConstants.RESPONSE_FIELD_LIST
+                    },
+                )
+            if app_type == ComplianceConstants.AppTypes.SHAREPOINT:
+                search_request[&#34;searchProcessingInfo&#34;][&#34;queryParams&#34;].append(
+                    {
+                        &#34;param&#34;: &#34;RESPONSE_FIELD_LIST&#34;,
+                        &#34;value&#34;: ComplianceConstants.RESPONSE_FIELD_LIST_SHAREPOINT
                     },
                 )
             custom_facet[1][&#34;stringParameter&#34;][0][&#34;name&#34;] = ComplianceConstants.CUSTOM_FACETS[app_type]
@@ -1218,7 +1278,7 @@ Response was not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/compliance_utils.py#L750-L836" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/compliance_utils.py#L758-L877" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Export():
     &#34;&#34;&#34;Class for an instance of a single Export of the export set&#34;&#34;&#34;
@@ -1232,6 +1292,7 @@ Response was not success</p></div>
         self._update_response_ = None
         self._user_guid = None
         self._download_file_api = None
+        self._download_via_stream = None
         self._download_file_json_req = None
         self.refresh()
 
@@ -1256,6 +1317,7 @@ Response was not success</p></div>
         self._update_response_ = self._commcell._update_response_
         self._user_guid = self._commcell.users.get(self._commcell.commcell_username).user_guid
         self._download_file_api = self._services[&#39;DOWNLOAD_EXPORT_ITEMS&#39;]
+        self._download_via_stream = self._services[&#39;DOWNLOAD_VIA_STREAM&#39;]
         self._download_file_json_req = \
             {
                 &#34;appTypeId&#34;: 200,
@@ -1287,26 +1349,57 @@ Response was not success</p></div>
 
         &#34;&#34;&#34;
         flag, response = self._cvpysdk_object.make_request(
-            method=&#34;POST&#34;, url=self._download_file_api, payload=self._download_file_json_req)
-        if flag:
-            if response.json() and &#34;fileContent&#34; in response.json():
-                file_content = response.json()[&#39;fileContent&#39;]
-                download_file = os.path.join(download_folder, file_content[&#39;fileName&#39;])
-                if &#39;cloudUrl&#39; in response.json():
-                    url = response.json()[&#39;cloudUrl&#39;]
-                    cloud_file = requests.get(url)
-                    if cloud_file.status_code == 200:
-                        file_data = cloud_file.content
-                    else:
-                        raise SDKException(&#39;ComplianceSearch&#39;, &#39;109&#39;)
+            method=&#34;POST&#34;, url=self._download_file_api, payload=self._download_file_json_req
+        )
+
+        if not flag or not response.json() or not response.json().get(&#34;fileContent&#34;):
+            self._response_not_success(response)
+
+        file_content = response.json().get(&#34;fileContent&#34;, {})
+        download_file = os.path.join(download_folder, file_content.get(&#34;fileName&#34;, &#34;&#34;))
+        req_id = file_content.get(&#34;requestId&#34;)
+
+        if not download_file or not req_id:
+            raise SDKException(&#39;ComplianceSearch&#39;, &#39;110&#39;)
+
+        # Handle response with &#39;cloudUrl&#39; or &#39;data&#39;
+        if &#39;cloudUrl&#39; in response.json() or &#39;data&#39; in file_content:
+            if &#39;cloudUrl&#39; in response.json():
+                url = response.json().get(&#39;cloudUrl&#39;)
+                cloud_file = requests.get(url)
+                if cloud_file.status_code == 200:
+                    file_data = cloud_file.content
                 else:
-                    file_data = base64.b64decode(file_content[&#39;data&#39;])
-                with open(download_file, &#34;wb&#34;) as f:
-                    f.write(file_data)
-                return download_file
-            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+                    raise SDKException(&#39;ComplianceSearch&#39;, &#39;109&#39;)
+            else:
+                file_data = base64.b64decode(file_content[&#39;data&#39;])
+            with open(download_file, &#34;wb&#34;) as f:
+                f.write(file_data)
+            return download_file
         else:
-            self._response_not_success(response)</code></pre>
+            # Handle download via stream API
+            self._download_file_json_req.update({
+                &#34;requestId&#34;: req_id,
+                &#34;userInformation&#34;: {
+                    &#34;userGuid&#34;: self._user_guid,
+                    &#34;userName&#34;: self._commcell.commcell_username,
+                }
+            })
+
+            flag, response = self._cvpysdk_object.make_request(
+                method=&#34;POST&#34;, url=self._download_via_stream, payload=self._download_file_json_req, stream=True
+            )
+
+            if flag:
+                try:
+                    with open(download_file, &#34;wb&#34;) as f:
+                        for content in response.iter_content():
+                            f.write(content)
+                except Exception:
+                    raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+                return download_file
+            else:
+                self._response_not_success(response)</code></pre>
 </details>
 <h3>Methods</h3>
 <dl>
@@ -1315,20 +1408,23 @@ Response was not success</p></div>
 </code></dt>
 <dd>
 <div class="desc"><p>Method to download the exported items to a zip file</p>
-<h2 id="args">Args</h2>
-<p>download_folder
+<p>Args
+-----=
+download_folder
 (str)
 -
 Path of the folder in which exported items zip file should be saved</p>
-<h2 id="returns">Returns</h2>
-<p>(str) path of the downloaded zip file</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
+<p>Returns
+-----=
+(str) path of the downloaded zip file</p>
+<p>Raises
+-----=
+SDKException:
 Response was not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/compliance_utils.py#L802-L836" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/compliance_utils.py#L812-L877" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def download_export(self, download_folder):
     &#34;&#34;&#34;Method to download the exported items to a zip file
@@ -1345,26 +1441,57 @@ Response was not success</p></div>
 
     &#34;&#34;&#34;
     flag, response = self._cvpysdk_object.make_request(
-        method=&#34;POST&#34;, url=self._download_file_api, payload=self._download_file_json_req)
-    if flag:
-        if response.json() and &#34;fileContent&#34; in response.json():
-            file_content = response.json()[&#39;fileContent&#39;]
-            download_file = os.path.join(download_folder, file_content[&#39;fileName&#39;])
-            if &#39;cloudUrl&#39; in response.json():
-                url = response.json()[&#39;cloudUrl&#39;]
-                cloud_file = requests.get(url)
-                if cloud_file.status_code == 200:
-                    file_data = cloud_file.content
-                else:
-                    raise SDKException(&#39;ComplianceSearch&#39;, &#39;109&#39;)
+        method=&#34;POST&#34;, url=self._download_file_api, payload=self._download_file_json_req
+    )
+
+    if not flag or not response.json() or not response.json().get(&#34;fileContent&#34;):
+        self._response_not_success(response)
+
+    file_content = response.json().get(&#34;fileContent&#34;, {})
+    download_file = os.path.join(download_folder, file_content.get(&#34;fileName&#34;, &#34;&#34;))
+    req_id = file_content.get(&#34;requestId&#34;)
+
+    if not download_file or not req_id:
+        raise SDKException(&#39;ComplianceSearch&#39;, &#39;110&#39;)
+
+    # Handle response with &#39;cloudUrl&#39; or &#39;data&#39;
+    if &#39;cloudUrl&#39; in response.json() or &#39;data&#39; in file_content:
+        if &#39;cloudUrl&#39; in response.json():
+            url = response.json().get(&#39;cloudUrl&#39;)
+            cloud_file = requests.get(url)
+            if cloud_file.status_code == 200:
+                file_data = cloud_file.content
             else:
-                file_data = base64.b64decode(file_content[&#39;data&#39;])
-            with open(download_file, &#34;wb&#34;) as f:
-                f.write(file_data)
-            return download_file
-        raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+                raise SDKException(&#39;ComplianceSearch&#39;, &#39;109&#39;)
+        else:
+            file_data = base64.b64decode(file_content[&#39;data&#39;])
+        with open(download_file, &#34;wb&#34;) as f:
+            f.write(file_data)
+        return download_file
     else:
-        self._response_not_success(response)</code></pre>
+        # Handle download via stream API
+        self._download_file_json_req.update({
+            &#34;requestId&#34;: req_id,
+            &#34;userInformation&#34;: {
+                &#34;userGuid&#34;: self._user_guid,
+                &#34;userName&#34;: self._commcell.commcell_username,
+            }
+        })
+
+        flag, response = self._cvpysdk_object.make_request(
+            method=&#34;POST&#34;, url=self._download_via_stream, payload=self._download_file_json_req, stream=True
+        )
+
+        if flag:
+            try:
+                with open(download_file, &#34;wb&#34;) as f:
+                    for content in response.iter_content():
+                        f.write(content)
+            except Exception:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+            return download_file
+        else:
+            self._response_not_success(response)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.activateapps.compliance_utils.Export.refresh"><code class="name flex">
@@ -1375,7 +1502,7 @@ Response was not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/compliance_utils.py#L779-L800" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/compliance_utils.py#L788-L810" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Method to refresh the properties of the class Export&#34;&#34;&#34;
@@ -1384,6 +1511,7 @@ Response was not success</p></div>
     self._update_response_ = self._commcell._update_response_
     self._user_guid = self._commcell.users.get(self._commcell.commcell_username).user_guid
     self._download_file_api = self._services[&#39;DOWNLOAD_EXPORT_ITEMS&#39;]
+    self._download_via_stream = self._services[&#39;DOWNLOAD_VIA_STREAM&#39;]
     self._download_file_json_req = \
         {
             &#34;appTypeId&#34;: 200,
@@ -1413,7 +1541,7 @@ Response was not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/compliance_utils.py#L397-L747" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/compliance_utils.py#L405-L755" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ExportSet():
     &#34;&#34;&#34;Class for an instance of a single Export set of the commcell&#34;&#34;&#34;
@@ -1774,8 +1902,9 @@ Response was not success</p></div>
 </code></dt>
 <dd>
 <div class="desc"><p>Static Method to randomly pick user input amount of items from the search result items</p>
-<h2 id="args">Args</h2>
-<p>result_items
+<p>Args
+-----=
+result_items
 (list)
 -
 List of all the search result items
@@ -1787,12 +1916,13 @@ export_all
 (bool)
 -
 if all the items needs to be selected or not</p>
-<h2 id="returns">Returns</h2>
-<p>List of randomly selected (no_of_files) items from the (result_items)</p></div>
+<p>Returns
+-----=
+List of randomly selected (no_of_files) items from the (result_items)</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/compliance_utils.py#L662-L677" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/compliance_utils.py#L670-L685" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@staticmethod
 def select(result_items, no_of_files=0, export_all=False):
@@ -1818,12 +1948,13 @@ def select(result_items, no_of_files=0, export_all=False):
 <dt id="cvpysdk.activateapps.compliance_utils.ExportSet.export_set_comment"><code class="name">var <span class="ident">export_set_comment</span></code></dt>
 <dd>
 <div class="desc"><p>Method to return the export set comment</p>
-<h2 id="returns">Returns</h2>
-<p>(str) export set comment</p></div>
+<p>Returns
+-----=
+(str) export set comment</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/compliance_utils.py#L709-L717" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/compliance_utils.py#L717-L725" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def export_set_comment(self):
@@ -1839,12 +1970,13 @@ def export_set_comment(self):
 <dt id="cvpysdk.activateapps.compliance_utils.ExportSet.export_set_full_name"><code class="name">var <span class="ident">export_set_full_name</span></code></dt>
 <dd>
 <div class="desc"><p>Method to return the export set full name</p>
-<h2 id="returns">Returns</h2>
-<p>(str) export set full name</p></div>
+<p>Returns
+-----=
+(str) export set full name</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/compliance_utils.py#L689-L697" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/compliance_utils.py#L697-L705" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def export_set_full_name(self):
@@ -1860,12 +1992,13 @@ def export_set_full_name(self):
 <dt id="cvpysdk.activateapps.compliance_utils.ExportSet.export_set_guid"><code class="name">var <span class="ident">export_set_guid</span></code></dt>
 <dd>
 <div class="desc"><p>Method to return the export set Guid</p>
-<h2 id="returns">Returns</h2>
-<p>(str) export set Guid</p></div>
+<p>Returns
+-----=
+(str) export set Guid</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/compliance_utils.py#L729-L737" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/compliance_utils.py#L737-L745" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def export_set_guid(self):
@@ -1881,12 +2014,13 @@ def export_set_guid(self):
 <dt id="cvpysdk.activateapps.compliance_utils.ExportSet.export_set_id"><code class="name">var <span class="ident">export_set_id</span></code></dt>
 <dd>
 <div class="desc"><p>Method to return the export set ID</p>
-<h2 id="returns">Returns</h2>
-<p>(int) export set ID</p></div>
+<p>Returns
+-----=
+(int) export set ID</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/compliance_utils.py#L719-L727" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/compliance_utils.py#L727-L735" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def export_set_id(self):
@@ -1902,12 +2036,13 @@ def export_set_id(self):
 <dt id="cvpysdk.activateapps.compliance_utils.ExportSet.export_set_name"><code class="name">var <span class="ident">export_set_name</span></code></dt>
 <dd>
 <div class="desc"><p>Method to return the export set name</p>
-<h2 id="returns">Returns</h2>
-<p>(str) export set name</p></div>
+<p>Returns
+-----=
+(str) export set name</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/compliance_utils.py#L699-L707" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/compliance_utils.py#L707-L715" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def export_set_name(self):
@@ -1923,12 +2058,13 @@ def export_set_name(self):
 <dt id="cvpysdk.activateapps.compliance_utils.ExportSet.export_set_owner_info"><code class="name">var <span class="ident">export_set_owner_info</span></code></dt>
 <dd>
 <div class="desc"><p>Method to return the export set Owner info</p>
-<h2 id="returns">Returns</h2>
-<p>(str) export set Owner info</p></div>
+<p>Returns
+-----=
+(str) export set Owner info</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/compliance_utils.py#L739-L747" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/compliance_utils.py#L747-L755" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def export_set_owner_info(self):
@@ -1944,12 +2080,13 @@ def export_set_owner_info(self):
 <dt id="cvpysdk.activateapps.compliance_utils.ExportSet.properties"><code class="name">var <span class="ident">properties</span></code></dt>
 <dd>
 <div class="desc"><p>Method to return all the properties of the export set</p>
-<h2 id="returns">Returns</h2>
-<p>Dict of the properties of the export set as received from the API (rawdata)</p></div>
+<p>Returns
+-----=
+Dict of the properties of the export set as received from the API (rawdata)</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/compliance_utils.py#L679-L687" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/compliance_utils.py#L687-L695" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def properties(self):
@@ -1970,19 +2107,22 @@ def properties(self):
 </code></dt>
 <dd>
 <div class="desc"><p>Method to delete the export</p>
-<h2 id="args">Args</h2>
-<p>export_name (str)
+<p>Args
+-----=
+export_name (str)
 -
 Export name to be deleted</p>
-<h2 id="returns">Returns</h2>
-<p>Returns True if delete successfully else raises error</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
+<p>Returns
+-----=
+Returns True if delete successfully else raises error</p>
+<p>Raises
+-----=
+SDKException:
 Response was not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/compliance_utils.py#L600-L626" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/compliance_utils.py#L608-L634" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, export_name):
     &#34;&#34;&#34;Method to delete the export
@@ -2018,8 +2158,9 @@ Response was not success</p></div>
 </code></dt>
 <dd>
 <div class="desc"><p>Method to export items/documents to the export set</p>
-<h2 id="args">Args</h2>
-<p>export_name
+<p>Args
+-----=
+export_name
 (str)
 -
 Export name for the exported items
@@ -2032,15 +2173,17 @@ export_type
 -
 ComplianceConstants.ExportTypes Enum values
 Default: CAB</p>
-<h2 id="returns">Returns</h2>
-<p>Returns the restore job ID for the export operation</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
+<p>Returns
+-----=
+Returns the restore job ID for the export operation</p>
+<p>Raises
+-----=
+SDKException:
 Response was not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/compliance_utils.py#L628-L660" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/compliance_utils.py#L636-L668" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def export_items_to_set(self, export_name, export_items, export_type=ComplianceConstants.ExportTypes.CAB):
     &#34;&#34;&#34;Method to export items/documents to the export set
@@ -2082,16 +2225,18 @@ Response was not success</p></div>
 </code></dt>
 <dd>
 <div class="desc"><p>Method to get the export</p>
-<h2 id="args">Args</h2>
-<p>export_name (str)
+<p>Args
+-----=
+export_name (str)
 -
 Export name to get</p>
-<h2 id="returns">Returns</h2>
-<p>Export class instance for the export with the given name if found else returns None</p></div>
+<p>Returns
+-----=
+Export class instance for the export with the given name if found else returns None</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/compliance_utils.py#L586-L598" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/compliance_utils.py#L594-L606" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, export_name):
     &#34;&#34;&#34;Method to get the export
@@ -2113,16 +2258,18 @@ Export name to get</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Method to check if the export exists or not</p>
-<h2 id="args">Args</h2>
-<p>export_name (str)
+<p>Args
+-----=
+export_name (str)
 -
 Export name to be checked</p>
-<h2 id="returns">Returns</h2>
-<p>Returns True if export exists in the environment or False otherwise</p></div>
+<p>Returns
+-----=
+Returns True if export exists in the environment or False otherwise</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/compliance_utils.py#L574-L584" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/compliance_utils.py#L582-L592" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has(self, export_name):
     &#34;&#34;&#34;Method to check if the export exists or not
@@ -2145,7 +2292,7 @@ Export name to be checked</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/compliance_utils.py#L419-L480" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/compliance_utils.py#L427-L488" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Method to refresh the properties of the class ExportSet&#34;&#34;&#34;
@@ -2216,8 +2363,9 @@ Export name to be checked</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Method to share the export set with the user or user group provided</p>
-<h2 id="args">Args</h2>
-<p>user_or_user_group_name (str)
+<p>Args
+-----=
+user_or_user_group_name (str)
 -
 User or user group with which export set has to be shared
 permissions
@@ -2230,12 +2378,13 @@ mode
 -
 to add (2), remove (3) or overwrite (1) the permissions
 Default : Add (2)</p>
-<h2 id="returns">Returns</h2>
-<p>Returns True if share worked fine else raises an Exception</p></div>
+<p>Returns
+-----=
+Returns True if share worked fine else raises an Exception</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/compliance_utils.py#L512-L572" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/compliance_utils.py#L520-L580" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def share(self, user_or_user_group_name=None, permissions=None, mode=2):
     &#34;&#34;&#34;Method to share the export set with the user or user group provided
@@ -2312,7 +2461,7 @@ Default : Add (2)</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/compliance_utils.py#L234-L394" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/compliance_utils.py#L242-L402" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ExportSets():
     &#34;&#34;&#34;Class for representing all the export sets associated with the commcell&#34;&#34;&#34;
@@ -2483,8 +2632,9 @@ Default : Add (2)</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Method to create an export set to the commcell environment</p>
-<h2 id="args">Args</h2>
-<p>export_set_name
+<p>Args
+-----=
+export_set_name
 (str)
 -
 Export set name for the newly created export set
@@ -2492,12 +2642,13 @@ comment
 (str)
 -
 Export set description fot the newly created export set</p>
-<h2 id="returns">Returns</h2>
-<p>ExportSet instance for the newly created export set</p></div>
+<p>Returns
+-----=
+ExportSet instance for the newly created export set</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/compliance_utils.py#L318-L342" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/compliance_utils.py#L326-L350" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self, export_set_name, comment=None):
     &#34;&#34;&#34;Method to create an export set to the commcell environment
@@ -2531,19 +2682,22 @@ Export set description fot the newly created export set</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Method to delete the export set</p>
-<h2 id="args">Args</h2>
-<p>export_set_name (str)
+<p>Args
+-----=
+export_set_name (str)
 -
 Export set name to be deleted</p>
-<h2 id="returns">Returns</h2>
-<p>Returns True if delete successfully else raises error</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
+<p>Returns
+-----=
+Returns True if delete successfully else raises error</p>
+<p>Raises
+-----=
+SDKException:
 Response was not success</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/compliance_utils.py#L371-L394" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/compliance_utils.py#L379-L402" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, export_set_name):
     &#34;&#34;&#34;Method to delete the export set
@@ -2576,16 +2730,18 @@ Response was not success</p></div>
 </code></dt>
 <dd>
 <div class="desc"><p>Method to get the export set</p>
-<h2 id="args">Args</h2>
-<p>export_set_name (str)
+<p>Args
+-----=
+export_set_name (str)
 -
 Export set name to get</p>
-<h2 id="returns">Returns</h2>
-<p>ExportSet instance for the export set with the given name if found else raises Exception</p></div>
+<p>Returns
+-----=
+ExportSet instance for the export set with the given name if found else raises Exception</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/compliance_utils.py#L356-L369" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/compliance_utils.py#L364-L377" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, export_set_name):
     &#34;&#34;&#34;Method to get the export set
@@ -2608,16 +2764,18 @@ Export set name to get</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Method to check if the export set exists or not</p>
-<h2 id="args">Args</h2>
-<p>export_set_name (str)
+<p>Args
+-----=
+export_set_name (str)
 -
 Export set name to be checked</p>
-<h2 id="returns">Returns</h2>
-<p>Returns True if export set exists in the environment or False otherwise</p></div>
+<p>Returns
+-----=
+Returns True if export set exists in the environment or False otherwise</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/compliance_utils.py#L344-L354" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/compliance_utils.py#L352-L362" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has(self, export_set_name):
     &#34;&#34;&#34;Method to check if the export set exists or not
@@ -2640,7 +2798,7 @@ Export set name to be checked</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/compliance_utils.py#L266-L303" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/compliance_utils.py#L274-L311" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Method to refresh all the properties of the class ExportSets&#34;&#34;&#34;

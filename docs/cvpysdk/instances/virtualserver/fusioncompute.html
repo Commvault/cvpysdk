@@ -28,7 +28,8 @@
 <p>FusionComputeInstance: Derived class from VirtualServer
 Base class, representing a
 Fusion Compute instance, and to perform operations on that instance</p>
-<h2 id="hypervinstance">Hypervinstance</h2>
+<p>Hypervinstance
+-----=</p>
 <p><strong>init</strong>(agent_object,instance_name,instance_id)
 &ndash; initialize object of FusionCompute
 Instance object associated with the
@@ -46,7 +47,7 @@ Specific instance properties</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/fusioncompute.py#L1-L119" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/fusioncompute.py#L1-L178" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -93,18 +94,39 @@ HyperVInstance:
 
 from ..vsinstance import VirtualServerInstance
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ...agent import Agent
+
 
 class FusionComputeInstance(VirtualServerInstance):
-    &#34;&#34;&#34;Class for representing a Fusion Compute of the Virtual Server agent.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents a Fusion Compute instance managed by the Virtual Server agent.
 
-    def __init__(self, agent, instance_name, instance_id=None):
-        &#34;&#34;&#34;Initialize the Instance object for the given Virtual Server instance.
+    This class encapsulates the properties and behaviors specific to a Fusion Compute
+    instance, providing mechanisms to initialize the instance, retrieve its properties,
+    and access key server-related information. It is designed to interact with the
+    underlying agent and manage instance-specific data.
 
-            Args:
-                class_object (agent_object,instance_name,instance_id)  --  instance of the
-                                                                                Agent class,
-                                                                                instance name,
-                                                                                instance id
+    Key Features:
+        - Initialization with agent, instance name, and instance ID
+        - Retrieval of instance properties in both standard and JSON formats
+        - Access to server host name and server name via properties
+        - Access to the associated username via a protected property
+
+    &#34;&#34;&#34;
+
+    def __init__(self, agent: &#39;Agent&#39;, instance_name: str, instance_id: str = None) -&gt; None:
+        &#34;&#34;&#34;Initialize a FusionComputeInstance object for the specified Virtual Server instance.
+
+        Args:
+            agent: An instance of the Agent class representing the associated agent.
+            instance_name: The name of the virtual server instance.
+            instance_id: Optional; the unique identifier for the instance. If not provided, a default or auto-generated ID may be used.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(client_object, &#34;Virtual Server&#34;)
+            &gt;&gt;&gt; instance = FusionComputeInstance(agent, &#34;MyInstance&#34;, &#34;12345&#34;)
 
         &#34;&#34;&#34;
 
@@ -114,14 +136,16 @@ class FusionComputeInstance(VirtualServerInstance):
         self._server_host_name = []
         super(FusionComputeInstance, self).__init__(agent, instance_name, instance_id)
 
-    def _get_instance_properties(self):
-        &#34;&#34;&#34;
-        Get the properties of this instance
+    def _get_instance_properties(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve and update the properties of this FusionCompute instance.
 
-        Raise:
-            SDK Exception:
-                if response is not empty
-                if response is not success
+        This method fetches the latest properties for the FusionCompute instance and updates
+        the internal state accordingly. It should be called to ensure the instance properties
+        are current.
+
+        Raises:
+            SDKException: If the response is not empty or the response indicates a failure.
+
         &#34;&#34;&#34;
 
         super(FusionComputeInstance, self)._get_instance_properties()
@@ -132,11 +156,11 @@ class FusionComputeInstance(VirtualServerInstance):
 
             self._server_host_name.append(self._vmwarvendor[&#34;domainName&#34;])
 
-    def _get_instance_properties_json(self):
-        &#34;&#34;&#34;get the all instance related properties of this subclient.
+    def _get_instance_properties_json(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve all instance-related properties for this subclient as a dictionary.
 
-          Returns:
-               dict - all instance properties put inside a dict
+        Returns:
+            dict: A dictionary containing all properties associated with this FusionCompute instance.
 
         &#34;&#34;&#34;
         instance_json = {
@@ -154,18 +178,47 @@ class FusionComputeInstance(VirtualServerInstance):
         return instance_json
 
     @property
-    def server_host_name(self):
-        &#34;&#34;&#34;return the Fusion compute VRM  associated with the PseudoClient&#34;&#34;&#34;
+    def server_host_name(self) -&gt; list:
+        &#34;&#34;&#34;Get the FusionCompute VRM server host name associated with the PseudoClient.
+
+        Returns:
+            The host name of the FusionCompute VRM server as a string.
+
+        Example:
+            &gt;&gt;&gt; instance = FusionComputeInstance()
+            &gt;&gt;&gt; vrm_host = instance.server_host_name
+            &gt;&gt;&gt; print(f&#34;VRM Host Name: {vrm_host}&#34;)
+        &#34;&#34;&#34;
         return self._server_host_name
 
     @property
-    def server_name(self):
-        &#34;&#34;&#34;getter for the domain name in the vmware vendor json&#34;&#34;&#34;
+    def server_name(self) -&gt; list:
+        &#34;&#34;&#34;Get the server name (domain name) from the FusionCompute vendor JSON.
+
+        Returns:
+            The domain name as a list.
+
+        Example:
+            &gt;&gt;&gt; instance = FusionComputeInstance()
+            &gt;&gt;&gt; domain = instance.server_name
+            &gt;&gt;&gt; print(f&#34;FusionCompute domain name: {domain}&#34;)
+
+        &#34;&#34;&#34;
         return self._server_name
 
     @property
-    def _user_name(self):
-        &#34;&#34;&#34;getter for the username from the vmware vendor json&#34;&#34;&#34;
+    def _user_name(self) -&gt; str:
+        &#34;&#34;&#34;Get the username from the VMware vendor JSON configuration.
+
+        Returns:
+            The username as a string extracted from the VMware vendor JSON.
+
+        Example:
+            &gt;&gt;&gt; instance = FusionComputeInstance()
+            &gt;&gt;&gt; username = instance._user_name
+            &gt;&gt;&gt; print(f&#34;VMware username: {username}&#34;)
+
+        &#34;&#34;&#34;
         return self._vmwarvendor.get(&#34;userName&#34;, &#34;&#34;)</code></pre>
 </details>
 </section>
@@ -180,34 +233,68 @@ class FusionComputeInstance(VirtualServerInstance):
 <dl>
 <dt id="cvpysdk.instances.virtualserver.fusioncompute.FusionComputeInstance"><code class="flex name class">
 <span>class <span class="ident">FusionComputeInstance</span></span>
-<span>(</span><span>agent, instance_name, instance_id=None)</span>
+<span>(</span><span>agent: Agent, instance_name: str, instance_id: str = None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for representing a Fusion Compute of the Virtual Server agent.</p>
-<p>Initialize the Instance object for the given Virtual Server instance.</p>
-<h2 id="args">Args</h2>
-<p>class_object (agent_object,instance_name,instance_id)
-&ndash;
-instance of the
-Agent class,
-instance name,
-instance id</p></div>
+<div class="desc"><p>Represents a Fusion Compute instance managed by the Virtual Server agent.</p>
+<p>This class encapsulates the properties and behaviors specific to a Fusion Compute
+instance, providing mechanisms to initialize the instance, retrieve its properties,
+and access key server-related information. It is designed to interact with the
+underlying agent and manage instance-specific data.</p>
+<p>Key Features:
+- Initialization with agent, instance name, and instance ID
+- Retrieval of instance properties in both standard and JSON formats
+- Access to server host name and server name via properties
+- Access to the associated username via a protected property</p>
+<p>Initialize a FusionComputeInstance object for the specified Virtual Server instance.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>agent</code></strong></dt>
+<dd>An instance of the Agent class representing the associated agent.</dd>
+<dt><strong><code>instance_name</code></strong></dt>
+<dd>The name of the virtual server instance.</dd>
+<dt><strong><code>instance_id</code></strong></dt>
+<dd>Optional; the unique identifier for the instance. If not provided, a default or auto-generated ID may be used.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; agent = Agent(client_object, &quot;Virtual Server&quot;)
+&gt;&gt;&gt; instance = FusionComputeInstance(agent, &quot;MyInstance&quot;, &quot;12345&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/fusioncompute.py#L47-L119" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/fusioncompute.py#L51-L178" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class FusionComputeInstance(VirtualServerInstance):
-    &#34;&#34;&#34;Class for representing a Fusion Compute of the Virtual Server agent.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents a Fusion Compute instance managed by the Virtual Server agent.
 
-    def __init__(self, agent, instance_name, instance_id=None):
-        &#34;&#34;&#34;Initialize the Instance object for the given Virtual Server instance.
+    This class encapsulates the properties and behaviors specific to a Fusion Compute
+    instance, providing mechanisms to initialize the instance, retrieve its properties,
+    and access key server-related information. It is designed to interact with the
+    underlying agent and manage instance-specific data.
 
-            Args:
-                class_object (agent_object,instance_name,instance_id)  --  instance of the
-                                                                                Agent class,
-                                                                                instance name,
-                                                                                instance id
+    Key Features:
+        - Initialization with agent, instance name, and instance ID
+        - Retrieval of instance properties in both standard and JSON formats
+        - Access to server host name and server name via properties
+        - Access to the associated username via a protected property
+
+    &#34;&#34;&#34;
+
+    def __init__(self, agent: &#39;Agent&#39;, instance_name: str, instance_id: str = None) -&gt; None:
+        &#34;&#34;&#34;Initialize a FusionComputeInstance object for the specified Virtual Server instance.
+
+        Args:
+            agent: An instance of the Agent class representing the associated agent.
+            instance_name: The name of the virtual server instance.
+            instance_id: Optional; the unique identifier for the instance. If not provided, a default or auto-generated ID may be used.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(client_object, &#34;Virtual Server&#34;)
+            &gt;&gt;&gt; instance = FusionComputeInstance(agent, &#34;MyInstance&#34;, &#34;12345&#34;)
 
         &#34;&#34;&#34;
 
@@ -217,14 +304,16 @@ instance id</p></div>
         self._server_host_name = []
         super(FusionComputeInstance, self).__init__(agent, instance_name, instance_id)
 
-    def _get_instance_properties(self):
-        &#34;&#34;&#34;
-        Get the properties of this instance
+    def _get_instance_properties(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve and update the properties of this FusionCompute instance.
 
-        Raise:
-            SDK Exception:
-                if response is not empty
-                if response is not success
+        This method fetches the latest properties for the FusionCompute instance and updates
+        the internal state accordingly. It should be called to ensure the instance properties
+        are current.
+
+        Raises:
+            SDKException: If the response is not empty or the response indicates a failure.
+
         &#34;&#34;&#34;
 
         super(FusionComputeInstance, self)._get_instance_properties()
@@ -235,11 +324,11 @@ instance id</p></div>
 
             self._server_host_name.append(self._vmwarvendor[&#34;domainName&#34;])
 
-    def _get_instance_properties_json(self):
-        &#34;&#34;&#34;get the all instance related properties of this subclient.
+    def _get_instance_properties_json(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve all instance-related properties for this subclient as a dictionary.
 
-          Returns:
-               dict - all instance properties put inside a dict
+        Returns:
+            dict: A dictionary containing all properties associated with this FusionCompute instance.
 
         &#34;&#34;&#34;
         instance_json = {
@@ -257,18 +346,47 @@ instance id</p></div>
         return instance_json
 
     @property
-    def server_host_name(self):
-        &#34;&#34;&#34;return the Fusion compute VRM  associated with the PseudoClient&#34;&#34;&#34;
+    def server_host_name(self) -&gt; list:
+        &#34;&#34;&#34;Get the FusionCompute VRM server host name associated with the PseudoClient.
+
+        Returns:
+            The host name of the FusionCompute VRM server as a string.
+
+        Example:
+            &gt;&gt;&gt; instance = FusionComputeInstance()
+            &gt;&gt;&gt; vrm_host = instance.server_host_name
+            &gt;&gt;&gt; print(f&#34;VRM Host Name: {vrm_host}&#34;)
+        &#34;&#34;&#34;
         return self._server_host_name
 
     @property
-    def server_name(self):
-        &#34;&#34;&#34;getter for the domain name in the vmware vendor json&#34;&#34;&#34;
+    def server_name(self) -&gt; list:
+        &#34;&#34;&#34;Get the server name (domain name) from the FusionCompute vendor JSON.
+
+        Returns:
+            The domain name as a list.
+
+        Example:
+            &gt;&gt;&gt; instance = FusionComputeInstance()
+            &gt;&gt;&gt; domain = instance.server_name
+            &gt;&gt;&gt; print(f&#34;FusionCompute domain name: {domain}&#34;)
+
+        &#34;&#34;&#34;
         return self._server_name
 
     @property
-    def _user_name(self):
-        &#34;&#34;&#34;getter for the username from the vmware vendor json&#34;&#34;&#34;
+    def _user_name(self) -&gt; str:
+        &#34;&#34;&#34;Get the username from the VMware vendor JSON configuration.
+
+        Returns:
+            The username as a string extracted from the VMware vendor JSON.
+
+        Example:
+            &gt;&gt;&gt; instance = FusionComputeInstance()
+            &gt;&gt;&gt; username = instance._user_name
+            &gt;&gt;&gt; print(f&#34;VMware username: {username}&#34;)
+
+        &#34;&#34;&#34;
         return self._vmwarvendor.get(&#34;userName&#34;, &#34;&#34;)</code></pre>
 </details>
 <h3>Ancestors</h3>
@@ -278,32 +396,68 @@ instance id</p></div>
 </ul>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.instances.virtualserver.fusioncompute.FusionComputeInstance.server_host_name"><code class="name">var <span class="ident">server_host_name</span></code></dt>
+<dt id="cvpysdk.instances.virtualserver.fusioncompute.FusionComputeInstance.server_host_name"><code class="name">var <span class="ident">server_host_name</span> : list</code></dt>
 <dd>
-<div class="desc"><p>return the Fusion compute VRM
-associated with the PseudoClient</p></div>
+<div class="desc"><p>Get the FusionCompute VRM server host name associated with the PseudoClient.</p>
+<p>Returns
+-----=
+The host name of the FusionCompute VRM server as a string.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; instance = FusionComputeInstance()
+&gt;&gt;&gt; vrm_host = instance.server_host_name
+&gt;&gt;&gt; print(f&quot;VRM Host Name: {vrm_host}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/fusioncompute.py#L106-L109" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/fusioncompute.py#L133-L146" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def server_host_name(self):
-    &#34;&#34;&#34;return the Fusion compute VRM  associated with the PseudoClient&#34;&#34;&#34;
+def server_host_name(self) -&gt; list:
+    &#34;&#34;&#34;Get the FusionCompute VRM server host name associated with the PseudoClient.
+
+    Returns:
+        The host name of the FusionCompute VRM server as a string.
+
+    Example:
+        &gt;&gt;&gt; instance = FusionComputeInstance()
+        &gt;&gt;&gt; vrm_host = instance.server_host_name
+        &gt;&gt;&gt; print(f&#34;VRM Host Name: {vrm_host}&#34;)
+    &#34;&#34;&#34;
     return self._server_host_name</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.virtualserver.fusioncompute.FusionComputeInstance.server_name"><code class="name">var <span class="ident">server_name</span></code></dt>
+<dt id="cvpysdk.instances.virtualserver.fusioncompute.FusionComputeInstance.server_name"><code class="name">var <span class="ident">server_name</span> : list</code></dt>
 <dd>
-<div class="desc"><p>getter for the domain name in the vmware vendor json</p></div>
+<div class="desc"><p>Get the server name (domain name) from the FusionCompute vendor JSON.</p>
+<p>Returns
+-----=
+The domain name as a list.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; instance = FusionComputeInstance()
+&gt;&gt;&gt; domain = instance.server_name
+&gt;&gt;&gt; print(f&quot;FusionCompute domain name: {domain}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/fusioncompute.py#L111-L114" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/fusioncompute.py#L148-L162" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def server_name(self):
-    &#34;&#34;&#34;getter for the domain name in the vmware vendor json&#34;&#34;&#34;
+def server_name(self) -&gt; list:
+    &#34;&#34;&#34;Get the server name (domain name) from the FusionCompute vendor JSON.
+
+    Returns:
+        The domain name as a list.
+
+    Example:
+        &gt;&gt;&gt; instance = FusionComputeInstance()
+        &gt;&gt;&gt; domain = instance.server_name
+        &gt;&gt;&gt; print(f&#34;FusionCompute domain name: {domain}&#34;)
+
+    &#34;&#34;&#34;
     return self._server_name</code></pre>
 </details>
 </dd>

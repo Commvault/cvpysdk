@@ -27,8 +27,9 @@
 <p>HANAServerSubclient is the only class defined in this file.</p>
 <p>HANAServerSubclient: Derived class from Subclient Base class, representing a HANA server subclient,
 and to perform operations on that subclient</p>
-<h2 id="hanaserversubclient">Hanaserversubclient</h2>
-<p>_backup_request_json()
+<p>Hanaserversubclient
+-----=
+_backup_request_json()
 &ndash;
 prepares the json for the backup request</p>
 <p>_get_subclient_properties()
@@ -42,7 +43,7 @@ run a backup job for the subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/hanasubclient.py#L1-L171" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/hanasubclient.py#L1-L171" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -228,31 +229,32 @@ class SAPHANASubclient(DatabaseSubclient):
 <dl>
 <dt id="cvpysdk.subclients.hanasubclient.SAPHANASubclient"><code class="flex name class">
 <span>class <span class="ident">SAPHANASubclient</span></span>
-<span>(</span><span>backupset_object, subclient_name, subclient_id=None)</span>
+<span>(</span><span>backupset_object: object, subclient_name: str, subclient_id: str = None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Derived class from Subclient Base class, representing a SAP HANA subclient,
 and to perform operations on that subclient.</p>
-<p>Initialise the Subclient object.</p>
-<h2 id="args">Args</h2>
-<p>backupset_object (object)
-&ndash;
-instance of the Backupset class</p>
-<p>subclient_name
-(str)
-&ndash;
-name of the subclient</p>
-<p>subclient_id
-(str)
-&ndash;
-id of the subclient
-default: None</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Subclient class</p></div>
+<p>Initialize a Subclient object.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>backupset_object</code></strong></dt>
+<dd>Instance of the Backupset class to which this subclient belongs.</dd>
+<dt><strong><code>subclient_name</code></strong></dt>
+<dd>Name of the subclient.</dd>
+<dt><strong><code>subclient_id</code></strong></dt>
+<dd>Optional; ID of the subclient. If not provided, it will be determined automatically.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; backupset = Backupset(client_object, 'defaultBackupSet')
+&gt;&gt;&gt; subclient = Subclient(backupset, 'default')
+&gt;&gt;&gt; print(f&quot;Subclient created: {subclient}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/hanasubclient.py#L40-L171" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/hanasubclient.py#L40-L171" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class SAPHANASubclient(DatabaseSubclient):
     &#34;&#34;&#34;Derived class from Subclient Base class, representing a SAP HANA subclient,
@@ -394,13 +396,68 @@ default: None</p>
 </ul>
 <h3>Instance variables</h3>
 <dl>
+<dt id="cvpysdk.subclients.hanasubclient.SAPHANASubclient.browse"><code class="name">var <span class="ident">browse</span></code></dt>
+<dd>
+<div class="desc"><p>Browse the content of the Subclient.</p>
+<p>This method allows you to explore the files and folders protected by the Subclient.
+You can specify browse options either as a single dictionary argument or as keyword arguments.
+The method returns a tuple containing a list of file/folder paths and a dictionary with detailed metadata.</p>
+<p>You can refer to the supported browse options in the <code>default_browse_options</code> documentation:
+<a href="https://github.com/CommvaultEngg/cvpysdk/blob/master/cvpysdk/backupset.py#L565">https://github.com/CommvaultEngg/cvpysdk/blob/master/cvpysdk/backupset.py#L565</a></p>
+<p>Examples
+-----=</p>
+<h1 id="using-a-dictionary-of-browse-options">Using a dictionary of browse options</h1>
+<pre><code class="language-python-repl">&gt;&gt;&gt; result = subclient.browse({
+...     'path': 'c:\hello',
+...     'show_deleted': True,
+...     'from_time': '2014-04-20 12:00:00',
+...     'to_time': '2016-04-21 12:00:00'
+... })
+&gt;&gt;&gt; file_list, metadata = result
+&gt;&gt;&gt; print(file_list)
+&gt;&gt;&gt; print(metadata)
+</code></pre>
+<h1 id="using-keyword-arguments-for-browse-options">Using keyword arguments for browse options</h1>
+<pre><code class="language-python-repl">&gt;&gt;&gt; file_list, metadata = subclient.browse(
+...     path='c:\hello',
+...     show_deleted=True,
+...     from_time='2014-04-20 12:00:00',
+...     to_time='2016-04-21 12:00:00'
+... )
+&gt;&gt;&gt; print(file_list)
+&gt;&gt;&gt; print(metadata)
+</code></pre>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>tuple[list, dict]</code></dt>
+<dd>
+<ul>
+<li>list: List of file and folder paths from the browse response.</li>
+<li>dict: Dictionary containing all paths with additional metadata from the browse operation.</li>
+</ul>
+</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/hanasubclient.py#L98-L103" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def browse(self):
+    raise AttributeError(&#34;&#39;{0}&#39; object has no attribute &#39;{1}&#39;&#34;.format(
+        self.__class__.__name__,
+        &#39;browse&#39;
+    ))</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.subclients.hanasubclient.SAPHANASubclient.browse_in_time"><code class="name">var <span class="ident">browse_in_time</span></code></dt>
 <dd>
 <div class="desc"></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/hanasubclient.py#L105-L110" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/hanasubclient.py#L105-L110" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def browse_in_time(self):
@@ -416,12 +473,219 @@ def browse_in_time(self):
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/hanasubclient.py#L75-L78" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/hanasubclient.py#L75-L78" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def content(self):
     &#34;&#34;&#34;Treats the subclient content as a property of the Subclient class.&#34;&#34;&#34;
     return self._content</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.subclients.hanasubclient.SAPHANASubclient.find"><code class="name">var <span class="ident">find</span></code></dt>
+<dd>
+<div class="desc"><p>Search for files or folders in the backed up content of the subclient.</p>
+<p>This method allows you to search for files and folders that match specified filters
+within the subclient's backup content. You can provide search criteria either as a
+dictionary of browse options or as keyword arguments.</p>
+<p>Supported options include:
+- file_name (str): Pattern to match file names (e.g., '*.txt').
+- show_deleted (bool): Whether to include deleted files in the results.
+- from_time (str): Start time for the search range (format: 'YYYY-MM-DD HH:MM:SS').
+- to_time (str): End time for the search range (format: 'YYYY-MM-DD HH:MM:SS').
+- file_size_gt (int): Find files with size greater than the specified value (in bytes).
+- file_size_lt (int): Find files with size less than the specified value (in bytes).
+- file_size_et (int): Find files with size equal to the specified value (in bytes).</p>
+<p>For a complete list of supported options, refer to the
+<code>default_browse_options</code>_ documentation.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>*args</code></strong></dt>
+<dd>Optional positional arguments. Typically, a single dictionary of browse options.</dd>
+<dt><strong><code>**kwargs</code></strong></dt>
+<dd>Optional keyword arguments specifying browse options.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>tuple[list, dict]</code></dt>
+<dd>
+<ul>
+<li>A list of file and folder paths matching the search criteria.</li>
+<li>A dictionary containing all matched paths with additional metadata from the browse operation.</li>
+</ul>
+</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; # Using a dictionary of browse options
+&gt;&gt;&gt; results, metadata = subclient.find({
+...     'file_name': '*.txt',
+...     'show_deleted': True,
+...     'from_time': '2022-01-01 00:00:00',
+...     'to_time': '2022-12-31 23:59:59'
+... })
+&gt;&gt;&gt; print(f&quot;Found {len(results)} .txt files&quot;)
+</code></pre>
+<pre><code class="language-python-repl">&gt;&gt;&gt; # Using keyword arguments
+&gt;&gt;&gt; results, metadata = subclient.find(
+...     file_name='report_*.csv',
+...     file_size_gt=1024,
+...     show_deleted=False
+... )
+&gt;&gt;&gt; for path in results:
+...     print(path)
+</code></pre>
+<p>.. _default_browse_options: <a href="https://github.com/CommvaultEngg/cvpysdk/blob/master/cvpysdk/backupset.py#L565">https://github.com/CommvaultEngg/cvpysdk/blob/master/cvpysdk/backupset.py#L565</a></p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/hanasubclient.py#L112-L117" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def find(self):
+    raise AttributeError(&#34;&#39;{0}&#39; object has no attribute &#39;{1}&#39;&#34;.format(
+        self.__class__.__name__,
+        &#39;find&#39;
+    ))</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.subclients.hanasubclient.SAPHANASubclient.restore_in_place"><code class="name">var <span class="ident">restore_in_place</span></code></dt>
+<dd>
+<div class="desc"><p>Restore files or folders to their original location on the client.</p>
+<p>This method restores the specified files or folders (provided in the <code>paths</code> list) to their original location
+on the client. You can control overwrite behavior, restore ACLs, specify copy precedence, set time filters,
+and provide advanced restore options. The restore can be performed immediately or scheduled for later execution.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>paths</code></strong></dt>
+<dd>List of full file or folder paths to restore.</dd>
+<dt><strong><code>overwrite</code></strong></dt>
+<dd>If True, existing files at the destination will be overwritten. Default is True.</dd>
+<dt><strong><code>restore_data_and_acl</code></strong></dt>
+<dd>If True, both data and ACLs are restored. Default is True.</dd>
+<dt><strong><code>copy_precedence</code></strong></dt>
+<dd>Optional storage policy copy precedence value. Default is None.</dd>
+<dt><strong><code>from_time</code></strong></dt>
+<dd>Optional string specifying the start time for restore (format: 'YYYY-MM-DD HH:MM:SS').</dd>
+<dt><strong><code>to_time</code></strong></dt>
+<dd>Optional string specifying the end time for restore (format: 'YYYY-MM-DD HH:MM:SS').</dd>
+<dt><strong><code>fs_options</code></strong></dt>
+<dd>Optional dictionary of advanced file system restore options, such as:
+- all_versions (bool): Restore all versions of the specified file.
+- versions (list): List of version numbers to restore.
+- validate_only (bool): Validate data for restore without performing the restore.</dd>
+<dt><strong><code>schedule_pattern</code></strong></dt>
+<dd>Optional dictionary specifying scheduling options for the restore job.
+Refer to <code>schedules.schedulePattern.createSchedule()</code> documentation for details.</dd>
+<dt><strong><code>proxy_client</code></strong></dt>
+<dd>Optional string specifying the proxy client to use during NAS operations.</dd>
+<dt><strong><code>advanced_options</code></strong></dt>
+<dd>Optional dictionary of advanced restore options, such as:
+- job_description (str): Description for the restore job.
+- timezone (str): Timezone to use for the restore. Use the TIMEZONES dict in constants.py.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>object</code></dt>
+<dd>An instance of the Job class if the restore is immediate, or an instance of the Schedule class if the restore is scheduled.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If <code>paths</code> is not a list, if the job fails to initialize, if the response is empty, or if the response is not successful.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; subclient = Subclient()
+&gt;&gt;&gt; restore_job = subclient.restore_in_place(
+...     paths=['/data/file1.txt', '/data/folder2'],
+...     overwrite=True,
+...     restore_data_and_acl=True,
+...     from_time='2023-01-01 00:00:00',
+...     to_time='2023-12-31 23:59:59',
+...     fs_options={'all_versions': True},
+...     advanced_options={'job_description': 'Restore job for year-end'}
+... )
+&gt;&gt;&gt; print(f&quot;Restore job started: {restore_job}&quot;)
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/hanasubclient.py#L119-L124" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def restore_in_place(self):
+    raise AttributeError(&#34;&#39;{0}&#39; object has no attribute &#39;{1}&#39;&#34;.format(
+        self.__class__.__name__,
+        &#39;restore_in_place&#39;
+    ))</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.subclients.hanasubclient.SAPHANASubclient.restore_out_of_place"><code class="name">var <span class="ident">restore_out_of_place</span></code></dt>
+<dd>
+<div class="desc"><p>Restore specified files or folders to a different client and destination path.</p>
+<p>This method restores the files or folders listed in <code>paths</code> to the specified <code>destination_path</code>
+on the given <code>client</code>. It supports various options such as overwriting existing files, restoring
+data and ACLs, specifying copy precedence, time filters, advanced file system options, scheduling,
+proxy client, and additional advanced restore options.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>client</code></strong></dt>
+<dd>The target client for restore. Can be a client name (str) or a Client object.</dd>
+<dt><strong><code>destination_path</code></strong></dt>
+<dd>Full path on the destination client where data will be restored.</dd>
+<dt><strong><code>paths</code></strong></dt>
+<dd>List of full file or folder paths to restore.</dd>
+<dt><strong><code>overwrite</code></strong></dt>
+<dd>If True, existing files at the destination will be overwritten. Default is True.</dd>
+<dt><strong><code>restore_data_and_acl</code></strong></dt>
+<dd>If True, both data and ACLs are restored. Default is True.</dd>
+<dt><strong><code>copy_precedence</code></strong></dt>
+<dd>Optional; copy precedence value for storage policy copy.</dd>
+<dt><strong><code>from_time</code></strong></dt>
+<dd>Optional; restore data backed up after this time (format: 'YYYY-MM-DD HH:MM:SS').</dd>
+<dt><strong><code>to_time</code></strong></dt>
+<dd>Optional; restore data backed up before this time (format: 'YYYY-MM-DD HH:MM:SS').</dd>
+<dt><strong><code>fs_options</code></strong></dt>
+<dd>Optional; dictionary of advanced file system restore options (e.g., preserve_level, proxy_client, impersonate_user, all_versions, versions, media_agent, validate_only).</dd>
+<dt><strong><code>schedule_pattern</code></strong></dt>
+<dd>Optional; dictionary specifying scheduling options for the restore job.</dd>
+<dt><strong><code>proxy_client</code></strong></dt>
+<dd>Optional; proxy client name to use during restore (for NAS operations).</dd>
+<dt><strong><code>advanced_options</code></strong></dt>
+<dd>Optional; dictionary of advanced restore options (e.g., job_description, timezone).</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>object</code></dt>
+<dd>An instance of the Job class if the restore is immediate, or an instance of the Schedule class if the restore is scheduled.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If input parameters are invalid or if the restore job fails to initialize or execute.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; # Restore files to a different client and path
+&gt;&gt;&gt; subclient = Subclient()
+&gt;&gt;&gt; job = subclient.restore_out_of_place(
+...     client='TargetClient',
+...     destination_path='/restore/location/',
+...     paths=['/data/file1.txt', '/data/file2.txt'],
+...     overwrite=True,
+...     restore_data_and_acl=True
+... )
+&gt;&gt;&gt; print(f&quot;Restore job started: {job}&quot;)
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/hanasubclient.py#L126-L131" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def restore_out_of_place(self):
+    raise AttributeError(&#34;&#39;{0}&#39; object has no attribute &#39;{1}&#39;&#34;.format(
+        self.__class__.__name__,
+        &#39;restore_out_of_place&#39;
+    ))</code></pre>
 </details>
 </dd>
 </dl>
@@ -432,8 +696,9 @@ def content(self):
 </code></dt>
 <dd>
 <div class="desc"><p>Runs a backup job for the subclient of the level specified.</p>
-<h2 id="args">Args</h2>
-<p>backup_level
+<p>Args
+-----=
+backup_level
 (str)
 &ndash;
 level of backup the user wish to run
@@ -444,10 +709,12 @@ default: Differential</p>
 &ndash;
 the prefix that the user wish to add to the backup
 default: None</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this backup job</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
+<p>Returns
+-----=
+object - instance of the Job class for this backup job</p>
+<p>Raises
+-----=
+SDKException:
 if backup level specified is not correct</p>
 <pre><code>if response is empty
 
@@ -456,7 +723,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/hanasubclient.py#L133-L171" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/hanasubclient.py#L133-L171" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def backup(
         self,
@@ -504,8 +771,9 @@ if response is not success
 <ul class="hlist">
 <li><code><b><a title="cvpysdk.subclients.dbsubclient.DatabaseSubclient" href="dbsubclient.html#cvpysdk.subclients.dbsubclient.DatabaseSubclient">DatabaseSubclient</a></b></code>:
 <ul class="hlist">
+<li><code><a title="cvpysdk.subclients.dbsubclient.DatabaseSubclient.additional_settings" href="../subclient.html#cvpysdk.subclient.Subclient.additional_settings">additional_settings</a></code></li>
 <li><code><a title="cvpysdk.subclients.dbsubclient.DatabaseSubclient.allow_multiple_readers" href="../subclient.html#cvpysdk.subclient.Subclient.allow_multiple_readers">allow_multiple_readers</a></code></li>
-<li><code><a title="cvpysdk.subclients.dbsubclient.DatabaseSubclient.browse" href="../subclient.html#cvpysdk.subclient.Subclient.browse">browse</a></code></li>
+<li><code><a title="cvpysdk.subclients.dbsubclient.DatabaseSubclient.browse_Cosmos_Content" href="../subclient.html#cvpysdk.subclient.Subclient.browse_Cosmos_Content">browse_Cosmos_Content</a></code></li>
 <li><code><a title="cvpysdk.subclients.dbsubclient.DatabaseSubclient.data_readers" href="../subclient.html#cvpysdk.subclient.Subclient.data_readers">data_readers</a></code></li>
 <li><code><a title="cvpysdk.subclients.dbsubclient.DatabaseSubclient.deduplication_options" href="../subclient.html#cvpysdk.subclient.Subclient.deduplication_options">deduplication_options</a></code></li>
 <li><code><a title="cvpysdk.subclients.dbsubclient.DatabaseSubclient.description" href="../subclient.html#cvpysdk.subclient.Subclient.description">description</a></code></li>
@@ -519,7 +787,6 @@ if response is not success
 <li><code><a title="cvpysdk.subclients.dbsubclient.DatabaseSubclient.enable_trueup_days" href="../subclient.html#cvpysdk.subclient.Subclient.enable_trueup_days">enable_trueup_days</a></code></li>
 <li><code><a title="cvpysdk.subclients.dbsubclient.DatabaseSubclient.encryption_flag" href="../subclient.html#cvpysdk.subclient.Subclient.encryption_flag">encryption_flag</a></code></li>
 <li><code><a title="cvpysdk.subclients.dbsubclient.DatabaseSubclient.exclude_from_sla" href="../subclient.html#cvpysdk.subclient.Subclient.exclude_from_sla">exclude_from_sla</a></code></li>
-<li><code><a title="cvpysdk.subclients.dbsubclient.DatabaseSubclient.find" href="../subclient.html#cvpysdk.subclient.Subclient.find">find</a></code></li>
 <li><code><a title="cvpysdk.subclients.dbsubclient.DatabaseSubclient.find_latest_job" href="../subclient.html#cvpysdk.subclient.Subclient.find_latest_job">find_latest_job</a></code></li>
 <li><code><a title="cvpysdk.subclients.dbsubclient.DatabaseSubclient.get_ma_associated_storagepolicy" href="../subclient.html#cvpysdk.subclient.Subclient.get_ma_associated_storagepolicy">get_ma_associated_storagepolicy</a></code></li>
 <li><code><a title="cvpysdk.subclients.dbsubclient.DatabaseSubclient.is_backup_enabled" href="../subclient.html#cvpysdk.subclient.Subclient.is_backup_enabled">is_backup_enabled</a></code></li>
@@ -538,10 +805,9 @@ if response is not success
 <li><code><a title="cvpysdk.subclients.dbsubclient.DatabaseSubclient.properties" href="../subclient.html#cvpysdk.subclient.Subclient.properties">properties</a></code></li>
 <li><code><a title="cvpysdk.subclients.dbsubclient.DatabaseSubclient.read_buffer_size" href="../subclient.html#cvpysdk.subclient.Subclient.read_buffer_size">read_buffer_size</a></code></li>
 <li><code><a title="cvpysdk.subclients.dbsubclient.DatabaseSubclient.refresh" href="../subclient.html#cvpysdk.subclient.Subclient.refresh">refresh</a></code></li>
-<li><code><a title="cvpysdk.subclients.dbsubclient.DatabaseSubclient.restore_in_place" href="../subclient.html#cvpysdk.subclient.Subclient.restore_in_place">restore_in_place</a></code></li>
-<li><code><a title="cvpysdk.subclients.dbsubclient.DatabaseSubclient.restore_out_of_place" href="../subclient.html#cvpysdk.subclient.Subclient.restore_out_of_place">restore_out_of_place</a></code></li>
 <li><code><a title="cvpysdk.subclients.dbsubclient.DatabaseSubclient.run_content_indexing" href="../subclient.html#cvpysdk.subclient.Subclient.run_content_indexing">run_content_indexing</a></code></li>
 <li><code><a title="cvpysdk.subclients.dbsubclient.DatabaseSubclient.set_backup_nodes" href="../subclient.html#cvpysdk.subclient.Subclient.set_backup_nodes">set_backup_nodes</a></code></li>
+<li><code><a title="cvpysdk.subclients.dbsubclient.DatabaseSubclient.set_proxy_for_backup_copy" href="../subclient.html#cvpysdk.subclient.Subclient.set_proxy_for_backup_copy">set_proxy_for_backup_copy</a></code></li>
 <li><code><a title="cvpysdk.subclients.dbsubclient.DatabaseSubclient.set_proxy_for_snap" href="../subclient.html#cvpysdk.subclient.Subclient.set_proxy_for_snap">set_proxy_for_snap</a></code></li>
 <li><code><a title="cvpysdk.subclients.dbsubclient.DatabaseSubclient.snapshot_engine_name" href="../subclient.html#cvpysdk.subclient.Subclient.snapshot_engine_name">snapshot_engine_name</a></code></li>
 <li><code><a title="cvpysdk.subclients.dbsubclient.DatabaseSubclient.software_compression" href="../subclient.html#cvpysdk.subclient.Subclient.software_compression">software_compression</a></code></li>
@@ -551,7 +817,9 @@ if response is not success
 <li><code><a title="cvpysdk.subclients.dbsubclient.DatabaseSubclient.subclient_guid" href="../subclient.html#cvpysdk.subclient.Subclient.subclient_guid">subclient_guid</a></code></li>
 <li><code><a title="cvpysdk.subclients.dbsubclient.DatabaseSubclient.subclient_id" href="../subclient.html#cvpysdk.subclient.Subclient.subclient_id">subclient_id</a></code></li>
 <li><code><a title="cvpysdk.subclients.dbsubclient.DatabaseSubclient.subclient_name" href="../subclient.html#cvpysdk.subclient.Subclient.subclient_name">subclient_name</a></code></li>
+<li><code><a title="cvpysdk.subclients.dbsubclient.DatabaseSubclient.unset_proxy_for_backup_copy" href="../subclient.html#cvpysdk.subclient.Subclient.unset_proxy_for_backup_copy">unset_proxy_for_backup_copy</a></code></li>
 <li><code><a title="cvpysdk.subclients.dbsubclient.DatabaseSubclient.unset_proxy_for_snap" href="../subclient.html#cvpysdk.subclient.Subclient.unset_proxy_for_snap">unset_proxy_for_snap</a></code></li>
+<li><code><a title="cvpysdk.subclients.dbsubclient.DatabaseSubclient.update_atlas_instance" href="../subclient.html#cvpysdk.subclient.Subclient.update_atlas_instance">update_atlas_instance</a></code></li>
 <li><code><a title="cvpysdk.subclients.dbsubclient.DatabaseSubclient.update_properties" href="../subclient.html#cvpysdk.subclient.Subclient.update_properties">update_properties</a></code></li>
 </ul>
 </li>
@@ -629,8 +897,12 @@ setTimeout(() => input.focus(), 100);
 <h4><code><a title="cvpysdk.subclients.hanasubclient.SAPHANASubclient" href="#cvpysdk.subclients.hanasubclient.SAPHANASubclient">SAPHANASubclient</a></code></h4>
 <ul class="">
 <li><code><a title="cvpysdk.subclients.hanasubclient.SAPHANASubclient.backup" href="#cvpysdk.subclients.hanasubclient.SAPHANASubclient.backup">backup</a></code></li>
+<li><code><a title="cvpysdk.subclients.hanasubclient.SAPHANASubclient.browse" href="#cvpysdk.subclients.hanasubclient.SAPHANASubclient.browse">browse</a></code></li>
 <li><code><a title="cvpysdk.subclients.hanasubclient.SAPHANASubclient.browse_in_time" href="#cvpysdk.subclients.hanasubclient.SAPHANASubclient.browse_in_time">browse_in_time</a></code></li>
 <li><code><a title="cvpysdk.subclients.hanasubclient.SAPHANASubclient.content" href="#cvpysdk.subclients.hanasubclient.SAPHANASubclient.content">content</a></code></li>
+<li><code><a title="cvpysdk.subclients.hanasubclient.SAPHANASubclient.find" href="#cvpysdk.subclients.hanasubclient.SAPHANASubclient.find">find</a></code></li>
+<li><code><a title="cvpysdk.subclients.hanasubclient.SAPHANASubclient.restore_in_place" href="#cvpysdk.subclients.hanasubclient.SAPHANASubclient.restore_in_place">restore_in_place</a></code></li>
+<li><code><a title="cvpysdk.subclients.hanasubclient.SAPHANASubclient.restore_out_of_place" href="#cvpysdk.subclients.hanasubclient.SAPHANASubclient.restore_out_of_place">restore_out_of_place</a></code></li>
 </ul>
 </li>
 </ul>

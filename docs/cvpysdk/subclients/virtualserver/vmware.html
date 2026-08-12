@@ -29,7 +29,8 @@
 Derived class from VirtualServerSubClient Base
 class,representing a VMware Subclient,
 and to perform operations on that Subclient</p>
-<h2 id="vmwarevirtualserversubclient">Vmwarevirtualserversubclient</h2>
+<p>Vmwarevirtualserversubclient
+-----=</p>
 <p><strong>init</strong>(
 backupset_object,
 subclient_name,
@@ -44,10 +45,22 @@ the same location</p>
 <p>full_vm_restore_out_of_place() &ndash; restores the VM specified to the provided
 VMware psuedoclient vcenter via
 vcenter_client</p>
+<ul>
+<li>
+<p><code>full_vm_conversion_ahv</code> — restore/convert a VMware VM into <strong>Nutanix AHV</strong>.</p>
+</li>
+<li>
+<p><code>full_vm_conversion_proxmox</code> — restore/convert a VMware VM into <strong>Proxmox VE</strong>.</p>
+<p>Both functions validate inputs, normalize common parameters (e.g., converting a
+single VM name to a list), build the required restore options, produce the
+request payload, and submit the job. A <code>Job</code> object is returned so callers can
+monitor progress and final status.</p>
+</li>
+</ul>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/virtualserver/vmware.py#L1-L1027" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/virtualserver/vmware.py#L1-L1216" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -89,6 +102,15 @@ VMWareVirtualServerSubclient:
     full_vm_restore_out_of_place() -- restores the VM specified to the provided
                                       VMware psuedoclient vcenter via
                                       vcenter_client
+
+    - ``full_vm_conversion_ahv`` — restore/convert a VMware VM into **Nutanix AHV**.
+
+    - ``full_vm_conversion_proxmox`` — restore/convert a VMware VM into **Proxmox VE**.
+
+        Both functions validate inputs, normalize common parameters (e.g., converting a
+        single VM name to a list), build the required restore options, produce the
+        request payload, and submit the job. A ``Job`` object is returned so callers can
+        monitor progress and final status.
 
 &#34;&#34;&#34;
 
@@ -437,7 +459,8 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                      copy_precedence=0,
                      convert_to=None,
                      media_agent=None,
-                     snap_proxy=None):
+                     snap_proxy=None,
+                     **kwargs):
         &#34;&#34;&#34;Restores the disk specified in the input paths list to the same location
 
             Args:
@@ -797,6 +820,185 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
         request_json = self._prepare_fullvm_restore_json(restore_option)
         return self._process_restore_response(request_json)
 
+    def full_vm_conversion_ahv(
+        self,
+        vcenter_client,
+        vm_to_restore=None,
+        esx_host=None,
+        esx_server=None,
+        data_store=None,
+        overwrite=True,
+        power_on=True,
+        copy_precedence=0,
+        proxy_client=None,
+        destination_network=None,
+        destination_os_name=None
+    ):
+        &#34;&#34;&#34;
+        Conversion from VMware VM to AHV VM.
+    
+        This operation restores a VMware virtual machine into an AHV environment.
+        It allows administrators to migrate workloads from VMware to Nutanix AHV
+        while providing options for datastore mapping, ESX source details, overwrite
+        policies, power-on behavior, and network configuration.
+    
+        Args:
+            vcenter_client (str): Name of the vCenter client where the VM should be restored from
+            vm_to_restore (list): VM name which needs to be restored
+            esx_host (str): Destination ESX host of the VMware VM
+            esx_server (str): Destination ESX server of the VMware VM
+            data_store (str): Destination container of the AHV VM
+            overwrite (bool): Whether to overwrite the existing VM on AHV. Default: True
+            power_on (bool): Whether to power on the restored VM on AHV. Default: True
+            copy_precedence (int): Copy precedence value. Default: 0
+            proxy_client (str): Destination Proxy client handling the restore
+            destination_network (str): Destination AHV network to which the VM should be connected
+            destination_os_name (str): OS name of the source VM
+    
+        Returns:
+            object: Instance of the Job class for this restore job.
+    
+        Raises:
+            SDKException:
+                - If inputs are not of correct type as per definition
+                - If failed to initialize job
+                - If response is empty
+                - If response is not successful
+        &#34;&#34;&#34;
+        restore_option = {}
+    
+        if not isinstance(vcenter_client, str):
+            raise SDKException(
+                &#34;Subclient&#34;,
+                &#34;101&#34;,
+                &#34;Invalid input: &#39;vcenter_client&#39; must be a string.&#34;
+            )
+    
+        if vm_to_restore and not isinstance(vm_to_restore, (str, list)):
+            raise SDKException(
+                &#34;Subclient&#34;,
+                &#34;101&#34;,
+                f&#34;Invalid input: &#39;vm_to_restore&#39; must be a string or list, &#34;
+                f&#34;but received {type(vm_to_restore).__name__}.&#34;
+            )
+    
+        if vm_to_restore is not None and isinstance(vm_to_restore, str):
+            vm_to_restore = [vm_to_restore]
+    
+        sub_client = self._set_vm_conversion_defaults(vcenter_client, restore_option)
+        instance = sub_client._backupset_object._instance_object
+    
+        self._set_restore_inputs(
+            restore_option,
+            in_place=False,
+            vcenter_client=vcenter_client,
+            datastore=data_store,
+            esx_host=esx_host,
+            esx_server=esx_server,
+            unconditional_overwrite=overwrite,
+            client_name=proxy_client,
+            power_on=power_on,
+            vm_to_restore=vm_to_restore,
+            copy_precedence=copy_precedence,
+            volume_level_restore=1,
+            destination_instance=instance.instance_name,
+            backupset_client_name=instance._agent_object._client_object.client_name,
+            destination_network=destination_network,
+            destination_os_name=destination_os_name,
+        )
+    
+        request_json = self._prepare_fullvm_restore_json(restore_option)
+        return self._process_restore_response(request_json)
+
+    def full_vm_conversion_proxmox(
+        self,
+        vcenter_client,
+        vm_to_restore=None,
+        esx_host=None,
+        esx_server=None,
+        data_store=None,
+        overwrite=True,
+        power_on=True,
+        copy_precedence=0,
+        proxy_client=None,
+        destination_network=None,
+        networkName=None
+    ):
+        &#34;&#34;&#34;
+        Conversion from VMware VM to proxmox VM.
+    
+        This operation restores a VMware virtual machine into an Promox environment.
+        It allows administrators to migrate workloads from VMware to Proxmox
+        while providing options for datastore mapping, ESX source details, overwrite
+        policies, power-on behavior, and network configuration.
+
+        Args:
+            vcenter_client (str): Name of the vCenter client where the VM should be restored 
+            vm_to_restore (list): VM name which needs to be restored
+            esx_host (str): Destination ESX host of the VMware VM
+            esx_server (str): Destination ESX server of the VMware VM
+            data_store (str): Destination container of the Proxmox VM
+            overwrite (bool): Whether to overwrite the existing VM on Proxmox. Default: True
+            power_on (bool): Whether to power on the restored VM on Proxmox. Default: True
+            copy_precedence (int): Copy precedence value. Default: 0
+            proxy_client (str): Destination Proxy client handling the restore
+            destination_network (str): Destination Proxmox network to which the VM should be connected
+            networkName (str): Destination network name
+
+        Returns:
+            object: Instance of the Job class for this restore job.
+    
+        Raises:
+            SDKException:
+                - If inputs are not of correct type as per definition
+                - If failed to initialize job
+                - If response is empty
+                - If response is not successful
+        &#34;&#34;&#34;
+        restore_option = {}
+    
+        if not isinstance(vcenter_client, str):
+            raise SDKException(
+                &#34;Subclient&#34;,
+                &#34;101&#34;,
+                &#34;Invalid input: &#39;vcenter_client&#39; must be a string.&#34;
+            )
+    
+        if vm_to_restore and not isinstance(vm_to_restore, (str, list)):
+            raise SDKException(
+                &#34;Subclient&#34;,
+                &#34;101&#34;,
+                f&#34;Invalid input: &#39;vm_to_restore&#39; must be a string or list, &#34;
+                f&#34;but received {type(vm_to_restore).__name__}.&#34;
+            )
+    
+        if vm_to_restore is not None and isinstance(vm_to_restore, str):
+            vm_to_restore = [vm_to_restore]
+    
+        sub_client = self._set_vm_conversion_defaults(vcenter_client, restore_option)
+        instance = sub_client._backupset_object._instance_object
+    
+        self._set_restore_inputs(
+            restore_option,
+            in_place=False,
+            vcenter_client=vcenter_client,
+            datastore=data_store,
+            esx_host=esx_host,
+            esx_server=esx_server,
+            unconditional_overwrite=overwrite,
+            client_name=proxy_client,
+            power_on=power_on,
+            copy_precedence=copy_precedence,
+            vm_to_restore=vm_to_restore,
+            volume_level_restore=1,
+            destination_instance=instance.instance_name,
+            backupset_client_name=instance._agent_object._client_object.client_name,
+            destination_network=destination_network,
+            networkName=networkName
+        )
+        request_json = self._prepare_fullvm_restore_json(restore_option)
+        return self._process_restore_response(request_json)
+
 
     def full_vm_conversion_hyperv(
             self,
@@ -1104,7 +1306,7 @@ backupset class, subclient name, subclient id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/virtualserver/vmware.py#L50-L1027" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/virtualserver/vmware.py#L59-L1216" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class VMWareVirtualServerSubclient(VirtualServerSubclient):
     &#34;&#34;&#34;Derived class from VirtualServerSubclient Base class.
@@ -1445,7 +1647,8 @@ backupset class, subclient name, subclient id</p></div>
                      copy_precedence=0,
                      convert_to=None,
                      media_agent=None,
-                     snap_proxy=None):
+                     snap_proxy=None,
+                     **kwargs):
         &#34;&#34;&#34;Restores the disk specified in the input paths list to the same location
 
             Args:
@@ -1805,6 +2008,185 @@ backupset class, subclient name, subclient id</p></div>
         request_json = self._prepare_fullvm_restore_json(restore_option)
         return self._process_restore_response(request_json)
 
+    def full_vm_conversion_ahv(
+        self,
+        vcenter_client,
+        vm_to_restore=None,
+        esx_host=None,
+        esx_server=None,
+        data_store=None,
+        overwrite=True,
+        power_on=True,
+        copy_precedence=0,
+        proxy_client=None,
+        destination_network=None,
+        destination_os_name=None
+    ):
+        &#34;&#34;&#34;
+        Conversion from VMware VM to AHV VM.
+    
+        This operation restores a VMware virtual machine into an AHV environment.
+        It allows administrators to migrate workloads from VMware to Nutanix AHV
+        while providing options for datastore mapping, ESX source details, overwrite
+        policies, power-on behavior, and network configuration.
+    
+        Args:
+            vcenter_client (str): Name of the vCenter client where the VM should be restored from
+            vm_to_restore (list): VM name which needs to be restored
+            esx_host (str): Destination ESX host of the VMware VM
+            esx_server (str): Destination ESX server of the VMware VM
+            data_store (str): Destination container of the AHV VM
+            overwrite (bool): Whether to overwrite the existing VM on AHV. Default: True
+            power_on (bool): Whether to power on the restored VM on AHV. Default: True
+            copy_precedence (int): Copy precedence value. Default: 0
+            proxy_client (str): Destination Proxy client handling the restore
+            destination_network (str): Destination AHV network to which the VM should be connected
+            destination_os_name (str): OS name of the source VM
+    
+        Returns:
+            object: Instance of the Job class for this restore job.
+    
+        Raises:
+            SDKException:
+                - If inputs are not of correct type as per definition
+                - If failed to initialize job
+                - If response is empty
+                - If response is not successful
+        &#34;&#34;&#34;
+        restore_option = {}
+    
+        if not isinstance(vcenter_client, str):
+            raise SDKException(
+                &#34;Subclient&#34;,
+                &#34;101&#34;,
+                &#34;Invalid input: &#39;vcenter_client&#39; must be a string.&#34;
+            )
+    
+        if vm_to_restore and not isinstance(vm_to_restore, (str, list)):
+            raise SDKException(
+                &#34;Subclient&#34;,
+                &#34;101&#34;,
+                f&#34;Invalid input: &#39;vm_to_restore&#39; must be a string or list, &#34;
+                f&#34;but received {type(vm_to_restore).__name__}.&#34;
+            )
+    
+        if vm_to_restore is not None and isinstance(vm_to_restore, str):
+            vm_to_restore = [vm_to_restore]
+    
+        sub_client = self._set_vm_conversion_defaults(vcenter_client, restore_option)
+        instance = sub_client._backupset_object._instance_object
+    
+        self._set_restore_inputs(
+            restore_option,
+            in_place=False,
+            vcenter_client=vcenter_client,
+            datastore=data_store,
+            esx_host=esx_host,
+            esx_server=esx_server,
+            unconditional_overwrite=overwrite,
+            client_name=proxy_client,
+            power_on=power_on,
+            vm_to_restore=vm_to_restore,
+            copy_precedence=copy_precedence,
+            volume_level_restore=1,
+            destination_instance=instance.instance_name,
+            backupset_client_name=instance._agent_object._client_object.client_name,
+            destination_network=destination_network,
+            destination_os_name=destination_os_name,
+        )
+    
+        request_json = self._prepare_fullvm_restore_json(restore_option)
+        return self._process_restore_response(request_json)
+
+    def full_vm_conversion_proxmox(
+        self,
+        vcenter_client,
+        vm_to_restore=None,
+        esx_host=None,
+        esx_server=None,
+        data_store=None,
+        overwrite=True,
+        power_on=True,
+        copy_precedence=0,
+        proxy_client=None,
+        destination_network=None,
+        networkName=None
+    ):
+        &#34;&#34;&#34;
+        Conversion from VMware VM to proxmox VM.
+    
+        This operation restores a VMware virtual machine into an Promox environment.
+        It allows administrators to migrate workloads from VMware to Proxmox
+        while providing options for datastore mapping, ESX source details, overwrite
+        policies, power-on behavior, and network configuration.
+
+        Args:
+            vcenter_client (str): Name of the vCenter client where the VM should be restored 
+            vm_to_restore (list): VM name which needs to be restored
+            esx_host (str): Destination ESX host of the VMware VM
+            esx_server (str): Destination ESX server of the VMware VM
+            data_store (str): Destination container of the Proxmox VM
+            overwrite (bool): Whether to overwrite the existing VM on Proxmox. Default: True
+            power_on (bool): Whether to power on the restored VM on Proxmox. Default: True
+            copy_precedence (int): Copy precedence value. Default: 0
+            proxy_client (str): Destination Proxy client handling the restore
+            destination_network (str): Destination Proxmox network to which the VM should be connected
+            networkName (str): Destination network name
+
+        Returns:
+            object: Instance of the Job class for this restore job.
+    
+        Raises:
+            SDKException:
+                - If inputs are not of correct type as per definition
+                - If failed to initialize job
+                - If response is empty
+                - If response is not successful
+        &#34;&#34;&#34;
+        restore_option = {}
+    
+        if not isinstance(vcenter_client, str):
+            raise SDKException(
+                &#34;Subclient&#34;,
+                &#34;101&#34;,
+                &#34;Invalid input: &#39;vcenter_client&#39; must be a string.&#34;
+            )
+    
+        if vm_to_restore and not isinstance(vm_to_restore, (str, list)):
+            raise SDKException(
+                &#34;Subclient&#34;,
+                &#34;101&#34;,
+                f&#34;Invalid input: &#39;vm_to_restore&#39; must be a string or list, &#34;
+                f&#34;but received {type(vm_to_restore).__name__}.&#34;
+            )
+    
+        if vm_to_restore is not None and isinstance(vm_to_restore, str):
+            vm_to_restore = [vm_to_restore]
+    
+        sub_client = self._set_vm_conversion_defaults(vcenter_client, restore_option)
+        instance = sub_client._backupset_object._instance_object
+    
+        self._set_restore_inputs(
+            restore_option,
+            in_place=False,
+            vcenter_client=vcenter_client,
+            datastore=data_store,
+            esx_host=esx_host,
+            esx_server=esx_server,
+            unconditional_overwrite=overwrite,
+            client_name=proxy_client,
+            power_on=power_on,
+            copy_precedence=copy_precedence,
+            vm_to_restore=vm_to_restore,
+            volume_level_restore=1,
+            destination_instance=instance.instance_name,
+            backupset_client_name=instance._agent_object._client_object.client_name,
+            destination_network=destination_network,
+            networkName=networkName
+        )
+        request_json = self._prepare_fullvm_restore_json(restore_option)
+        return self._process_restore_response(request_json)
+
 
     def full_vm_conversion_hyperv(
             self,
@@ -2097,8 +2479,9 @@ backupset class, subclient name, subclient id</p></div>
 </code></dt>
 <dd>
 <div class="desc"><p>Add revert in restore json</p>
-<h2 id="args">Args</h2>
-<p>request_json
+<p>Args
+-----=
+request_json
 (dict)
 :
 restore dict</p>
@@ -2106,15 +2489,16 @@ restore dict</p>
 (bool)
 :
 revert option</p>
-<h2 id="returns">Returns</h2>
-<p>request_json
+<p>Returns
+-----=
+request_json
 (dict)
 :
 restore dict</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/virtualserver/vmware.py#L84-L100" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/virtualserver/vmware.py#L93-L109" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_revert_option(self, request_json, revert):
     &#34;&#34;&#34;
@@ -2140,8 +2524,9 @@ restore dict</p></div>
 </code></dt>
 <dd>
 <div class="desc"><p>Attaches the Disks to the provided vm</p>
-<h2 id="args">Args</h2>
-<p>vm_name
+<p>Args
+-----=
+vm_name
 (str)
 &ndash;
 Name of the VM added in subclient content
@@ -2184,10 +2569,12 @@ default :proxy in instance or subclient</p>
 &ndash;
 Prefix of the disk name to be attached
 defaul: None</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this restore job</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
+<p>Returns
+-----=
+object - instance of the Job class for this restore job</p>
+<p>Raises
+-----=
+SDKException:
 if inputs are not passed in proper expected format</p>
 <pre><code>if response is empty
 
@@ -2196,7 +2583,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/virtualserver/vmware.py#L510-L621" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/virtualserver/vmware.py#L520-L631" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def attach_disk_restore(self,
                         vm_name,
@@ -2316,8 +2703,9 @@ if response is not success
 <span>def <span class="ident">create_blr_replication_pair</span></span>(<span>self, *, target, vms, plan_name, rpstore=None, granular_options=None)</span>
 </code></dt>
 <dd>
-<div class="desc"><h2 id="args">Args</h2>
-<p>target
+<div class="desc"><p>Args
+-----=
+target
 (VirtualMachinePolicy): an instance of
 VirtualMachinePolicy which is the target</p>
 <p>vms
@@ -2344,7 +2732,7 @@ default : None. If name of the RPStore is given, granular mode is chosen else Li
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/virtualserver/vmware.py#L845-L913" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/virtualserver/vmware.py#L1034-L1102" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def create_blr_replication_pair(self, *, target, vms, plan_name, rpstore=None, granular_options=None):
     &#34;&#34;&#34;
@@ -2418,12 +2806,13 @@ default : None. If name of the RPStore is given, granular mode is chosen else Li
 </details>
 </dd>
 <dt id="cvpysdk.subclients.virtualserver.vmware.VMWareVirtualServerSubclient.disk_restore"><code class="name flex">
-<span>def <span class="ident">disk_restore</span></span>(<span>self, vm_name, destination_path, disk_name=None, proxy_client=None, copy_precedence=0, convert_to=None, media_agent=None, snap_proxy=None)</span>
+<span>def <span class="ident">disk_restore</span></span>(<span>self, vm_name, destination_path, disk_name=None, proxy_client=None, copy_precedence=0, convert_to=None, media_agent=None, snap_proxy=None, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Restores the disk specified in the input paths list to the same location</p>
-<h2 id="args">Args</h2>
-<p>vm_name
+<p>Args
+-----=
+vm_name
 (str)
 &ndash;
 Name of the VM added in subclient content
@@ -2468,10 +2857,12 @@ default :Storage policy MA</p>
 &ndash; proxy need to be used for disk
 restores from snap
 default :proxy in instance or subclient</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this restore job</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
+<p>Returns
+-----=
+object - instance of the Job class for this restore job</p>
+<p>Raises
+-----=
+SDKException:
 if inputs are not passed in proper expected format</p>
 <pre><code>if response is empty
 
@@ -2480,7 +2871,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/virtualserver/vmware.py#L381-L508" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/virtualserver/vmware.py#L390-L518" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disk_restore(self,
                  vm_name,
@@ -2490,7 +2881,8 @@ if response is not success
                  copy_precedence=0,
                  convert_to=None,
                  media_agent=None,
-                 snap_proxy=None):
+                 snap_proxy=None,
+                 **kwargs):
     &#34;&#34;&#34;Restores the disk specified in the input paths list to the same location
 
         Args:
@@ -2612,19 +3004,163 @@ if response is not success
     return self._process_restore_response(request_json)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.subclients.virtualserver.vmware.VMWareVirtualServerSubclient.full_vm_conversion_ahv"><code class="name flex">
+<span>def <span class="ident">full_vm_conversion_ahv</span></span>(<span>self, vcenter_client, vm_to_restore=None, esx_host=None, esx_server=None, data_store=None, overwrite=True, power_on=True, copy_precedence=0, proxy_client=None, destination_network=None, destination_os_name=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Conversion from VMware VM to AHV VM.</p>
+<p>This operation restores a VMware virtual machine into an AHV environment.
+It allows administrators to migrate workloads from VMware to Nutanix AHV
+while providing options for datastore mapping, ESX source details, overwrite
+policies, power-on behavior, and network configuration.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>vcenter_client</code></strong> :&ensp;<code>str</code></dt>
+<dd>Name of the vCenter client where the VM should be restored from</dd>
+<dt><strong><code>vm_to_restore</code></strong> :&ensp;<code>list</code></dt>
+<dd>VM name which needs to be restored</dd>
+<dt><strong><code>esx_host</code></strong> :&ensp;<code>str</code></dt>
+<dd>Destination ESX host of the VMware VM</dd>
+<dt><strong><code>esx_server</code></strong> :&ensp;<code>str</code></dt>
+<dd>Destination ESX server of the VMware VM</dd>
+<dt><strong><code>data_store</code></strong> :&ensp;<code>str</code></dt>
+<dd>Destination container of the AHV VM</dd>
+<dt><strong><code>overwrite</code></strong> :&ensp;<code>bool</code></dt>
+<dd>Whether to overwrite the existing VM on AHV. Default: True</dd>
+<dt><strong><code>power_on</code></strong> :&ensp;<code>bool</code></dt>
+<dd>Whether to power on the restored VM on AHV. Default: True</dd>
+<dt><strong><code>copy_precedence</code></strong> :&ensp;<code>int</code></dt>
+<dd>Copy precedence value. Default: 0</dd>
+<dt><strong><code>proxy_client</code></strong> :&ensp;<code>str</code></dt>
+<dd>Destination Proxy client handling the restore</dd>
+<dt><strong><code>destination_network</code></strong> :&ensp;<code>str</code></dt>
+<dd>Destination AHV network to which the VM should be connected</dd>
+<dt><strong><code>destination_os_name</code></strong> :&ensp;<code>str</code></dt>
+<dd>OS name of the source VM</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>object</code></dt>
+<dd>Instance of the Job class for this restore job.</dd>
+</dl>
+<p>Raises
+-----=
+SDKException:
+- If inputs are not of correct type as per definition
+- If failed to initialize job
+- If response is empty
+- If response is not successful</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/virtualserver/vmware.py#L759-L847" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def full_vm_conversion_ahv(
+    self,
+    vcenter_client,
+    vm_to_restore=None,
+    esx_host=None,
+    esx_server=None,
+    data_store=None,
+    overwrite=True,
+    power_on=True,
+    copy_precedence=0,
+    proxy_client=None,
+    destination_network=None,
+    destination_os_name=None
+):
+    &#34;&#34;&#34;
+    Conversion from VMware VM to AHV VM.
+
+    This operation restores a VMware virtual machine into an AHV environment.
+    It allows administrators to migrate workloads from VMware to Nutanix AHV
+    while providing options for datastore mapping, ESX source details, overwrite
+    policies, power-on behavior, and network configuration.
+
+    Args:
+        vcenter_client (str): Name of the vCenter client where the VM should be restored from
+        vm_to_restore (list): VM name which needs to be restored
+        esx_host (str): Destination ESX host of the VMware VM
+        esx_server (str): Destination ESX server of the VMware VM
+        data_store (str): Destination container of the AHV VM
+        overwrite (bool): Whether to overwrite the existing VM on AHV. Default: True
+        power_on (bool): Whether to power on the restored VM on AHV. Default: True
+        copy_precedence (int): Copy precedence value. Default: 0
+        proxy_client (str): Destination Proxy client handling the restore
+        destination_network (str): Destination AHV network to which the VM should be connected
+        destination_os_name (str): OS name of the source VM
+
+    Returns:
+        object: Instance of the Job class for this restore job.
+
+    Raises:
+        SDKException:
+            - If inputs are not of correct type as per definition
+            - If failed to initialize job
+            - If response is empty
+            - If response is not successful
+    &#34;&#34;&#34;
+    restore_option = {}
+
+    if not isinstance(vcenter_client, str):
+        raise SDKException(
+            &#34;Subclient&#34;,
+            &#34;101&#34;,
+            &#34;Invalid input: &#39;vcenter_client&#39; must be a string.&#34;
+        )
+
+    if vm_to_restore and not isinstance(vm_to_restore, (str, list)):
+        raise SDKException(
+            &#34;Subclient&#34;,
+            &#34;101&#34;,
+            f&#34;Invalid input: &#39;vm_to_restore&#39; must be a string or list, &#34;
+            f&#34;but received {type(vm_to_restore).__name__}.&#34;
+        )
+
+    if vm_to_restore is not None and isinstance(vm_to_restore, str):
+        vm_to_restore = [vm_to_restore]
+
+    sub_client = self._set_vm_conversion_defaults(vcenter_client, restore_option)
+    instance = sub_client._backupset_object._instance_object
+
+    self._set_restore_inputs(
+        restore_option,
+        in_place=False,
+        vcenter_client=vcenter_client,
+        datastore=data_store,
+        esx_host=esx_host,
+        esx_server=esx_server,
+        unconditional_overwrite=overwrite,
+        client_name=proxy_client,
+        power_on=power_on,
+        vm_to_restore=vm_to_restore,
+        copy_precedence=copy_precedence,
+        volume_level_restore=1,
+        destination_instance=instance.instance_name,
+        backupset_client_name=instance._agent_object._client_object.client_name,
+        destination_network=destination_network,
+        destination_os_name=destination_os_name,
+    )
+
+    request_json = self._prepare_fullvm_restore_json(restore_option)
+    return self._process_restore_response(request_json)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.subclients.virtualserver.vmware.VMWareVirtualServerSubclient.full_vm_conversion_azurerm"><code class="name flex">
 <span>def <span class="ident">full_vm_conversion_azurerm</span></span>(<span>self, azure_client, vm_to_restore=None, resource_group=None, storage_account=None, datacenter=None, proxy_client=None, overwrite=True, power_on=True, instance_size=None, public_ip=False, restore_as_managed=False, copy_precedence=0, disk_type=None, restore_option=None, networkDisplayName=None, networkrsg=None, destsubid=None, subnetId=None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>This converts the Hyperv VM to AzureRM</p>
-<h2 id="args">Args</h2>
-<pre><code>vm_to_restore          (dict):     dict containing the VM name(s) to restore as
-                                   keys and the new VM name(s) as their values.
-                                   Input empty string for default VM name for
-                                   restored VM.
-                                   default: {}
-
-azure_client    (str):      name of the AzureRM client
+<p>Args
+-----=
+vm_to_restore
+(dict):
+dict containing the VM name(s) to restore as
+keys and the new VM name(s) as their values.
+Input empty string for default VM name for
+restored VM.
+default: {}</p>
+<pre><code>azure_client    (str):      name of the AzureRM client
                                    where the VM should be
                                    restored.
 
@@ -2675,7 +3211,7 @@ if inputs are not of correct type as per definition</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/virtualserver/vmware.py#L623-L747" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/virtualserver/vmware.py#L633-L757" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_conversion_azurerm(
         self,
@@ -2809,10 +3345,12 @@ if inputs are not of correct type as per definition</p>
 </code></dt>
 <dd>
 <div class="desc"><p>This converts the VMware to Google Cloud</p>
-<h2 id="args">Args</h2>
-<pre><code>vm_to_restore          (list):     provide the VM names to restore
-
-google_cloud_client    (str):      name of the Google Cloud client
+<p>Args
+-----=
+vm_to_restore
+(list):
+provide the VM names to restore</p>
+<pre><code>google_cloud_client    (str):      name of the Google Cloud client
                                    where the VM should be
                                    restored.
 
@@ -2856,7 +3394,7 @@ if inputs are not of correct type as per definition</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/virtualserver/vmware.py#L915-L1027" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/virtualserver/vmware.py#L1104-L1216" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_conversion_googlecloud(
         self,
@@ -2978,8 +3516,9 @@ if inputs are not of correct type as per definition</p>
 </code></dt>
 <dd>
 <div class="desc"><p>This converts the AzureRM to Hyper-v VM</p>
-<h2 id="args">Args</h2>
-<p>hyperv_client(str):
+<p>Args
+-----=
+hyperv_client(str):
 name of the hyper-V client
 where the VM should restored.</p>
 <p>vm_to_restore(dict):
@@ -3024,7 +3563,7 @@ if inputs are not of correct type as per definition</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/virtualserver/vmware.py#L750-L843" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/virtualserver/vmware.py#L939-L1032" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_conversion_hyperv(
         self,
@@ -3122,14 +3661,156 @@ if inputs are not of correct type as per definition</p>
     return self._process_restore_response(request_json)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.subclients.virtualserver.vmware.VMWareVirtualServerSubclient.full_vm_conversion_proxmox"><code class="name flex">
+<span>def <span class="ident">full_vm_conversion_proxmox</span></span>(<span>self, vcenter_client, vm_to_restore=None, esx_host=None, esx_server=None, data_store=None, overwrite=True, power_on=True, copy_precedence=0, proxy_client=None, destination_network=None, networkName=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Conversion from VMware VM to proxmox VM.</p>
+<p>This operation restores a VMware virtual machine into an Promox environment.
+It allows administrators to migrate workloads from VMware to Proxmox
+while providing options for datastore mapping, ESX source details, overwrite
+policies, power-on behavior, and network configuration.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>vcenter_client</code></strong> :&ensp;<code>str</code></dt>
+<dd>Name of the vCenter client where the VM should be restored </dd>
+<dt><strong><code>vm_to_restore</code></strong> :&ensp;<code>list</code></dt>
+<dd>VM name which needs to be restored</dd>
+<dt><strong><code>esx_host</code></strong> :&ensp;<code>str</code></dt>
+<dd>Destination ESX host of the VMware VM</dd>
+<dt><strong><code>esx_server</code></strong> :&ensp;<code>str</code></dt>
+<dd>Destination ESX server of the VMware VM</dd>
+<dt><strong><code>data_store</code></strong> :&ensp;<code>str</code></dt>
+<dd>Destination container of the Proxmox VM</dd>
+<dt><strong><code>overwrite</code></strong> :&ensp;<code>bool</code></dt>
+<dd>Whether to overwrite the existing VM on Proxmox. Default: True</dd>
+<dt><strong><code>power_on</code></strong> :&ensp;<code>bool</code></dt>
+<dd>Whether to power on the restored VM on Proxmox. Default: True</dd>
+<dt><strong><code>copy_precedence</code></strong> :&ensp;<code>int</code></dt>
+<dd>Copy precedence value. Default: 0</dd>
+<dt><strong><code>proxy_client</code></strong> :&ensp;<code>str</code></dt>
+<dd>Destination Proxy client handling the restore</dd>
+<dt><strong><code>destination_network</code></strong> :&ensp;<code>str</code></dt>
+<dd>Destination Proxmox network to which the VM should be connected</dd>
+<dt><strong><code>networkName</code></strong> :&ensp;<code>str</code></dt>
+<dd>Destination network name</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>object</code></dt>
+<dd>Instance of the Job class for this restore job.</dd>
+</dl>
+<p>Raises
+-----=
+SDKException:
+- If inputs are not of correct type as per definition
+- If failed to initialize job
+- If response is empty
+- If response is not successful</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/virtualserver/vmware.py#L849-L936" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def full_vm_conversion_proxmox(
+    self,
+    vcenter_client,
+    vm_to_restore=None,
+    esx_host=None,
+    esx_server=None,
+    data_store=None,
+    overwrite=True,
+    power_on=True,
+    copy_precedence=0,
+    proxy_client=None,
+    destination_network=None,
+    networkName=None
+):
+    &#34;&#34;&#34;
+    Conversion from VMware VM to proxmox VM.
+
+    This operation restores a VMware virtual machine into an Promox environment.
+    It allows administrators to migrate workloads from VMware to Proxmox
+    while providing options for datastore mapping, ESX source details, overwrite
+    policies, power-on behavior, and network configuration.
+
+    Args:
+        vcenter_client (str): Name of the vCenter client where the VM should be restored 
+        vm_to_restore (list): VM name which needs to be restored
+        esx_host (str): Destination ESX host of the VMware VM
+        esx_server (str): Destination ESX server of the VMware VM
+        data_store (str): Destination container of the Proxmox VM
+        overwrite (bool): Whether to overwrite the existing VM on Proxmox. Default: True
+        power_on (bool): Whether to power on the restored VM on Proxmox. Default: True
+        copy_precedence (int): Copy precedence value. Default: 0
+        proxy_client (str): Destination Proxy client handling the restore
+        destination_network (str): Destination Proxmox network to which the VM should be connected
+        networkName (str): Destination network name
+
+    Returns:
+        object: Instance of the Job class for this restore job.
+
+    Raises:
+        SDKException:
+            - If inputs are not of correct type as per definition
+            - If failed to initialize job
+            - If response is empty
+            - If response is not successful
+    &#34;&#34;&#34;
+    restore_option = {}
+
+    if not isinstance(vcenter_client, str):
+        raise SDKException(
+            &#34;Subclient&#34;,
+            &#34;101&#34;,
+            &#34;Invalid input: &#39;vcenter_client&#39; must be a string.&#34;
+        )
+
+    if vm_to_restore and not isinstance(vm_to_restore, (str, list)):
+        raise SDKException(
+            &#34;Subclient&#34;,
+            &#34;101&#34;,
+            f&#34;Invalid input: &#39;vm_to_restore&#39; must be a string or list, &#34;
+            f&#34;but received {type(vm_to_restore).__name__}.&#34;
+        )
+
+    if vm_to_restore is not None and isinstance(vm_to_restore, str):
+        vm_to_restore = [vm_to_restore]
+
+    sub_client = self._set_vm_conversion_defaults(vcenter_client, restore_option)
+    instance = sub_client._backupset_object._instance_object
+
+    self._set_restore_inputs(
+        restore_option,
+        in_place=False,
+        vcenter_client=vcenter_client,
+        datastore=data_store,
+        esx_host=esx_host,
+        esx_server=esx_server,
+        unconditional_overwrite=overwrite,
+        client_name=proxy_client,
+        power_on=power_on,
+        copy_precedence=copy_precedence,
+        vm_to_restore=vm_to_restore,
+        volume_level_restore=1,
+        destination_instance=instance.instance_name,
+        backupset_client_name=instance._agent_object._client_object.client_name,
+        destination_network=destination_network,
+        networkName=networkName
+    )
+    request_json = self._prepare_fullvm_restore_json(restore_option)
+    return self._process_restore_response(request_json)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.subclients.virtualserver.vmware.VMWareVirtualServerSubclient.full_vm_restore_in_place"><code class="name flex">
 <span>def <span class="ident">full_vm_restore_in_place</span></span>(<span>self, vm_to_restore=None, overwrite=True, power_on=True, copy_precedence=0, disk_option='Original', transport_mode='Auto', proxy_client=None, to_time=0, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Restores the FULL Virtual machine specified in the input list
 to the location same as the actual location of the VM in VCenter.</p>
-<h2 id="args">Args</h2>
-<p>vm_to_restore
+<p>Args
+-----=
+vm_to_restore
 (list)
 &ndash;
 provide the VM name to restore
@@ -3187,10 +3868,12 @@ media_agent
 
 revert              (bool)      --  Revert option
 </code></pre>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this restore job</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
+<p>Returns
+-----=
+object - instance of the Job class for this restore job</p>
+<p>Raises
+-----=
+SDKException:
 if inputs are not of correct type as per definition</p>
 <pre><code>if failed to initialize job
 
@@ -3201,7 +3884,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/virtualserver/vmware.py#L102-L210" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/virtualserver/vmware.py#L111-L219" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_in_place(
         self,
@@ -3322,8 +4005,9 @@ if response is not success
 to the provided vcenter client along with the ESX and the datastores.
 If the provided client name is none then it restores the Full Virtual
 Machine to the source client and corresponding ESX and datastore.</p>
-<h2 id="args">Args</h2>
-<p>vm_to_restore
+<p>Args
+-----=
+vm_to_restore
 (str)
 &ndash;
 VM that is to be restored</p>
@@ -3431,10 +4115,12 @@ delayMigrationMinutes   (Int)  -- Migrations delay in minutes: Default '0'
 
 vmTags              (list)  --  List of tags to be added to the restored VM
 </code></pre>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this restore job</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
+<p>Returns
+-----=
+object - instance of the Job class for this restore job</p>
+<p>Raises
+-----=
+SDKException:
 if inputs are not of correct type as per definition</p>
 <pre><code>if failed to initialize job
 
@@ -3445,7 +4131,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/virtualserver/vmware.py#L212-L379" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/virtualserver/vmware.py#L221-L388" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def full_vm_restore_out_of_place(
         self,
@@ -3622,10 +4308,12 @@ if response is not success
 <ul class="hlist">
 <li><code><b><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient">VirtualServerSubclient</a></b></code>:
 <ul class="hlist">
+<li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.additional_settings" href="../../subclient.html#cvpysdk.subclient.Subclient.additional_settings">additional_settings</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.allow_multiple_readers" href="../../subclient.html#cvpysdk.subclient.Subclient.allow_multiple_readers">allow_multiple_readers</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.amazon_defaults" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.amazon_defaults">amazon_defaults</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.backup" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.backup">backup</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.browse" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.browse">browse</a></code></li>
+<li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.browse_Cosmos_Content" href="../../subclient.html#cvpysdk.subclient.Subclient.browse_Cosmos_Content">browse_Cosmos_Content</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.browse_in_time" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.browse_in_time">browse_in_time</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.cbtvalue" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.cbtvalue">cbtvalue</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.content" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.content">content</a></code></li>
@@ -3678,6 +4366,7 @@ if response is not success
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.set_advanced_attach_disk_restore_options" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.set_advanced_attach_disk_restore_options">set_advanced_attach_disk_restore_options</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.set_advanced_vm_restore_options" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.set_advanced_vm_restore_options">set_advanced_vm_restore_options</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.set_backup_nodes" href="../../subclient.html#cvpysdk.subclient.Subclient.set_backup_nodes">set_backup_nodes</a></code></li>
+<li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.set_proxy_for_backup_copy" href="../../subclient.html#cvpysdk.subclient.Subclient.set_proxy_for_backup_copy">set_proxy_for_backup_copy</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.set_proxy_for_snap" href="../../subclient.html#cvpysdk.subclient.Subclient.set_proxy_for_snap">set_proxy_for_snap</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.snapshot_engine_name" href="../../subclient.html#cvpysdk.subclient.Subclient.snapshot_engine_name">snapshot_engine_name</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.snapshot_storage_type" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.snapshot_storage_type">snapshot_storage_type</a></code></li>
@@ -3689,7 +4378,9 @@ if response is not success
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.subclient_id" href="../../subclient.html#cvpysdk.subclient.Subclient.subclient_id">subclient_id</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.subclient_name" href="../../subclient.html#cvpysdk.subclient.Subclient.subclient_name">subclient_name</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.subclient_proxy" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.subclient_proxy">subclient_proxy</a></code></li>
+<li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.unset_proxy_for_backup_copy" href="../../subclient.html#cvpysdk.subclient.Subclient.unset_proxy_for_backup_copy">unset_proxy_for_backup_copy</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.unset_proxy_for_snap" href="../../subclient.html#cvpysdk.subclient.Subclient.unset_proxy_for_snap">unset_proxy_for_snap</a></code></li>
+<li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.update_atlas_instance" href="../../subclient.html#cvpysdk.subclient.Subclient.update_atlas_instance">update_atlas_instance</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.update_properties" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.update_properties">update_properties</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_diskfilter" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_diskfilter">vm_diskfilter</a></code></li>
 <li><code><a title="cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_files_browse" href="../vssubclient.html#cvpysdk.subclients.vssubclient.VirtualServerSubclient.vm_files_browse">vm_files_browse</a></code></li>
@@ -3774,9 +4465,11 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.subclients.virtualserver.vmware.VMWareVirtualServerSubclient.attach_disk_restore" href="#cvpysdk.subclients.virtualserver.vmware.VMWareVirtualServerSubclient.attach_disk_restore">attach_disk_restore</a></code></li>
 <li><code><a title="cvpysdk.subclients.virtualserver.vmware.VMWareVirtualServerSubclient.create_blr_replication_pair" href="#cvpysdk.subclients.virtualserver.vmware.VMWareVirtualServerSubclient.create_blr_replication_pair">create_blr_replication_pair</a></code></li>
 <li><code><a title="cvpysdk.subclients.virtualserver.vmware.VMWareVirtualServerSubclient.disk_restore" href="#cvpysdk.subclients.virtualserver.vmware.VMWareVirtualServerSubclient.disk_restore">disk_restore</a></code></li>
+<li><code><a title="cvpysdk.subclients.virtualserver.vmware.VMWareVirtualServerSubclient.full_vm_conversion_ahv" href="#cvpysdk.subclients.virtualserver.vmware.VMWareVirtualServerSubclient.full_vm_conversion_ahv">full_vm_conversion_ahv</a></code></li>
 <li><code><a title="cvpysdk.subclients.virtualserver.vmware.VMWareVirtualServerSubclient.full_vm_conversion_azurerm" href="#cvpysdk.subclients.virtualserver.vmware.VMWareVirtualServerSubclient.full_vm_conversion_azurerm">full_vm_conversion_azurerm</a></code></li>
 <li><code><a title="cvpysdk.subclients.virtualserver.vmware.VMWareVirtualServerSubclient.full_vm_conversion_googlecloud" href="#cvpysdk.subclients.virtualserver.vmware.VMWareVirtualServerSubclient.full_vm_conversion_googlecloud">full_vm_conversion_googlecloud</a></code></li>
 <li><code><a title="cvpysdk.subclients.virtualserver.vmware.VMWareVirtualServerSubclient.full_vm_conversion_hyperv" href="#cvpysdk.subclients.virtualserver.vmware.VMWareVirtualServerSubclient.full_vm_conversion_hyperv">full_vm_conversion_hyperv</a></code></li>
+<li><code><a title="cvpysdk.subclients.virtualserver.vmware.VMWareVirtualServerSubclient.full_vm_conversion_proxmox" href="#cvpysdk.subclients.virtualserver.vmware.VMWareVirtualServerSubclient.full_vm_conversion_proxmox">full_vm_conversion_proxmox</a></code></li>
 <li><code><a title="cvpysdk.subclients.virtualserver.vmware.VMWareVirtualServerSubclient.full_vm_restore_in_place" href="#cvpysdk.subclients.virtualserver.vmware.VMWareVirtualServerSubclient.full_vm_restore_in_place">full_vm_restore_in_place</a></code></li>
 <li><code><a title="cvpysdk.subclients.virtualserver.vmware.VMWareVirtualServerSubclient.full_vm_restore_out_of_place" href="#cvpysdk.subclients.virtualserver.vmware.VMWareVirtualServerSubclient.full_vm_restore_out_of_place">full_vm_restore_out_of_place</a></code></li>
 </ul>

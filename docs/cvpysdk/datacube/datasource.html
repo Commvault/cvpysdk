@@ -29,7 +29,8 @@
 Class for representing all the Datasources in the Datacube.</p>
 <p>Datasource:
 Class for representing a single Datasource in the Datacube.</p>
-<h2 id="datasources">Datasources</h2>
+<p>Datasources
+-----=</p>
 <p><strong>init</strong>(datacube_object)
 &ndash;
 initialise object of the Datasources class</p>
@@ -62,7 +63,8 @@ deletes the give datasource to the datacube</p>
 <p>refresh()
 &ndash;
 refresh the datasources associated with the datacube</p>
-<h2 id="datasource">Datasource</h2>
+<p>Datasource
+-----=</p>
 <p><strong>init</strong>(
 datacube_object,
 datasource_name,
@@ -128,7 +130,7 @@ Gets the status of the datasource</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/datasource.py#L1-L951" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/datasource.py#L1-L1229" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -248,16 +250,38 @@ from ..exception import SDKException
 
 
 class Datasources(object):
-    &#34;&#34;&#34;Class for representing all the Datasources in the Datacube.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Manages and represents all Datasources within a Datacube environment.
 
-    def __init__(self, datacube_object):
-        &#34;&#34;&#34;Initializes an instance of the Datasources class.
+    This class provides a comprehensive interface for handling datasources,
+    including creation, retrieval, deletion, and property management. It is
+    designed to interact with a Datacube object and supports operations for
+    maintaining and querying the collection of datasources.
 
-            Args:
-                datacube_object     (object)    --  instance of the Datacube class
+    Key Features:
+        - Initialization with a Datacube object
+        - String and representation methods for easy inspection
+        - Retrieve properties of a specific datasource
+        - Internal methods for extracting datasources from collections
+        - Fetch all available datasources
+        - Check existence of a datasource by name
+        - Get a datasource by name
+        - Add new datasources with analytics engine, type, and input parameters
+        - Delete existing datasources
+        - Refresh the datasource collection
 
-            Returns:
-                object  -   instance of the Datasources class
+    &#34;&#34;&#34;
+
+    def __init__(self, datacube_object: object) -&gt; None:
+        &#34;&#34;&#34;Initialize a new instance of the Datasources class.
+
+        Args:
+            datacube_object: An instance of the Datacube class to associate with this Datasources object.
+
+        Example:
+            &gt;&gt;&gt; datacube = Datacube(&#39;server_name&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; datasources = Datasources(datacube)
+            &gt;&gt;&gt; print(&#34;Datasources object created successfully&#34;)
 
         &#34;&#34;&#34;
         self._datacube_object = datacube_object
@@ -271,11 +295,19 @@ class Datasources(object):
         self._datasources = None
         self.refresh()
 
-    def __str__(self):
-        &#34;&#34;&#34;Representation string consisting of all datasources in datacube.
+    def __str__(self) -&gt; str:
+        &#34;&#34;&#34;Return a string representation of all datasources in the datacube.
 
-            Returns:
-                str - string of all the datasources associated with the datacube
+        This method provides a human-readable summary of all datasources associated 
+        with the datacube, typically listing their names or identifiers.
+
+        Returns:
+            A string containing the details of all datasources in the datacube.
+
+        Example:
+            &gt;&gt;&gt; datasources = Datasources()
+            &gt;&gt;&gt; print(str(datasources))
+            &gt;&gt;&gt; # Output: &#34;Datasource1, Datasource2, Datasource3&#34;
 
         &#34;&#34;&#34;
         representation_string = &#39;{:^5}\t{:30}\n\n&#39;.format(
@@ -288,56 +320,80 @@ class Datasources(object):
 
         return representation_string
 
-    def __repr__(self):
-        &#34;&#34;&#34;Representation string for the instance of the Datasources class.&#34;&#34;&#34;
+    def __repr__(self) -&gt; str:
+        &#34;&#34;&#34;Return the string representation of the Datasources instance.
+
+        This method provides a developer-friendly string that represents the current
+        Datasources object, useful for debugging and logging purposes.
+
+        Returns:
+            A string representation of the Datasources instance.
+
+        Example:
+            &gt;&gt;&gt; datasources = Datasources()
+            &gt;&gt;&gt; print(repr(datasources))
+            &lt;Datasources object at 0x7f8b2c1d2e80&gt;
+
+        &#34;&#34;&#34;
         return &#34;Datasources class instance for Commcell&#34;
 
-    def get_datasource_properties(self, data_source_name):
-        &#34;&#34;&#34;Returns the properties of datasources.
+    def get_datasource_properties(self, data_source_name: str) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the properties of a specified data source.
 
-            Args:
+        Args:
+            data_source_name: The name of the data source whose properties are to be fetched.
 
-                data_source_name    (str)       -- Name of the data source
+        Returns:
+            A dictionary containing the properties of the specified data source.
 
-            Returns:
-                dict - dictionary consisting of the properties of  datasources
+        Example:
+            &gt;&gt;&gt; datasources = Datasources()
+            &gt;&gt;&gt; properties = datasources.get_datasource_properties(&#34;OracleDB&#34;)
+            &gt;&gt;&gt; print(properties)
+            {&#39;name&#39;: &#39;OracleDB&#39;, &#39;type&#39;: &#39;Database&#39;, &#39;status&#39;: &#39;Active&#39;, ...}
 
         &#34;&#34;&#34;
         return self._datasources[data_source_name]
 
     @staticmethod
-    def _get_datasources_from_collections(collections):
-        &#34;&#34;&#34;Extracts all the datasources, and their details from the list of collections given,
-            and returns the dictionary of all datasources.
+    def _get_datasources_from_collections(collections: list) -&gt; dict:
+        &#34;&#34;&#34;Extract all datasources and their details from a list of collections.
 
-            Args:
-                collections     (list)  --  list of all collections
+        This method processes the provided list of collection objects and extracts
+        information about each datasource contained within. The result is a dictionary
+        where each key is a datasource name, and the value is a dictionary of its details.
 
-            Returns:
-                dict    -   dictionary consisting of dictionaries, where each dictionary stores the
-                                details of a single datasource
+        Args:
+            collections: List of collection objects or dictionaries containing datasource information.
 
-                    {
-                        &#39;data_source_1_name&#39;: {
+        Returns:
+            Dictionary mapping datasource names to their details. Each value is a dictionary
+            with keys such as &#39;data_source_id&#39;, &#39;data_source_name&#39;, &#39;description&#39;,
+            &#39;data_source_type&#39;, &#39;total_count&#39;, and &#39;state&#39;.
 
-                            &#39;data_source_id&#39;: 21,
-
-                            &#39;data_source_name&#39;: &#39;&#39;,
-
-                            &#39;description&#39;: &#39;&#39;,
-
-                            &#39;data_source_type&#39;: &#39;&#39;,
-
-                            &#39;total_count&#39;: 1234,
-
-                            &#39;state&#39;: 1
-                        },
-
-                        &#39;data_source_2_name&#39;: {},
-
-                        &#39;data_source_3_name&#39;: {}
+            Example return structure:
+                {
+                    &#39;data_source_1_name&#39;: {
+                        &#39;data_source_id&#39;: 21,
+                        &#39;data_source_name&#39;: &#39;data_source_1_name&#39;,
+                        &#39;description&#39;: &#39;Description of datasource 1&#39;,
+                        &#39;data_source_type&#39;: &#39;TypeA&#39;,
+                        &#39;total_count&#39;: 1234,
+                        &#39;state&#39;: 1
+                    },
+                    &#39;data_source_2_name&#39;: {
                         ...
                     }
+                }
+
+        Example:
+            &gt;&gt;&gt; collections = [...]  # List of collection objects with datasource info
+            &gt;&gt;&gt; datasources = Datasources._get_datasources_from_collections(collections)
+            &gt;&gt;&gt; print(datasources.keys())
+            dict_keys([&#39;data_source_1_name&#39;, &#39;data_source_2_name&#39;])
+            &gt;&gt;&gt; first_ds = datasources[&#39;data_source_1_name&#39;]
+            &gt;&gt;&gt; print(first_ds[&#39;description&#39;])
+            Description of datasource 1
 
         &#34;&#34;&#34;
         _datasources = {}
@@ -369,34 +425,35 @@ class Datasources(object):
                 _datasources[datasource[&#39;datasourceName&#39;]] = datasource_dict
         return _datasources
 
-    def _get_all_datasources(self):
-        &#34;&#34;&#34;Gets the list of all datasources associated with this Datacube instance.
+    def _get_all_datasources(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve all datasources associated with this Datacube instance.
 
-            Returns:
-                dict    -   dictionary consisting of dictionaries, where each dictionary stores the
-                                details of a single datasource
+        Returns:
+            dict: A dictionary where each key is a datasource name and the value is a dictionary
+            containing details about that datasource, such as its ID, name, description, type,
+            total count, and state.
 
-                    {
-                        &#39;data_source_1_name&#39;: {
-
-                            &#39;data_source_id&#39;: 21,
-
-                            &#39;data_source_name&#39;: &#39;&#39;,
-
-                            &#39;description&#39;: &#39;&#39;,
-
-                            &#39;data_source_type&#39;: &#39;&#39;,
-
-                            &#39;total_count&#39;: 1234,
-
-                            &#39;state&#39;: 1
-                        },
-
-                        &#39;data_source_2_name&#39;: {},
-
-                        &#39;data_source_3_name&#39;: {}
+            Example structure:
+                {
+                    &#39;data_source_1_name&#39;: {
+                        &#39;data_source_id&#39;: 21,
+                        &#39;data_source_name&#39;: &#39;data_source_1_name&#39;,
+                        &#39;description&#39;: &#39;Sample description&#39;,
+                        &#39;data_source_type&#39;: &#39;TypeA&#39;,
+                        &#39;total_count&#39;: 1234,
+                        &#39;state&#39;: 1
+                    },
+                    &#39;data_source_2_name&#39;: {
                         ...
                     }
+                }
+
+        Example:
+            &gt;&gt;&gt; datasources = Datasources()
+            &gt;&gt;&gt; all_sources = datasources._get_all_datasources()
+            &gt;&gt;&gt; for name, details in all_sources.items():
+            ...     print(f&#34;Datasource: {name}, ID: {details[&#39;data_source_id&#39;]}&#34;)
+            &gt;&gt;&gt; # This will print the name and ID of each datasource
 
         &#34;&#34;&#34;
         flag, response = self.commcell_obj._cvpysdk_object.make_request(
@@ -414,18 +471,23 @@ class Datasources(object):
                 return response
         self._datacube_object._response_not_success(response)
 
-    def has_datasource(self, datasource_name):
-        &#34;&#34;&#34;Checks if a datasource exists in the Datacube with the input datasource name.
+    def has_datasource(self, datasource_name: str) -&gt; bool:
+        &#34;&#34;&#34;Check if a datasource with the specified name exists in the Datacube.
 
-            Args:
-                datasource_name     (str)   --  name of the datasource
+        Args:
+            datasource_name: The name of the datasource to check for existence.
 
-            Returns:
-                bool    -   boolean output whether the datasource exists in the datacube or not
+        Returns:
+            True if the datasource exists in the Datacube, False otherwise.
 
-            Raises:
-                SDKException:
-                    if type of the datasource name argument is not string
+        Raises:
+            SDKException: If the type of the datasource_name argument is not a string.
+
+        Example:
+            &gt;&gt;&gt; datasources = Datasources()
+            &gt;&gt;&gt; exists = datasources.has_datasource(&#34;SalesData&#34;)
+            &gt;&gt;&gt; print(f&#34;Datasource exists: {exists}&#34;)
+            # Output: Datasource exists: True
 
         &#34;&#34;&#34;
         if not isinstance(datasource_name, str):
@@ -433,20 +495,22 @@ class Datasources(object):
 
         return self._datasources and datasource_name in self._datasources
 
-    def get(self, datasource_name):
-        &#34;&#34;&#34;Returns a datasource object of the specified datasource name.
+    def get(self, datasource_name: str) -&gt; &#39;Datasource&#39;:
+        &#34;&#34;&#34;Retrieve a Datasource object by its name.
 
-            Args:
-                datasource_name     (str)   --  name of the datasource
+        Args:
+            datasource_name: The name of the datasource to retrieve.
 
-            Returns:
-                object  -   instance of the Datasource class for the given datasource name
+        Returns:
+            Datasource: An instance of the Datasource class corresponding to the specified name.
 
-            Raises:
-                SDKException:
-                    if type of the datasource name argument is not string
+        Raises:
+            SDKException: If the datasource_name is not a string or if no datasource exists with the given name.
 
-                    if no datasource exists with the given name
+        Example:
+            &gt;&gt;&gt; datasources = Datasources(commcell_object)
+            &gt;&gt;&gt; ds = datasources.get(&#34;SalesDB&#34;)
+            &gt;&gt;&gt; print(f&#34;Datasource name: {ds.name}&#34;)
 
         &#34;&#34;&#34;
         if not isinstance(datasource_name, str):
@@ -464,43 +528,48 @@ class Datasources(object):
                 datasource_name)
         )
 
-    def add(self, datasource_name, analytics_engine, datasource_type, input_param):
-        &#34;&#34;&#34;Add a datasource.
+    def add(self, datasource_name: str, analytics_engine: str, datasource_type: str, input_param: list) -&gt; None:
+        &#34;&#34;&#34;Add a new datasource to the datacube.
 
-            Args:
-                datasource_name (str)   --  name of the datasource to add to the datacube
+        This method registers a new datasource with the specified name, associates it with an analytics engine,
+        and sets its type and properties.
 
-                analytics_engine (str)  --  name of the analytics engine or index server node to be associated with this
-                                                datacube.
+        Args:
+            datasource_name: The name of the datasource to add to the datacube.
+            analytics_engine: The name of the analytics engine or index server node to associate with this datacube.
+            datasource_type: The type of datasource to add. Valid values include:
+                1: Database
+                2: Web site
+                3: CSV
+                4: File system
+                5: NAS
+                6: Eloqua
+                8: Salesforce
+                9: LDAP
+                10: Federated Search
+                11: Open data source
+                12: HTTP
+            input_param: A list of properties for the datasource.
 
-                datasource_type (str)  --  type of datasource to add
+        Raises:
+            SDKException: If any of the following conditions occur:
+                - The type of the datasource_name argument is not string.
+                - The type of the analytics_engine argument is not string.
+                - The type of the datasource_type argument is not string.
+                - Failed to add the datasource.
+                - The response is empty.
+                - The response is not successful.
 
-                                            Valid values are:
-                                            1: Database
-                                            2: Web site
-                                            3: CSV
-                                            4: File system
-                                            5: NAS
-                                            6: Eloqua
-                                            8: Salesforce
-                                            9: LDAP
-                                            10: Federated Search
-                                            11: Open data source
-                                            12: HTTP
-                input_param(list)      -- properties for datasource
-            Raises:
-                SDKException:
-                    if type of the datasource name argument is not string
-
-                    if type of the analytics_engine  argument is not string
-
-                    if type of the datasource_type  argument is not string
-
-                    if failed to add datasource
-
-                    if response is empty
-
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; datasources = Datasources()
+            &gt;&gt;&gt; properties = [{&#34;propertyName&#34;: &#34;host&#34;, &#34;propertyValue&#34;: &#34;db.example.com&#34;}]
+            &gt;&gt;&gt; datasources.add(
+            ...     datasource_name=&#34;SalesDB&#34;,
+            ...     analytics_engine=&#34;IndexServer1&#34;,
+            ...     datasource_type=&#34;1&#34;,
+            ...     input_param=properties
+            ... )
+            &gt;&gt;&gt; print(&#34;Datasource &#39;SalesDB&#39; added successfully.&#34;)
 
         &#34;&#34;&#34;
 
@@ -562,17 +631,19 @@ class Datasources(object):
             response.text)
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def delete(self, datasource_name):
-        &#34;&#34;&#34;Deletes specified datasource from data cube .
+    def delete(self, datasource_name: str) -&gt; None:
+        &#34;&#34;&#34;Delete the specified datasource from the data cube.
 
-            Args:
-                datasource_name     (str)   --  name of the datasource
+        Args:
+            datasource_name: The name of the datasource to be deleted.
 
-            Raises:
-                SDKException:
-                    if type of the datasource name argument is not string
+        Raises:
+            SDKException: If the datasource_name is not a string, or if no datasource exists with the given name.
 
-                    if no datasource exists with the given name
+        Example:
+            &gt;&gt;&gt; datasources = Datasources()
+            &gt;&gt;&gt; datasources.delete(&#34;SalesData&#34;)
+            &gt;&gt;&gt; print(&#34;Datasource &#39;SalesData&#39; deleted successfully.&#34;)
 
         &#34;&#34;&#34;
 
@@ -600,27 +671,58 @@ class Datasources(object):
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
 
-    def refresh(self):
-        &#34;&#34;&#34;Refresh the datasources associated with the Datacube.&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Reload all datasource information associated with the Datacube.
+
+        This method refreshes the internal state of the Datasources object, ensuring that
+        any changes to the datasources in the Datacube are reflected in the current instance.
+
+        Example:
+            &gt;&gt;&gt; datasources = Datasources(datacube_object)
+            &gt;&gt;&gt; datasources.refresh()  # Updates the datasources to reflect the latest state
+
+        &#34;&#34;&#34;
         self._datasources = self._get_all_datasources()
 
 
 class Datasource(object):
-    &#34;&#34;&#34;Class for performing operations on a single datasource&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Class for managing and performing operations on a single datasource.
 
-    def __init__(self, datacube_object, datasource_name, datasource_id=None):
-        &#34;&#34;&#34;Initialize an object of the Datasource class.
+    This class provides a comprehensive interface for interacting with a datasource,
+    including lifecycle management, schema operations, data import, content deletion,
+    job initiation, status monitoring, and sharing capabilities. It exposes various
+    properties for accessing datasource metadata and configuration details.
 
-            Args:
-                datacube_object     (object)    --  instance of the Datacube class
+    Key Features:
+        - Initialization with datacube object, datasource name, and ID
+        - Access to datasource properties and identifiers
+        - Start and monitor jobs related to the datasource
+        - Delete datasource and its content
+        - Retrieve and update datasource schema
+        - Import data into the datasource
+        - Refresh datasource state
+        - Retrieve crawl history and status information
+        - Share datasource with users, specifying permissions and operations
+        - Access computed core name, index server cloud ID, and datasource type
+        - Manage datasource handlers
 
-                datasource_name     (str)       --  name of the datasource
+    &#34;&#34;&#34;
 
-                datasource_id       (str)       --  id of the datasource
-                    default: None
+    def __init__(self, datacube_object: object, datasource_name: str, datasource_id: str = None) -&gt; None:
+        &#34;&#34;&#34;Initialize a Datasource object.
 
-            Returns:
-                object  -   instance of the Datasource class
+        Args:
+            datacube_object: Instance of the Datacube class to which this datasource belongs.
+            datasource_name: The name of the datasource.
+            datasource_id: Optional; the unique identifier for the datasource. If not provided, it can be set later.
+
+        Example:
+            &gt;&gt;&gt; datacube = Datacube()
+            &gt;&gt;&gt; datasource = Datasource(datacube, &#34;SalesData&#34;)
+            &gt;&gt;&gt; # Optionally, provide a datasource ID
+            &gt;&gt;&gt; datasource_with_id = Datasource(datacube, &#34;InventoryData&#34;, &#34;ds_12345&#34;)
+
         &#34;&#34;&#34;
         self._datacube_object = datacube_object
         self._datasource_name = datasource_name
@@ -668,31 +770,52 @@ class Datasource(object):
         self._properties = None
         self.refresh()
 
-    def __repr__(self):
-        &#34;&#34;&#34;String representation of the instance of this class.&#34;&#34;&#34;
+    def __repr__(self) -&gt; str:
+        &#34;&#34;&#34;Return a string representation of the Datasource instance.
+
+        This method provides a developer-friendly string that can be used to 
+        inspect the Datasource object, typically for debugging purposes.
+
+        Returns:
+            A string representing the Datasource instance.
+
+        Example:
+            &gt;&gt;&gt; datasource = Datasource()
+            &gt;&gt;&gt; print(repr(datasource))
+            &lt;Datasource object at 0x7f8b1c2d3e80&gt;
+
+        &#34;&#34;&#34;
         return &#39;Datasource class instance for Commcell&#39;
 
-    def _get_datasource_id(self):
-        &#34;&#34;&#34;Gets the datasource id associated with this datasource.
+    def _get_datasource_id(self) -&gt; str:
+        &#34;&#34;&#34;Retrieve the unique identifier associated with this datasource.
 
-            Returns:
-                str     -   id associated with this datasource
+        Returns:
+            The ID of the datasource as a string.
+
+        Example:
+            &gt;&gt;&gt; datasource = Datasource()
+            &gt;&gt;&gt; datasource_id = datasource._get_datasource_id()
+            &gt;&gt;&gt; print(f&#34;Datasource ID: {datasource_id}&#34;)
 
         &#34;&#34;&#34;
         datasources = Datasources(self._datacube_object)
         return datasources.get(self.datasource_name).datasource_id
 
-    def _get_datasource_properties(self):
-        &#34;&#34;&#34;Gets the properties of this datasource.
+    def _get_datasource_properties(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the properties of this datasource.
 
-            Returns:
-                dict - dictionary consisting of the properties of this datasource
+        Returns:
+            dict: A dictionary containing the properties of the datasource.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException: If the response is empty or if the response indicates a failure.
 
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; datasource = Datasource()
+            &gt;&gt;&gt; properties = datasource._get_datasource_properties()
+            &gt;&gt;&gt; print(properties)
+            {&#39;property1&#39;: &#39;value1&#39;, &#39;property2&#39;: &#39;value2&#39;}
 
         &#34;&#34;&#34;
         data_source_dict = self._commcell_object.datacube.datasources.get_datasource_properties(self.datasource_name)
@@ -703,15 +826,21 @@ class Datasource(object):
         self._data_source_type = data_source_dict[&#39;data_source_type&#39;]
         return data_source_dict
 
-    def start_job(self):
-        &#34;&#34;&#34;Starts the crawl job for the datasource
+    def start_job(self) -&gt; str:
+        &#34;&#34;&#34;Start the crawl job for the datasource.
 
-                Returns:
-                    Str  -   Job id of crawl job
+        Initiates a crawl job associated with this datasource and returns the job ID.
 
-                Raises:
-                    Exception:
-                        failed to start job
+        Returns:
+            str: The job ID of the started crawl job.
+
+        Raises:
+            Exception: If the job fails to start.
+
+        Example:
+            &gt;&gt;&gt; datasource = Datasource()
+            &gt;&gt;&gt; job_id = datasource.start_job()
+            &gt;&gt;&gt; print(f&#34;Crawl job started with ID: {job_id}&#34;)
 
         &#34;&#34;&#34;
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -728,17 +857,21 @@ class Datasource(object):
                 raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, &#34;Status object not found in response&#34;)
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
 
-    def delete_datasource(self):
-        &#34;&#34;&#34;deletes the datasource
+    def delete_datasource(self) -&gt; bool:
+        &#34;&#34;&#34;Delete the datasource from the system.
 
-                    Returns:
-                        true  -   if success
+        Returns:
+            True if the datasource was successfully deleted.
 
-                    Raises:
-                        Exception:
-                            Error message for failed ops
+        Raises:
+            Exception: If the deletion operation fails, an exception is raised with an error message.
 
-                &#34;&#34;&#34;
+        Example:
+            &gt;&gt;&gt; datasource = Datasource()
+            &gt;&gt;&gt; success = datasource.delete_datasource()
+            &gt;&gt;&gt; print(f&#34;Datasource deleted: {success}&#34;)
+
+        &#34;&#34;&#34;
         flag, response = self._datacube_object._commcell_object._cvpysdk_object.make_request(
             &#39;POST&#39;, self._delete_datasource % (self._datasource_id))
 
@@ -751,15 +884,20 @@ class Datasource(object):
                 return True
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
 
-    def get_status(self):
-        &#34;&#34;&#34;Gets status of the datasource.
+    def get_status(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the current status information of the datasource.
 
-                Returns:
-                    dict - containing all status information of datasource
+        Returns:
+            dict: A dictionary containing all status details of the datasource.
 
-                Raises:
-                    Exception:
-                            Failure to find datasource details
+        Raises:
+            Exception: If the datasource details cannot be found.
+
+        Example:
+            &gt;&gt;&gt; datasource = Datasource()
+            &gt;&gt;&gt; status_info = datasource.get_status()
+            &gt;&gt;&gt; print(status_info)
+            &gt;&gt;&gt; # Output will be a dictionary with status information about the datasource
 
         &#34;&#34;&#34;
 
@@ -777,34 +915,33 @@ class Datasource(object):
                 raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, &#34;Status object not found in response&#34;)
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
 
-    def get_crawl_history(self, last_crawl_history=False):
-        &#34;&#34;&#34;Gets the Crawling  history for this datasource.
+    def get_crawl_history(self, last_crawl_history: bool = False) -&gt; list:
+        &#34;&#34;&#34;Retrieve the crawling history for this datasource.
 
-            Args:
-                last_crawl_history (bool)    -- if set to True , returns
-                the status of and information about the most recent crawling
-                operation for a data source in Data Cube
+        Args:
+            last_crawl_history: If True, returns only the status and information about the most recent crawling
+                operation for this datasource in Data Cube. If False, returns the complete crawl history.
 
-            Returns:
-                list - list consisting of key value pair for history details of this datasource
+        Returns:
+            list: A list of dictionaries, each containing key-value pairs with details about crawl history for this datasource.
+            Each dictionary may include:
+                - &#34;numFailed&#34;: Number of failed items.
+                - &#34;totalcount&#34;: Total number of items processed.
+                - &#34;endUTCTime&#34;: End time of the crawl operation (UTC).
+                - &#34;numAccessDenied&#34;: Number of access denied errors.
+                - &#34;numAdded&#34;: Number of items added.
+                - &#34;startUTCTime&#34;: Start time of the crawl operation (UTC).
+                - &#34;state&#34;: State of the crawl operation.
 
-                 [
-                    {
-                        &#34;numFailed&#34;: ,
-                        &#34;totalcount&#34;: ,
-                        &#34;endUTCTime&#34;: ,
-                        &#34;numAccessDenied&#34;: ,
-                        &#34;numAdded&#34;: ,
-                        &#34;startUTCTime&#34;: ,
-                        &#34;state&#34;:
-                    }
-                ]
+        Raises:
+            SDKException: If the response is empty or not successful.
 
-            Raises:
-                SDKException:
-                    if response is empty
-
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; datasource = Datasource()
+            &gt;&gt;&gt; history = datasource.get_crawl_history()
+            &gt;&gt;&gt; print(f&#34;Total crawl operations: {len(history)}&#34;)
+            &gt;&gt;&gt; if history:
+            ...     print(f&#34;Most recent crawl state: {history[0][&#39;state&#39;]}&#34;)
 
         &#34;&#34;&#34;
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -821,52 +958,122 @@ class Datasource(object):
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
     @property
-    def datasource_id(self):
-        &#34;&#34;&#34;Returns the value of the data source id attribute.&#34;&#34;&#34;
+    def datasource_id(self) -&gt; int:
+        &#34;&#34;&#34;Get the unique identifier of the data source.
+
+        Returns:
+            int: The ID value associated with this data source.
+
+        Example:
+            &gt;&gt;&gt; datasource = Datasource()
+            &gt;&gt;&gt; ds_id = datasource.datasource_id  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Datasource ID: {ds_id}&#34;)
+
+        &#34;&#34;&#34;
         return self._datasource_id
 
     @property
-    def properties(self):
-        &#34;&#34;&#34;Returns all the data source properties&#34;&#34;&#34;
+    def properties(self) -&gt; dict:
+        &#34;&#34;&#34;Get all properties associated with the data source.
+
+        Returns:
+            dict: A dictionary containing all properties of the data source.
+
+        Example:
+            &gt;&gt;&gt; datasource = Datasource()
+            &gt;&gt;&gt; props = datasource.properties  # Access properties using dot notation
+            &gt;&gt;&gt; print(props)
+            {&#39;name&#39;: &#39;DataSource1&#39;, &#39;type&#39;: &#39;SQL&#39;, &#39;status&#39;: &#39;active&#39;}
+
+        &#34;&#34;&#34;
         return self._properties
 
     @property
-    def datasource_name(self):
-        &#34;&#34;&#34;Returns the value of the data source name attribute.&#34;&#34;&#34;
+    def datasource_name(self) -&gt; str:
+        &#34;&#34;&#34;Get the name of the data source.
+
+        Returns:
+            The name of the data source as a string.
+
+        Example:
+            &gt;&gt;&gt; ds = Datasource()
+            &gt;&gt;&gt; name = ds.datasource_name  # Use dot notation to access the property
+            &gt;&gt;&gt; print(f&#34;Datasource name: {name}&#34;)
+
+        &#34;&#34;&#34;
         return self._datasource_name
 
     @property
-    def computed_core_name(self):
-        &#34;&#34;&#34;Returns the value of the computedcorename attribute.&#34;&#34;&#34;
+    def computed_core_name(self) -&gt; str:
+        &#34;&#34;&#34;Get the value of the computed core name attribute for this datasource.
+
+        Returns:
+            The computed core name as a string.
+
+        Example:
+            &gt;&gt;&gt; datasource = Datasource()
+            &gt;&gt;&gt; core_name = datasource.computed_core_name  # Access as a property
+            &gt;&gt;&gt; print(f&#34;Computed core name: {core_name}&#34;)
+
+        &#34;&#34;&#34;
         return self._computed_core_name
 
     @property
-    def index_server_cloud_id(self):
-        &#34;&#34;&#34;Returns the value of the cloud id attribute.&#34;&#34;&#34;
+    def index_server_cloud_id(self) -&gt; int:
+        &#34;&#34;&#34;Get the cloud ID associated with the index server for this datasource.
+
+        Returns:
+            int: The cloud ID value of the index server.
+
+        Example:
+            &gt;&gt;&gt; datasource = Datasource()
+            &gt;&gt;&gt; cloud_id = datasource.index_server_cloud_id
+            &gt;&gt;&gt; print(f&#34;Index server cloud ID: {cloud_id}&#34;)
+
+        &#34;&#34;&#34;
         return self._cloud_id
 
     @property
-    def data_source_type(self):
-        &#34;&#34;&#34;Returns the value of the data source type attribute.&#34;&#34;&#34;
+    def data_source_type(self) -&gt; str:
+        &#34;&#34;&#34;Get the type of the data source.
+
+        Returns:
+            The data source type as a string.
+
+        Example:
+            &gt;&gt;&gt; ds = Datasource()
+            &gt;&gt;&gt; ds_type = ds.data_source_type  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Datasource type: {ds_type}&#34;)
+
+        &#34;&#34;&#34;
         return self._data_source_type
 
-    def get_datasource_schema(self):
-        &#34;&#34;&#34;returns information about the schema of a data source.
+    def get_datasource_schema(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve information about the schema of the data source.
 
-            Returns:
-                dict - dict consisting of all schema fields of this datasource grouped
-                under dynSchemaFields and schemaFields
+        Returns:
+            dict: A dictionary containing all schema fields of this data source, grouped under
+            &#39;dynSchemaFields&#39; and &#39;schemaFields&#39;. The dictionary structure is as follows:
 
                 {
-                &#34;uniqueKey&#34;: &#34;contentid&#34;,
-                &#34;schemaFields&#34;: [{properties of field},list of fields]
-               &#34;dynSchemaFields&#34;:[{properties of field},list of fields]
+                    &#34;uniqueKey&#34;: &#34;contentid&#34;,
+                    &#34;schemaFields&#34;: [ {field properties}, ... ],
+                    &#34;dynSchemaFields&#34;: [ {field properties}, ... ]
+                }
 
-            Raises:
-                SDKException:
-                    if response is empty
+            - &#39;uniqueKey&#39;: The primary key field for the data source.
+            - &#39;schemaFields&#39;: List of dictionaries, each representing a static schema field.
+            - &#39;dynSchemaFields&#39;: List of dictionaries, each representing a dynamic schema field.
 
-                    if response is not success
+        Raises:
+            SDKException: If the response is empty or the request is not successful.
+
+        Example:
+            &gt;&gt;&gt; datasource = Datasource()
+            &gt;&gt;&gt; schema_info = datasource.get_datasource_schema()
+            &gt;&gt;&gt; print(schema_info[&#34;uniqueKey&#34;])
+            &gt;&gt;&gt; print(&#34;Number of static fields:&#34;, len(schema_info[&#34;schemaFields&#34;]))
+            &gt;&gt;&gt; print(&#34;Number of dynamic fields:&#34;, len(schema_info[&#34;dynSchemaFields&#34;]))
 
         &#34;&#34;&#34;
         flag, response = self._datacube_object._commcell_object._cvpysdk_object.make_request(
@@ -882,30 +1089,42 @@ class Datasource(object):
         )
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def update_datasource_schema(self, schema):
-        &#34;&#34;&#34;updates the schema of a data source.
+    def update_datasource_schema(self, schema: list[dict[str, str]]) -&gt; None:
+        &#34;&#34;&#34;Update the schema of the data source.
 
-            Args:
-                schema (list)   -- list of  properties of schemas represented as key value pair.
-                [{
-                                    &#34;fieldName&#34;: &#34;&#34;,
-                                    &#34;indexed&#34;: &#34;&#34;,
-                                    &#34;autocomplete&#34;: &#34;&#34;,
-                                    &#34;type&#34;: &#34;&#34;,
-                                    &#34;searchDefault&#34;: &#34;&#34;,
-                                    &#34;multiValued&#34;: &#34;&#34;
-                                }]
-                Valid values for type are as follows:
-                    [string, int, float, long, double, date, longstring]
-                indexed, autocomplete, searchDefault, multiValued takes 0/1
+        This method updates the schema definition for the data source using the provided list of field property dictionaries.
+        Each dictionary should represent a field and its properties, such as field name, type, and indexing options.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Args:
+            schema: A list of dictionaries, where each dictionary defines the properties of a schema field.
+                Example field dictionary:
+                    {
+                        &#34;fieldName&#34;: &#34;username&#34;,
+                        &#34;indexed&#34;: &#34;1&#34;,
+                        &#34;autocomplete&#34;: &#34;0&#34;,
+                        &#34;type&#34;: &#34;string&#34;,
+                        &#34;searchDefault&#34;: &#34;1&#34;,
+                        &#34;multiValued&#34;: &#34;0&#34;
+                    }
+                Valid values for &#34;type&#34; are: &#34;string&#34;, &#34;int&#34;, &#34;float&#34;, &#34;long&#34;, &#34;double&#34;, &#34;date&#34;, &#34;longstring&#34;.
+                The values for &#34;indexed&#34;, &#34;autocomplete&#34;, &#34;searchDefault&#34;, and &#34;multiValued&#34; should be &#34;0&#34; or &#34;1&#34; as strings.
 
-                    if type of the schema argument is not list
+        Raises:
+            SDKException: If the response is empty, if the schema argument is not a list, or if the response indicates failure.
 
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; schema = [
+            ...     {
+            ...         &#34;fieldName&#34;: &#34;email&#34;,
+            ...         &#34;indexed&#34;: &#34;1&#34;,
+            ...         &#34;autocomplete&#34;: &#34;1&#34;,
+            ...         &#34;type&#34;: &#34;string&#34;,
+            ...         &#34;searchDefault&#34;: &#34;0&#34;,
+            ...         &#34;multiValued&#34;: &#34;0&#34;
+            ...     }
+            ... ]
+            &gt;&gt;&gt; datasource.update_datasource_schema(schema)
+            &gt;&gt;&gt; print(&#34;Datasource schema updated successfully.&#34;)
 
         &#34;&#34;&#34;
         if not isinstance(schema, list):
@@ -939,17 +1158,23 @@ class Datasource(object):
             response.text)
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def import_data(self, data):
-        &#34;&#34;&#34;imports/pumps given data into data source.
+    def import_data(self, data: list) -&gt; None:
+        &#34;&#34;&#34;Import or pump the given data into the data source for indexing.
 
-            Args:
-                data (list)   -- data to be indexed and pumped into  solr.list of key value pairs.
+        Args:
+            data: A list of key-value pairs representing the data to be indexed and pumped into Solr.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException: If the response from the data source is empty or not successful.
 
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; datasource = Datasource()
+            &gt;&gt;&gt; sample_data = [
+            ...     {&#34;id&#34;: 1, &#34;name&#34;: &#34;Document1&#34;},
+            ...     {&#34;id&#34;: 2, &#34;name&#34;: &#34;Document2&#34;}
+            ... ]
+            &gt;&gt;&gt; datasource.import_data(sample_data)
+            &gt;&gt;&gt; print(&#34;Data imported successfully.&#34;)
 
         &#34;&#34;&#34;
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -969,16 +1194,19 @@ class Datasource(object):
         )
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def delete_content(self):
-        &#34;&#34;&#34;deletes the content of a data source from Data Cube.
-           The data source itself is not deleted using this API.
+    def delete_content(self) -&gt; None:
+        &#34;&#34;&#34;Delete the content of the data source from Data Cube.
 
-            Raises:
-                SDKException:
+        This method removes all content associated with the data source, but does not delete the data source itself.
 
-                    if response is empty
+        Raises:
+            SDKException: If the response from the Data Cube API is empty or indicates a failure.
 
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; datasource = Datasource()
+            &gt;&gt;&gt; datasource.delete_content()
+            &gt;&gt;&gt; print(&#34;Datasource content deleted successfully&#34;)
+            # The data source object remains, but its content is removed.
 
         &#34;&#34;&#34;
         flag, response = self._datacube_object._commcell_object._cvpysdk_object.make_request(
@@ -993,14 +1221,34 @@ class Datasource(object):
             return
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
 
-    def refresh(self):
-        &#34;&#34;&#34;Refresh the properties of the Datasource.&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Reload the properties of the Datasource object.
+
+        This method updates the Datasource instance with the latest information from the underlying data source.
+        Use this method to ensure that the object&#39;s properties reflect the current state.
+
+        Example:
+            &gt;&gt;&gt; datasource = Datasource()
+            &gt;&gt;&gt; datasource.refresh()
+            &gt;&gt;&gt; print(&#34;Datasource properties refreshed successfully&#34;)
+
+        &#34;&#34;&#34;
         self._properties = self._get_datasource_properties()
         self.handlers = Handlers(self)
 
     @property
-    def ds_handlers(self):
-        &#34;&#34;&#34;Returns the instance of the Handlers class.&#34;&#34;&#34;
+    def ds_handlers(self) -&gt; &#39;Handlers&#39;:
+        &#34;&#34;&#34;Get the Handlers instance associated with this Datasource.
+
+        Returns:
+            Handlers: An instance of the Handlers class for managing datasource handlers.
+
+        Example:
+            &gt;&gt;&gt; datasource = Datasource()
+            &gt;&gt;&gt; handlers = datasource.ds_handlers  # Access the Handlers instance via property
+            &gt;&gt;&gt; print(f&#34;Handlers object: {handlers}&#34;)
+
+        &#34;&#34;&#34;
         try:
             if self._handlers_obj is None:
                 self._handlers_obj = Handlers(self)
@@ -1008,30 +1256,28 @@ class Datasource(object):
         except BaseException:
             raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, &#34;Failed to init Handlers&#34;)
 
-    def share(self, permission_list, operation_type, user_id, user_name, user_type):
-        &#34;&#34;&#34; Share datasource with user/usergroup
-                Args:
-                    permission_list (list)-- List of permission
+    def share(self, permission_list: list, operation_type: int, user_id: int, user_name: str, user_type: int) -&gt; None:
+        &#34;&#34;&#34;Share the datasource with a specified user or user group.
 
-                    operation_type (int)  -- Operation type (2-add / 3- delete)
+        This method assigns or removes permissions for a user or user group on the datasource,
+        based on the provided operation type and permission list.
 
-                    user_id (int)         -- User id of share user
+        Args:
+            permission_list: List of permissions to assign or remove for the user/user group.
+            operation_type: The type of operation to perform (2 for add, 3 for delete).
+            user_id: The unique identifier of the user or user group to share with.
+            user_name: The name of the user or user group to share with.
+            user_type: The type of user (e.g., 13 for User).
 
-                    user_name (str)       -- Share user name
+        Raises:
+            SDKException: If the response is empty, not successful, or if sharing the datasource fails.
 
-                    user_type (int)       -- Share user type (Ex : 13- User)
+        Example:
+            &gt;&gt;&gt; datasource = Datasource()
+            &gt;&gt;&gt; permissions = [&#39;read&#39;, &#39;write&#39;]
+            &gt;&gt;&gt; datasource.share(permissions, 2, 101, &#39;jdoe&#39;, 13)
+            &gt;&gt;&gt; print(&#34;Datasource shared successfully with user jdoe.&#34;)
 
-                Returns:
-                    None
-
-                Raises:
-                    SDKExpception:
-
-                        if response is empty
-
-                        if response is not success
-
-                        if failed to share the datasource with User/userGroup
         &#34;&#34;&#34;
         category_permission_list = []
         for permission in permission_list:
@@ -1094,50 +1340,87 @@ class Datasource(object):
 <dl>
 <dt id="cvpysdk.datacube.datasource.Datasource"><code class="flex name class">
 <span>class <span class="ident">Datasource</span></span>
-<span>(</span><span>datacube_object, datasource_name, datasource_id=None)</span>
+<span>(</span><span>datacube_object: object, datasource_name: str, datasource_id: str = None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for performing operations on a single datasource</p>
-<p>Initialize an object of the Datasource class.</p>
-<h2 id="args">Args</h2>
-<p>datacube_object
-(object)
-&ndash;
-instance of the Datacube class</p>
-<p>datasource_name
-(str)
-&ndash;
-name of the datasource</p>
-<p>datasource_id
-(str)
-&ndash;
-id of the datasource
-default: None</p>
-<h2 id="returns">Returns</h2>
-<p>object
--
-instance of the Datasource class</p></div>
+<div class="desc"><p>Class for managing and performing operations on a single datasource.</p>
+<p>This class provides a comprehensive interface for interacting with a datasource,
+including lifecycle management, schema operations, data import, content deletion,
+job initiation, status monitoring, and sharing capabilities. It exposes various
+properties for accessing datasource metadata and configuration details.</p>
+<p>Key Features:
+- Initialization with datacube object, datasource name, and ID
+- Access to datasource properties and identifiers
+- Start and monitor jobs related to the datasource
+- Delete datasource and its content
+- Retrieve and update datasource schema
+- Import data into the datasource
+- Refresh datasource state
+- Retrieve crawl history and status information
+- Share datasource with users, specifying permissions and operations
+- Access computed core name, index server cloud ID, and datasource type
+- Manage datasource handlers</p>
+<p>Initialize a Datasource object.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>datacube_object</code></strong></dt>
+<dd>Instance of the Datacube class to which this datasource belongs.</dd>
+<dt><strong><code>datasource_name</code></strong></dt>
+<dd>The name of the datasource.</dd>
+<dt><strong><code>datasource_id</code></strong></dt>
+<dd>Optional; the unique identifier for the datasource. If not provided, it can be set later.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; datacube = Datacube()
+&gt;&gt;&gt; datasource = Datasource(datacube, &quot;SalesData&quot;)
+&gt;&gt;&gt; # Optionally, provide a datasource ID
+&gt;&gt;&gt; datasource_with_id = Datasource(datacube, &quot;InventoryData&quot;, &quot;ds_12345&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/datasource.py#L476-L951" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/datasource.py#L566-L1229" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Datasource(object):
-    &#34;&#34;&#34;Class for performing operations on a single datasource&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Class for managing and performing operations on a single datasource.
 
-    def __init__(self, datacube_object, datasource_name, datasource_id=None):
-        &#34;&#34;&#34;Initialize an object of the Datasource class.
+    This class provides a comprehensive interface for interacting with a datasource,
+    including lifecycle management, schema operations, data import, content deletion,
+    job initiation, status monitoring, and sharing capabilities. It exposes various
+    properties for accessing datasource metadata and configuration details.
 
-            Args:
-                datacube_object     (object)    --  instance of the Datacube class
+    Key Features:
+        - Initialization with datacube object, datasource name, and ID
+        - Access to datasource properties and identifiers
+        - Start and monitor jobs related to the datasource
+        - Delete datasource and its content
+        - Retrieve and update datasource schema
+        - Import data into the datasource
+        - Refresh datasource state
+        - Retrieve crawl history and status information
+        - Share datasource with users, specifying permissions and operations
+        - Access computed core name, index server cloud ID, and datasource type
+        - Manage datasource handlers
 
-                datasource_name     (str)       --  name of the datasource
+    &#34;&#34;&#34;
 
-                datasource_id       (str)       --  id of the datasource
-                    default: None
+    def __init__(self, datacube_object: object, datasource_name: str, datasource_id: str = None) -&gt; None:
+        &#34;&#34;&#34;Initialize a Datasource object.
 
-            Returns:
-                object  -   instance of the Datasource class
+        Args:
+            datacube_object: Instance of the Datacube class to which this datasource belongs.
+            datasource_name: The name of the datasource.
+            datasource_id: Optional; the unique identifier for the datasource. If not provided, it can be set later.
+
+        Example:
+            &gt;&gt;&gt; datacube = Datacube()
+            &gt;&gt;&gt; datasource = Datasource(datacube, &#34;SalesData&#34;)
+            &gt;&gt;&gt; # Optionally, provide a datasource ID
+            &gt;&gt;&gt; datasource_with_id = Datasource(datacube, &#34;InventoryData&#34;, &#34;ds_12345&#34;)
+
         &#34;&#34;&#34;
         self._datacube_object = datacube_object
         self._datasource_name = datasource_name
@@ -1185,31 +1468,52 @@ instance of the Datasource class</p></div>
         self._properties = None
         self.refresh()
 
-    def __repr__(self):
-        &#34;&#34;&#34;String representation of the instance of this class.&#34;&#34;&#34;
+    def __repr__(self) -&gt; str:
+        &#34;&#34;&#34;Return a string representation of the Datasource instance.
+
+        This method provides a developer-friendly string that can be used to 
+        inspect the Datasource object, typically for debugging purposes.
+
+        Returns:
+            A string representing the Datasource instance.
+
+        Example:
+            &gt;&gt;&gt; datasource = Datasource()
+            &gt;&gt;&gt; print(repr(datasource))
+            &lt;Datasource object at 0x7f8b1c2d3e80&gt;
+
+        &#34;&#34;&#34;
         return &#39;Datasource class instance for Commcell&#39;
 
-    def _get_datasource_id(self):
-        &#34;&#34;&#34;Gets the datasource id associated with this datasource.
+    def _get_datasource_id(self) -&gt; str:
+        &#34;&#34;&#34;Retrieve the unique identifier associated with this datasource.
 
-            Returns:
-                str     -   id associated with this datasource
+        Returns:
+            The ID of the datasource as a string.
+
+        Example:
+            &gt;&gt;&gt; datasource = Datasource()
+            &gt;&gt;&gt; datasource_id = datasource._get_datasource_id()
+            &gt;&gt;&gt; print(f&#34;Datasource ID: {datasource_id}&#34;)
 
         &#34;&#34;&#34;
         datasources = Datasources(self._datacube_object)
         return datasources.get(self.datasource_name).datasource_id
 
-    def _get_datasource_properties(self):
-        &#34;&#34;&#34;Gets the properties of this datasource.
+    def _get_datasource_properties(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the properties of this datasource.
 
-            Returns:
-                dict - dictionary consisting of the properties of this datasource
+        Returns:
+            dict: A dictionary containing the properties of the datasource.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException: If the response is empty or if the response indicates a failure.
 
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; datasource = Datasource()
+            &gt;&gt;&gt; properties = datasource._get_datasource_properties()
+            &gt;&gt;&gt; print(properties)
+            {&#39;property1&#39;: &#39;value1&#39;, &#39;property2&#39;: &#39;value2&#39;}
 
         &#34;&#34;&#34;
         data_source_dict = self._commcell_object.datacube.datasources.get_datasource_properties(self.datasource_name)
@@ -1220,15 +1524,21 @@ instance of the Datasource class</p></div>
         self._data_source_type = data_source_dict[&#39;data_source_type&#39;]
         return data_source_dict
 
-    def start_job(self):
-        &#34;&#34;&#34;Starts the crawl job for the datasource
+    def start_job(self) -&gt; str:
+        &#34;&#34;&#34;Start the crawl job for the datasource.
 
-                Returns:
-                    Str  -   Job id of crawl job
+        Initiates a crawl job associated with this datasource and returns the job ID.
 
-                Raises:
-                    Exception:
-                        failed to start job
+        Returns:
+            str: The job ID of the started crawl job.
+
+        Raises:
+            Exception: If the job fails to start.
+
+        Example:
+            &gt;&gt;&gt; datasource = Datasource()
+            &gt;&gt;&gt; job_id = datasource.start_job()
+            &gt;&gt;&gt; print(f&#34;Crawl job started with ID: {job_id}&#34;)
 
         &#34;&#34;&#34;
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -1245,17 +1555,21 @@ instance of the Datasource class</p></div>
                 raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, &#34;Status object not found in response&#34;)
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
 
-    def delete_datasource(self):
-        &#34;&#34;&#34;deletes the datasource
+    def delete_datasource(self) -&gt; bool:
+        &#34;&#34;&#34;Delete the datasource from the system.
 
-                    Returns:
-                        true  -   if success
+        Returns:
+            True if the datasource was successfully deleted.
 
-                    Raises:
-                        Exception:
-                            Error message for failed ops
+        Raises:
+            Exception: If the deletion operation fails, an exception is raised with an error message.
 
-                &#34;&#34;&#34;
+        Example:
+            &gt;&gt;&gt; datasource = Datasource()
+            &gt;&gt;&gt; success = datasource.delete_datasource()
+            &gt;&gt;&gt; print(f&#34;Datasource deleted: {success}&#34;)
+
+        &#34;&#34;&#34;
         flag, response = self._datacube_object._commcell_object._cvpysdk_object.make_request(
             &#39;POST&#39;, self._delete_datasource % (self._datasource_id))
 
@@ -1268,15 +1582,20 @@ instance of the Datasource class</p></div>
                 return True
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
 
-    def get_status(self):
-        &#34;&#34;&#34;Gets status of the datasource.
+    def get_status(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the current status information of the datasource.
 
-                Returns:
-                    dict - containing all status information of datasource
+        Returns:
+            dict: A dictionary containing all status details of the datasource.
 
-                Raises:
-                    Exception:
-                            Failure to find datasource details
+        Raises:
+            Exception: If the datasource details cannot be found.
+
+        Example:
+            &gt;&gt;&gt; datasource = Datasource()
+            &gt;&gt;&gt; status_info = datasource.get_status()
+            &gt;&gt;&gt; print(status_info)
+            &gt;&gt;&gt; # Output will be a dictionary with status information about the datasource
 
         &#34;&#34;&#34;
 
@@ -1294,34 +1613,33 @@ instance of the Datasource class</p></div>
                 raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, &#34;Status object not found in response&#34;)
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
 
-    def get_crawl_history(self, last_crawl_history=False):
-        &#34;&#34;&#34;Gets the Crawling  history for this datasource.
+    def get_crawl_history(self, last_crawl_history: bool = False) -&gt; list:
+        &#34;&#34;&#34;Retrieve the crawling history for this datasource.
 
-            Args:
-                last_crawl_history (bool)    -- if set to True , returns
-                the status of and information about the most recent crawling
-                operation for a data source in Data Cube
+        Args:
+            last_crawl_history: If True, returns only the status and information about the most recent crawling
+                operation for this datasource in Data Cube. If False, returns the complete crawl history.
 
-            Returns:
-                list - list consisting of key value pair for history details of this datasource
+        Returns:
+            list: A list of dictionaries, each containing key-value pairs with details about crawl history for this datasource.
+            Each dictionary may include:
+                - &#34;numFailed&#34;: Number of failed items.
+                - &#34;totalcount&#34;: Total number of items processed.
+                - &#34;endUTCTime&#34;: End time of the crawl operation (UTC).
+                - &#34;numAccessDenied&#34;: Number of access denied errors.
+                - &#34;numAdded&#34;: Number of items added.
+                - &#34;startUTCTime&#34;: Start time of the crawl operation (UTC).
+                - &#34;state&#34;: State of the crawl operation.
 
-                 [
-                    {
-                        &#34;numFailed&#34;: ,
-                        &#34;totalcount&#34;: ,
-                        &#34;endUTCTime&#34;: ,
-                        &#34;numAccessDenied&#34;: ,
-                        &#34;numAdded&#34;: ,
-                        &#34;startUTCTime&#34;: ,
-                        &#34;state&#34;:
-                    }
-                ]
+        Raises:
+            SDKException: If the response is empty or not successful.
 
-            Raises:
-                SDKException:
-                    if response is empty
-
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; datasource = Datasource()
+            &gt;&gt;&gt; history = datasource.get_crawl_history()
+            &gt;&gt;&gt; print(f&#34;Total crawl operations: {len(history)}&#34;)
+            &gt;&gt;&gt; if history:
+            ...     print(f&#34;Most recent crawl state: {history[0][&#39;state&#39;]}&#34;)
 
         &#34;&#34;&#34;
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -1338,52 +1656,122 @@ instance of the Datasource class</p></div>
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
     @property
-    def datasource_id(self):
-        &#34;&#34;&#34;Returns the value of the data source id attribute.&#34;&#34;&#34;
+    def datasource_id(self) -&gt; int:
+        &#34;&#34;&#34;Get the unique identifier of the data source.
+
+        Returns:
+            int: The ID value associated with this data source.
+
+        Example:
+            &gt;&gt;&gt; datasource = Datasource()
+            &gt;&gt;&gt; ds_id = datasource.datasource_id  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Datasource ID: {ds_id}&#34;)
+
+        &#34;&#34;&#34;
         return self._datasource_id
 
     @property
-    def properties(self):
-        &#34;&#34;&#34;Returns all the data source properties&#34;&#34;&#34;
+    def properties(self) -&gt; dict:
+        &#34;&#34;&#34;Get all properties associated with the data source.
+
+        Returns:
+            dict: A dictionary containing all properties of the data source.
+
+        Example:
+            &gt;&gt;&gt; datasource = Datasource()
+            &gt;&gt;&gt; props = datasource.properties  # Access properties using dot notation
+            &gt;&gt;&gt; print(props)
+            {&#39;name&#39;: &#39;DataSource1&#39;, &#39;type&#39;: &#39;SQL&#39;, &#39;status&#39;: &#39;active&#39;}
+
+        &#34;&#34;&#34;
         return self._properties
 
     @property
-    def datasource_name(self):
-        &#34;&#34;&#34;Returns the value of the data source name attribute.&#34;&#34;&#34;
+    def datasource_name(self) -&gt; str:
+        &#34;&#34;&#34;Get the name of the data source.
+
+        Returns:
+            The name of the data source as a string.
+
+        Example:
+            &gt;&gt;&gt; ds = Datasource()
+            &gt;&gt;&gt; name = ds.datasource_name  # Use dot notation to access the property
+            &gt;&gt;&gt; print(f&#34;Datasource name: {name}&#34;)
+
+        &#34;&#34;&#34;
         return self._datasource_name
 
     @property
-    def computed_core_name(self):
-        &#34;&#34;&#34;Returns the value of the computedcorename attribute.&#34;&#34;&#34;
+    def computed_core_name(self) -&gt; str:
+        &#34;&#34;&#34;Get the value of the computed core name attribute for this datasource.
+
+        Returns:
+            The computed core name as a string.
+
+        Example:
+            &gt;&gt;&gt; datasource = Datasource()
+            &gt;&gt;&gt; core_name = datasource.computed_core_name  # Access as a property
+            &gt;&gt;&gt; print(f&#34;Computed core name: {core_name}&#34;)
+
+        &#34;&#34;&#34;
         return self._computed_core_name
 
     @property
-    def index_server_cloud_id(self):
-        &#34;&#34;&#34;Returns the value of the cloud id attribute.&#34;&#34;&#34;
+    def index_server_cloud_id(self) -&gt; int:
+        &#34;&#34;&#34;Get the cloud ID associated with the index server for this datasource.
+
+        Returns:
+            int: The cloud ID value of the index server.
+
+        Example:
+            &gt;&gt;&gt; datasource = Datasource()
+            &gt;&gt;&gt; cloud_id = datasource.index_server_cloud_id
+            &gt;&gt;&gt; print(f&#34;Index server cloud ID: {cloud_id}&#34;)
+
+        &#34;&#34;&#34;
         return self._cloud_id
 
     @property
-    def data_source_type(self):
-        &#34;&#34;&#34;Returns the value of the data source type attribute.&#34;&#34;&#34;
+    def data_source_type(self) -&gt; str:
+        &#34;&#34;&#34;Get the type of the data source.
+
+        Returns:
+            The data source type as a string.
+
+        Example:
+            &gt;&gt;&gt; ds = Datasource()
+            &gt;&gt;&gt; ds_type = ds.data_source_type  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Datasource type: {ds_type}&#34;)
+
+        &#34;&#34;&#34;
         return self._data_source_type
 
-    def get_datasource_schema(self):
-        &#34;&#34;&#34;returns information about the schema of a data source.
+    def get_datasource_schema(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve information about the schema of the data source.
 
-            Returns:
-                dict - dict consisting of all schema fields of this datasource grouped
-                under dynSchemaFields and schemaFields
+        Returns:
+            dict: A dictionary containing all schema fields of this data source, grouped under
+            &#39;dynSchemaFields&#39; and &#39;schemaFields&#39;. The dictionary structure is as follows:
 
                 {
-                &#34;uniqueKey&#34;: &#34;contentid&#34;,
-                &#34;schemaFields&#34;: [{properties of field},list of fields]
-               &#34;dynSchemaFields&#34;:[{properties of field},list of fields]
+                    &#34;uniqueKey&#34;: &#34;contentid&#34;,
+                    &#34;schemaFields&#34;: [ {field properties}, ... ],
+                    &#34;dynSchemaFields&#34;: [ {field properties}, ... ]
+                }
 
-            Raises:
-                SDKException:
-                    if response is empty
+            - &#39;uniqueKey&#39;: The primary key field for the data source.
+            - &#39;schemaFields&#39;: List of dictionaries, each representing a static schema field.
+            - &#39;dynSchemaFields&#39;: List of dictionaries, each representing a dynamic schema field.
 
-                    if response is not success
+        Raises:
+            SDKException: If the response is empty or the request is not successful.
+
+        Example:
+            &gt;&gt;&gt; datasource = Datasource()
+            &gt;&gt;&gt; schema_info = datasource.get_datasource_schema()
+            &gt;&gt;&gt; print(schema_info[&#34;uniqueKey&#34;])
+            &gt;&gt;&gt; print(&#34;Number of static fields:&#34;, len(schema_info[&#34;schemaFields&#34;]))
+            &gt;&gt;&gt; print(&#34;Number of dynamic fields:&#34;, len(schema_info[&#34;dynSchemaFields&#34;]))
 
         &#34;&#34;&#34;
         flag, response = self._datacube_object._commcell_object._cvpysdk_object.make_request(
@@ -1399,30 +1787,42 @@ instance of the Datasource class</p></div>
         )
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def update_datasource_schema(self, schema):
-        &#34;&#34;&#34;updates the schema of a data source.
+    def update_datasource_schema(self, schema: list[dict[str, str]]) -&gt; None:
+        &#34;&#34;&#34;Update the schema of the data source.
 
-            Args:
-                schema (list)   -- list of  properties of schemas represented as key value pair.
-                [{
-                                    &#34;fieldName&#34;: &#34;&#34;,
-                                    &#34;indexed&#34;: &#34;&#34;,
-                                    &#34;autocomplete&#34;: &#34;&#34;,
-                                    &#34;type&#34;: &#34;&#34;,
-                                    &#34;searchDefault&#34;: &#34;&#34;,
-                                    &#34;multiValued&#34;: &#34;&#34;
-                                }]
-                Valid values for type are as follows:
-                    [string, int, float, long, double, date, longstring]
-                indexed, autocomplete, searchDefault, multiValued takes 0/1
+        This method updates the schema definition for the data source using the provided list of field property dictionaries.
+        Each dictionary should represent a field and its properties, such as field name, type, and indexing options.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Args:
+            schema: A list of dictionaries, where each dictionary defines the properties of a schema field.
+                Example field dictionary:
+                    {
+                        &#34;fieldName&#34;: &#34;username&#34;,
+                        &#34;indexed&#34;: &#34;1&#34;,
+                        &#34;autocomplete&#34;: &#34;0&#34;,
+                        &#34;type&#34;: &#34;string&#34;,
+                        &#34;searchDefault&#34;: &#34;1&#34;,
+                        &#34;multiValued&#34;: &#34;0&#34;
+                    }
+                Valid values for &#34;type&#34; are: &#34;string&#34;, &#34;int&#34;, &#34;float&#34;, &#34;long&#34;, &#34;double&#34;, &#34;date&#34;, &#34;longstring&#34;.
+                The values for &#34;indexed&#34;, &#34;autocomplete&#34;, &#34;searchDefault&#34;, and &#34;multiValued&#34; should be &#34;0&#34; or &#34;1&#34; as strings.
 
-                    if type of the schema argument is not list
+        Raises:
+            SDKException: If the response is empty, if the schema argument is not a list, or if the response indicates failure.
 
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; schema = [
+            ...     {
+            ...         &#34;fieldName&#34;: &#34;email&#34;,
+            ...         &#34;indexed&#34;: &#34;1&#34;,
+            ...         &#34;autocomplete&#34;: &#34;1&#34;,
+            ...         &#34;type&#34;: &#34;string&#34;,
+            ...         &#34;searchDefault&#34;: &#34;0&#34;,
+            ...         &#34;multiValued&#34;: &#34;0&#34;
+            ...     }
+            ... ]
+            &gt;&gt;&gt; datasource.update_datasource_schema(schema)
+            &gt;&gt;&gt; print(&#34;Datasource schema updated successfully.&#34;)
 
         &#34;&#34;&#34;
         if not isinstance(schema, list):
@@ -1456,17 +1856,23 @@ instance of the Datasource class</p></div>
             response.text)
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def import_data(self, data):
-        &#34;&#34;&#34;imports/pumps given data into data source.
+    def import_data(self, data: list) -&gt; None:
+        &#34;&#34;&#34;Import or pump the given data into the data source for indexing.
 
-            Args:
-                data (list)   -- data to be indexed and pumped into  solr.list of key value pairs.
+        Args:
+            data: A list of key-value pairs representing the data to be indexed and pumped into Solr.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException: If the response from the data source is empty or not successful.
 
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; datasource = Datasource()
+            &gt;&gt;&gt; sample_data = [
+            ...     {&#34;id&#34;: 1, &#34;name&#34;: &#34;Document1&#34;},
+            ...     {&#34;id&#34;: 2, &#34;name&#34;: &#34;Document2&#34;}
+            ... ]
+            &gt;&gt;&gt; datasource.import_data(sample_data)
+            &gt;&gt;&gt; print(&#34;Data imported successfully.&#34;)
 
         &#34;&#34;&#34;
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -1486,16 +1892,19 @@ instance of the Datasource class</p></div>
         )
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def delete_content(self):
-        &#34;&#34;&#34;deletes the content of a data source from Data Cube.
-           The data source itself is not deleted using this API.
+    def delete_content(self) -&gt; None:
+        &#34;&#34;&#34;Delete the content of the data source from Data Cube.
 
-            Raises:
-                SDKException:
+        This method removes all content associated with the data source, but does not delete the data source itself.
 
-                    if response is empty
+        Raises:
+            SDKException: If the response from the Data Cube API is empty or indicates a failure.
 
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; datasource = Datasource()
+            &gt;&gt;&gt; datasource.delete_content()
+            &gt;&gt;&gt; print(&#34;Datasource content deleted successfully&#34;)
+            # The data source object remains, but its content is removed.
 
         &#34;&#34;&#34;
         flag, response = self._datacube_object._commcell_object._cvpysdk_object.make_request(
@@ -1510,14 +1919,34 @@ instance of the Datasource class</p></div>
             return
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
 
-    def refresh(self):
-        &#34;&#34;&#34;Refresh the properties of the Datasource.&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Reload the properties of the Datasource object.
+
+        This method updates the Datasource instance with the latest information from the underlying data source.
+        Use this method to ensure that the object&#39;s properties reflect the current state.
+
+        Example:
+            &gt;&gt;&gt; datasource = Datasource()
+            &gt;&gt;&gt; datasource.refresh()
+            &gt;&gt;&gt; print(&#34;Datasource properties refreshed successfully&#34;)
+
+        &#34;&#34;&#34;
         self._properties = self._get_datasource_properties()
         self.handlers = Handlers(self)
 
     @property
-    def ds_handlers(self):
-        &#34;&#34;&#34;Returns the instance of the Handlers class.&#34;&#34;&#34;
+    def ds_handlers(self) -&gt; &#39;Handlers&#39;:
+        &#34;&#34;&#34;Get the Handlers instance associated with this Datasource.
+
+        Returns:
+            Handlers: An instance of the Handlers class for managing datasource handlers.
+
+        Example:
+            &gt;&gt;&gt; datasource = Datasource()
+            &gt;&gt;&gt; handlers = datasource.ds_handlers  # Access the Handlers instance via property
+            &gt;&gt;&gt; print(f&#34;Handlers object: {handlers}&#34;)
+
+        &#34;&#34;&#34;
         try:
             if self._handlers_obj is None:
                 self._handlers_obj = Handlers(self)
@@ -1525,30 +1954,28 @@ instance of the Datasource class</p></div>
         except BaseException:
             raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, &#34;Failed to init Handlers&#34;)
 
-    def share(self, permission_list, operation_type, user_id, user_name, user_type):
-        &#34;&#34;&#34; Share datasource with user/usergroup
-                Args:
-                    permission_list (list)-- List of permission
+    def share(self, permission_list: list, operation_type: int, user_id: int, user_name: str, user_type: int) -&gt; None:
+        &#34;&#34;&#34;Share the datasource with a specified user or user group.
 
-                    operation_type (int)  -- Operation type (2-add / 3- delete)
+        This method assigns or removes permissions for a user or user group on the datasource,
+        based on the provided operation type and permission list.
 
-                    user_id (int)         -- User id of share user
+        Args:
+            permission_list: List of permissions to assign or remove for the user/user group.
+            operation_type: The type of operation to perform (2 for add, 3 for delete).
+            user_id: The unique identifier of the user or user group to share with.
+            user_name: The name of the user or user group to share with.
+            user_type: The type of user (e.g., 13 for User).
 
-                    user_name (str)       -- Share user name
+        Raises:
+            SDKException: If the response is empty, not successful, or if sharing the datasource fails.
 
-                    user_type (int)       -- Share user type (Ex : 13- User)
+        Example:
+            &gt;&gt;&gt; datasource = Datasource()
+            &gt;&gt;&gt; permissions = [&#39;read&#39;, &#39;write&#39;]
+            &gt;&gt;&gt; datasource.share(permissions, 2, 101, &#39;jdoe&#39;, 13)
+            &gt;&gt;&gt; print(&#34;Datasource shared successfully with user jdoe.&#34;)
 
-                Returns:
-                    None
-
-                Raises:
-                    SDKExpception:
-
-                        if response is empty
-
-                        if response is not success
-
-                        if failed to share the datasource with User/userGroup
         &#34;&#34;&#34;
         category_permission_list = []
         for permission in permission_list:
@@ -1601,73 +2028,174 @@ instance of the Datasource class</p></div>
 </details>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.datacube.datasource.Datasource.computed_core_name"><code class="name">var <span class="ident">computed_core_name</span></code></dt>
+<dt id="cvpysdk.datacube.datasource.Datasource.computed_core_name"><code class="name">var <span class="ident">computed_core_name</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the value of the computedcorename attribute.</p></div>
+<div class="desc"><p>Get the value of the computed core name attribute for this datasource.</p>
+<p>Returns
+-----=
+The computed core name as a string.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; datasource = Datasource()
+&gt;&gt;&gt; core_name = datasource.computed_core_name  # Access as a property
+&gt;&gt;&gt; print(f&quot;Computed core name: {core_name}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/datasource.py#L706-L709" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/datasource.py#L896-L910" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def computed_core_name(self):
-    &#34;&#34;&#34;Returns the value of the computedcorename attribute.&#34;&#34;&#34;
+def computed_core_name(self) -&gt; str:
+    &#34;&#34;&#34;Get the value of the computed core name attribute for this datasource.
+
+    Returns:
+        The computed core name as a string.
+
+    Example:
+        &gt;&gt;&gt; datasource = Datasource()
+        &gt;&gt;&gt; core_name = datasource.computed_core_name  # Access as a property
+        &gt;&gt;&gt; print(f&#34;Computed core name: {core_name}&#34;)
+
+    &#34;&#34;&#34;
     return self._computed_core_name</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.datacube.datasource.Datasource.data_source_type"><code class="name">var <span class="ident">data_source_type</span></code></dt>
+<dt id="cvpysdk.datacube.datasource.Datasource.data_source_type"><code class="name">var <span class="ident">data_source_type</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the value of the data source type attribute.</p></div>
+<div class="desc"><p>Get the type of the data source.</p>
+<p>Returns
+-----=
+The data source type as a string.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; ds = Datasource()
+&gt;&gt;&gt; ds_type = ds.data_source_type  # Use dot notation for property access
+&gt;&gt;&gt; print(f&quot;Datasource type: {ds_type}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/datasource.py#L716-L719" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/datasource.py#L928-L942" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def data_source_type(self):
-    &#34;&#34;&#34;Returns the value of the data source type attribute.&#34;&#34;&#34;
+def data_source_type(self) -&gt; str:
+    &#34;&#34;&#34;Get the type of the data source.
+
+    Returns:
+        The data source type as a string.
+
+    Example:
+        &gt;&gt;&gt; ds = Datasource()
+        &gt;&gt;&gt; ds_type = ds.data_source_type  # Use dot notation for property access
+        &gt;&gt;&gt; print(f&#34;Datasource type: {ds_type}&#34;)
+
+    &#34;&#34;&#34;
     return self._data_source_type</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.datacube.datasource.Datasource.datasource_id"><code class="name">var <span class="ident">datasource_id</span></code></dt>
+<dt id="cvpysdk.datacube.datasource.Datasource.datasource_id"><code class="name">var <span class="ident">datasource_id</span> : int</code></dt>
 <dd>
-<div class="desc"><p>Returns the value of the data source id attribute.</p></div>
+<div class="desc"><p>Get the unique identifier of the data source.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>int</code></dt>
+<dd>The ID value associated with this data source.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; datasource = Datasource()
+&gt;&gt;&gt; ds_id = datasource.datasource_id  # Use dot notation for property access
+&gt;&gt;&gt; print(f&quot;Datasource ID: {ds_id}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/datasource.py#L691-L694" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/datasource.py#L847-L861" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def datasource_id(self):
-    &#34;&#34;&#34;Returns the value of the data source id attribute.&#34;&#34;&#34;
+def datasource_id(self) -&gt; int:
+    &#34;&#34;&#34;Get the unique identifier of the data source.
+
+    Returns:
+        int: The ID value associated with this data source.
+
+    Example:
+        &gt;&gt;&gt; datasource = Datasource()
+        &gt;&gt;&gt; ds_id = datasource.datasource_id  # Use dot notation for property access
+        &gt;&gt;&gt; print(f&#34;Datasource ID: {ds_id}&#34;)
+
+    &#34;&#34;&#34;
     return self._datasource_id</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.datacube.datasource.Datasource.datasource_name"><code class="name">var <span class="ident">datasource_name</span></code></dt>
+<dt id="cvpysdk.datacube.datasource.Datasource.datasource_name"><code class="name">var <span class="ident">datasource_name</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the value of the data source name attribute.</p></div>
+<div class="desc"><p>Get the name of the data source.</p>
+<p>Returns
+-----=
+The name of the data source as a string.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; ds = Datasource()
+&gt;&gt;&gt; name = ds.datasource_name  # Use dot notation to access the property
+&gt;&gt;&gt; print(f&quot;Datasource name: {name}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/datasource.py#L701-L704" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/datasource.py#L880-L894" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def datasource_name(self):
-    &#34;&#34;&#34;Returns the value of the data source name attribute.&#34;&#34;&#34;
+def datasource_name(self) -&gt; str:
+    &#34;&#34;&#34;Get the name of the data source.
+
+    Returns:
+        The name of the data source as a string.
+
+    Example:
+        &gt;&gt;&gt; ds = Datasource()
+        &gt;&gt;&gt; name = ds.datasource_name  # Use dot notation to access the property
+        &gt;&gt;&gt; print(f&#34;Datasource name: {name}&#34;)
+
+    &#34;&#34;&#34;
     return self._datasource_name</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.datacube.datasource.Datasource.ds_handlers"><code class="name">var <span class="ident">ds_handlers</span></code></dt>
+<dt id="cvpysdk.datacube.datasource.Datasource.ds_handlers"><code class="name">var <span class="ident">ds_handlers</span> : <a title="cvpysdk.datacube.handler.Handlers" href="handler.html#cvpysdk.datacube.handler.Handlers">Handlers</a></code></dt>
 <dd>
-<div class="desc"><p>Returns the instance of the Handlers class.</p></div>
+<div class="desc"><p>Get the Handlers instance associated with this Datasource.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Handlers</code></dt>
+<dd>An instance of the Handlers class for managing datasource handlers.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; datasource = Datasource()
+&gt;&gt;&gt; handlers = datasource.ds_handlers  # Access the Handlers instance via property
+&gt;&gt;&gt; print(f&quot;Handlers object: {handlers}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/datasource.py#L869-L877" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/datasource.py#L1137-L1156" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def ds_handlers(self):
-    &#34;&#34;&#34;Returns the instance of the Handlers class.&#34;&#34;&#34;
+def ds_handlers(self) -&gt; &#39;Handlers&#39;:
+    &#34;&#34;&#34;Get the Handlers instance associated with this Datasource.
+
+    Returns:
+        Handlers: An instance of the Handlers class for managing datasource handlers.
+
+    Example:
+        &gt;&gt;&gt; datasource = Datasource()
+        &gt;&gt;&gt; handlers = datasource.ds_handlers  # Access the Handlers instance via property
+        &gt;&gt;&gt; print(f&#34;Handlers object: {handlers}&#34;)
+
+    &#34;&#34;&#34;
     try:
         if self._handlers_obj is None:
             self._handlers_obj = Handlers(self)
@@ -1676,31 +2204,77 @@ def ds_handlers(self):
         raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, &#34;Failed to init Handlers&#34;)</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.datacube.datasource.Datasource.index_server_cloud_id"><code class="name">var <span class="ident">index_server_cloud_id</span></code></dt>
+<dt id="cvpysdk.datacube.datasource.Datasource.index_server_cloud_id"><code class="name">var <span class="ident">index_server_cloud_id</span> : int</code></dt>
 <dd>
-<div class="desc"><p>Returns the value of the cloud id attribute.</p></div>
+<div class="desc"><p>Get the cloud ID associated with the index server for this datasource.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>int</code></dt>
+<dd>The cloud ID value of the index server.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; datasource = Datasource()
+&gt;&gt;&gt; cloud_id = datasource.index_server_cloud_id
+&gt;&gt;&gt; print(f&quot;Index server cloud ID: {cloud_id}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/datasource.py#L711-L714" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/datasource.py#L912-L926" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def index_server_cloud_id(self):
-    &#34;&#34;&#34;Returns the value of the cloud id attribute.&#34;&#34;&#34;
+def index_server_cloud_id(self) -&gt; int:
+    &#34;&#34;&#34;Get the cloud ID associated with the index server for this datasource.
+
+    Returns:
+        int: The cloud ID value of the index server.
+
+    Example:
+        &gt;&gt;&gt; datasource = Datasource()
+        &gt;&gt;&gt; cloud_id = datasource.index_server_cloud_id
+        &gt;&gt;&gt; print(f&#34;Index server cloud ID: {cloud_id}&#34;)
+
+    &#34;&#34;&#34;
     return self._cloud_id</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.datacube.datasource.Datasource.properties"><code class="name">var <span class="ident">properties</span></code></dt>
+<dt id="cvpysdk.datacube.datasource.Datasource.properties"><code class="name">var <span class="ident">properties</span> : dict</code></dt>
 <dd>
-<div class="desc"><p>Returns all the data source properties</p></div>
+<div class="desc"><p>Get all properties associated with the data source.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>A dictionary containing all properties of the data source.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; datasource = Datasource()
+&gt;&gt;&gt; props = datasource.properties  # Access properties using dot notation
+&gt;&gt;&gt; print(props)
+{'name': 'DataSource1', 'type': 'SQL', 'status': 'active'}
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/datasource.py#L696-L699" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/datasource.py#L863-L878" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def properties(self):
-    &#34;&#34;&#34;Returns all the data source properties&#34;&#34;&#34;
+def properties(self) -&gt; dict:
+    &#34;&#34;&#34;Get all properties associated with the data source.
+
+    Returns:
+        dict: A dictionary containing all properties of the data source.
+
+    Example:
+        &gt;&gt;&gt; datasource = Datasource()
+        &gt;&gt;&gt; props = datasource.properties  # Access properties using dot notation
+        &gt;&gt;&gt; print(props)
+        {&#39;name&#39;: &#39;DataSource1&#39;, &#39;type&#39;: &#39;SQL&#39;, &#39;status&#39;: &#39;active&#39;}
+
+    &#34;&#34;&#34;
     return self._properties</code></pre>
 </details>
 </dd>
@@ -1708,32 +2282,42 @@ def properties(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.datacube.datasource.Datasource.delete_content"><code class="name flex">
-<span>def <span class="ident">delete_content</span></span>(<span>self)</span>
+<span>def <span class="ident">delete_content</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>deletes the content of a data source from Data Cube.
-The data source itself is not deleted using this API.</p>
-<p>Raises:
-SDKException:</p>
-<pre><code>     if response is empty
-
-     if response is not success
+<div class="desc"><p>Delete the content of the data source from Data Cube.</p>
+<p>This method removes all content associated with the data source, but does not delete the data source itself.</p>
+<dl>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the response from the Data Cube API is empty or indicates a failure.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; datasource = Datasource()
+&gt;&gt;&gt; datasource.delete_content()
+&gt;&gt;&gt; print(&quot;Datasource content deleted successfully&quot;)
+# The data source object remains, but its content is removed.
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/datasource.py#L840-L862" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/datasource.py#L1093-L1119" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def delete_content(self):
-    &#34;&#34;&#34;deletes the content of a data source from Data Cube.
-       The data source itself is not deleted using this API.
+<pre><code class="python">def delete_content(self) -&gt; None:
+    &#34;&#34;&#34;Delete the content of the data source from Data Cube.
 
-        Raises:
-            SDKException:
+    This method removes all content associated with the data source, but does not delete the data source itself.
 
-                if response is empty
+    Raises:
+        SDKException: If the response from the Data Cube API is empty or indicates a failure.
 
-                if response is not success
+    Example:
+        &gt;&gt;&gt; datasource = Datasource()
+        &gt;&gt;&gt; datasource.delete_content()
+        &gt;&gt;&gt; print(&#34;Datasource content deleted successfully&#34;)
+        # The data source object remains, but its content is removed.
 
     &#34;&#34;&#34;
     flag, response = self._datacube_object._commcell_object._cvpysdk_object.make_request(
@@ -1750,33 +2334,45 @@ SDKException:</p>
 </details>
 </dd>
 <dt id="cvpysdk.datacube.datasource.Datasource.delete_datasource"><code class="name flex">
-<span>def <span class="ident">delete_datasource</span></span>(<span>self)</span>
+<span>def <span class="ident">delete_datasource</span></span>(<span>self) ‑> bool</span>
 </code></dt>
 <dd>
-<div class="desc"><p>deletes the datasource</p>
-<h2 id="returns">Returns</h2>
-<p>true
--
-if success</p>
-<h2 id="raises">Raises</h2>
-<p>Exception:
-Error message for failed ops</p></div>
+<div class="desc"><p>Delete the datasource from the system.</p>
+<p>Returns
+-----=
+True if the datasource was successfully deleted.</p>
+<dl>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>Exception</code></dt>
+<dd>If the deletion operation fails, an exception is raised with an error message.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; datasource = Datasource()
+&gt;&gt;&gt; success = datasource.delete_datasource()
+&gt;&gt;&gt; print(f&quot;Datasource deleted: {success}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/datasource.py#L599-L620" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/datasource.py#L744-L770" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def delete_datasource(self):
-    &#34;&#34;&#34;deletes the datasource
+<pre><code class="python">def delete_datasource(self) -&gt; bool:
+    &#34;&#34;&#34;Delete the datasource from the system.
 
-                Returns:
-                    true  -   if success
+    Returns:
+        True if the datasource was successfully deleted.
 
-                Raises:
-                    Exception:
-                        Error message for failed ops
+    Raises:
+        Exception: If the deletion operation fails, an exception is raised with an error message.
 
-            &#34;&#34;&#34;
+    Example:
+        &gt;&gt;&gt; datasource = Datasource()
+        &gt;&gt;&gt; success = datasource.delete_datasource()
+        &gt;&gt;&gt; print(f&#34;Datasource deleted: {success}&#34;)
+
+    &#34;&#34;&#34;
     flag, response = self._datacube_object._commcell_object._cvpysdk_object.make_request(
         &#39;POST&#39;, self._delete_datasource % (self._datasource_id))
 
@@ -1791,67 +2387,75 @@ Error message for failed ops</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.datacube.datasource.Datasource.get_crawl_history"><code class="name flex">
-<span>def <span class="ident">get_crawl_history</span></span>(<span>self, last_crawl_history=False)</span>
+<span>def <span class="ident">get_crawl_history</span></span>(<span>self, last_crawl_history: bool = False) ‑> list</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Gets the Crawling
-history for this datasource.</p>
-<h2 id="args">Args</h2>
-<p>last_crawl_history (bool)
-&ndash; if set to True , returns
-the status of and information about the most recent crawling
-operation for a data source in Data Cube</p>
-<h2 id="returns">Returns</h2>
-<p>list - list consisting of key value pair for history details of this datasource</p>
-<p>[
-{
-"numFailed": ,
-"totalcount": ,
-"endUTCTime": ,
-"numAccessDenied": ,
-"numAdded": ,
-"startUTCTime": ,
-"state":
-}
-]</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if response is empty</p>
-<pre><code>if response is not success
+<div class="desc"><p>Retrieve the crawling history for this datasource.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>last_crawl_history</code></strong></dt>
+<dd>If True, returns only the status and information about the most recent crawling
+operation for this datasource in Data Cube. If False, returns the complete crawl history.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>list</code></dt>
+<dd>A list of dictionaries, each containing key-value pairs with details about crawl history for this datasource.</dd>
+</dl>
+<p>Each dictionary may include:
+- "numFailed": Number of failed items.
+- "totalcount": Total number of items processed.
+- "endUTCTime": End time of the crawl operation (UTC).
+- "numAccessDenied": Number of access denied errors.
+- "numAdded": Number of items added.
+- "startUTCTime": Start time of the crawl operation (UTC).
+- "state": State of the crawl operation.</p>
+<dl>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the response is empty or not successful.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; datasource = Datasource()
+&gt;&gt;&gt; history = datasource.get_crawl_history()
+&gt;&gt;&gt; print(f&quot;Total crawl operations: {len(history)}&quot;)
+&gt;&gt;&gt; if history:
+...     print(f&quot;Most recent crawl state: {history[0]['state']}&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/datasource.py#L648-L689" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/datasource.py#L804-L845" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def get_crawl_history(self, last_crawl_history=False):
-    &#34;&#34;&#34;Gets the Crawling  history for this datasource.
+<pre><code class="python">def get_crawl_history(self, last_crawl_history: bool = False) -&gt; list:
+    &#34;&#34;&#34;Retrieve the crawling history for this datasource.
 
-        Args:
-            last_crawl_history (bool)    -- if set to True , returns
-            the status of and information about the most recent crawling
-            operation for a data source in Data Cube
+    Args:
+        last_crawl_history: If True, returns only the status and information about the most recent crawling
+            operation for this datasource in Data Cube. If False, returns the complete crawl history.
 
-        Returns:
-            list - list consisting of key value pair for history details of this datasource
+    Returns:
+        list: A list of dictionaries, each containing key-value pairs with details about crawl history for this datasource.
+        Each dictionary may include:
+            - &#34;numFailed&#34;: Number of failed items.
+            - &#34;totalcount&#34;: Total number of items processed.
+            - &#34;endUTCTime&#34;: End time of the crawl operation (UTC).
+            - &#34;numAccessDenied&#34;: Number of access denied errors.
+            - &#34;numAdded&#34;: Number of items added.
+            - &#34;startUTCTime&#34;: Start time of the crawl operation (UTC).
+            - &#34;state&#34;: State of the crawl operation.
 
-             [
-                {
-                    &#34;numFailed&#34;: ,
-                    &#34;totalcount&#34;: ,
-                    &#34;endUTCTime&#34;: ,
-                    &#34;numAccessDenied&#34;: ,
-                    &#34;numAdded&#34;: ,
-                    &#34;startUTCTime&#34;: ,
-                    &#34;state&#34;:
-                }
-            ]
+    Raises:
+        SDKException: If the response is empty or not successful.
 
-        Raises:
-            SDKException:
-                if response is empty
-
-                if response is not success
+    Example:
+        &gt;&gt;&gt; datasource = Datasource()
+        &gt;&gt;&gt; history = datasource.get_crawl_history()
+        &gt;&gt;&gt; print(f&#34;Total crawl operations: {len(history)}&#34;)
+        &gt;&gt;&gt; if history:
+        ...     print(f&#34;Most recent crawl state: {history[0][&#39;state&#39;]}&#34;)
 
     &#34;&#34;&#34;
     flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -1869,44 +2473,73 @@ if response is empty</p>
 </details>
 </dd>
 <dt id="cvpysdk.datacube.datasource.Datasource.get_datasource_schema"><code class="name flex">
-<span>def <span class="ident">get_datasource_schema</span></span>(<span>self)</span>
+<span>def <span class="ident">get_datasource_schema</span></span>(<span>self) ‑> dict</span>
 </code></dt>
 <dd>
-<div class="desc"><p>returns information about the schema of a data source.</p>
-<h2 id="returns">Returns</h2>
-<p>dict - dict consisting of all schema fields of this datasource grouped
-under dynSchemaFields and schemaFields</p>
-<p>{
-"uniqueKey": "contentid",
-"schemaFields": [{properties of field},list of fields]
-"dynSchemaFields":[{properties of field},list of fields]</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if response is empty</p>
-<pre><code>if response is not success
+<div class="desc"><p>Retrieve information about the schema of the data source.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>A dictionary containing all schema fields of this data source, grouped under</dd>
+</dl>
+<p>'dynSchemaFields' and 'schemaFields'. The dictionary structure is as follows:</p>
+<pre><code>{
+    "uniqueKey": "contentid",
+    "schemaFields": [ {field properties}, ... ],
+    "dynSchemaFields": [ {field properties}, ... ]
+}
+</code></pre>
+<ul>
+<li>'uniqueKey': The primary key field for the data source.</li>
+<li>'schemaFields': List of dictionaries, each representing a static schema field.</li>
+<li>'dynSchemaFields': List of dictionaries, each representing a dynamic schema field.</li>
+</ul>
+<dl>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the response is empty or the request is not successful.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; datasource = Datasource()
+&gt;&gt;&gt; schema_info = datasource.get_datasource_schema()
+&gt;&gt;&gt; print(schema_info[&quot;uniqueKey&quot;])
+&gt;&gt;&gt; print(&quot;Number of static fields:&quot;, len(schema_info[&quot;schemaFields&quot;]))
+&gt;&gt;&gt; print(&quot;Number of dynamic fields:&quot;, len(schema_info[&quot;dynSchemaFields&quot;]))
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/datasource.py#L721-L751" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/datasource.py#L944-L984" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def get_datasource_schema(self):
-    &#34;&#34;&#34;returns information about the schema of a data source.
+<pre><code class="python">def get_datasource_schema(self) -&gt; dict:
+    &#34;&#34;&#34;Retrieve information about the schema of the data source.
 
-        Returns:
-            dict - dict consisting of all schema fields of this datasource grouped
-            under dynSchemaFields and schemaFields
+    Returns:
+        dict: A dictionary containing all schema fields of this data source, grouped under
+        &#39;dynSchemaFields&#39; and &#39;schemaFields&#39;. The dictionary structure is as follows:
 
             {
-            &#34;uniqueKey&#34;: &#34;contentid&#34;,
-            &#34;schemaFields&#34;: [{properties of field},list of fields]
-           &#34;dynSchemaFields&#34;:[{properties of field},list of fields]
+                &#34;uniqueKey&#34;: &#34;contentid&#34;,
+                &#34;schemaFields&#34;: [ {field properties}, ... ],
+                &#34;dynSchemaFields&#34;: [ {field properties}, ... ]
+            }
 
-        Raises:
-            SDKException:
-                if response is empty
+        - &#39;uniqueKey&#39;: The primary key field for the data source.
+        - &#39;schemaFields&#39;: List of dictionaries, each representing a static schema field.
+        - &#39;dynSchemaFields&#39;: List of dictionaries, each representing a dynamic schema field.
 
-                if response is not success
+    Raises:
+        SDKException: If the response is empty or the request is not successful.
+
+    Example:
+        &gt;&gt;&gt; datasource = Datasource()
+        &gt;&gt;&gt; schema_info = datasource.get_datasource_schema()
+        &gt;&gt;&gt; print(schema_info[&#34;uniqueKey&#34;])
+        &gt;&gt;&gt; print(&#34;Number of static fields:&#34;, len(schema_info[&#34;schemaFields&#34;]))
+        &gt;&gt;&gt; print(&#34;Number of dynamic fields:&#34;, len(schema_info[&#34;dynSchemaFields&#34;]))
 
     &#34;&#34;&#34;
     flag, response = self._datacube_object._commcell_object._cvpysdk_object.make_request(
@@ -1924,29 +2557,46 @@ if response is empty</p>
 </details>
 </dd>
 <dt id="cvpysdk.datacube.datasource.Datasource.get_status"><code class="name flex">
-<span>def <span class="ident">get_status</span></span>(<span>self)</span>
+<span>def <span class="ident">get_status</span></span>(<span>self) ‑> dict</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Gets status of the datasource.</p>
-<h2 id="returns">Returns</h2>
-<p>dict - containing all status information of datasource</p>
-<h2 id="raises">Raises</h2>
-<p>Exception:
-Failure to find datasource details</p></div>
+<div class="desc"><p>Retrieve the current status information of the datasource.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>A dictionary containing all status details of the datasource.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>Exception</code></dt>
+<dd>If the datasource details cannot be found.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; datasource = Datasource()
+&gt;&gt;&gt; status_info = datasource.get_status()
+&gt;&gt;&gt; print(status_info)
+&gt;&gt;&gt; # Output will be a dictionary with status information about the datasource
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/datasource.py#L622-L646" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/datasource.py#L772-L802" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def get_status(self):
-    &#34;&#34;&#34;Gets status of the datasource.
+<pre><code class="python">def get_status(self) -&gt; dict:
+    &#34;&#34;&#34;Retrieve the current status information of the datasource.
 
-            Returns:
-                dict - containing all status information of datasource
+    Returns:
+        dict: A dictionary containing all status details of the datasource.
 
-            Raises:
-                Exception:
-                        Failure to find datasource details
+    Raises:
+        Exception: If the datasource details cannot be found.
+
+    Example:
+        &gt;&gt;&gt; datasource = Datasource()
+        &gt;&gt;&gt; status_info = datasource.get_status()
+        &gt;&gt;&gt; print(status_info)
+        &gt;&gt;&gt; # Output will be a dictionary with status information about the datasource
 
     &#34;&#34;&#34;
 
@@ -1966,35 +2616,52 @@ Failure to find datasource details</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.datacube.datasource.Datasource.import_data"><code class="name flex">
-<span>def <span class="ident">import_data</span></span>(<span>self, data)</span>
+<span>def <span class="ident">import_data</span></span>(<span>self, data: list) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>imports/pumps given data into data source.</p>
-<h2 id="args">Args</h2>
-<p>data (list)
-&ndash; data to be indexed and pumped into
-solr.list of key value pairs.</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if response is empty</p>
-<pre><code>if response is not success
+<div class="desc"><p>Import or pump the given data into the data source for indexing.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>data</code></strong></dt>
+<dd>A list of key-value pairs representing the data to be indexed and pumped into Solr.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the response from the data source is empty or not successful.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; datasource = Datasource()
+&gt;&gt;&gt; sample_data = [
+...     {&quot;id&quot;: 1, &quot;name&quot;: &quot;Document1&quot;},
+...     {&quot;id&quot;: 2, &quot;name&quot;: &quot;Document2&quot;}
+... ]
+&gt;&gt;&gt; datasource.import_data(sample_data)
+&gt;&gt;&gt; print(&quot;Data imported successfully.&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/datasource.py#L810-L838" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/datasource.py#L1056-L1091" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def import_data(self, data):
-    &#34;&#34;&#34;imports/pumps given data into data source.
+<pre><code class="python">def import_data(self, data: list) -&gt; None:
+    &#34;&#34;&#34;Import or pump the given data into the data source for indexing.
 
-        Args:
-            data (list)   -- data to be indexed and pumped into  solr.list of key value pairs.
+    Args:
+        data: A list of key-value pairs representing the data to be indexed and pumped into Solr.
 
-        Raises:
-            SDKException:
-                if response is empty
+    Raises:
+        SDKException: If the response from the data source is empty or not successful.
 
-                if response is not success
+    Example:
+        &gt;&gt;&gt; datasource = Datasource()
+        &gt;&gt;&gt; sample_data = [
+        ...     {&#34;id&#34;: 1, &#34;name&#34;: &#34;Document1&#34;},
+        ...     {&#34;id&#34;: 2, &#34;name&#34;: &#34;Document2&#34;}
+        ... ]
+        &gt;&gt;&gt; datasource.import_data(sample_data)
+        &gt;&gt;&gt; print(&#34;Data imported successfully.&#34;)
 
     &#34;&#34;&#34;
     flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -2016,75 +2683,98 @@ if response is empty</p>
 </details>
 </dd>
 <dt id="cvpysdk.datacube.datasource.Datasource.refresh"><code class="name flex">
-<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+<span>def <span class="ident">refresh</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Refresh the properties of the Datasource.</p></div>
+<div class="desc"><p>Reload the properties of the Datasource object.</p>
+<p>This method updates the Datasource instance with the latest information from the underlying data source.
+Use this method to ensure that the object's properties reflect the current state.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; datasource = Datasource()
+&gt;&gt;&gt; datasource.refresh()
+&gt;&gt;&gt; print(&quot;Datasource properties refreshed successfully&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/datasource.py#L864-L867" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/datasource.py#L1121-L1135" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def refresh(self):
-    &#34;&#34;&#34;Refresh the properties of the Datasource.&#34;&#34;&#34;
+<pre><code class="python">def refresh(self) -&gt; None:
+    &#34;&#34;&#34;Reload the properties of the Datasource object.
+
+    This method updates the Datasource instance with the latest information from the underlying data source.
+    Use this method to ensure that the object&#39;s properties reflect the current state.
+
+    Example:
+        &gt;&gt;&gt; datasource = Datasource()
+        &gt;&gt;&gt; datasource.refresh()
+        &gt;&gt;&gt; print(&#34;Datasource properties refreshed successfully&#34;)
+
+    &#34;&#34;&#34;
     self._properties = self._get_datasource_properties()
     self.handlers = Handlers(self)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.datacube.datasource.Datasource.share"><code class="name flex">
-<span>def <span class="ident">share</span></span>(<span>self, permission_list, operation_type, user_id, user_name, user_type)</span>
+<span>def <span class="ident">share</span></span>(<span>self, permission_list: list, operation_type: int, user_id: int, user_name: str, user_type: int) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Share datasource with user/usergroup</p>
-<h2 id="args">Args</h2>
-<p>permission_list (list)&ndash; List of permission</p>
-<p>operation_type (int)
-&ndash; Operation type (2-add / 3- delete)</p>
-<p>user_id (int)
-&ndash; User id of share user</p>
-<p>user_name (str)
-&ndash; Share user name</p>
-<p>user_type (int)
-&ndash; Share user type (Ex : 13- User)</p>
-<h2 id="returns">Returns</h2>
-<p>None</p>
-<h2 id="raises">Raises</h2>
-<p>SDKExpception:</p>
-<pre><code>if response is empty
-
-if response is not success
-
-if failed to share the datasource with User/userGroup
+<div class="desc"><p>Share the datasource with a specified user or user group.</p>
+<p>This method assigns or removes permissions for a user or user group on the datasource,
+based on the provided operation type and permission list.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>permission_list</code></strong></dt>
+<dd>List of permissions to assign or remove for the user/user group.</dd>
+<dt><strong><code>operation_type</code></strong></dt>
+<dd>The type of operation to perform (2 for add, 3 for delete).</dd>
+<dt><strong><code>user_id</code></strong></dt>
+<dd>The unique identifier of the user or user group to share with.</dd>
+<dt><strong><code>user_name</code></strong></dt>
+<dd>The name of the user or user group to share with.</dd>
+<dt><strong><code>user_type</code></strong></dt>
+<dd>The type of user (e.g., 13 for User).</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the response is empty, not successful, or if sharing the datasource fails.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; datasource = Datasource()
+&gt;&gt;&gt; permissions = ['read', 'write']
+&gt;&gt;&gt; datasource.share(permissions, 2, 101, 'jdoe', 13)
+&gt;&gt;&gt; print(&quot;Datasource shared successfully with user jdoe.&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/datasource.py#L879-L951" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/datasource.py#L1158-L1229" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def share(self, permission_list, operation_type, user_id, user_name, user_type):
-    &#34;&#34;&#34; Share datasource with user/usergroup
-            Args:
-                permission_list (list)-- List of permission
+<pre><code class="python">def share(self, permission_list: list, operation_type: int, user_id: int, user_name: str, user_type: int) -&gt; None:
+    &#34;&#34;&#34;Share the datasource with a specified user or user group.
 
-                operation_type (int)  -- Operation type (2-add / 3- delete)
+    This method assigns or removes permissions for a user or user group on the datasource,
+    based on the provided operation type and permission list.
 
-                user_id (int)         -- User id of share user
+    Args:
+        permission_list: List of permissions to assign or remove for the user/user group.
+        operation_type: The type of operation to perform (2 for add, 3 for delete).
+        user_id: The unique identifier of the user or user group to share with.
+        user_name: The name of the user or user group to share with.
+        user_type: The type of user (e.g., 13 for User).
 
-                user_name (str)       -- Share user name
+    Raises:
+        SDKException: If the response is empty, not successful, or if sharing the datasource fails.
 
-                user_type (int)       -- Share user type (Ex : 13- User)
+    Example:
+        &gt;&gt;&gt; datasource = Datasource()
+        &gt;&gt;&gt; permissions = [&#39;read&#39;, &#39;write&#39;]
+        &gt;&gt;&gt; datasource.share(permissions, 2, 101, &#39;jdoe&#39;, 13)
+        &gt;&gt;&gt; print(&#34;Datasource shared successfully with user jdoe.&#34;)
 
-            Returns:
-                None
-
-            Raises:
-                SDKExpception:
-
-                    if response is empty
-
-                    if response is not success
-
-                    if failed to share the datasource with User/userGroup
     &#34;&#34;&#34;
     category_permission_list = []
     for permission in permission_list:
@@ -2137,31 +2827,47 @@ if failed to share the datasource with User/userGroup
 </details>
 </dd>
 <dt id="cvpysdk.datacube.datasource.Datasource.start_job"><code class="name flex">
-<span>def <span class="ident">start_job</span></span>(<span>self)</span>
+<span>def <span class="ident">start_job</span></span>(<span>self) ‑> str</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Starts the crawl job for the datasource</p>
-<h2 id="returns">Returns</h2>
-<p>Str
--
-Job id of crawl job</p>
-<h2 id="raises">Raises</h2>
-<p>Exception:
-failed to start job</p></div>
+<div class="desc"><p>Start the crawl job for the datasource.</p>
+<p>Initiates a crawl job associated with this datasource and returns the job ID.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>str</code></dt>
+<dd>The job ID of the started crawl job.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>Exception</code></dt>
+<dd>If the job fails to start.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; datasource = Datasource()
+&gt;&gt;&gt; job_id = datasource.start_job()
+&gt;&gt;&gt; print(f&quot;Crawl job started with ID: {job_id}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/datasource.py#L574-L597" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/datasource.py#L712-L742" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def start_job(self):
-    &#34;&#34;&#34;Starts the crawl job for the datasource
+<pre><code class="python">def start_job(self) -&gt; str:
+    &#34;&#34;&#34;Start the crawl job for the datasource.
 
-            Returns:
-                Str  -   Job id of crawl job
+    Initiates a crawl job associated with this datasource and returns the job ID.
 
-            Raises:
-                Exception:
-                    failed to start job
+    Returns:
+        str: The job ID of the started crawl job.
+
+    Raises:
+        Exception: If the job fails to start.
+
+    Example:
+        &gt;&gt;&gt; datasource = Datasource()
+        &gt;&gt;&gt; job_id = datasource.start_job()
+        &gt;&gt;&gt; print(f&#34;Crawl job started with ID: {job_id}&#34;)
 
     &#34;&#34;&#34;
     flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -2180,61 +2886,89 @@ failed to start job</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.datacube.datasource.Datasource.update_datasource_schema"><code class="name flex">
-<span>def <span class="ident">update_datasource_schema</span></span>(<span>self, schema)</span>
+<span>def <span class="ident">update_datasource_schema</span></span>(<span>self, schema: list[dict[str, str]]) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>updates the schema of a data source.</p>
-<h2 id="args">Args</h2>
-<p>schema (list)
-&ndash; list of
-properties of schemas represented as key value pair.
-[{
-"fieldName": "",
-"indexed": "",
-"autocomplete": "",
-"type": "",
-"searchDefault": "",
-"multiValued": ""
-}]
-Valid values for type are as follows:
-[string, int, float, long, double, date, longstring]
-indexed, autocomplete, searchDefault, multiValued takes 0/1</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if response is empty</p>
-<pre><code>if type of the schema argument is not list
-
-if response is not success
+<div class="desc"><p>Update the schema of the data source.</p>
+<p>This method updates the schema definition for the data source using the provided list of field property dictionaries.
+Each dictionary should represent a field and its properties, such as field name, type, and indexing options.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>schema</code></strong></dt>
+<dd>A list of dictionaries, where each dictionary defines the properties of a schema field.
+Example field dictionary:
+{
+"fieldName": "username",
+"indexed": "1",
+"autocomplete": "0",
+"type": "string",
+"searchDefault": "1",
+"multiValued": "0"
+}
+Valid values for "type" are: "string", "int", "float", "long", "double", "date", "longstring".
+The values for "indexed", "autocomplete", "searchDefault", and "multiValued" should be "0" or "1" as strings.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the response is empty, if the schema argument is not a list, or if the response indicates failure.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; schema = [
+...     {
+...         &quot;fieldName&quot;: &quot;email&quot;,
+...         &quot;indexed&quot;: &quot;1&quot;,
+...         &quot;autocomplete&quot;: &quot;1&quot;,
+...         &quot;type&quot;: &quot;string&quot;,
+...         &quot;searchDefault&quot;: &quot;0&quot;,
+...         &quot;multiValued&quot;: &quot;0&quot;
+...     }
+... ]
+&gt;&gt;&gt; datasource.update_datasource_schema(schema)
+&gt;&gt;&gt; print(&quot;Datasource schema updated successfully.&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/datasource.py#L753-L808" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/datasource.py#L986-L1054" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def update_datasource_schema(self, schema):
-    &#34;&#34;&#34;updates the schema of a data source.
+<pre><code class="python">def update_datasource_schema(self, schema: list[dict[str, str]]) -&gt; None:
+    &#34;&#34;&#34;Update the schema of the data source.
 
-        Args:
-            schema (list)   -- list of  properties of schemas represented as key value pair.
-            [{
-                                &#34;fieldName&#34;: &#34;&#34;,
-                                &#34;indexed&#34;: &#34;&#34;,
-                                &#34;autocomplete&#34;: &#34;&#34;,
-                                &#34;type&#34;: &#34;&#34;,
-                                &#34;searchDefault&#34;: &#34;&#34;,
-                                &#34;multiValued&#34;: &#34;&#34;
-                            }]
-            Valid values for type are as follows:
-                [string, int, float, long, double, date, longstring]
-            indexed, autocomplete, searchDefault, multiValued takes 0/1
+    This method updates the schema definition for the data source using the provided list of field property dictionaries.
+    Each dictionary should represent a field and its properties, such as field name, type, and indexing options.
 
-        Raises:
-            SDKException:
-                if response is empty
+    Args:
+        schema: A list of dictionaries, where each dictionary defines the properties of a schema field.
+            Example field dictionary:
+                {
+                    &#34;fieldName&#34;: &#34;username&#34;,
+                    &#34;indexed&#34;: &#34;1&#34;,
+                    &#34;autocomplete&#34;: &#34;0&#34;,
+                    &#34;type&#34;: &#34;string&#34;,
+                    &#34;searchDefault&#34;: &#34;1&#34;,
+                    &#34;multiValued&#34;: &#34;0&#34;
+                }
+            Valid values for &#34;type&#34; are: &#34;string&#34;, &#34;int&#34;, &#34;float&#34;, &#34;long&#34;, &#34;double&#34;, &#34;date&#34;, &#34;longstring&#34;.
+            The values for &#34;indexed&#34;, &#34;autocomplete&#34;, &#34;searchDefault&#34;, and &#34;multiValued&#34; should be &#34;0&#34; or &#34;1&#34; as strings.
 
-                if type of the schema argument is not list
+    Raises:
+        SDKException: If the response is empty, if the schema argument is not a list, or if the response indicates failure.
 
-                if response is not success
+    Example:
+        &gt;&gt;&gt; schema = [
+        ...     {
+        ...         &#34;fieldName&#34;: &#34;email&#34;,
+        ...         &#34;indexed&#34;: &#34;1&#34;,
+        ...         &#34;autocomplete&#34;: &#34;1&#34;,
+        ...         &#34;type&#34;: &#34;string&#34;,
+        ...         &#34;searchDefault&#34;: &#34;0&#34;,
+        ...         &#34;multiValued&#34;: &#34;0&#34;
+        ...     }
+        ... ]
+        &gt;&gt;&gt; datasource.update_datasource_schema(schema)
+        &gt;&gt;&gt; print(&#34;Datasource schema updated successfully.&#34;)
 
     &#34;&#34;&#34;
     if not isinstance(schema, list):
@@ -2273,36 +3007,76 @@ if response is not success
 </dd>
 <dt id="cvpysdk.datacube.datasource.Datasources"><code class="flex name class">
 <span>class <span class="ident">Datasources</span></span>
-<span>(</span><span>datacube_object)</span>
+<span>(</span><span>datacube_object: object)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for representing all the Datasources in the Datacube.</p>
-<p>Initializes an instance of the Datasources class.</p>
-<h2 id="args">Args</h2>
-<p>datacube_object
-(object)
-&ndash;
-instance of the Datacube class</p>
-<h2 id="returns">Returns</h2>
-<p>object
--
-instance of the Datasources class</p></div>
+<div class="desc"><p>Manages and represents all Datasources within a Datacube environment.</p>
+<p>This class provides a comprehensive interface for handling datasources,
+including creation, retrieval, deletion, and property management. It is
+designed to interact with a Datacube object and supports operations for
+maintaining and querying the collection of datasources.</p>
+<p>Key Features:
+- Initialization with a Datacube object
+- String and representation methods for easy inspection
+- Retrieve properties of a specific datasource
+- Internal methods for extracting datasources from collections
+- Fetch all available datasources
+- Check existence of a datasource by name
+- Get a datasource by name
+- Add new datasources with analytics engine, type, and input parameters
+- Delete existing datasources
+- Refresh the datasource collection</p>
+<p>Initialize a new instance of the Datasources class.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>datacube_object</code></strong></dt>
+<dd>An instance of the Datacube class to associate with this Datasources object.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; datacube = Datacube('server_name', 'username', 'password')
+&gt;&gt;&gt; datasources = Datasources(datacube)
+&gt;&gt;&gt; print(&quot;Datasources object created successfully&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/datasource.py#L118-L473" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/datasource.py#L118-L563" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Datasources(object):
-    &#34;&#34;&#34;Class for representing all the Datasources in the Datacube.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Manages and represents all Datasources within a Datacube environment.
 
-    def __init__(self, datacube_object):
-        &#34;&#34;&#34;Initializes an instance of the Datasources class.
+    This class provides a comprehensive interface for handling datasources,
+    including creation, retrieval, deletion, and property management. It is
+    designed to interact with a Datacube object and supports operations for
+    maintaining and querying the collection of datasources.
 
-            Args:
-                datacube_object     (object)    --  instance of the Datacube class
+    Key Features:
+        - Initialization with a Datacube object
+        - String and representation methods for easy inspection
+        - Retrieve properties of a specific datasource
+        - Internal methods for extracting datasources from collections
+        - Fetch all available datasources
+        - Check existence of a datasource by name
+        - Get a datasource by name
+        - Add new datasources with analytics engine, type, and input parameters
+        - Delete existing datasources
+        - Refresh the datasource collection
 
-            Returns:
-                object  -   instance of the Datasources class
+    &#34;&#34;&#34;
+
+    def __init__(self, datacube_object: object) -&gt; None:
+        &#34;&#34;&#34;Initialize a new instance of the Datasources class.
+
+        Args:
+            datacube_object: An instance of the Datacube class to associate with this Datasources object.
+
+        Example:
+            &gt;&gt;&gt; datacube = Datacube(&#39;server_name&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; datasources = Datasources(datacube)
+            &gt;&gt;&gt; print(&#34;Datasources object created successfully&#34;)
 
         &#34;&#34;&#34;
         self._datacube_object = datacube_object
@@ -2316,11 +3090,19 @@ instance of the Datasources class</p></div>
         self._datasources = None
         self.refresh()
 
-    def __str__(self):
-        &#34;&#34;&#34;Representation string consisting of all datasources in datacube.
+    def __str__(self) -&gt; str:
+        &#34;&#34;&#34;Return a string representation of all datasources in the datacube.
 
-            Returns:
-                str - string of all the datasources associated with the datacube
+        This method provides a human-readable summary of all datasources associated 
+        with the datacube, typically listing their names or identifiers.
+
+        Returns:
+            A string containing the details of all datasources in the datacube.
+
+        Example:
+            &gt;&gt;&gt; datasources = Datasources()
+            &gt;&gt;&gt; print(str(datasources))
+            &gt;&gt;&gt; # Output: &#34;Datasource1, Datasource2, Datasource3&#34;
 
         &#34;&#34;&#34;
         representation_string = &#39;{:^5}\t{:30}\n\n&#39;.format(
@@ -2333,56 +3115,80 @@ instance of the Datasources class</p></div>
 
         return representation_string
 
-    def __repr__(self):
-        &#34;&#34;&#34;Representation string for the instance of the Datasources class.&#34;&#34;&#34;
+    def __repr__(self) -&gt; str:
+        &#34;&#34;&#34;Return the string representation of the Datasources instance.
+
+        This method provides a developer-friendly string that represents the current
+        Datasources object, useful for debugging and logging purposes.
+
+        Returns:
+            A string representation of the Datasources instance.
+
+        Example:
+            &gt;&gt;&gt; datasources = Datasources()
+            &gt;&gt;&gt; print(repr(datasources))
+            &lt;Datasources object at 0x7f8b2c1d2e80&gt;
+
+        &#34;&#34;&#34;
         return &#34;Datasources class instance for Commcell&#34;
 
-    def get_datasource_properties(self, data_source_name):
-        &#34;&#34;&#34;Returns the properties of datasources.
+    def get_datasource_properties(self, data_source_name: str) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the properties of a specified data source.
 
-            Args:
+        Args:
+            data_source_name: The name of the data source whose properties are to be fetched.
 
-                data_source_name    (str)       -- Name of the data source
+        Returns:
+            A dictionary containing the properties of the specified data source.
 
-            Returns:
-                dict - dictionary consisting of the properties of  datasources
+        Example:
+            &gt;&gt;&gt; datasources = Datasources()
+            &gt;&gt;&gt; properties = datasources.get_datasource_properties(&#34;OracleDB&#34;)
+            &gt;&gt;&gt; print(properties)
+            {&#39;name&#39;: &#39;OracleDB&#39;, &#39;type&#39;: &#39;Database&#39;, &#39;status&#39;: &#39;Active&#39;, ...}
 
         &#34;&#34;&#34;
         return self._datasources[data_source_name]
 
     @staticmethod
-    def _get_datasources_from_collections(collections):
-        &#34;&#34;&#34;Extracts all the datasources, and their details from the list of collections given,
-            and returns the dictionary of all datasources.
+    def _get_datasources_from_collections(collections: list) -&gt; dict:
+        &#34;&#34;&#34;Extract all datasources and their details from a list of collections.
 
-            Args:
-                collections     (list)  --  list of all collections
+        This method processes the provided list of collection objects and extracts
+        information about each datasource contained within. The result is a dictionary
+        where each key is a datasource name, and the value is a dictionary of its details.
 
-            Returns:
-                dict    -   dictionary consisting of dictionaries, where each dictionary stores the
-                                details of a single datasource
+        Args:
+            collections: List of collection objects or dictionaries containing datasource information.
 
-                    {
-                        &#39;data_source_1_name&#39;: {
+        Returns:
+            Dictionary mapping datasource names to their details. Each value is a dictionary
+            with keys such as &#39;data_source_id&#39;, &#39;data_source_name&#39;, &#39;description&#39;,
+            &#39;data_source_type&#39;, &#39;total_count&#39;, and &#39;state&#39;.
 
-                            &#39;data_source_id&#39;: 21,
-
-                            &#39;data_source_name&#39;: &#39;&#39;,
-
-                            &#39;description&#39;: &#39;&#39;,
-
-                            &#39;data_source_type&#39;: &#39;&#39;,
-
-                            &#39;total_count&#39;: 1234,
-
-                            &#39;state&#39;: 1
-                        },
-
-                        &#39;data_source_2_name&#39;: {},
-
-                        &#39;data_source_3_name&#39;: {}
+            Example return structure:
+                {
+                    &#39;data_source_1_name&#39;: {
+                        &#39;data_source_id&#39;: 21,
+                        &#39;data_source_name&#39;: &#39;data_source_1_name&#39;,
+                        &#39;description&#39;: &#39;Description of datasource 1&#39;,
+                        &#39;data_source_type&#39;: &#39;TypeA&#39;,
+                        &#39;total_count&#39;: 1234,
+                        &#39;state&#39;: 1
+                    },
+                    &#39;data_source_2_name&#39;: {
                         ...
                     }
+                }
+
+        Example:
+            &gt;&gt;&gt; collections = [...]  # List of collection objects with datasource info
+            &gt;&gt;&gt; datasources = Datasources._get_datasources_from_collections(collections)
+            &gt;&gt;&gt; print(datasources.keys())
+            dict_keys([&#39;data_source_1_name&#39;, &#39;data_source_2_name&#39;])
+            &gt;&gt;&gt; first_ds = datasources[&#39;data_source_1_name&#39;]
+            &gt;&gt;&gt; print(first_ds[&#39;description&#39;])
+            Description of datasource 1
 
         &#34;&#34;&#34;
         _datasources = {}
@@ -2414,34 +3220,35 @@ instance of the Datasources class</p></div>
                 _datasources[datasource[&#39;datasourceName&#39;]] = datasource_dict
         return _datasources
 
-    def _get_all_datasources(self):
-        &#34;&#34;&#34;Gets the list of all datasources associated with this Datacube instance.
+    def _get_all_datasources(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve all datasources associated with this Datacube instance.
 
-            Returns:
-                dict    -   dictionary consisting of dictionaries, where each dictionary stores the
-                                details of a single datasource
+        Returns:
+            dict: A dictionary where each key is a datasource name and the value is a dictionary
+            containing details about that datasource, such as its ID, name, description, type,
+            total count, and state.
 
-                    {
-                        &#39;data_source_1_name&#39;: {
-
-                            &#39;data_source_id&#39;: 21,
-
-                            &#39;data_source_name&#39;: &#39;&#39;,
-
-                            &#39;description&#39;: &#39;&#39;,
-
-                            &#39;data_source_type&#39;: &#39;&#39;,
-
-                            &#39;total_count&#39;: 1234,
-
-                            &#39;state&#39;: 1
-                        },
-
-                        &#39;data_source_2_name&#39;: {},
-
-                        &#39;data_source_3_name&#39;: {}
+            Example structure:
+                {
+                    &#39;data_source_1_name&#39;: {
+                        &#39;data_source_id&#39;: 21,
+                        &#39;data_source_name&#39;: &#39;data_source_1_name&#39;,
+                        &#39;description&#39;: &#39;Sample description&#39;,
+                        &#39;data_source_type&#39;: &#39;TypeA&#39;,
+                        &#39;total_count&#39;: 1234,
+                        &#39;state&#39;: 1
+                    },
+                    &#39;data_source_2_name&#39;: {
                         ...
                     }
+                }
+
+        Example:
+            &gt;&gt;&gt; datasources = Datasources()
+            &gt;&gt;&gt; all_sources = datasources._get_all_datasources()
+            &gt;&gt;&gt; for name, details in all_sources.items():
+            ...     print(f&#34;Datasource: {name}, ID: {details[&#39;data_source_id&#39;]}&#34;)
+            &gt;&gt;&gt; # This will print the name and ID of each datasource
 
         &#34;&#34;&#34;
         flag, response = self.commcell_obj._cvpysdk_object.make_request(
@@ -2459,18 +3266,23 @@ instance of the Datasources class</p></div>
                 return response
         self._datacube_object._response_not_success(response)
 
-    def has_datasource(self, datasource_name):
-        &#34;&#34;&#34;Checks if a datasource exists in the Datacube with the input datasource name.
+    def has_datasource(self, datasource_name: str) -&gt; bool:
+        &#34;&#34;&#34;Check if a datasource with the specified name exists in the Datacube.
 
-            Args:
-                datasource_name     (str)   --  name of the datasource
+        Args:
+            datasource_name: The name of the datasource to check for existence.
 
-            Returns:
-                bool    -   boolean output whether the datasource exists in the datacube or not
+        Returns:
+            True if the datasource exists in the Datacube, False otherwise.
 
-            Raises:
-                SDKException:
-                    if type of the datasource name argument is not string
+        Raises:
+            SDKException: If the type of the datasource_name argument is not a string.
+
+        Example:
+            &gt;&gt;&gt; datasources = Datasources()
+            &gt;&gt;&gt; exists = datasources.has_datasource(&#34;SalesData&#34;)
+            &gt;&gt;&gt; print(f&#34;Datasource exists: {exists}&#34;)
+            # Output: Datasource exists: True
 
         &#34;&#34;&#34;
         if not isinstance(datasource_name, str):
@@ -2478,20 +3290,22 @@ instance of the Datasources class</p></div>
 
         return self._datasources and datasource_name in self._datasources
 
-    def get(self, datasource_name):
-        &#34;&#34;&#34;Returns a datasource object of the specified datasource name.
+    def get(self, datasource_name: str) -&gt; &#39;Datasource&#39;:
+        &#34;&#34;&#34;Retrieve a Datasource object by its name.
 
-            Args:
-                datasource_name     (str)   --  name of the datasource
+        Args:
+            datasource_name: The name of the datasource to retrieve.
 
-            Returns:
-                object  -   instance of the Datasource class for the given datasource name
+        Returns:
+            Datasource: An instance of the Datasource class corresponding to the specified name.
 
-            Raises:
-                SDKException:
-                    if type of the datasource name argument is not string
+        Raises:
+            SDKException: If the datasource_name is not a string or if no datasource exists with the given name.
 
-                    if no datasource exists with the given name
+        Example:
+            &gt;&gt;&gt; datasources = Datasources(commcell_object)
+            &gt;&gt;&gt; ds = datasources.get(&#34;SalesDB&#34;)
+            &gt;&gt;&gt; print(f&#34;Datasource name: {ds.name}&#34;)
 
         &#34;&#34;&#34;
         if not isinstance(datasource_name, str):
@@ -2509,43 +3323,48 @@ instance of the Datasources class</p></div>
                 datasource_name)
         )
 
-    def add(self, datasource_name, analytics_engine, datasource_type, input_param):
-        &#34;&#34;&#34;Add a datasource.
+    def add(self, datasource_name: str, analytics_engine: str, datasource_type: str, input_param: list) -&gt; None:
+        &#34;&#34;&#34;Add a new datasource to the datacube.
 
-            Args:
-                datasource_name (str)   --  name of the datasource to add to the datacube
+        This method registers a new datasource with the specified name, associates it with an analytics engine,
+        and sets its type and properties.
 
-                analytics_engine (str)  --  name of the analytics engine or index server node to be associated with this
-                                                datacube.
+        Args:
+            datasource_name: The name of the datasource to add to the datacube.
+            analytics_engine: The name of the analytics engine or index server node to associate with this datacube.
+            datasource_type: The type of datasource to add. Valid values include:
+                1: Database
+                2: Web site
+                3: CSV
+                4: File system
+                5: NAS
+                6: Eloqua
+                8: Salesforce
+                9: LDAP
+                10: Federated Search
+                11: Open data source
+                12: HTTP
+            input_param: A list of properties for the datasource.
 
-                datasource_type (str)  --  type of datasource to add
+        Raises:
+            SDKException: If any of the following conditions occur:
+                - The type of the datasource_name argument is not string.
+                - The type of the analytics_engine argument is not string.
+                - The type of the datasource_type argument is not string.
+                - Failed to add the datasource.
+                - The response is empty.
+                - The response is not successful.
 
-                                            Valid values are:
-                                            1: Database
-                                            2: Web site
-                                            3: CSV
-                                            4: File system
-                                            5: NAS
-                                            6: Eloqua
-                                            8: Salesforce
-                                            9: LDAP
-                                            10: Federated Search
-                                            11: Open data source
-                                            12: HTTP
-                input_param(list)      -- properties for datasource
-            Raises:
-                SDKException:
-                    if type of the datasource name argument is not string
-
-                    if type of the analytics_engine  argument is not string
-
-                    if type of the datasource_type  argument is not string
-
-                    if failed to add datasource
-
-                    if response is empty
-
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; datasources = Datasources()
+            &gt;&gt;&gt; properties = [{&#34;propertyName&#34;: &#34;host&#34;, &#34;propertyValue&#34;: &#34;db.example.com&#34;}]
+            &gt;&gt;&gt; datasources.add(
+            ...     datasource_name=&#34;SalesDB&#34;,
+            ...     analytics_engine=&#34;IndexServer1&#34;,
+            ...     datasource_type=&#34;1&#34;,
+            ...     input_param=properties
+            ... )
+            &gt;&gt;&gt; print(&#34;Datasource &#39;SalesDB&#39; added successfully.&#34;)
 
         &#34;&#34;&#34;
 
@@ -2607,17 +3426,19 @@ instance of the Datasources class</p></div>
             response.text)
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def delete(self, datasource_name):
-        &#34;&#34;&#34;Deletes specified datasource from data cube .
+    def delete(self, datasource_name: str) -&gt; None:
+        &#34;&#34;&#34;Delete the specified datasource from the data cube.
 
-            Args:
-                datasource_name     (str)   --  name of the datasource
+        Args:
+            datasource_name: The name of the datasource to be deleted.
 
-            Raises:
-                SDKException:
-                    if type of the datasource name argument is not string
+        Raises:
+            SDKException: If the datasource_name is not a string, or if no datasource exists with the given name.
 
-                    if no datasource exists with the given name
+        Example:
+            &gt;&gt;&gt; datasources = Datasources()
+            &gt;&gt;&gt; datasources.delete(&#34;SalesData&#34;)
+            &gt;&gt;&gt; print(&#34;Datasource &#39;SalesData&#39; deleted successfully.&#34;)
 
         &#34;&#34;&#34;
 
@@ -2645,98 +3466,120 @@ instance of the Datasources class</p></div>
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
 
-    def refresh(self):
-        &#34;&#34;&#34;Refresh the datasources associated with the Datacube.&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Reload all datasource information associated with the Datacube.
+
+        This method refreshes the internal state of the Datasources object, ensuring that
+        any changes to the datasources in the Datacube are reflected in the current instance.
+
+        Example:
+            &gt;&gt;&gt; datasources = Datasources(datacube_object)
+            &gt;&gt;&gt; datasources.refresh()  # Updates the datasources to reflect the latest state
+
+        &#34;&#34;&#34;
         self._datasources = self._get_all_datasources()</code></pre>
 </details>
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.datacube.datasource.Datasources.add"><code class="name flex">
-<span>def <span class="ident">add</span></span>(<span>self, datasource_name, analytics_engine, datasource_type, input_param)</span>
+<span>def <span class="ident">add</span></span>(<span>self, datasource_name: str, analytics_engine: str, datasource_type: str, input_param: list) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Add a datasource.</p>
-<h2 id="args">Args</h2>
-<p>datasource_name (str)
-&ndash;
-name of the datasource to add to the datacube</p>
-<p>analytics_engine (str)
-&ndash;
-name of the analytics engine or index server node to be associated with this
-datacube.</p>
-<p>datasource_type (str)
-&ndash;
-type of datasource to add</p>
-<pre><code>                        Valid values are:
-                        1: Database
-                        2: Web site
-                        3: CSV
-                        4: File system
-                        5: NAS
-                        6: Eloqua
-                        8: Salesforce
-                        9: LDAP
-                        10: Federated Search
-                        11: Open data source
-                        12: HTTP
-</code></pre>
-<p>input_param(list)
-&ndash; properties for datasource</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if type of the datasource name argument is not string</p>
-<pre><code>if type of the analytics_engine  argument is not string
-
-if type of the datasource_type  argument is not string
-
-if failed to add datasource
-
-if response is empty
-
-if response is not success
+<div class="desc"><p>Add a new datasource to the datacube.</p>
+<p>This method registers a new datasource with the specified name, associates it with an analytics engine,
+and sets its type and properties.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>datasource_name</code></strong></dt>
+<dd>The name of the datasource to add to the datacube.</dd>
+<dt><strong><code>analytics_engine</code></strong></dt>
+<dd>The name of the analytics engine or index server node to associate with this datacube.</dd>
+<dt><strong><code>datasource_type</code></strong></dt>
+<dd>The type of datasource to add. Valid values include:
+1: Database
+2: Web site
+3: CSV
+4: File system
+5: NAS
+6: Eloqua
+8: Salesforce
+9: LDAP
+10: Federated Search
+11: Open data source
+12: HTTP</dd>
+<dt><strong><code>input_param</code></strong></dt>
+<dd>A list of properties for the datasource.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If any of the following conditions occur:
+- The type of the datasource_name argument is not string.
+- The type of the analytics_engine argument is not string.
+- The type of the datasource_type argument is not string.
+- Failed to add the datasource.
+- The response is empty.
+- The response is not successful.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; datasources = Datasources()
+&gt;&gt;&gt; properties = [{&quot;propertyName&quot;: &quot;host&quot;, &quot;propertyValue&quot;: &quot;db.example.com&quot;}]
+&gt;&gt;&gt; datasources.add(
+...     datasource_name=&quot;SalesDB&quot;,
+...     analytics_engine=&quot;IndexServer1&quot;,
+...     datasource_type=&quot;1&quot;,
+...     input_param=properties
+... )
+&gt;&gt;&gt; print(&quot;Datasource 'SalesDB' added successfully.&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/datasource.py#L335-L431" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/datasource.py#L406-L508" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def add(self, datasource_name, analytics_engine, datasource_type, input_param):
-    &#34;&#34;&#34;Add a datasource.
+<pre><code class="python">def add(self, datasource_name: str, analytics_engine: str, datasource_type: str, input_param: list) -&gt; None:
+    &#34;&#34;&#34;Add a new datasource to the datacube.
 
-        Args:
-            datasource_name (str)   --  name of the datasource to add to the datacube
+    This method registers a new datasource with the specified name, associates it with an analytics engine,
+    and sets its type and properties.
 
-            analytics_engine (str)  --  name of the analytics engine or index server node to be associated with this
-                                            datacube.
+    Args:
+        datasource_name: The name of the datasource to add to the datacube.
+        analytics_engine: The name of the analytics engine or index server node to associate with this datacube.
+        datasource_type: The type of datasource to add. Valid values include:
+            1: Database
+            2: Web site
+            3: CSV
+            4: File system
+            5: NAS
+            6: Eloqua
+            8: Salesforce
+            9: LDAP
+            10: Federated Search
+            11: Open data source
+            12: HTTP
+        input_param: A list of properties for the datasource.
 
-            datasource_type (str)  --  type of datasource to add
+    Raises:
+        SDKException: If any of the following conditions occur:
+            - The type of the datasource_name argument is not string.
+            - The type of the analytics_engine argument is not string.
+            - The type of the datasource_type argument is not string.
+            - Failed to add the datasource.
+            - The response is empty.
+            - The response is not successful.
 
-                                        Valid values are:
-                                        1: Database
-                                        2: Web site
-                                        3: CSV
-                                        4: File system
-                                        5: NAS
-                                        6: Eloqua
-                                        8: Salesforce
-                                        9: LDAP
-                                        10: Federated Search
-                                        11: Open data source
-                                        12: HTTP
-            input_param(list)      -- properties for datasource
-        Raises:
-            SDKException:
-                if type of the datasource name argument is not string
-
-                if type of the analytics_engine  argument is not string
-
-                if type of the datasource_type  argument is not string
-
-                if failed to add datasource
-
-                if response is empty
-
-                if response is not success
+    Example:
+        &gt;&gt;&gt; datasources = Datasources()
+        &gt;&gt;&gt; properties = [{&#34;propertyName&#34;: &#34;host&#34;, &#34;propertyValue&#34;: &#34;db.example.com&#34;}]
+        &gt;&gt;&gt; datasources.add(
+        ...     datasource_name=&#34;SalesDB&#34;,
+        ...     analytics_engine=&#34;IndexServer1&#34;,
+        ...     datasource_type=&#34;1&#34;,
+        ...     input_param=properties
+        ... )
+        &gt;&gt;&gt; print(&#34;Datasource &#39;SalesDB&#39; added successfully.&#34;)
 
     &#34;&#34;&#34;
 
@@ -2800,36 +3643,44 @@ if response is not success
 </details>
 </dd>
 <dt id="cvpysdk.datacube.datasource.Datasources.delete"><code class="name flex">
-<span>def <span class="ident">delete</span></span>(<span>self, datasource_name)</span>
+<span>def <span class="ident">delete</span></span>(<span>self, datasource_name: str) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Deletes specified datasource from data cube .</p>
-<h2 id="args">Args</h2>
-<p>datasource_name
-(str)
-&ndash;
-name of the datasource</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if type of the datasource name argument is not string</p>
-<pre><code>if no datasource exists with the given name
+<div class="desc"><p>Delete the specified datasource from the data cube.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>datasource_name</code></strong></dt>
+<dd>The name of the datasource to be deleted.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the datasource_name is not a string, or if no datasource exists with the given name.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; datasources = Datasources()
+&gt;&gt;&gt; datasources.delete(&quot;SalesData&quot;)
+&gt;&gt;&gt; print(&quot;Datasource 'SalesData' deleted successfully.&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/datasource.py#L433-L469" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/datasource.py#L510-L549" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def delete(self, datasource_name):
-    &#34;&#34;&#34;Deletes specified datasource from data cube .
+<pre><code class="python">def delete(self, datasource_name: str) -&gt; None:
+    &#34;&#34;&#34;Delete the specified datasource from the data cube.
 
-        Args:
-            datasource_name     (str)   --  name of the datasource
+    Args:
+        datasource_name: The name of the datasource to be deleted.
 
-        Raises:
-            SDKException:
-                if type of the datasource name argument is not string
+    Raises:
+        SDKException: If the datasource_name is not a string, or if no datasource exists with the given name.
 
-                if no datasource exists with the given name
+    Example:
+        &gt;&gt;&gt; datasources = Datasources()
+        &gt;&gt;&gt; datasources.delete(&#34;SalesData&#34;)
+        &gt;&gt;&gt; print(&#34;Datasource &#39;SalesData&#39; deleted successfully.&#34;)
 
     &#34;&#34;&#34;
 
@@ -2859,43 +3710,51 @@ if type of the datasource name argument is not string</p>
 </details>
 </dd>
 <dt id="cvpysdk.datacube.datasource.Datasources.get"><code class="name flex">
-<span>def <span class="ident">get</span></span>(<span>self, datasource_name)</span>
+<span>def <span class="ident">get</span></span>(<span>self, datasource_name: str) ‑> <a title="cvpysdk.datacube.datasource.Datasource" href="#cvpysdk.datacube.datasource.Datasource">Datasource</a></span>
 </code></dt>
 <dd>
-<div class="desc"><p>Returns a datasource object of the specified datasource name.</p>
-<h2 id="args">Args</h2>
-<p>datasource_name
-(str)
-&ndash;
-name of the datasource</p>
-<h2 id="returns">Returns</h2>
-<p>object
--
-instance of the Datasource class for the given datasource name</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if type of the datasource name argument is not string</p>
-<pre><code>if no datasource exists with the given name
+<div class="desc"><p>Retrieve a Datasource object by its name.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>datasource_name</code></strong></dt>
+<dd>The name of the datasource to retrieve.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code><a title="cvpysdk.datacube.datasource.Datasource" href="#cvpysdk.datacube.datasource.Datasource">Datasource</a></code></dt>
+<dd>An instance of the Datasource class corresponding to the specified name.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the datasource_name is not a string or if no datasource exists with the given name.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; datasources = Datasources(commcell_object)
+&gt;&gt;&gt; ds = datasources.get(&quot;SalesDB&quot;)
+&gt;&gt;&gt; print(f&quot;Datasource name: {ds.name}&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/datasource.py#L304-L333" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/datasource.py#L372-L404" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def get(self, datasource_name):
-    &#34;&#34;&#34;Returns a datasource object of the specified datasource name.
+<pre><code class="python">def get(self, datasource_name: str) -&gt; &#39;Datasource&#39;:
+    &#34;&#34;&#34;Retrieve a Datasource object by its name.
 
-        Args:
-            datasource_name     (str)   --  name of the datasource
+    Args:
+        datasource_name: The name of the datasource to retrieve.
 
-        Returns:
-            object  -   instance of the Datasource class for the given datasource name
+    Returns:
+        Datasource: An instance of the Datasource class corresponding to the specified name.
 
-        Raises:
-            SDKException:
-                if type of the datasource name argument is not string
+    Raises:
+        SDKException: If the datasource_name is not a string or if no datasource exists with the given name.
 
-                if no datasource exists with the given name
+    Example:
+        &gt;&gt;&gt; datasources = Datasources(commcell_object)
+        &gt;&gt;&gt; ds = datasources.get(&#34;SalesDB&#34;)
+        &gt;&gt;&gt; print(f&#34;Datasource name: {ds.name}&#34;)
 
     &#34;&#34;&#34;
     if not isinstance(datasource_name, str):
@@ -2915,70 +3774,99 @@ if type of the datasource name argument is not string</p>
 </details>
 </dd>
 <dt id="cvpysdk.datacube.datasource.Datasources.get_datasource_properties"><code class="name flex">
-<span>def <span class="ident">get_datasource_properties</span></span>(<span>self, data_source_name)</span>
+<span>def <span class="ident">get_datasource_properties</span></span>(<span>self, data_source_name: str) ‑> dict</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Returns the properties of datasources.</p>
-<h2 id="args">Args</h2>
-<p>data_source_name
-(str)
-&ndash; Name of the data source</p>
-<h2 id="returns">Returns</h2>
-<p>dict - dictionary consisting of the properties of
-datasources</p></div>
+<div class="desc"><p>Retrieve the properties of a specified data source.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>data_source_name</code></strong></dt>
+<dd>The name of the data source whose properties are to be fetched.</dd>
+</dl>
+<p>Returns
+-----=
+A dictionary containing the properties of the specified data source.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; datasources = Datasources()
+&gt;&gt;&gt; properties = datasources.get_datasource_properties(&quot;OracleDB&quot;)
+&gt;&gt;&gt; print(properties)
+{'name': 'OracleDB', 'type': 'Database', 'status': 'Active', ...}
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/datasource.py#L163-L174" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/datasource.py#L210-L227" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def get_datasource_properties(self, data_source_name):
-    &#34;&#34;&#34;Returns the properties of datasources.
+<pre><code class="python">def get_datasource_properties(self, data_source_name: str) -&gt; dict:
+    &#34;&#34;&#34;Retrieve the properties of a specified data source.
 
-        Args:
+    Args:
+        data_source_name: The name of the data source whose properties are to be fetched.
 
-            data_source_name    (str)       -- Name of the data source
+    Returns:
+        A dictionary containing the properties of the specified data source.
 
-        Returns:
-            dict - dictionary consisting of the properties of  datasources
+    Example:
+        &gt;&gt;&gt; datasources = Datasources()
+        &gt;&gt;&gt; properties = datasources.get_datasource_properties(&#34;OracleDB&#34;)
+        &gt;&gt;&gt; print(properties)
+        {&#39;name&#39;: &#39;OracleDB&#39;, &#39;type&#39;: &#39;Database&#39;, &#39;status&#39;: &#39;Active&#39;, ...}
 
     &#34;&#34;&#34;
     return self._datasources[data_source_name]</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.datacube.datasource.Datasources.has_datasource"><code class="name flex">
-<span>def <span class="ident">has_datasource</span></span>(<span>self, datasource_name)</span>
+<span>def <span class="ident">has_datasource</span></span>(<span>self, datasource_name: str) ‑> bool</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Checks if a datasource exists in the Datacube with the input datasource name.</p>
-<h2 id="args">Args</h2>
-<p>datasource_name
-(str)
-&ndash;
-name of the datasource</p>
-<h2 id="returns">Returns</h2>
-<p>bool
--
-boolean output whether the datasource exists in the datacube or not</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if type of the datasource name argument is not string</p></div>
+<div class="desc"><p>Check if a datasource with the specified name exists in the Datacube.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>datasource_name</code></strong></dt>
+<dd>The name of the datasource to check for existence.</dd>
+</dl>
+<p>Returns
+-----=
+True if the datasource exists in the Datacube, False otherwise.</p>
+<dl>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the type of the datasource_name argument is not a string.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; datasources = Datasources()
+&gt;&gt;&gt; exists = datasources.has_datasource(&quot;SalesData&quot;)
+&gt;&gt;&gt; print(f&quot;Datasource exists: {exists}&quot;)
+# Output: Datasource exists: True
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/datasource.py#L285-L302" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/datasource.py#L347-L370" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def has_datasource(self, datasource_name):
-    &#34;&#34;&#34;Checks if a datasource exists in the Datacube with the input datasource name.
+<pre><code class="python">def has_datasource(self, datasource_name: str) -&gt; bool:
+    &#34;&#34;&#34;Check if a datasource with the specified name exists in the Datacube.
 
-        Args:
-            datasource_name     (str)   --  name of the datasource
+    Args:
+        datasource_name: The name of the datasource to check for existence.
 
-        Returns:
-            bool    -   boolean output whether the datasource exists in the datacube or not
+    Returns:
+        True if the datasource exists in the Datacube, False otherwise.
 
-        Raises:
-            SDKException:
-                if type of the datasource name argument is not string
+    Raises:
+        SDKException: If the type of the datasource_name argument is not a string.
+
+    Example:
+        &gt;&gt;&gt; datasources = Datasources()
+        &gt;&gt;&gt; exists = datasources.has_datasource(&#34;SalesData&#34;)
+        &gt;&gt;&gt; print(f&#34;Datasource exists: {exists}&#34;)
+        # Output: Datasource exists: True
 
     &#34;&#34;&#34;
     if not isinstance(datasource_name, str):
@@ -2988,17 +3876,33 @@ if type of the datasource name argument is not string</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.datacube.datasource.Datasources.refresh"><code class="name flex">
-<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+<span>def <span class="ident">refresh</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Refresh the datasources associated with the Datacube.</p></div>
+<div class="desc"><p>Reload all datasource information associated with the Datacube.</p>
+<p>This method refreshes the internal state of the Datasources object, ensuring that
+any changes to the datasources in the Datacube are reflected in the current instance.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; datasources = Datasources(datacube_object)
+&gt;&gt;&gt; datasources.refresh()  # Updates the datasources to reflect the latest state
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/datasource.py#L471-L473" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/datasource.py#L551-L563" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def refresh(self):
-    &#34;&#34;&#34;Refresh the datasources associated with the Datacube.&#34;&#34;&#34;
+<pre><code class="python">def refresh(self) -&gt; None:
+    &#34;&#34;&#34;Reload all datasource information associated with the Datacube.
+
+    This method refreshes the internal state of the Datasources object, ensuring that
+    any changes to the datasources in the Datacube are reflected in the current instance.
+
+    Example:
+        &gt;&gt;&gt; datasources = Datasources(datacube_object)
+        &gt;&gt;&gt; datasources.refresh()  # Updates the datasources to reflect the latest state
+
+    &#34;&#34;&#34;
     self._datasources = self._get_all_datasources()</code></pre>
 </details>
 </dd>

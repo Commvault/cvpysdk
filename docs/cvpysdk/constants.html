@@ -60,7 +60,7 @@ Class to store VsInstance dict</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/constants.py#L1-L818" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/constants.py#L1-L979" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -572,6 +572,14 @@ ENTITY_TYPE_MAP = {
     52: &#34;o365 sharepoint sites app&#34;,
 }
 
+class UserRole(Enum):
+    MSP_ADMIN = 0
+    TENANT_ADMIN = 1
+    TENANT_USER = 2
+    MSP_USER = 3
+    RESTRICTED_USER = 4
+    NIL = 5
+
 
 class HypervisorType(Enum):
     &#34;&#34;&#34;Class to maintain all the hypervisor related constants.&#34;&#34;&#34;
@@ -593,6 +601,8 @@ class HypervisorType(Enum):
     ORACLE_CLOUD_INFRASTRUCTURE = &#34;Oracle Cloud Infrastructure&#34;
     OPENSHIFT = &#34;Red Hat OpenShift&#34;
     PROXMOX = &#34;Proxmox ve&#34;
+    NUTANIX_PRISM_CENTRAL = &#34;nutanix prism central&#34;
+    MORPHEUS = &#34;HPE Morpheus VM Essentials&#34;
 
 
 class AppIDAType(Enum):
@@ -744,24 +754,92 @@ class StoragePoolConstants:
 
     AIR_GAP_PROTECT_STORAGE_TYPES = {
         &#34;MICROSOFT AZURE STORAGE&#34;: {
-            &#34;HOT&#34;: {
+            &#34;FREQUENT ACCESS (MULTI REGION)&#34;: {
                 &#34;vendorId&#34;: 3,
                 &#34;displayVendorId&#34;: 401,
+                &#34;licenseType&#34;: 100042,
             },
-
-            &#34;COOL&#34;: {
+            &#34;INFREQUENT ACCESS&#34;: {
                 &#34;vendorId&#34;: 3,
                 &#34;displayVendorId&#34;: 402,
+                &#34;licenseType&#34;: 100041,
             },
+            &#34;ARCHIVE&#34;: {
+                &#34;vendorId&#34;: 3,
+                &#34;displayVendorId&#34;: 414,
+                &#34;licenseType&#34;: 100088,
+            },
+            &#34;FREQUENT ACCESS&#34;: {
+                &#34;vendorId&#34;: 3,
+                &#34;displayVendorId&#34;: 415,
+                &#34;licenseType&#34;: 100081,
+            }
         },
-
         &#34;ORACLE CLOUD INFRASTRUCTURE OBJECT STORAGE&#34;: {
+            &#34;FREQUENT ACCESS&#34;: {
+                &#34;vendorId&#34;: 26,
+                &#34;displayVendorId&#34;: 403,
+                &#34;licenseType&#34;: 100064,
+            },
             &#34;INFREQUENT ACCESS&#34;: {
                 &#34;vendorId&#34;: 26,
                 &#34;displayVendorId&#34;: 404,
+                &#34;licenseType&#34;: 100050,
+            },
+            &#34;ARCHIVE&#34;: {
+                &#34;vendorId&#34;: 26,
+                &#34;displayVendorId&#34;: 444,
+                &#34;licenseType&#34;: 100100,
+            }
+        },
+        &#34;GOOGLE CLOUD STORAGE&#34;: {
+            &#34;FREQUENT ACCESS&#34;: {
+                &#34;vendorId&#34;: 19,
+                &#34;displayVendorId&#34;: 482,
+                &#34;licenseType&#34;: 100062,
+            },
+            &#34;INFREQUENT ACCESS&#34;: {
+                &#34;vendorId&#34;: 19,
+                &#34;displayVendorId&#34;: 483,
+                &#34;licenseType&#34;: 100063,
+            },
+            &#34;ARCHIVE&#34;: {
+                &#34;vendorId&#34;: 19,
+                &#34;displayVendorId&#34;: 484,
+                &#34;licenseType&#34;: 100102,
+            }
+        },
+        &#34;AMAZON S3&#34;: {
+            &#34;FREQUENT ACCESS&#34;: {
+                &#34;vendorId&#34;: 2,
+                &#34;displayVendorId&#34;: 451,
+                &#34;licenseType&#34;: 100043,
+            },
+            &#34;INFREQUENT ACCESS&#34;: {
+                &#34;vendorId&#34;: 2,
+                &#34;displayVendorId&#34;: 452,
+                &#34;licenseType&#34;: 100048,
+            },
+            &#34;ARCHIVE&#34;: {
+                &#34;vendorId&#34;: 2,
+                &#34;displayVendorId&#34;: 456,
+                &#34;licenseType&#34;: 100094,
+            }
+        },
+        &#34;STACKIT&#34;: {
+            &#34;FREQUENT ACCESS&#34;: {
+                &#34;vendorId&#34;: 216,
+                &#34;displayVendorId&#34;: 496,
+                &#34;licenseType&#34;: 100085,
+            },
+            &#34;INFREQUENT ACCESS&#34;: {
+                &#34;vendorId&#34;: 216,
+                &#34;displayVendorId&#34;: 497,
+                &#34;licenseType&#34;: 100091,
             },
         }
     }
+
 
 
 class CommcellEntity(Enum):
@@ -861,6 +939,8 @@ class VsInstanceType:
 
     VSINSTANCE_TYPE = {
         101: &#34;vmware&#34;,
+        103: &#34;vcloud_director&#34;,
+        105: &#34;vmware_cloud_foundation_automation&#34;,
         201: &#34;xen&#34;,
         102: &#34;hyperv&#34;,
         301: &#34;amazon_web_services&#34;,
@@ -869,6 +949,7 @@ class VsInstanceType:
         403: &#34;azure_stack&#34;,
         501: &#34;red_hat_virtualization&#34;,
         601: &#34;nutanix_ahv&#34;,
+        602: &#34;nutanix_prism_central&#34;,
         701: &#34;oraclevm&#34;,
         801: &#34;fusioncompute&#34;,
         901: &#34;openstack&#34;,
@@ -878,8 +959,88 @@ class VsInstanceType:
         1401: &#34;alibaba_cloud&#34;,
         1503: &#34;vcloud_director&#34;,
         1501: &#34;kubernetes&#34;,
-        1600: &#34;proxmox_ve&#34;
-    }</code></pre>
+        1600: &#34;proxmox_ve&#34;,
+        1700: &#34;morpheus_data&#34;
+    }
+
+
+def convert_bytes_to_tb(size_in_bytes):
+    &#34;&#34;&#34;
+            Convert bytes to TB
+            Args:
+                size_in_bytes(int)  -- Size in Bytes
+            Returns:
+                (int)               -- Size in TB
+            &#34;&#34;&#34;
+    return float(size_in_bytes) / (1024 ** 4) if size_in_bytes else 0
+
+
+cost_assessment_config = {
+            &#34;standardRetention&#34;:  30,
+            &#34;annualGrowthRate&#34;: 10,
+            &#34;dailyChangeRateVM&#34;: 1.6,
+            &#34;utilizationFactorVM&#34;: 50,
+            &#34;dailyChangeRateDB&#34;: 2.8,
+            &#34;dailyChangeRateFO&#34;: 1.6,
+            &#34;storageReplicationTarget&#34;: 50
+        }
+
+workload_mapping = {
+            &#34;VM&#34;: &#34;Virtual machine&#34;,
+            &#34;FILE_STORAGE&#34;: &#34;File &amp; Object&#34;,
+            &#34;DB&#34;: &#34;Database&#34;
+        }
+
+threat_detection_plan_json = {
+            &#34;application&#34;: &#34;&#34;,
+            &#34;contentIndexing&#34;: {
+                &#34;fileFilters&#34;: {
+                    &#34;excludePaths&#34;: [],
+                    &#34;includeDocTypes&#34;: &#34;*&#34;,
+                    &#34;maxDocSize&#34;: 50,
+                    &#34;minDocSize&#34;: 0
+                }
+            },
+            &#34;name&#34;: &#34;&#34;,
+            &#34;schedule&#34;: {
+                &#34;name&#34;: &#34;Run scan every 1 day at 9:00 PM&#34;,
+                &#34;pattern&#34;: {
+                    &#34;frequency&#34;: 1,
+                    &#34;scheduleFrequencyType&#34;: &#34;DAILY&#34;,
+                    &#34;startTime&#34;: 75600
+                }
+            },
+            &#34;threatIndicator&#34;: {
+                &#34;accessNodesInfo&#34;: {},
+                &#34;threatDetection&#34;: {
+                    &#34;backupSize&#34;: False,
+                    &#34;canaryFile&#34;: False,
+                    &#34;fileActivity&#34;: False,
+                    &#34;fileExtension&#34;: False,
+                    &#34;fileType&#34;: False
+                },
+                &#34;threatNexus&#34;: {
+                    &#34;cspm_dspm&#34;: {
+                        &#34;acante&#34;: False,
+                        &#34;dasera&#34;: False
+                    },
+                    &#34;networkAndDataSecurity&#34;: {
+                        &#34;crowdstrike&#34;: False,
+                        &#34;darktrace&#34;: False,
+                        &#34;netskope&#34;: False
+                    },
+                    &#34;soar&#34;: {
+                        &#34;msSentinel&#34;: False,
+                        &#34;paloAlto_XSOAR&#34;: False,
+                        &#34;splunk&#34;: False
+                    }
+                },
+                &#34;threatScan&#34;: {
+                    &#34;fileDataAnalysis&#34;: False,
+                    &#34;threatAnalysis&#34;: False
+                }
+            }
+        }</code></pre>
 </details>
 </section>
 <section>
@@ -887,20 +1048,52 @@ class VsInstanceType:
 <section>
 </section>
 <section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="cvpysdk.constants.convert_bytes_to_tb"><code class="name flex">
+<span>def <span class="ident">convert_bytes_to_tb</span></span>(<span>size_in_bytes)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Convert bytes to TB</p>
+<p>Args
+-----=
+size_in_bytes(int)
+&ndash; Size in Bytes</p>
+<p>Returns
+-----=
+(int)
+&ndash; Size in TB</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/constants.py#L903-L911" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def convert_bytes_to_tb(size_in_bytes):
+    &#34;&#34;&#34;
+            Convert bytes to TB
+            Args:
+                size_in_bytes(int)  -- Size in Bytes
+            Returns:
+                (int)               -- Size in TB
+            &#34;&#34;&#34;
+    return float(size_in_bytes) / (1024 ** 4) if size_in_bytes else 0</code></pre>
+</details>
+</dd>
+</dl>
 </section>
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
 <dt id="cvpysdk.constants.AdvancedJobDetailType"><code class="flex name class">
 <span>class <span class="ident">AdvancedJobDetailType</span></span>
-<span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
+<span>(</span><span>*args, **kwds)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Class to maintain advanced job details info type</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/constants.py#L624-L632" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/constants.py#L634-L642" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class AdvancedJobDetailType(Enum):
     &#34;&#34;&#34;Class to maintain advanced job details info type
@@ -920,36 +1113,36 @@ class VsInstanceType:
 <dl>
 <dt id="cvpysdk.constants.AdvancedJobDetailType.ADMIN_DATA_INFO"><code class="name">var <span class="ident">ADMIN_DATA_INFO</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.AdvancedJobDetailType.BKUP_INFO"><code class="name">var <span class="ident">BKUP_INFO</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.AdvancedJobDetailType.DASH_COPY_INFO"><code class="name">var <span class="ident">DASH_COPY_INFO</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.AdvancedJobDetailType.REFERNCE_COPY_INFO"><code class="name">var <span class="ident">REFERNCE_COPY_INFO</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.AdvancedJobDetailType.RETENTION_INFO"><code class="name">var <span class="ident">RETENTION_INFO</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 </dl>
 </dd>
 <dt id="cvpysdk.constants.AppIDAName"><code class="flex name class">
 <span>class <span class="ident">AppIDAName</span></span>
-<span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
+<span>(</span><span>*args, **kwds)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Class to maintain the app IDA names</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/constants.py#L542-L546" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/constants.py#L552-L556" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class AppIDAName(Enum):
     &#34;&#34;&#34;Class to maintain the app IDA names&#34;&#34;&#34;
@@ -965,28 +1158,28 @@ class VsInstanceType:
 <dl>
 <dt id="cvpysdk.constants.AppIDAName.BIG_DATA_APPS"><code class="name">var <span class="ident">BIG_DATA_APPS</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.AppIDAName.FILE_SYSTEM"><code class="name">var <span class="ident">FILE_SYSTEM</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.AppIDAName.VIRTUAL_SERVER"><code class="name">var <span class="ident">VIRTUAL_SERVER</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 </dl>
 </dd>
 <dt id="cvpysdk.constants.AppIDAType"><code class="flex name class">
 <span>class <span class="ident">AppIDAType</span></span>
-<span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
+<span>(</span><span>*args, **kwds)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Class to maintain all the app ida constants</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/constants.py#L534-L539" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/constants.py#L544-L549" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class AppIDAType(Enum):
     &#34;&#34;&#34;Class to maintain all the app ida constants&#34;&#34;&#34;
@@ -1003,32 +1196,32 @@ class VsInstanceType:
 <dl>
 <dt id="cvpysdk.constants.AppIDAType.CLOUD_APP"><code class="name">var <span class="ident">CLOUD_APP</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.AppIDAType.LINUX_FILE_SYSTEM"><code class="name">var <span class="ident">LINUX_FILE_SYSTEM</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.AppIDAType.VIRTUAL_SERVER"><code class="name">var <span class="ident">VIRTUAL_SERVER</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.AppIDAType.WINDOWS_FILE_SYSTEM"><code class="name">var <span class="ident">WINDOWS_FILE_SYSTEM</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 </dl>
 </dd>
 <dt id="cvpysdk.constants.ApplicationGroup"><code class="flex name class">
 <span>class <span class="ident">ApplicationGroup</span></span>
-<span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
+<span>(</span><span>*args, **kwds)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Class to maintain application group types.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/constants.py#L666-L675" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/constants.py#L676-L685" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ApplicationGroup(Enum):
     &#34;&#34;&#34;Class to maintain application group types.&#34;&#34;&#34;
@@ -1049,44 +1242,44 @@ class VsInstanceType:
 <dl>
 <dt id="cvpysdk.constants.ApplicationGroup.CLOUDAPPS"><code class="name">var <span class="ident">CLOUDAPPS</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.ApplicationGroup.IBMi"><code class="name">var <span class="ident">IBMi</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.ApplicationGroup.MSSQLSERVER"><code class="name">var <span class="ident">MSSQLSERVER</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.ApplicationGroup.OPENVMS"><code class="name">var <span class="ident">OPENVMS</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.ApplicationGroup.SHAREPOINTSERVER"><code class="name">var <span class="ident">SHAREPOINTSERVER</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.ApplicationGroup.UNIX"><code class="name">var <span class="ident">UNIX</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.ApplicationGroup.WINDOWS"><code class="name">var <span class="ident">WINDOWS</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 </dl>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity"><code class="flex name class">
 <span>class <span class="ident">CommcellEntity</span></span>
-<span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
+<span>(</span><span>*args, **kwds)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Class to maintain Commcell Entity types</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/constants.py#L703-L767" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/constants.py#L781-L845" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class CommcellEntity(Enum):
     &#34;&#34;&#34;Class to maintain Commcell Entity types&#34;&#34;&#34;
@@ -1162,264 +1355,264 @@ class VsInstanceType:
 <dl>
 <dt id="cvpysdk.constants.CommcellEntity.ALERT_ENTITY"><code class="name">var <span class="ident">ALERT_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.ALL_USERGROUPS_ENTITY"><code class="name">var <span class="ident">ALL_USERGROUPS_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.ALL_USERS_ENTITY"><code class="name">var <span class="ident">ALL_USERS_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.APPID_ENTITY"><code class="name">var <span class="ident">APPID_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.APPTYPE_ENTITY"><code class="name">var <span class="ident">APPTYPE_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.AUX_COPY_JOBS"><code class="name">var <span class="ident">AUX_COPY_JOBS</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.BACKUPSET_ENTITY"><code class="name">var <span class="ident">BACKUPSET_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.CALENDAR"><code class="name">var <span class="ident">CALENDAR</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.CALENDARS"><code class="name">var <span class="ident">CALENDARS</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.CALENDAR_ENTITY"><code class="name">var <span class="ident">CALENDAR_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.CLIENT_ENTITY"><code class="name">var <span class="ident">CLIENT_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.CLIENT_GROUP_ENTITY"><code class="name">var <span class="ident">CLIENT_GROUP_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.COMMCELL_ENTITY"><code class="name">var <span class="ident">COMMCELL_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.COMPONENT_ENTITY"><code class="name">var <span class="ident">COMPONENT_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.DATAPROTECTION_JOBS"><code class="name">var <span class="ident">DATAPROTECTION_JOBS</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.DATE_TIME"><code class="name">var <span class="ident">DATE_TIME</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.DRIVE_ENTITY"><code class="name">var <span class="ident">DRIVE_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.DRIVE_POOL_ENTITY"><code class="name">var <span class="ident">DRIVE_POOL_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.EXTERNAL_GROUP_ENTITY"><code class="name">var <span class="ident">EXTERNAL_GROUP_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.GALAXYRELEASE_ENTITY"><code class="name">var <span class="ident">GALAXYRELEASE_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.GLOBALFILTERS"><code class="name">var <span class="ident">GLOBALFILTERS</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.HOLIDAYS"><code class="name">var <span class="ident">HOLIDAYS</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.INSTANCE_ENTITY"><code class="name">var <span class="ident">INSTANCE_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.LEGAL_HOLD"><code class="name">var <span class="ident">LEGAL_HOLD</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.LIBRARIES_ENTITY"><code class="name">var <span class="ident">LIBRARIES_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.LIBRARY_ENTITY"><code class="name">var <span class="ident">LIBRARY_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.LIBRARY_MEDIA_TYPE_ENTITY"><code class="name">var <span class="ident">LIBRARY_MEDIA_TYPE_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.LICENSE_ENTITY"><code class="name">var <span class="ident">LICENSE_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.LOCALE_ENTITY"><code class="name">var <span class="ident">LOCALE_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.LOCATION_ENTITY"><code class="name">var <span class="ident">LOCATION_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.MACHINE_ENTITIY"><code class="name">var <span class="ident">MACHINE_ENTITIY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.MEDIAAGENT_ENTITY"><code class="name">var <span class="ident">MEDIAAGENT_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.MEDIA_ENTITY"><code class="name">var <span class="ident">MEDIA_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.MEDIA_LOCATIONS"><code class="name">var <span class="ident">MEDIA_LOCATIONS</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.MEDIA_SIDE_ENTITY"><code class="name">var <span class="ident">MEDIA_SIDE_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.MEDIA_TYPE_ENTITY"><code class="name">var <span class="ident">MEDIA_TYPE_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.MOUNT_PATH_ENTITY"><code class="name">var <span class="ident">MOUNT_PATH_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.OPERATION_WINDOW"><code class="name">var <span class="ident">OPERATION_WINDOW</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.PROVIDER_ENTITY"><code class="name">var <span class="ident">PROVIDER_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.SCHEDULE_POLICY_ENTITY"><code class="name">var <span class="ident">SCHEDULE_POLICY_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.SCRATCH_POOL_ENTITY"><code class="name">var <span class="ident">SCRATCH_POOL_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.SECURITY"><code class="name">var <span class="ident">SECURITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.SHELF_ENTITY"><code class="name">var <span class="ident">SHELF_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.SPARE_MEDIA_GROUP_ENTITY"><code class="name">var <span class="ident">SPARE_MEDIA_GROUP_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.SRM_REPORTS_ENTITY"><code class="name">var <span class="ident">SRM_REPORTS_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.SRM_REPORTS_SET"><code class="name">var <span class="ident">SRM_REPORTS_SET</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.SRM_REPORT_ENTITY"><code class="name">var <span class="ident">SRM_REPORT_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.SRM_REPORT_SET"><code class="name">var <span class="ident">SRM_REPORT_SET</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.STORAGE_POLICIES_ENTITY"><code class="name">var <span class="ident">STORAGE_POLICIES_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.STORAGE_POLICY_COPY_ENTITY"><code class="name">var <span class="ident">STORAGE_POLICY_COPY_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.STORAGE_POLICY_ENTITY"><code class="name">var <span class="ident">STORAGE_POLICY_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.SUBCLIENT_ENTITY"><code class="name">var <span class="ident">SUBCLIENT_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.SUBCLIENT_POLICY_ENTITY"><code class="name">var <span class="ident">SUBCLIENT_POLICY_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.SUBTASK_ENTITY"><code class="name">var <span class="ident">SUBTASK_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.TASK_ENTITY"><code class="name">var <span class="ident">TASK_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.TIME_RANGE"><code class="name">var <span class="ident">TIME_RANGE</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.TIME_ZONE"><code class="name">var <span class="ident">TIME_ZONE</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.TRACKING_POLICIES_ENTITY"><code class="name">var <span class="ident">TRACKING_POLICIES_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.TRACKING_POLICY_ENTITY"><code class="name">var <span class="ident">TRACKING_POLICY_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.USERGROUP_ENTITY"><code class="name">var <span class="ident">USERGROUP_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.USER_ENTITY"><code class="name">var <span class="ident">USER_ENTITY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.CommcellEntity.VAULTRACKER_JOBS"><code class="name">var <span class="ident">VAULTRACKER_JOBS</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 </dl>
 </dd>
 <dt id="cvpysdk.constants.Credential_Type"><code class="flex name class">
 <span>class <span class="ident">Credential_Type</span></span>
-<span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
+<span>(</span><span>*args, **kwds)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Class to maintain Credential types</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/constants.py#L770-L778" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/constants.py#L848-L856" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Credential_Type(Enum):
     &#34;&#34;&#34;Class to maintain Credential types&#34;&#34;&#34;
@@ -1439,40 +1632,40 @@ class VsInstanceType:
 <dl>
 <dt id="cvpysdk.constants.Credential_Type.AZUREACCOUNT"><code class="name">var <span class="ident">AZUREACCOUNT</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.Credential_Type.LINUXACCOUNT"><code class="name">var <span class="ident">LINUXACCOUNT</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.Credential_Type.MICROSOFT_AZURE"><code class="name">var <span class="ident">MICROSOFT_AZURE</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.Credential_Type.SSHACCOUNT"><code class="name">var <span class="ident">SSHACCOUNT</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.Credential_Type.VMWAREACCOUNT"><code class="name">var <span class="ident">VMWAREACCOUNT</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.Credential_Type.WINDOWSACCOUNT"><code class="name">var <span class="ident">WINDOWSACCOUNT</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 </dl>
 </dd>
 <dt id="cvpysdk.constants.HypervisorType"><code class="flex name class">
 <span>class <span class="ident">HypervisorType</span></span>
-<span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
+<span>(</span><span>*args, **kwds)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Class to maintain all the hypervisor related constants.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/constants.py#L512-L531" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/constants.py#L520-L541" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class HypervisorType(Enum):
     &#34;&#34;&#34;Class to maintain all the hypervisor related constants.&#34;&#34;&#34;
@@ -1493,7 +1686,9 @@ class VsInstanceType:
     Nutanix = &#34;Nutanix AHV&#34;
     ORACLE_CLOUD_INFRASTRUCTURE = &#34;Oracle Cloud Infrastructure&#34;
     OPENSHIFT = &#34;Red Hat OpenShift&#34;
-    PROXMOX = &#34;Proxmox ve&#34;</code></pre>
+    PROXMOX = &#34;Proxmox ve&#34;
+    NUTANIX_PRISM_CENTRAL = &#34;nutanix prism central&#34;
+    MORPHEUS = &#34;HPE Morpheus VM Essentials&#34;</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -1503,88 +1698,96 @@ class VsInstanceType:
 <dl>
 <dt id="cvpysdk.constants.HypervisorType.ALIBABA_CLOUD"><code class="name">var <span class="ident">ALIBABA_CLOUD</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.HypervisorType.AMAZON_AWS"><code class="name">var <span class="ident">AMAZON_AWS</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.HypervisorType.AZURE"><code class="name">var <span class="ident">AZURE</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.HypervisorType.AZURE_V2"><code class="name">var <span class="ident">AZURE_V2</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.HypervisorType.Azure_Stack"><code class="name">var <span class="ident">Azure_Stack</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.HypervisorType.FUSION_COMPUTE"><code class="name">var <span class="ident">FUSION_COMPUTE</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.HypervisorType.GOOGLE_CLOUD"><code class="name">var <span class="ident">GOOGLE_CLOUD</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="cvpysdk.constants.HypervisorType.MORPHEUS"><code class="name">var <span class="ident">MORPHEUS</span></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.HypervisorType.MS_VIRTUAL_SERVER"><code class="name">var <span class="ident">MS_VIRTUAL_SERVER</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="cvpysdk.constants.HypervisorType.NUTANIX_PRISM_CENTRAL"><code class="name">var <span class="ident">NUTANIX_PRISM_CENTRAL</span></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.HypervisorType.Nutanix"><code class="name">var <span class="ident">Nutanix</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.HypervisorType.OPENSHIFT"><code class="name">var <span class="ident">OPENSHIFT</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.HypervisorType.OPENSTACK"><code class="name">var <span class="ident">OPENSTACK</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.HypervisorType.ORACLE_CLOUD"><code class="name">var <span class="ident">ORACLE_CLOUD</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.HypervisorType.ORACLE_CLOUD_INFRASTRUCTURE"><code class="name">var <span class="ident">ORACLE_CLOUD_INFRASTRUCTURE</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.HypervisorType.ORACLE_VM"><code class="name">var <span class="ident">ORACLE_VM</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.HypervisorType.PROXMOX"><code class="name">var <span class="ident">PROXMOX</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.HypervisorType.Rhev"><code class="name">var <span class="ident">Rhev</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.HypervisorType.VCLOUD"><code class="name">var <span class="ident">VCLOUD</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.HypervisorType.VIRTUAL_CENTER"><code class="name">var <span class="ident">VIRTUAL_CENTER</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 </dl>
 </dd>
 <dt id="cvpysdk.constants.InstanceBackupType"><code class="flex name class">
 <span>class <span class="ident">InstanceBackupType</span></span>
-<span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
+<span>(</span><span>*args, **kwds)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Class to maintain type of instance backup</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/constants.py#L595-L599" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/constants.py#L605-L609" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class InstanceBackupType(Enum):
     &#34;&#34;&#34;Class to maintain type of instance backup&#34;&#34;&#34;
@@ -1600,28 +1803,28 @@ class VsInstanceType:
 <dl>
 <dt id="cvpysdk.constants.InstanceBackupType.CUMULATIVE"><code class="name">var <span class="ident">CUMULATIVE</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.InstanceBackupType.FULL"><code class="name">var <span class="ident">FULL</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.InstanceBackupType.INCREMENTAL"><code class="name">var <span class="ident">INCREMENTAL</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 </dl>
 </dd>
 <dt id="cvpysdk.constants.OSType"><code class="flex name class">
 <span>class <span class="ident">OSType</span></span>
-<span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
+<span>(</span><span>*args, **kwds)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Class to maintain OS Types</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/constants.py#L790-L793" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/constants.py#L868-L871" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class OSType(Enum):
     &#34;&#34;&#34;Class to maintain OS Types&#34;&#34;&#34;
@@ -1636,24 +1839,24 @@ class VsInstanceType:
 <dl>
 <dt id="cvpysdk.constants.OSType.UNIX"><code class="name">var <span class="ident">UNIX</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.OSType.WINDOWS"><code class="name">var <span class="ident">WINDOWS</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 </dl>
 </dd>
 <dt id="cvpysdk.constants.ResourcePoolAppType"><code class="flex name class">
 <span>class <span class="ident">ResourcePoolAppType</span></span>
-<span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
+<span>(</span><span>*args, **kwds)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Class to maintain ResourcePool AppType</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/constants.py#L781-L787" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/constants.py#L859-L865" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ResourcePoolAppType(Enum):
     &#34;&#34;&#34;Class to maintain ResourcePool AppType&#34;&#34;&#34;
@@ -1671,23 +1874,23 @@ class VsInstanceType:
 <dl>
 <dt id="cvpysdk.constants.ResourcePoolAppType.EXCHANGE"><code class="name">var <span class="ident">EXCHANGE</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.ResourcePoolAppType.O365"><code class="name">var <span class="ident">O365</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.ResourcePoolAppType.ONEDRIVE"><code class="name">var <span class="ident">ONEDRIVE</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.ResourcePoolAppType.SHAREPOINT"><code class="name">var <span class="ident">SHAREPOINT</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.ResourcePoolAppType.TEAMS"><code class="name">var <span class="ident">TEAMS</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 </dl>
 </dd>
@@ -1699,7 +1902,7 @@ class VsInstanceType:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/constants.py#L602-L613" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/constants.py#L612-L623" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class SQLDefines:
     &#34;&#34;&#34;Class to maintain SQL Defines&#34;&#34;&#34;
@@ -1718,27 +1921,27 @@ class VsInstanceType:
 <dl>
 <dt id="cvpysdk.constants.SQLDefines.DATABASE_RESTORE"><code class="name">var <span class="ident">DATABASE_RESTORE</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.SQLDefines.RECOVER_ONLY"><code class="name">var <span class="ident">RECOVER_ONLY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.SQLDefines.STATE_NORECOVER"><code class="name">var <span class="ident">STATE_NORECOVER</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.SQLDefines.STATE_RECOVER"><code class="name">var <span class="ident">STATE_RECOVER</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.SQLDefines.STATE_STANDBY"><code class="name">var <span class="ident">STATE_STANDBY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.SQLDefines.STEP_RESTORE"><code class="name">var <span class="ident">STEP_RESTORE</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 </dl>
 </dd>
@@ -1750,7 +1953,7 @@ class VsInstanceType:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/constants.py#L616-L621" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/constants.py#L626-L631" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class SharepointDefines:
     &#34;&#34;&#34;Class to maintiain Sharepoint Defines&#34;&#34;&#34;
@@ -1763,11 +1966,11 @@ class VsInstanceType:
 <dl>
 <dt id="cvpysdk.constants.SharepointDefines.CONTENT_DB"><code class="name">var <span class="ident">CONTENT_DB</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.SharepointDefines.CONTENT_WEBAPP"><code class="name">var <span class="ident">CONTENT_WEBAPP</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 </dl>
 </dd>
@@ -1779,28 +1982,95 @@ class VsInstanceType:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/constants.py#L678-L700" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/constants.py#L688-L777" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class StoragePoolConstants:
     &#34;&#34;&#34;Class to maintain storage policy constants&#34;&#34;&#34;
 
     AIR_GAP_PROTECT_STORAGE_TYPES = {
         &#34;MICROSOFT AZURE STORAGE&#34;: {
-            &#34;HOT&#34;: {
+            &#34;FREQUENT ACCESS (MULTI REGION)&#34;: {
                 &#34;vendorId&#34;: 3,
                 &#34;displayVendorId&#34;: 401,
+                &#34;licenseType&#34;: 100042,
             },
-
-            &#34;COOL&#34;: {
+            &#34;INFREQUENT ACCESS&#34;: {
                 &#34;vendorId&#34;: 3,
                 &#34;displayVendorId&#34;: 402,
+                &#34;licenseType&#34;: 100041,
             },
+            &#34;ARCHIVE&#34;: {
+                &#34;vendorId&#34;: 3,
+                &#34;displayVendorId&#34;: 414,
+                &#34;licenseType&#34;: 100088,
+            },
+            &#34;FREQUENT ACCESS&#34;: {
+                &#34;vendorId&#34;: 3,
+                &#34;displayVendorId&#34;: 415,
+                &#34;licenseType&#34;: 100081,
+            }
         },
-
         &#34;ORACLE CLOUD INFRASTRUCTURE OBJECT STORAGE&#34;: {
+            &#34;FREQUENT ACCESS&#34;: {
+                &#34;vendorId&#34;: 26,
+                &#34;displayVendorId&#34;: 403,
+                &#34;licenseType&#34;: 100064,
+            },
             &#34;INFREQUENT ACCESS&#34;: {
                 &#34;vendorId&#34;: 26,
                 &#34;displayVendorId&#34;: 404,
+                &#34;licenseType&#34;: 100050,
+            },
+            &#34;ARCHIVE&#34;: {
+                &#34;vendorId&#34;: 26,
+                &#34;displayVendorId&#34;: 444,
+                &#34;licenseType&#34;: 100100,
+            }
+        },
+        &#34;GOOGLE CLOUD STORAGE&#34;: {
+            &#34;FREQUENT ACCESS&#34;: {
+                &#34;vendorId&#34;: 19,
+                &#34;displayVendorId&#34;: 482,
+                &#34;licenseType&#34;: 100062,
+            },
+            &#34;INFREQUENT ACCESS&#34;: {
+                &#34;vendorId&#34;: 19,
+                &#34;displayVendorId&#34;: 483,
+                &#34;licenseType&#34;: 100063,
+            },
+            &#34;ARCHIVE&#34;: {
+                &#34;vendorId&#34;: 19,
+                &#34;displayVendorId&#34;: 484,
+                &#34;licenseType&#34;: 100102,
+            }
+        },
+        &#34;AMAZON S3&#34;: {
+            &#34;FREQUENT ACCESS&#34;: {
+                &#34;vendorId&#34;: 2,
+                &#34;displayVendorId&#34;: 451,
+                &#34;licenseType&#34;: 100043,
+            },
+            &#34;INFREQUENT ACCESS&#34;: {
+                &#34;vendorId&#34;: 2,
+                &#34;displayVendorId&#34;: 452,
+                &#34;licenseType&#34;: 100048,
+            },
+            &#34;ARCHIVE&#34;: {
+                &#34;vendorId&#34;: 2,
+                &#34;displayVendorId&#34;: 456,
+                &#34;licenseType&#34;: 100094,
+            }
+        },
+        &#34;STACKIT&#34;: {
+            &#34;FREQUENT ACCESS&#34;: {
+                &#34;vendorId&#34;: 216,
+                &#34;displayVendorId&#34;: 496,
+                &#34;licenseType&#34;: 100085,
+            },
+            &#34;INFREQUENT ACCESS&#34;: {
+                &#34;vendorId&#34;: 216,
+                &#34;displayVendorId&#34;: 497,
+                &#34;licenseType&#34;: 100091,
             },
         }
     }</code></pre>
@@ -1809,20 +2079,120 @@ class VsInstanceType:
 <dl>
 <dt id="cvpysdk.constants.StoragePoolConstants.AIR_GAP_PROTECT_STORAGE_TYPES"><code class="name">var <span class="ident">AIR_GAP_PROTECT_STORAGE_TYPES</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="cvpysdk.constants.UserRole"><code class="flex name class">
+<span>class <span class="ident">UserRole</span></span>
+<span>(</span><span>*args, **kwds)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Create a collection of name/value pairs.</p>
+<p>Example enumeration:</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; class Color(Enum):
+...     RED = 1
+...     BLUE = 2
+...     GREEN = 3
+</code></pre>
+<p>Access them by:</p>
+<ul>
+<li>attribute access:</li>
+</ul>
+<blockquote>
+<blockquote>
+<blockquote>
+<p>Color.RED
+<Color.RED: 1></p>
+</blockquote>
+</blockquote>
+</blockquote>
+<ul>
+<li>value lookup:</li>
+</ul>
+<blockquote>
+<blockquote>
+<blockquote>
+<p>Color(1)
+<Color.RED: 1></p>
+</blockquote>
+</blockquote>
+</blockquote>
+<ul>
+<li>name lookup:</li>
+</ul>
+<blockquote>
+<blockquote>
+<blockquote>
+<p>Color['RED']
+<Color.RED: 1></p>
+</blockquote>
+</blockquote>
+</blockquote>
+<p>Enumerations can be iterated over, and know how many members they have:</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; len(Color)
+3
+</code></pre>
+<pre><code class="language-python-repl">&gt;&gt;&gt; list(Color)
+[&lt;Color.RED: 1&gt;, &lt;Color.BLUE: 2&gt;, &lt;Color.GREEN: 3&gt;]
+</code></pre>
+<p>Methods can be added to enumerations, and members can have their own
+attributes &ndash; see the documentation for details.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/constants.py#L511-L517" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class UserRole(Enum):
+    MSP_ADMIN = 0
+    TENANT_ADMIN = 1
+    TENANT_USER = 2
+    MSP_USER = 3
+    RESTRICTED_USER = 4
+    NIL = 5</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>enum.Enum</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="cvpysdk.constants.UserRole.MSP_ADMIN"><code class="name">var <span class="ident">MSP_ADMIN</span></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="cvpysdk.constants.UserRole.MSP_USER"><code class="name">var <span class="ident">MSP_USER</span></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="cvpysdk.constants.UserRole.NIL"><code class="name">var <span class="ident">NIL</span></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="cvpysdk.constants.UserRole.RESTRICTED_USER"><code class="name">var <span class="ident">RESTRICTED_USER</span></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="cvpysdk.constants.UserRole.TENANT_ADMIN"><code class="name">var <span class="ident">TENANT_ADMIN</span></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="cvpysdk.constants.UserRole.TENANT_USER"><code class="name">var <span class="ident">TENANT_USER</span></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 </dl>
 </dd>
 <dt id="cvpysdk.constants.VSAFailOverStatus"><code class="flex name class">
 <span>class <span class="ident">VSAFailOverStatus</span></span>
-<span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
+<span>(</span><span>*args, **kwds)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Class to maintain Failover status of the VSA Live sync</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/constants.py#L651-L663" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/constants.py#L661-L673" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class VSAFailOverStatus(Enum):
     &#34;&#34;&#34;Class to maintain Failover status of the VSA Live sync&#34;&#34;&#34;
@@ -1846,60 +2216,60 @@ class VsInstanceType:
 <dl>
 <dt id="cvpysdk.constants.VSAFailOverStatus.FAILBACK_COMPLETE"><code class="name">var <span class="ident">FAILBACK_COMPLETE</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAFailOverStatus.FAILBACK_FAILED"><code class="name">var <span class="ident">FAILBACK_FAILED</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAFailOverStatus.FAILBACK_PARTIAL"><code class="name">var <span class="ident">FAILBACK_PARTIAL</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAFailOverStatus.FAILBACK_PAUSED"><code class="name">var <span class="ident">FAILBACK_PAUSED</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAFailOverStatus.FAILBACK_RUNNING"><code class="name">var <span class="ident">FAILBACK_RUNNING</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAFailOverStatus.FAILOVER_COMPLETE"><code class="name">var <span class="ident">FAILOVER_COMPLETE</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAFailOverStatus.FAILOVER_FAILED"><code class="name">var <span class="ident">FAILOVER_FAILED</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAFailOverStatus.FAILOVER_PARTIAL"><code class="name">var <span class="ident">FAILOVER_PARTIAL</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAFailOverStatus.FAILOVER_PAUSED"><code class="name">var <span class="ident">FAILOVER_PAUSED</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAFailOverStatus.FAILOVER_RUNNING"><code class="name">var <span class="ident">FAILOVER_RUNNING</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAFailOverStatus.NONE"><code class="name">var <span class="ident">NONE</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 </dl>
 </dd>
 <dt id="cvpysdk.constants.VSALiveSyncStatus"><code class="flex name class">
 <span>class <span class="ident">VSALiveSyncStatus</span></span>
-<span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
+<span>(</span><span>*args, **kwds)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Class to maintain status of the VSA Live sync</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/constants.py#L635-L648" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/constants.py#L645-L658" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class VSALiveSyncStatus(Enum):
     &#34;&#34;&#34;Class to maintain status of the VSA Live sync&#34;&#34;&#34;
@@ -1924,64 +2294,64 @@ class VsInstanceType:
 <dl>
 <dt id="cvpysdk.constants.VSALiveSyncStatus.IN_SYNC"><code class="name">var <span class="ident">IN_SYNC</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSALiveSyncStatus.NEEDS_SYNC"><code class="name">var <span class="ident">NEEDS_SYNC</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSALiveSyncStatus.NEVER_HAS_BEEN_SYNCED"><code class="name">var <span class="ident">NEVER_HAS_BEEN_SYNCED</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSALiveSyncStatus.REVERT_FAILED"><code class="name">var <span class="ident">REVERT_FAILED</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSALiveSyncStatus.SYNC_DISABLED"><code class="name">var <span class="ident">SYNC_DISABLED</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSALiveSyncStatus.SYNC_ENABLED"><code class="name">var <span class="ident">SYNC_ENABLED</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSALiveSyncStatus.SYNC_FAILED"><code class="name">var <span class="ident">SYNC_FAILED</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSALiveSyncStatus.SYNC_IN_PROGRESS"><code class="name">var <span class="ident">SYNC_IN_PROGRESS</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSALiveSyncStatus.SYNC_PAUSED"><code class="name">var <span class="ident">SYNC_PAUSED</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSALiveSyncStatus.SYNC_QUEUED"><code class="name">var <span class="ident">SYNC_QUEUED</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSALiveSyncStatus.SYNC_STARTING"><code class="name">var <span class="ident">SYNC_STARTING</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSALiveSyncStatus.VALIDATION_FAILED"><code class="name">var <span class="ident">VALIDATION_FAILED</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 </dl>
 </dd>
 <dt id="cvpysdk.constants.VSAObjects"><code class="flex name class">
 <span>class <span class="ident">VSAObjects</span></span>
-<span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
+<span>(</span><span>*args, **kwds)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Mapping for VSA Objects.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/constants.py#L549-L592" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/constants.py#L559-L602" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class VSAObjects(Enum):
     &#34;&#34;&#34;Mapping for VSA Objects.&#34;&#34;&#34;
@@ -2036,171 +2406,171 @@ class VsInstanceType:
 <dl>
 <dt id="cvpysdk.constants.VSAObjects.CLUSTER"><code class="name">var <span class="ident">CLUSTER</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAObjects.ClientGroup"><code class="name">var <span class="ident">ClientGroup</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAObjects.ClusterDisk"><code class="name">var <span class="ident">ClusterDisk</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAObjects.ClusterFolder"><code class="name">var <span class="ident">ClusterFolder</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAObjects.ClusterSharedVolumes"><code class="name">var <span class="ident">ClusterSharedVolumes</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAObjects.ConsistencyGroup"><code class="name">var <span class="ident">ConsistencyGroup</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAObjects.DATACENTER"><code class="name">var <span class="ident">DATACENTER</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAObjects.DATASTORE"><code class="name">var <span class="ident">DATASTORE</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAObjects.DATASTORE_CLUSTER"><code class="name">var <span class="ident">DATASTORE_CLUSTER</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAObjects.DatacenterFolder"><code class="name">var <span class="ident">DatacenterFolder</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAObjects.FOLDER"><code class="name">var <span class="ident">FOLDER</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAObjects.FileServer"><code class="name">var <span class="ident">FileServer</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAObjects.InstanceSize"><code class="name">var <span class="ident">InstanceSize</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAObjects.LocalDisk"><code class="name">var <span class="ident">LocalDisk</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAObjects.Network"><code class="name">var <span class="ident">Network</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAObjects.Organization"><code class="name">var <span class="ident">Organization</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAObjects.ProtectionDomain"><code class="name">var <span class="ident">ProtectionDomain</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAObjects.RESOURCE_POOL"><code class="name">var <span class="ident">RESOURCE_POOL</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAObjects.ROOT"><code class="name">var <span class="ident">ROOT</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAObjects.SERVER"><code class="name">var <span class="ident">SERVER</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAObjects.SMBShare"><code class="name">var <span class="ident">SMBShare</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAObjects.Selector"><code class="name">var <span class="ident">Selector</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAObjects.ServerFolder"><code class="name">var <span class="ident">ServerFolder</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAObjects.StorageRepositoryFolder"><code class="name">var <span class="ident">StorageRepositoryFolder</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAObjects.Subclient"><code class="name">var <span class="ident">Subclient</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAObjects.Tag"><code class="name">var <span class="ident">Tag</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAObjects.TagCategory"><code class="name">var <span class="ident">TagCategory</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAObjects.TemplateFolder"><code class="name">var <span class="ident">TemplateFolder</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAObjects.TypesFolder"><code class="name">var <span class="ident">TypesFolder</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAObjects.UnprotectedVMs"><code class="name">var <span class="ident">UnprotectedVMs</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAObjects.User"><code class="name">var <span class="ident">User</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAObjects.VAPP"><code class="name">var <span class="ident">VAPP</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAObjects.VAppFolder"><code class="name">var <span class="ident">VAppFolder</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAObjects.VM"><code class="name">var <span class="ident">VM</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAObjects.VMCustomAttribute"><code class="name">var <span class="ident">VMCustomAttribute</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAObjects.VMFolder"><code class="name">var <span class="ident">VMFolder</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAObjects.VMGuestHostName"><code class="name">var <span class="ident">VMGuestHostName</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAObjects.VMGuestOS"><code class="name">var <span class="ident">VMGuestOS</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAObjects.VMName"><code class="name">var <span class="ident">VMName</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAObjects.VMNotes"><code class="name">var <span class="ident">VMNotes</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAObjects.VMPowerState"><code class="name">var <span class="ident">VMPowerState</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.constants.VSAObjects.VMTemplate"><code class="name">var <span class="ident">VMTemplate</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 </dl>
 </dd>
@@ -2212,13 +2582,15 @@ class VsInstanceType:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/constants.py#L795-L818" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/constants.py#L873-L900" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class VsInstanceType:
     &#34;&#34;&#34;Class to store vsinstance dict&#34;&#34;&#34;
 
     VSINSTANCE_TYPE = {
         101: &#34;vmware&#34;,
+        103: &#34;vcloud_director&#34;,
+        105: &#34;vmware_cloud_foundation_automation&#34;,
         201: &#34;xen&#34;,
         102: &#34;hyperv&#34;,
         301: &#34;amazon_web_services&#34;,
@@ -2227,6 +2599,7 @@ class VsInstanceType:
         403: &#34;azure_stack&#34;,
         501: &#34;red_hat_virtualization&#34;,
         601: &#34;nutanix_ahv&#34;,
+        602: &#34;nutanix_prism_central&#34;,
         701: &#34;oraclevm&#34;,
         801: &#34;fusioncompute&#34;,
         901: &#34;openstack&#34;,
@@ -2236,14 +2609,15 @@ class VsInstanceType:
         1401: &#34;alibaba_cloud&#34;,
         1503: &#34;vcloud_director&#34;,
         1501: &#34;kubernetes&#34;,
-        1600: &#34;proxmox_ve&#34;
+        1600: &#34;proxmox_ve&#34;,
+        1700: &#34;morpheus_data&#34;
     }</code></pre>
 </details>
 <h3>Class variables</h3>
 <dl>
 <dt id="cvpysdk.constants.VsInstanceType.VSINSTANCE_TYPE"><code class="name">var <span class="ident">VSINSTANCE_TYPE</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 </dl>
 </dd>
@@ -2311,6 +2685,11 @@ setTimeout(() => input.focus(), 100);
 <li><h3>Super-module</h3>
 <ul>
 <li><code><a title="cvpysdk" href="index.html">cvpysdk</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="cvpysdk.constants.convert_bytes_to_tb" href="#cvpysdk.constants.convert_bytes_to_tb">convert_bytes_to_tb</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>
@@ -2442,7 +2821,9 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.constants.HypervisorType.Azure_Stack" href="#cvpysdk.constants.HypervisorType.Azure_Stack">Azure_Stack</a></code></li>
 <li><code><a title="cvpysdk.constants.HypervisorType.FUSION_COMPUTE" href="#cvpysdk.constants.HypervisorType.FUSION_COMPUTE">FUSION_COMPUTE</a></code></li>
 <li><code><a title="cvpysdk.constants.HypervisorType.GOOGLE_CLOUD" href="#cvpysdk.constants.HypervisorType.GOOGLE_CLOUD">GOOGLE_CLOUD</a></code></li>
+<li><code><a title="cvpysdk.constants.HypervisorType.MORPHEUS" href="#cvpysdk.constants.HypervisorType.MORPHEUS">MORPHEUS</a></code></li>
 <li><code><a title="cvpysdk.constants.HypervisorType.MS_VIRTUAL_SERVER" href="#cvpysdk.constants.HypervisorType.MS_VIRTUAL_SERVER">MS_VIRTUAL_SERVER</a></code></li>
+<li><code><a title="cvpysdk.constants.HypervisorType.NUTANIX_PRISM_CENTRAL" href="#cvpysdk.constants.HypervisorType.NUTANIX_PRISM_CENTRAL">NUTANIX_PRISM_CENTRAL</a></code></li>
 <li><code><a title="cvpysdk.constants.HypervisorType.Nutanix" href="#cvpysdk.constants.HypervisorType.Nutanix">Nutanix</a></code></li>
 <li><code><a title="cvpysdk.constants.HypervisorType.OPENSHIFT" href="#cvpysdk.constants.HypervisorType.OPENSHIFT">OPENSHIFT</a></code></li>
 <li><code><a title="cvpysdk.constants.HypervisorType.OPENSTACK" href="#cvpysdk.constants.HypervisorType.OPENSTACK">OPENSTACK</a></code></li>
@@ -2502,6 +2883,17 @@ setTimeout(() => input.focus(), 100);
 <h4><code><a title="cvpysdk.constants.StoragePoolConstants" href="#cvpysdk.constants.StoragePoolConstants">StoragePoolConstants</a></code></h4>
 <ul class="">
 <li><code><a title="cvpysdk.constants.StoragePoolConstants.AIR_GAP_PROTECT_STORAGE_TYPES" href="#cvpysdk.constants.StoragePoolConstants.AIR_GAP_PROTECT_STORAGE_TYPES">AIR_GAP_PROTECT_STORAGE_TYPES</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="cvpysdk.constants.UserRole" href="#cvpysdk.constants.UserRole">UserRole</a></code></h4>
+<ul class="two-column">
+<li><code><a title="cvpysdk.constants.UserRole.MSP_ADMIN" href="#cvpysdk.constants.UserRole.MSP_ADMIN">MSP_ADMIN</a></code></li>
+<li><code><a title="cvpysdk.constants.UserRole.MSP_USER" href="#cvpysdk.constants.UserRole.MSP_USER">MSP_USER</a></code></li>
+<li><code><a title="cvpysdk.constants.UserRole.NIL" href="#cvpysdk.constants.UserRole.NIL">NIL</a></code></li>
+<li><code><a title="cvpysdk.constants.UserRole.RESTRICTED_USER" href="#cvpysdk.constants.UserRole.RESTRICTED_USER">RESTRICTED_USER</a></code></li>
+<li><code><a title="cvpysdk.constants.UserRole.TENANT_ADMIN" href="#cvpysdk.constants.UserRole.TENANT_ADMIN">TENANT_ADMIN</a></code></li>
+<li><code><a title="cvpysdk.constants.UserRole.TENANT_USER" href="#cvpysdk.constants.UserRole.TENANT_USER">TENANT_USER</a></code></li>
 </ul>
 </li>
 <li>

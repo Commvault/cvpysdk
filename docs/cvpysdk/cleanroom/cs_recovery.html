@@ -27,8 +27,9 @@
 <p>CommServeRecovery class is defined in this file.</p>
 <p>CommServeRecovery:
 Class for Commserve Recovery of a CS, and to perform operations related to Commserve Recovery</p>
-<h2 id="commserverecovery">Commserverecovery</h2>
-<p><strong>init</strong>()
+<p>Commserverecovery
+-----=
+<strong>init</strong>()
 &ndash;
 initialize object of CommServeRecovery with the required CS GUID</p>
 <p>_get_backupsets()
@@ -46,7 +47,7 @@ returns the details of the given request ID</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/cleanroom/cs_recovery.py#L1-L297" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/cleanroom/cs_recovery.py#L1-L591" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -89,39 +90,80 @@ CommServeRecovery:
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-from json import JSONDecodeError
 from datetime import datetime
+from json import JSONDecodeError
+from typing import Dict, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from cvpysdk.commcell import Commcell
+
 from cvpysdk.exception import SDKException
-from cvpysdk.commcell import Commcell
 
 
 class CommServeRecovery:
-    &#34;&#34;&#34;Class to perform operations related to Commserve Recovery&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Class to perform operations related to CommServe Recovery.
 
-    def __init__(self, commcell_object: Commcell, cs_guid: str):
-        &#34;&#34;&#34;Initialize the instance of the CommServeRecovery class.
+    This class provides a comprehensive interface for managing CommServe recovery operations,
+    including backupset management, recovery request lifecycle, VM details retrieval, quota and
+    retention information, and license validation. It is designed to facilitate the recovery
+    process in a Commcell environment by offering methods to initiate, extend, and close recovery
+    requests, as well as to access relevant details and properties associated with recovery tasks.
 
-            Args:
-                commcell_object   (commcell object)    --  instance of the Commcell class
+    Key Features:
+        - Initialization with Commcell object and CommServe GUID
+        - Retrieval of backupsets and active recovery requests
+        - Creation, extension, and closure of CommServe recovery requests
+        - Access to VM details associated with recovery requests
+        - Quota and manual retention details management
+        - Properties for license validation, backupsets, active requests, recovery license, and retention details
+        - Methods to start, extend, and close recovery reservations
 
-                cs_guid           (str)                --  CS GUID
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_object: &#39;Commcell&#39;, cs_guid: str) -&gt; None:
+        &#34;&#34;&#34;Initialize a new instance of the CommServeRecovery class.
+
+        Args:
+            commcell_object: An instance of the Commcell class representing the Commcell connection.
+            cs_guid: The unique GUID string identifying the CommServe.
+
+        Example:
+            &gt;&gt;&gt; from cvpysdk.commcell import Commcell
+            &gt;&gt;&gt; commcell = Commcell(&#39;commcell_host&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; cs_guid = &#34;1234-5678-90ab-cdef&#34;
+            &gt;&gt;&gt; cs_recovery = CommServeRecovery(commcell, cs_guid)
+            &gt;&gt;&gt; print(&#34;CommServeRecovery instance created successfully&#34;)
 
         &#34;&#34;&#34;
-        self._commcell_object = commcell_object
-        self._cvpysdk_object = commcell_object._cvpysdk_object
-        self._services = commcell_object._services
-        self.cs_guid = cs_guid
-        self._CS_RECOVERY_API = self._services[&#39;COMMSERVE_RECOVERY&#39;]
-        self._CS_RECOVERY_LICENSE_API = self._services[&#39;GET_COMMSERVE_RECOVERY_LICENSE_DETAILS&#39;] % self.cs_guid
-        self._CS_RECOVERY_RETENTION_API = self._services[&#39;GET_COMMSERVE_RECOVERY_RETENTION_DETAILS&#39;] % self.cs_guid
-        self._BACKUPSET_API = self._services[&#39;GET_BACKUPSET_INFO&#39;] % self.cs_guid
-        self._cleanup_lock_time = None
-        self._is_licensed_commcell = self._quota_details().get(&#39;is_licensed&#39;)
+        try:
+            self._commcell_object = commcell_object
+            self._cvpysdk_object = commcell_object._cvpysdk_object
+            self._services = commcell_object._services
+            self.cs_guid = cs_guid
+            self._CS_RECOVERY_API = self._services[&#39;COMMSERVE_RECOVERY&#39;]
+            self._CS_RECOVERY_LICENSE_API = self._services[&#39;GET_COMMSERVE_RECOVERY_LICENSE_DETAILS&#39;] % self.cs_guid
+            self._CS_RECOVERY_RETENTION_API = self._services[&#39;GET_COMMSERVE_RECOVERY_RETENTION_DETAILS&#39;] % self.cs_guid
+            self._BACKUPSET_API = self._services[&#39;GET_BACKUPSET_INFO&#39;] % self.cs_guid
+            self._cleanup_lock_time = None
+            self._is_licensed_commcell = self._quota_details().get(&#39;is_licensed&#39;)
+            self._manual_retention_details()
+        except Exception as e:
+            raise SDKException(&#39;CommserveRecovery&#39;, &#39;105&#39;, &#34;Failed to initialize CommServeRecovery&#34;) from e
 
-        self._manual_retention_details()
+    def _get_backupsets(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve details of uploaded backupsets.
 
-    def _get_backupsets(self):
-        &#34;&#34;&#34;Returns details of uploaded backupsets&#34;&#34;&#34;
+        Returns:
+            list: A list containing information about each uploaded backupset.
+
+        Example:
+            &gt;&gt;&gt; recovery = CommServeRecovery()
+            &gt;&gt;&gt; backupsets = recovery._get_backupsets()
+            &gt;&gt;&gt; print(f&#34;Number of backupsets: {len(backupsets)}&#34;)
+            &gt;&gt;&gt; # Each item in the list represents a backupset&#39;s details
+
+        &#34;&#34;&#34;
         flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._BACKUPSET_API)
 
         if flag:
@@ -146,8 +188,30 @@ class CommServeRecovery:
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
 
-    def _create_cs_recovery_request(self, set_name: str):
-        &#34;&#34;&#34;submits a new commserve recovery request and returns the request id to track&#34;&#34;&#34;
+    def _create_cs_recovery_request(self, set_name: str, address_prefixes: list, remember_address: bool) -&gt; int:
+        &#34;&#34;&#34;Submit a new CommServe recovery request.
+
+        This method initiates a CommServe recovery operation using the specified set name and address prefixes.
+        It returns a unique request ID that can be used to track the progress or status of the recovery request.
+
+        Args:
+            set_name: The name of the recovery set to use for the operation.
+            address_prefixes: A list of address prefixes to be used during the recovery process.
+            remember_address: If True, the addresses will be remembered for future recovery operations.
+
+        Returns:
+            An integer representing the unique request ID for the submitted CommServe recovery request.
+
+        Example:
+            &gt;&gt;&gt; recovery = CommServeRecovery()
+            &gt;&gt;&gt; request_id = recovery._create_cs_recovery_request(
+            ...     set_name=&#34;RecoverySet1&#34;,
+            ...     address_prefixes=[&#34;192.168.1.0/24&#34;, &#34;10.0.0.0/8&#34;],
+            ...     remember_address=True
+            ... )
+            &gt;&gt;&gt; print(f&#34;Recovery request submitted with ID: {request_id}&#34;)
+
+        &#34;&#34;&#34;
         try:
             set_id, set_size = self.backupsets[set_name][&#39;set_id&#39;], self.backupsets[set_name][&#39;size&#39;]
         except KeyError:
@@ -156,7 +220,9 @@ class CommServeRecovery:
             &#34;commcellGUID&#34;: self.cs_guid,
             &#34;setId&#34;: set_id,
             &#34;setName&#34;: set_name,
-            &#34;setSize&#34;: set_size
+            &#34;setSize&#34;: set_size,
+            &#34;addressPrefixes&#34;: address_prefixes,
+            &#34;rememberAddress&#34;: remember_address
         }
         flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._CS_RECOVERY_API, payload)
 
@@ -166,12 +232,25 @@ class CommServeRecovery:
                     raise SDKException(&#39;Response&#39;, &#39;101&#39;, &#39;request creation not successful&#39;)
                 return response.json()[&#39;requestId&#39;]
             except (JSONDecodeError, KeyError):
-                raise SDKException(&#39;Responcsse&#39;, &#39;102&#39;, &#39;Job id not found in response&#39;)
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;, &#39;Job id not found in response&#39;)
         else:
-            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
+            raise SDKException(&#39;CommserveRecovery&#39;, &#39;105&#39;, &#34;Failed to create recovery request&#34;)
 
-    def _extend_recovery_request(self, request_id: int):
-        &#34;&#34;&#34;Returns True if the request is submitted successfully, otherwise, False&#34;&#34;&#34;
+    def _extend_recovery_request(self, request_id: int) -&gt; bool:
+        &#34;&#34;&#34;Extend the recovery request for the specified request ID.
+
+        Args:
+            request_id: The unique identifier of the recovery request to be extended.
+
+        Returns:
+            True if the extension request is submitted successfully; otherwise, False.
+
+        Example:
+            &gt;&gt;&gt; recovery = CommServeRecovery()
+            &gt;&gt;&gt; success = recovery._extend_recovery_request(12345)
+            &gt;&gt;&gt; print(f&#34;Extension submitted: {success}&#34;)
+
+        &#34;&#34;&#34;
         payload = {
             &#34;csGuid&#34;: self.cs_guid,
             &#34;requestId&#34;: request_id,
@@ -185,11 +264,56 @@ class CommServeRecovery:
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;, &#39;request did not submit successfully&#39;)
         else:
-            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
+            raise SDKException(&#39;CommserveRecovery&#39;, &#39;105&#39;, &#34;Failed to extend recovery request&#34;)
 
-    def _get_active_recovery_requests(self):
+    def _close_recovery_request(self, request_id: int) -&gt; bool:
+        &#34;&#34;&#34;Submit a request to close a CommServe recovery operation.
 
-        url = f&#39;{self._CS_RECOVERY_API}?csGuid={self.cs_guid}&amp;showOnlyActiveRequests=true&#39;
+        Args:
+            request_id: The unique identifier of the recovery request to be closed.
+
+        Returns:
+            True if the close request is submitted successfully; otherwise, False.
+
+        Example:
+            &gt;&gt;&gt; recovery = CommServeRecovery()
+            &gt;&gt;&gt; success = recovery._close_recovery_request(12345)
+            &gt;&gt;&gt; print(f&#34;Request closed: {success}&#34;)
+
+        &#34;&#34;&#34;
+        payload = {
+            &#34;csGuid&#34;: self.cs_guid,
+            &#34;requestId&#34;: request_id,
+            &#34;operation&#34;: 3
+        }
+        flag, response = self._cvpysdk_object.make_request(&#39;PUT&#39;, self._CS_RECOVERY_API, payload)
+
+        if flag:
+            if response.json()[&#39;errorCode&#39;] == 0:
+                return True
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;, &#39;request did not submit successfully&#39;)
+        else:
+            raise SDKException(&#39;CommserveRecovery&#39;, &#39;105&#39;, &#34;Failed to close recovery request&#34;)
+
+    def _get_active_recovery_requests(self, staged:bool=True) -&gt; list:
+        &#34;&#34;&#34;Retrieve the list of currently active CommServe recovery requests.
+
+        Args:
+            staged: If True, retrieves only active requests. If False, retrieves all requests. Defaults to True.
+
+        Returns:
+            list: A list containing details of all active CommServe recovery requests.
+
+        Example:
+            &gt;&gt;&gt; recovery = CommServeRecovery()
+            &gt;&gt;&gt; active_requests = recovery._get_active_recovery_requests()
+            &gt;&gt;&gt; print(f&#34;Number of active recovery requests: {len(active_requests)}&#34;)
+            &gt;&gt;&gt; # Each item in the list represents an active recovery request
+
+        &#34;&#34;&#34;
+
+        url = f&#39;{self._CS_RECOVERY_API}?csGuid={self.cs_guid}&amp;showOnlyActiveRequests={staged}&#39;
 
         states = {
             1: &#39;SUBMITTED&#39;,
@@ -209,11 +333,12 @@ class CommServeRecovery:
             if response.get(&#34;errorCode&#34;) == 6:
                 raise SDKException(&#39;CommserveRecovery&#39;, &#39;101&#39;)
 
-            map_vm_info = lambda vm_info: {
-                                    &#34;commandcenter_url&#34;: f&#34;https://{vm_info[&#39;ipAddress&#39;]}/commandcenter&#34;,
-                                    &#34;vm_expiration_time&#34;: vm_info[&#39;vmExpirationTime&#39;],
-                                    &#34;username&#34;: vm_info[&#39;credentials&#39;][&#39;sUsername&#39;],
-                                    &#39;password&#39;: vm_info[&#39;credentials&#39;][&#39;sPassword&#39;]
+            map_vm_info = lambda request: {
+                                    &#34;commandcenter_url&#34;: f&#34;https://{request[&#39;vmInfo&#39;][&#39;ipAddress&#39;]}/commandcenter&#34; if request[&#39;status&#39;] == 5 else &#39;&#39;,
+                                    &#34;vm_expiration_time&#34;: request[&#39;vmInfo&#39;][&#39;vmExpirationTime&#39;],
+                                    &#34;username&#34;: request[&#39;vmInfo&#39;].get(&#39;credentials&#39;,{}).get(&#39;sUsername&#39;) if request[&#39;status&#39;] == 5 else &#39;&#39;,
+                                    &#39;password&#39;: request[&#39;vmInfo&#39;].get(&#39;credentials&#39;,{}).get(&#39;sPassword&#39;) if request[&#39;status&#39;] == 5 else &#39;&#39;,
+                                    &#39;vmName&#39;: request[&#39;vmInfo&#39;].get(&#39;name&#39;)
                                 }
             return {
                         request[&#34;id&#34;]: {
@@ -223,7 +348,7 @@ class CommServeRecovery:
                             &#34;start_time&#34;: request[&#34;createdTime&#34;],
                             &#34;end_time&#34;: request[&#34;vmInfo&#34;][&#39;vmExpirationTime&#39;],
                             &#34;status&#34;: states[request[&#34;status&#34;]],
-                            &#34;vmInfo&#34;: map_vm_info(request[&#39;vmInfo&#39;]) if request[&#39;status&#39;] == 5 else {}
+                            &#34;vmInfo&#34;: map_vm_info(request)
                         }
                         for request in response.get(&#39;requests&#39;, [])
                     }
@@ -231,19 +356,44 @@ class CommServeRecovery:
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
 
-    def _get_vm_details(self, requestid: int):
-        &#34;&#34;&#34;Returns VM access details&#34;&#34;&#34;
+    def _get_vm_details(self, requestid: int, staged:bool=True) -&gt; dict:
+        &#34;&#34;&#34;Retrieve access details for a virtual machine associated with a specific request ID.
+
+        Args:
+            requestid: The unique identifier for the VM access request.
+            staged: If True, retrieves from cached active requests. If False, makes fresh API call.
+
+        Returns:
+            A dictionary containing the VM access details, such as connection information and credentials.
+
+        Example:
+            &gt;&gt;&gt; recovery = CommServeRecovery()
+            &gt;&gt;&gt; vm_details = recovery._get_vm_details(12345)
+            &gt;&gt;&gt; print(vm_details)
+            {&#39;ip&#39;: &#39;192.168.1.10&#39;, &#39;username&#39;: &#39;admin&#39;, &#39;password&#39;: &#39;*****&#39;}
+
+        &#34;&#34;&#34;
         try:
-            return self.active_recovery_requests[requestid][&#39;vmInfo&#39;]
+            if staged:
+                return self.active_recovery_requests[requestid][&#39;vmInfo&#39;]
+            return self._get_active_recovery_requests(staged=False)[requestid][&#39;vmInfo&#39;]
         except KeyError:
             raise SDKException(&#39;CommserveRecovery&#39;, &#39;103&#39;)
 
-    def _quota_details(self):
-        &#34;&#34;&#34;
-        Returns CS Recovery license quota details in a dictionary
+    def _quota_details(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the CommServe Recovery license quota details.
+
+        Returns:
+            dict: A dictionary containing the quota details for the CS Recovery license.
+
+        Example:
+            &gt;&gt;&gt; recovery = CommServeRecovery()
+            &gt;&gt;&gt; quota_info = recovery._quota_details()
+            &gt;&gt;&gt; print(quota_info)
+            {&#39;total_quota&#39;: 100, &#39;used_quota&#39;: 45, &#39;remaining_quota&#39;: 55}
+
         &#34;&#34;&#34;
         flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._CS_RECOVERY_LICENSE_API)
-
         if flag:
             response = response.json()
             return {
@@ -256,8 +406,19 @@ class CommServeRecovery:
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
 
-    def _manual_retention_details(self):
-        &#34;&#34;&#34;Returns details of used vs allocated quota of manual retains in a dict&#34;&#34;&#34;
+    def _manual_retention_details(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve details about the used versus allocated quota of manual retains.
+
+        Returns:
+            dict: A dictionary containing information about the quota usage for manual retains,
+            including both used and allocated values.
+
+        Example:
+            &gt;&gt;&gt; recovery = CommServeRecovery()
+            &gt;&gt;&gt; retention_info = recovery._manual_retention_details()
+            &gt;&gt;&gt; print(f&#34;Used quota: {retention_info[&#39;used&#39;]}, Allocated quota: {retention_info[&#39;allocated&#39;]}&#34;)
+
+        &#34;&#34;&#34;
         flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._CS_RECOVERY_RETENTION_API)
         if flag:
             response = response.json()
@@ -272,79 +433,194 @@ class CommServeRecovery:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
 
     @property
-    def is_licensed_commcell(self):
+    def is_licensed_commcell(self) -&gt; bool:
+        &#34;&#34;&#34;Check if the Commcell is licensed for CommServe Recovery operations.
+
+        Returns:
+            True if the Commcell is licensed for CommServe Recovery; False otherwise.
+
+        Example:
+            &gt;&gt;&gt; recovery = CommServeRecovery(commcell_object)
+            &gt;&gt;&gt; if recovery.is_licensed_commcell:
+            ...     print(&#34;Commcell is licensed for CommServe Recovery.&#34;)
+            ... else:
+            ...     print(&#34;Commcell is not licensed for CommServe Recovery.&#34;)
+
+        &#34;&#34;&#34;
         return self._is_licensed_commcell
 
     @property
-    def backupsets(self):
+    def backupsets(self) -&gt; Dict[str, dict]:
+        &#34;&#34;&#34;Get the details of backupsets.
+
+        Returns:
+            Dict[str, dict]: A dictionary where each key is a backupset name and the value is another dictionary containing backupset details.
+
+        Example:
+            &gt;&gt;&gt; recovery = CommServeRecovery(commcell_object)
+            &gt;&gt;&gt; backupsets = recovery.backupsets  # Access the backupsets property
+            &gt;&gt;&gt; for name, details in backupsets.items():
+            ...     print(f&#34;Backupset Name: {name}, Details: {details}&#34;)
+
+        &#34;&#34;&#34;
         return self._get_backupsets()
 
     @property
-    def active_recovery_requests(self):
+    def active_recovery_requests(self) -&gt; list:
+        &#34;&#34;&#34;Get the list of currently active CommServe recovery requests.
+
+        Returns:
+            list: A list containing details of all active CommServe recovery requests.
+
+        Example:
+            &gt;&gt;&gt; recovery = CommServeRecovery()
+            &gt;&gt;&gt; active_requests = recovery.active_recovery_requests
+            &gt;&gt;&gt; print(f&#34;Number of active recovery requests: {len(active_requests)}&#34;)
+            &gt;&gt;&gt; # Each item in the list represents an active recovery request
+
+        &#34;&#34;&#34;
         return self._get_active_recovery_requests()
 
     @property
-    def recovery_license_details(self):
-        &#34;&#34;&#34;
-        Returns a dict containing start date, expiry date of license, number of consumed recovery requests and max requests count.
-        Ex:
-        {
+    def recovery_license_details(self) -&gt; dict:
+        &#34;&#34;&#34;Get the CommServe recovery license details.
+
+        Returns:
+            dict: A dictionary containing license information, including:
+                - is_licensed (int): 1 if licensed, 0 otherwise.
+                - start_date (float): License start date as a Unix timestamp.
+                - end_date (float): License expiry date as a Unix timestamp.
+                - used_recoveries_count (int): Number of recovery requests consumed.
+                - total_recoveries_allocated (int): Maximum number of recovery requests allowed.
+
+        Example:
+            &gt;&gt;&gt; recovery = CommServeRecovery()
+            &gt;&gt;&gt; license_info = recovery.recovery_license_details
+            &gt;&gt;&gt; print(license_info)
+            {
                 &#34;is_licensed&#34;: 1,
                 &#34;start_date&#34;: 1711460013.0,
                 &#34;end_date&#34;: 1711460013.0,
-                &#39;used_recoveries_count&#39;: 23,
-                &#39;total_recoveries_allocated&#39;: 40
+                &#34;used_recoveries_count&#34;: 23,
+                &#34;total_recoveries_allocated&#34;: 40
             }
+
         &#34;&#34;&#34;
         return self._quota_details()
 
     @property
-    def manual_retention_details(self):
-        &#34;&#34;&#34;
-        Returns a dict containing start date, expiry date of license, number of consumed retains and max retains allocated.
-        Ex:
-        {
-            &#34;start_date&#34;: 1711460013,
-            &#34;end_date&#34;: 1711544749,
-            &#39;consumed_retains&#39;: 4,
-            &#39;max_retains_allocated&#39;: 10
-        }
+    def manual_retention_details(self) -&gt; Dict[str, int]:
+        &#34;&#34;&#34;Get manual retention details for the CommServe license.
+
+        Returns:
+            Dict[str, int]: A dictionary containing the following keys:
+                - &#34;start_date&#34;: The start date of the license (as a Unix timestamp).
+                - &#34;end_date&#34;: The expiry date of the license (as a Unix timestamp).
+                - &#34;consumed_retains&#34;: The number of retains that have been consumed.
+                - &#34;max_retains_allocated&#34;: The maximum number of retains allocated.
+
+        Example:
+            &gt;&gt;&gt; recovery = CommServeRecovery()
+            &gt;&gt;&gt; details = recovery.manual_retention_details
+            &gt;&gt;&gt; print(details)
+            {&#39;start_date&#39;: 1711460013, &#39;end_date&#39;: 1711544749, &#39;consumed_retains&#39;: 4, &#39;max_retains_allocated&#39;: 10}
+
         &#34;&#34;&#34;
         return self._manual_retention_details()
 
-    def start_recovery(self, backupset_name: str):
-        &#34;&#34;&#34;
-        Submits commserve recovery request for the given backupset
-        Args:
-            backupset_name (str) : name of the backup set to recover.
-                                    Ex: SET_45
-        Returns:
-            Request id of the submitted request as an integer
-        &#34;&#34;&#34;
-        return self._create_cs_recovery_request(backupset_name)
+    def start_recovery(self, backupset_name: str, address_prefixes: str = &#34;*&#34;, remember_address: bool = True) -&gt; int:
+        &#34;&#34;&#34;Submit a CommServe recovery request for the specified backup set.
 
-    def extend_reservation(self, request_id: int):
-        &#34;&#34;&#34;
-        Extends the expiry time of a VM created for the given request id.
+        This method initiates a recovery operation for the given backup set name, using the provided
+        address prefixes and an option to remember the address for future use. The method returns
+        the request ID of the submitted recovery operation.
+
         Args:
-            request_id (int) : commserve recovery request id
+            backupset_name: The name of the backup set to recover (e.g., &#34;SET_45&#34;).
+            address_prefixes: Address prefixes to use for the recovery. Use &#34;*&#34; to include all addresses.
+                Defaults to &#34;*&#34;.
+            remember_address: Whether to remember the address for future recovery operations.
+                Defaults to True.
+
         Returns:
-            True is the request is submitted successfully, otherwise, False
+            The request ID (as an integer) of the submitted CommServe recovery request.
+
+        Example:
+            &gt;&gt;&gt; recovery = CommServeRecovery()
+            &gt;&gt;&gt; request_id = recovery.start_recovery(&#34;SET_45&#34;, address_prefixes=&#34;192.168.*&#34;, remember_address=True)
+            &gt;&gt;&gt; print(f&#34;Recovery request submitted with ID: {request_id}&#34;)
+
+        &#34;&#34;&#34;
+        return self._create_cs_recovery_request(backupset_name, address_prefixes, remember_address)
+
+    def extend_reservation(self, request_id: int) -&gt; bool:
+        &#34;&#34;&#34;Extend the expiry time of a VM created for a specific CommServe recovery request.
+
+        Args:
+            request_id: The unique identifier of the CommServe recovery request for which the VM reservation should be extended.
+
+        Returns:
+            True if the reservation extension request is submitted successfully; otherwise, False.
+
+        Example:
+            &gt;&gt;&gt; recovery = CommServeRecovery()
+            &gt;&gt;&gt; success = recovery.extend_reservation(12345)
+            &gt;&gt;&gt; if success:
+            ...     print(&#34;Reservation extended successfully.&#34;)
+            ... else:
+            ...     print(&#34;Failed to extend reservation.&#34;)
+
         &#34;&#34;&#34;
         return self._extend_recovery_request(request_id)
 
-    def get_vm_details(self, request_id: int):
+    def close_reservation(self, request_id: int) -&gt; bool:
+        &#34;&#34;&#34;Close the current CommServe recovery request and release the associated VM.
+
+        This method submits a request to close an active CommServe recovery session,
+        releasing any virtual machine resources that were allocated for the recovery process.
+
+        Args:
+            request_id: The unique identifier of the CommServe recovery request to be closed.
+
+        Returns:
+            True if the request to close the reservation is submitted successfully; otherwise, False.
+
+        Example:
+            &gt;&gt;&gt; recovery = CommServeRecovery()
+            &gt;&gt;&gt; success = recovery.close_reservation(12345)
+            &gt;&gt;&gt; print(f&#34;Reservation closed: {success}&#34;)
+
         &#34;&#34;&#34;
-        Returns VM details for the given recovery request in a dict format.
-        Ex:
-        {
-            &#34;commandcenter_url&#34;: &#34;https://20.235.143.244/commandcenter&#34;,
-            &#34;vm_expiration_time&#34;: 1712311000,
-            &#34;username&#34;: &#34;recoverymanager&#34;,
-            &#34;password&#34;: &#34;&lt;REDACTED&gt;&#34;,
-        }
+        return self._close_recovery_request(request_id)
+
+    def get_vm_details(self, request_id: int, staged=True) -&gt; dict:
+        &#34;&#34;&#34;Retrieve VM details for a specific recovery request.
+
+        Given a recovery request ID, this method returns a dictionary containing
+        details about the associated virtual machine, such as the Command Center URL,
+        VM expiration time, username, and password.
+
+        Args:
+            request_id: The unique identifier for the recovery request.
+            staged: If True, retrieves from cached active requests. If False, makes fresh API call. Defaults to True.
+
+        Returns:
+            dict: A dictionary with VM details, for example:
+                {
+                    &#34;commandcenter_url&#34;: &#34;https://20.235.143.244/commandcenter&#34;,
+                    &#34;vm_expiration_time&#34;: 1712311000,
+                    &#34;username&#34;: &#34;recoverymanager&#34;,
+                    &#34;password&#34;: &#34;&lt;REDACTED&gt;&#34;,
+                }
+
+        Example:
+            &gt;&gt;&gt; recovery = CommServeRecovery()
+            &gt;&gt;&gt; vm_info = recovery.get_vm_details(12345)
+            &gt;&gt;&gt; print(vm_info[&#34;commandcenter_url&#34;])
+            https://20.235.143.244/commandcenter
+
         &#34;&#34;&#34;
-        return self._get_vm_details(request_id)</code></pre>
+        return self._get_vm_details(request_id, staged)</code></pre>
 </details>
 </section>
 <section>
@@ -358,52 +634,109 @@ class CommServeRecovery:
 <dl>
 <dt id="cvpysdk.cleanroom.cs_recovery.CommServeRecovery"><code class="flex name class">
 <span>class <span class="ident">CommServeRecovery</span></span>
-<span>(</span><span>commcell_object: <a title="cvpysdk.commcell.Commcell" href="../commcell.html#cvpysdk.commcell.Commcell">Commcell</a>, cs_guid: str)</span>
+<span>(</span><span>commcell_object: Commcell, cs_guid: str)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class to perform operations related to Commserve Recovery</p>
-<p>Initialize the instance of the CommServeRecovery class.</p>
-<h2 id="args">Args</h2>
-<p>commcell_object
-(commcell object)
-&ndash;
-instance of the Commcell class</p>
-<p>cs_guid
-(str)
-&ndash;
-CS GUID</p></div>
+<div class="desc"><p>Class to perform operations related to CommServe Recovery.</p>
+<p>This class provides a comprehensive interface for managing CommServe recovery operations,
+including backupset management, recovery request lifecycle, VM details retrieval, quota and
+retention information, and license validation. It is designed to facilitate the recovery
+process in a Commcell environment by offering methods to initiate, extend, and close recovery
+requests, as well as to access relevant details and properties associated with recovery tasks.</p>
+<p>Key Features:
+- Initialization with Commcell object and CommServe GUID
+- Retrieval of backupsets and active recovery requests
+- Creation, extension, and closure of CommServe recovery requests
+- Access to VM details associated with recovery requests
+- Quota and manual retention details management
+- Properties for license validation, backupsets, active requests, recovery license, and retention details
+- Methods to start, extend, and close recovery reservations</p>
+<p>Initialize a new instance of the CommServeRecovery class.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>commcell_object</code></strong></dt>
+<dd>An instance of the Commcell class representing the Commcell connection.</dd>
+<dt><strong><code>cs_guid</code></strong></dt>
+<dd>The unique GUID string identifying the CommServe.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; from cvpysdk.commcell import Commcell
+&gt;&gt;&gt; commcell = Commcell('commcell_host', 'username', 'password')
+&gt;&gt;&gt; cs_guid = &quot;1234-5678-90ab-cdef&quot;
+&gt;&gt;&gt; cs_recovery = CommServeRecovery(commcell, cs_guid)
+&gt;&gt;&gt; print(&quot;CommServeRecovery instance created successfully&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/cleanroom/cs_recovery.py#L48-L297" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/cleanroom/cs_recovery.py#L52-L591" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class CommServeRecovery:
-    &#34;&#34;&#34;Class to perform operations related to Commserve Recovery&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Class to perform operations related to CommServe Recovery.
 
-    def __init__(self, commcell_object: Commcell, cs_guid: str):
-        &#34;&#34;&#34;Initialize the instance of the CommServeRecovery class.
+    This class provides a comprehensive interface for managing CommServe recovery operations,
+    including backupset management, recovery request lifecycle, VM details retrieval, quota and
+    retention information, and license validation. It is designed to facilitate the recovery
+    process in a Commcell environment by offering methods to initiate, extend, and close recovery
+    requests, as well as to access relevant details and properties associated with recovery tasks.
 
-            Args:
-                commcell_object   (commcell object)    --  instance of the Commcell class
+    Key Features:
+        - Initialization with Commcell object and CommServe GUID
+        - Retrieval of backupsets and active recovery requests
+        - Creation, extension, and closure of CommServe recovery requests
+        - Access to VM details associated with recovery requests
+        - Quota and manual retention details management
+        - Properties for license validation, backupsets, active requests, recovery license, and retention details
+        - Methods to start, extend, and close recovery reservations
 
-                cs_guid           (str)                --  CS GUID
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_object: &#39;Commcell&#39;, cs_guid: str) -&gt; None:
+        &#34;&#34;&#34;Initialize a new instance of the CommServeRecovery class.
+
+        Args:
+            commcell_object: An instance of the Commcell class representing the Commcell connection.
+            cs_guid: The unique GUID string identifying the CommServe.
+
+        Example:
+            &gt;&gt;&gt; from cvpysdk.commcell import Commcell
+            &gt;&gt;&gt; commcell = Commcell(&#39;commcell_host&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; cs_guid = &#34;1234-5678-90ab-cdef&#34;
+            &gt;&gt;&gt; cs_recovery = CommServeRecovery(commcell, cs_guid)
+            &gt;&gt;&gt; print(&#34;CommServeRecovery instance created successfully&#34;)
 
         &#34;&#34;&#34;
-        self._commcell_object = commcell_object
-        self._cvpysdk_object = commcell_object._cvpysdk_object
-        self._services = commcell_object._services
-        self.cs_guid = cs_guid
-        self._CS_RECOVERY_API = self._services[&#39;COMMSERVE_RECOVERY&#39;]
-        self._CS_RECOVERY_LICENSE_API = self._services[&#39;GET_COMMSERVE_RECOVERY_LICENSE_DETAILS&#39;] % self.cs_guid
-        self._CS_RECOVERY_RETENTION_API = self._services[&#39;GET_COMMSERVE_RECOVERY_RETENTION_DETAILS&#39;] % self.cs_guid
-        self._BACKUPSET_API = self._services[&#39;GET_BACKUPSET_INFO&#39;] % self.cs_guid
-        self._cleanup_lock_time = None
-        self._is_licensed_commcell = self._quota_details().get(&#39;is_licensed&#39;)
+        try:
+            self._commcell_object = commcell_object
+            self._cvpysdk_object = commcell_object._cvpysdk_object
+            self._services = commcell_object._services
+            self.cs_guid = cs_guid
+            self._CS_RECOVERY_API = self._services[&#39;COMMSERVE_RECOVERY&#39;]
+            self._CS_RECOVERY_LICENSE_API = self._services[&#39;GET_COMMSERVE_RECOVERY_LICENSE_DETAILS&#39;] % self.cs_guid
+            self._CS_RECOVERY_RETENTION_API = self._services[&#39;GET_COMMSERVE_RECOVERY_RETENTION_DETAILS&#39;] % self.cs_guid
+            self._BACKUPSET_API = self._services[&#39;GET_BACKUPSET_INFO&#39;] % self.cs_guid
+            self._cleanup_lock_time = None
+            self._is_licensed_commcell = self._quota_details().get(&#39;is_licensed&#39;)
+            self._manual_retention_details()
+        except Exception as e:
+            raise SDKException(&#39;CommserveRecovery&#39;, &#39;105&#39;, &#34;Failed to initialize CommServeRecovery&#34;) from e
 
-        self._manual_retention_details()
+    def _get_backupsets(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve details of uploaded backupsets.
 
-    def _get_backupsets(self):
-        &#34;&#34;&#34;Returns details of uploaded backupsets&#34;&#34;&#34;
+        Returns:
+            list: A list containing information about each uploaded backupset.
+
+        Example:
+            &gt;&gt;&gt; recovery = CommServeRecovery()
+            &gt;&gt;&gt; backupsets = recovery._get_backupsets()
+            &gt;&gt;&gt; print(f&#34;Number of backupsets: {len(backupsets)}&#34;)
+            &gt;&gt;&gt; # Each item in the list represents a backupset&#39;s details
+
+        &#34;&#34;&#34;
         flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._BACKUPSET_API)
 
         if flag:
@@ -428,8 +761,30 @@ CS GUID</p></div>
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
 
-    def _create_cs_recovery_request(self, set_name: str):
-        &#34;&#34;&#34;submits a new commserve recovery request and returns the request id to track&#34;&#34;&#34;
+    def _create_cs_recovery_request(self, set_name: str, address_prefixes: list, remember_address: bool) -&gt; int:
+        &#34;&#34;&#34;Submit a new CommServe recovery request.
+
+        This method initiates a CommServe recovery operation using the specified set name and address prefixes.
+        It returns a unique request ID that can be used to track the progress or status of the recovery request.
+
+        Args:
+            set_name: The name of the recovery set to use for the operation.
+            address_prefixes: A list of address prefixes to be used during the recovery process.
+            remember_address: If True, the addresses will be remembered for future recovery operations.
+
+        Returns:
+            An integer representing the unique request ID for the submitted CommServe recovery request.
+
+        Example:
+            &gt;&gt;&gt; recovery = CommServeRecovery()
+            &gt;&gt;&gt; request_id = recovery._create_cs_recovery_request(
+            ...     set_name=&#34;RecoverySet1&#34;,
+            ...     address_prefixes=[&#34;192.168.1.0/24&#34;, &#34;10.0.0.0/8&#34;],
+            ...     remember_address=True
+            ... )
+            &gt;&gt;&gt; print(f&#34;Recovery request submitted with ID: {request_id}&#34;)
+
+        &#34;&#34;&#34;
         try:
             set_id, set_size = self.backupsets[set_name][&#39;set_id&#39;], self.backupsets[set_name][&#39;size&#39;]
         except KeyError:
@@ -438,7 +793,9 @@ CS GUID</p></div>
             &#34;commcellGUID&#34;: self.cs_guid,
             &#34;setId&#34;: set_id,
             &#34;setName&#34;: set_name,
-            &#34;setSize&#34;: set_size
+            &#34;setSize&#34;: set_size,
+            &#34;addressPrefixes&#34;: address_prefixes,
+            &#34;rememberAddress&#34;: remember_address
         }
         flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._CS_RECOVERY_API, payload)
 
@@ -448,12 +805,25 @@ CS GUID</p></div>
                     raise SDKException(&#39;Response&#39;, &#39;101&#39;, &#39;request creation not successful&#39;)
                 return response.json()[&#39;requestId&#39;]
             except (JSONDecodeError, KeyError):
-                raise SDKException(&#39;Responcsse&#39;, &#39;102&#39;, &#39;Job id not found in response&#39;)
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;, &#39;Job id not found in response&#39;)
         else:
-            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
+            raise SDKException(&#39;CommserveRecovery&#39;, &#39;105&#39;, &#34;Failed to create recovery request&#34;)
 
-    def _extend_recovery_request(self, request_id: int):
-        &#34;&#34;&#34;Returns True if the request is submitted successfully, otherwise, False&#34;&#34;&#34;
+    def _extend_recovery_request(self, request_id: int) -&gt; bool:
+        &#34;&#34;&#34;Extend the recovery request for the specified request ID.
+
+        Args:
+            request_id: The unique identifier of the recovery request to be extended.
+
+        Returns:
+            True if the extension request is submitted successfully; otherwise, False.
+
+        Example:
+            &gt;&gt;&gt; recovery = CommServeRecovery()
+            &gt;&gt;&gt; success = recovery._extend_recovery_request(12345)
+            &gt;&gt;&gt; print(f&#34;Extension submitted: {success}&#34;)
+
+        &#34;&#34;&#34;
         payload = {
             &#34;csGuid&#34;: self.cs_guid,
             &#34;requestId&#34;: request_id,
@@ -467,11 +837,56 @@ CS GUID</p></div>
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;, &#39;request did not submit successfully&#39;)
         else:
-            raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
+            raise SDKException(&#39;CommserveRecovery&#39;, &#39;105&#39;, &#34;Failed to extend recovery request&#34;)
 
-    def _get_active_recovery_requests(self):
+    def _close_recovery_request(self, request_id: int) -&gt; bool:
+        &#34;&#34;&#34;Submit a request to close a CommServe recovery operation.
 
-        url = f&#39;{self._CS_RECOVERY_API}?csGuid={self.cs_guid}&amp;showOnlyActiveRequests=true&#39;
+        Args:
+            request_id: The unique identifier of the recovery request to be closed.
+
+        Returns:
+            True if the close request is submitted successfully; otherwise, False.
+
+        Example:
+            &gt;&gt;&gt; recovery = CommServeRecovery()
+            &gt;&gt;&gt; success = recovery._close_recovery_request(12345)
+            &gt;&gt;&gt; print(f&#34;Request closed: {success}&#34;)
+
+        &#34;&#34;&#34;
+        payload = {
+            &#34;csGuid&#34;: self.cs_guid,
+            &#34;requestId&#34;: request_id,
+            &#34;operation&#34;: 3
+        }
+        flag, response = self._cvpysdk_object.make_request(&#39;PUT&#39;, self._CS_RECOVERY_API, payload)
+
+        if flag:
+            if response.json()[&#39;errorCode&#39;] == 0:
+                return True
+            else:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;, &#39;request did not submit successfully&#39;)
+        else:
+            raise SDKException(&#39;CommserveRecovery&#39;, &#39;105&#39;, &#34;Failed to close recovery request&#34;)
+
+    def _get_active_recovery_requests(self, staged:bool=True) -&gt; list:
+        &#34;&#34;&#34;Retrieve the list of currently active CommServe recovery requests.
+
+        Args:
+            staged: If True, retrieves only active requests. If False, retrieves all requests. Defaults to True.
+
+        Returns:
+            list: A list containing details of all active CommServe recovery requests.
+
+        Example:
+            &gt;&gt;&gt; recovery = CommServeRecovery()
+            &gt;&gt;&gt; active_requests = recovery._get_active_recovery_requests()
+            &gt;&gt;&gt; print(f&#34;Number of active recovery requests: {len(active_requests)}&#34;)
+            &gt;&gt;&gt; # Each item in the list represents an active recovery request
+
+        &#34;&#34;&#34;
+
+        url = f&#39;{self._CS_RECOVERY_API}?csGuid={self.cs_guid}&amp;showOnlyActiveRequests={staged}&#39;
 
         states = {
             1: &#39;SUBMITTED&#39;,
@@ -491,11 +906,12 @@ CS GUID</p></div>
             if response.get(&#34;errorCode&#34;) == 6:
                 raise SDKException(&#39;CommserveRecovery&#39;, &#39;101&#39;)
 
-            map_vm_info = lambda vm_info: {
-                                    &#34;commandcenter_url&#34;: f&#34;https://{vm_info[&#39;ipAddress&#39;]}/commandcenter&#34;,
-                                    &#34;vm_expiration_time&#34;: vm_info[&#39;vmExpirationTime&#39;],
-                                    &#34;username&#34;: vm_info[&#39;credentials&#39;][&#39;sUsername&#39;],
-                                    &#39;password&#39;: vm_info[&#39;credentials&#39;][&#39;sPassword&#39;]
+            map_vm_info = lambda request: {
+                                    &#34;commandcenter_url&#34;: f&#34;https://{request[&#39;vmInfo&#39;][&#39;ipAddress&#39;]}/commandcenter&#34; if request[&#39;status&#39;] == 5 else &#39;&#39;,
+                                    &#34;vm_expiration_time&#34;: request[&#39;vmInfo&#39;][&#39;vmExpirationTime&#39;],
+                                    &#34;username&#34;: request[&#39;vmInfo&#39;].get(&#39;credentials&#39;,{}).get(&#39;sUsername&#39;) if request[&#39;status&#39;] == 5 else &#39;&#39;,
+                                    &#39;password&#39;: request[&#39;vmInfo&#39;].get(&#39;credentials&#39;,{}).get(&#39;sPassword&#39;) if request[&#39;status&#39;] == 5 else &#39;&#39;,
+                                    &#39;vmName&#39;: request[&#39;vmInfo&#39;].get(&#39;name&#39;)
                                 }
             return {
                         request[&#34;id&#34;]: {
@@ -505,7 +921,7 @@ CS GUID</p></div>
                             &#34;start_time&#34;: request[&#34;createdTime&#34;],
                             &#34;end_time&#34;: request[&#34;vmInfo&#34;][&#39;vmExpirationTime&#39;],
                             &#34;status&#34;: states[request[&#34;status&#34;]],
-                            &#34;vmInfo&#34;: map_vm_info(request[&#39;vmInfo&#39;]) if request[&#39;status&#39;] == 5 else {}
+                            &#34;vmInfo&#34;: map_vm_info(request)
                         }
                         for request in response.get(&#39;requests&#39;, [])
                     }
@@ -513,19 +929,44 @@ CS GUID</p></div>
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
 
-    def _get_vm_details(self, requestid: int):
-        &#34;&#34;&#34;Returns VM access details&#34;&#34;&#34;
+    def _get_vm_details(self, requestid: int, staged:bool=True) -&gt; dict:
+        &#34;&#34;&#34;Retrieve access details for a virtual machine associated with a specific request ID.
+
+        Args:
+            requestid: The unique identifier for the VM access request.
+            staged: If True, retrieves from cached active requests. If False, makes fresh API call.
+
+        Returns:
+            A dictionary containing the VM access details, such as connection information and credentials.
+
+        Example:
+            &gt;&gt;&gt; recovery = CommServeRecovery()
+            &gt;&gt;&gt; vm_details = recovery._get_vm_details(12345)
+            &gt;&gt;&gt; print(vm_details)
+            {&#39;ip&#39;: &#39;192.168.1.10&#39;, &#39;username&#39;: &#39;admin&#39;, &#39;password&#39;: &#39;*****&#39;}
+
+        &#34;&#34;&#34;
         try:
-            return self.active_recovery_requests[requestid][&#39;vmInfo&#39;]
+            if staged:
+                return self.active_recovery_requests[requestid][&#39;vmInfo&#39;]
+            return self._get_active_recovery_requests(staged=False)[requestid][&#39;vmInfo&#39;]
         except KeyError:
             raise SDKException(&#39;CommserveRecovery&#39;, &#39;103&#39;)
 
-    def _quota_details(self):
-        &#34;&#34;&#34;
-        Returns CS Recovery license quota details in a dictionary
+    def _quota_details(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the CommServe Recovery license quota details.
+
+        Returns:
+            dict: A dictionary containing the quota details for the CS Recovery license.
+
+        Example:
+            &gt;&gt;&gt; recovery = CommServeRecovery()
+            &gt;&gt;&gt; quota_info = recovery._quota_details()
+            &gt;&gt;&gt; print(quota_info)
+            {&#39;total_quota&#39;: 100, &#39;used_quota&#39;: 45, &#39;remaining_quota&#39;: 55}
+
         &#34;&#34;&#34;
         flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._CS_RECOVERY_LICENSE_API)
-
         if flag:
             response = response.json()
             return {
@@ -538,8 +979,19 @@ CS GUID</p></div>
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
 
-    def _manual_retention_details(self):
-        &#34;&#34;&#34;Returns details of used vs allocated quota of manual retains in a dict&#34;&#34;&#34;
+    def _manual_retention_details(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve details about the used versus allocated quota of manual retains.
+
+        Returns:
+            dict: A dictionary containing information about the quota usage for manual retains,
+            including both used and allocated values.
+
+        Example:
+            &gt;&gt;&gt; recovery = CommServeRecovery()
+            &gt;&gt;&gt; retention_info = recovery._manual_retention_details()
+            &gt;&gt;&gt; print(f&#34;Used quota: {retention_info[&#39;used&#39;]}, Allocated quota: {retention_info[&#39;allocated&#39;]}&#34;)
+
+        &#34;&#34;&#34;
         flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._CS_RECOVERY_RETENTION_API)
         if flag:
             response = response.json()
@@ -554,179 +1006,412 @@ CS GUID</p></div>
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
 
     @property
-    def is_licensed_commcell(self):
+    def is_licensed_commcell(self) -&gt; bool:
+        &#34;&#34;&#34;Check if the Commcell is licensed for CommServe Recovery operations.
+
+        Returns:
+            True if the Commcell is licensed for CommServe Recovery; False otherwise.
+
+        Example:
+            &gt;&gt;&gt; recovery = CommServeRecovery(commcell_object)
+            &gt;&gt;&gt; if recovery.is_licensed_commcell:
+            ...     print(&#34;Commcell is licensed for CommServe Recovery.&#34;)
+            ... else:
+            ...     print(&#34;Commcell is not licensed for CommServe Recovery.&#34;)
+
+        &#34;&#34;&#34;
         return self._is_licensed_commcell
 
     @property
-    def backupsets(self):
+    def backupsets(self) -&gt; Dict[str, dict]:
+        &#34;&#34;&#34;Get the details of backupsets.
+
+        Returns:
+            Dict[str, dict]: A dictionary where each key is a backupset name and the value is another dictionary containing backupset details.
+
+        Example:
+            &gt;&gt;&gt; recovery = CommServeRecovery(commcell_object)
+            &gt;&gt;&gt; backupsets = recovery.backupsets  # Access the backupsets property
+            &gt;&gt;&gt; for name, details in backupsets.items():
+            ...     print(f&#34;Backupset Name: {name}, Details: {details}&#34;)
+
+        &#34;&#34;&#34;
         return self._get_backupsets()
 
     @property
-    def active_recovery_requests(self):
+    def active_recovery_requests(self) -&gt; list:
+        &#34;&#34;&#34;Get the list of currently active CommServe recovery requests.
+
+        Returns:
+            list: A list containing details of all active CommServe recovery requests.
+
+        Example:
+            &gt;&gt;&gt; recovery = CommServeRecovery()
+            &gt;&gt;&gt; active_requests = recovery.active_recovery_requests
+            &gt;&gt;&gt; print(f&#34;Number of active recovery requests: {len(active_requests)}&#34;)
+            &gt;&gt;&gt; # Each item in the list represents an active recovery request
+
+        &#34;&#34;&#34;
         return self._get_active_recovery_requests()
 
     @property
-    def recovery_license_details(self):
-        &#34;&#34;&#34;
-        Returns a dict containing start date, expiry date of license, number of consumed recovery requests and max requests count.
-        Ex:
-        {
+    def recovery_license_details(self) -&gt; dict:
+        &#34;&#34;&#34;Get the CommServe recovery license details.
+
+        Returns:
+            dict: A dictionary containing license information, including:
+                - is_licensed (int): 1 if licensed, 0 otherwise.
+                - start_date (float): License start date as a Unix timestamp.
+                - end_date (float): License expiry date as a Unix timestamp.
+                - used_recoveries_count (int): Number of recovery requests consumed.
+                - total_recoveries_allocated (int): Maximum number of recovery requests allowed.
+
+        Example:
+            &gt;&gt;&gt; recovery = CommServeRecovery()
+            &gt;&gt;&gt; license_info = recovery.recovery_license_details
+            &gt;&gt;&gt; print(license_info)
+            {
                 &#34;is_licensed&#34;: 1,
                 &#34;start_date&#34;: 1711460013.0,
                 &#34;end_date&#34;: 1711460013.0,
-                &#39;used_recoveries_count&#39;: 23,
-                &#39;total_recoveries_allocated&#39;: 40
+                &#34;used_recoveries_count&#34;: 23,
+                &#34;total_recoveries_allocated&#34;: 40
             }
+
         &#34;&#34;&#34;
         return self._quota_details()
 
     @property
-    def manual_retention_details(self):
-        &#34;&#34;&#34;
-        Returns a dict containing start date, expiry date of license, number of consumed retains and max retains allocated.
-        Ex:
-        {
-            &#34;start_date&#34;: 1711460013,
-            &#34;end_date&#34;: 1711544749,
-            &#39;consumed_retains&#39;: 4,
-            &#39;max_retains_allocated&#39;: 10
-        }
+    def manual_retention_details(self) -&gt; Dict[str, int]:
+        &#34;&#34;&#34;Get manual retention details for the CommServe license.
+
+        Returns:
+            Dict[str, int]: A dictionary containing the following keys:
+                - &#34;start_date&#34;: The start date of the license (as a Unix timestamp).
+                - &#34;end_date&#34;: The expiry date of the license (as a Unix timestamp).
+                - &#34;consumed_retains&#34;: The number of retains that have been consumed.
+                - &#34;max_retains_allocated&#34;: The maximum number of retains allocated.
+
+        Example:
+            &gt;&gt;&gt; recovery = CommServeRecovery()
+            &gt;&gt;&gt; details = recovery.manual_retention_details
+            &gt;&gt;&gt; print(details)
+            {&#39;start_date&#39;: 1711460013, &#39;end_date&#39;: 1711544749, &#39;consumed_retains&#39;: 4, &#39;max_retains_allocated&#39;: 10}
+
         &#34;&#34;&#34;
         return self._manual_retention_details()
 
-    def start_recovery(self, backupset_name: str):
-        &#34;&#34;&#34;
-        Submits commserve recovery request for the given backupset
-        Args:
-            backupset_name (str) : name of the backup set to recover.
-                                    Ex: SET_45
-        Returns:
-            Request id of the submitted request as an integer
-        &#34;&#34;&#34;
-        return self._create_cs_recovery_request(backupset_name)
+    def start_recovery(self, backupset_name: str, address_prefixes: str = &#34;*&#34;, remember_address: bool = True) -&gt; int:
+        &#34;&#34;&#34;Submit a CommServe recovery request for the specified backup set.
 
-    def extend_reservation(self, request_id: int):
-        &#34;&#34;&#34;
-        Extends the expiry time of a VM created for the given request id.
+        This method initiates a recovery operation for the given backup set name, using the provided
+        address prefixes and an option to remember the address for future use. The method returns
+        the request ID of the submitted recovery operation.
+
         Args:
-            request_id (int) : commserve recovery request id
+            backupset_name: The name of the backup set to recover (e.g., &#34;SET_45&#34;).
+            address_prefixes: Address prefixes to use for the recovery. Use &#34;*&#34; to include all addresses.
+                Defaults to &#34;*&#34;.
+            remember_address: Whether to remember the address for future recovery operations.
+                Defaults to True.
+
         Returns:
-            True is the request is submitted successfully, otherwise, False
+            The request ID (as an integer) of the submitted CommServe recovery request.
+
+        Example:
+            &gt;&gt;&gt; recovery = CommServeRecovery()
+            &gt;&gt;&gt; request_id = recovery.start_recovery(&#34;SET_45&#34;, address_prefixes=&#34;192.168.*&#34;, remember_address=True)
+            &gt;&gt;&gt; print(f&#34;Recovery request submitted with ID: {request_id}&#34;)
+
+        &#34;&#34;&#34;
+        return self._create_cs_recovery_request(backupset_name, address_prefixes, remember_address)
+
+    def extend_reservation(self, request_id: int) -&gt; bool:
+        &#34;&#34;&#34;Extend the expiry time of a VM created for a specific CommServe recovery request.
+
+        Args:
+            request_id: The unique identifier of the CommServe recovery request for which the VM reservation should be extended.
+
+        Returns:
+            True if the reservation extension request is submitted successfully; otherwise, False.
+
+        Example:
+            &gt;&gt;&gt; recovery = CommServeRecovery()
+            &gt;&gt;&gt; success = recovery.extend_reservation(12345)
+            &gt;&gt;&gt; if success:
+            ...     print(&#34;Reservation extended successfully.&#34;)
+            ... else:
+            ...     print(&#34;Failed to extend reservation.&#34;)
+
         &#34;&#34;&#34;
         return self._extend_recovery_request(request_id)
 
-    def get_vm_details(self, request_id: int):
+    def close_reservation(self, request_id: int) -&gt; bool:
+        &#34;&#34;&#34;Close the current CommServe recovery request and release the associated VM.
+
+        This method submits a request to close an active CommServe recovery session,
+        releasing any virtual machine resources that were allocated for the recovery process.
+
+        Args:
+            request_id: The unique identifier of the CommServe recovery request to be closed.
+
+        Returns:
+            True if the request to close the reservation is submitted successfully; otherwise, False.
+
+        Example:
+            &gt;&gt;&gt; recovery = CommServeRecovery()
+            &gt;&gt;&gt; success = recovery.close_reservation(12345)
+            &gt;&gt;&gt; print(f&#34;Reservation closed: {success}&#34;)
+
         &#34;&#34;&#34;
-        Returns VM details for the given recovery request in a dict format.
-        Ex:
-        {
-            &#34;commandcenter_url&#34;: &#34;https://20.235.143.244/commandcenter&#34;,
-            &#34;vm_expiration_time&#34;: 1712311000,
-            &#34;username&#34;: &#34;recoverymanager&#34;,
-            &#34;password&#34;: &#34;&lt;REDACTED&gt;&#34;,
-        }
+        return self._close_recovery_request(request_id)
+
+    def get_vm_details(self, request_id: int, staged=True) -&gt; dict:
+        &#34;&#34;&#34;Retrieve VM details for a specific recovery request.
+
+        Given a recovery request ID, this method returns a dictionary containing
+        details about the associated virtual machine, such as the Command Center URL,
+        VM expiration time, username, and password.
+
+        Args:
+            request_id: The unique identifier for the recovery request.
+            staged: If True, retrieves from cached active requests. If False, makes fresh API call. Defaults to True.
+
+        Returns:
+            dict: A dictionary with VM details, for example:
+                {
+                    &#34;commandcenter_url&#34;: &#34;https://20.235.143.244/commandcenter&#34;,
+                    &#34;vm_expiration_time&#34;: 1712311000,
+                    &#34;username&#34;: &#34;recoverymanager&#34;,
+                    &#34;password&#34;: &#34;&lt;REDACTED&gt;&#34;,
+                }
+
+        Example:
+            &gt;&gt;&gt; recovery = CommServeRecovery()
+            &gt;&gt;&gt; vm_info = recovery.get_vm_details(12345)
+            &gt;&gt;&gt; print(vm_info[&#34;commandcenter_url&#34;])
+            https://20.235.143.244/commandcenter
+
         &#34;&#34;&#34;
-        return self._get_vm_details(request_id)</code></pre>
+        return self._get_vm_details(request_id, staged)</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.cleanroom.cs_recovery.CommServeRecovery.active_recovery_requests"><code class="name">var <span class="ident">active_recovery_requests</span></code></dt>
+<dt id="cvpysdk.cleanroom.cs_recovery.CommServeRecovery.active_recovery_requests"><code class="name">var <span class="ident">active_recovery_requests</span> : list</code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Get the list of currently active CommServe recovery requests.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>list</code></dt>
+<dd>A list containing details of all active CommServe recovery requests.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; recovery = CommServeRecovery()
+&gt;&gt;&gt; active_requests = recovery.active_recovery_requests
+&gt;&gt;&gt; print(f&quot;Number of active recovery requests: {len(active_requests)}&quot;)
+&gt;&gt;&gt; # Each item in the list represents an active recovery request
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/cleanroom/cs_recovery.py#L232-L234" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/cleanroom/cs_recovery.py#L429-L444" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def active_recovery_requests(self):
+def active_recovery_requests(self) -&gt; list:
+    &#34;&#34;&#34;Get the list of currently active CommServe recovery requests.
+
+    Returns:
+        list: A list containing details of all active CommServe recovery requests.
+
+    Example:
+        &gt;&gt;&gt; recovery = CommServeRecovery()
+        &gt;&gt;&gt; active_requests = recovery.active_recovery_requests
+        &gt;&gt;&gt; print(f&#34;Number of active recovery requests: {len(active_requests)}&#34;)
+        &gt;&gt;&gt; # Each item in the list represents an active recovery request
+
+    &#34;&#34;&#34;
     return self._get_active_recovery_requests()</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.cleanroom.cs_recovery.CommServeRecovery.backupsets"><code class="name">var <span class="ident">backupsets</span></code></dt>
+<dt id="cvpysdk.cleanroom.cs_recovery.CommServeRecovery.backupsets"><code class="name">var <span class="ident">backupsets</span> : Dict[str, dict]</code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Get the details of backupsets.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Dict[str, dict]</code></dt>
+<dd>A dictionary where each key is a backupset name and the value is another dictionary containing backupset details.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; recovery = CommServeRecovery(commcell_object)
+&gt;&gt;&gt; backupsets = recovery.backupsets  # Access the backupsets property
+&gt;&gt;&gt; for name, details in backupsets.items():
+...     print(f&quot;Backupset Name: {name}, Details: {details}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/cleanroom/cs_recovery.py#L228-L230" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/cleanroom/cs_recovery.py#L412-L427" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def backupsets(self):
+def backupsets(self) -&gt; Dict[str, dict]:
+    &#34;&#34;&#34;Get the details of backupsets.
+
+    Returns:
+        Dict[str, dict]: A dictionary where each key is a backupset name and the value is another dictionary containing backupset details.
+
+    Example:
+        &gt;&gt;&gt; recovery = CommServeRecovery(commcell_object)
+        &gt;&gt;&gt; backupsets = recovery.backupsets  # Access the backupsets property
+        &gt;&gt;&gt; for name, details in backupsets.items():
+        ...     print(f&#34;Backupset Name: {name}, Details: {details}&#34;)
+
+    &#34;&#34;&#34;
     return self._get_backupsets()</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.cleanroom.cs_recovery.CommServeRecovery.is_licensed_commcell"><code class="name">var <span class="ident">is_licensed_commcell</span></code></dt>
+<dt id="cvpysdk.cleanroom.cs_recovery.CommServeRecovery.is_licensed_commcell"><code class="name">var <span class="ident">is_licensed_commcell</span> : bool</code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Check if the Commcell is licensed for CommServe Recovery operations.</p>
+<p>Returns
+-----=
+True if the Commcell is licensed for CommServe Recovery; False otherwise.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; recovery = CommServeRecovery(commcell_object)
+&gt;&gt;&gt; if recovery.is_licensed_commcell:
+...     print(&quot;Commcell is licensed for CommServe Recovery.&quot;)
+... else:
+...     print(&quot;Commcell is not licensed for CommServe Recovery.&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/cleanroom/cs_recovery.py#L224-L226" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/cleanroom/cs_recovery.py#L394-L410" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def is_licensed_commcell(self):
+def is_licensed_commcell(self) -&gt; bool:
+    &#34;&#34;&#34;Check if the Commcell is licensed for CommServe Recovery operations.
+
+    Returns:
+        True if the Commcell is licensed for CommServe Recovery; False otherwise.
+
+    Example:
+        &gt;&gt;&gt; recovery = CommServeRecovery(commcell_object)
+        &gt;&gt;&gt; if recovery.is_licensed_commcell:
+        ...     print(&#34;Commcell is licensed for CommServe Recovery.&#34;)
+        ... else:
+        ...     print(&#34;Commcell is not licensed for CommServe Recovery.&#34;)
+
+    &#34;&#34;&#34;
     return self._is_licensed_commcell</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.cleanroom.cs_recovery.CommServeRecovery.manual_retention_details"><code class="name">var <span class="ident">manual_retention_details</span></code></dt>
+<dt id="cvpysdk.cleanroom.cs_recovery.CommServeRecovery.manual_retention_details"><code class="name">var <span class="ident">manual_retention_details</span> : Dict[str, int]</code></dt>
 <dd>
-<div class="desc"><p>Returns a dict containing start date, expiry date of license, number of consumed retains and max retains allocated.
-Ex:
-{
-"start_date": 1711460013,
-"end_date": 1711544749,
-'consumed_retains': 4,
-'max_retains_allocated': 10
-}</p></div>
+<div class="desc"><p>Get manual retention details for the CommServe license.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Dict[str, int]</code></dt>
+<dd>A dictionary containing the following keys:
+- "start_date": The start date of the license (as a Unix timestamp).
+- "end_date": The expiry date of the license (as a Unix timestamp).
+- "consumed_retains": The number of retains that have been consumed.
+- "max_retains_allocated": The maximum number of retains allocated.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; recovery = CommServeRecovery()
+&gt;&gt;&gt; details = recovery.manual_retention_details
+&gt;&gt;&gt; print(details)
+{'start_date': 1711460013, 'end_date': 1711544749, 'consumed_retains': 4, 'max_retains_allocated': 10}
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/cleanroom/cs_recovery.py#L251-L263" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/cleanroom/cs_recovery.py#L474-L493" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def manual_retention_details(self):
-    &#34;&#34;&#34;
-    Returns a dict containing start date, expiry date of license, number of consumed retains and max retains allocated.
-    Ex:
-    {
-        &#34;start_date&#34;: 1711460013,
-        &#34;end_date&#34;: 1711544749,
-        &#39;consumed_retains&#39;: 4,
-        &#39;max_retains_allocated&#39;: 10
-    }
+def manual_retention_details(self) -&gt; Dict[str, int]:
+    &#34;&#34;&#34;Get manual retention details for the CommServe license.
+
+    Returns:
+        Dict[str, int]: A dictionary containing the following keys:
+            - &#34;start_date&#34;: The start date of the license (as a Unix timestamp).
+            - &#34;end_date&#34;: The expiry date of the license (as a Unix timestamp).
+            - &#34;consumed_retains&#34;: The number of retains that have been consumed.
+            - &#34;max_retains_allocated&#34;: The maximum number of retains allocated.
+
+    Example:
+        &gt;&gt;&gt; recovery = CommServeRecovery()
+        &gt;&gt;&gt; details = recovery.manual_retention_details
+        &gt;&gt;&gt; print(details)
+        {&#39;start_date&#39;: 1711460013, &#39;end_date&#39;: 1711544749, &#39;consumed_retains&#39;: 4, &#39;max_retains_allocated&#39;: 10}
+
     &#34;&#34;&#34;
     return self._manual_retention_details()</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.cleanroom.cs_recovery.CommServeRecovery.recovery_license_details"><code class="name">var <span class="ident">recovery_license_details</span></code></dt>
+<dt id="cvpysdk.cleanroom.cs_recovery.CommServeRecovery.recovery_license_details"><code class="name">var <span class="ident">recovery_license_details</span> : dict</code></dt>
 <dd>
-<div class="desc"><p>Returns a dict containing start date, expiry date of license, number of consumed recovery requests and max requests count.
-Ex:
+<div class="desc"><p>Get the CommServe recovery license details.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>A dictionary containing license information, including:
+- is_licensed (int): 1 if licensed, 0 otherwise.
+- start_date (float): License start date as a Unix timestamp.
+- end_date (float): License expiry date as a Unix timestamp.
+- used_recoveries_count (int): Number of recovery requests consumed.
+- total_recoveries_allocated (int): Maximum number of recovery requests allowed.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; recovery = CommServeRecovery()
+&gt;&gt;&gt; license_info = recovery.recovery_license_details
+&gt;&gt;&gt; print(license_info)
 {
-"is_licensed": 1,
-"start_date": 1711460013.0,
-"end_date": 1711460013.0,
-'used_recoveries_count': 23,
-'total_recoveries_allocated': 40
-}</p></div>
+    &quot;is_licensed&quot;: 1,
+    &quot;start_date&quot;: 1711460013.0,
+    &quot;end_date&quot;: 1711460013.0,
+    &quot;used_recoveries_count&quot;: 23,
+    &quot;total_recoveries_allocated&quot;: 40
+}
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/cleanroom/cs_recovery.py#L236-L249" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/cleanroom/cs_recovery.py#L446-L472" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def recovery_license_details(self):
-    &#34;&#34;&#34;
-    Returns a dict containing start date, expiry date of license, number of consumed recovery requests and max requests count.
-    Ex:
-    {
+def recovery_license_details(self) -&gt; dict:
+    &#34;&#34;&#34;Get the CommServe recovery license details.
+
+    Returns:
+        dict: A dictionary containing license information, including:
+            - is_licensed (int): 1 if licensed, 0 otherwise.
+            - start_date (float): License start date as a Unix timestamp.
+            - end_date (float): License expiry date as a Unix timestamp.
+            - used_recoveries_count (int): Number of recovery requests consumed.
+            - total_recoveries_allocated (int): Maximum number of recovery requests allowed.
+
+    Example:
+        &gt;&gt;&gt; recovery = CommServeRecovery()
+        &gt;&gt;&gt; license_info = recovery.recovery_license_details
+        &gt;&gt;&gt; print(license_info)
+        {
             &#34;is_licensed&#34;: 1,
             &#34;start_date&#34;: 1711460013.0,
             &#34;end_date&#34;: 1711460013.0,
-            &#39;used_recoveries_count&#39;: 23,
-            &#39;total_recoveries_allocated&#39;: 40
+            &#34;used_recoveries_count&#34;: 23,
+            &#34;total_recoveries_allocated&#34;: 40
         }
+
     &#34;&#34;&#34;
     return self._quota_details()</code></pre>
 </details>
@@ -734,87 +1419,229 @@ def recovery_license_details(self):
 </dl>
 <h3>Methods</h3>
 <dl>
-<dt id="cvpysdk.cleanroom.cs_recovery.CommServeRecovery.extend_reservation"><code class="name flex">
-<span>def <span class="ident">extend_reservation</span></span>(<span>self, request_id: int)</span>
+<dt id="cvpysdk.cleanroom.cs_recovery.CommServeRecovery.close_reservation"><code class="name flex">
+<span>def <span class="ident">close_reservation</span></span>(<span>self, request_id: int) ‑> bool</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Extends the expiry time of a VM created for the given request id.</p>
-<h2 id="args">Args</h2>
-<p>request_id (int) : commserve recovery request id</p>
-<h2 id="returns">Returns</h2>
-<p>True is the request is submitted successfully, otherwise, False</p></div>
+<div class="desc"><p>Close the current CommServe recovery request and release the associated VM.</p>
+<p>This method submits a request to close an active CommServe recovery session,
+releasing any virtual machine resources that were allocated for the recovery process.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>request_id</code></strong></dt>
+<dd>The unique identifier of the CommServe recovery request to be closed.</dd>
+</dl>
+<p>Returns
+-----=
+True if the request to close the reservation is submitted successfully; otherwise, False.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; recovery = CommServeRecovery()
+&gt;&gt;&gt; success = recovery.close_reservation(12345)
+&gt;&gt;&gt; print(f&quot;Reservation closed: {success}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/cleanroom/cs_recovery.py#L276-L284" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/cleanroom/cs_recovery.py#L542-L561" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def extend_reservation(self, request_id: int):
-    &#34;&#34;&#34;
-    Extends the expiry time of a VM created for the given request id.
+<pre><code class="python">def close_reservation(self, request_id: int) -&gt; bool:
+    &#34;&#34;&#34;Close the current CommServe recovery request and release the associated VM.
+
+    This method submits a request to close an active CommServe recovery session,
+    releasing any virtual machine resources that were allocated for the recovery process.
+
     Args:
-        request_id (int) : commserve recovery request id
+        request_id: The unique identifier of the CommServe recovery request to be closed.
+
     Returns:
-        True is the request is submitted successfully, otherwise, False
+        True if the request to close the reservation is submitted successfully; otherwise, False.
+
+    Example:
+        &gt;&gt;&gt; recovery = CommServeRecovery()
+        &gt;&gt;&gt; success = recovery.close_reservation(12345)
+        &gt;&gt;&gt; print(f&#34;Reservation closed: {success}&#34;)
+
+    &#34;&#34;&#34;
+    return self._close_recovery_request(request_id)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.cleanroom.cs_recovery.CommServeRecovery.extend_reservation"><code class="name flex">
+<span>def <span class="ident">extend_reservation</span></span>(<span>self, request_id: int) ‑> bool</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Extend the expiry time of a VM created for a specific CommServe recovery request.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>request_id</code></strong></dt>
+<dd>The unique identifier of the CommServe recovery request for which the VM reservation should be extended.</dd>
+</dl>
+<p>Returns
+-----=
+True if the reservation extension request is submitted successfully; otherwise, False.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; recovery = CommServeRecovery()
+&gt;&gt;&gt; success = recovery.extend_reservation(12345)
+&gt;&gt;&gt; if success:
+...     print(&quot;Reservation extended successfully.&quot;)
+... else:
+...     print(&quot;Failed to extend reservation.&quot;)
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/cleanroom/cs_recovery.py#L521-L540" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def extend_reservation(self, request_id: int) -&gt; bool:
+    &#34;&#34;&#34;Extend the expiry time of a VM created for a specific CommServe recovery request.
+
+    Args:
+        request_id: The unique identifier of the CommServe recovery request for which the VM reservation should be extended.
+
+    Returns:
+        True if the reservation extension request is submitted successfully; otherwise, False.
+
+    Example:
+        &gt;&gt;&gt; recovery = CommServeRecovery()
+        &gt;&gt;&gt; success = recovery.extend_reservation(12345)
+        &gt;&gt;&gt; if success:
+        ...     print(&#34;Reservation extended successfully.&#34;)
+        ... else:
+        ...     print(&#34;Failed to extend reservation.&#34;)
+
     &#34;&#34;&#34;
     return self._extend_recovery_request(request_id)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.cleanroom.cs_recovery.CommServeRecovery.get_vm_details"><code class="name flex">
-<span>def <span class="ident">get_vm_details</span></span>(<span>self, request_id: int)</span>
+<span>def <span class="ident">get_vm_details</span></span>(<span>self, request_id: int, staged=True) ‑> dict</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Returns VM details for the given recovery request in a dict format.
-Ex:
+<div class="desc"><p>Retrieve VM details for a specific recovery request.</p>
+<p>Given a recovery request ID, this method returns a dictionary containing
+details about the associated virtual machine, such as the Command Center URL,
+VM expiration time, username, and password.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>request_id</code></strong></dt>
+<dd>The unique identifier for the recovery request.</dd>
+<dt><strong><code>staged</code></strong></dt>
+<dd>If True, retrieves from cached active requests. If False, makes fresh API call. Defaults to True.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>A dictionary with VM details, for example:
 {
 "commandcenter_url": "https://20.235.143.244/commandcenter",
 "vm_expiration_time": 1712311000,
 "username": "recoverymanager",
 "password": "<REDACTED>",
-}</p></div>
+}</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; recovery = CommServeRecovery()
+&gt;&gt;&gt; vm_info = recovery.get_vm_details(12345)
+&gt;&gt;&gt; print(vm_info[&quot;commandcenter_url&quot;])
+&lt;https://20.235.143.244/commandcenter&gt;
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/cleanroom/cs_recovery.py#L286-L297" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/cleanroom/cs_recovery.py#L563-L591" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def get_vm_details(self, request_id: int):
+<pre><code class="python">def get_vm_details(self, request_id: int, staged=True) -&gt; dict:
+    &#34;&#34;&#34;Retrieve VM details for a specific recovery request.
+
+    Given a recovery request ID, this method returns a dictionary containing
+    details about the associated virtual machine, such as the Command Center URL,
+    VM expiration time, username, and password.
+
+    Args:
+        request_id: The unique identifier for the recovery request.
+        staged: If True, retrieves from cached active requests. If False, makes fresh API call. Defaults to True.
+
+    Returns:
+        dict: A dictionary with VM details, for example:
+            {
+                &#34;commandcenter_url&#34;: &#34;https://20.235.143.244/commandcenter&#34;,
+                &#34;vm_expiration_time&#34;: 1712311000,
+                &#34;username&#34;: &#34;recoverymanager&#34;,
+                &#34;password&#34;: &#34;&lt;REDACTED&gt;&#34;,
+            }
+
+    Example:
+        &gt;&gt;&gt; recovery = CommServeRecovery()
+        &gt;&gt;&gt; vm_info = recovery.get_vm_details(12345)
+        &gt;&gt;&gt; print(vm_info[&#34;commandcenter_url&#34;])
+        https://20.235.143.244/commandcenter
+
     &#34;&#34;&#34;
-    Returns VM details for the given recovery request in a dict format.
-    Ex:
-    {
-        &#34;commandcenter_url&#34;: &#34;https://20.235.143.244/commandcenter&#34;,
-        &#34;vm_expiration_time&#34;: 1712311000,
-        &#34;username&#34;: &#34;recoverymanager&#34;,
-        &#34;password&#34;: &#34;&lt;REDACTED&gt;&#34;,
-    }
-    &#34;&#34;&#34;
-    return self._get_vm_details(request_id)</code></pre>
+    return self._get_vm_details(request_id, staged)</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.cleanroom.cs_recovery.CommServeRecovery.start_recovery"><code class="name flex">
-<span>def <span class="ident">start_recovery</span></span>(<span>self, backupset_name: str)</span>
+<span>def <span class="ident">start_recovery</span></span>(<span>self, backupset_name: str, address_prefixes: str = '*', remember_address: bool = True) ‑> int</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Submits commserve recovery request for the given backupset</p>
-<h2 id="args">Args</h2>
-<p>backupset_name (str) : name of the backup set to recover.
-Ex: SET_45</p>
-<h2 id="returns">Returns</h2>
-<p>Request id of the submitted request as an integer</p></div>
+<div class="desc"><p>Submit a CommServe recovery request for the specified backup set.</p>
+<p>This method initiates a recovery operation for the given backup set name, using the provided
+address prefixes and an option to remember the address for future use. The method returns
+the request ID of the submitted recovery operation.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>backupset_name</code></strong></dt>
+<dd>The name of the backup set to recover (e.g., "SET_45").</dd>
+<dt><strong><code>address_prefixes</code></strong></dt>
+<dd>Address prefixes to use for the recovery. Use "<em>" to include all addresses.
+Defaults to "</em>".</dd>
+<dt><strong><code>remember_address</code></strong></dt>
+<dd>Whether to remember the address for future recovery operations.
+Defaults to True.</dd>
+</dl>
+<p>Returns
+-----=
+The request ID (as an integer) of the submitted CommServe recovery request.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; recovery = CommServeRecovery()
+&gt;&gt;&gt; request_id = recovery.start_recovery(&quot;SET_45&quot;, address_prefixes=&quot;192.168.*&quot;, remember_address=True)
+&gt;&gt;&gt; print(f&quot;Recovery request submitted with ID: {request_id}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/cleanroom/cs_recovery.py#L265-L274" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/cleanroom/cs_recovery.py#L495-L519" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def start_recovery(self, backupset_name: str):
-    &#34;&#34;&#34;
-    Submits commserve recovery request for the given backupset
+<pre><code class="python">def start_recovery(self, backupset_name: str, address_prefixes: str = &#34;*&#34;, remember_address: bool = True) -&gt; int:
+    &#34;&#34;&#34;Submit a CommServe recovery request for the specified backup set.
+
+    This method initiates a recovery operation for the given backup set name, using the provided
+    address prefixes and an option to remember the address for future use. The method returns
+    the request ID of the submitted recovery operation.
+
     Args:
-        backupset_name (str) : name of the backup set to recover.
-                                Ex: SET_45
+        backupset_name: The name of the backup set to recover (e.g., &#34;SET_45&#34;).
+        address_prefixes: Address prefixes to use for the recovery. Use &#34;*&#34; to include all addresses.
+            Defaults to &#34;*&#34;.
+        remember_address: Whether to remember the address for future recovery operations.
+            Defaults to True.
+
     Returns:
-        Request id of the submitted request as an integer
+        The request ID (as an integer) of the submitted CommServe recovery request.
+
+    Example:
+        &gt;&gt;&gt; recovery = CommServeRecovery()
+        &gt;&gt;&gt; request_id = recovery.start_recovery(&#34;SET_45&#34;, address_prefixes=&#34;192.168.*&#34;, remember_address=True)
+        &gt;&gt;&gt; print(f&#34;Recovery request submitted with ID: {request_id}&#34;)
+
     &#34;&#34;&#34;
-    return self._create_cs_recovery_request(backupset_name)</code></pre>
+    return self._create_cs_recovery_request(backupset_name, address_prefixes, remember_address)</code></pre>
 </details>
 </dd>
 </dl>
@@ -892,6 +1719,7 @@ setTimeout(() => input.focus(), 100);
 <ul class="">
 <li><code><a title="cvpysdk.cleanroom.cs_recovery.CommServeRecovery.active_recovery_requests" href="#cvpysdk.cleanroom.cs_recovery.CommServeRecovery.active_recovery_requests">active_recovery_requests</a></code></li>
 <li><code><a title="cvpysdk.cleanroom.cs_recovery.CommServeRecovery.backupsets" href="#cvpysdk.cleanroom.cs_recovery.CommServeRecovery.backupsets">backupsets</a></code></li>
+<li><code><a title="cvpysdk.cleanroom.cs_recovery.CommServeRecovery.close_reservation" href="#cvpysdk.cleanroom.cs_recovery.CommServeRecovery.close_reservation">close_reservation</a></code></li>
 <li><code><a title="cvpysdk.cleanroom.cs_recovery.CommServeRecovery.extend_reservation" href="#cvpysdk.cleanroom.cs_recovery.CommServeRecovery.extend_reservation">extend_reservation</a></code></li>
 <li><code><a title="cvpysdk.cleanroom.cs_recovery.CommServeRecovery.get_vm_details" href="#cvpysdk.cleanroom.cs_recovery.CommServeRecovery.get_vm_details">get_vm_details</a></code></li>
 <li><code><a title="cvpysdk.cleanroom.cs_recovery.CommServeRecovery.is_licensed_commcell" href="#cvpysdk.cleanroom.cs_recovery.CommServeRecovery.is_licensed_commcell">is_licensed_commcell</a></code></li>

@@ -33,7 +33,7 @@ splunk instance, and to perform operations on that instance</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/splunkinstance.py#L1-L111" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/splunkinstance.py#L1-L138" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -66,35 +66,61 @@ SplunkInstance
 
     _restore_json() --  Method which creates json for a restore job
 &#34;&#34;&#34;
-from cvpysdk.instances.bigdataappsinstance import BigDataAppsInstance
+
+from .bigdataappsinstance import BigDataAppsInstance
+
 
 class SplunkInstance(BigDataAppsInstance):
     &#34;&#34;&#34;
-    Class  representing a splunk instance, and to perform operations on
-    that instance
+    Represents a Splunk instance and provides operations for managing and interacting with it.
+
+    This class is designed to encapsulate the functionality required to operate on a Splunk instance,
+    including internal methods for restoring configuration or state from JSON data.
+
+    Key Features:
+        - Encapsulation of Splunk instance operations
+        - Internal support for restoring instance state from JSON
+
     &#34;&#34;&#34;
 
-    def _restore_json(self, **kwargs):
-        &#34;&#34;&#34;
-        Creates json required for restore job
+    def _restore_json(self, **kwargs) -&gt; dict:
+        &#34;&#34;&#34;Create the JSON dictionary required for initiating a restore job.
 
-        Args:
-            kwargs              (dict)  --  dictionary containing optional key word arguments,
-            if it is a restore out of place destination_entity dictionary is expected which
-            has information about the destination.
+        This method constructs the parameter dictionary needed to start a restore job.
+        If performing a restore out of place, a `destination_entity` dictionary should be provided
+        in the keyword arguments, containing information about the destination client and instance.
 
-            destination_entity  (dict)  --  {
-                                                &#34;clientId&#34;: ,
-                                                &#34;clientName&#34;: ,
-                                                &#34;instanceName&#34;: ,
-                                                &#34;appName&#34;: ,
-                                                &#34;instanceId&#34;: ,
-                                                &#34;applicationId&#34;: ,
-                                            }
+        Keyword Args:
+            destination_entity (dict, optional): Dictionary specifying the destination for an out-of-place restore.
+                Example format:
+                    {
+                        &#34;clientId&#34;: &lt;int&gt;,
+                        &#34;clientName&#34;: &lt;str&gt;,
+                        &#34;instanceName&#34;: &lt;str&gt;,
+                        &#34;appName&#34;: &lt;str&gt;,
+                        &#34;instanceId&#34;: &lt;int&gt;,
+                        &#34;applicationId&#34;: &lt;int&gt;,
+                    }
+            Additional keyword arguments may be provided as needed for restore customization.
 
         Returns:
-            parameter_dict  (dict)  --  dictionary with parameters set required for a
-            retore job
+            dict: Dictionary containing all parameters required to initiate a restore job.
+
+        Example:
+            &gt;&gt;&gt; restore_params = splunk_instance._restore_json(
+            ...     destination_entity={
+            ...         &#34;clientId&#34;: 123,
+            ...         &#34;clientName&#34;: &#34;DestinationClient&#34;,
+            ...         &#34;instanceName&#34;: &#34;SplunkInstance2&#34;,
+            ...         &#34;appName&#34;: &#34;Splunk&#34;,
+            ...         &#34;instanceId&#34;: 456,
+            ...         &#34;applicationId&#34;: 789,
+            ...     },
+            ...     some_other_option=True
+            ... )
+            &gt;&gt;&gt; print(restore_params)
+            # The returned dictionary can be used to submit a restore job
+
         &#34;&#34;&#34;
 
         instance_properties = self.properties
@@ -120,7 +146,6 @@ class SplunkInstance(BigDataAppsInstance):
         rest_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;] \
             [&#34;restoreOptions&#34;][&#34;destination&#34;][&#34;destinationInstance&#34;] = kwargs. \
             get(&#39;destination_entity&#39;, self._instance)
-
 
         rest_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;] \
             [&#34;restoreOptions&#34;][&#34;distributedAppsRestoreOptions&#34;] = {&#34;distributedRestore&#34;: True}
@@ -162,12 +187,16 @@ class SplunkInstance(BigDataAppsInstance):
 <span>(</span><span>agent_object, instance_name, instance_id=None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class
-representing a splunk instance, and to perform operations on
-that instance</p>
+<div class="desc"><p>Represents a Splunk instance and provides operations for managing and interacting with it.</p>
+<p>This class is designed to encapsulate the functionality required to operate on a Splunk instance,
+including internal methods for restoring configuration or state from JSON data.</p>
+<p>Key Features:
+- Encapsulation of Splunk instance operations
+- Internal support for restoring instance state from JSON</p>
 <p>Initialise the instance object.</p>
-<h2 id="args">Args</h2>
-<p>agent_object
+<p>Args
+-----=
+agent_object
 (object)
 &ndash;
 instance of the Agent class</p>
@@ -180,40 +209,65 @@ name of the instance</p>
 &ndash;
 id of the instance
 default: None</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Instance class</p></div>
+<p>Returns
+-----=
+object - instance of the Instance class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/splunkinstance.py#L34-L111" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/splunkinstance.py#L36-L138" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class SplunkInstance(BigDataAppsInstance):
     &#34;&#34;&#34;
-    Class  representing a splunk instance, and to perform operations on
-    that instance
+    Represents a Splunk instance and provides operations for managing and interacting with it.
+
+    This class is designed to encapsulate the functionality required to operate on a Splunk instance,
+    including internal methods for restoring configuration or state from JSON data.
+
+    Key Features:
+        - Encapsulation of Splunk instance operations
+        - Internal support for restoring instance state from JSON
+
     &#34;&#34;&#34;
 
-    def _restore_json(self, **kwargs):
-        &#34;&#34;&#34;
-        Creates json required for restore job
+    def _restore_json(self, **kwargs) -&gt; dict:
+        &#34;&#34;&#34;Create the JSON dictionary required for initiating a restore job.
 
-        Args:
-            kwargs              (dict)  --  dictionary containing optional key word arguments,
-            if it is a restore out of place destination_entity dictionary is expected which
-            has information about the destination.
+        This method constructs the parameter dictionary needed to start a restore job.
+        If performing a restore out of place, a `destination_entity` dictionary should be provided
+        in the keyword arguments, containing information about the destination client and instance.
 
-            destination_entity  (dict)  --  {
-                                                &#34;clientId&#34;: ,
-                                                &#34;clientName&#34;: ,
-                                                &#34;instanceName&#34;: ,
-                                                &#34;appName&#34;: ,
-                                                &#34;instanceId&#34;: ,
-                                                &#34;applicationId&#34;: ,
-                                            }
+        Keyword Args:
+            destination_entity (dict, optional): Dictionary specifying the destination for an out-of-place restore.
+                Example format:
+                    {
+                        &#34;clientId&#34;: &lt;int&gt;,
+                        &#34;clientName&#34;: &lt;str&gt;,
+                        &#34;instanceName&#34;: &lt;str&gt;,
+                        &#34;appName&#34;: &lt;str&gt;,
+                        &#34;instanceId&#34;: &lt;int&gt;,
+                        &#34;applicationId&#34;: &lt;int&gt;,
+                    }
+            Additional keyword arguments may be provided as needed for restore customization.
 
         Returns:
-            parameter_dict  (dict)  --  dictionary with parameters set required for a
-            retore job
+            dict: Dictionary containing all parameters required to initiate a restore job.
+
+        Example:
+            &gt;&gt;&gt; restore_params = splunk_instance._restore_json(
+            ...     destination_entity={
+            ...         &#34;clientId&#34;: 123,
+            ...         &#34;clientName&#34;: &#34;DestinationClient&#34;,
+            ...         &#34;instanceName&#34;: &#34;SplunkInstance2&#34;,
+            ...         &#34;appName&#34;: &#34;Splunk&#34;,
+            ...         &#34;instanceId&#34;: 456,
+            ...         &#34;applicationId&#34;: 789,
+            ...     },
+            ...     some_other_option=True
+            ... )
+            &gt;&gt;&gt; print(restore_params)
+            # The returned dictionary can be used to submit a restore job
+
         &#34;&#34;&#34;
 
         instance_properties = self.properties
@@ -239,7 +293,6 @@ default: None</p>
         rest_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;] \
             [&#34;restoreOptions&#34;][&#34;destination&#34;][&#34;destinationInstance&#34;] = kwargs. \
             get(&#39;destination_entity&#39;, self._instance)
-
 
         rest_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;] \
             [&#34;restoreOptions&#34;][&#34;distributedAppsRestoreOptions&#34;] = {&#34;distributedRestore&#34;: True}

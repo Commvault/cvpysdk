@@ -28,7 +28,8 @@
 <p>OracleCloudInstance: Derived class from VirtualServer
 Base class, representing a
 Oracle Cloud instance, and to perform operations on that instance</p>
-<h2 id="oraclecloudinstance">Oraclecloudinstance</h2>
+<p>Oraclecloudinstance
+-----=</p>
 <p><strong>init</strong>(agent_object,instance_name,instance_id)
 &ndash;
 initialize object of Oracle Cloud
@@ -47,7 +48,7 @@ Specific instance properties</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/oracle_cloud.py#L1-L138" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/oracle_cloud.py#L1-L183" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -94,19 +95,39 @@ OracleCloudInstance:
 
 from ..vsinstance import VirtualServerInstance
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ...agent import Agent
+
 
 class OracleCloudInstance(VirtualServerInstance):
-    &#34;&#34;&#34;Class for representing an Hyper-V of the Virtual Server agent.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents an Oracle Cloud instance managed by the Virtual Server agent.
 
-    def __init__(self, agent, instance_name, instance_id=None):
-        &#34;&#34;&#34;Initialize the Instance object for the given Virtual Server instance.
+    This class provides an interface for handling Oracle Cloud virtual server instances,
+    allowing for retrieval and management of instance properties and metadata. It includes
+    methods for initializing the instance with specific agent and identification details,
+    as well as internal methods for accessing instance properties in both object and JSON formats.
+
+    Key Features:
+        - Initialization with agent, instance name, and instance ID
+        - Retrieval of instance properties and their JSON representation
+        - Access to server host name, server name, and instance username via properties
+
+    &#34;&#34;&#34;
+
+    def __init__(self, agent: &#39;Agent&#39;, instance_name: str, instance_id: str = None) -&gt; None:
+        &#34;&#34;&#34;Initialize an OracleCloudInstance object for the specified Virtual Server instance.
 
         Args:
-            agent               (object)    --  the instance of the agent class
-            
-            instance_name       (str)       --  the name of the instance
-            
-            instance_id         (int)       --  the instance id
+            agent: The agent object associated with this Oracle Cloud instance.
+            instance_name: The name of the Oracle Cloud instance.
+            instance_id: The unique identifier for the instance. If not provided, it will be determined automatically.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(client_object, &#39;Virtual Server&#39;)
+            &gt;&gt;&gt; instance = OracleCloudInstance(agent, &#39;MyOracleInstance&#39;, &#39;101&#39;)
+            &gt;&gt;&gt; print(f&#34;Instance created: {instance}&#34;)
 
         &#34;&#34;&#34;
         self._vendor_id = 13
@@ -115,14 +136,15 @@ class OracleCloudInstance(VirtualServerInstance):
         self._username = None
         super(OracleCloudInstance, self).__init__(agent, instance_name, instance_id)
 
-    def  _get_instance_properties(self):
-        &#34;&#34;&#34;
-        Get the properties of this instance
+    def _get_instance_properties(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve and update the properties of the current Oracle Cloud instance.
 
-        Raise:
-            SDK Exception:
-                if response is not empty
-                if response is not success
+        This method fetches the latest properties for the instance and updates the internal state.
+        It raises an SDK Exception if the response is not empty or if the response indicates failure.
+
+        Raises:
+            SDK Exception: If the response is not empty or not successful.
+
         &#34;&#34;&#34;
 
         super(OracleCloudInstance, self)._get_instance_properties()
@@ -138,15 +160,15 @@ class OracleCloudInstance(VirtualServerInstance):
             if &#39;clientName&#39; in client.keys():
                 self._server_name.append(str(client[&#39;clientName&#39;]))
 
-    def _get_instance_properties_json(self):
-        &#34;&#34;&#34;get the all instance related properties of this subclient.
+    def _get_instance_properties_json(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve all instance-related properties for this Oracle Cloud instance.
 
-          Returns:
-               instance_json    (dict)  --  all instance properties put inside a dict
+        Returns:
+            dict: A dictionary containing all properties associated with this instance.
 
         &#34;&#34;&#34;
         instance_json = {
-            &#34;instanceProperties&#34;:{
+            &#34;instanceProperties&#34;: {
                 &#34;isDeleted&#34;: False,
                 &#34;instance&#34;: self._instance,
                 &#34;instanceActivityControl&#34;: self._instanceActivityControl,
@@ -161,30 +183,47 @@ class OracleCloudInstance(VirtualServerInstance):
         return instance_json
 
     @property
-    def server_host_name(self):
-        &#34;&#34;&#34;return the Oracle Cloud endpoint
+    def server_host_name(self) -&gt; list:
+        &#34;&#34;&#34;Get the Oracle Cloud server endpoint hostname.
 
         Returns:
-            _server_host_name   (str)   --  the hostname of the oracle cloud server
+            The hostname of the Oracle Cloud server as a list.
+
+        Example:
+            &gt;&gt;&gt; instance = OracleCloudInstance()
+            &gt;&gt;&gt; endpoint = instance.server_host_name  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Oracle Cloud endpoint: {endpoint}&#34;)
+
         &#34;&#34;&#34;
         return self._server_host_name
 
     @property
-    def server_name(self):
-        &#34;&#34;&#34;
-        returns the list of all associated clients with the instance
+    def server_name(self) -&gt; list:
+        &#34;&#34;&#34;Get the server name associated with this Oracle Cloud instance.
 
         Returns:
-            _server_name    (str)   --  the list of all proxies associated to the instance
+            The server name as a list.
+
+        Example:
+            &gt;&gt;&gt; instance = OracleCloudInstance()
+            &gt;&gt;&gt; name = instance.server_name  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Server name: {name}&#34;)
+
         &#34;&#34;&#34;
         return self._server_name
 
     @property
-    def instance_username(self):
-        &#34;&#34;&#34;returns the username of the instance
+    def instance_username(self) -&gt; str:
+        &#34;&#34;&#34;Get the username associated with the Oracle Cloud instance endpoint.
 
         Returns:
-            _username   (str)   --  the user name of the oracle cloud endpoint
+            The username of the Oracle Cloud endpoint as a string.
+
+        Example:
+            &gt;&gt;&gt; instance = OracleCloudInstance()
+            &gt;&gt;&gt; username = instance.instance_username  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Instance username: {username}&#34;)
+
         &#34;&#34;&#34;
         return self._username</code></pre>
 </details>
@@ -200,41 +239,68 @@ class OracleCloudInstance(VirtualServerInstance):
 <dl>
 <dt id="cvpysdk.instances.virtualserver.oracle_cloud.OracleCloudInstance"><code class="flex name class">
 <span>class <span class="ident">OracleCloudInstance</span></span>
-<span>(</span><span>agent, instance_name, instance_id=None)</span>
+<span>(</span><span>agent: Agent, instance_name: str, instance_id: str = None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for representing an Hyper-V of the Virtual Server agent.</p>
-<p>Initialize the Instance object for the given Virtual Server instance.</p>
-<h2 id="args">Args</h2>
-<p>agent
-(object)
-&ndash;
-the instance of the agent class</p>
-<p>instance_name
-(str)
-&ndash;
-the name of the instance</p>
-<p>instance_id
-(int)
-&ndash;
-the instance id</p></div>
+<div class="desc"><p>Represents an Oracle Cloud instance managed by the Virtual Server agent.</p>
+<p>This class provides an interface for handling Oracle Cloud virtual server instances,
+allowing for retrieval and management of instance properties and metadata. It includes
+methods for initializing the instance with specific agent and identification details,
+as well as internal methods for accessing instance properties in both object and JSON formats.</p>
+<p>Key Features:
+- Initialization with agent, instance name, and instance ID
+- Retrieval of instance properties and their JSON representation
+- Access to server host name, server name, and instance username via properties</p>
+<p>Initialize an OracleCloudInstance object for the specified Virtual Server instance.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>agent</code></strong></dt>
+<dd>The agent object associated with this Oracle Cloud instance.</dd>
+<dt><strong><code>instance_name</code></strong></dt>
+<dd>The name of the Oracle Cloud instance.</dd>
+<dt><strong><code>instance_id</code></strong></dt>
+<dd>The unique identifier for the instance. If not provided, it will be determined automatically.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; agent = Agent(client_object, 'Virtual Server')
+&gt;&gt;&gt; instance = OracleCloudInstance(agent, 'MyOracleInstance', '101')
+&gt;&gt;&gt; print(f&quot;Instance created: {instance}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/oracle_cloud.py#L47-L138" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/oracle_cloud.py#L51-L183" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class OracleCloudInstance(VirtualServerInstance):
-    &#34;&#34;&#34;Class for representing an Hyper-V of the Virtual Server agent.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents an Oracle Cloud instance managed by the Virtual Server agent.
 
-    def __init__(self, agent, instance_name, instance_id=None):
-        &#34;&#34;&#34;Initialize the Instance object for the given Virtual Server instance.
+    This class provides an interface for handling Oracle Cloud virtual server instances,
+    allowing for retrieval and management of instance properties and metadata. It includes
+    methods for initializing the instance with specific agent and identification details,
+    as well as internal methods for accessing instance properties in both object and JSON formats.
+
+    Key Features:
+        - Initialization with agent, instance name, and instance ID
+        - Retrieval of instance properties and their JSON representation
+        - Access to server host name, server name, and instance username via properties
+
+    &#34;&#34;&#34;
+
+    def __init__(self, agent: &#39;Agent&#39;, instance_name: str, instance_id: str = None) -&gt; None:
+        &#34;&#34;&#34;Initialize an OracleCloudInstance object for the specified Virtual Server instance.
 
         Args:
-            agent               (object)    --  the instance of the agent class
-            
-            instance_name       (str)       --  the name of the instance
-            
-            instance_id         (int)       --  the instance id
+            agent: The agent object associated with this Oracle Cloud instance.
+            instance_name: The name of the Oracle Cloud instance.
+            instance_id: The unique identifier for the instance. If not provided, it will be determined automatically.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(client_object, &#39;Virtual Server&#39;)
+            &gt;&gt;&gt; instance = OracleCloudInstance(agent, &#39;MyOracleInstance&#39;, &#39;101&#39;)
+            &gt;&gt;&gt; print(f&#34;Instance created: {instance}&#34;)
 
         &#34;&#34;&#34;
         self._vendor_id = 13
@@ -243,14 +309,15 @@ the instance id</p></div>
         self._username = None
         super(OracleCloudInstance, self).__init__(agent, instance_name, instance_id)
 
-    def  _get_instance_properties(self):
-        &#34;&#34;&#34;
-        Get the properties of this instance
+    def _get_instance_properties(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve and update the properties of the current Oracle Cloud instance.
 
-        Raise:
-            SDK Exception:
-                if response is not empty
-                if response is not success
+        This method fetches the latest properties for the instance and updates the internal state.
+        It raises an SDK Exception if the response is not empty or if the response indicates failure.
+
+        Raises:
+            SDK Exception: If the response is not empty or not successful.
+
         &#34;&#34;&#34;
 
         super(OracleCloudInstance, self)._get_instance_properties()
@@ -266,15 +333,15 @@ the instance id</p></div>
             if &#39;clientName&#39; in client.keys():
                 self._server_name.append(str(client[&#39;clientName&#39;]))
 
-    def _get_instance_properties_json(self):
-        &#34;&#34;&#34;get the all instance related properties of this subclient.
+    def _get_instance_properties_json(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve all instance-related properties for this Oracle Cloud instance.
 
-          Returns:
-               instance_json    (dict)  --  all instance properties put inside a dict
+        Returns:
+            dict: A dictionary containing all properties associated with this instance.
 
         &#34;&#34;&#34;
         instance_json = {
-            &#34;instanceProperties&#34;:{
+            &#34;instanceProperties&#34;: {
                 &#34;isDeleted&#34;: False,
                 &#34;instance&#34;: self._instance,
                 &#34;instanceActivityControl&#34;: self._instanceActivityControl,
@@ -289,30 +356,47 @@ the instance id</p></div>
         return instance_json
 
     @property
-    def server_host_name(self):
-        &#34;&#34;&#34;return the Oracle Cloud endpoint
+    def server_host_name(self) -&gt; list:
+        &#34;&#34;&#34;Get the Oracle Cloud server endpoint hostname.
 
         Returns:
-            _server_host_name   (str)   --  the hostname of the oracle cloud server
+            The hostname of the Oracle Cloud server as a list.
+
+        Example:
+            &gt;&gt;&gt; instance = OracleCloudInstance()
+            &gt;&gt;&gt; endpoint = instance.server_host_name  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Oracle Cloud endpoint: {endpoint}&#34;)
+
         &#34;&#34;&#34;
         return self._server_host_name
 
     @property
-    def server_name(self):
-        &#34;&#34;&#34;
-        returns the list of all associated clients with the instance
+    def server_name(self) -&gt; list:
+        &#34;&#34;&#34;Get the server name associated with this Oracle Cloud instance.
 
         Returns:
-            _server_name    (str)   --  the list of all proxies associated to the instance
+            The server name as a list.
+
+        Example:
+            &gt;&gt;&gt; instance = OracleCloudInstance()
+            &gt;&gt;&gt; name = instance.server_name  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Server name: {name}&#34;)
+
         &#34;&#34;&#34;
         return self._server_name
 
     @property
-    def instance_username(self):
-        &#34;&#34;&#34;returns the username of the instance
+    def instance_username(self) -&gt; str:
+        &#34;&#34;&#34;Get the username associated with the Oracle Cloud instance endpoint.
 
         Returns:
-            _username   (str)   --  the user name of the oracle cloud endpoint
+            The username of the Oracle Cloud endpoint as a string.
+
+        Example:
+            &gt;&gt;&gt; instance = OracleCloudInstance()
+            &gt;&gt;&gt; username = instance.instance_username  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Instance username: {username}&#34;)
+
         &#34;&#34;&#34;
         return self._username</code></pre>
 </details>
@@ -323,72 +407,101 @@ the instance id</p></div>
 </ul>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.instances.virtualserver.oracle_cloud.OracleCloudInstance.instance_username"><code class="name">var <span class="ident">instance_username</span></code></dt>
+<dt id="cvpysdk.instances.virtualserver.oracle_cloud.OracleCloudInstance.instance_username"><code class="name">var <span class="ident">instance_username</span> : str</code></dt>
 <dd>
-<div class="desc"><p>returns the username of the instance</p>
-<h2 id="returns">Returns</h2>
-<p>_username
-(str)
-&ndash;
-the user name of the oracle cloud endpoint</p></div>
+<div class="desc"><p>Get the username associated with the Oracle Cloud instance endpoint.</p>
+<p>Returns
+-----=
+The username of the Oracle Cloud endpoint as a string.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; instance = OracleCloudInstance()
+&gt;&gt;&gt; username = instance.instance_username  # Use dot notation for property access
+&gt;&gt;&gt; print(f&quot;Instance username: {username}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/oracle_cloud.py#L131-L138" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/oracle_cloud.py#L169-L183" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def instance_username(self):
-    &#34;&#34;&#34;returns the username of the instance
+def instance_username(self) -&gt; str:
+    &#34;&#34;&#34;Get the username associated with the Oracle Cloud instance endpoint.
 
     Returns:
-        _username   (str)   --  the user name of the oracle cloud endpoint
+        The username of the Oracle Cloud endpoint as a string.
+
+    Example:
+        &gt;&gt;&gt; instance = OracleCloudInstance()
+        &gt;&gt;&gt; username = instance.instance_username  # Use dot notation for property access
+        &gt;&gt;&gt; print(f&#34;Instance username: {username}&#34;)
+
     &#34;&#34;&#34;
     return self._username</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.virtualserver.oracle_cloud.OracleCloudInstance.server_host_name"><code class="name">var <span class="ident">server_host_name</span></code></dt>
+<dt id="cvpysdk.instances.virtualserver.oracle_cloud.OracleCloudInstance.server_host_name"><code class="name">var <span class="ident">server_host_name</span> : list</code></dt>
 <dd>
-<div class="desc"><p>return the Oracle Cloud endpoint</p>
-<h2 id="returns">Returns</h2>
-<p>_server_host_name
-(str)
-&ndash;
-the hostname of the oracle cloud server</p></div>
+<div class="desc"><p>Get the Oracle Cloud server endpoint hostname.</p>
+<p>Returns
+-----=
+The hostname of the Oracle Cloud server as a list.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; instance = OracleCloudInstance()
+&gt;&gt;&gt; endpoint = instance.server_host_name  # Use dot notation for property access
+&gt;&gt;&gt; print(f&quot;Oracle Cloud endpoint: {endpoint}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/oracle_cloud.py#L112-L119" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/oracle_cloud.py#L137-L151" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def server_host_name(self):
-    &#34;&#34;&#34;return the Oracle Cloud endpoint
+def server_host_name(self) -&gt; list:
+    &#34;&#34;&#34;Get the Oracle Cloud server endpoint hostname.
 
     Returns:
-        _server_host_name   (str)   --  the hostname of the oracle cloud server
+        The hostname of the Oracle Cloud server as a list.
+
+    Example:
+        &gt;&gt;&gt; instance = OracleCloudInstance()
+        &gt;&gt;&gt; endpoint = instance.server_host_name  # Use dot notation for property access
+        &gt;&gt;&gt; print(f&#34;Oracle Cloud endpoint: {endpoint}&#34;)
+
     &#34;&#34;&#34;
     return self._server_host_name</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.virtualserver.oracle_cloud.OracleCloudInstance.server_name"><code class="name">var <span class="ident">server_name</span></code></dt>
+<dt id="cvpysdk.instances.virtualserver.oracle_cloud.OracleCloudInstance.server_name"><code class="name">var <span class="ident">server_name</span> : list</code></dt>
 <dd>
-<div class="desc"><p>returns the list of all associated clients with the instance</p>
-<h2 id="returns">Returns</h2>
-<p>_server_name
-(str)
-&ndash;
-the list of all proxies associated to the instance</p></div>
+<div class="desc"><p>Get the server name associated with this Oracle Cloud instance.</p>
+<p>Returns
+-----=
+The server name as a list.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; instance = OracleCloudInstance()
+&gt;&gt;&gt; name = instance.server_name  # Use dot notation for property access
+&gt;&gt;&gt; print(f&quot;Server name: {name}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/oracle_cloud.py#L121-L129" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/oracle_cloud.py#L153-L167" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def server_name(self):
-    &#34;&#34;&#34;
-    returns the list of all associated clients with the instance
+def server_name(self) -&gt; list:
+    &#34;&#34;&#34;Get the server name associated with this Oracle Cloud instance.
 
     Returns:
-        _server_name    (str)   --  the list of all proxies associated to the instance
+        The server name as a list.
+
+    Example:
+        &gt;&gt;&gt; instance = OracleCloudInstance()
+        &gt;&gt;&gt; name = instance.server_name  # Use dot notation for property access
+        &gt;&gt;&gt; print(f&#34;Server name: {name}&#34;)
+
     &#34;&#34;&#34;
     return self._server_name</code></pre>
 </details>

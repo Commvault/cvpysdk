@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.10.0" />
-<title>cvpysdk.instances.virtualserver.amazon API documentation</title>
-<meta name="description" content="File for operating on a Virtual Server Amazon Instance …" />
+<title>cvpysdk.instances.virtualserver.vmware_cloud_foundation_automation API documentation</title>
+<meta name="description" content="File for operating on a Virtual Server VMware Cloud Foundation Automation Instance …" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
 <link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
@@ -20,26 +20,40 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>cvpysdk.instances.virtualserver.amazon</code></h1>
+<h1 class="title">Module <code>cvpysdk.instances.virtualserver.vmware_cloud_foundation_automation</code></h1>
 </header>
 <section id="section-intro">
-<p>File for operating on a Virtual Server Amazon Instance.</p>
-<p>AmazonInstance is the only class defined in this file.</p>
-<p>AmazonInstance: Derived class from VirtualServer
-Base class, representing a
-Amazon instance, and to perform operations on that instance</p>
-<h2 id="amazoninstance">Amazoninstance</h2>
-<p><strong>init</strong>(agent_object,instance_name,instance_id)
+<p>File for operating on a Virtual Server VMware Cloud Foundation Automation Instance.</p>
+<p>VMwareCloudFoundationAutomationInstance is the only class defined in this file.</p>
+<p>VMwareCloudFoundationAutomationInstance:
+Derived class from VirtualServerBase,
+representing a VCF instance, and to perform
+operations on that instance.</p>
+<p>Vmwarecloudfoundationautomationinstance
+-----=</p>
+<p><strong>init</strong>(
+agent_object,
+instance_name,
+instance_id)
 &ndash;
-initialize object of amazon Instance
-object associated with the
-VirtualServer Instance</p>
+initialize object of VCF Instance object
+associated with the VirtualServer Instance</p>
+<p>_get_instance_properties()
+&ndash;
+VirtualServer Instance class method overwritten
+to get VCF specific instance properties</p>
+<p>_get_instance_properties_json()
+&ndash;
+get all instance (VCF) related properties
+as JSON</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/virtualserver/amazon.py#L1-L118" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/vmware_cloud_foundation_automation.py#L1-L119" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python"># --------------------------------------------------------------------------
+<pre><code class="python"># -*- coding: utf-8 -*-
+
+# --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the &#34;License&#34;);
@@ -55,57 +69,73 @@ VirtualServer Instance</p>
 # limitations under the License.
 # --------------------------------------------------------------------------
 
-&#34;&#34;&#34;File for operating on a Virtual Server Amazon Instance.
+&#34;&#34;&#34;File for operating on a Virtual Server VMware Cloud Foundation Automation Instance.
 
-AmazonInstance is the only class defined in this file.
+VMwareCloudFoundationAutomationInstance is the only class defined in this file.
 
-AmazonInstance: Derived class from VirtualServer  Base class, representing a
-                           Amazon instance, and to perform operations on that instance
+VMwareCloudFoundationAutomationInstance:     Derived class from VirtualServerBase,
+                                           representing a VCF instance, and to perform
+                                           operations on that instance.
 
-AmazonInstance:
-    __init__(agent_object,instance_name,instance_id)    --  initialize object of amazon Instance
-                                                            object associated with the
-                                                            VirtualServer Instance
+VMwareCloudFoundationAutomationInstance:
 
+    __init__(
+        agent_object,
+        instance_name,
+        instance_id)                    --  initialize object of VCF Instance object
+                                                associated with the VirtualServer Instance
+
+    _get_instance_properties()          --  VirtualServer Instance class method overwritten
+                                                to get VCF specific instance properties
+
+    _get_instance_properties_json()     --  get all instance (VCF) related properties
+                                                as JSON
 &#34;&#34;&#34;
 
 from ..vsinstance import VirtualServerInstance
-from ...exception import SDKException
-from ...instance import Instance
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ...agent import Agent
 
 
-class AmazonInstance(VirtualServerInstance):
-    def __init__(self, agent, name, iid):
-        self._vendor_id = 4
-        self._server_name = []
-        super(AmazonInstance, self).__init__(agent, name, iid)
+class VMwareCloudFoundationAutomationInstance(VirtualServerInstance):
+    &#34;&#34;&#34;
+    Represents a VMware Cloud Foundation Automation instance managed by the Virtual Server agent.
 
-    def _get_instance_properties(self):
+    This class encapsulates the properties and behaviors specific to a VCF virtual server
+    instance, providing mechanisms to retrieve and manage instance properties and metadata.
+
+    &#34;&#34;&#34;
+
+    def __init__(self, agent_object: &#39;Agent&#39;, instance_name: str, instance_id: str = None) -&gt; None:
+        &#34;&#34;&#34;Initialize a VMwareCloudFoundationAutomationInstance object.
+
+        Args:
+            agent_object: An instance of the Agent class representing the associated agent.
+            instance_name: The name of the virtual server instance.
+            instance_id: Optional; the unique identifier for the instance.
+
         &#34;&#34;&#34;
-        Get the properties of this instance
-
-        Raise:
-            SDK Exception:
-                if response is not empty
-                if response is not success
-        &#34;&#34;&#34;
-
-        super(AmazonInstance, self)._get_instance_properties()
+        self._vendor_id = 105
+        self._vmwarvendor = None
         self._server_name = []
-        self._initialize_tenant_instance_properties()
-        if &#39;virtualServerInstance&#39; in self._properties:
-            _member_servers = self._properties[&#34;virtualServerInstance&#34;] \
-                [&#34;associatedClients&#34;][&#34;memberServers&#34;]
-            for _each_client in _member_servers:
-                client = _each_client[&#39;client&#39;]
-                if &#39;clientName&#39; in client.keys():
-                    self._server_name.append(str(client[&#39;clientName&#39;]))
+        self._server_host_name = []
+        super(VMwareCloudFoundationAutomationInstance, self).__init__(agent_object, instance_name, instance_id)
 
-    def _get_instance_properties_json(self):
-        &#34;&#34;&#34;get the all instance related properties of this subclient.
+    def _get_instance_properties(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve and update the properties of this VCF instance.
 
-           Returns:
-                dict - all instance properties put inside a dict
+        &#34;&#34;&#34;
+        super(VMwareCloudFoundationAutomationInstance, self)._get_instance_properties()
+
+        if &#34;vmwareVendor&#34; in self._virtualserverinstance:
+            self._vmwarvendor = self._virtualserverinstance[&#39;vmwareVendor&#39;][&#39;virtualCenter&#39;]
+            self._server_name.append(self._instance[&#39;clientName&#39;])
+            self._server_host_name.append(self._vmwarvendor[&#34;domainName&#34;])
+
+    def _get_instance_properties_json(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve all instance-related properties for this VCF instance as a dictionary.
 
         &#34;&#34;&#34;
         instance_json = {
@@ -124,39 +154,18 @@ class AmazonInstance(VirtualServerInstance):
         return instance_json
 
     @property
-    def server_name(self):
-        &#34;&#34;&#34;getter for the domain name in the AWS vendor json&#34;&#34;&#34;
-        return self._server_name
+    def server_host_name(self) -&gt; list:
+        &#34;&#34;&#34;Get the server host name list from the VCF vendor JSON.&#34;&#34;&#34;
+        return self._server_host_name
 
     @property
-    def server_host_name(self):
-        &#34;&#34;&#34;getter for the domain name in the AWS vendor json&#34;&#34;&#34;
-        return self._server_name
+    def _user_name(self) -&gt; str:
+        return self._vmwarvendor.get(&#39;userName&#39;) or self._credential.get(&#39;userName&#39;, &#39;&#39;)
 
-    def _initialize_tenant_instance_properties(self):
-        &#34;&#34;&#34;&#34;
-        Initializes the properties if the client is Tenant
-        &#34;&#34;&#34;
-        if &#39;virtualServerInstance&#39; in self._properties.keys():
-            if &#39;enableAdminAccount&#39; in self._properties[&#39;virtualServerInstance&#39;][&#39;amazonInstanceInfo&#39;]:
-                if self._properties[&#39;virtualServerInstance&#39;][&#39;amazonInstanceInfo&#39;][&#39;enableAdminAccount&#39;]:
-                    admin_ins_id = self._properties[&#39;virtualServerInstance&#39;][&#39;amazonInstanceInfo&#39;][&#39;adminInstanceId&#39;]
-                    _instance = self._services[&#39;INSTANCE&#39;] % (admin_ins_id)
-                    flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, _instance)
-                    if flag:
-                        if response.json() and &#34;instanceProperties&#34; in response.json():
-                            self._admin_properties = response.json()[&#34;instanceProperties&#34;][0]
-                            if &#39;virtualServerInstance&#39; in self._admin_properties:
-                                self._asscociatedclients = None
-                                self._properties[&#39;virtualServerInstance&#39;][&#39;associatedClients&#39;] =\
-                                    self._admin_properties[&#39;virtualServerInstance&#39;][&#39;associatedClients&#39;]
-                                self._virtualserverinstance = self._properties[&#34;virtualServerInstance&#34;]
-                                self._vsinstancetype = self._virtualserverinstance[&#39;vsInstanceType&#39;]
-                                self._asscociatedclients = self._virtualserverinstance[&#39;associatedClients&#39;]
-                        else:
-                            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
-                    else:
-                        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))</code></pre>
+    @property
+    def server_name(self) -&gt; list:
+        &#34;&#34;&#34;Get the server name list from the VCF vendor JSON.&#34;&#34;&#34;
+        return self._server_name</code></pre>
 </details>
 </section>
 <section>
@@ -168,66 +177,67 @@ class AmazonInstance(VirtualServerInstance):
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
-<dt id="cvpysdk.instances.virtualserver.amazon.AmazonInstance"><code class="flex name class">
-<span>class <span class="ident">AmazonInstance</span></span>
-<span>(</span><span>agent, name, iid)</span>
+<dt id="cvpysdk.instances.virtualserver.vmware_cloud_foundation_automation.VMwareCloudFoundationAutomationInstance"><code class="flex name class">
+<span>class <span class="ident">VMwareCloudFoundationAutomationInstance</span></span>
+<span>(</span><span>agent_object: Agent, instance_name: str, instance_id: str = None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for representing an Instance of the Virtual Server agent.</p>
-<p>Initialise the instance object.</p>
-<h2 id="args">Args</h2>
-<p>agent_object
-(object)
-&ndash;
-instance of the Agent class</p>
-<p>instance_name
-(str)
-&ndash;
-name of the instance</p>
-<p>instance_id
-(str)
-&ndash;
-id of the instance
-default: None</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Instance class</p></div>
+<div class="desc"><p>Represents a VMware Cloud Foundation Automation instance managed by the Virtual Server agent.</p>
+<p>This class encapsulates the properties and behaviors specific to a VCF virtual server
+instance, providing mechanisms to retrieve and manage instance properties and metadata.</p>
+<p>Initialize a VMwareCloudFoundationAutomationInstance object.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>agent_object</code></strong></dt>
+<dd>An instance of the Agent class representing the associated agent.</dd>
+<dt><strong><code>instance_name</code></strong></dt>
+<dd>The name of the virtual server instance.</dd>
+<dt><strong><code>instance_id</code></strong></dt>
+<dd>Optional; the unique identifier for the instance.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/virtualserver/amazon.py#L36-L118" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/vmware_cloud_foundation_automation.py#L49-L119" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">class AmazonInstance(VirtualServerInstance):
-    def __init__(self, agent, name, iid):
-        self._vendor_id = 4
-        self._server_name = []
-        super(AmazonInstance, self).__init__(agent, name, iid)
+<pre><code class="python">class VMwareCloudFoundationAutomationInstance(VirtualServerInstance):
+    &#34;&#34;&#34;
+    Represents a VMware Cloud Foundation Automation instance managed by the Virtual Server agent.
 
-    def _get_instance_properties(self):
+    This class encapsulates the properties and behaviors specific to a VCF virtual server
+    instance, providing mechanisms to retrieve and manage instance properties and metadata.
+
+    &#34;&#34;&#34;
+
+    def __init__(self, agent_object: &#39;Agent&#39;, instance_name: str, instance_id: str = None) -&gt; None:
+        &#34;&#34;&#34;Initialize a VMwareCloudFoundationAutomationInstance object.
+
+        Args:
+            agent_object: An instance of the Agent class representing the associated agent.
+            instance_name: The name of the virtual server instance.
+            instance_id: Optional; the unique identifier for the instance.
+
         &#34;&#34;&#34;
-        Get the properties of this instance
-
-        Raise:
-            SDK Exception:
-                if response is not empty
-                if response is not success
-        &#34;&#34;&#34;
-
-        super(AmazonInstance, self)._get_instance_properties()
+        self._vendor_id = 105
+        self._vmwarvendor = None
         self._server_name = []
-        self._initialize_tenant_instance_properties()
-        if &#39;virtualServerInstance&#39; in self._properties:
-            _member_servers = self._properties[&#34;virtualServerInstance&#34;] \
-                [&#34;associatedClients&#34;][&#34;memberServers&#34;]
-            for _each_client in _member_servers:
-                client = _each_client[&#39;client&#39;]
-                if &#39;clientName&#39; in client.keys():
-                    self._server_name.append(str(client[&#39;clientName&#39;]))
+        self._server_host_name = []
+        super(VMwareCloudFoundationAutomationInstance, self).__init__(agent_object, instance_name, instance_id)
 
-    def _get_instance_properties_json(self):
-        &#34;&#34;&#34;get the all instance related properties of this subclient.
+    def _get_instance_properties(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve and update the properties of this VCF instance.
 
-           Returns:
-                dict - all instance properties put inside a dict
+        &#34;&#34;&#34;
+        super(VMwareCloudFoundationAutomationInstance, self)._get_instance_properties()
+
+        if &#34;vmwareVendor&#34; in self._virtualserverinstance:
+            self._vmwarvendor = self._virtualserverinstance[&#39;vmwareVendor&#39;][&#39;virtualCenter&#39;]
+            self._server_name.append(self._instance[&#39;clientName&#39;])
+            self._server_host_name.append(self._vmwarvendor[&#34;domainName&#34;])
+
+    def _get_instance_properties_json(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve all instance-related properties for this VCF instance as a dictionary.
 
         &#34;&#34;&#34;
         instance_json = {
@@ -246,39 +256,18 @@ default: None</p>
         return instance_json
 
     @property
-    def server_name(self):
-        &#34;&#34;&#34;getter for the domain name in the AWS vendor json&#34;&#34;&#34;
-        return self._server_name
+    def server_host_name(self) -&gt; list:
+        &#34;&#34;&#34;Get the server host name list from the VCF vendor JSON.&#34;&#34;&#34;
+        return self._server_host_name
 
     @property
-    def server_host_name(self):
-        &#34;&#34;&#34;getter for the domain name in the AWS vendor json&#34;&#34;&#34;
-        return self._server_name
+    def _user_name(self) -&gt; str:
+        return self._vmwarvendor.get(&#39;userName&#39;) or self._credential.get(&#39;userName&#39;, &#39;&#39;)
 
-    def _initialize_tenant_instance_properties(self):
-        &#34;&#34;&#34;&#34;
-        Initializes the properties if the client is Tenant
-        &#34;&#34;&#34;
-        if &#39;virtualServerInstance&#39; in self._properties.keys():
-            if &#39;enableAdminAccount&#39; in self._properties[&#39;virtualServerInstance&#39;][&#39;amazonInstanceInfo&#39;]:
-                if self._properties[&#39;virtualServerInstance&#39;][&#39;amazonInstanceInfo&#39;][&#39;enableAdminAccount&#39;]:
-                    admin_ins_id = self._properties[&#39;virtualServerInstance&#39;][&#39;amazonInstanceInfo&#39;][&#39;adminInstanceId&#39;]
-                    _instance = self._services[&#39;INSTANCE&#39;] % (admin_ins_id)
-                    flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, _instance)
-                    if flag:
-                        if response.json() and &#34;instanceProperties&#34; in response.json():
-                            self._admin_properties = response.json()[&#34;instanceProperties&#34;][0]
-                            if &#39;virtualServerInstance&#39; in self._admin_properties:
-                                self._asscociatedclients = None
-                                self._properties[&#39;virtualServerInstance&#39;][&#39;associatedClients&#39;] =\
-                                    self._admin_properties[&#39;virtualServerInstance&#39;][&#39;associatedClients&#39;]
-                                self._virtualserverinstance = self._properties[&#34;virtualServerInstance&#34;]
-                                self._vsinstancetype = self._virtualserverinstance[&#39;vsInstanceType&#39;]
-                                self._asscociatedclients = self._virtualserverinstance[&#39;associatedClients&#39;]
-                        else:
-                            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
-                    else:
-                        raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))</code></pre>
+    @property
+    def server_name(self) -&gt; list:
+        &#34;&#34;&#34;Get the server name list from the VCF vendor JSON.&#34;&#34;&#34;
+        return self._server_name</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -287,31 +276,31 @@ default: None</p>
 </ul>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.instances.virtualserver.amazon.AmazonInstance.server_host_name"><code class="name">var <span class="ident">server_host_name</span></code></dt>
+<dt id="cvpysdk.instances.virtualserver.vmware_cloud_foundation_automation.VMwareCloudFoundationAutomationInstance.server_host_name"><code class="name">var <span class="ident">server_host_name</span> : list</code></dt>
 <dd>
-<div class="desc"><p>getter for the domain name in the AWS vendor json</p></div>
+<div class="desc"><p>Get the server host name list from the VCF vendor JSON.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/virtualserver/amazon.py#L90-L93" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/vmware_cloud_foundation_automation.py#L107-L110" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def server_host_name(self):
-    &#34;&#34;&#34;getter for the domain name in the AWS vendor json&#34;&#34;&#34;
-    return self._server_name</code></pre>
+def server_host_name(self) -&gt; list:
+    &#34;&#34;&#34;Get the server host name list from the VCF vendor JSON.&#34;&#34;&#34;
+    return self._server_host_name</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.virtualserver.amazon.AmazonInstance.server_name"><code class="name">var <span class="ident">server_name</span></code></dt>
+<dt id="cvpysdk.instances.virtualserver.vmware_cloud_foundation_automation.VMwareCloudFoundationAutomationInstance.server_name"><code class="name">var <span class="ident">server_name</span> : list</code></dt>
 <dd>
-<div class="desc"><p>getter for the domain name in the AWS vendor json</p></div>
+<div class="desc"><p>Get the server name list from the VCF vendor JSON.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/2aca5f791188934b883a3498b8b92fae4b92ee4a/cvpysdk/instances/virtualserver/amazon.py#L85-L88" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/vmware_cloud_foundation_automation.py#L116-L119" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def server_name(self):
-    &#34;&#34;&#34;getter for the domain name in the AWS vendor json&#34;&#34;&#34;
+def server_name(self) -&gt; list:
+    &#34;&#34;&#34;Get the server name list from the VCF vendor JSON.&#34;&#34;&#34;
     return self._server_name</code></pre>
 </details>
 </dd>
@@ -321,8 +310,10 @@ def server_name(self):
 <li><code><b><a title="cvpysdk.instances.vsinstance.VirtualServerInstance" href="../vsinstance.html#cvpysdk.instances.vsinstance.VirtualServerInstance">VirtualServerInstance</a></b></code>:
 <ul class="hlist">
 <li><code><a title="cvpysdk.instances.vsinstance.VirtualServerInstance.associated_clients" href="../vsinstance.html#cvpysdk.instances.vsinstance.VirtualServerInstance.associated_clients">associated_clients</a></code></li>
+<li><code><a title="cvpysdk.instances.vsinstance.VirtualServerInstance.backupsets" href="../../instance.html#cvpysdk.instance.Instance.backupsets">backupsets</a></code></li>
 <li><code><a title="cvpysdk.instances.vsinstance.VirtualServerInstance.browse" href="../../instance.html#cvpysdk.instance.Instance.browse">browse</a></code></li>
 <li><code><a title="cvpysdk.instances.vsinstance.VirtualServerInstance.co_ordinator" href="../vsinstance.html#cvpysdk.instances.vsinstance.VirtualServerInstance.co_ordinator">co_ordinator</a></code></li>
+<li><code><a title="cvpysdk.instances.vsinstance.VirtualServerInstance.credentials" href="../../instance.html#cvpysdk.instance.Instance.credentials">credentials</a></code></li>
 <li><code><a title="cvpysdk.instances.vsinstance.VirtualServerInstance.find" href="../../instance.html#cvpysdk.instance.Instance.find">find</a></code></li>
 <li><code><a title="cvpysdk.instances.vsinstance.VirtualServerInstance.frel" href="../vsinstance.html#cvpysdk.instances.vsinstance.VirtualServerInstance.frel">frel</a></code></li>
 <li><code><a title="cvpysdk.instances.vsinstance.VirtualServerInstance.instance_id" href="../../instance.html#cvpysdk.instance.Instance.instance_id">instance_id</a></code></li>
@@ -330,6 +321,7 @@ def server_name(self):
 <li><code><a title="cvpysdk.instances.vsinstance.VirtualServerInstance.name" href="../../instance.html#cvpysdk.instance.Instance.name">name</a></code></li>
 <li><code><a title="cvpysdk.instances.vsinstance.VirtualServerInstance.properties" href="../../instance.html#cvpysdk.instance.Instance.properties">properties</a></code></li>
 <li><code><a title="cvpysdk.instances.vsinstance.VirtualServerInstance.refresh" href="../../instance.html#cvpysdk.instance.Instance.refresh">refresh</a></code></li>
+<li><code><a title="cvpysdk.instances.vsinstance.VirtualServerInstance.subclients" href="../../instance.html#cvpysdk.instance.Instance.subclients">subclients</a></code></li>
 <li><code><a title="cvpysdk.instances.vsinstance.VirtualServerInstance.update_properties" href="../../instance.html#cvpysdk.instance.Instance.update_properties">update_properties</a></code></li>
 </ul>
 </li>
@@ -404,10 +396,10 @@ setTimeout(() => input.focus(), 100);
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
-<h4><code><a title="cvpysdk.instances.virtualserver.amazon.AmazonInstance" href="#cvpysdk.instances.virtualserver.amazon.AmazonInstance">AmazonInstance</a></code></h4>
+<h4><code><a title="cvpysdk.instances.virtualserver.vmware_cloud_foundation_automation.VMwareCloudFoundationAutomationInstance" href="#cvpysdk.instances.virtualserver.vmware_cloud_foundation_automation.VMwareCloudFoundationAutomationInstance">VMwareCloudFoundationAutomationInstance</a></code></h4>
 <ul class="">
-<li><code><a title="cvpysdk.instances.virtualserver.amazon.AmazonInstance.server_host_name" href="#cvpysdk.instances.virtualserver.amazon.AmazonInstance.server_host_name">server_host_name</a></code></li>
-<li><code><a title="cvpysdk.instances.virtualserver.amazon.AmazonInstance.server_name" href="#cvpysdk.instances.virtualserver.amazon.AmazonInstance.server_name">server_name</a></code></li>
+<li><code><a title="cvpysdk.instances.virtualserver.vmware_cloud_foundation_automation.VMwareCloudFoundationAutomationInstance.server_host_name" href="#cvpysdk.instances.virtualserver.vmware_cloud_foundation_automation.VMwareCloudFoundationAutomationInstance.server_host_name">server_host_name</a></code></li>
+<li><code><a title="cvpysdk.instances.virtualserver.vmware_cloud_foundation_automation.VMwareCloudFoundationAutomationInstance.server_name" href="#cvpysdk.instances.virtualserver.vmware_cloud_foundation_automation.VMwareCloudFoundationAutomationInstance.server_name">server_name</a></code></li>
 </ul>
 </li>
 </ul>

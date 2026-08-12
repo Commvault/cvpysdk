@@ -28,7 +28,8 @@
 <p>GoogleSpannerSubclient:
 Derived class from CloudAppsSubclient Base class, representing a
 Google Cloud Spanner subclient, and to perform operations on that subclient</p>
-<h2 id="googlespannersubclient">Googlespannersubclient</h2>
+<p>Googlespannersubclient
+-----=</p>
 <p>_get_subclient_properties()
 &ndash;
 gets the properties of Google Subclient</p>
@@ -44,7 +45,7 @@ runs database discovery on subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/spanner_subclient.py#L1-L91" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/spanner_subclient.py#L1-L127" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -90,11 +91,32 @@ from ..casubclient import CloudAppsSubclient
 
 
 class GoogleSpannerSubclient(CloudAppsSubclient):
-    &#34;&#34;&#34;Derived class from CloudAppsSubclient Base class, representing a Google Cloud Spanner subclient,
-        and to perform operations on that subclient.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents a subclient for Google Cloud Spanner within the CloudApps framework.
 
-    def _get_subclient_properties(self):
-        &#34;&#34;&#34;Gets the subclient related properties of Google Cloud Spanner subclient..&#34;&#34;&#34;
+    This class extends the CloudAppsSubclient base class to provide specialized
+    operations and management for Google Cloud Spanner subclients. It includes
+    methods for retrieving subclient properties and managing subclient content.
+
+    Key Features:
+        - Retrieve subclient properties specific to Google Cloud Spanner
+        - Access and manage subclient content via a property interface
+        - Inherits core functionality from CloudAppsSubclient
+
+    &#34;&#34;&#34;
+
+    def _get_subclient_properties(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve and update the properties specific to the Google Cloud Spanner subclient.
+
+        This method fetches the configuration and metadata related to the current Google Cloud Spanner subclient
+        and updates the internal state of the object accordingly.
+
+        Example:
+            &gt;&gt;&gt; subclient = GoogleSpannerSubclient()
+            &gt;&gt;&gt; subclient._get_subclient_properties()
+            &gt;&gt;&gt; # The subclient&#39;s properties are now refreshed with the latest values
+
+        &#34;&#34;&#34;
         super(GoogleSpannerSubclient, self)._get_subclient_properties()
         if &#39;backupObject&#39; in self._subclient_properties[&#39;cloudAppsSubClientProp&#39;][&#39;cloudSpannerSubclient&#39;]:
             self._content = \
@@ -102,24 +124,35 @@ class GoogleSpannerSubclient(CloudAppsSubclient):
 
         self._spanner_content = []
         for database in self._content:
-                self._spanner_content.append(database[&#39;dbName&#39;])
+            self._spanner_content.append(database[&#39;dbName&#39;])
 
     @property
-    def content(self):
-        &#34;&#34;&#34;
-        Returns the subclient content list
+    def content(self) -&gt; list:
+        &#34;&#34;&#34;Get the list of content items associated with the Google Spanner subclient.
 
-            Returns:
-                    list - list of subclient content
+        Returns:
+            list: A list containing the content items configured for this subclient.
+
+        Example:
+            &gt;&gt;&gt; subclient = GoogleSpannerSubclient()
+            &gt;&gt;&gt; content_list = subclient.content
+            &gt;&gt;&gt; print(f&#34;Subclient content: {content_list}&#34;)
+            &gt;&gt;&gt; # The returned list contains the content items for the subclient
+
         &#34;&#34;&#34;
         return self._spanner_content
 
     @content.setter
-    def content(self, subclient_content):
-        &#34;&#34;&#34;Sets content to the Google Spanner Subclient
+    def content(self, subclient_content: list) -&gt; None:
+        &#34;&#34;&#34;Set the content for the Google Spanner Subclient.
 
-            Args:
-                subclient_content (list)  --  list of the content to add to the subclient
+        Args:
+            subclient_content: A list specifying the content to add to the subclient.
+
+        Example:
+            &gt;&gt;&gt; spanner_subclient = GoogleSpannerSubclient()
+            &gt;&gt;&gt; spanner_subclient.content = [&#39;database1&#39;, &#39;database2&#39;]
+            &gt;&gt;&gt; # The subclient content is now set to the specified databases
 
         &#34;&#34;&#34;
         content = []
@@ -150,38 +183,66 @@ class GoogleSpannerSubclient(CloudAppsSubclient):
 <dl>
 <dt id="cvpysdk.subclients.cloudapps.spanner_subclient.GoogleSpannerSubclient"><code class="flex name class">
 <span>class <span class="ident">GoogleSpannerSubclient</span></span>
-<span>(</span><span>backupset_object, subclient_name, subclient_id=None)</span>
+<span>(</span><span>backupset_object: object, subclient_name: str, subclient_id: str = None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Derived class from CloudAppsSubclient Base class, representing a Google Cloud Spanner subclient,
-and to perform operations on that subclient.</p>
-<p>Initialise the Subclient object.</p>
-<h2 id="args">Args</h2>
-<p>backupset_object (object)
-&ndash;
-instance of the Backupset class</p>
-<p>subclient_name
-(str)
-&ndash;
-name of the subclient</p>
-<p>subclient_id
-(str)
-&ndash;
-id of the subclient
-default: None</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Subclient class</p></div>
+<div class="desc"><p>Represents a subclient for Google Cloud Spanner within the CloudApps framework.</p>
+<p>This class extends the CloudAppsSubclient base class to provide specialized
+operations and management for Google Cloud Spanner subclients. It includes
+methods for retrieving subclient properties and managing subclient content.</p>
+<p>Key Features:
+- Retrieve subclient properties specific to Google Cloud Spanner
+- Access and manage subclient content via a property interface
+- Inherits core functionality from CloudAppsSubclient</p>
+<p>Initialize a Subclient object.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>backupset_object</code></strong></dt>
+<dd>Instance of the Backupset class to which this subclient belongs.</dd>
+<dt><strong><code>subclient_name</code></strong></dt>
+<dd>Name of the subclient.</dd>
+<dt><strong><code>subclient_id</code></strong></dt>
+<dd>Optional; ID of the subclient. If not provided, it will be determined automatically.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; backupset = Backupset(client_object, 'defaultBackupSet')
+&gt;&gt;&gt; subclient = Subclient(backupset, 'default')
+&gt;&gt;&gt; print(f&quot;Subclient created: {subclient}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/spanner_subclient.py#L44-L91" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/spanner_subclient.py#L44-L127" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class GoogleSpannerSubclient(CloudAppsSubclient):
-    &#34;&#34;&#34;Derived class from CloudAppsSubclient Base class, representing a Google Cloud Spanner subclient,
-        and to perform operations on that subclient.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents a subclient for Google Cloud Spanner within the CloudApps framework.
 
-    def _get_subclient_properties(self):
-        &#34;&#34;&#34;Gets the subclient related properties of Google Cloud Spanner subclient..&#34;&#34;&#34;
+    This class extends the CloudAppsSubclient base class to provide specialized
+    operations and management for Google Cloud Spanner subclients. It includes
+    methods for retrieving subclient properties and managing subclient content.
+
+    Key Features:
+        - Retrieve subclient properties specific to Google Cloud Spanner
+        - Access and manage subclient content via a property interface
+        - Inherits core functionality from CloudAppsSubclient
+
+    &#34;&#34;&#34;
+
+    def _get_subclient_properties(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve and update the properties specific to the Google Cloud Spanner subclient.
+
+        This method fetches the configuration and metadata related to the current Google Cloud Spanner subclient
+        and updates the internal state of the object accordingly.
+
+        Example:
+            &gt;&gt;&gt; subclient = GoogleSpannerSubclient()
+            &gt;&gt;&gt; subclient._get_subclient_properties()
+            &gt;&gt;&gt; # The subclient&#39;s properties are now refreshed with the latest values
+
+        &#34;&#34;&#34;
         super(GoogleSpannerSubclient, self)._get_subclient_properties()
         if &#39;backupObject&#39; in self._subclient_properties[&#39;cloudAppsSubClientProp&#39;][&#39;cloudSpannerSubclient&#39;]:
             self._content = \
@@ -189,24 +250,35 @@ default: None</p>
 
         self._spanner_content = []
         for database in self._content:
-                self._spanner_content.append(database[&#39;dbName&#39;])
+            self._spanner_content.append(database[&#39;dbName&#39;])
 
     @property
-    def content(self):
-        &#34;&#34;&#34;
-        Returns the subclient content list
+    def content(self) -&gt; list:
+        &#34;&#34;&#34;Get the list of content items associated with the Google Spanner subclient.
 
-            Returns:
-                    list - list of subclient content
+        Returns:
+            list: A list containing the content items configured for this subclient.
+
+        Example:
+            &gt;&gt;&gt; subclient = GoogleSpannerSubclient()
+            &gt;&gt;&gt; content_list = subclient.content
+            &gt;&gt;&gt; print(f&#34;Subclient content: {content_list}&#34;)
+            &gt;&gt;&gt; # The returned list contains the content items for the subclient
+
         &#34;&#34;&#34;
         return self._spanner_content
 
     @content.setter
-    def content(self, subclient_content):
-        &#34;&#34;&#34;Sets content to the Google Spanner Subclient
+    def content(self, subclient_content: list) -&gt; None:
+        &#34;&#34;&#34;Set the content for the Google Spanner Subclient.
 
-            Args:
-                subclient_content (list)  --  list of the content to add to the subclient
+        Args:
+            subclient_content: A list specifying the content to add to the subclient.
+
+        Example:
+            &gt;&gt;&gt; spanner_subclient = GoogleSpannerSubclient()
+            &gt;&gt;&gt; spanner_subclient.content = [&#39;database1&#39;, &#39;database2&#39;]
+            &gt;&gt;&gt; # The subclient content is now set to the specified databases
 
         &#34;&#34;&#34;
         content = []
@@ -232,24 +304,40 @@ default: None</p>
 </ul>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.subclients.cloudapps.spanner_subclient.GoogleSpannerSubclient.content"><code class="name">var <span class="ident">content</span></code></dt>
+<dt id="cvpysdk.subclients.cloudapps.spanner_subclient.GoogleSpannerSubclient.content"><code class="name">var <span class="ident">content</span> : list</code></dt>
 <dd>
-<div class="desc"><p>Returns the subclient content list</p>
-<pre><code>Returns:
-        list - list of subclient content
+<div class="desc"><p>Get the list of content items associated with the Google Spanner subclient.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>list</code></dt>
+<dd>A list containing the content items configured for this subclient.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; subclient = GoogleSpannerSubclient()
+&gt;&gt;&gt; content_list = subclient.content
+&gt;&gt;&gt; print(f&quot;Subclient content: {content_list}&quot;)
+&gt;&gt;&gt; # The returned list contains the content items for the subclient
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/cloudapps/spanner_subclient.py#L59-L67" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/cloudapps/spanner_subclient.py#L82-L97" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def content(self):
-    &#34;&#34;&#34;
-    Returns the subclient content list
+def content(self) -&gt; list:
+    &#34;&#34;&#34;Get the list of content items associated with the Google Spanner subclient.
 
-        Returns:
-                list - list of subclient content
+    Returns:
+        list: A list containing the content items configured for this subclient.
+
+    Example:
+        &gt;&gt;&gt; subclient = GoogleSpannerSubclient()
+        &gt;&gt;&gt; content_list = subclient.content
+        &gt;&gt;&gt; print(f&#34;Subclient content: {content_list}&#34;)
+        &gt;&gt;&gt; # The returned list contains the content items for the subclient
+
     &#34;&#34;&#34;
     return self._spanner_content</code></pre>
 </details>
@@ -259,9 +347,11 @@ def content(self):
 <ul class="hlist">
 <li><code><b><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient" href="../casubclient.html#cvpysdk.subclients.casubclient.CloudAppsSubclient">CloudAppsSubclient</a></b></code>:
 <ul class="hlist">
+<li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.additional_settings" href="../../subclient.html#cvpysdk.subclient.Subclient.additional_settings">additional_settings</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.allow_multiple_readers" href="../../subclient.html#cvpysdk.subclient.Subclient.allow_multiple_readers">allow_multiple_readers</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.backup" href="../../subclient.html#cvpysdk.subclient.Subclient.backup">backup</a></code></li>
-<li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.browse" href="../../subclient.html#cvpysdk.subclient.Subclient.browse">browse</a></code></li>
+<li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.browse" href="../casubclient.html#cvpysdk.subclients.casubclient.CloudAppsSubclient.browse">browse</a></code></li>
+<li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.browse_Cosmos_Content" href="../../subclient.html#cvpysdk.subclient.Subclient.browse_Cosmos_Content">browse_Cosmos_Content</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.data_readers" href="../../subclient.html#cvpysdk.subclient.Subclient.data_readers">data_readers</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.deduplication_options" href="../../subclient.html#cvpysdk.subclient.Subclient.deduplication_options">deduplication_options</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.description" href="../../subclient.html#cvpysdk.subclient.Subclient.description">description</a></code></li>
@@ -293,10 +383,12 @@ def content(self):
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.properties" href="../../subclient.html#cvpysdk.subclient.Subclient.properties">properties</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.read_buffer_size" href="../../subclient.html#cvpysdk.subclient.Subclient.read_buffer_size">read_buffer_size</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.refresh" href="../../subclient.html#cvpysdk.subclient.Subclient.refresh">refresh</a></code></li>
+<li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.restore" href="../casubclient.html#cvpysdk.subclients.casubclient.CloudAppsSubclient.restore">restore</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.restore_in_place" href="../../subclient.html#cvpysdk.subclient.Subclient.restore_in_place">restore_in_place</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.restore_out_of_place" href="../../subclient.html#cvpysdk.subclient.Subclient.restore_out_of_place">restore_out_of_place</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.run_content_indexing" href="../../subclient.html#cvpysdk.subclient.Subclient.run_content_indexing">run_content_indexing</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.set_backup_nodes" href="../../subclient.html#cvpysdk.subclient.Subclient.set_backup_nodes">set_backup_nodes</a></code></li>
+<li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.set_proxy_for_backup_copy" href="../../subclient.html#cvpysdk.subclient.Subclient.set_proxy_for_backup_copy">set_proxy_for_backup_copy</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.set_proxy_for_snap" href="../../subclient.html#cvpysdk.subclient.Subclient.set_proxy_for_snap">set_proxy_for_snap</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.snapshot_engine_name" href="../../subclient.html#cvpysdk.subclient.Subclient.snapshot_engine_name">snapshot_engine_name</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.software_compression" href="../../subclient.html#cvpysdk.subclient.Subclient.software_compression">software_compression</a></code></li>
@@ -306,7 +398,9 @@ def content(self):
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.subclient_guid" href="../../subclient.html#cvpysdk.subclient.Subclient.subclient_guid">subclient_guid</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.subclient_id" href="../../subclient.html#cvpysdk.subclient.Subclient.subclient_id">subclient_id</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.subclient_name" href="../../subclient.html#cvpysdk.subclient.Subclient.subclient_name">subclient_name</a></code></li>
+<li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.unset_proxy_for_backup_copy" href="../../subclient.html#cvpysdk.subclient.Subclient.unset_proxy_for_backup_copy">unset_proxy_for_backup_copy</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.unset_proxy_for_snap" href="../../subclient.html#cvpysdk.subclient.Subclient.unset_proxy_for_snap">unset_proxy_for_snap</a></code></li>
+<li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.update_atlas_instance" href="../../subclient.html#cvpysdk.subclient.Subclient.update_atlas_instance">update_atlas_instance</a></code></li>
 <li><code><a title="cvpysdk.subclients.casubclient.CloudAppsSubclient.update_properties" href="../../subclient.html#cvpysdk.subclient.Subclient.update_properties">update_properties</a></code></li>
 </ul>
 </li>

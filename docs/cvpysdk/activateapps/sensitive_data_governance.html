@@ -29,7 +29,8 @@
 Class to represent all SDG projects in the commcell</p>
 <p>Project:
 Class to represent single SDG project in the commcell</p>
-<h2 id="projects">Projects</h2>
+<p>Projects
+-----=</p>
 <p><strong>init</strong>()
 &ndash;
 initialise object of the Projects class</p>
@@ -54,7 +55,38 @@ adds project to the SDG</p>
 <p>delete()
 &ndash;
 deletes project from the SDG</p>
-<h2 id="project">Project</h2>
+<p>sensitive_files_count()
+&ndash;
+Get the count of sensitive files</p>
+<p>total_files_count()
+&ndash;
+Get the total count of files</p>
+<p>total_one_drive_files()
+&ndash;
+Get the total count of OneDrive files</p>
+<p>total_exchange_files()
+&ndash;
+Get the total count of Exchange files</p>
+<p>sensitive_one_drive_files()
+&ndash;
+Get the count of sensitive OneDrive files</p>
+<p>sensitive_exchange_files()
+&ndash;
+Get the count of sensitive Exchange files</p>
+<p>get_top_entities()
+&ndash;
+Retrieve the top five entities sorted based on frequency</p>
+<p>get_entity_sensitivity_counts()
+&ndash;
+Get the count of entities by sensitivity level (critical, high, moderate, none)</p>
+<p>get_entity_distribution()
+&ndash;
+Gets the entity distribution statistics for the Exchange and OneDrive applications.</p>
+<p>get_extracted_solr_query()
+&ndash;
+Construct a Solr query string for the given entity values</p>
+<p>Project
+-----=</p>
 <p><strong>init</strong>()
 &ndash;
 initialise object of the Project class</p>
@@ -108,7 +140,7 @@ returns the search response containing document details from project</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/sensitive_data_governance.py#L1-L649" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/sensitive_data_governance.py#L1-L856" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -153,6 +185,26 @@ Projects:
      add()                              --  adds project to the SDG
 
      delete()                           --  deletes project from the SDG
+
+    sensitive_files_count()             --  Get the count of sensitive files
+
+    total_files_count()                 --  Get the total count of files
+
+    total_one_drive_files()             --  Get the total count of OneDrive files
+
+    total_exchange_files()              --  Get the total count of Exchange files
+
+    sensitive_one_drive_files()         --  Get the count of sensitive OneDrive files
+
+    sensitive_exchange_files()          --  Get the count of sensitive Exchange files
+
+    get_top_entities()                  --  Retrieve the top five entities sorted based on frequency
+
+    get_entity_sensitivity_counts()     --  Get the count of entities by sensitivity level (critical, high, moderate, none)
+
+    get_entity_distribution()           --  Gets the entity distribution statistics for the Exchange and OneDrive applications.
+
+    get_extracted_solr_query()          --  Construct a Solr query string for the given entity values
 
 Project:
 
@@ -199,7 +251,9 @@ Project Attributes
     **sensitive_files_count**   --  returns the total sensitive files count
 
 &#34;&#34;&#34;
+import copy
 
+from .constants import RequestConstants
 from ..schedules import Schedules
 
 from ..activateapps.constants import EdiscoveryConstants
@@ -227,7 +281,9 @@ class Projects():
         self._cvpysdk_object = commcell_object._cvpysdk_object
         self._services = commcell_object._services
         self._sdg_projects = None
+        self._entity_manger = self._commcell_object.activate.entity_manager()
         self._ediscovery_clients_obj = EdiscoveryClients(self._commcell_object, self)
+        self._ediscovery_client_ops = EdiscoveryClientOperations(self._commcell_object, self)
         self.refresh()
 
     def _response_not_success(self, response):
@@ -373,6 +429,189 @@ class Projects():
             raise SDKException(&#39;SensitiveDataGovernance&#39;, &#39;103&#39;)
         project_id = self._sdg_projects[project_name.lower()][&#39;eDiscoveryClient&#39;][&#39;clientId&#39;]
         return Project(commcell_object=self._commcell_object, project_name=project_name, project_id=project_id)
+
+    def search(self, criteria=None, attr_list=None, params=None):
+        &#34;&#34;&#34;Does search on all the projects and returns document details
+
+            Args:
+
+                criteria        (str)      --  containing criteria for query
+                                                    (Default : None - returns all docs)
+
+                                                    Example :
+
+                                                        Size:[10 TO 1024]
+                                                        FileName:09_23*
+
+                attr_list       (set)      --  Column names to be returned in results.
+                                                     Acts as &#39;fl&#39; in query
+
+                params          (dict)     --  Any other params which needs to be passed
+                                                   Example : { &#34;start&#34; : &#34;0&#34; }
+
+            Returns:
+
+                int,list(dict),dict    --  Containing document count, document details &amp; facet details(if any)
+
+            Raises:
+
+                SDKException:
+
+                        if failed to perform search
+
+        &#34;&#34;&#34;
+        return self._ediscovery_client_ops.search(criteria=criteria, attr_list=attr_list, params=params)
+
+    def sensitive_files_count(self, app_type=EdiscoveryConstants.APP_TYPE_ALL):
+        &#34;&#34;&#34;
+        Retrieve the count of sensitive files for a given application type.
+
+        Args:
+            app_type (int, optional): Application type to filter by. Defaults to EdiscoveryConstants.APP_TYPE_ALL.
+                Supported values:
+                    - EdiscoveryConstants.APP_TYPE_ALL (0): All applications
+                    - EdiscoveryConstants.APP_TYPE_ONEDRIVE (200118): OneDrive
+                    - EdiscoveryConstants.APP_TYPE_EXCHANGE (137): Exchange
+
+        Returns:
+            int: Count of sensitive files for the specified application type.
+        &#34;&#34;&#34;
+        count, _, _ = self.search(criteria=EdiscoveryConstants.APP_TYPE_SENSITIVE_DICT[app_type],
+                                  params=RequestConstants.REQUEST_ZERO_ROWS)
+        return count
+
+    def total_files_count(self, app_type=EdiscoveryConstants.APP_TYPE_ALL):
+        &#34;&#34;&#34;
+        Retrieve the total count of files for a given application type.
+
+        Args:
+            app_type (int, optional): Application type to filter by. Defaults to EdiscoveryConstants.APP_TYPE_ALL.
+                Supported values:
+                    - EdiscoveryConstants.APP_TYPE_ALL (0): All applications
+                    - EdiscoveryConstants.APP_TYPE_ONEDRIVE (200118): OneDrive
+                    - EdiscoveryConstants.APP_TYPE_EXCHANGE (137): Exchange
+
+        Returns:
+            int: Total number of files for the specified application type.
+        &#34;&#34;&#34;
+        count, _, _ = self.search(criteria=EdiscoveryConstants.APP_TYPE_TOTAL_DICT[app_type],
+                                  params=RequestConstants.REQUEST_ZERO_ROWS)
+        return count
+
+    @property
+    def total_one_drive_files(self):
+        &#34;&#34;&#34;
+        Get the total count of OneDrive files.
+
+        Returns:
+            int: The total number of OneDrive files.
+        &#34;&#34;&#34;
+        count = self.total_files_count(EdiscoveryConstants.APP_TYPE_ONEDRIVE)
+        return count
+
+    @property
+    def total_exchange_files(self):
+        &#34;&#34;&#34;
+        Get the total count of Exchange files.
+
+        Returns:
+            int: The total number of Exchange files.
+        &#34;&#34;&#34;
+        count = self.total_files_count(EdiscoveryConstants.APP_TYPE_EXCHANGE)
+        return count
+
+    @property
+    def sensitive_one_drive_files(self):
+        &#34;&#34;&#34;
+        Get the count of sensitive OneDrive files.
+
+        Returns:
+            int: The number of sensitive OneDrive files.
+        &#34;&#34;&#34;
+        count = self.sensitive_files_count(EdiscoveryConstants.APP_TYPE_ONEDRIVE)
+        return count
+
+    @property
+    def sensitive_exchange_files(self):
+        &#34;&#34;&#34;
+        Get the count of sensitive Exchange files.
+
+        Returns:
+            int: The number of sensitive Exchange files.
+        &#34;&#34;&#34;
+        count = self.sensitive_files_count(EdiscoveryConstants.APP_TYPE_EXCHANGE)
+        return count
+
+    def get_top_entities(self, count=5):
+        &#34;&#34;&#34;
+        Retrieve the top five entities sorted based on frequency.
+        Args:
+            count(int):     Number of entities to be returned
+        Returns:
+            dict: Statistics or data for the top five entities.
+        &#34;&#34;&#34;
+        request_top_entities_facet = copy.deepcopy(RequestConstants.REQUEST_TOP_ENTITIES_FACET)
+        request_top_entities_facet[&#34;json.facet&#34;] = request_top_entities_facet[&#34;json.facet&#34;] % count
+        _, _, stats = self.search(criteria=EdiscoveryConstants.CRITERIA_ALL_DOCS,
+                                  params=request_top_entities_facet)
+        return stats
+
+    def get_entity_distribution(self):
+        &#34;&#34;&#34;
+        Gets the entity distribution statistics for the Exchange and OneDrive applications.
+        Returns:
+            dict: Statistics or data for the entity distribution.
+        &#34;&#34;&#34;
+        request_entity_dist_facet = copy.deepcopy(RequestConstants.REQUEST_ENTITY_DISTRIBUTION_FACET)
+        _, _, stats = self.search(criteria=EdiscoveryConstants.CRITERIA_ALL_DOCS,
+                                  params=request_entity_dist_facet)
+        return stats
+
+    def get_entity_sensitivity_counts(self):
+        &#34;&#34;&#34;
+        Get the count of entities by sensitivity level (critical, high, moderate, none).
+
+        Returns:
+            tuple: (critical_count, high_count, moderate_count, none_count)
+        &#34;&#34;&#34;
+        critical, high, moderate = self._entity_manger.get_entity_by_sensitivity()
+        critical_count, _, _ = self.search(criteria=self.get_extracted_solr_query(critical),
+                                           params=RequestConstants.REQUEST_ZERO_ROWS)
+        high_count, _, _ = self.search(
+            criteria=f&#34;{self.get_extracted_solr_query(high)} AND {self.get_extracted_solr_query(critical, True)}&#34;,
+            params=RequestConstants.REQUEST_ZERO_ROWS)
+        moderate_count, _, _ = self.search(
+            criteria=f&#34;{self.get_extracted_solr_query(moderate)} AND {self.get_extracted_solr_query(critical + high, True)}&#34;,
+            params=RequestConstants.REQUEST_ZERO_ROWS)
+        none_count, _, _ = self.search(
+            criteria=f&#34;{EdiscoveryConstants.CRITERIA_ALL_DOCS} AND {self.get_extracted_solr_query(critical + high + moderate, True)}&#34;,
+            params=RequestConstants.REQUEST_ZERO_ROWS)
+        return critical_count, high_count, moderate_count, none_count
+
+    def get_extracted_solr_query(self, values, is_negation=False):
+        &#34;&#34;&#34;
+        Construct a Solr query string for the given entity values.
+
+        Args:
+            values (list): List of entity names to include in the query.
+            is_negation (bool, optional): If True, negates the query. Defaults to False.
+
+        Returns:
+            str: The constructed Solr query string.
+
+        Raises:
+            SDKException: If values is not a list.
+        &#34;&#34;&#34;
+        if not isinstance(values, list):
+            raise SDKException(&#39;SensitiveDataGovernance&#39;, &#39;101&#39;,
+                               &#34;Values must be a list&#34;)
+        if not values:
+            return &#34;&#34;
+
+        append_str = &#34;&#34;
+        if is_negation:
+            append_str = &#34;-&#34;
+        return f&#34;{append_str}(entities_extracted:&#34; + &#34; OR entities_extracted:&#34;.join(values) + &#34;)&#34;
 
 
 class Project():
@@ -777,8 +1016,9 @@ class Project():
 <dd>
 <div class="desc"><p>Class to represent single SDG Project in the commcell</p>
 <p>Initializes an instance of the Project class.</p>
-<h2 id="args">Args</h2>
-<p>commcell_object
+<p>Args
+-----=
+commcell_object
 (object)
 &ndash;
 instance of the commcell class</p>
@@ -790,14 +1030,15 @@ name of the project</p>
 (int)
 &ndash;
 project's pseudoclient id</p>
-<h2 id="returns">Returns</h2>
-<p>object
+<p>Returns
+-----=
+object
 -
 instance of the Project class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/sensitive_data_governance.py#L266-L649" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/sensitive_data_governance.py#L473-L856" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Project():
     &#34;&#34;&#34;Class to represent single SDG Project in the commcell&#34;&#34;&#34;
@@ -1189,13 +1430,14 @@ instance of the Project class</p></div>
 <dt id="cvpysdk.activateapps.sensitive_data_governance.Project.data_sources"><code class="name">var <span class="ident">data_sources</span></code></dt>
 <dd>
 <div class="desc"><p>returns the EdiscoveryDataSources object associated to this project</p>
-<h2 id="returns">Returns</h2>
-<p>obj &ndash;
+<p>Returns
+-----=
+obj &ndash;
 Instance of EdiscoveryDataSources Object</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/sensitive_data_governance.py#L614-L623" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/sensitive_data_governance.py#L821-L830" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def data_sources(self):
@@ -1212,13 +1454,14 @@ def data_sources(self):
 <dt id="cvpysdk.activateapps.sensitive_data_governance.Project.data_sources_name"><code class="name">var <span class="ident">data_sources_name</span></code></dt>
 <dd>
 <div class="desc"><p>returns the associated data sources to this project</p>
-<h2 id="returns">Returns</h2>
-<p>list &ndash;
+<p>Returns
+-----=
+list &ndash;
 names of data sources</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/sensitive_data_governance.py#L592-L601" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/sensitive_data_governance.py#L799-L808" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def data_sources_name(self):
@@ -1235,14 +1478,15 @@ def data_sources_name(self):
 <dt id="cvpysdk.activateapps.sensitive_data_governance.Project.project_details"><code class="name">var <span class="ident">project_details</span></code></dt>
 <dd>
 <div class="desc"><p>returns the project properties</p>
-<h2 id="returns">Returns</h2>
-<p>dict
+<p>Returns
+-----=
+dict
 &ndash;
 Containing project properties</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/sensitive_data_governance.py#L581-L590" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/sensitive_data_governance.py#L788-L797" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def project_details(self):
@@ -1259,13 +1503,14 @@ def project_details(self):
 <dt id="cvpysdk.activateapps.sensitive_data_governance.Project.project_id"><code class="name">var <span class="ident">project_id</span></code></dt>
 <dd>
 <div class="desc"><p>returns the project psuedoclient id</p>
-<h2 id="returns">Returns</h2>
-<p>int &ndash;
+<p>Returns
+-----=
+int &ndash;
 Pseudoclient id associated with this project</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/sensitive_data_governance.py#L559-L568" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/sensitive_data_governance.py#L766-L775" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def project_id(self):
@@ -1282,13 +1527,14 @@ def project_id(self):
 <dt id="cvpysdk.activateapps.sensitive_data_governance.Project.project_name"><code class="name">var <span class="ident">project_name</span></code></dt>
 <dd>
 <div class="desc"><p>returns the project name</p>
-<h2 id="returns">Returns</h2>
-<p>str &ndash;
+<p>Returns
+-----=
+str &ndash;
 project name</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/sensitive_data_governance.py#L570-L579" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/sensitive_data_governance.py#L777-L786" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def project_name(self):
@@ -1305,8 +1551,9 @@ def project_name(self):
 <dt id="cvpysdk.activateapps.sensitive_data_governance.Project.schedule"><code class="name">var <span class="ident">schedule</span></code></dt>
 <dd>
 <div class="desc"><p>returns the schedule object for associated schedule</p>
-<h2 id="returns">Returns</h2>
-<p>obj
+<p>Returns
+-----=
+obj
 &ndash;
 Instance of Schedule Class if schedule exists</p>
 <p>None
@@ -1315,7 +1562,7 @@ If no schedule exists</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/sensitive_data_governance.py#L625-L636" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/sensitive_data_governance.py#L832-L843" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def schedule(self):
@@ -1334,13 +1581,14 @@ def schedule(self):
 <dt id="cvpysdk.activateapps.sensitive_data_governance.Project.sensitive_files_count"><code class="name">var <span class="ident">sensitive_files_count</span></code></dt>
 <dd>
 <div class="desc"><p>returns the total sensitive files count on this project</p>
-<h2 id="returns">Returns</h2>
-<p>int &ndash;
+<p>Returns
+-----=
+int &ndash;
 Sensitive files count</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/sensitive_data_governance.py#L638-L649" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/sensitive_data_governance.py#L845-L856" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def sensitive_files_count(self):
@@ -1359,13 +1607,14 @@ def sensitive_files_count(self):
 <dt id="cvpysdk.activateapps.sensitive_data_governance.Project.total_data_sources"><code class="name">var <span class="ident">total_data_sources</span></code></dt>
 <dd>
 <div class="desc"><p>returns the total number of data sources associated with this project</p>
-<h2 id="returns">Returns</h2>
-<p>int &ndash;
+<p>Returns
+-----=
+int &ndash;
 total number of data sources</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/sensitive_data_governance.py#L603-L612" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/sensitive_data_governance.py#L810-L819" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def total_data_sources(self):
@@ -1387,8 +1636,9 @@ def total_data_sources(self):
 </code></dt>
 <dd>
 <div class="desc"><p>Adds file system data source to project</p>
-<h2 id="args">Args</h2>
-<p>server_name
+<p>Args
+-----=
+server_name
 (str)
 &ndash;
 Server name which needs to be added</p>
@@ -1417,12 +1667,14 @@ password            (str)       --  base64 encoded password to access unc path
 
 enable_monitoring   (str)       --  specifies whether to enable file monitoring or not for this
 </code></pre>
-<h2 id="returns">Returns</h2>
-<p>obj
+<p>Returns
+-----=
+obj
 &ndash;
 Instance of EdiscoveryDataSource class</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>  if plan/inventory/index server doesn't exists
 
   if failed to add FS data source
@@ -1430,7 +1682,7 @@ Instance of EdiscoveryDataSource class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/sensitive_data_governance.py#L470-L520" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/sensitive_data_governance.py#L677-L727" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_fs_data_source(self, server_name, data_source_name,
                        source_type=EdiscoveryConstants.SourceType.BACKUP, **kwargs):
@@ -1490,8 +1742,9 @@ Instance of EdiscoveryDataSource class</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Adds Office365 SDG data source to a project</p>
-<h2 id="args">Args</h2>
-<p>server_name
+<p>Args
+-----=
+server_name
 (str)
 &ndash;
 Server name which needs to be added</p>
@@ -1510,18 +1763,20 @@ country_code        (str)       --  Country code (ISO 3166 2-letter code)
 
 users               (list)      --  List of users/mailboxes to be added. If empty, all users would be added
 </code></pre>
-<h2 id="returns">Returns</h2>
-<p>obj
+<p>Returns
+-----=
+obj
 &ndash;
 Instance of EdiscoveryDataSource class</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>  if plan doesn't exists
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/sensitive_data_governance.py#L522-L557" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/sensitive_data_governance.py#L729-L764" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_o365_sdg_data_source(self, server_name, data_source_name,
                              datasource_type=EdiscoveryConstants.ClientType.ONEDRIVE, **kwargs):
@@ -1566,8 +1821,9 @@ Instance of EdiscoveryDataSource class</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Creates the schedule and associate it with project</p>
-<h2 id="args">Args</h2>
-<p>schedule_name
+<p>Args
+-----=
+schedule_name
 (str)
 &ndash;
 Schedule name</p>
@@ -1576,8 +1832,9 @@ Schedule name</p>
 &ndash;
 Schedule pattern dict
 (Refer to Create_schedule_pattern in schedule.py)</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>  if input is not valid
 
   if failed to create schedule
@@ -1585,7 +1842,7 @@ Schedule pattern dict
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/sensitive_data_governance.py#L360-L380" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/sensitive_data_governance.py#L567-L587" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add_schedule(self, schedule_name, pattern_json):
     &#34;&#34;&#34;Creates the schedule and associate it with project
@@ -1615,16 +1872,18 @@ Schedule pattern dict
 </code></dt>
 <dd>
 <div class="desc"><p>Deletes the schedule associated with project</p>
-<h2 id="args">Args</h2>
-<p>None</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Args
+-----=
+None</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>  if failed to Delete schedule
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/sensitive_data_governance.py#L382-L399" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/sensitive_data_governance.py#L589-L606" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete_schedule(self):
     &#34;&#34;&#34;Deletes the schedule associated with project
@@ -1654,7 +1913,7 @@ Schedule pattern dict
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/sensitive_data_governance.py#L355-L358" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/sensitive_data_governance.py#L562-L565" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the SDG project details&#34;&#34;&#34;
@@ -1667,8 +1926,9 @@ Schedule pattern dict
 </code></dt>
 <dd>
 <div class="desc"><p>do searches on entire project and returns document details</p>
-<h2 id="args">Args</h2>
-<p>criteria
+<p>Args
+-----=
+criteria
 (str)
 &ndash;
 containing criteria for query
@@ -1688,18 +1948,20 @@ Acts as 'fl' in query</p>
 &ndash;
 Any other params which needs to be passed
 Example : { "start" : "0" }</p>
-<h2 id="returns">Returns</h2>
-<p>int,list(dict),dict
+<p>Returns
+-----=
+int,list(dict),dict
 &ndash;
 Containing document count, document details &amp; facet details(if any)</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>    if failed to perform search
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/sensitive_data_governance.py#L401-L431" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/sensitive_data_governance.py#L608-L638" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def search(self, criteria=None, attr_list=None, params=None):
     &#34;&#34;&#34;do searches on entire project and returns document details
@@ -1739,8 +2001,9 @@ Containing document count, document details &amp; facet details(if any)</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Shares project with given user or user group in commcell</p>
-<h2 id="args">Args</h2>
-<p>user_or_group_name
+<p>Args
+-----=
+user_or_group_name
 (str)
 &ndash;
 Name of user or group</p>
@@ -1762,10 +2025,12 @@ Operation type</p>
                                     Supported : 1 (Add)
                                                 3 (Delete)
 </code></pre>
-<h2 id="returns">Returns</h2>
-<p>None</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Returns
+-----=
+None</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>    if unable to update security associations
 
     if response is empty or not success
@@ -1773,7 +2038,7 @@ Operation type</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/sensitive_data_governance.py#L433-L468" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/sensitive_data_governance.py#L640-L675" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def share(self, user_or_group_name, allow_edit_permission=False, is_user=True, ops_type=1):
     &#34;&#34;&#34;Shares project with given user or user group in commcell
@@ -1822,19 +2087,21 @@ Operation type</p>
 <dd>
 <div class="desc"><p>Class for representing all SDG Projects in the commcell.</p>
 <p>Initializes an instance of the Projects class.</p>
-<h2 id="args">Args</h2>
-<p>commcell_object
+<p>Args
+-----=
+commcell_object
 (object)
 &ndash;
 instance of the commcell class</p>
-<h2 id="returns">Returns</h2>
-<p>object
+<p>Returns
+-----=
+object
 -
 instance of the Projects class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/sensitive_data_governance.py#L100-L263" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/sensitive_data_governance.py#L122-L470" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Projects():
     &#34;&#34;&#34;Class for representing all SDG Projects in the commcell.&#34;&#34;&#34;
@@ -1854,7 +2121,9 @@ instance of the Projects class</p></div>
         self._cvpysdk_object = commcell_object._cvpysdk_object
         self._services = commcell_object._services
         self._sdg_projects = None
+        self._entity_manger = self._commcell_object.activate.entity_manager()
         self._ediscovery_clients_obj = EdiscoveryClients(self._commcell_object, self)
+        self._ediscovery_client_ops = EdiscoveryClientOperations(self._commcell_object, self)
         self.refresh()
 
     def _response_not_success(self, response):
@@ -1999,8 +2268,298 @@ instance of the Projects class</p></div>
         if not self.has_project(project_name):
             raise SDKException(&#39;SensitiveDataGovernance&#39;, &#39;103&#39;)
         project_id = self._sdg_projects[project_name.lower()][&#39;eDiscoveryClient&#39;][&#39;clientId&#39;]
-        return Project(commcell_object=self._commcell_object, project_name=project_name, project_id=project_id)</code></pre>
+        return Project(commcell_object=self._commcell_object, project_name=project_name, project_id=project_id)
+
+    def search(self, criteria=None, attr_list=None, params=None):
+        &#34;&#34;&#34;Does search on all the projects and returns document details
+
+            Args:
+
+                criteria        (str)      --  containing criteria for query
+                                                    (Default : None - returns all docs)
+
+                                                    Example :
+
+                                                        Size:[10 TO 1024]
+                                                        FileName:09_23*
+
+                attr_list       (set)      --  Column names to be returned in results.
+                                                     Acts as &#39;fl&#39; in query
+
+                params          (dict)     --  Any other params which needs to be passed
+                                                   Example : { &#34;start&#34; : &#34;0&#34; }
+
+            Returns:
+
+                int,list(dict),dict    --  Containing document count, document details &amp; facet details(if any)
+
+            Raises:
+
+                SDKException:
+
+                        if failed to perform search
+
+        &#34;&#34;&#34;
+        return self._ediscovery_client_ops.search(criteria=criteria, attr_list=attr_list, params=params)
+
+    def sensitive_files_count(self, app_type=EdiscoveryConstants.APP_TYPE_ALL):
+        &#34;&#34;&#34;
+        Retrieve the count of sensitive files for a given application type.
+
+        Args:
+            app_type (int, optional): Application type to filter by. Defaults to EdiscoveryConstants.APP_TYPE_ALL.
+                Supported values:
+                    - EdiscoveryConstants.APP_TYPE_ALL (0): All applications
+                    - EdiscoveryConstants.APP_TYPE_ONEDRIVE (200118): OneDrive
+                    - EdiscoveryConstants.APP_TYPE_EXCHANGE (137): Exchange
+
+        Returns:
+            int: Count of sensitive files for the specified application type.
+        &#34;&#34;&#34;
+        count, _, _ = self.search(criteria=EdiscoveryConstants.APP_TYPE_SENSITIVE_DICT[app_type],
+                                  params=RequestConstants.REQUEST_ZERO_ROWS)
+        return count
+
+    def total_files_count(self, app_type=EdiscoveryConstants.APP_TYPE_ALL):
+        &#34;&#34;&#34;
+        Retrieve the total count of files for a given application type.
+
+        Args:
+            app_type (int, optional): Application type to filter by. Defaults to EdiscoveryConstants.APP_TYPE_ALL.
+                Supported values:
+                    - EdiscoveryConstants.APP_TYPE_ALL (0): All applications
+                    - EdiscoveryConstants.APP_TYPE_ONEDRIVE (200118): OneDrive
+                    - EdiscoveryConstants.APP_TYPE_EXCHANGE (137): Exchange
+
+        Returns:
+            int: Total number of files for the specified application type.
+        &#34;&#34;&#34;
+        count, _, _ = self.search(criteria=EdiscoveryConstants.APP_TYPE_TOTAL_DICT[app_type],
+                                  params=RequestConstants.REQUEST_ZERO_ROWS)
+        return count
+
+    @property
+    def total_one_drive_files(self):
+        &#34;&#34;&#34;
+        Get the total count of OneDrive files.
+
+        Returns:
+            int: The total number of OneDrive files.
+        &#34;&#34;&#34;
+        count = self.total_files_count(EdiscoveryConstants.APP_TYPE_ONEDRIVE)
+        return count
+
+    @property
+    def total_exchange_files(self):
+        &#34;&#34;&#34;
+        Get the total count of Exchange files.
+
+        Returns:
+            int: The total number of Exchange files.
+        &#34;&#34;&#34;
+        count = self.total_files_count(EdiscoveryConstants.APP_TYPE_EXCHANGE)
+        return count
+
+    @property
+    def sensitive_one_drive_files(self):
+        &#34;&#34;&#34;
+        Get the count of sensitive OneDrive files.
+
+        Returns:
+            int: The number of sensitive OneDrive files.
+        &#34;&#34;&#34;
+        count = self.sensitive_files_count(EdiscoveryConstants.APP_TYPE_ONEDRIVE)
+        return count
+
+    @property
+    def sensitive_exchange_files(self):
+        &#34;&#34;&#34;
+        Get the count of sensitive Exchange files.
+
+        Returns:
+            int: The number of sensitive Exchange files.
+        &#34;&#34;&#34;
+        count = self.sensitive_files_count(EdiscoveryConstants.APP_TYPE_EXCHANGE)
+        return count
+
+    def get_top_entities(self, count=5):
+        &#34;&#34;&#34;
+        Retrieve the top five entities sorted based on frequency.
+        Args:
+            count(int):     Number of entities to be returned
+        Returns:
+            dict: Statistics or data for the top five entities.
+        &#34;&#34;&#34;
+        request_top_entities_facet = copy.deepcopy(RequestConstants.REQUEST_TOP_ENTITIES_FACET)
+        request_top_entities_facet[&#34;json.facet&#34;] = request_top_entities_facet[&#34;json.facet&#34;] % count
+        _, _, stats = self.search(criteria=EdiscoveryConstants.CRITERIA_ALL_DOCS,
+                                  params=request_top_entities_facet)
+        return stats
+
+    def get_entity_distribution(self):
+        &#34;&#34;&#34;
+        Gets the entity distribution statistics for the Exchange and OneDrive applications.
+        Returns:
+            dict: Statistics or data for the entity distribution.
+        &#34;&#34;&#34;
+        request_entity_dist_facet = copy.deepcopy(RequestConstants.REQUEST_ENTITY_DISTRIBUTION_FACET)
+        _, _, stats = self.search(criteria=EdiscoveryConstants.CRITERIA_ALL_DOCS,
+                                  params=request_entity_dist_facet)
+        return stats
+
+    def get_entity_sensitivity_counts(self):
+        &#34;&#34;&#34;
+        Get the count of entities by sensitivity level (critical, high, moderate, none).
+
+        Returns:
+            tuple: (critical_count, high_count, moderate_count, none_count)
+        &#34;&#34;&#34;
+        critical, high, moderate = self._entity_manger.get_entity_by_sensitivity()
+        critical_count, _, _ = self.search(criteria=self.get_extracted_solr_query(critical),
+                                           params=RequestConstants.REQUEST_ZERO_ROWS)
+        high_count, _, _ = self.search(
+            criteria=f&#34;{self.get_extracted_solr_query(high)} AND {self.get_extracted_solr_query(critical, True)}&#34;,
+            params=RequestConstants.REQUEST_ZERO_ROWS)
+        moderate_count, _, _ = self.search(
+            criteria=f&#34;{self.get_extracted_solr_query(moderate)} AND {self.get_extracted_solr_query(critical + high, True)}&#34;,
+            params=RequestConstants.REQUEST_ZERO_ROWS)
+        none_count, _, _ = self.search(
+            criteria=f&#34;{EdiscoveryConstants.CRITERIA_ALL_DOCS} AND {self.get_extracted_solr_query(critical + high + moderate, True)}&#34;,
+            params=RequestConstants.REQUEST_ZERO_ROWS)
+        return critical_count, high_count, moderate_count, none_count
+
+    def get_extracted_solr_query(self, values, is_negation=False):
+        &#34;&#34;&#34;
+        Construct a Solr query string for the given entity values.
+
+        Args:
+            values (list): List of entity names to include in the query.
+            is_negation (bool, optional): If True, negates the query. Defaults to False.
+
+        Returns:
+            str: The constructed Solr query string.
+
+        Raises:
+            SDKException: If values is not a list.
+        &#34;&#34;&#34;
+        if not isinstance(values, list):
+            raise SDKException(&#39;SensitiveDataGovernance&#39;, &#39;101&#39;,
+                               &#34;Values must be a list&#34;)
+        if not values:
+            return &#34;&#34;
+
+        append_str = &#34;&#34;
+        if is_negation:
+            append_str = &#34;-&#34;
+        return f&#34;{append_str}(entities_extracted:&#34; + &#34; OR entities_extracted:&#34;.join(values) + &#34;)&#34;</code></pre>
 </details>
+<h3>Instance variables</h3>
+<dl>
+<dt id="cvpysdk.activateapps.sensitive_data_governance.Projects.sensitive_exchange_files"><code class="name">var <span class="ident">sensitive_exchange_files</span></code></dt>
+<dd>
+<div class="desc"><p>Get the count of sensitive Exchange files.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>int</code></dt>
+<dd>The number of sensitive Exchange files.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/sensitive_data_governance.py#L390-L399" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def sensitive_exchange_files(self):
+    &#34;&#34;&#34;
+    Get the count of sensitive Exchange files.
+
+    Returns:
+        int: The number of sensitive Exchange files.
+    &#34;&#34;&#34;
+    count = self.sensitive_files_count(EdiscoveryConstants.APP_TYPE_EXCHANGE)
+    return count</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.activateapps.sensitive_data_governance.Projects.sensitive_one_drive_files"><code class="name">var <span class="ident">sensitive_one_drive_files</span></code></dt>
+<dd>
+<div class="desc"><p>Get the count of sensitive OneDrive files.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>int</code></dt>
+<dd>The number of sensitive OneDrive files.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/sensitive_data_governance.py#L379-L388" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def sensitive_one_drive_files(self):
+    &#34;&#34;&#34;
+    Get the count of sensitive OneDrive files.
+
+    Returns:
+        int: The number of sensitive OneDrive files.
+    &#34;&#34;&#34;
+    count = self.sensitive_files_count(EdiscoveryConstants.APP_TYPE_ONEDRIVE)
+    return count</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.activateapps.sensitive_data_governance.Projects.total_exchange_files"><code class="name">var <span class="ident">total_exchange_files</span></code></dt>
+<dd>
+<div class="desc"><p>Get the total count of Exchange files.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>int</code></dt>
+<dd>The total number of Exchange files.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/sensitive_data_governance.py#L368-L377" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def total_exchange_files(self):
+    &#34;&#34;&#34;
+    Get the total count of Exchange files.
+
+    Returns:
+        int: The total number of Exchange files.
+    &#34;&#34;&#34;
+    count = self.total_files_count(EdiscoveryConstants.APP_TYPE_EXCHANGE)
+    return count</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.activateapps.sensitive_data_governance.Projects.total_one_drive_files"><code class="name">var <span class="ident">total_one_drive_files</span></code></dt>
+<dd>
+<div class="desc"><p>Get the total count of OneDrive files.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>int</code></dt>
+<dd>The total number of OneDrive files.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/sensitive_data_governance.py#L357-L366" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def total_one_drive_files(self):
+    &#34;&#34;&#34;
+    Get the total count of OneDrive files.
+
+    Returns:
+        int: The total number of OneDrive files.
+    &#34;&#34;&#34;
+    count = self.total_files_count(EdiscoveryConstants.APP_TYPE_ONEDRIVE)
+    return count</code></pre>
+</details>
+</dd>
+</dl>
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.activateapps.sensitive_data_governance.Projects.add"><code class="name flex">
@@ -2008,8 +2567,9 @@ instance of the Projects class</p></div>
 </code></dt>
 <dd>
 <div class="desc"><p>Adds project to the SDG</p>
-<h2 id="args">Args</h2>
-<p>project_name
+<p>Args
+-----=
+project_name
 (str)
 &ndash;
 Name of the project</p>
@@ -2021,11 +2581,13 @@ Name of inventory</p>
 (str)
 &ndash;
 Plan name to associate with this project</p>
-<h2 id="returns">Returns</h2>
-<p>obj &ndash;
+<p>Returns
+-----=
+obj &ndash;
 Instance of Project class</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>    if input is not valid
 
     if failed to create project
@@ -2035,7 +2597,7 @@ Instance of Project class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/sensitive_data_governance.py#L186-L218" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/sensitive_data_governance.py#L210-L242" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self, project_name, inventory_name, plan_name):
     &#34;&#34;&#34;Adds project to the SDG
@@ -2077,15 +2639,18 @@ Instance of Project class</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Deletes project from SDG</p>
-<h2 id="args">Args</h2>
-<p>project_name
+<p>Args
+-----=
+project_name
 (str)
 &ndash;
 Name of the project</p>
-<h2 id="returns">Returns</h2>
-<p>None</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Returns
+-----=
+None</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>    if input is not valid
 
     if failed to delete project
@@ -2095,7 +2660,7 @@ Name of the project</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/sensitive_data_governance.py#L159-L184" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/sensitive_data_governance.py#L183-L208" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, project_name):
     &#34;&#34;&#34;Deletes project from SDG
@@ -2130,16 +2695,19 @@ Name of the project</p>
 </code></dt>
 <dd>
 <div class="desc"><p>returns the Project object for given project name</p>
-<h2 id="args">Args</h2>
-<p>project_name
+<p>Args
+-----=
+project_name
 (str)
 &ndash;
 Name of the project</p>
-<h2 id="returns">Returns</h2>
-<p>obj &ndash;
+<p>Returns
+-----=
+obj &ndash;
 Instance of Project Class</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
+<p>Raises
+-----=
+SDKException:</p>
 <pre><code>    if failed to find Project in SDG
 
     if input is not valid
@@ -2147,7 +2715,7 @@ Instance of Project Class</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/sensitive_data_governance.py#L238-L263" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/sensitive_data_governance.py#L262-L287" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get(self, project_name):
     &#34;&#34;&#34;returns the Project object for given project name
@@ -2177,24 +2745,180 @@ Instance of Project Class</p>
     return Project(commcell_object=self._commcell_object, project_name=project_name, project_id=project_id)</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.activateapps.sensitive_data_governance.Projects.get_entity_distribution"><code class="name flex">
+<span>def <span class="ident">get_entity_distribution</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Gets the entity distribution statistics for the Exchange and OneDrive applications.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>Statistics or data for the entity distribution.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/sensitive_data_governance.py#L415-L424" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get_entity_distribution(self):
+    &#34;&#34;&#34;
+    Gets the entity distribution statistics for the Exchange and OneDrive applications.
+    Returns:
+        dict: Statistics or data for the entity distribution.
+    &#34;&#34;&#34;
+    request_entity_dist_facet = copy.deepcopy(RequestConstants.REQUEST_ENTITY_DISTRIBUTION_FACET)
+    _, _, stats = self.search(criteria=EdiscoveryConstants.CRITERIA_ALL_DOCS,
+                              params=request_entity_dist_facet)
+    return stats</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.activateapps.sensitive_data_governance.Projects.get_entity_sensitivity_counts"><code class="name flex">
+<span>def <span class="ident">get_entity_sensitivity_counts</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get the count of entities by sensitivity level (critical, high, moderate, none).</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>tuple</code></dt>
+<dd>(critical_count, high_count, moderate_count, none_count)</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/sensitive_data_governance.py#L426-L445" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get_entity_sensitivity_counts(self):
+    &#34;&#34;&#34;
+    Get the count of entities by sensitivity level (critical, high, moderate, none).
+
+    Returns:
+        tuple: (critical_count, high_count, moderate_count, none_count)
+    &#34;&#34;&#34;
+    critical, high, moderate = self._entity_manger.get_entity_by_sensitivity()
+    critical_count, _, _ = self.search(criteria=self.get_extracted_solr_query(critical),
+                                       params=RequestConstants.REQUEST_ZERO_ROWS)
+    high_count, _, _ = self.search(
+        criteria=f&#34;{self.get_extracted_solr_query(high)} AND {self.get_extracted_solr_query(critical, True)}&#34;,
+        params=RequestConstants.REQUEST_ZERO_ROWS)
+    moderate_count, _, _ = self.search(
+        criteria=f&#34;{self.get_extracted_solr_query(moderate)} AND {self.get_extracted_solr_query(critical + high, True)}&#34;,
+        params=RequestConstants.REQUEST_ZERO_ROWS)
+    none_count, _, _ = self.search(
+        criteria=f&#34;{EdiscoveryConstants.CRITERIA_ALL_DOCS} AND {self.get_extracted_solr_query(critical + high + moderate, True)}&#34;,
+        params=RequestConstants.REQUEST_ZERO_ROWS)
+    return critical_count, high_count, moderate_count, none_count</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.activateapps.sensitive_data_governance.Projects.get_extracted_solr_query"><code class="name flex">
+<span>def <span class="ident">get_extracted_solr_query</span></span>(<span>self, values, is_negation=False)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Construct a Solr query string for the given entity values.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>values</code></strong> :&ensp;<code>list</code></dt>
+<dd>List of entity names to include in the query.</dd>
+<dt><strong><code>is_negation</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>If True, negates the query. Defaults to False.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>str</code></dt>
+<dd>The constructed Solr query string.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If values is not a list.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/sensitive_data_governance.py#L447-L470" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get_extracted_solr_query(self, values, is_negation=False):
+    &#34;&#34;&#34;
+    Construct a Solr query string for the given entity values.
+
+    Args:
+        values (list): List of entity names to include in the query.
+        is_negation (bool, optional): If True, negates the query. Defaults to False.
+
+    Returns:
+        str: The constructed Solr query string.
+
+    Raises:
+        SDKException: If values is not a list.
+    &#34;&#34;&#34;
+    if not isinstance(values, list):
+        raise SDKException(&#39;SensitiveDataGovernance&#39;, &#39;101&#39;,
+                           &#34;Values must be a list&#34;)
+    if not values:
+        return &#34;&#34;
+
+    append_str = &#34;&#34;
+    if is_negation:
+        append_str = &#34;-&#34;
+    return f&#34;{append_str}(entities_extracted:&#34; + &#34; OR entities_extracted:&#34;.join(values) + &#34;)&#34;</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.activateapps.sensitive_data_governance.Projects.get_top_entities"><code class="name flex">
+<span>def <span class="ident">get_top_entities</span></span>(<span>self, count=5)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Retrieve the top five entities sorted based on frequency.</p>
+<p>Args
+-----=
+count(int):
+Number of entities to be returned</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>Statistics or data for the top five entities.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/sensitive_data_governance.py#L401-L413" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get_top_entities(self, count=5):
+    &#34;&#34;&#34;
+    Retrieve the top five entities sorted based on frequency.
+    Args:
+        count(int):     Number of entities to be returned
+    Returns:
+        dict: Statistics or data for the top five entities.
+    &#34;&#34;&#34;
+    request_top_entities_facet = copy.deepcopy(RequestConstants.REQUEST_TOP_ENTITIES_FACET)
+    request_top_entities_facet[&#34;json.facet&#34;] = request_top_entities_facet[&#34;json.facet&#34;] % count
+    _, _, stats = self.search(criteria=EdiscoveryConstants.CRITERIA_ALL_DOCS,
+                              params=request_top_entities_facet)
+    return stats</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.activateapps.sensitive_data_governance.Projects.has_project"><code class="name flex">
 <span>def <span class="ident">has_project</span></span>(<span>self, project_name)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Checks if a project exists in the commcell with the input name for SDG or not</p>
-<h2 id="args">Args</h2>
-<p>project_name (str)
+<p>Args
+-----=
+project_name (str)
 &ndash;
 name of the project</p>
-<h2 id="returns">Returns</h2>
-<p>bool - boolean output whether the SDG Project exists in the commcell or not</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
+<p>Returns
+-----=
+bool - boolean output whether the SDG Project exists in the commcell or not</p>
+<p>Raises
+-----=
+SDKException:
 if type of the project name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/sensitive_data_governance.py#L220-L236" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/sensitive_data_governance.py#L244-L260" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_project(self, project_name):
     &#34;&#34;&#34;Checks if a project exists in the commcell with the input name for SDG or not
@@ -2223,11 +2947,172 @@ if type of the project name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activateapps/sensitive_data_governance.py#L155-L157" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/sensitive_data_governance.py#L179-L181" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self):
     &#34;&#34;&#34;Refresh the SDG Projects associated with the commcell.&#34;&#34;&#34;
     self._sdg_projects = self._get_all_sdg_projects()</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.activateapps.sensitive_data_governance.Projects.search"><code class="name flex">
+<span>def <span class="ident">search</span></span>(<span>self, criteria=None, attr_list=None, params=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Does search on all the projects and returns document details</p>
+<p>Args
+-----=
+criteria
+(str)
+&ndash;
+containing criteria for query
+(Default : None - returns all docs)</p>
+<pre><code>                                Example :
+
+                                    Size:[10 TO 1024]
+                                    FileName:09_23*
+</code></pre>
+<p>attr_list
+(set)
+&ndash;
+Column names to be returned in results.
+Acts as 'fl' in query</p>
+<p>params
+(dict)
+&ndash;
+Any other params which needs to be passed
+Example : { "start" : "0" }</p>
+<p>Returns
+-----=
+int,list(dict),dict
+&ndash;
+Containing document count, document details &amp; facet details(if any)</p>
+<p>Raises
+-----=
+SDKException:</p>
+<pre><code>    if failed to perform search
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/sensitive_data_governance.py#L289-L319" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def search(self, criteria=None, attr_list=None, params=None):
+    &#34;&#34;&#34;Does search on all the projects and returns document details
+
+        Args:
+
+            criteria        (str)      --  containing criteria for query
+                                                (Default : None - returns all docs)
+
+                                                Example :
+
+                                                    Size:[10 TO 1024]
+                                                    FileName:09_23*
+
+            attr_list       (set)      --  Column names to be returned in results.
+                                                 Acts as &#39;fl&#39; in query
+
+            params          (dict)     --  Any other params which needs to be passed
+                                               Example : { &#34;start&#34; : &#34;0&#34; }
+
+        Returns:
+
+            int,list(dict),dict    --  Containing document count, document details &amp; facet details(if any)
+
+        Raises:
+
+            SDKException:
+
+                    if failed to perform search
+
+    &#34;&#34;&#34;
+    return self._ediscovery_client_ops.search(criteria=criteria, attr_list=attr_list, params=params)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.activateapps.sensitive_data_governance.Projects.sensitive_files_count"><code class="name flex">
+<span>def <span class="ident">sensitive_files_count</span></span>(<span>self, app_type=0)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Retrieve the count of sensitive files for a given application type.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>app_type</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>Application type to filter by. Defaults to EdiscoveryConstants.APP_TYPE_ALL.
+Supported values:
+- EdiscoveryConstants.APP_TYPE_ALL (0): All applications
+- EdiscoveryConstants.APP_TYPE_ONEDRIVE (200118): OneDrive
+- EdiscoveryConstants.APP_TYPE_EXCHANGE (137): Exchange</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>int</code></dt>
+<dd>Count of sensitive files for the specified application type.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/sensitive_data_governance.py#L321-L337" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def sensitive_files_count(self, app_type=EdiscoveryConstants.APP_TYPE_ALL):
+    &#34;&#34;&#34;
+    Retrieve the count of sensitive files for a given application type.
+
+    Args:
+        app_type (int, optional): Application type to filter by. Defaults to EdiscoveryConstants.APP_TYPE_ALL.
+            Supported values:
+                - EdiscoveryConstants.APP_TYPE_ALL (0): All applications
+                - EdiscoveryConstants.APP_TYPE_ONEDRIVE (200118): OneDrive
+                - EdiscoveryConstants.APP_TYPE_EXCHANGE (137): Exchange
+
+    Returns:
+        int: Count of sensitive files for the specified application type.
+    &#34;&#34;&#34;
+    count, _, _ = self.search(criteria=EdiscoveryConstants.APP_TYPE_SENSITIVE_DICT[app_type],
+                              params=RequestConstants.REQUEST_ZERO_ROWS)
+    return count</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.activateapps.sensitive_data_governance.Projects.total_files_count"><code class="name flex">
+<span>def <span class="ident">total_files_count</span></span>(<span>self, app_type=0)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Retrieve the total count of files for a given application type.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>app_type</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>Application type to filter by. Defaults to EdiscoveryConstants.APP_TYPE_ALL.
+Supported values:
+- EdiscoveryConstants.APP_TYPE_ALL (0): All applications
+- EdiscoveryConstants.APP_TYPE_ONEDRIVE (200118): OneDrive
+- EdiscoveryConstants.APP_TYPE_EXCHANGE (137): Exchange</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>int</code></dt>
+<dd>Total number of files for the specified application type.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activateapps/sensitive_data_governance.py#L339-L355" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def total_files_count(self, app_type=EdiscoveryConstants.APP_TYPE_ALL):
+    &#34;&#34;&#34;
+    Retrieve the total count of files for a given application type.
+
+    Args:
+        app_type (int, optional): Application type to filter by. Defaults to EdiscoveryConstants.APP_TYPE_ALL.
+            Supported values:
+                - EdiscoveryConstants.APP_TYPE_ALL (0): All applications
+                - EdiscoveryConstants.APP_TYPE_ONEDRIVE (200118): OneDrive
+                - EdiscoveryConstants.APP_TYPE_EXCHANGE (137): Exchange
+
+    Returns:
+        int: Total number of files for the specified application type.
+    &#34;&#34;&#34;
+    count, _, _ = self.search(criteria=EdiscoveryConstants.APP_TYPE_TOTAL_DICT[app_type],
+                              params=RequestConstants.REQUEST_ZERO_ROWS)
+    return count</code></pre>
 </details>
 </dd>
 </dl>
@@ -2328,8 +3213,19 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.activateapps.sensitive_data_governance.Projects.add" href="#cvpysdk.activateapps.sensitive_data_governance.Projects.add">add</a></code></li>
 <li><code><a title="cvpysdk.activateapps.sensitive_data_governance.Projects.delete" href="#cvpysdk.activateapps.sensitive_data_governance.Projects.delete">delete</a></code></li>
 <li><code><a title="cvpysdk.activateapps.sensitive_data_governance.Projects.get" href="#cvpysdk.activateapps.sensitive_data_governance.Projects.get">get</a></code></li>
+<li><code><a title="cvpysdk.activateapps.sensitive_data_governance.Projects.get_entity_distribution" href="#cvpysdk.activateapps.sensitive_data_governance.Projects.get_entity_distribution">get_entity_distribution</a></code></li>
+<li><code><a title="cvpysdk.activateapps.sensitive_data_governance.Projects.get_entity_sensitivity_counts" href="#cvpysdk.activateapps.sensitive_data_governance.Projects.get_entity_sensitivity_counts">get_entity_sensitivity_counts</a></code></li>
+<li><code><a title="cvpysdk.activateapps.sensitive_data_governance.Projects.get_extracted_solr_query" href="#cvpysdk.activateapps.sensitive_data_governance.Projects.get_extracted_solr_query">get_extracted_solr_query</a></code></li>
+<li><code><a title="cvpysdk.activateapps.sensitive_data_governance.Projects.get_top_entities" href="#cvpysdk.activateapps.sensitive_data_governance.Projects.get_top_entities">get_top_entities</a></code></li>
 <li><code><a title="cvpysdk.activateapps.sensitive_data_governance.Projects.has_project" href="#cvpysdk.activateapps.sensitive_data_governance.Projects.has_project">has_project</a></code></li>
 <li><code><a title="cvpysdk.activateapps.sensitive_data_governance.Projects.refresh" href="#cvpysdk.activateapps.sensitive_data_governance.Projects.refresh">refresh</a></code></li>
+<li><code><a title="cvpysdk.activateapps.sensitive_data_governance.Projects.search" href="#cvpysdk.activateapps.sensitive_data_governance.Projects.search">search</a></code></li>
+<li><code><a title="cvpysdk.activateapps.sensitive_data_governance.Projects.sensitive_exchange_files" href="#cvpysdk.activateapps.sensitive_data_governance.Projects.sensitive_exchange_files">sensitive_exchange_files</a></code></li>
+<li><code><a title="cvpysdk.activateapps.sensitive_data_governance.Projects.sensitive_files_count" href="#cvpysdk.activateapps.sensitive_data_governance.Projects.sensitive_files_count">sensitive_files_count</a></code></li>
+<li><code><a title="cvpysdk.activateapps.sensitive_data_governance.Projects.sensitive_one_drive_files" href="#cvpysdk.activateapps.sensitive_data_governance.Projects.sensitive_one_drive_files">sensitive_one_drive_files</a></code></li>
+<li><code><a title="cvpysdk.activateapps.sensitive_data_governance.Projects.total_exchange_files" href="#cvpysdk.activateapps.sensitive_data_governance.Projects.total_exchange_files">total_exchange_files</a></code></li>
+<li><code><a title="cvpysdk.activateapps.sensitive_data_governance.Projects.total_files_count" href="#cvpysdk.activateapps.sensitive_data_governance.Projects.total_files_count">total_files_count</a></code></li>
+<li><code><a title="cvpysdk.activateapps.sensitive_data_governance.Projects.total_one_drive_files" href="#cvpysdk.activateapps.sensitive_data_governance.Projects.total_one_drive_files">total_one_drive_files</a></code></li>
 </ul>
 </li>
 </ul>

@@ -90,7 +90,7 @@ with postgres server
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/postgresinstance.py#L1-L726" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/postgresinstance.py#L1-L763" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -187,22 +187,52 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 from base64 import b64encode
+
 from ..instance import Instance
 from ..exception import SDKException
+from ..job import Job
+
+from typing import Optional, TYPE_CHECKING
+if TYPE_CHECKING:
+    from ..agent import Agent
 
 
 class PostgreSQLInstance(Instance):
-    &#34;&#34;&#34;Derived class from Instance Base class, representing a POSTGRESQL instance,
-        and to perform operations on that Instance.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents a PostgreSQL database instance, extending the base Instance class.
 
-    def __init__(self, agent_object, instance_name, instance_id):
-        &#34;&#34;&#34;Initialize object of the Instances class.
+    This class provides comprehensive management and operational capabilities for
+    PostgreSQL instances, including configuration, backup, restore, and security
+    operations. It exposes properties for accessing and modifying key PostgreSQL
+    instance attributes such as binary and library directories, archive log
+    directories, server user and port information, SSL configuration, standby
+    settings, and storage policies.
 
-            Args:
-                agent_object (object)  --  instance of the Agent class
+    Additionally, the class offers methods for retrieving and manipulating
+    instance properties, handling restore operations with various options, and
+    managing security aspects like changing the superuser password.
 
-            Returns:
-                object - instance of the Instances class
+    Key Features:
+        - Access to PostgreSQL binary, library, and archive log directories
+        - Management of log storage policies
+        - Retrieval and configuration of server user, port, and maintenance database
+        - PostgreSQL version and SSL configuration management
+        - Standby instance support and status checks
+        - Control over log and data backup sources (master/standby)
+        - Archive log deletion management
+        - Secure password change for the superuser account
+        - Retrieval of instance properties in both object and JSON formats
+        - Flexible restore operations, including in-place and advanced options
+
+    &#34;&#34;&#34;
+
+    def __init__(self, agent_object: &#39;Agent&#39;, instance_name: str, instance_id: int) -&gt; None:
+        &#34;&#34;&#34;Initialize a PostgreSQLInstance object.
+
+        Args:
+            agent_object: Instance of the Agent class associated with this PostgreSQL instance.
+            instance_name: The name of the PostgreSQL instance.
+            instance_id: The unique identifier for the PostgreSQL instance.
 
         &#34;&#34;&#34;
         super(
@@ -219,10 +249,11 @@ class PostgreSQLInstance(Instance):
         self._destination_restore_json = None
 
     @property
-    def postgres_bin_directory(self):
-        &#34;&#34;&#34;Returns the bin directory of postgres server
+    def postgres_bin_directory(self) -&gt; str:
+        &#34;&#34;&#34;Get the bin directory path of the PostgreSQL server.
 
-            Return Type: str
+        Returns:
+            The absolute path to the PostgreSQL server&#39;s bin directory as a string.
 
         &#34;&#34;&#34;
         if self._properties[&#39;postGreSQLInstance&#39;][&#39;BinaryDirectory&#39;]:
@@ -233,10 +264,11 @@ class PostgreSQLInstance(Instance):
             &#34;Could not fetch the Binary directory.&#34;)
 
     @property
-    def postgres_lib_directory(self):
-        &#34;&#34;&#34;Returns the lib directory of postgres server
+    def postgres_lib_directory(self) -&gt; str:
+        &#34;&#34;&#34;Get the library directory path of the PostgreSQL server.
 
-            Return Type: str
+        Returns:
+            The absolute path to the PostgreSQL server&#39;s library (lib) directory as a string.
 
         &#34;&#34;&#34;
         if self._properties[&#39;postGreSQLInstance&#39;][&#39;LibDirectory&#39;]:
@@ -247,10 +279,11 @@ class PostgreSQLInstance(Instance):
             &#34;Could not fetch the Lib directory.&#34;)
 
     @property
-    def postgres_archive_log_directory(self):
-        &#34;&#34;&#34;Returns the archive log directory of postgres server
+    def postgres_archive_log_directory(self) -&gt; str:
+        &#34;&#34;&#34;Get the archive log directory path of the PostgreSQL server.
 
-            Return Type: str
+        Returns:
+            The file system path to the PostgreSQL server&#39;s archive log directory as a string.
 
         &#34;&#34;&#34;
         if self._properties[&#39;postGreSQLInstance&#39;][&#39;ArchiveLogDirectory&#39;]:
@@ -261,21 +294,21 @@ class PostgreSQLInstance(Instance):
             &#34;Could not fetch the Archive log directory.&#34;)
 
     @property
-    def log_storage_policy(self):
-        &#34;&#34;&#34;Returns the log storage policy for the instance
+    def log_storage_policy(self) -&gt; Optional[str]:
+        &#34;&#34;&#34;Get the log storage policy associated with this PostgreSQL instance.
 
-            Return Type: str
-                        Default: None
+        Returns:
+            The name of the log storage policy as a string, or None if no policy is set.
+
         &#34;&#34;&#34;
         return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;logStoragePolicy&#39;, {}).get(&#39;storagePolicyName&#39;, None)
 
     @log_storage_policy.setter
-    def log_storage_policy(self, value):
-        &#34;&#34;&#34; Setter for log storage policy in instance property
+    def log_storage_policy(self, value: str) -&gt; None:
+        &#34;&#34;&#34;Set the log storage policy for the PostgreSQL instance.
 
-            Args:
-
-                value (str)  -- Storage policy name
+        Args:
+            value: The name of the storage policy to assign for log backups.
 
         &#34;&#34;&#34;
         if not isinstance(value, str):
@@ -286,14 +319,15 @@ class PostgreSQLInstance(Instance):
         self.update_properties(properties)
 
     @property
-    def postgres_server_user_name(self):
-        &#34;&#34;&#34;Returns the username of postgres server
+    def postgres_server_user_name(self) -&gt; str:
+        &#34;&#34;&#34;Get the username of the PostgreSQL server.
 
-            Return Type: str
+        Returns:
+            The username used to connect to the PostgreSQL server as a string.
 
         &#34;&#34;&#34;
         if self.credentials:
-            return self._commcell_object.credentials.get(self.credentials).credential_user_name
+            return self._commcell_object.credentials.get(self.credentials)._credential_properties.get(&#34;userName&#34;)
         else:
             if self._properties[&#39;postGreSQLInstance&#39;][&#39;SAUser&#39;][&#39;userName&#39;]:
                 return self._properties[&#39;postGreSQLInstance&#39;][&#39;SAUser&#39;][&#39;userName&#39;]
@@ -303,10 +337,11 @@ class PostgreSQLInstance(Instance):
             &#34;Could not fetch the Server name.&#34;)
 
     @property
-    def postgres_server_port_number(self):
-        &#34;&#34;&#34;Returns the port number associated with postgres server
+    def postgres_server_port_number(self) -&gt; str:
+        &#34;&#34;&#34;Get the port number associated with the PostgreSQL server.
 
-            Return Type: str
+        Returns:
+            The port number used by the PostgreSQL server as a string.
 
         &#34;&#34;&#34;
         if self._properties[&#39;postGreSQLInstance&#39;][&#39;port&#39;]:
@@ -317,10 +352,11 @@ class PostgreSQLInstance(Instance):
             &#34;Could not fetch the port Number.&#34;)
 
     @property
-    def maintenance_database(self):
-        &#34;&#34;&#34;Returns the maintenance database associated with postgres server
+    def maintenance_database(self) -&gt; str:
+        &#34;&#34;&#34;Get the maintenance database associated with the PostgreSQL server.
 
-            Return Type: str
+        Returns:
+            The name of the maintenance database as a string.
 
         &#34;&#34;&#34;
         if self._properties[&#39;postGreSQLInstance&#39;].get(&#39;MaintainenceDB&#39;):
@@ -331,10 +367,11 @@ class PostgreSQLInstance(Instance):
             &#34;Could not fetch maintenance database.&#34;)
 
     @property
-    def postgres_version(self):
-        &#34;&#34;&#34;Returns the postgres server version
+    def postgres_version(self) -&gt; str:
+        &#34;&#34;&#34;Get the PostgreSQL server version for this instance.
 
-            Return Type: str
+        Returns:
+            The version of the PostgreSQL server as a string.
 
         &#34;&#34;&#34;
         if self._properties.get(&#39;version&#39;):
@@ -345,21 +382,23 @@ class PostgreSQLInstance(Instance):
             &#34;Could not fetch postgres version.&#34;)
 
     @property
-    def archive_delete(self):
-        &#34;&#34;&#34;Returns True if archive delete enabled. False if not
+    def archive_delete(self) -&gt; bool:
+        &#34;&#34;&#34;Check if archive delete is enabled for the PostgreSQL instance.
 
-            Return Type: bool
+        Returns:
+            True if archive delete is enabled; False otherwise.
 
         &#34;&#34;&#34;
         return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;ArchiveDelete&#39;, False)
 
     @archive_delete.setter
-    def archive_delete(self, value):
-        &#34;&#34;&#34; Setter for archive delete instance property
+    def archive_delete(self, value: bool) -&gt; None:
+        &#34;&#34;&#34;Set the archive delete property for the PostgreSQL instance.
 
-            Args:
+        This setter enables or disables the archive delete feature for the instance.
 
-                value (bool)  -- True to enable archive delete
+        Args:
+            value: Set to True to enable archive delete, or False to disable it.
 
         &#34;&#34;&#34;
         if not isinstance(value, bool):
@@ -369,56 +408,59 @@ class PostgreSQLInstance(Instance):
         self.update_properties(properties)
 
     @property
-    def standby_instance_name(self):
-        &#34;&#34;&#34;Returns the standby instance name
+    def standby_instance_name(self) -&gt; Optional[str]:
+        &#34;&#34;&#34;Get the name of the standby PostgreSQL instance.
 
-            Return Type: str
-
-        &#34;&#34;&#34;
-        if self.is_standby_enabled:
-            return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;standbyOptions&#39;, {}).get(&#39;standbyInstance&#39;,
-                                                                                                {}).get(&#39;instanceName&#39;,
-                                                                                                        &#34;&#34;)
-        return None
-
-    @property
-    def standby_instance_id(self):
-        &#34;&#34;&#34;Returns the standby instance id
-
-            Return Type: str
+        Returns:
+            The name of the standby instance as a string.
 
         &#34;&#34;&#34;
         if self.is_standby_enabled:
-            return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;standbyOptions&#39;, {}).get(&#39;standbyInstance&#39;,
-                                                                                                {}).get(&#39;instanceId&#39;,
-                                                                                                        &#34;&#34;)
+            return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(
+                &#39;standbyOptions&#39;, {}).get(&#39;standbyInstance&#39;, {}).get(&#39;instanceName&#39;, &#34;&#34;)
+
         return None
 
     @property
-    def is_standby_enabled(self):
-        &#34;&#34;&#34;Returns True if standby enabled. False if not
+    def standby_instance_id(self) -&gt; Optional[str]:
+        &#34;&#34;&#34;Get the standby instance ID for the PostgreSQL instance.
 
-            Return Type: bool
+        Returns:
+            The standby instance ID as a string.
+
+        &#34;&#34;&#34;
+        if self.is_standby_enabled:
+            return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(
+                &#39;standbyOptions&#39;, {}).get(&#39;standbyInstance&#39;, {}).get(&#39;instanceId&#39;, &#34;&#34;)
+
+        return None
+
+    @property
+    def is_standby_enabled(self) -&gt; bool:
+        &#34;&#34;&#34;Check if standby mode is enabled for the PostgreSQL instance.
+
+        Returns:
+            True if standby mode is enabled; False otherwise.
 
         &#34;&#34;&#34;
         return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;standbyOptions&#39;, {}).get(&#39;isStandbyEnabled&#39;, False)
 
     @property
-    def use_master_for_log_backup(self):
-        &#34;&#34;&#34; Returns True if master is used for log backup
+    def use_master_for_log_backup(self) -&gt; bool:
+        &#34;&#34;&#34;Indicate whether the master database is used for log backup operations.
 
-            Return Type: bool
+        Returns:
+            True if the master database is configured to be used for log backup; False otherwise.
 
         &#34;&#34;&#34;
         return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;standbyOptions&#39;, {}).get(&#39;useMasterForLogBkp&#39;, False)
 
     @use_master_for_log_backup.setter
-    def use_master_for_log_backup(self, value):
-        &#34;&#34;&#34; Setter for user master for log backup standby property
+    def use_master_for_log_backup(self, value: bool) -&gt; None:
+        &#34;&#34;&#34;Set whether to use the master server for log backup in standby mode.
 
-            Args:
-
-                value (bool)  -- True to use master for log backup
+        Args:
+            value: Set to True to enable using the master server for log backup; False to disable.
 
         &#34;&#34;&#34;
         if not isinstance(value, bool):
@@ -428,22 +470,22 @@ class PostgreSQLInstance(Instance):
         self.update_properties(properties)
 
     @property
-    def use_master_for_data_backup(self):
-        &#34;&#34;&#34; Returns True if master is used for data backup
+    def use_master_for_data_backup(self) -&gt; bool:
+        &#34;&#34;&#34;Indicate whether the master server is used for data backup.
 
-            Return Type: bool
+        Returns:
+            True if the master server is configured to be used for data backup; otherwise, False.
 
         &#34;&#34;&#34;
-        return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;standbyOptions&#39;, {}).get(&#39;useMasterForDataBkp&#39;,
-                                                                                            False)
+        return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(
+            &#39;standbyOptions&#39;, {}).get(&#39;useMasterForDataBkp&#39;, False)
 
     @use_master_for_data_backup.setter
-    def use_master_for_data_backup(self, value):
-        &#34;&#34;&#34; Setter for user master for data backup standby property
+    def use_master_for_data_backup(self, value: bool) -&gt; None:
+        &#34;&#34;&#34;Set the property to use the master server for data backup in a PostgreSQL standby configuration.
 
-            Args:
-
-                value (bool)  -- True to use master for data backup
+        Args:
+            value: Set to True to enable using the master server for data backup; set to False to disable.
 
         &#34;&#34;&#34;
         if not isinstance(value, bool):
@@ -453,31 +495,50 @@ class PostgreSQLInstance(Instance):
         self.update_properties(properties)
 
     @property
-    def postgres_ssl_status(self):
-        &#34;&#34;&#34;Returns True/False based on if ssl is enabled or not&#34;&#34;&#34;
+    def postgres_ssl_status(self) -&gt; bool:
+        &#34;&#34;&#34;Check whether SSL is enabled for the PostgreSQL instance.
+
+        Returns:
+            True if SSL is enabled for the PostgreSQL instance, False otherwise.
+
+        &#34;&#34;&#34;
         return self._properties.get(&#34;postGreSQLInstance&#34;, {}).get(&#34;sslOpt&#34;, {}).get(&#34;sslEnabled&#34;, False)
 
     @property
-    def postgres_ssl_ca_file(self):
-        &#34;&#34;&#34;Returns: str - ssl ca file path&#34;&#34;&#34;
+    def postgres_ssl_ca_file(self) -&gt; str:
+        &#34;&#34;&#34;Get the file path to the SSL CA certificate used by the PostgreSQL instance.
+
+        Returns:
+            The file path to the SSL CA (Certificate Authority) file as a string.
+
+        &#34;&#34;&#34;
         return self._properties.get(&#34;postGreSQLInstance&#34;, {}).get(&#34;sslOpt&#34;, {}).get(&#34;sslCa&#34;, &#34;&#34;)
 
     @property
-    def postgres_ssl_key_file(self):
-        &#34;&#34;&#34;Returns: str - ssl key file path&#34;&#34;&#34;
+    def postgres_ssl_key_file(self) -&gt; str:
+        &#34;&#34;&#34;Get the file path to the PostgreSQL SSL key file.
+
+        Returns:
+            The full path to the SSL key file used by the PostgreSQL instance.
+
+        &#34;&#34;&#34;
         return self._properties.get(&#34;postGreSQLInstance&#34;, {}).get(&#34;sslOpt&#34;, {}).get(&#34;sslKey&#34;, &#34;&#34;)
 
     @property
-    def postgres_ssl_cert_file(self):
-        &#34;&#34;&#34;Returns:str - ssl cert file path&#34;&#34;&#34;
+    def postgres_ssl_cert_file(self) -&gt; str:
+        &#34;&#34;&#34;Get the file path to the PostgreSQL SSL certificate.
+
+        Returns:
+            The file system path to the SSL certificate used by the PostgreSQL instance.
+
+        &#34;&#34;&#34;
         return self._properties.get(&#34;postGreSQLInstance&#34;, {}).get(&#34;sslOpt&#34;, {}).get(&#34;sslCert&#34;, &#34;&#34;)
 
-    def change_sa_password(self, value):
-        &#34;&#34;&#34; Changes postgresql user password
+    def change_sa_password(self, value: str) -&gt; None:
+        &#34;&#34;&#34;Change the password for the PostgreSQL user (SA user).
 
-            Args:
-
-                value (bool)  -- PostgreSQL password
+        Args:
+            value: The new password to set for the PostgreSQL user.
 
         &#34;&#34;&#34;
         if not isinstance(value, str):
@@ -486,24 +547,24 @@ class PostgreSQLInstance(Instance):
         properties[&#39;postGreSQLInstance&#39;][&#39;SAUser&#39;][&#39;password&#39;] = b64encode(value.encode()).decode()
         self.update_properties(properties)
 
-    def _get_instance_properties(self):
-        &#34;&#34;&#34;Gets the properties of this instance.
+    def _get_instance_properties(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve and update the properties of this PostgreSQL instance.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        This method fetches the latest properties for the PostgreSQL instance from the Commcell
+        and updates the instance&#39;s internal state accordingly.
 
-                    if response is not success
+        Raises:
+            SDKException: If the response from the Commcell is empty or indicates a failure.
 
         &#34;&#34;&#34;
         super(PostgreSQLInstance, self)._get_instance_properties()
         self._postgresql_instance = self._properties[&#39;postGreSQLInstance&#39;]
 
-    def _get_instance_properties_json(self):
-        &#34;&#34;&#34; Gets all the instance related properties of PostgreSQL instance.
+    def _get_instance_properties_json(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve all properties related to the PostgreSQL instance as a dictionary.
 
-           Returns:
-                dict - all instance properties put inside a dict
+        Returns:
+            dict: A dictionary containing all instance properties for the PostgreSQL instance.
 
         &#34;&#34;&#34;
         instance_json = {
@@ -515,14 +576,18 @@ class PostgreSQLInstance(Instance):
         }
         return instance_json
 
-    def _restore_json(self, **kwargs):
-        &#34;&#34;&#34;Returns the JSON request to pass to the API as per the options selected by the user.
+    def _restore_json(self, **kwargs) -&gt; dict:
+        &#34;&#34;&#34;Generate the JSON request payload for a restore operation based on user-selected options.
 
-            Args:
-                kwargs   (dict)  --  Dictionary of options need to be set for restore
+        This method constructs a dictionary representing the JSON request to be sent to the API,
+        using the provided keyword arguments to specify restore options.
 
-            Returns:
-                dict             -- JSON request to pass to the API
+        Args:
+            **kwargs: Arbitrary keyword arguments representing restore options. Each key-value pair
+                corresponds to a specific restore parameter required by the API.
+
+        Returns:
+            dict: The JSON request dictionary to be passed to the API for the restore operation.
 
         &#34;&#34;&#34;
         rest_json = super(PostgreSQLInstance, self)._restore_json(**kwargs)
@@ -540,8 +605,13 @@ class PostgreSQLInstance(Instance):
             &#34;restoreOptions&#34;][&#34;postgresRstOption&#34;] = self.postgres_restore_json
         return rest_json
 
-    def _restore_common_options_json(self, value):
-        &#34;&#34;&#34;setter for  the Common options of in restore JSON&#34;&#34;&#34;
+    def _restore_common_options_json(self, value: dict) -&gt; None:
+        &#34;&#34;&#34;Set the common options section in the restore JSON configuration.
+
+        Args:
+            value: A dictionary containing the common options to be set in the restore JSON.
+
+        &#34;&#34;&#34;
         if not isinstance(value, dict):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
         super(PostgreSQLInstance, self)._restore_common_options_json(value)
@@ -557,11 +627,13 @@ class PostgreSQLInstance(Instance):
                 &#34;syncRestore&#34;: value.get(&#34;sync_restore&#34;, True)
             }
 
-    def _restore_destination_json(self, value):
-        &#34;&#34;&#34;setter for the Destination options in restore JSON
+    def _restore_destination_json(self, value: dict) -&gt; None:
+        &#34;&#34;&#34;Set the destination options in the restore JSON configuration.
 
-            Args:
-                value   (dict)  --  Dictionary of options need to be set for restore
+        This method updates the restore JSON with the specified destination options.
+
+        Args:
+            value: Dictionary containing the destination options to be set for the restore operation.
 
         &#34;&#34;&#34;
 
@@ -583,11 +655,11 @@ class PostgreSQLInstance(Instance):
                 }
             }
 
-    def _restore_postgres_option_json(self, value):
-        &#34;&#34;&#34;setter for the restore option in restore JSON
+    def _restore_postgres_option_json(self, value: dict) -&gt; None:
+        &#34;&#34;&#34;Set the restore options in the PostgreSQL restore JSON.
 
-            Args:
-                value   (dict)  --  Dictionary of options need to be set for restore
+        Args:
+            value: Dictionary containing the options to be set for the restore operation.
 
         &#34;&#34;&#34;
 
@@ -630,142 +702,75 @@ class PostgreSQLInstance(Instance):
             self.postgres_restore_json[&#34;fsBackupSetRestore&#34;] = False
 
     def restore_in_place(
-            self,
-            path,
-            dest_client_name,
-            dest_instance_name,
-            backupset_name,
-            backupset_flag,
-            overwrite=True,
-            copy_precedence=None,
-            from_time=None,
-            to_time=None,
-            clone_env=False,
-            clone_options=None,
-            media_agent=None,
-            table_level_restore=False,
-            staging_path=None,
-            no_of_streams=None,
-            volume_level_restore=False,
-            redirect_enabled=False,
-            redirect_path=None,
-            restore_to_disk=False,
-            restore_to_disk_job=None,
-            destination_path=None,
-            revert=False):
-        &#34;&#34;&#34;Restores the postgres data/log files specified in the input paths
-        list to the same location.
+        self,
+        path: list,
+        dest_client_name: str,
+        dest_instance_name: str,
+        backupset_name: str,
+        backupset_flag: bool,
+        overwrite: bool = True,
+        copy_precedence: int = None,
+        from_time: str = None,
+        to_time: str = None,
+        clone_env: bool = False,
+        clone_options: dict = None,
+        media_agent: str = None,
+        table_level_restore: bool = False,
+        staging_path: str = None,
+        no_of_streams: int = None,
+        volume_level_restore: bool = False,
+        redirect_enabled: bool = False,
+        redirect_path: str = None,
+        restore_to_disk: bool = False,
+        restore_to_disk_job: int = None,
+        destination_path: str = None,
+        revert: bool = False
+    ) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;Restore PostgreSQL data or log files in place to their original location.
 
-            Args:
-                path                    (list)  --  list of database/databases to be restored
+        This method restores the specified PostgreSQL databases or files to the same location on the destination client and instance.
+        It supports various restore options such as cloning, table-level restore, volume-level restore, redirect restore, and restore to disk.
 
-                dest_client_name        (str)   --  destination client name where files are to be
-                restored
+        Args:
+            path: List of database names or file paths to be restored.
+            dest_client_name: Name of the destination client where the data will be restored.
+            dest_instance_name: Name of the destination PostgreSQL instance.
+            backupset_name: Name of the backupset to restore from.
+            backupset_flag: Flag indicating if the backup is file system-based.
+            overwrite: If True, files will be unconditionally overwritten during restore. Default is True.
+            copy_precedence: Copy precedence value of the storage policy copy. Default is None.
+            from_time: Restore data backed up after this time (format: &#39;YYYY-MM-DD HH:MM:SS&#39;). Default is None.
+            to_time: Restore data backed up before this time (format: &#39;YYYY-MM-DD HH:MM:SS&#39;). Default is None.
+            clone_env: If True, the database will be cloned. Default is False.
+            clone_options: Dictionary of clone restore options. Example:
+                {
+                    &#34;stagingLocaion&#34;: &#34;/gk_snap&#34;,
+                    &#34;forceCleanup&#34;: True,
+                    &#34;port&#34;: &#34;5595&#34;,
+                    &#34;libDirectory&#34;: &#34;/opt/PostgreSQL/9.6/lib&#34;,
+                    &#34;isInstanceSelected&#34;: True,
+                    &#34;reservationPeriodS&#34;: 3600,
+                    &#34;user&#34;: &#34;postgres&#34;,
+                    &#34;binaryDirectory&#34;: &#34;/opt/PostgreSQL/9.6/bin&#34;
+                }
+                Default is None.
+            media_agent: Name of the media agent to use for the restore. Default is None.
+            table_level_restore: If True, perform a table-level restore. Default is False.
+            staging_path: Staging path location for table-level restore. Default is None.
+            no_of_streams: Number of streams to use for volume-level restore. Default is None.
+            volume_level_restore: If True, perform a volume-level restore. Default is False.
+            redirect_enabled: If True, enable redirect restore. Default is False.
+            redirect_path: Path to redirect the restore to. Default is None.
+            restore_to_disk: If True, restore to disk instead of the original location. Default is False.
+            restore_to_disk_job: Backup job ID to restore to disk. Default is None.
+            destination_path: Destination path for the restore. Default is None.
+            revert: If True, perform a hardware revert during restore. Default is False.
 
-                dest_instance_name      (str)   --  destination postgres instance name of
-                destination client
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                backupset_name          (str)   --  destination postgres backupset name of
-                destination client
-
-                backupset_flag          (bool)  --  flag to indicate fsbased backup
-
-                overwrite               (bool)  --  unconditional overwrite files during restore
-                    default: True
-
-                copy_precedence         (int)   --  copy precedence value of storage policy copy
-                    default: None
-
-                from_time               (str)   --  time to retore the contents after
-                    format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                to_time                 (str)   --  time to retore the contents before
-                    format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                clone_env               (bool)  --  boolean to specify whether the database
-                should be cloned or not
-
-                    default: False
-
-                clone_options           (dict)  --  clone restore options passed in a dict
-
-                    default: None
-
-                    Accepted format: {
-                                        &#34;stagingLocaion&#34;: &#34;/gk_snap&#34;,
-                                        &#34;forceCleanup&#34;: True,
-                                        &#34;port&#34;: &#34;5595&#34;,
-                                        &#34;libDirectory&#34;: &#34;/opt/PostgreSQL/9.6/lib&#34;,
-                                        &#34;isInstanceSelected&#34;: True,
-                                        &#34;reservationPeriodS&#34;: 3600,
-                                        &#34;user&#34;: &#34;postgres&#34;,
-                                        &#34;binaryDirectory&#34;: &#34;/opt/PostgreSQL/9.6/bin&#34;
-                                     }
-
-                media_agent             (str)   --  media agent name
-
-                    default: None
-
-                table_level_restore     (bool)  --  boolean to specify if the restore operation
-                is table level
-
-                    default: False
-
-                staging_path            (str)   --  staging path location for table level restore
-
-                    default: None
-
-                no_of_streams           (int)   --  number of streams to be used by
-                volume level restore
-
-                    default: None
-
-                volume_level_restore    (bool)  --  volume level restore flag
-
-                    default: False
-
-                redirect_enabled         (bool)  --  boolean to specify if redirect restore is
-                enabled
-
-                    default: False
-
-                redirect_path           (str)   --  Path specified in advanced restore options
-                in order to perform redirect restore
-
-                    default: None
-
-                restore_to_disk         (bool)  --  restore to disk flag
-
-                    default: False
-
-                restore_to_disk_job     (int)   --  backup job id to restore to disk
-
-                    default: None
-
-                destination_path        (str)   --  destinath path for restore
-
-                    default: None
-
-                revert                  (bool)  --  boolean to specify whether to do a
-                                                    hardware revert in restore
-                    default: False
-
-            Returns:
-                object - instance of the Job class for this restore job
-
-            Raises:
-                SDKException:
-                    if paths is not a list
-
-                    if failed to initialize job
-
-                    if response is empty
-
-                    if response is not success
+        Raises:
+            SDKException: If the path is not a list, if the job fails to initialize, if the response is empty, or if the response is not successful.
 
         &#34;&#34;&#34;
         if not (isinstance(path, list) and
@@ -831,35 +836,82 @@ class PostgreSQLInstance(Instance):
 <dl>
 <dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance"><code class="flex name class">
 <span>class <span class="ident">PostgreSQLInstance</span></span>
-<span>(</span><span>agent_object, instance_name, instance_id)</span>
+<span>(</span><span>agent_object: Agent, instance_name: str, instance_id: int)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Derived class from Instance Base class, representing a POSTGRESQL instance,
-and to perform operations on that Instance.</p>
-<p>Initialize object of the Instances class.</p>
-<h2 id="args">Args</h2>
-<p>agent_object (object)
-&ndash;
-instance of the Agent class</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Instances class</p></div>
+<div class="desc"><p>Represents a PostgreSQL database instance, extending the base Instance class.</p>
+<p>This class provides comprehensive management and operational capabilities for
+PostgreSQL instances, including configuration, backup, restore, and security
+operations. It exposes properties for accessing and modifying key PostgreSQL
+instance attributes such as binary and library directories, archive log
+directories, server user and port information, SSL configuration, standby
+settings, and storage policies.</p>
+<p>Additionally, the class offers methods for retrieving and manipulating
+instance properties, handling restore operations with various options, and
+managing security aspects like changing the superuser password.</p>
+<p>Key Features:
+- Access to PostgreSQL binary, library, and archive log directories
+- Management of log storage policies
+- Retrieval and configuration of server user, port, and maintenance database
+- PostgreSQL version and SSL configuration management
+- Standby instance support and status checks
+- Control over log and data backup sources (master/standby)
+- Archive log deletion management
+- Secure password change for the superuser account
+- Retrieval of instance properties in both object and JSON formats
+- Flexible restore operations, including in-place and advanced options</p>
+<p>Initialize a PostgreSQLInstance object.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>agent_object</code></strong></dt>
+<dd>Instance of the Agent class associated with this PostgreSQL instance.</dd>
+<dt><strong><code>instance_name</code></strong></dt>
+<dd>The name of the PostgreSQL instance.</dd>
+<dt><strong><code>instance_id</code></strong></dt>
+<dd>The unique identifier for the PostgreSQL instance.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/postgresinstance.py#L100-L726" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/postgresinstance.py#L106-L763" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class PostgreSQLInstance(Instance):
-    &#34;&#34;&#34;Derived class from Instance Base class, representing a POSTGRESQL instance,
-        and to perform operations on that Instance.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents a PostgreSQL database instance, extending the base Instance class.
 
-    def __init__(self, agent_object, instance_name, instance_id):
-        &#34;&#34;&#34;Initialize object of the Instances class.
+    This class provides comprehensive management and operational capabilities for
+    PostgreSQL instances, including configuration, backup, restore, and security
+    operations. It exposes properties for accessing and modifying key PostgreSQL
+    instance attributes such as binary and library directories, archive log
+    directories, server user and port information, SSL configuration, standby
+    settings, and storage policies.
 
-            Args:
-                agent_object (object)  --  instance of the Agent class
+    Additionally, the class offers methods for retrieving and manipulating
+    instance properties, handling restore operations with various options, and
+    managing security aspects like changing the superuser password.
 
-            Returns:
-                object - instance of the Instances class
+    Key Features:
+        - Access to PostgreSQL binary, library, and archive log directories
+        - Management of log storage policies
+        - Retrieval and configuration of server user, port, and maintenance database
+        - PostgreSQL version and SSL configuration management
+        - Standby instance support and status checks
+        - Control over log and data backup sources (master/standby)
+        - Archive log deletion management
+        - Secure password change for the superuser account
+        - Retrieval of instance properties in both object and JSON formats
+        - Flexible restore operations, including in-place and advanced options
+
+    &#34;&#34;&#34;
+
+    def __init__(self, agent_object: &#39;Agent&#39;, instance_name: str, instance_id: int) -&gt; None:
+        &#34;&#34;&#34;Initialize a PostgreSQLInstance object.
+
+        Args:
+            agent_object: Instance of the Agent class associated with this PostgreSQL instance.
+            instance_name: The name of the PostgreSQL instance.
+            instance_id: The unique identifier for the PostgreSQL instance.
 
         &#34;&#34;&#34;
         super(
@@ -876,10 +928,11 @@ instance of the Agent class</p>
         self._destination_restore_json = None
 
     @property
-    def postgres_bin_directory(self):
-        &#34;&#34;&#34;Returns the bin directory of postgres server
+    def postgres_bin_directory(self) -&gt; str:
+        &#34;&#34;&#34;Get the bin directory path of the PostgreSQL server.
 
-            Return Type: str
+        Returns:
+            The absolute path to the PostgreSQL server&#39;s bin directory as a string.
 
         &#34;&#34;&#34;
         if self._properties[&#39;postGreSQLInstance&#39;][&#39;BinaryDirectory&#39;]:
@@ -890,10 +943,11 @@ instance of the Agent class</p>
             &#34;Could not fetch the Binary directory.&#34;)
 
     @property
-    def postgres_lib_directory(self):
-        &#34;&#34;&#34;Returns the lib directory of postgres server
+    def postgres_lib_directory(self) -&gt; str:
+        &#34;&#34;&#34;Get the library directory path of the PostgreSQL server.
 
-            Return Type: str
+        Returns:
+            The absolute path to the PostgreSQL server&#39;s library (lib) directory as a string.
 
         &#34;&#34;&#34;
         if self._properties[&#39;postGreSQLInstance&#39;][&#39;LibDirectory&#39;]:
@@ -904,10 +958,11 @@ instance of the Agent class</p>
             &#34;Could not fetch the Lib directory.&#34;)
 
     @property
-    def postgres_archive_log_directory(self):
-        &#34;&#34;&#34;Returns the archive log directory of postgres server
+    def postgres_archive_log_directory(self) -&gt; str:
+        &#34;&#34;&#34;Get the archive log directory path of the PostgreSQL server.
 
-            Return Type: str
+        Returns:
+            The file system path to the PostgreSQL server&#39;s archive log directory as a string.
 
         &#34;&#34;&#34;
         if self._properties[&#39;postGreSQLInstance&#39;][&#39;ArchiveLogDirectory&#39;]:
@@ -918,21 +973,21 @@ instance of the Agent class</p>
             &#34;Could not fetch the Archive log directory.&#34;)
 
     @property
-    def log_storage_policy(self):
-        &#34;&#34;&#34;Returns the log storage policy for the instance
+    def log_storage_policy(self) -&gt; Optional[str]:
+        &#34;&#34;&#34;Get the log storage policy associated with this PostgreSQL instance.
 
-            Return Type: str
-                        Default: None
+        Returns:
+            The name of the log storage policy as a string, or None if no policy is set.
+
         &#34;&#34;&#34;
         return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;logStoragePolicy&#39;, {}).get(&#39;storagePolicyName&#39;, None)
 
     @log_storage_policy.setter
-    def log_storage_policy(self, value):
-        &#34;&#34;&#34; Setter for log storage policy in instance property
+    def log_storage_policy(self, value: str) -&gt; None:
+        &#34;&#34;&#34;Set the log storage policy for the PostgreSQL instance.
 
-            Args:
-
-                value (str)  -- Storage policy name
+        Args:
+            value: The name of the storage policy to assign for log backups.
 
         &#34;&#34;&#34;
         if not isinstance(value, str):
@@ -943,14 +998,15 @@ instance of the Agent class</p>
         self.update_properties(properties)
 
     @property
-    def postgres_server_user_name(self):
-        &#34;&#34;&#34;Returns the username of postgres server
+    def postgres_server_user_name(self) -&gt; str:
+        &#34;&#34;&#34;Get the username of the PostgreSQL server.
 
-            Return Type: str
+        Returns:
+            The username used to connect to the PostgreSQL server as a string.
 
         &#34;&#34;&#34;
         if self.credentials:
-            return self._commcell_object.credentials.get(self.credentials).credential_user_name
+            return self._commcell_object.credentials.get(self.credentials)._credential_properties.get(&#34;userName&#34;)
         else:
             if self._properties[&#39;postGreSQLInstance&#39;][&#39;SAUser&#39;][&#39;userName&#39;]:
                 return self._properties[&#39;postGreSQLInstance&#39;][&#39;SAUser&#39;][&#39;userName&#39;]
@@ -960,10 +1016,11 @@ instance of the Agent class</p>
             &#34;Could not fetch the Server name.&#34;)
 
     @property
-    def postgres_server_port_number(self):
-        &#34;&#34;&#34;Returns the port number associated with postgres server
+    def postgres_server_port_number(self) -&gt; str:
+        &#34;&#34;&#34;Get the port number associated with the PostgreSQL server.
 
-            Return Type: str
+        Returns:
+            The port number used by the PostgreSQL server as a string.
 
         &#34;&#34;&#34;
         if self._properties[&#39;postGreSQLInstance&#39;][&#39;port&#39;]:
@@ -974,10 +1031,11 @@ instance of the Agent class</p>
             &#34;Could not fetch the port Number.&#34;)
 
     @property
-    def maintenance_database(self):
-        &#34;&#34;&#34;Returns the maintenance database associated with postgres server
+    def maintenance_database(self) -&gt; str:
+        &#34;&#34;&#34;Get the maintenance database associated with the PostgreSQL server.
 
-            Return Type: str
+        Returns:
+            The name of the maintenance database as a string.
 
         &#34;&#34;&#34;
         if self._properties[&#39;postGreSQLInstance&#39;].get(&#39;MaintainenceDB&#39;):
@@ -988,10 +1046,11 @@ instance of the Agent class</p>
             &#34;Could not fetch maintenance database.&#34;)
 
     @property
-    def postgres_version(self):
-        &#34;&#34;&#34;Returns the postgres server version
+    def postgres_version(self) -&gt; str:
+        &#34;&#34;&#34;Get the PostgreSQL server version for this instance.
 
-            Return Type: str
+        Returns:
+            The version of the PostgreSQL server as a string.
 
         &#34;&#34;&#34;
         if self._properties.get(&#39;version&#39;):
@@ -1002,21 +1061,23 @@ instance of the Agent class</p>
             &#34;Could not fetch postgres version.&#34;)
 
     @property
-    def archive_delete(self):
-        &#34;&#34;&#34;Returns True if archive delete enabled. False if not
+    def archive_delete(self) -&gt; bool:
+        &#34;&#34;&#34;Check if archive delete is enabled for the PostgreSQL instance.
 
-            Return Type: bool
+        Returns:
+            True if archive delete is enabled; False otherwise.
 
         &#34;&#34;&#34;
         return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;ArchiveDelete&#39;, False)
 
     @archive_delete.setter
-    def archive_delete(self, value):
-        &#34;&#34;&#34; Setter for archive delete instance property
+    def archive_delete(self, value: bool) -&gt; None:
+        &#34;&#34;&#34;Set the archive delete property for the PostgreSQL instance.
 
-            Args:
+        This setter enables or disables the archive delete feature for the instance.
 
-                value (bool)  -- True to enable archive delete
+        Args:
+            value: Set to True to enable archive delete, or False to disable it.
 
         &#34;&#34;&#34;
         if not isinstance(value, bool):
@@ -1026,56 +1087,59 @@ instance of the Agent class</p>
         self.update_properties(properties)
 
     @property
-    def standby_instance_name(self):
-        &#34;&#34;&#34;Returns the standby instance name
+    def standby_instance_name(self) -&gt; Optional[str]:
+        &#34;&#34;&#34;Get the name of the standby PostgreSQL instance.
 
-            Return Type: str
-
-        &#34;&#34;&#34;
-        if self.is_standby_enabled:
-            return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;standbyOptions&#39;, {}).get(&#39;standbyInstance&#39;,
-                                                                                                {}).get(&#39;instanceName&#39;,
-                                                                                                        &#34;&#34;)
-        return None
-
-    @property
-    def standby_instance_id(self):
-        &#34;&#34;&#34;Returns the standby instance id
-
-            Return Type: str
+        Returns:
+            The name of the standby instance as a string.
 
         &#34;&#34;&#34;
         if self.is_standby_enabled:
-            return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;standbyOptions&#39;, {}).get(&#39;standbyInstance&#39;,
-                                                                                                {}).get(&#39;instanceId&#39;,
-                                                                                                        &#34;&#34;)
+            return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(
+                &#39;standbyOptions&#39;, {}).get(&#39;standbyInstance&#39;, {}).get(&#39;instanceName&#39;, &#34;&#34;)
+
         return None
 
     @property
-    def is_standby_enabled(self):
-        &#34;&#34;&#34;Returns True if standby enabled. False if not
+    def standby_instance_id(self) -&gt; Optional[str]:
+        &#34;&#34;&#34;Get the standby instance ID for the PostgreSQL instance.
 
-            Return Type: bool
+        Returns:
+            The standby instance ID as a string.
+
+        &#34;&#34;&#34;
+        if self.is_standby_enabled:
+            return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(
+                &#39;standbyOptions&#39;, {}).get(&#39;standbyInstance&#39;, {}).get(&#39;instanceId&#39;, &#34;&#34;)
+
+        return None
+
+    @property
+    def is_standby_enabled(self) -&gt; bool:
+        &#34;&#34;&#34;Check if standby mode is enabled for the PostgreSQL instance.
+
+        Returns:
+            True if standby mode is enabled; False otherwise.
 
         &#34;&#34;&#34;
         return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;standbyOptions&#39;, {}).get(&#39;isStandbyEnabled&#39;, False)
 
     @property
-    def use_master_for_log_backup(self):
-        &#34;&#34;&#34; Returns True if master is used for log backup
+    def use_master_for_log_backup(self) -&gt; bool:
+        &#34;&#34;&#34;Indicate whether the master database is used for log backup operations.
 
-            Return Type: bool
+        Returns:
+            True if the master database is configured to be used for log backup; False otherwise.
 
         &#34;&#34;&#34;
         return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;standbyOptions&#39;, {}).get(&#39;useMasterForLogBkp&#39;, False)
 
     @use_master_for_log_backup.setter
-    def use_master_for_log_backup(self, value):
-        &#34;&#34;&#34; Setter for user master for log backup standby property
+    def use_master_for_log_backup(self, value: bool) -&gt; None:
+        &#34;&#34;&#34;Set whether to use the master server for log backup in standby mode.
 
-            Args:
-
-                value (bool)  -- True to use master for log backup
+        Args:
+            value: Set to True to enable using the master server for log backup; False to disable.
 
         &#34;&#34;&#34;
         if not isinstance(value, bool):
@@ -1085,22 +1149,22 @@ instance of the Agent class</p>
         self.update_properties(properties)
 
     @property
-    def use_master_for_data_backup(self):
-        &#34;&#34;&#34; Returns True if master is used for data backup
+    def use_master_for_data_backup(self) -&gt; bool:
+        &#34;&#34;&#34;Indicate whether the master server is used for data backup.
 
-            Return Type: bool
+        Returns:
+            True if the master server is configured to be used for data backup; otherwise, False.
 
         &#34;&#34;&#34;
-        return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;standbyOptions&#39;, {}).get(&#39;useMasterForDataBkp&#39;,
-                                                                                            False)
+        return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(
+            &#39;standbyOptions&#39;, {}).get(&#39;useMasterForDataBkp&#39;, False)
 
     @use_master_for_data_backup.setter
-    def use_master_for_data_backup(self, value):
-        &#34;&#34;&#34; Setter for user master for data backup standby property
+    def use_master_for_data_backup(self, value: bool) -&gt; None:
+        &#34;&#34;&#34;Set the property to use the master server for data backup in a PostgreSQL standby configuration.
 
-            Args:
-
-                value (bool)  -- True to use master for data backup
+        Args:
+            value: Set to True to enable using the master server for data backup; set to False to disable.
 
         &#34;&#34;&#34;
         if not isinstance(value, bool):
@@ -1110,31 +1174,50 @@ instance of the Agent class</p>
         self.update_properties(properties)
 
     @property
-    def postgres_ssl_status(self):
-        &#34;&#34;&#34;Returns True/False based on if ssl is enabled or not&#34;&#34;&#34;
+    def postgres_ssl_status(self) -&gt; bool:
+        &#34;&#34;&#34;Check whether SSL is enabled for the PostgreSQL instance.
+
+        Returns:
+            True if SSL is enabled for the PostgreSQL instance, False otherwise.
+
+        &#34;&#34;&#34;
         return self._properties.get(&#34;postGreSQLInstance&#34;, {}).get(&#34;sslOpt&#34;, {}).get(&#34;sslEnabled&#34;, False)
 
     @property
-    def postgres_ssl_ca_file(self):
-        &#34;&#34;&#34;Returns: str - ssl ca file path&#34;&#34;&#34;
+    def postgres_ssl_ca_file(self) -&gt; str:
+        &#34;&#34;&#34;Get the file path to the SSL CA certificate used by the PostgreSQL instance.
+
+        Returns:
+            The file path to the SSL CA (Certificate Authority) file as a string.
+
+        &#34;&#34;&#34;
         return self._properties.get(&#34;postGreSQLInstance&#34;, {}).get(&#34;sslOpt&#34;, {}).get(&#34;sslCa&#34;, &#34;&#34;)
 
     @property
-    def postgres_ssl_key_file(self):
-        &#34;&#34;&#34;Returns: str - ssl key file path&#34;&#34;&#34;
+    def postgres_ssl_key_file(self) -&gt; str:
+        &#34;&#34;&#34;Get the file path to the PostgreSQL SSL key file.
+
+        Returns:
+            The full path to the SSL key file used by the PostgreSQL instance.
+
+        &#34;&#34;&#34;
         return self._properties.get(&#34;postGreSQLInstance&#34;, {}).get(&#34;sslOpt&#34;, {}).get(&#34;sslKey&#34;, &#34;&#34;)
 
     @property
-    def postgres_ssl_cert_file(self):
-        &#34;&#34;&#34;Returns:str - ssl cert file path&#34;&#34;&#34;
+    def postgres_ssl_cert_file(self) -&gt; str:
+        &#34;&#34;&#34;Get the file path to the PostgreSQL SSL certificate.
+
+        Returns:
+            The file system path to the SSL certificate used by the PostgreSQL instance.
+
+        &#34;&#34;&#34;
         return self._properties.get(&#34;postGreSQLInstance&#34;, {}).get(&#34;sslOpt&#34;, {}).get(&#34;sslCert&#34;, &#34;&#34;)
 
-    def change_sa_password(self, value):
-        &#34;&#34;&#34; Changes postgresql user password
+    def change_sa_password(self, value: str) -&gt; None:
+        &#34;&#34;&#34;Change the password for the PostgreSQL user (SA user).
 
-            Args:
-
-                value (bool)  -- PostgreSQL password
+        Args:
+            value: The new password to set for the PostgreSQL user.
 
         &#34;&#34;&#34;
         if not isinstance(value, str):
@@ -1143,24 +1226,24 @@ instance of the Agent class</p>
         properties[&#39;postGreSQLInstance&#39;][&#39;SAUser&#39;][&#39;password&#39;] = b64encode(value.encode()).decode()
         self.update_properties(properties)
 
-    def _get_instance_properties(self):
-        &#34;&#34;&#34;Gets the properties of this instance.
+    def _get_instance_properties(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve and update the properties of this PostgreSQL instance.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        This method fetches the latest properties for the PostgreSQL instance from the Commcell
+        and updates the instance&#39;s internal state accordingly.
 
-                    if response is not success
+        Raises:
+            SDKException: If the response from the Commcell is empty or indicates a failure.
 
         &#34;&#34;&#34;
         super(PostgreSQLInstance, self)._get_instance_properties()
         self._postgresql_instance = self._properties[&#39;postGreSQLInstance&#39;]
 
-    def _get_instance_properties_json(self):
-        &#34;&#34;&#34; Gets all the instance related properties of PostgreSQL instance.
+    def _get_instance_properties_json(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve all properties related to the PostgreSQL instance as a dictionary.
 
-           Returns:
-                dict - all instance properties put inside a dict
+        Returns:
+            dict: A dictionary containing all instance properties for the PostgreSQL instance.
 
         &#34;&#34;&#34;
         instance_json = {
@@ -1172,14 +1255,18 @@ instance of the Agent class</p>
         }
         return instance_json
 
-    def _restore_json(self, **kwargs):
-        &#34;&#34;&#34;Returns the JSON request to pass to the API as per the options selected by the user.
+    def _restore_json(self, **kwargs) -&gt; dict:
+        &#34;&#34;&#34;Generate the JSON request payload for a restore operation based on user-selected options.
 
-            Args:
-                kwargs   (dict)  --  Dictionary of options need to be set for restore
+        This method constructs a dictionary representing the JSON request to be sent to the API,
+        using the provided keyword arguments to specify restore options.
 
-            Returns:
-                dict             -- JSON request to pass to the API
+        Args:
+            **kwargs: Arbitrary keyword arguments representing restore options. Each key-value pair
+                corresponds to a specific restore parameter required by the API.
+
+        Returns:
+            dict: The JSON request dictionary to be passed to the API for the restore operation.
 
         &#34;&#34;&#34;
         rest_json = super(PostgreSQLInstance, self)._restore_json(**kwargs)
@@ -1197,8 +1284,13 @@ instance of the Agent class</p>
             &#34;restoreOptions&#34;][&#34;postgresRstOption&#34;] = self.postgres_restore_json
         return rest_json
 
-    def _restore_common_options_json(self, value):
-        &#34;&#34;&#34;setter for  the Common options of in restore JSON&#34;&#34;&#34;
+    def _restore_common_options_json(self, value: dict) -&gt; None:
+        &#34;&#34;&#34;Set the common options section in the restore JSON configuration.
+
+        Args:
+            value: A dictionary containing the common options to be set in the restore JSON.
+
+        &#34;&#34;&#34;
         if not isinstance(value, dict):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
         super(PostgreSQLInstance, self)._restore_common_options_json(value)
@@ -1214,11 +1306,13 @@ instance of the Agent class</p>
                 &#34;syncRestore&#34;: value.get(&#34;sync_restore&#34;, True)
             }
 
-    def _restore_destination_json(self, value):
-        &#34;&#34;&#34;setter for the Destination options in restore JSON
+    def _restore_destination_json(self, value: dict) -&gt; None:
+        &#34;&#34;&#34;Set the destination options in the restore JSON configuration.
 
-            Args:
-                value   (dict)  --  Dictionary of options need to be set for restore
+        This method updates the restore JSON with the specified destination options.
+
+        Args:
+            value: Dictionary containing the destination options to be set for the restore operation.
 
         &#34;&#34;&#34;
 
@@ -1240,11 +1334,11 @@ instance of the Agent class</p>
                 }
             }
 
-    def _restore_postgres_option_json(self, value):
-        &#34;&#34;&#34;setter for the restore option in restore JSON
+    def _restore_postgres_option_json(self, value: dict) -&gt; None:
+        &#34;&#34;&#34;Set the restore options in the PostgreSQL restore JSON.
 
-            Args:
-                value   (dict)  --  Dictionary of options need to be set for restore
+        Args:
+            value: Dictionary containing the options to be set for the restore operation.
 
         &#34;&#34;&#34;
 
@@ -1287,142 +1381,75 @@ instance of the Agent class</p>
             self.postgres_restore_json[&#34;fsBackupSetRestore&#34;] = False
 
     def restore_in_place(
-            self,
-            path,
-            dest_client_name,
-            dest_instance_name,
-            backupset_name,
-            backupset_flag,
-            overwrite=True,
-            copy_precedence=None,
-            from_time=None,
-            to_time=None,
-            clone_env=False,
-            clone_options=None,
-            media_agent=None,
-            table_level_restore=False,
-            staging_path=None,
-            no_of_streams=None,
-            volume_level_restore=False,
-            redirect_enabled=False,
-            redirect_path=None,
-            restore_to_disk=False,
-            restore_to_disk_job=None,
-            destination_path=None,
-            revert=False):
-        &#34;&#34;&#34;Restores the postgres data/log files specified in the input paths
-        list to the same location.
+        self,
+        path: list,
+        dest_client_name: str,
+        dest_instance_name: str,
+        backupset_name: str,
+        backupset_flag: bool,
+        overwrite: bool = True,
+        copy_precedence: int = None,
+        from_time: str = None,
+        to_time: str = None,
+        clone_env: bool = False,
+        clone_options: dict = None,
+        media_agent: str = None,
+        table_level_restore: bool = False,
+        staging_path: str = None,
+        no_of_streams: int = None,
+        volume_level_restore: bool = False,
+        redirect_enabled: bool = False,
+        redirect_path: str = None,
+        restore_to_disk: bool = False,
+        restore_to_disk_job: int = None,
+        destination_path: str = None,
+        revert: bool = False
+    ) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;Restore PostgreSQL data or log files in place to their original location.
 
-            Args:
-                path                    (list)  --  list of database/databases to be restored
+        This method restores the specified PostgreSQL databases or files to the same location on the destination client and instance.
+        It supports various restore options such as cloning, table-level restore, volume-level restore, redirect restore, and restore to disk.
 
-                dest_client_name        (str)   --  destination client name where files are to be
-                restored
+        Args:
+            path: List of database names or file paths to be restored.
+            dest_client_name: Name of the destination client where the data will be restored.
+            dest_instance_name: Name of the destination PostgreSQL instance.
+            backupset_name: Name of the backupset to restore from.
+            backupset_flag: Flag indicating if the backup is file system-based.
+            overwrite: If True, files will be unconditionally overwritten during restore. Default is True.
+            copy_precedence: Copy precedence value of the storage policy copy. Default is None.
+            from_time: Restore data backed up after this time (format: &#39;YYYY-MM-DD HH:MM:SS&#39;). Default is None.
+            to_time: Restore data backed up before this time (format: &#39;YYYY-MM-DD HH:MM:SS&#39;). Default is None.
+            clone_env: If True, the database will be cloned. Default is False.
+            clone_options: Dictionary of clone restore options. Example:
+                {
+                    &#34;stagingLocaion&#34;: &#34;/gk_snap&#34;,
+                    &#34;forceCleanup&#34;: True,
+                    &#34;port&#34;: &#34;5595&#34;,
+                    &#34;libDirectory&#34;: &#34;/opt/PostgreSQL/9.6/lib&#34;,
+                    &#34;isInstanceSelected&#34;: True,
+                    &#34;reservationPeriodS&#34;: 3600,
+                    &#34;user&#34;: &#34;postgres&#34;,
+                    &#34;binaryDirectory&#34;: &#34;/opt/PostgreSQL/9.6/bin&#34;
+                }
+                Default is None.
+            media_agent: Name of the media agent to use for the restore. Default is None.
+            table_level_restore: If True, perform a table-level restore. Default is False.
+            staging_path: Staging path location for table-level restore. Default is None.
+            no_of_streams: Number of streams to use for volume-level restore. Default is None.
+            volume_level_restore: If True, perform a volume-level restore. Default is False.
+            redirect_enabled: If True, enable redirect restore. Default is False.
+            redirect_path: Path to redirect the restore to. Default is None.
+            restore_to_disk: If True, restore to disk instead of the original location. Default is False.
+            restore_to_disk_job: Backup job ID to restore to disk. Default is None.
+            destination_path: Destination path for the restore. Default is None.
+            revert: If True, perform a hardware revert during restore. Default is False.
 
-                dest_instance_name      (str)   --  destination postgres instance name of
-                destination client
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                backupset_name          (str)   --  destination postgres backupset name of
-                destination client
-
-                backupset_flag          (bool)  --  flag to indicate fsbased backup
-
-                overwrite               (bool)  --  unconditional overwrite files during restore
-                    default: True
-
-                copy_precedence         (int)   --  copy precedence value of storage policy copy
-                    default: None
-
-                from_time               (str)   --  time to retore the contents after
-                    format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                to_time                 (str)   --  time to retore the contents before
-                    format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                clone_env               (bool)  --  boolean to specify whether the database
-                should be cloned or not
-
-                    default: False
-
-                clone_options           (dict)  --  clone restore options passed in a dict
-
-                    default: None
-
-                    Accepted format: {
-                                        &#34;stagingLocaion&#34;: &#34;/gk_snap&#34;,
-                                        &#34;forceCleanup&#34;: True,
-                                        &#34;port&#34;: &#34;5595&#34;,
-                                        &#34;libDirectory&#34;: &#34;/opt/PostgreSQL/9.6/lib&#34;,
-                                        &#34;isInstanceSelected&#34;: True,
-                                        &#34;reservationPeriodS&#34;: 3600,
-                                        &#34;user&#34;: &#34;postgres&#34;,
-                                        &#34;binaryDirectory&#34;: &#34;/opt/PostgreSQL/9.6/bin&#34;
-                                     }
-
-                media_agent             (str)   --  media agent name
-
-                    default: None
-
-                table_level_restore     (bool)  --  boolean to specify if the restore operation
-                is table level
-
-                    default: False
-
-                staging_path            (str)   --  staging path location for table level restore
-
-                    default: None
-
-                no_of_streams           (int)   --  number of streams to be used by
-                volume level restore
-
-                    default: None
-
-                volume_level_restore    (bool)  --  volume level restore flag
-
-                    default: False
-
-                redirect_enabled         (bool)  --  boolean to specify if redirect restore is
-                enabled
-
-                    default: False
-
-                redirect_path           (str)   --  Path specified in advanced restore options
-                in order to perform redirect restore
-
-                    default: None
-
-                restore_to_disk         (bool)  --  restore to disk flag
-
-                    default: False
-
-                restore_to_disk_job     (int)   --  backup job id to restore to disk
-
-                    default: None
-
-                destination_path        (str)   --  destinath path for restore
-
-                    default: None
-
-                revert                  (bool)  --  boolean to specify whether to do a
-                                                    hardware revert in restore
-                    default: False
-
-            Returns:
-                object - instance of the Job class for this restore job
-
-            Raises:
-                SDKException:
-                    if paths is not a list
-
-                    if failed to initialize job
-
-                    if response is empty
-
-                    if response is not success
+        Raises:
+            SDKException: If the path is not a list, if the job fails to initialize, if the response is empty, or if the response is not successful.
 
         &#34;&#34;&#34;
         if not (isinstance(path, list) and
@@ -1482,78 +1509,89 @@ instance of the Agent class</p>
 </ul>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.archive_delete"><code class="name">var <span class="ident">archive_delete</span></code></dt>
+<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.archive_delete"><code class="name">var <span class="ident">archive_delete</span> : bool</code></dt>
 <dd>
-<div class="desc"><p>Returns True if archive delete enabled. False if not</p>
-<p>Return Type: bool</p></div>
+<div class="desc"><p>Check if archive delete is enabled for the PostgreSQL instance.</p>
+<p>Returns
+-----=
+True if archive delete is enabled; False otherwise.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/postgresinstance.py#L253-L260" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/postgresinstance.py#L301-L310" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def archive_delete(self):
-    &#34;&#34;&#34;Returns True if archive delete enabled. False if not
+def archive_delete(self) -&gt; bool:
+    &#34;&#34;&#34;Check if archive delete is enabled for the PostgreSQL instance.
 
-        Return Type: bool
+    Returns:
+        True if archive delete is enabled; False otherwise.
 
     &#34;&#34;&#34;
     return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;ArchiveDelete&#39;, False)</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.is_standby_enabled"><code class="name">var <span class="ident">is_standby_enabled</span></code></dt>
+<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.is_standby_enabled"><code class="name">var <span class="ident">is_standby_enabled</span> : bool</code></dt>
 <dd>
-<div class="desc"><p>Returns True if standby enabled. False if not</p>
-<p>Return Type: bool</p></div>
+<div class="desc"><p>Check if standby mode is enabled for the PostgreSQL instance.</p>
+<p>Returns
+-----=
+True if standby mode is enabled; False otherwise.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/postgresinstance.py#L303-L310" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/postgresinstance.py#L359-L368" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def is_standby_enabled(self):
-    &#34;&#34;&#34;Returns True if standby enabled. False if not
+def is_standby_enabled(self) -&gt; bool:
+    &#34;&#34;&#34;Check if standby mode is enabled for the PostgreSQL instance.
 
-        Return Type: bool
+    Returns:
+        True if standby mode is enabled; False otherwise.
 
     &#34;&#34;&#34;
     return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;standbyOptions&#39;, {}).get(&#39;isStandbyEnabled&#39;, False)</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.log_storage_policy"><code class="name">var <span class="ident">log_storage_policy</span></code></dt>
+<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.log_storage_policy"><code class="name">var <span class="ident">log_storage_policy</span> : Optional[str]</code></dt>
 <dd>
-<div class="desc"><p>Returns the log storage policy for the instance</p>
-<p>Return Type: str
-Default: None</p></div>
+<div class="desc"><p>Get the log storage policy associated with this PostgreSQL instance.</p>
+<p>Returns
+-----=
+The name of the log storage policy as a string, or None if no policy is set.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/postgresinstance.py#L169-L176" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/postgresinstance.py#L207-L216" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def log_storage_policy(self):
-    &#34;&#34;&#34;Returns the log storage policy for the instance
+def log_storage_policy(self) -&gt; Optional[str]:
+    &#34;&#34;&#34;Get the log storage policy associated with this PostgreSQL instance.
 
-        Return Type: str
-                    Default: None
+    Returns:
+        The name of the log storage policy as a string, or None if no policy is set.
+
     &#34;&#34;&#34;
     return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;logStoragePolicy&#39;, {}).get(&#39;storagePolicyName&#39;, None)</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.maintenance_database"><code class="name">var <span class="ident">maintenance_database</span></code></dt>
+<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.maintenance_database"><code class="name">var <span class="ident">maintenance_database</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the maintenance database associated with postgres server</p>
-<p>Return Type: str</p></div>
+<div class="desc"><p>Get the maintenance database associated with the PostgreSQL server.</p>
+<p>Returns
+-----=
+The name of the maintenance database as a string.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/postgresinstance.py#L225-L237" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/postgresinstance.py#L269-L283" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def maintenance_database(self):
-    &#34;&#34;&#34;Returns the maintenance database associated with postgres server
+def maintenance_database(self) -&gt; str:
+    &#34;&#34;&#34;Get the maintenance database associated with the PostgreSQL server.
 
-        Return Type: str
+    Returns:
+        The name of the maintenance database as a string.
 
     &#34;&#34;&#34;
     if self._properties[&#39;postGreSQLInstance&#39;].get(&#39;MaintainenceDB&#39;):
@@ -1564,20 +1602,23 @@ def maintenance_database(self):
         &#34;Could not fetch maintenance database.&#34;)</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_archive_log_directory"><code class="name">var <span class="ident">postgres_archive_log_directory</span></code></dt>
+<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_archive_log_directory"><code class="name">var <span class="ident">postgres_archive_log_directory</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the archive log directory of postgres server</p>
-<p>Return Type: str</p></div>
+<div class="desc"><p>Get the archive log directory path of the PostgreSQL server.</p>
+<p>Returns
+-----=
+The file system path to the PostgreSQL server's archive log directory as a string.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/postgresinstance.py#L155-L167" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/postgresinstance.py#L191-L205" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def postgres_archive_log_directory(self):
-    &#34;&#34;&#34;Returns the archive log directory of postgres server
+def postgres_archive_log_directory(self) -&gt; str:
+    &#34;&#34;&#34;Get the archive log directory path of the PostgreSQL server.
 
-        Return Type: str
+    Returns:
+        The file system path to the PostgreSQL server&#39;s archive log directory as a string.
 
     &#34;&#34;&#34;
     if self._properties[&#39;postGreSQLInstance&#39;][&#39;ArchiveLogDirectory&#39;]:
@@ -1588,20 +1629,23 @@ def postgres_archive_log_directory(self):
         &#34;Could not fetch the Archive log directory.&#34;)</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_bin_directory"><code class="name">var <span class="ident">postgres_bin_directory</span></code></dt>
+<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_bin_directory"><code class="name">var <span class="ident">postgres_bin_directory</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the bin directory of postgres server</p>
-<p>Return Type: str</p></div>
+<div class="desc"><p>Get the bin directory path of the PostgreSQL server.</p>
+<p>Returns
+-----=
+The absolute path to the PostgreSQL server's bin directory as a string.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/postgresinstance.py#L127-L139" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/postgresinstance.py#L159-L173" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def postgres_bin_directory(self):
-    &#34;&#34;&#34;Returns the bin directory of postgres server
+def postgres_bin_directory(self) -&gt; str:
+    &#34;&#34;&#34;Get the bin directory path of the PostgreSQL server.
 
-        Return Type: str
+    Returns:
+        The absolute path to the PostgreSQL server&#39;s bin directory as a string.
 
     &#34;&#34;&#34;
     if self._properties[&#39;postGreSQLInstance&#39;][&#39;BinaryDirectory&#39;]:
@@ -1612,20 +1656,23 @@ def postgres_bin_directory(self):
         &#34;Could not fetch the Binary directory.&#34;)</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_lib_directory"><code class="name">var <span class="ident">postgres_lib_directory</span></code></dt>
+<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_lib_directory"><code class="name">var <span class="ident">postgres_lib_directory</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the lib directory of postgres server</p>
-<p>Return Type: str</p></div>
+<div class="desc"><p>Get the library directory path of the PostgreSQL server.</p>
+<p>Returns
+-----=
+The absolute path to the PostgreSQL server's library (lib) directory as a string.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/postgresinstance.py#L141-L153" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/postgresinstance.py#L175-L189" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def postgres_lib_directory(self):
-    &#34;&#34;&#34;Returns the lib directory of postgres server
+def postgres_lib_directory(self) -&gt; str:
+    &#34;&#34;&#34;Get the library directory path of the PostgreSQL server.
 
-        Return Type: str
+    Returns:
+        The absolute path to the PostgreSQL server&#39;s library (lib) directory as a string.
 
     &#34;&#34;&#34;
     if self._properties[&#39;postGreSQLInstance&#39;][&#39;LibDirectory&#39;]:
@@ -1636,20 +1683,23 @@ def postgres_lib_directory(self):
         &#34;Could not fetch the Lib directory.&#34;)</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_server_port_number"><code class="name">var <span class="ident">postgres_server_port_number</span></code></dt>
+<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_server_port_number"><code class="name">var <span class="ident">postgres_server_port_number</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the port number associated with postgres server</p>
-<p>Return Type: str</p></div>
+<div class="desc"><p>Get the port number associated with the PostgreSQL server.</p>
+<p>Returns
+-----=
+The port number used by the PostgreSQL server as a string.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/postgresinstance.py#L211-L223" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/postgresinstance.py#L253-L267" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def postgres_server_port_number(self):
-    &#34;&#34;&#34;Returns the port number associated with postgres server
+def postgres_server_port_number(self) -&gt; str:
+    &#34;&#34;&#34;Get the port number associated with the PostgreSQL server.
 
-        Return Type: str
+    Returns:
+        The port number used by the PostgreSQL server as a string.
 
     &#34;&#34;&#34;
     if self._properties[&#39;postGreSQLInstance&#39;][&#39;port&#39;]:
@@ -1660,24 +1710,27 @@ def postgres_server_port_number(self):
         &#34;Could not fetch the port Number.&#34;)</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_server_user_name"><code class="name">var <span class="ident">postgres_server_user_name</span></code></dt>
+<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_server_user_name"><code class="name">var <span class="ident">postgres_server_user_name</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the username of postgres server</p>
-<p>Return Type: str</p></div>
+<div class="desc"><p>Get the username of the PostgreSQL server.</p>
+<p>Returns
+-----=
+The username used to connect to the PostgreSQL server as a string.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/postgresinstance.py#L194-L209" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/postgresinstance.py#L234-L251" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def postgres_server_user_name(self):
-    &#34;&#34;&#34;Returns the username of postgres server
+def postgres_server_user_name(self) -&gt; str:
+    &#34;&#34;&#34;Get the username of the PostgreSQL server.
 
-        Return Type: str
+    Returns:
+        The username used to connect to the PostgreSQL server as a string.
 
     &#34;&#34;&#34;
     if self.credentials:
-        return self._commcell_object.credentials.get(self.credentials).credential_user_name
+        return self._commcell_object.credentials.get(self.credentials)._credential_properties.get(&#34;userName&#34;)
     else:
         if self._properties[&#39;postGreSQLInstance&#39;][&#39;SAUser&#39;][&#39;userName&#39;]:
             return self._properties[&#39;postGreSQLInstance&#39;][&#39;SAUser&#39;][&#39;userName&#39;]
@@ -1687,76 +1740,111 @@ def postgres_server_user_name(self):
         &#34;Could not fetch the Server name.&#34;)</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_ssl_ca_file"><code class="name">var <span class="ident">postgres_ssl_ca_file</span></code></dt>
+<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_ssl_ca_file"><code class="name">var <span class="ident">postgres_ssl_ca_file</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns: str - ssl ca file path</p></div>
+<div class="desc"><p>Get the file path to the SSL CA certificate used by the PostgreSQL instance.</p>
+<p>Returns
+-----=
+The file path to the SSL CA (Certificate Authority) file as a string.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/postgresinstance.py#L366-L369" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/postgresinstance.py#L434-L443" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def postgres_ssl_ca_file(self):
-    &#34;&#34;&#34;Returns: str - ssl ca file path&#34;&#34;&#34;
+def postgres_ssl_ca_file(self) -&gt; str:
+    &#34;&#34;&#34;Get the file path to the SSL CA certificate used by the PostgreSQL instance.
+
+    Returns:
+        The file path to the SSL CA (Certificate Authority) file as a string.
+
+    &#34;&#34;&#34;
     return self._properties.get(&#34;postGreSQLInstance&#34;, {}).get(&#34;sslOpt&#34;, {}).get(&#34;sslCa&#34;, &#34;&#34;)</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_ssl_cert_file"><code class="name">var <span class="ident">postgres_ssl_cert_file</span></code></dt>
+<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_ssl_cert_file"><code class="name">var <span class="ident">postgres_ssl_cert_file</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns:str - ssl cert file path</p></div>
+<div class="desc"><p>Get the file path to the PostgreSQL SSL certificate.</p>
+<p>Returns
+-----=
+The file system path to the SSL certificate used by the PostgreSQL instance.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/postgresinstance.py#L376-L379" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/postgresinstance.py#L456-L465" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def postgres_ssl_cert_file(self):
-    &#34;&#34;&#34;Returns:str - ssl cert file path&#34;&#34;&#34;
+def postgres_ssl_cert_file(self) -&gt; str:
+    &#34;&#34;&#34;Get the file path to the PostgreSQL SSL certificate.
+
+    Returns:
+        The file system path to the SSL certificate used by the PostgreSQL instance.
+
+    &#34;&#34;&#34;
     return self._properties.get(&#34;postGreSQLInstance&#34;, {}).get(&#34;sslOpt&#34;, {}).get(&#34;sslCert&#34;, &#34;&#34;)</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_ssl_key_file"><code class="name">var <span class="ident">postgres_ssl_key_file</span></code></dt>
+<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_ssl_key_file"><code class="name">var <span class="ident">postgres_ssl_key_file</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns: str - ssl key file path</p></div>
+<div class="desc"><p>Get the file path to the PostgreSQL SSL key file.</p>
+<p>Returns
+-----=
+The full path to the SSL key file used by the PostgreSQL instance.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/postgresinstance.py#L371-L374" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/postgresinstance.py#L445-L454" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def postgres_ssl_key_file(self):
-    &#34;&#34;&#34;Returns: str - ssl key file path&#34;&#34;&#34;
+def postgres_ssl_key_file(self) -&gt; str:
+    &#34;&#34;&#34;Get the file path to the PostgreSQL SSL key file.
+
+    Returns:
+        The full path to the SSL key file used by the PostgreSQL instance.
+
+    &#34;&#34;&#34;
     return self._properties.get(&#34;postGreSQLInstance&#34;, {}).get(&#34;sslOpt&#34;, {}).get(&#34;sslKey&#34;, &#34;&#34;)</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_ssl_status"><code class="name">var <span class="ident">postgres_ssl_status</span></code></dt>
+<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_ssl_status"><code class="name">var <span class="ident">postgres_ssl_status</span> : bool</code></dt>
 <dd>
-<div class="desc"><p>Returns True/False based on if ssl is enabled or not</p></div>
+<div class="desc"><p>Check whether SSL is enabled for the PostgreSQL instance.</p>
+<p>Returns
+-----=
+True if SSL is enabled for the PostgreSQL instance, False otherwise.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/postgresinstance.py#L361-L364" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/postgresinstance.py#L423-L432" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def postgres_ssl_status(self):
-    &#34;&#34;&#34;Returns True/False based on if ssl is enabled or not&#34;&#34;&#34;
+def postgres_ssl_status(self) -&gt; bool:
+    &#34;&#34;&#34;Check whether SSL is enabled for the PostgreSQL instance.
+
+    Returns:
+        True if SSL is enabled for the PostgreSQL instance, False otherwise.
+
+    &#34;&#34;&#34;
     return self._properties.get(&#34;postGreSQLInstance&#34;, {}).get(&#34;sslOpt&#34;, {}).get(&#34;sslEnabled&#34;, False)</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_version"><code class="name">var <span class="ident">postgres_version</span></code></dt>
+<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.postgres_version"><code class="name">var <span class="ident">postgres_version</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the postgres server version</p>
-<p>Return Type: str</p></div>
+<div class="desc"><p>Get the PostgreSQL server version for this instance.</p>
+<p>Returns
+-----=
+The version of the PostgreSQL server as a string.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/postgresinstance.py#L239-L251" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/postgresinstance.py#L285-L299" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def postgres_version(self):
-    &#34;&#34;&#34;Returns the postgres server version
+def postgres_version(self) -&gt; str:
+    &#34;&#34;&#34;Get the PostgreSQL server version for this instance.
 
-        Return Type: str
+    Returns:
+        The version of the PostgreSQL server as a string.
 
     &#34;&#34;&#34;
     if self._properties.get(&#39;version&#39;):
@@ -1767,86 +1855,98 @@ def postgres_version(self):
         &#34;Could not fetch postgres version.&#34;)</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.standby_instance_id"><code class="name">var <span class="ident">standby_instance_id</span></code></dt>
+<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.standby_instance_id"><code class="name">var <span class="ident">standby_instance_id</span> : Optional[str]</code></dt>
 <dd>
-<div class="desc"><p>Returns the standby instance id</p>
-<p>Return Type: str</p></div>
+<div class="desc"><p>Get the standby instance ID for the PostgreSQL instance.</p>
+<p>Returns
+-----=
+The standby instance ID as a string.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/postgresinstance.py#L290-L301" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/postgresinstance.py#L344-L357" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def standby_instance_id(self):
-    &#34;&#34;&#34;Returns the standby instance id
+def standby_instance_id(self) -&gt; Optional[str]:
+    &#34;&#34;&#34;Get the standby instance ID for the PostgreSQL instance.
 
-        Return Type: str
+    Returns:
+        The standby instance ID as a string.
 
     &#34;&#34;&#34;
     if self.is_standby_enabled:
-        return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;standbyOptions&#39;, {}).get(&#39;standbyInstance&#39;,
-                                                                                            {}).get(&#39;instanceId&#39;,
-                                                                                                    &#34;&#34;)
+        return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(
+            &#39;standbyOptions&#39;, {}).get(&#39;standbyInstance&#39;, {}).get(&#39;instanceId&#39;, &#34;&#34;)
+
     return None</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.standby_instance_name"><code class="name">var <span class="ident">standby_instance_name</span></code></dt>
+<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.standby_instance_name"><code class="name">var <span class="ident">standby_instance_name</span> : Optional[str]</code></dt>
 <dd>
-<div class="desc"><p>Returns the standby instance name</p>
-<p>Return Type: str</p></div>
+<div class="desc"><p>Get the name of the standby PostgreSQL instance.</p>
+<p>Returns
+-----=
+The name of the standby instance as a string.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/postgresinstance.py#L277-L288" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/postgresinstance.py#L329-L342" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def standby_instance_name(self):
-    &#34;&#34;&#34;Returns the standby instance name
+def standby_instance_name(self) -&gt; Optional[str]:
+    &#34;&#34;&#34;Get the name of the standby PostgreSQL instance.
 
-        Return Type: str
+    Returns:
+        The name of the standby instance as a string.
 
     &#34;&#34;&#34;
     if self.is_standby_enabled:
-        return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;standbyOptions&#39;, {}).get(&#39;standbyInstance&#39;,
-                                                                                            {}).get(&#39;instanceName&#39;,
-                                                                                                    &#34;&#34;)
+        return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(
+            &#39;standbyOptions&#39;, {}).get(&#39;standbyInstance&#39;, {}).get(&#39;instanceName&#39;, &#34;&#34;)
+
     return None</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.use_master_for_data_backup"><code class="name">var <span class="ident">use_master_for_data_backup</span></code></dt>
+<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.use_master_for_data_backup"><code class="name">var <span class="ident">use_master_for_data_backup</span> : bool</code></dt>
 <dd>
-<div class="desc"><p>Returns True if master is used for data backup</p>
-<p>Return Type: bool</p></div>
+<div class="desc"><p>Indicate whether the master server is used for data backup.</p>
+<p>Returns
+-----=
+True if the master server is configured to be used for data backup; otherwise, False.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/postgresinstance.py#L336-L344" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/postgresinstance.py#L396-L406" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def use_master_for_data_backup(self):
-    &#34;&#34;&#34; Returns True if master is used for data backup
+def use_master_for_data_backup(self) -&gt; bool:
+    &#34;&#34;&#34;Indicate whether the master server is used for data backup.
 
-        Return Type: bool
+    Returns:
+        True if the master server is configured to be used for data backup; otherwise, False.
 
     &#34;&#34;&#34;
-    return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;standbyOptions&#39;, {}).get(&#39;useMasterForDataBkp&#39;,
-                                                                                        False)</code></pre>
+    return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(
+        &#39;standbyOptions&#39;, {}).get(&#39;useMasterForDataBkp&#39;, False)</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.use_master_for_log_backup"><code class="name">var <span class="ident">use_master_for_log_backup</span></code></dt>
+<dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.use_master_for_log_backup"><code class="name">var <span class="ident">use_master_for_log_backup</span> : bool</code></dt>
 <dd>
-<div class="desc"><p>Returns True if master is used for log backup</p>
-<p>Return Type: bool</p></div>
+<div class="desc"><p>Indicate whether the master database is used for log backup operations.</p>
+<p>Returns
+-----=
+True if the master database is configured to be used for log backup; False otherwise.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/postgresinstance.py#L312-L319" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/postgresinstance.py#L370-L379" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def use_master_for_log_backup(self):
-    &#34;&#34;&#34; Returns True if master is used for log backup
+def use_master_for_log_backup(self) -&gt; bool:
+    &#34;&#34;&#34;Indicate whether the master database is used for log backup operations.
 
-        Return Type: bool
+    Returns:
+        True if the master database is configured to be used for log backup; False otherwise.
 
     &#34;&#34;&#34;
     return self._properties.get(&#39;postGreSQLInstance&#39;, {}).get(&#39;standbyOptions&#39;, {}).get(&#39;useMasterForLogBkp&#39;, False)</code></pre>
@@ -1856,24 +1956,26 @@ def use_master_for_log_backup(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.change_sa_password"><code class="name flex">
-<span>def <span class="ident">change_sa_password</span></span>(<span>self, value)</span>
+<span>def <span class="ident">change_sa_password</span></span>(<span>self, value: str) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Changes postgresql user password</p>
-<h2 id="args">Args</h2>
-<p>value (bool)
-&ndash; PostgreSQL password</p></div>
+<div class="desc"><p>Change the password for the PostgreSQL user (SA user).</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>value</code></strong></dt>
+<dd>The new password to set for the PostgreSQL user.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/postgresinstance.py#L381-L393" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/postgresinstance.py#L467-L479" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def change_sa_password(self, value):
-    &#34;&#34;&#34; Changes postgresql user password
+<pre><code class="python">def change_sa_password(self, value: str) -&gt; None:
+    &#34;&#34;&#34;Change the password for the PostgreSQL user (SA user).
 
-        Args:
-
-            value (bool)  -- PostgreSQL password
+    Args:
+        value: The new password to set for the PostgreSQL user.
 
     &#34;&#34;&#34;
     if not isinstance(value, str):
@@ -1884,264 +1986,154 @@ def use_master_for_log_backup(self):
 </details>
 </dd>
 <dt id="cvpysdk.instances.postgresinstance.PostgreSQLInstance.restore_in_place"><code class="name flex">
-<span>def <span class="ident">restore_in_place</span></span>(<span>self, path, dest_client_name, dest_instance_name, backupset_name, backupset_flag, overwrite=True, copy_precedence=None, from_time=None, to_time=None, clone_env=False, clone_options=None, media_agent=None, table_level_restore=False, staging_path=None, no_of_streams=None, volume_level_restore=False, redirect_enabled=False, redirect_path=None, restore_to_disk=False, restore_to_disk_job=None, destination_path=None, revert=False)</span>
+<span>def <span class="ident">restore_in_place</span></span>(<span>self, path: list, dest_client_name: str, dest_instance_name: str, backupset_name: str, backupset_flag: bool, overwrite: bool = True, copy_precedence: int = None, from_time: str = None, to_time: str = None, clone_env: bool = False, clone_options: dict = None, media_agent: str = None, table_level_restore: bool = False, staging_path: str = None, no_of_streams: int = None, volume_level_restore: bool = False, redirect_enabled: bool = False, redirect_path: str = None, restore_to_disk: bool = False, restore_to_disk_job: int = None, destination_path: str = None, revert: bool = False) ‑> <a title="cvpysdk.job.Job" href="../job.html#cvpysdk.job.Job">Job</a></span>
 </code></dt>
 <dd>
-<div class="desc"><p>Restores the postgres data/log files specified in the input paths
-list to the same location.</p>
-<pre><code>Args:
-    path                    (list)  --  list of database/databases to be restored
-
-    dest_client_name        (str)   --  destination client name where files are to be
-    restored
-
-    dest_instance_name      (str)   --  destination postgres instance name of
-    destination client
-
-    backupset_name          (str)   --  destination postgres backupset name of
-    destination client
-
-    backupset_flag          (bool)  --  flag to indicate fsbased backup
-
-    overwrite               (bool)  --  unconditional overwrite files during restore
-        default: True
-
-    copy_precedence         (int)   --  copy precedence value of storage policy copy
-        default: None
-
-    from_time               (str)   --  time to retore the contents after
-        format: YYYY-MM-DD HH:MM:SS
-
-        default: None
-
-    to_time                 (str)   --  time to retore the contents before
-        format: YYYY-MM-DD HH:MM:SS
-
-        default: None
-
-    clone_env               (bool)  --  boolean to specify whether the database
-    should be cloned or not
-
-        default: False
-
-    clone_options           (dict)  --  clone restore options passed in a dict
-
-        default: None
-
-        Accepted format: {
-                            "stagingLocaion": "/gk_snap",
-                            "forceCleanup": True,
-                            "port": "5595",
-                            "libDirectory": "/opt/PostgreSQL/9.6/lib",
-                            "isInstanceSelected": True,
-                            "reservationPeriodS": 3600,
-                            "user": "postgres",
-                            "binaryDirectory": "/opt/PostgreSQL/9.6/bin"
-                         }
-
-    media_agent             (str)   --  media agent name
-
-        default: None
-
-    table_level_restore     (bool)  --  boolean to specify if the restore operation
-    is table level
-
-        default: False
-
-    staging_path            (str)   --  staging path location for table level restore
-
-        default: None
-
-    no_of_streams           (int)   --  number of streams to be used by
-    volume level restore
-
-        default: None
-
-    volume_level_restore    (bool)  --  volume level restore flag
-
-        default: False
-
-    redirect_enabled         (bool)  --  boolean to specify if redirect restore is
-    enabled
-
-        default: False
-
-    redirect_path           (str)   --  Path specified in advanced restore options
-    in order to perform redirect restore
-
-        default: None
-
-    restore_to_disk         (bool)  --  restore to disk flag
-
-        default: False
-
-    restore_to_disk_job     (int)   --  backup job id to restore to disk
-
-        default: None
-
-    destination_path        (str)   --  destinath path for restore
-
-        default: None
-
-    revert                  (bool)  --  boolean to specify whether to do a
-                                        hardware revert in restore
-        default: False
-
-Returns:
-    object - instance of the Job class for this restore job
-
-Raises:
-    SDKException:
-        if paths is not a list
-
-        if failed to initialize job
-
-        if response is empty
-
-        if response is not success
-</code></pre></div>
+<div class="desc"><p>Restore PostgreSQL data or log files in place to their original location.</p>
+<p>This method restores the specified PostgreSQL databases or files to the same location on the destination client and instance.
+It supports various restore options such as cloning, table-level restore, volume-level restore, redirect restore, and restore to disk.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>path</code></strong></dt>
+<dd>List of database names or file paths to be restored.</dd>
+<dt><strong><code>dest_client_name</code></strong></dt>
+<dd>Name of the destination client where the data will be restored.</dd>
+<dt><strong><code>dest_instance_name</code></strong></dt>
+<dd>Name of the destination PostgreSQL instance.</dd>
+<dt><strong><code>backupset_name</code></strong></dt>
+<dd>Name of the backupset to restore from.</dd>
+<dt><strong><code>backupset_flag</code></strong></dt>
+<dd>Flag indicating if the backup is file system-based.</dd>
+<dt><strong><code>overwrite</code></strong></dt>
+<dd>If True, files will be unconditionally overwritten during restore. Default is True.</dd>
+<dt><strong><code>copy_precedence</code></strong></dt>
+<dd>Copy precedence value of the storage policy copy. Default is None.</dd>
+<dt><strong><code>from_time</code></strong></dt>
+<dd>Restore data backed up after this time (format: 'YYYY-MM-DD HH:MM:SS'). Default is None.</dd>
+<dt><strong><code>to_time</code></strong></dt>
+<dd>Restore data backed up before this time (format: 'YYYY-MM-DD HH:MM:SS'). Default is None.</dd>
+<dt><strong><code>clone_env</code></strong></dt>
+<dd>If True, the database will be cloned. Default is False.</dd>
+<dt><strong><code>clone_options</code></strong></dt>
+<dd>Dictionary of clone restore options. Example:
+{
+"stagingLocaion": "/gk_snap",
+"forceCleanup": True,
+"port": "5595",
+"libDirectory": "/opt/PostgreSQL/9.6/lib",
+"isInstanceSelected": True,
+"reservationPeriodS": 3600,
+"user": "postgres",
+"binaryDirectory": "/opt/PostgreSQL/9.6/bin"
+}
+Default is None.</dd>
+<dt><strong><code>media_agent</code></strong></dt>
+<dd>Name of the media agent to use for the restore. Default is None.</dd>
+<dt><strong><code>table_level_restore</code></strong></dt>
+<dd>If True, perform a table-level restore. Default is False.</dd>
+<dt><strong><code>staging_path</code></strong></dt>
+<dd>Staging path location for table-level restore. Default is None.</dd>
+<dt><strong><code>no_of_streams</code></strong></dt>
+<dd>Number of streams to use for volume-level restore. Default is None.</dd>
+<dt><strong><code>volume_level_restore</code></strong></dt>
+<dd>If True, perform a volume-level restore. Default is False.</dd>
+<dt><strong><code>redirect_enabled</code></strong></dt>
+<dd>If True, enable redirect restore. Default is False.</dd>
+<dt><strong><code>redirect_path</code></strong></dt>
+<dd>Path to redirect the restore to. Default is None.</dd>
+<dt><strong><code>restore_to_disk</code></strong></dt>
+<dd>If True, restore to disk instead of the original location. Default is False.</dd>
+<dt><strong><code>restore_to_disk_job</code></strong></dt>
+<dd>Backup job ID to restore to disk. Default is None.</dd>
+<dt><strong><code>destination_path</code></strong></dt>
+<dd>Destination path for the restore. Default is None.</dd>
+<dt><strong><code>revert</code></strong></dt>
+<dd>If True, perform a hardware revert during restore. Default is False.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Job</code></dt>
+<dd>An instance of the Job class representing the restore job.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the path is not a list, if the job fails to initialize, if the response is empty, or if the response is not successful.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/postgresinstance.py#L538-L726" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/postgresinstance.py#L641-L763" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_in_place(
-        self,
-        path,
-        dest_client_name,
-        dest_instance_name,
-        backupset_name,
-        backupset_flag,
-        overwrite=True,
-        copy_precedence=None,
-        from_time=None,
-        to_time=None,
-        clone_env=False,
-        clone_options=None,
-        media_agent=None,
-        table_level_restore=False,
-        staging_path=None,
-        no_of_streams=None,
-        volume_level_restore=False,
-        redirect_enabled=False,
-        redirect_path=None,
-        restore_to_disk=False,
-        restore_to_disk_job=None,
-        destination_path=None,
-        revert=False):
-    &#34;&#34;&#34;Restores the postgres data/log files specified in the input paths
-    list to the same location.
+    self,
+    path: list,
+    dest_client_name: str,
+    dest_instance_name: str,
+    backupset_name: str,
+    backupset_flag: bool,
+    overwrite: bool = True,
+    copy_precedence: int = None,
+    from_time: str = None,
+    to_time: str = None,
+    clone_env: bool = False,
+    clone_options: dict = None,
+    media_agent: str = None,
+    table_level_restore: bool = False,
+    staging_path: str = None,
+    no_of_streams: int = None,
+    volume_level_restore: bool = False,
+    redirect_enabled: bool = False,
+    redirect_path: str = None,
+    restore_to_disk: bool = False,
+    restore_to_disk_job: int = None,
+    destination_path: str = None,
+    revert: bool = False
+) -&gt; &#39;Job&#39;:
+    &#34;&#34;&#34;Restore PostgreSQL data or log files in place to their original location.
 
-        Args:
-            path                    (list)  --  list of database/databases to be restored
+    This method restores the specified PostgreSQL databases or files to the same location on the destination client and instance.
+    It supports various restore options such as cloning, table-level restore, volume-level restore, redirect restore, and restore to disk.
 
-            dest_client_name        (str)   --  destination client name where files are to be
-            restored
+    Args:
+        path: List of database names or file paths to be restored.
+        dest_client_name: Name of the destination client where the data will be restored.
+        dest_instance_name: Name of the destination PostgreSQL instance.
+        backupset_name: Name of the backupset to restore from.
+        backupset_flag: Flag indicating if the backup is file system-based.
+        overwrite: If True, files will be unconditionally overwritten during restore. Default is True.
+        copy_precedence: Copy precedence value of the storage policy copy. Default is None.
+        from_time: Restore data backed up after this time (format: &#39;YYYY-MM-DD HH:MM:SS&#39;). Default is None.
+        to_time: Restore data backed up before this time (format: &#39;YYYY-MM-DD HH:MM:SS&#39;). Default is None.
+        clone_env: If True, the database will be cloned. Default is False.
+        clone_options: Dictionary of clone restore options. Example:
+            {
+                &#34;stagingLocaion&#34;: &#34;/gk_snap&#34;,
+                &#34;forceCleanup&#34;: True,
+                &#34;port&#34;: &#34;5595&#34;,
+                &#34;libDirectory&#34;: &#34;/opt/PostgreSQL/9.6/lib&#34;,
+                &#34;isInstanceSelected&#34;: True,
+                &#34;reservationPeriodS&#34;: 3600,
+                &#34;user&#34;: &#34;postgres&#34;,
+                &#34;binaryDirectory&#34;: &#34;/opt/PostgreSQL/9.6/bin&#34;
+            }
+            Default is None.
+        media_agent: Name of the media agent to use for the restore. Default is None.
+        table_level_restore: If True, perform a table-level restore. Default is False.
+        staging_path: Staging path location for table-level restore. Default is None.
+        no_of_streams: Number of streams to use for volume-level restore. Default is None.
+        volume_level_restore: If True, perform a volume-level restore. Default is False.
+        redirect_enabled: If True, enable redirect restore. Default is False.
+        redirect_path: Path to redirect the restore to. Default is None.
+        restore_to_disk: If True, restore to disk instead of the original location. Default is False.
+        restore_to_disk_job: Backup job ID to restore to disk. Default is None.
+        destination_path: Destination path for the restore. Default is None.
+        revert: If True, perform a hardware revert during restore. Default is False.
 
-            dest_instance_name      (str)   --  destination postgres instance name of
-            destination client
+    Returns:
+        Job: An instance of the Job class representing the restore job.
 
-            backupset_name          (str)   --  destination postgres backupset name of
-            destination client
-
-            backupset_flag          (bool)  --  flag to indicate fsbased backup
-
-            overwrite               (bool)  --  unconditional overwrite files during restore
-                default: True
-
-            copy_precedence         (int)   --  copy precedence value of storage policy copy
-                default: None
-
-            from_time               (str)   --  time to retore the contents after
-                format: YYYY-MM-DD HH:MM:SS
-
-                default: None
-
-            to_time                 (str)   --  time to retore the contents before
-                format: YYYY-MM-DD HH:MM:SS
-
-                default: None
-
-            clone_env               (bool)  --  boolean to specify whether the database
-            should be cloned or not
-
-                default: False
-
-            clone_options           (dict)  --  clone restore options passed in a dict
-
-                default: None
-
-                Accepted format: {
-                                    &#34;stagingLocaion&#34;: &#34;/gk_snap&#34;,
-                                    &#34;forceCleanup&#34;: True,
-                                    &#34;port&#34;: &#34;5595&#34;,
-                                    &#34;libDirectory&#34;: &#34;/opt/PostgreSQL/9.6/lib&#34;,
-                                    &#34;isInstanceSelected&#34;: True,
-                                    &#34;reservationPeriodS&#34;: 3600,
-                                    &#34;user&#34;: &#34;postgres&#34;,
-                                    &#34;binaryDirectory&#34;: &#34;/opt/PostgreSQL/9.6/bin&#34;
-                                 }
-
-            media_agent             (str)   --  media agent name
-
-                default: None
-
-            table_level_restore     (bool)  --  boolean to specify if the restore operation
-            is table level
-
-                default: False
-
-            staging_path            (str)   --  staging path location for table level restore
-
-                default: None
-
-            no_of_streams           (int)   --  number of streams to be used by
-            volume level restore
-
-                default: None
-
-            volume_level_restore    (bool)  --  volume level restore flag
-
-                default: False
-
-            redirect_enabled         (bool)  --  boolean to specify if redirect restore is
-            enabled
-
-                default: False
-
-            redirect_path           (str)   --  Path specified in advanced restore options
-            in order to perform redirect restore
-
-                default: None
-
-            restore_to_disk         (bool)  --  restore to disk flag
-
-                default: False
-
-            restore_to_disk_job     (int)   --  backup job id to restore to disk
-
-                default: None
-
-            destination_path        (str)   --  destinath path for restore
-
-                default: None
-
-            revert                  (bool)  --  boolean to specify whether to do a
-                                                hardware revert in restore
-                default: False
-
-        Returns:
-            object - instance of the Job class for this restore job
-
-        Raises:
-            SDKException:
-                if paths is not a list
-
-                if failed to initialize job
-
-                if response is empty
-
-                if response is not success
+    Raises:
+        SDKException: If the path is not a list, if the job fails to initialize, if the response is empty, or if the response is not successful.
 
     &#34;&#34;&#34;
     if not (isinstance(path, list) and

@@ -25,7 +25,8 @@
 <section id="section-intro">
 <p>Main file for performing resource pool related operations on CS</p>
 <p>ResourcePools , ResourcePool and ResourcePoolTypes are the classes defined in this file</p>
-<h2 id="resourcepools">Resourcepools</h2>
+<p>Resourcepools
+-----=</p>
 <p><strong>init</strong>()
 &ndash;
 initialise object of the ResourcePools class</p>
@@ -46,10 +47,20 @@ deletes the resource pool from CS</p>
 <p>create()
 &ndash;
 creates resource pool in CS</p>
+<p>get_resource_pools_by_solution()
+&ndash;
+returns resource pools filtered by solution name</p>
+<p>get_resource_pools_by_region()
+&ndash;
+returns resource pools filtered by region name</p>
+<p>get_cleanroom_resource_pools()
+&ndash;
+returns all Cleanroom resource pools</p>
 <p>refresh()
 &ndash;
 Refreshes resource pools associated with cs</p>
-<h2 id="resourcepool">Resourcepool</h2>
+<p>Resourcepool
+-----=</p>
 <p><strong>init</strong>()
 &ndash;
 initialise object of the ResourcePool class</p>
@@ -66,11 +77,15 @@ refreshes resource pool details</p>
 <pre><code>**resource_pool_id**        --  returns Resource pool id
 
 **resource_pool_type**      --  returns ResourcePoolTypes enum
+
+**resource_pool_solution**  --  returns list of solutions associated with the resource pool
+
+**resource_pool_region**    --  returns region name for the resource pool
 </code></pre>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/resource_pool.py#L1-L394" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/resource_pool.py#L1-L629" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># Copyright Commvault Systems, Inc.
 #
@@ -107,6 +122,12 @@ ResourcePools:
 
         create()                            --  creates resource pool in CS
 
+        get_resource_pools_by_solution()    --  returns resource pools filtered by solution name
+
+        get_resource_pools_by_region()      --  returns resource pools filtered by region name
+
+        get_cleanroom_resource_pools()      --  returns all Cleanroom resource pools
+
         refresh()                           --  Refreshes resource pools associated with cs
 
 ResourcePool:
@@ -126,15 +147,36 @@ ResourcePool Attributes:
 
     **resource_pool_type**      --  returns ResourcePoolTypes enum
 
+    **resource_pool_solution**  --  returns list of solutions associated with the resource pool
+
+    **resource_pool_region**    --  returns region name for the resource pool
+
 &#34;&#34;&#34;
 
 from .exception import SDKException
 
 import enum
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    import requests
+    from cvpysdk.commcell import Commcell
+
 
 class ResourcePoolTypes(enum.Enum):
-    &#34;&#34;&#34;Enum class for different resource pool types&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Enumeration class representing different types of resource pools.
+
+    This enum is used to define and categorize various resource pool types
+    within the application, providing a clear and type-safe way to reference
+    specific pool categories throughout the codebase.
+
+    Key Features:
+        - Defines distinct resource pool types as enumeration members
+        - Ensures type safety and clarity when working with resource pools
+        - Facilitates consistent usage of resource pool identifiers
+
+    &#34;&#34;&#34;
     GENERIC = 0
     O365 = 1
     SALESFORCE = 2
@@ -157,25 +199,60 @@ class ResourcePoolTypes(enum.Enum):
     GOOGLE_DRIVE = 19
     GOOGLE_WORKSPACE = 20
     SERVICENOW = 21
-    THREATSCAN = 22
+    THREATINDICATOR = 22
     DEVOPS = 23
     RISK_ANALYSIS = 24
+    THREATSCAN = 25
     GOOGLE_CLOUD_PLATFORM = 50001
 
 
-class ResourcePools():
-    &#34;&#34;&#34;class to represent all pool in resource pool&#34;&#34;&#34;
+class ResourcePoolSolutions(enum.Enum):
+    &#34;&#34;&#34;
+    Enumeration class representing different solutions associated with resource pools.
 
-    def __init__(self, commcell_object):
-        &#34;&#34;&#34;Initializes an instance of the ResourcePools class.
+    This enum is used to define and categorize various solutions that resource pools may be associated with,
+    providing a clear and type-safe way to reference specific solution categories throughout the codebase.
 
-            Args:
+    Key Features:
+        - Defines distinct solution categories as enumeration members
+        - Ensures type safety and clarity when working with resource pool solutions
+        - Facilitates consistent usage of solution identifiers in relation to resource pools
 
-                commcell_object     (object)    --  instance of the commcell class
+    &#34;&#34;&#34;
+    CLEANROOM = 25
 
-            Returns:
 
-                object  -   instance of the ResourcePools class
+class ResourcePools:
+    &#34;&#34;&#34;
+    Class to manage and represent all resource pools within a system.
+
+    This class provides a comprehensive interface for interacting with resource pools,
+    including creation, deletion, retrieval, existence checks, and refreshing the pool list.
+    It also includes internal mechanisms for handling responses and fetching resource pool data.
+
+    Key Features:
+        - Initialize with a Commcell object for context
+        - Create new resource pools with specified names and types
+        - Delete existing resource pools by name
+        - Retrieve resource pool details by name
+        - Check for the existence of a resource pool
+        - Refresh the list of resource pools to reflect current state
+        - Internal handling of unsuccessful responses
+        - Internal retrieval of all resource pools
+
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_object: &#39;Commcell&#39;) -&gt; None:
+        &#34;&#34;&#34;Initialize a new instance of the ResourcePools class.
+
+        Args:
+            commcell_object: An instance of the Commcell class representing the active Commcell connection.
+
+        Example:
+            &gt;&gt;&gt; from cvpysdk.commcell import Commcell
+            &gt;&gt;&gt; commcell = Commcell(&#39;commcell_host&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; resource_pools = ResourcePools(commcell)
+            &gt;&gt;&gt; print(&#34;ResourcePools instance created successfully&#34;)
 
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
@@ -187,33 +264,27 @@ class ResourcePools():
         self._pools = {}
         self.refresh()
 
-    def _response_not_success(self, response):
-        &#34;&#34;&#34;Helper function to raise an exception when reponse status is not 200 (OK).
+    def _response_not_success(self, response: &#39;requests.Response&#39;) -&gt; None:
+        &#34;&#34;&#34;Raise an exception if the API response status is not 200 (OK).
 
-            Args:
-                response    (object)    --  response class object,
+        This helper function checks the status of the provided response object, typically
+        obtained from the `requests` Python package, and raises an exception if the status
+        code indicates a failure.
 
-                received upon running an API request, using the `requests` python package
+        Args:
+            response: The response object returned from an API request.
 
         &#34;&#34;&#34;
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
 
     def _get_resource_pools(self) -&gt; dict:
-        &#34;&#34;&#34;returns resource pools details from CS
+        &#34;&#34;&#34;Retrieve resource pool details from the CommServe (CS).
 
-                Args:
+        Returns:
+            dict: A dictionary containing details of all resource pools.
 
-                    None
-
-                Returns:
-
-                    dict       --  Resource pool details
-
-                Raises:
-
-                    SDKException:
-
-                        if failed to get resource pool details
+        Raises:
+            SDKException: If the resource pool details could not be retrieved.
 
         &#34;&#34;&#34;
         flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._API_GET_ALL_RESOURCE_POOLS)
@@ -229,40 +300,66 @@ class ResourcePools():
             return output
         self._response_not_success(response)
 
-    def create(self, name: str, resource_type, **kwargs):
-        &#34;&#34;&#34;creates resource pool in CS
+    def create(self, name: str, resource_type: &#39;ResourcePoolTypes&#39;, access_nodes: list, is_client_group: bool = True) -&gt; &#39;ResourcePool&#39;:
+        &#34;&#34;&#34;Create a new resource pool in the CommServe.
 
-            Args:
+        Args:
+            name: The name of the resource pool to create.
+            resource_type: The type of resource pool (appType 25 for Cleanroom).
+            access_nodes: List of client group names or client names to associate with the resource pool.
+            is_client_group: Flag to determine if access_nodes contains client groups (True) or clients (False).
+                            Default is True for client groups.
 
-                name    (str)           --  Resource pool name
+        Returns:
+            ResourcePool: An instance representing the newly created resource pool.
 
-                resource_type   (enum)  --  ResourcePoolTypes enum
+        Raises:
+            SDKException: If the resource pool creation fails or if a resource pool with the given name already exists.
 
-            kwargs options:
-
-                for Threat Scan -
-
-                    index_server    (str)   --  index server name
-
-            Returns:
-
-                obj --  Instance of ResourcePool class
-
-            Raises:
-
-                SDKException:
-
-                    if failed to create resource pool
-
-                    if resource pool already exists
+        Example:
+            &gt;&gt;&gt; # Create with client groups
+            &gt;&gt;&gt; pool = resource_pools.create(
+            ...     name=&#34;CleanroomPool&#34;,
+            ...     resource_type=ResourcePoolTypes(25),
+            ...     access_nodes=[&#34;AdminHyperVAWS&#34;],
+            ...     is_client_group=True
+            ... )
+            
+            &gt;&gt;&gt; # Create with clients
+            &gt;&gt;&gt; pool = resource_pools.create(
+            ...     name=&#34;CleanroomPool&#34;,
+            ...     resource_type=ResourcePoolTypes(25),
+            ...     access_nodes=[&#34;lego&#34;],
+            ...     is_client_group=False
+            ... )
 
         &#34;&#34;&#34;
-        if resource_type.value not in [ResourcePoolTypes.THREATSCAN.value]:
-            raise SDKException(&#39;ResourcePools&#39;, &#39;102&#39;, &#39;Resource pool creation is not supported for this resource type&#39;)
-        if resource_type.value == ResourcePoolTypes.THREATSCAN.value and &#39;index_server&#39; not in kwargs:
-            raise SDKException(&#39;ResourcePools&#39;, &#39;102&#39;, &#39;Index server name is missing in kwargs&#39;)
+        if resource_type.value != ResourcePoolTypes.THREATSCAN.value:
+            raise SDKException(&#39;ResourcePools&#39;, &#39;102&#39;, &#39;Resource pool creation is only supported for appType ThreatScan (25)&#39;)
+        if not access_nodes:
+            raise SDKException(&#39;ResourcePools&#39;, &#39;102&#39;, &#39;Access nodes list cannot be empty&#39;)
         if self.has(name=name):
             raise SDKException(&#39;ResourcePools&#39;, &#39;107&#39;)
+        
+        client_groups = []
+        clients = []
+        
+        # Build client groups or clients based on flag
+        if is_client_group:
+            for node_name in access_nodes:
+                client_group = self._commcell_object.client_groups.get(node_name)
+                client_groups.append({
+                    &#34;clientGroupId&#34;: int(client_group.clientgroup_id),
+                    &#34;clientGroupName&#34;: node_name
+                })
+        else:
+            for client_name in access_nodes:
+                client = self._commcell_object.clients.get(client_name)
+                clients.append({
+                    &#34;clientId&#34;: int(client.client_id),
+                    &#34;clientName&#34;: client_name
+                })
+        
         _request_json = {
             &#34;resourcePool&#34;: {
                 &#34;appType&#34;: resource_type.value,
@@ -278,15 +375,10 @@ class ResourcePools():
                     &#34;jobResultsDirPath&#34;: &#34;&#34;},
                 &#34;roleId&#34;: None,
                 &#34;indexServerMembers&#34;: [],
-                &#34;indexServer&#34;: {
-                    &#34;clientId&#34;: self._commcell_object.index_servers.get(
-                        kwargs.get(&#39;index_server&#39;)).index_server_client_id if resource_type.value == ResourcePoolTypes.THREATSCAN.value else 0,
-                    &#34;clientName&#34;: kwargs.get(&#39;index_server&#39;) if resource_type.value == ResourcePoolTypes.THREATSCAN.value else &#39;&#39;,
-                    &#34;displayName&#34;: kwargs.get(&#39;index_server&#39;) if resource_type.value == ResourcePoolTypes.THREATSCAN.value else &#39;&#39;,
-                    &#34;selected&#34;: True},
                 &#34;accessNodes&#34;: {
-                    &#34;clientGroups&#34;: [],
-                    &#34;clients&#34;: []}}}
+                    &#34;clientGroups&#34;: client_groups,
+                    &#34;clients&#34;: clients}}}
+        
         flag, response = self._cvpysdk_object.make_request(
             &#39;POST&#39;, self._API_CREATE_RESOURCE_POOL, _request_json)
         if flag:
@@ -299,24 +391,15 @@ class ResourcePools():
             raise SDKException(&#39;ResourcePools&#39;, &#39;108&#39;)
         self._response_not_success(response)
 
-    def delete(self, name: str):
-        &#34;&#34;&#34;deletes the resource pool from CS
+    def delete(self, name: str) -&gt; None:
+        &#34;&#34;&#34;Delete a resource pool from the CommServe (CS) by name.
 
-            Args:
+        Args:
+            name: The name of the resource pool to delete.
 
-                name   (str)       --   Resource pool name
+        Raises:
+            SDKException: If the resource pool cannot be found or deletion fails.
 
-            Returns:
-
-                None
-
-            Raises:
-
-                SDKException:
-
-                    if failed to delete resource pool
-
-                    if failed to find resource pool
         &#34;&#34;&#34;
         if not self.has(name=name):
             raise SDKException(&#39;ResourcePools&#39;, &#39;104&#39;)
@@ -332,22 +415,17 @@ class ResourcePools():
             raise SDKException(&#39;ResourcePools&#39;, &#39;106&#39;)
         self._response_not_success(response)
 
-    def get(self, name: str):
-        &#34;&#34;&#34;returns ResourcePool object for given name
+    def get(self, name: str) -&gt; &#39;ResourcePool&#39;:
+        &#34;&#34;&#34;Retrieve a ResourcePool object by its name.
 
-            Args:
+        Args:
+            name: The name of the resource pool to retrieve.
 
-                Name    (str)       -- Resource Pool name
+        Returns:
+            ResourcePool: An instance of the ResourcePool class corresponding to the specified name.
 
-            Returns:
-
-                obj     -- Instance of ResourcePool class
-
-            Raises:
-
-                SDKException:
-
-                    if failed to find resource pool with given name
+        Raises:
+            SDKException: If a resource pool with the given name cannot be found.
 
         &#34;&#34;&#34;
         if not self.has(name):
@@ -355,43 +433,139 @@ class ResourcePools():
         return ResourcePool(commcell_object=self._commcell_object, name=name, pool_id=self._pools[name.lower()][&#39;id&#39;])
 
     def has(self, name: str) -&gt; bool:
-        &#34;&#34;&#34;Checks whether given resource pool exists in cs or not
+        &#34;&#34;&#34;Check if a resource pool with the specified name exists in the CommServe.
 
-            Args:
+        Args:
+            name: The name of the resource pool to check.
 
-                name        (str)       -- Resource pool name
+        Returns:
+            True if the resource pool exists in the CommServe; False otherwise.
 
-            Returns:
-
-               bool    --  True if resource pool exists in cs
         &#34;&#34;&#34;
         if name.lower() in self._pools:
             return True
         return False
 
-    def refresh(self):
-        &#34;&#34;&#34;Refresh the resource pools associated with CS&#34;&#34;&#34;
+    def get_resource_pools_by_solution(self, solution_id: int) -&gt; dict:
+        &#34;&#34;&#34;Return resource pools filtered by solution ID.
+
+        This method checks each pool&#39;s ``solutions`` list and matches against the
+        integer ``solutionId`` field. Pools that do not include the ``solutions`` key
+        (or have an empty solutions list) are skipped.
+
+        Args:
+            solution_id (int): The solution ID to filter by, e.g. ``25`` for Cleanroom.
+
+        Returns:
+            dict: Mapping of resource pool name to its details dictionary for all pools
+            whose ``solutions`` list contains the given ``solution_id``. Returns an
+            empty dict if no pools match.
+
+        Example:
+            &gt;&gt;&gt; cleanroom_pools = resource_pools.get_resource_pools_by_solution(25)
+            &gt;&gt;&gt; for name, details in cleanroom_pools.items():
+            ...     region = details.get(&#34;regionInfo&#34;, {}).get(&#34;regionEntity&#34;, {}).get(&#34;regionName&#34;, &#34;&#34;)
+            ...     print(f&#34;{name}: {region}&#34;)
+
+        &#34;&#34;&#34;
+        resource_pools = {}
+        for pool_name, pool_details in self._pools.items():
+            if solution_id == ResourcePoolTypes.THREATINDICATOR.value:
+                 if pool_details.get(&#39;solutionType&#39;) == &#34;THREAT_INDICATORS&#34;:
+                    resource_pools[pool_name] = pool_details
+            else:
+                for sol in pool_details.get(&#39;solutions&#39;, []):
+                    if sol.get(&#39;id&#39;) == solution_id:
+                        resource_pools[pool_name] = pool_details
+                        break
+        return resource_pools
+
+    def get_resource_pools_by_region(self, region_name: str) -&gt; dict:
+        &#34;&#34;&#34;Return resource pools filtered by region name.
+
+        This method matches pools based on the region name present at
+        ``regionInfo.regionEntity.regionName`` in each pool&#39;s details. Matching is
+        case-insensitive.
+
+        Args:
+            region_name (str): Region name to filter by (case-insensitive), e.g. ``&#34;eastus2&#34;``.
+
+        Returns:
+            dict: Mapping of resource pool name to its details dictionary for all matching pools.
+                  Returns an empty dict if no pools match the given region or if a pool does not
+                  contain region information.
+
+        Example:
+            &gt;&gt;&gt; eastus2_pools = resource_pools.get_resource_pools_by_region(&#34;eastus2&#34;)
+            &gt;&gt;&gt; for name, details in eastus2_pools.items():
+            ...     pool_id = details.get(&#34;resourcePool&#34;, {}).get(&#34;resourcePoolId&#34;)
+            ...     print(f&#34;{name}: {pool_id}&#34;)
+
+        &#34;&#34;&#34;
+        resource_pools = {}
+        for pool_name, pool_details in self._pools.items():
+            if pool_details.get(&#39;region&#39;, {}).get(&#39;name&#39;, &#39;&#39;).lower() == region_name.lower():
+                resource_pools[pool_name] = pool_details
+        return resource_pools
+
+    def get_cleanroom_resource_pools(self) -&gt; dict:
+        &#34;&#34;&#34;Return all resource pools configured for the Cleanroom solution.
+
+        This is a convenience wrapper over :meth:`get_resource_pools_by_solution`
+        that filters pools where the ``solutions`` list contains the Cleanroom
+        solution ID (``ResourcePoolSolutions.CLEANROOM.value``).
+
+        Returns:
+            dict: Mapping of resource pool name to its details dictionary for all Cleanroom pools.
+                  Returns an empty dict if no Cleanroom resource pools are found.
+
+        Example:
+            &gt;&gt;&gt; cleanroom_pools = resource_pools.get_cleanroom_resource_pools()
+            &gt;&gt;&gt; for name, details in cleanroom_pools.items():
+            ...     print(name)
+
+        &#34;&#34;&#34;
+        return self.get_resource_pools_by_solution(ResourcePoolSolutions.CLEANROOM.value)
+
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Reload the resource pools associated with the CommServe (CS).
+
+        This method refreshes the internal state of the ResourcePools object, ensuring that
+        any changes to resource pools on the CommServe are reflected in the current instance.
+
+        &#34;&#34;&#34;
         self._pools = {}
         self._pools = self._get_resource_pools()
 
 
 class ResourcePool:
+    &#34;&#34;&#34;
+    Represents a resource pool within a system, providing management and access to pool details.
 
-    def __init__(self, commcell_object, name, pool_id):
-        &#34;&#34;&#34;Initializes an instance of the ResourcePool class.
+    This class encapsulates the properties and operations related to a resource pool, including
+    initialization with specific identifiers, retrieval and refreshing of pool details, and
+    access to pool-specific properties such as ID and type. It also includes internal mechanisms
+    for handling unsuccessful responses from operations.
 
-            Args:
+    Key Features:
+        - Initialize a resource pool with a commcell object, name, and pool ID
+        - Retrieve and refresh resource pool details
+        - Handle unsuccessful responses from operations
+        - Access resource pool ID and type via properties
 
-                commcell_object     (object)    --  instance of the commcell class
+    &#34;&#34;&#34;
 
-                server_name         (str)       --  Name of the resurce pool
+    def __init__(self, commcell_object: &#39;Commcell&#39;, name: str, pool_id: int) -&gt; None:
+        &#34;&#34;&#34;Initialize a new instance of the ResourcePool class.
 
-                pool_id             (str)       --  Resource pool id
+        Args:
+            commcell_object: An instance of the Commcell class representing the active Commcell connection.
+            name: The name of the resource pool.
+            pool_id: The unique identifier for the resource pool.
 
-
-            Returns:
-
-                object  -   instance of the ResourcePool class
+        Example:
+            &gt;&gt;&gt; commcell = Commcell(&#39;commcell_host&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; resource_pool = ResourcePool(commcell, &#39;MainPool&#39;, 12345)
 
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
@@ -404,33 +578,28 @@ class ResourcePool:
         self._API_GET_POOL_DETAILS = self._services[&#39;GET_RESOURCE_POOL_DETAILS&#39;]
         self.refresh()
 
-    def _response_not_success(self, response):
-        &#34;&#34;&#34;Helper function to raise an exception when reponse status is not 200 (OK).
+    def _response_not_success(self, response: &#39;requests.Response&#39;) -&gt; None:
+        &#34;&#34;&#34;Raise an exception if the API response status is not 200 (OK).
 
-            Args:
-                response    (object)    --  response class object,
+        This helper function checks the status of the provided response object,
+        typically obtained from the `requests` Python package, and raises an
+        exception if the response indicates a failure (i.e., status code is not 200).
 
-                received upon running an API request, using the `requests` python package
+        Args:
+            response: The response object returned from an API request.
 
         &#34;&#34;&#34;
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
 
     def _get_pool_details(self) -&gt; dict:
-        &#34;&#34;&#34;returns resource pool details from CS
+        &#34;&#34;&#34;Retrieve the details of the resource pool from the CommServe.
 
-            Args:
+        Returns:
+            dict: A dictionary containing the resource pool details.
 
-                None
+        Raises:
+            SDKException: If the details for the resource pool could not be retrieved.
 
-            Returns:
-
-                dict        - Resource pool details
-
-            Raises:
-
-                SDKException:
-
-                    if failed to get details for resource pool
         &#34;&#34;&#34;
         api = self._API_GET_POOL_DETAILS % (self._resource_pool_id)
         flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, api)
@@ -440,32 +609,89 @@ class ResourcePool:
             raise SDKException(&#39;ResourcePools&#39;, &#39;105&#39;)
         self._response_not_success(response)
 
-    def refresh(self):
-        &#34;&#34;&#34;Refresh the resource pool details&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Reload the details of the resource pool.
+
+        This method updates the internal state of the ResourcePool instance to reflect
+        the latest information from the underlying data source or system.
+
+        &#34;&#34;&#34;
         self._resource_details = None
         self._resource_details = self._get_pool_details()
 
     @property
-    def resource_pool_id(self):
-        &#34;&#34;&#34;returns the pool id for this resource pool
+    def resource_pool_id(self) -&gt; int:
+        &#34;&#34;&#34;Get the unique identifier (ID) for this resource pool.
 
-            Returns:
-
-                int --  resource pool id
+        Returns:
+            The resource pool ID as an integer.
 
         &#34;&#34;&#34;
         return int(self._resource_details[&#39;resourcePool&#39;].get(&#39;resourcePoolId&#39;))
 
     @property
-    def resource_pool_type(self):
-        &#34;&#34;&#34;returns the pool type enum for this resource pool
+    def resource_pool_type(self) -&gt; &#39;ResourcePoolTypes&#39;:
+        &#34;&#34;&#34;Get the pool type enum for this resource pool.
 
-            Returns:
-
-                enum --  ResourcePoolTypes
+        Returns:
+            ResourcePoolTypes: The enum value representing the type of this resource pool.
 
         &#34;&#34;&#34;
-        return ResourcePoolTypes(int(self._resource_details[&#39;appType&#39;]))</code></pre>
+        return ResourcePoolTypes(int(self._resource_details[&#39;appType&#39;]))
+
+    @property
+    def resource_pool_solution(self) -&gt; list:
+        &#34;&#34;&#34;Return the solutions configured for this resource pool.
+
+        The API returns solutions as a list of dictionaries under the ``solutions`` key,
+        with keys like ``solutionId`` and ``solutionName``.
+
+        Returns:
+            list: List of solution dictionaries (e.g., ``{&#39;solutionId&#39;: int, &#39;solutionName&#39;: str}``).
+                  Returns an empty list if the resource pool has no solutions configured.
+
+        Example:
+            &gt;&gt;&gt; pool = commcell.resource_pools.get(&#39;Cleanroom Access Nodes - eastus2&#39;)
+            &gt;&gt;&gt; for sol in pool.resource_pool_solution:
+            ...     print(f&#34;{sol.get(&#39;solutionName&#39;)} ({sol.get(&#39;solutionId&#39;)})&#34;)
+
+        &#34;&#34;&#34;
+        return self._resource_details.get(&#39;solutions&#39;, [])
+
+    @property
+    def resource_pool_region(self) -&gt; str:
+        &#34;&#34;&#34;Return the region name for this resource pool.
+
+        The API provides region information under ``regionInfo.regionEntity.regionName``.
+
+        Returns:
+            str: Region name (for example, ``&#39;eastus2&#39;``). Returns an empty string if not present.
+
+        Example:
+            &gt;&gt;&gt; pool = commcell.resource_pools.get(&#39;Cleanroom Access Nodes - eastus2&#39;)
+            &gt;&gt;&gt; print(pool.resource_pool_region)
+
+        &#34;&#34;&#34;
+        return self._resource_details.get(&#39;regionInfo&#39;, {}).get(&#39;regionEntity&#39;, {}).get(&#39;regionName&#39;, &#39;&#39;)
+
+    @property
+    def resource_pool_client_groups(self) -&gt; list:
+        &#34;&#34;&#34;Return the access-node client groups associated with this resource pool.
+
+        The API returns client groups under ``accessNodes.clientGroups`` as a list of dictionaries,
+        typically containing ``clientGroupId`` and ``clientGroupName``.
+
+        Returns:
+            list: List of client-group dictionaries (e.g., ``{&#39;clientGroupId&#39;: int, &#39;clientGroupName&#39;: str}``).
+                  Returns an empty list if none are configured.
+
+        Example:
+            &gt;&gt;&gt; pool = commcell.resource_pools.get(&#39;Cleanroom Access Nodes - eastus2&#39;)
+            &gt;&gt;&gt; for cg in pool.resource_pool_client_groups:
+            ...     print(f&#34;{cg.get(&#39;clientGroupName&#39;)} ({cg.get(&#39;clientGroupId&#39;)})&#34;)
+
+        &#34;&#34;&#34;
+        return self._resource_details.get(&#39;accessNodes&#39;, {}).get(&#39;clientGroups&#39;, [])</code></pre>
 </details>
 </section>
 <section>
@@ -479,49 +705,68 @@ class ResourcePool:
 <dl>
 <dt id="cvpysdk.resource_pool.ResourcePool"><code class="flex name class">
 <span>class <span class="ident">ResourcePool</span></span>
-<span>(</span><span>commcell_object, name, pool_id)</span>
+<span>(</span><span>commcell_object: Commcell, name: str, pool_id: int)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Initializes an instance of the ResourcePool class.</p>
-<h2 id="args">Args</h2>
-<p>commcell_object
-(object)
-&ndash;
-instance of the commcell class</p>
-<p>server_name
-(str)
-&ndash;
-Name of the resurce pool</p>
-<p>pool_id
-(str)
-&ndash;
-Resource pool id</p>
-<h2 id="returns">Returns</h2>
-<p>object
--
-instance of the ResourcePool class</p></div>
+<div class="desc"><p>Represents a resource pool within a system, providing management and access to pool details.</p>
+<p>This class encapsulates the properties and operations related to a resource pool, including
+initialization with specific identifiers, retrieval and refreshing of pool details, and
+access to pool-specific properties such as ID and type. It also includes internal mechanisms
+for handling unsuccessful responses from operations.</p>
+<p>Key Features:
+- Initialize a resource pool with a commcell object, name, and pool ID
+- Retrieve and refresh resource pool details
+- Handle unsuccessful responses from operations
+- Access resource pool ID and type via properties</p>
+<p>Initialize a new instance of the ResourcePool class.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>commcell_object</code></strong></dt>
+<dd>An instance of the Commcell class representing the active Commcell connection.</dd>
+<dt><strong><code>name</code></strong></dt>
+<dd>The name of the resource pool.</dd>
+<dt><strong><code>pool_id</code></strong></dt>
+<dd>The unique identifier for the resource pool.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; commcell = Commcell('commcell_host', 'username', 'password')
+&gt;&gt;&gt; resource_pool = ResourcePool(commcell, 'MainPool', 12345)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/resource_pool.py#L304-L394" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/resource_pool.py#L466-L629" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ResourcePool:
+    &#34;&#34;&#34;
+    Represents a resource pool within a system, providing management and access to pool details.
 
-    def __init__(self, commcell_object, name, pool_id):
-        &#34;&#34;&#34;Initializes an instance of the ResourcePool class.
+    This class encapsulates the properties and operations related to a resource pool, including
+    initialization with specific identifiers, retrieval and refreshing of pool details, and
+    access to pool-specific properties such as ID and type. It also includes internal mechanisms
+    for handling unsuccessful responses from operations.
 
-            Args:
+    Key Features:
+        - Initialize a resource pool with a commcell object, name, and pool ID
+        - Retrieve and refresh resource pool details
+        - Handle unsuccessful responses from operations
+        - Access resource pool ID and type via properties
 
-                commcell_object     (object)    --  instance of the commcell class
+    &#34;&#34;&#34;
 
-                server_name         (str)       --  Name of the resurce pool
+    def __init__(self, commcell_object: &#39;Commcell&#39;, name: str, pool_id: int) -&gt; None:
+        &#34;&#34;&#34;Initialize a new instance of the ResourcePool class.
 
-                pool_id             (str)       --  Resource pool id
+        Args:
+            commcell_object: An instance of the Commcell class representing the active Commcell connection.
+            name: The name of the resource pool.
+            pool_id: The unique identifier for the resource pool.
 
-
-            Returns:
-
-                object  -   instance of the ResourcePool class
+        Example:
+            &gt;&gt;&gt; commcell = Commcell(&#39;commcell_host&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; resource_pool = ResourcePool(commcell, &#39;MainPool&#39;, 12345)
 
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
@@ -534,33 +779,28 @@ instance of the ResourcePool class</p></div>
         self._API_GET_POOL_DETAILS = self._services[&#39;GET_RESOURCE_POOL_DETAILS&#39;]
         self.refresh()
 
-    def _response_not_success(self, response):
-        &#34;&#34;&#34;Helper function to raise an exception when reponse status is not 200 (OK).
+    def _response_not_success(self, response: &#39;requests.Response&#39;) -&gt; None:
+        &#34;&#34;&#34;Raise an exception if the API response status is not 200 (OK).
 
-            Args:
-                response    (object)    --  response class object,
+        This helper function checks the status of the provided response object,
+        typically obtained from the `requests` Python package, and raises an
+        exception if the response indicates a failure (i.e., status code is not 200).
 
-                received upon running an API request, using the `requests` python package
+        Args:
+            response: The response object returned from an API request.
 
         &#34;&#34;&#34;
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
 
     def _get_pool_details(self) -&gt; dict:
-        &#34;&#34;&#34;returns resource pool details from CS
+        &#34;&#34;&#34;Retrieve the details of the resource pool from the CommServe.
 
-            Args:
+        Returns:
+            dict: A dictionary containing the resource pool details.
 
-                None
+        Raises:
+            SDKException: If the details for the resource pool could not be retrieved.
 
-            Returns:
-
-                dict        - Resource pool details
-
-            Raises:
-
-                SDKException:
-
-                    if failed to get details for resource pool
         &#34;&#34;&#34;
         api = self._API_GET_POOL_DETAILS % (self._resource_pool_id)
         flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, api)
@@ -570,76 +810,257 @@ instance of the ResourcePool class</p></div>
             raise SDKException(&#39;ResourcePools&#39;, &#39;105&#39;)
         self._response_not_success(response)
 
-    def refresh(self):
-        &#34;&#34;&#34;Refresh the resource pool details&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Reload the details of the resource pool.
+
+        This method updates the internal state of the ResourcePool instance to reflect
+        the latest information from the underlying data source or system.
+
+        &#34;&#34;&#34;
         self._resource_details = None
         self._resource_details = self._get_pool_details()
 
     @property
-    def resource_pool_id(self):
-        &#34;&#34;&#34;returns the pool id for this resource pool
+    def resource_pool_id(self) -&gt; int:
+        &#34;&#34;&#34;Get the unique identifier (ID) for this resource pool.
 
-            Returns:
-
-                int --  resource pool id
+        Returns:
+            The resource pool ID as an integer.
 
         &#34;&#34;&#34;
         return int(self._resource_details[&#39;resourcePool&#39;].get(&#39;resourcePoolId&#39;))
 
     @property
-    def resource_pool_type(self):
-        &#34;&#34;&#34;returns the pool type enum for this resource pool
+    def resource_pool_type(self) -&gt; &#39;ResourcePoolTypes&#39;:
+        &#34;&#34;&#34;Get the pool type enum for this resource pool.
 
-            Returns:
-
-                enum --  ResourcePoolTypes
+        Returns:
+            ResourcePoolTypes: The enum value representing the type of this resource pool.
 
         &#34;&#34;&#34;
-        return ResourcePoolTypes(int(self._resource_details[&#39;appType&#39;]))</code></pre>
+        return ResourcePoolTypes(int(self._resource_details[&#39;appType&#39;]))
+
+    @property
+    def resource_pool_solution(self) -&gt; list:
+        &#34;&#34;&#34;Return the solutions configured for this resource pool.
+
+        The API returns solutions as a list of dictionaries under the ``solutions`` key,
+        with keys like ``solutionId`` and ``solutionName``.
+
+        Returns:
+            list: List of solution dictionaries (e.g., ``{&#39;solutionId&#39;: int, &#39;solutionName&#39;: str}``).
+                  Returns an empty list if the resource pool has no solutions configured.
+
+        Example:
+            &gt;&gt;&gt; pool = commcell.resource_pools.get(&#39;Cleanroom Access Nodes - eastus2&#39;)
+            &gt;&gt;&gt; for sol in pool.resource_pool_solution:
+            ...     print(f&#34;{sol.get(&#39;solutionName&#39;)} ({sol.get(&#39;solutionId&#39;)})&#34;)
+
+        &#34;&#34;&#34;
+        return self._resource_details.get(&#39;solutions&#39;, [])
+
+    @property
+    def resource_pool_region(self) -&gt; str:
+        &#34;&#34;&#34;Return the region name for this resource pool.
+
+        The API provides region information under ``regionInfo.regionEntity.regionName``.
+
+        Returns:
+            str: Region name (for example, ``&#39;eastus2&#39;``). Returns an empty string if not present.
+
+        Example:
+            &gt;&gt;&gt; pool = commcell.resource_pools.get(&#39;Cleanroom Access Nodes - eastus2&#39;)
+            &gt;&gt;&gt; print(pool.resource_pool_region)
+
+        &#34;&#34;&#34;
+        return self._resource_details.get(&#39;regionInfo&#39;, {}).get(&#39;regionEntity&#39;, {}).get(&#39;regionName&#39;, &#39;&#39;)
+
+    @property
+    def resource_pool_client_groups(self) -&gt; list:
+        &#34;&#34;&#34;Return the access-node client groups associated with this resource pool.
+
+        The API returns client groups under ``accessNodes.clientGroups`` as a list of dictionaries,
+        typically containing ``clientGroupId`` and ``clientGroupName``.
+
+        Returns:
+            list: List of client-group dictionaries (e.g., ``{&#39;clientGroupId&#39;: int, &#39;clientGroupName&#39;: str}``).
+                  Returns an empty list if none are configured.
+
+        Example:
+            &gt;&gt;&gt; pool = commcell.resource_pools.get(&#39;Cleanroom Access Nodes - eastus2&#39;)
+            &gt;&gt;&gt; for cg in pool.resource_pool_client_groups:
+            ...     print(f&#34;{cg.get(&#39;clientGroupName&#39;)} ({cg.get(&#39;clientGroupId&#39;)})&#34;)
+
+        &#34;&#34;&#34;
+        return self._resource_details.get(&#39;accessNodes&#39;, {}).get(&#39;clientGroups&#39;, [])</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.resource_pool.ResourcePool.resource_pool_id"><code class="name">var <span class="ident">resource_pool_id</span></code></dt>
+<dt id="cvpysdk.resource_pool.ResourcePool.resource_pool_client_groups"><code class="name">var <span class="ident">resource_pool_client_groups</span> : list</code></dt>
 <dd>
-<div class="desc"><p>returns the pool id for this resource pool</p>
-<h2 id="returns">Returns</h2>
-<p>int &ndash;
-resource pool id</p></div>
+<div class="desc"><p>Return the access-node client groups associated with this resource pool.</p>
+<p>The API returns client groups under <code>accessNodes.clientGroups</code> as a list of dictionaries,
+typically containing <code>clientGroupId</code> and <code>clientGroupName</code>.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>list</code></dt>
+<dd>List of client-group dictionaries (e.g., <code>{'clientGroupId': int, 'clientGroupName': str}</code>).
+Returns an empty list if none are configured.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; pool = commcell.resource_pools.get('Cleanroom Access Nodes - eastus2')
+&gt;&gt;&gt; for cg in pool.resource_pool_client_groups:
+...     print(f&quot;{cg.get('clientGroupName')} ({cg.get('clientGroupId')})&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/resource_pool.py#L374-L383" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/resource_pool.py#L611-L629" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def resource_pool_id(self):
-    &#34;&#34;&#34;returns the pool id for this resource pool
+def resource_pool_client_groups(self) -&gt; list:
+    &#34;&#34;&#34;Return the access-node client groups associated with this resource pool.
 
-        Returns:
+    The API returns client groups under ``accessNodes.clientGroups`` as a list of dictionaries,
+    typically containing ``clientGroupId`` and ``clientGroupName``.
 
-            int --  resource pool id
+    Returns:
+        list: List of client-group dictionaries (e.g., ``{&#39;clientGroupId&#39;: int, &#39;clientGroupName&#39;: str}``).
+              Returns an empty list if none are configured.
+
+    Example:
+        &gt;&gt;&gt; pool = commcell.resource_pools.get(&#39;Cleanroom Access Nodes - eastus2&#39;)
+        &gt;&gt;&gt; for cg in pool.resource_pool_client_groups:
+        ...     print(f&#34;{cg.get(&#39;clientGroupName&#39;)} ({cg.get(&#39;clientGroupId&#39;)})&#34;)
+
+    &#34;&#34;&#34;
+    return self._resource_details.get(&#39;accessNodes&#39;, {}).get(&#39;clientGroups&#39;, [])</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.resource_pool.ResourcePool.resource_pool_id"><code class="name">var <span class="ident">resource_pool_id</span> : int</code></dt>
+<dd>
+<div class="desc"><p>Get the unique identifier (ID) for this resource pool.</p>
+<p>Returns
+-----=
+The resource pool ID as an integer.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/resource_pool.py#L552-L561" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def resource_pool_id(self) -&gt; int:
+    &#34;&#34;&#34;Get the unique identifier (ID) for this resource pool.
+
+    Returns:
+        The resource pool ID as an integer.
 
     &#34;&#34;&#34;
     return int(self._resource_details[&#39;resourcePool&#39;].get(&#39;resourcePoolId&#39;))</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.resource_pool.ResourcePool.resource_pool_type"><code class="name">var <span class="ident">resource_pool_type</span></code></dt>
+<dt id="cvpysdk.resource_pool.ResourcePool.resource_pool_region"><code class="name">var <span class="ident">resource_pool_region</span> : str</code></dt>
 <dd>
-<div class="desc"><p>returns the pool type enum for this resource pool</p>
-<h2 id="returns">Returns</h2>
-<p>enum &ndash;
-ResourcePoolTypes</p></div>
+<div class="desc"><p>Return the region name for this resource pool.</p>
+<p>The API provides region information under <code>regionInfo.regionEntity.regionName</code>.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>str</code></dt>
+<dd>Region name (for example, <code>'eastus2'</code>). Returns an empty string if not present.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; pool = commcell.resource_pools.get('Cleanroom Access Nodes - eastus2')
+&gt;&gt;&gt; print(pool.resource_pool_region)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/resource_pool.py#L385-L394" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/resource_pool.py#L594-L609" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def resource_pool_type(self):
-    &#34;&#34;&#34;returns the pool type enum for this resource pool
+def resource_pool_region(self) -&gt; str:
+    &#34;&#34;&#34;Return the region name for this resource pool.
 
-        Returns:
+    The API provides region information under ``regionInfo.regionEntity.regionName``.
 
-            enum --  ResourcePoolTypes
+    Returns:
+        str: Region name (for example, ``&#39;eastus2&#39;``). Returns an empty string if not present.
+
+    Example:
+        &gt;&gt;&gt; pool = commcell.resource_pools.get(&#39;Cleanroom Access Nodes - eastus2&#39;)
+        &gt;&gt;&gt; print(pool.resource_pool_region)
+
+    &#34;&#34;&#34;
+    return self._resource_details.get(&#39;regionInfo&#39;, {}).get(&#39;regionEntity&#39;, {}).get(&#39;regionName&#39;, &#39;&#39;)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.resource_pool.ResourcePool.resource_pool_solution"><code class="name">var <span class="ident">resource_pool_solution</span> : list</code></dt>
+<dd>
+<div class="desc"><p>Return the solutions configured for this resource pool.</p>
+<p>The API returns solutions as a list of dictionaries under the <code>solutions</code> key,
+with keys like <code>solutionId</code> and <code>solutionName</code>.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>list</code></dt>
+<dd>List of solution dictionaries (e.g., <code>{'solutionId': int, 'solutionName': str}</code>).
+Returns an empty list if the resource pool has no solutions configured.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; pool = commcell.resource_pools.get('Cleanroom Access Nodes - eastus2')
+&gt;&gt;&gt; for sol in pool.resource_pool_solution:
+...     print(f&quot;{sol.get('solutionName')} ({sol.get('solutionId')})&quot;)
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/resource_pool.py#L574-L592" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def resource_pool_solution(self) -&gt; list:
+    &#34;&#34;&#34;Return the solutions configured for this resource pool.
+
+    The API returns solutions as a list of dictionaries under the ``solutions`` key,
+    with keys like ``solutionId`` and ``solutionName``.
+
+    Returns:
+        list: List of solution dictionaries (e.g., ``{&#39;solutionId&#39;: int, &#39;solutionName&#39;: str}``).
+              Returns an empty list if the resource pool has no solutions configured.
+
+    Example:
+        &gt;&gt;&gt; pool = commcell.resource_pools.get(&#39;Cleanroom Access Nodes - eastus2&#39;)
+        &gt;&gt;&gt; for sol in pool.resource_pool_solution:
+        ...     print(f&#34;{sol.get(&#39;solutionName&#39;)} ({sol.get(&#39;solutionId&#39;)})&#34;)
+
+    &#34;&#34;&#34;
+    return self._resource_details.get(&#39;solutions&#39;, [])</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.resource_pool.ResourcePool.resource_pool_type"><code class="name">var <span class="ident">resource_pool_type</span> : <a title="cvpysdk.resource_pool.ResourcePoolTypes" href="#cvpysdk.resource_pool.ResourcePoolTypes">ResourcePoolTypes</a></code></dt>
+<dd>
+<div class="desc"><p>Get the pool type enum for this resource pool.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code><a title="cvpysdk.resource_pool.ResourcePoolTypes" href="#cvpysdk.resource_pool.ResourcePoolTypes">ResourcePoolTypes</a></code></dt>
+<dd>The enum value representing the type of this resource pool.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/resource_pool.py#L563-L572" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">@property
+def resource_pool_type(self) -&gt; &#39;ResourcePoolTypes&#39;:
+    &#34;&#34;&#34;Get the pool type enum for this resource pool.
+
+    Returns:
+        ResourcePoolTypes: The enum value representing the type of this resource pool.
 
     &#34;&#34;&#34;
     return ResourcePoolTypes(int(self._resource_details[&#39;appType&#39;]))</code></pre>
@@ -649,36 +1070,106 @@ def resource_pool_type(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.resource_pool.ResourcePool.refresh"><code class="name flex">
-<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+<span>def <span class="ident">refresh</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Refresh the resource pool details</p></div>
+<div class="desc"><p>Reload the details of the resource pool.</p>
+<p>This method updates the internal state of the ResourcePool instance to reflect
+the latest information from the underlying data source or system.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/resource_pool.py#L369-L372" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/resource_pool.py#L541-L550" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def refresh(self):
-    &#34;&#34;&#34;Refresh the resource pool details&#34;&#34;&#34;
+<pre><code class="python">def refresh(self) -&gt; None:
+    &#34;&#34;&#34;Reload the details of the resource pool.
+
+    This method updates the internal state of the ResourcePool instance to reflect
+    the latest information from the underlying data source or system.
+
+    &#34;&#34;&#34;
     self._resource_details = None
     self._resource_details = self._get_pool_details()</code></pre>
 </details>
 </dd>
 </dl>
 </dd>
-<dt id="cvpysdk.resource_pool.ResourcePoolTypes"><code class="flex name class">
-<span>class <span class="ident">ResourcePoolTypes</span></span>
-<span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
+<dt id="cvpysdk.resource_pool.ResourcePoolSolutions"><code class="flex name class">
+<span>class <span class="ident">ResourcePoolSolutions</span></span>
+<span>(</span><span>*args, **kwds)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Enum class for different resource pool types</p></div>
+<div class="desc"><p>Enumeration class representing different solutions associated with resource pools.</p>
+<p>This enum is used to define and categorize various solutions that resource pools may be associated with,
+providing a clear and type-safe way to reference specific solution categories throughout the codebase.</p>
+<p>Key Features:
+- Defines distinct solution categories as enumeration members
+- Ensures type safety and clarity when working with resource pool solutions
+- Facilitates consistent usage of solution identifiers in relation to resource pools</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/resource_pool.py#L62-L89" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/resource_pool.py#L121-L135" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">class ResourcePoolSolutions(enum.Enum):
+    &#34;&#34;&#34;
+    Enumeration class representing different solutions associated with resource pools.
+
+    This enum is used to define and categorize various solutions that resource pools may be associated with,
+    providing a clear and type-safe way to reference specific solution categories throughout the codebase.
+
+    Key Features:
+        - Defines distinct solution categories as enumeration members
+        - Ensures type safety and clarity when working with resource pool solutions
+        - Facilitates consistent usage of solution identifiers in relation to resource pools
+
+    &#34;&#34;&#34;
+    CLEANROOM = 25</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>enum.Enum</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="cvpysdk.resource_pool.ResourcePoolSolutions.CLEANROOM"><code class="name">var <span class="ident">CLEANROOM</span></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="cvpysdk.resource_pool.ResourcePoolTypes"><code class="flex name class">
+<span>class <span class="ident">ResourcePoolTypes</span></span>
+<span>(</span><span>*args, **kwds)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Enumeration class representing different types of resource pools.</p>
+<p>This enum is used to define and categorize various resource pool types
+within the application, providing a clear and type-safe way to reference
+specific pool categories throughout the codebase.</p>
+<p>Key Features:
+- Defines distinct resource pool types as enumeration members
+- Ensures type safety and clarity when working with resource pools
+- Facilitates consistent usage of resource pool identifiers</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/resource_pool.py#L77-L118" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ResourcePoolTypes(enum.Enum):
-    &#34;&#34;&#34;Enum class for different resource pool types&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Enumeration class representing different types of resource pools.
+
+    This enum is used to define and categorize various resource pool types
+    within the application, providing a clear and type-safe way to reference
+    specific pool categories throughout the codebase.
+
+    Key Features:
+        - Defines distinct resource pool types as enumeration members
+        - Ensures type safety and clarity when working with resource pools
+        - Facilitates consistent usage of resource pool identifiers
+
+    &#34;&#34;&#34;
     GENERIC = 0
     O365 = 1
     SALESFORCE = 2
@@ -701,9 +1192,10 @@ def resource_pool_type(self):
     GOOGLE_DRIVE = 19
     GOOGLE_WORKSPACE = 20
     SERVICENOW = 21
-    THREATSCAN = 22
+    THREATINDICATOR = 22
     DEVOPS = 23
     RISK_ANALYSIS = 24
+    THREATSCAN = 25
     GOOGLE_CLOUD_PLATFORM = 50001</code></pre>
 </details>
 <h3>Ancestors</h3>
@@ -714,144 +1206,182 @@ def resource_pool_type(self):
 <dl>
 <dt id="cvpysdk.resource_pool.ResourcePoolTypes.AZURE_AD"><code class="name">var <span class="ident">AZURE_AD</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.resource_pool.ResourcePoolTypes.CLOUD_DB"><code class="name">var <span class="ident">CLOUD_DB</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.resource_pool.ResourcePoolTypes.CLOUD_LAPTOP"><code class="name">var <span class="ident">CLOUD_LAPTOP</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.resource_pool.ResourcePoolTypes.DATA_GOVERNANCE"><code class="name">var <span class="ident">DATA_GOVERNANCE</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.resource_pool.ResourcePoolTypes.DEVOPS"><code class="name">var <span class="ident">DEVOPS</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.resource_pool.ResourcePoolTypes.DYNAMICS_365"><code class="name">var <span class="ident">DYNAMICS_365</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.resource_pool.ResourcePoolTypes.EXCHANGE"><code class="name">var <span class="ident">EXCHANGE</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.resource_pool.ResourcePoolTypes.E_DISCOVERY"><code class="name">var <span class="ident">E_DISCOVERY</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.resource_pool.ResourcePoolTypes.FILESYSTEM"><code class="name">var <span class="ident">FILESYSTEM</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.resource_pool.ResourcePoolTypes.FILE_STORAGE_OPTIMIZATION"><code class="name">var <span class="ident">FILE_STORAGE_OPTIMIZATION</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.resource_pool.ResourcePoolTypes.GENERIC"><code class="name">var <span class="ident">GENERIC</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.resource_pool.ResourcePoolTypes.GMAIL"><code class="name">var <span class="ident">GMAIL</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.resource_pool.ResourcePoolTypes.GOOGLE_CLOUD_PLATFORM"><code class="name">var <span class="ident">GOOGLE_CLOUD_PLATFORM</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.resource_pool.ResourcePoolTypes.GOOGLE_DRIVE"><code class="name">var <span class="ident">GOOGLE_DRIVE</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.resource_pool.ResourcePoolTypes.GOOGLE_WORKSPACE"><code class="name">var <span class="ident">GOOGLE_WORKSPACE</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.resource_pool.ResourcePoolTypes.KUBERNETES"><code class="name">var <span class="ident">KUBERNETES</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.resource_pool.ResourcePoolTypes.O365"><code class="name">var <span class="ident">O365</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.resource_pool.ResourcePoolTypes.OBJECT_STORAGE"><code class="name">var <span class="ident">OBJECT_STORAGE</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.resource_pool.ResourcePoolTypes.ONEDRIVE"><code class="name">var <span class="ident">ONEDRIVE</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.resource_pool.ResourcePoolTypes.RISK_ANALYSIS"><code class="name">var <span class="ident">RISK_ANALYSIS</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.resource_pool.ResourcePoolTypes.SALESFORCE"><code class="name">var <span class="ident">SALESFORCE</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.resource_pool.ResourcePoolTypes.SERVICENOW"><code class="name">var <span class="ident">SERVICENOW</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.resource_pool.ResourcePoolTypes.SHAREPOINT"><code class="name">var <span class="ident">SHAREPOINT</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.resource_pool.ResourcePoolTypes.TEAMS"><code class="name">var <span class="ident">TEAMS</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="cvpysdk.resource_pool.ResourcePoolTypes.THREATINDICATOR"><code class="name">var <span class="ident">THREATINDICATOR</span></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.resource_pool.ResourcePoolTypes.THREATSCAN"><code class="name">var <span class="ident">THREATSCAN</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.resource_pool.ResourcePoolTypes.VSA"><code class="name">var <span class="ident">VSA</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 </dl>
 </dd>
 <dt id="cvpysdk.resource_pool.ResourcePools"><code class="flex name class">
 <span>class <span class="ident">ResourcePools</span></span>
-<span>(</span><span>commcell_object)</span>
+<span>(</span><span>commcell_object: Commcell)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>class to represent all pool in resource pool</p>
-<p>Initializes an instance of the ResourcePools class.</p>
-<h2 id="args">Args</h2>
-<p>commcell_object
-(object)
-&ndash;
-instance of the commcell class</p>
-<h2 id="returns">Returns</h2>
-<p>object
--
-instance of the ResourcePools class</p></div>
+<div class="desc"><p>Class to manage and represent all resource pools within a system.</p>
+<p>This class provides a comprehensive interface for interacting with resource pools,
+including creation, deletion, retrieval, existence checks, and refreshing the pool list.
+It also includes internal mechanisms for handling responses and fetching resource pool data.</p>
+<p>Key Features:
+- Initialize with a Commcell object for context
+- Create new resource pools with specified names and types
+- Delete existing resource pools by name
+- Retrieve resource pool details by name
+- Check for the existence of a resource pool
+- Refresh the list of resource pools to reflect current state
+- Internal handling of unsuccessful responses
+- Internal retrieval of all resource pools</p>
+<p>Initialize a new instance of the ResourcePools class.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>commcell_object</code></strong></dt>
+<dd>An instance of the Commcell class representing the active Commcell connection.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; from cvpysdk.commcell import Commcell
+&gt;&gt;&gt; commcell = Commcell('commcell_host', 'username', 'password')
+&gt;&gt;&gt; resource_pools = ResourcePools(commcell)
+&gt;&gt;&gt; print(&quot;ResourcePools instance created successfully&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/resource_pool.py#L92-L301" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/resource_pool.py#L138-L463" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">class ResourcePools():
-    &#34;&#34;&#34;class to represent all pool in resource pool&#34;&#34;&#34;
+<pre><code class="python">class ResourcePools:
+    &#34;&#34;&#34;
+    Class to manage and represent all resource pools within a system.
 
-    def __init__(self, commcell_object):
-        &#34;&#34;&#34;Initializes an instance of the ResourcePools class.
+    This class provides a comprehensive interface for interacting with resource pools,
+    including creation, deletion, retrieval, existence checks, and refreshing the pool list.
+    It also includes internal mechanisms for handling responses and fetching resource pool data.
 
-            Args:
+    Key Features:
+        - Initialize with a Commcell object for context
+        - Create new resource pools with specified names and types
+        - Delete existing resource pools by name
+        - Retrieve resource pool details by name
+        - Check for the existence of a resource pool
+        - Refresh the list of resource pools to reflect current state
+        - Internal handling of unsuccessful responses
+        - Internal retrieval of all resource pools
 
-                commcell_object     (object)    --  instance of the commcell class
+    &#34;&#34;&#34;
 
-            Returns:
+    def __init__(self, commcell_object: &#39;Commcell&#39;) -&gt; None:
+        &#34;&#34;&#34;Initialize a new instance of the ResourcePools class.
 
-                object  -   instance of the ResourcePools class
+        Args:
+            commcell_object: An instance of the Commcell class representing the active Commcell connection.
+
+        Example:
+            &gt;&gt;&gt; from cvpysdk.commcell import Commcell
+            &gt;&gt;&gt; commcell = Commcell(&#39;commcell_host&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; resource_pools = ResourcePools(commcell)
+            &gt;&gt;&gt; print(&#34;ResourcePools instance created successfully&#34;)
 
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
@@ -863,33 +1393,27 @@ instance of the ResourcePools class</p></div>
         self._pools = {}
         self.refresh()
 
-    def _response_not_success(self, response):
-        &#34;&#34;&#34;Helper function to raise an exception when reponse status is not 200 (OK).
+    def _response_not_success(self, response: &#39;requests.Response&#39;) -&gt; None:
+        &#34;&#34;&#34;Raise an exception if the API response status is not 200 (OK).
 
-            Args:
-                response    (object)    --  response class object,
+        This helper function checks the status of the provided response object, typically
+        obtained from the `requests` Python package, and raises an exception if the status
+        code indicates a failure.
 
-                received upon running an API request, using the `requests` python package
+        Args:
+            response: The response object returned from an API request.
 
         &#34;&#34;&#34;
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._commcell_object._update_response_(response.text))
 
     def _get_resource_pools(self) -&gt; dict:
-        &#34;&#34;&#34;returns resource pools details from CS
+        &#34;&#34;&#34;Retrieve resource pool details from the CommServe (CS).
 
-                Args:
+        Returns:
+            dict: A dictionary containing details of all resource pools.
 
-                    None
-
-                Returns:
-
-                    dict       --  Resource pool details
-
-                Raises:
-
-                    SDKException:
-
-                        if failed to get resource pool details
+        Raises:
+            SDKException: If the resource pool details could not be retrieved.
 
         &#34;&#34;&#34;
         flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._API_GET_ALL_RESOURCE_POOLS)
@@ -905,40 +1429,66 @@ instance of the ResourcePools class</p></div>
             return output
         self._response_not_success(response)
 
-    def create(self, name: str, resource_type, **kwargs):
-        &#34;&#34;&#34;creates resource pool in CS
+    def create(self, name: str, resource_type: &#39;ResourcePoolTypes&#39;, access_nodes: list, is_client_group: bool = True) -&gt; &#39;ResourcePool&#39;:
+        &#34;&#34;&#34;Create a new resource pool in the CommServe.
 
-            Args:
+        Args:
+            name: The name of the resource pool to create.
+            resource_type: The type of resource pool (appType 25 for Cleanroom).
+            access_nodes: List of client group names or client names to associate with the resource pool.
+            is_client_group: Flag to determine if access_nodes contains client groups (True) or clients (False).
+                            Default is True for client groups.
 
-                name    (str)           --  Resource pool name
+        Returns:
+            ResourcePool: An instance representing the newly created resource pool.
 
-                resource_type   (enum)  --  ResourcePoolTypes enum
+        Raises:
+            SDKException: If the resource pool creation fails or if a resource pool with the given name already exists.
 
-            kwargs options:
-
-                for Threat Scan -
-
-                    index_server    (str)   --  index server name
-
-            Returns:
-
-                obj --  Instance of ResourcePool class
-
-            Raises:
-
-                SDKException:
-
-                    if failed to create resource pool
-
-                    if resource pool already exists
+        Example:
+            &gt;&gt;&gt; # Create with client groups
+            &gt;&gt;&gt; pool = resource_pools.create(
+            ...     name=&#34;CleanroomPool&#34;,
+            ...     resource_type=ResourcePoolTypes(25),
+            ...     access_nodes=[&#34;AdminHyperVAWS&#34;],
+            ...     is_client_group=True
+            ... )
+            
+            &gt;&gt;&gt; # Create with clients
+            &gt;&gt;&gt; pool = resource_pools.create(
+            ...     name=&#34;CleanroomPool&#34;,
+            ...     resource_type=ResourcePoolTypes(25),
+            ...     access_nodes=[&#34;lego&#34;],
+            ...     is_client_group=False
+            ... )
 
         &#34;&#34;&#34;
-        if resource_type.value not in [ResourcePoolTypes.THREATSCAN.value]:
-            raise SDKException(&#39;ResourcePools&#39;, &#39;102&#39;, &#39;Resource pool creation is not supported for this resource type&#39;)
-        if resource_type.value == ResourcePoolTypes.THREATSCAN.value and &#39;index_server&#39; not in kwargs:
-            raise SDKException(&#39;ResourcePools&#39;, &#39;102&#39;, &#39;Index server name is missing in kwargs&#39;)
+        if resource_type.value != ResourcePoolTypes.THREATSCAN.value:
+            raise SDKException(&#39;ResourcePools&#39;, &#39;102&#39;, &#39;Resource pool creation is only supported for appType ThreatScan (25)&#39;)
+        if not access_nodes:
+            raise SDKException(&#39;ResourcePools&#39;, &#39;102&#39;, &#39;Access nodes list cannot be empty&#39;)
         if self.has(name=name):
             raise SDKException(&#39;ResourcePools&#39;, &#39;107&#39;)
+        
+        client_groups = []
+        clients = []
+        
+        # Build client groups or clients based on flag
+        if is_client_group:
+            for node_name in access_nodes:
+                client_group = self._commcell_object.client_groups.get(node_name)
+                client_groups.append({
+                    &#34;clientGroupId&#34;: int(client_group.clientgroup_id),
+                    &#34;clientGroupName&#34;: node_name
+                })
+        else:
+            for client_name in access_nodes:
+                client = self._commcell_object.clients.get(client_name)
+                clients.append({
+                    &#34;clientId&#34;: int(client.client_id),
+                    &#34;clientName&#34;: client_name
+                })
+        
         _request_json = {
             &#34;resourcePool&#34;: {
                 &#34;appType&#34;: resource_type.value,
@@ -954,15 +1504,10 @@ instance of the ResourcePools class</p></div>
                     &#34;jobResultsDirPath&#34;: &#34;&#34;},
                 &#34;roleId&#34;: None,
                 &#34;indexServerMembers&#34;: [],
-                &#34;indexServer&#34;: {
-                    &#34;clientId&#34;: self._commcell_object.index_servers.get(
-                        kwargs.get(&#39;index_server&#39;)).index_server_client_id if resource_type.value == ResourcePoolTypes.THREATSCAN.value else 0,
-                    &#34;clientName&#34;: kwargs.get(&#39;index_server&#39;) if resource_type.value == ResourcePoolTypes.THREATSCAN.value else &#39;&#39;,
-                    &#34;displayName&#34;: kwargs.get(&#39;index_server&#39;) if resource_type.value == ResourcePoolTypes.THREATSCAN.value else &#39;&#39;,
-                    &#34;selected&#34;: True},
                 &#34;accessNodes&#34;: {
-                    &#34;clientGroups&#34;: [],
-                    &#34;clients&#34;: []}}}
+                    &#34;clientGroups&#34;: client_groups,
+                    &#34;clients&#34;: clients}}}
+        
         flag, response = self._cvpysdk_object.make_request(
             &#39;POST&#39;, self._API_CREATE_RESOURCE_POOL, _request_json)
         if flag:
@@ -975,24 +1520,15 @@ instance of the ResourcePools class</p></div>
             raise SDKException(&#39;ResourcePools&#39;, &#39;108&#39;)
         self._response_not_success(response)
 
-    def delete(self, name: str):
-        &#34;&#34;&#34;deletes the resource pool from CS
+    def delete(self, name: str) -&gt; None:
+        &#34;&#34;&#34;Delete a resource pool from the CommServe (CS) by name.
 
-            Args:
+        Args:
+            name: The name of the resource pool to delete.
 
-                name   (str)       --   Resource pool name
+        Raises:
+            SDKException: If the resource pool cannot be found or deletion fails.
 
-            Returns:
-
-                None
-
-            Raises:
-
-                SDKException:
-
-                    if failed to delete resource pool
-
-                    if failed to find resource pool
         &#34;&#34;&#34;
         if not self.has(name=name):
             raise SDKException(&#39;ResourcePools&#39;, &#39;104&#39;)
@@ -1008,22 +1544,17 @@ instance of the ResourcePools class</p></div>
             raise SDKException(&#39;ResourcePools&#39;, &#39;106&#39;)
         self._response_not_success(response)
 
-    def get(self, name: str):
-        &#34;&#34;&#34;returns ResourcePool object for given name
+    def get(self, name: str) -&gt; &#39;ResourcePool&#39;:
+        &#34;&#34;&#34;Retrieve a ResourcePool object by its name.
 
-            Args:
+        Args:
+            name: The name of the resource pool to retrieve.
 
-                Name    (str)       -- Resource Pool name
+        Returns:
+            ResourcePool: An instance of the ResourcePool class corresponding to the specified name.
 
-            Returns:
-
-                obj     -- Instance of ResourcePool class
-
-            Raises:
-
-                SDKException:
-
-                    if failed to find resource pool with given name
+        Raises:
+            SDKException: If a resource pool with the given name cannot be found.
 
         &#34;&#34;&#34;
         if not self.has(name):
@@ -1031,94 +1562,221 @@ instance of the ResourcePools class</p></div>
         return ResourcePool(commcell_object=self._commcell_object, name=name, pool_id=self._pools[name.lower()][&#39;id&#39;])
 
     def has(self, name: str) -&gt; bool:
-        &#34;&#34;&#34;Checks whether given resource pool exists in cs or not
+        &#34;&#34;&#34;Check if a resource pool with the specified name exists in the CommServe.
 
-            Args:
+        Args:
+            name: The name of the resource pool to check.
 
-                name        (str)       -- Resource pool name
+        Returns:
+            True if the resource pool exists in the CommServe; False otherwise.
 
-            Returns:
-
-               bool    --  True if resource pool exists in cs
         &#34;&#34;&#34;
         if name.lower() in self._pools:
             return True
         return False
 
-    def refresh(self):
-        &#34;&#34;&#34;Refresh the resource pools associated with CS&#34;&#34;&#34;
+    def get_resource_pools_by_solution(self, solution_id: int) -&gt; dict:
+        &#34;&#34;&#34;Return resource pools filtered by solution ID.
+
+        This method checks each pool&#39;s ``solutions`` list and matches against the
+        integer ``solutionId`` field. Pools that do not include the ``solutions`` key
+        (or have an empty solutions list) are skipped.
+
+        Args:
+            solution_id (int): The solution ID to filter by, e.g. ``25`` for Cleanroom.
+
+        Returns:
+            dict: Mapping of resource pool name to its details dictionary for all pools
+            whose ``solutions`` list contains the given ``solution_id``. Returns an
+            empty dict if no pools match.
+
+        Example:
+            &gt;&gt;&gt; cleanroom_pools = resource_pools.get_resource_pools_by_solution(25)
+            &gt;&gt;&gt; for name, details in cleanroom_pools.items():
+            ...     region = details.get(&#34;regionInfo&#34;, {}).get(&#34;regionEntity&#34;, {}).get(&#34;regionName&#34;, &#34;&#34;)
+            ...     print(f&#34;{name}: {region}&#34;)
+
+        &#34;&#34;&#34;
+        resource_pools = {}
+        for pool_name, pool_details in self._pools.items():
+            if solution_id == ResourcePoolTypes.THREATINDICATOR.value:
+                 if pool_details.get(&#39;solutionType&#39;) == &#34;THREAT_INDICATORS&#34;:
+                    resource_pools[pool_name] = pool_details
+            else:
+                for sol in pool_details.get(&#39;solutions&#39;, []):
+                    if sol.get(&#39;id&#39;) == solution_id:
+                        resource_pools[pool_name] = pool_details
+                        break
+        return resource_pools
+
+    def get_resource_pools_by_region(self, region_name: str) -&gt; dict:
+        &#34;&#34;&#34;Return resource pools filtered by region name.
+
+        This method matches pools based on the region name present at
+        ``regionInfo.regionEntity.regionName`` in each pool&#39;s details. Matching is
+        case-insensitive.
+
+        Args:
+            region_name (str): Region name to filter by (case-insensitive), e.g. ``&#34;eastus2&#34;``.
+
+        Returns:
+            dict: Mapping of resource pool name to its details dictionary for all matching pools.
+                  Returns an empty dict if no pools match the given region or if a pool does not
+                  contain region information.
+
+        Example:
+            &gt;&gt;&gt; eastus2_pools = resource_pools.get_resource_pools_by_region(&#34;eastus2&#34;)
+            &gt;&gt;&gt; for name, details in eastus2_pools.items():
+            ...     pool_id = details.get(&#34;resourcePool&#34;, {}).get(&#34;resourcePoolId&#34;)
+            ...     print(f&#34;{name}: {pool_id}&#34;)
+
+        &#34;&#34;&#34;
+        resource_pools = {}
+        for pool_name, pool_details in self._pools.items():
+            if pool_details.get(&#39;region&#39;, {}).get(&#39;name&#39;, &#39;&#39;).lower() == region_name.lower():
+                resource_pools[pool_name] = pool_details
+        return resource_pools
+
+    def get_cleanroom_resource_pools(self) -&gt; dict:
+        &#34;&#34;&#34;Return all resource pools configured for the Cleanroom solution.
+
+        This is a convenience wrapper over :meth:`get_resource_pools_by_solution`
+        that filters pools where the ``solutions`` list contains the Cleanroom
+        solution ID (``ResourcePoolSolutions.CLEANROOM.value``).
+
+        Returns:
+            dict: Mapping of resource pool name to its details dictionary for all Cleanroom pools.
+                  Returns an empty dict if no Cleanroom resource pools are found.
+
+        Example:
+            &gt;&gt;&gt; cleanroom_pools = resource_pools.get_cleanroom_resource_pools()
+            &gt;&gt;&gt; for name, details in cleanroom_pools.items():
+            ...     print(name)
+
+        &#34;&#34;&#34;
+        return self.get_resource_pools_by_solution(ResourcePoolSolutions.CLEANROOM.value)
+
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Reload the resource pools associated with the CommServe (CS).
+
+        This method refreshes the internal state of the ResourcePools object, ensuring that
+        any changes to resource pools on the CommServe are reflected in the current instance.
+
+        &#34;&#34;&#34;
         self._pools = {}
         self._pools = self._get_resource_pools()</code></pre>
 </details>
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.resource_pool.ResourcePools.create"><code class="name flex">
-<span>def <span class="ident">create</span></span>(<span>self, name: str, resource_type, **kwargs)</span>
+<span>def <span class="ident">create</span></span>(<span>self, name: str, resource_type: <a title="cvpysdk.resource_pool.ResourcePoolTypes" href="#cvpysdk.resource_pool.ResourcePoolTypes">ResourcePoolTypes</a>, access_nodes: list, is_client_group: bool = True) ‑> <a title="cvpysdk.resource_pool.ResourcePool" href="#cvpysdk.resource_pool.ResourcePool">ResourcePool</a></span>
 </code></dt>
 <dd>
-<div class="desc"><p>creates resource pool in CS</p>
-<h2 id="args">Args</h2>
-<p>name
-(str)
-&ndash;
-Resource pool name</p>
-<p>resource_type
-(enum)
-&ndash;
-ResourcePoolTypes enum
-kwargs options:</p>
-<pre><code>for Threat Scan -
-
-    index_server    (str)   --  index server name
+<div class="desc"><p>Create a new resource pool in the CommServe.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>name</code></strong></dt>
+<dd>The name of the resource pool to create.</dd>
+<dt><strong><code>resource_type</code></strong></dt>
+<dd>The type of resource pool (appType 25 for Cleanroom).</dd>
+<dt><strong><code>access_nodes</code></strong></dt>
+<dd>List of client group names or client names to associate with the resource pool.</dd>
+<dt><strong><code>is_client_group</code></strong></dt>
+<dd>Flag to determine if access_nodes contains client groups (True) or clients (False).
+Default is True for client groups.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code><a title="cvpysdk.resource_pool.ResourcePool" href="#cvpysdk.resource_pool.ResourcePool">ResourcePool</a></code></dt>
+<dd>An instance representing the newly created resource pool.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the resource pool creation fails or if a resource pool with the given name already exists.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; # Create with client groups
+&gt;&gt;&gt; pool = resource_pools.create(
+...     name=&quot;CleanroomPool&quot;,
+...     resource_type=ResourcePoolTypes(25),
+...     access_nodes=[&quot;AdminHyperVAWS&quot;],
+...     is_client_group=True
+... )
 </code></pre>
-<h2 id="returns">Returns</h2>
-<p>obj &ndash;
-Instance of ResourcePool class</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
-<pre><code>if failed to create resource pool
-
-if resource pool already exists
+<pre><code class="language-python-repl">&gt;&gt;&gt; # Create with clients
+&gt;&gt;&gt; pool = resource_pools.create(
+...     name=&quot;CleanroomPool&quot;,
+...     resource_type=ResourcePoolTypes(25),
+...     access_nodes=[&quot;lego&quot;],
+...     is_client_group=False
+... )
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/resource_pool.py#L158-L226" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/resource_pool.py#L220-L310" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def create(self, name: str, resource_type, **kwargs):
-    &#34;&#34;&#34;creates resource pool in CS
+<pre><code class="python">def create(self, name: str, resource_type: &#39;ResourcePoolTypes&#39;, access_nodes: list, is_client_group: bool = True) -&gt; &#39;ResourcePool&#39;:
+    &#34;&#34;&#34;Create a new resource pool in the CommServe.
 
-        Args:
+    Args:
+        name: The name of the resource pool to create.
+        resource_type: The type of resource pool (appType 25 for Cleanroom).
+        access_nodes: List of client group names or client names to associate with the resource pool.
+        is_client_group: Flag to determine if access_nodes contains client groups (True) or clients (False).
+                        Default is True for client groups.
 
-            name    (str)           --  Resource pool name
+    Returns:
+        ResourcePool: An instance representing the newly created resource pool.
 
-            resource_type   (enum)  --  ResourcePoolTypes enum
+    Raises:
+        SDKException: If the resource pool creation fails or if a resource pool with the given name already exists.
 
-        kwargs options:
-
-            for Threat Scan -
-
-                index_server    (str)   --  index server name
-
-        Returns:
-
-            obj --  Instance of ResourcePool class
-
-        Raises:
-
-            SDKException:
-
-                if failed to create resource pool
-
-                if resource pool already exists
+    Example:
+        &gt;&gt;&gt; # Create with client groups
+        &gt;&gt;&gt; pool = resource_pools.create(
+        ...     name=&#34;CleanroomPool&#34;,
+        ...     resource_type=ResourcePoolTypes(25),
+        ...     access_nodes=[&#34;AdminHyperVAWS&#34;],
+        ...     is_client_group=True
+        ... )
+        
+        &gt;&gt;&gt; # Create with clients
+        &gt;&gt;&gt; pool = resource_pools.create(
+        ...     name=&#34;CleanroomPool&#34;,
+        ...     resource_type=ResourcePoolTypes(25),
+        ...     access_nodes=[&#34;lego&#34;],
+        ...     is_client_group=False
+        ... )
 
     &#34;&#34;&#34;
-    if resource_type.value not in [ResourcePoolTypes.THREATSCAN.value]:
-        raise SDKException(&#39;ResourcePools&#39;, &#39;102&#39;, &#39;Resource pool creation is not supported for this resource type&#39;)
-    if resource_type.value == ResourcePoolTypes.THREATSCAN.value and &#39;index_server&#39; not in kwargs:
-        raise SDKException(&#39;ResourcePools&#39;, &#39;102&#39;, &#39;Index server name is missing in kwargs&#39;)
+    if resource_type.value != ResourcePoolTypes.THREATSCAN.value:
+        raise SDKException(&#39;ResourcePools&#39;, &#39;102&#39;, &#39;Resource pool creation is only supported for appType ThreatScan (25)&#39;)
+    if not access_nodes:
+        raise SDKException(&#39;ResourcePools&#39;, &#39;102&#39;, &#39;Access nodes list cannot be empty&#39;)
     if self.has(name=name):
         raise SDKException(&#39;ResourcePools&#39;, &#39;107&#39;)
+    
+    client_groups = []
+    clients = []
+    
+    # Build client groups or clients based on flag
+    if is_client_group:
+        for node_name in access_nodes:
+            client_group = self._commcell_object.client_groups.get(node_name)
+            client_groups.append({
+                &#34;clientGroupId&#34;: int(client_group.clientgroup_id),
+                &#34;clientGroupName&#34;: node_name
+            })
+    else:
+        for client_name in access_nodes:
+            client = self._commcell_object.clients.get(client_name)
+            clients.append({
+                &#34;clientId&#34;: int(client.client_id),
+                &#34;clientName&#34;: client_name
+            })
+    
     _request_json = {
         &#34;resourcePool&#34;: {
             &#34;appType&#34;: resource_type.value,
@@ -1134,15 +1792,10 @@ if resource pool already exists
                 &#34;jobResultsDirPath&#34;: &#34;&#34;},
             &#34;roleId&#34;: None,
             &#34;indexServerMembers&#34;: [],
-            &#34;indexServer&#34;: {
-                &#34;clientId&#34;: self._commcell_object.index_servers.get(
-                    kwargs.get(&#39;index_server&#39;)).index_server_client_id if resource_type.value == ResourcePoolTypes.THREATSCAN.value else 0,
-                &#34;clientName&#34;: kwargs.get(&#39;index_server&#39;) if resource_type.value == ResourcePoolTypes.THREATSCAN.value else &#39;&#39;,
-                &#34;displayName&#34;: kwargs.get(&#39;index_server&#39;) if resource_type.value == ResourcePoolTypes.THREATSCAN.value else &#39;&#39;,
-                &#34;selected&#34;: True},
             &#34;accessNodes&#34;: {
-                &#34;clientGroups&#34;: [],
-                &#34;clients&#34;: []}}}
+                &#34;clientGroups&#34;: client_groups,
+                &#34;clients&#34;: clients}}}
+    
     flag, response = self._cvpysdk_object.make_request(
         &#39;POST&#39;, self._API_CREATE_RESOURCE_POOL, _request_json)
     if flag:
@@ -1157,46 +1810,34 @@ if resource pool already exists
 </details>
 </dd>
 <dt id="cvpysdk.resource_pool.ResourcePools.delete"><code class="name flex">
-<span>def <span class="ident">delete</span></span>(<span>self, name: str)</span>
+<span>def <span class="ident">delete</span></span>(<span>self, name: str) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>deletes the resource pool from CS</p>
-<h2 id="args">Args</h2>
-<p>name
-(str)
-&ndash;
-Resource pool name</p>
-<h2 id="returns">Returns</h2>
-<p>None</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
-<pre><code>if failed to delete resource pool
-
-if failed to find resource pool
-</code></pre></div>
+<div class="desc"><p>Delete a resource pool from the CommServe (CS) by name.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>name</code></strong></dt>
+<dd>The name of the resource pool to delete.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the resource pool cannot be found or deletion fails.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/resource_pool.py#L228-L259" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/resource_pool.py#L312-L335" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def delete(self, name: str):
-    &#34;&#34;&#34;deletes the resource pool from CS
+<pre><code class="python">def delete(self, name: str) -&gt; None:
+    &#34;&#34;&#34;Delete a resource pool from the CommServe (CS) by name.
 
-        Args:
+    Args:
+        name: The name of the resource pool to delete.
 
-            name   (str)       --   Resource pool name
+    Raises:
+        SDKException: If the resource pool cannot be found or deletion fails.
 
-        Returns:
-
-            None
-
-        Raises:
-
-            SDKException:
-
-                if failed to delete resource pool
-
-                if failed to find resource pool
     &#34;&#34;&#34;
     if not self.has(name=name):
         raise SDKException(&#39;ResourcePools&#39;, &#39;104&#39;)
@@ -1214,42 +1855,40 @@ if failed to find resource pool
 </details>
 </dd>
 <dt id="cvpysdk.resource_pool.ResourcePools.get"><code class="name flex">
-<span>def <span class="ident">get</span></span>(<span>self, name: str)</span>
+<span>def <span class="ident">get</span></span>(<span>self, name: str) ‑> <a title="cvpysdk.resource_pool.ResourcePool" href="#cvpysdk.resource_pool.ResourcePool">ResourcePool</a></span>
 </code></dt>
 <dd>
-<div class="desc"><p>returns ResourcePool object for given name</p>
-<h2 id="args">Args</h2>
-<p>Name
-(str)
-&ndash; Resource Pool name</p>
-<h2 id="returns">Returns</h2>
-<p>obj
-&ndash; Instance of ResourcePool class</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
-<pre><code>if failed to find resource pool with given name
-</code></pre></div>
+<div class="desc"><p>Retrieve a ResourcePool object by its name.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>name</code></strong></dt>
+<dd>The name of the resource pool to retrieve.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code><a title="cvpysdk.resource_pool.ResourcePool" href="#cvpysdk.resource_pool.ResourcePool">ResourcePool</a></code></dt>
+<dd>An instance of the ResourcePool class corresponding to the specified name.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If a resource pool with the given name cannot be found.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/resource_pool.py#L261-L281" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/resource_pool.py#L337-L353" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def get(self, name: str):
-    &#34;&#34;&#34;returns ResourcePool object for given name
+<pre><code class="python">def get(self, name: str) -&gt; &#39;ResourcePool&#39;:
+    &#34;&#34;&#34;Retrieve a ResourcePool object by its name.
 
-        Args:
+    Args:
+        name: The name of the resource pool to retrieve.
 
-            Name    (str)       -- Resource Pool name
+    Returns:
+        ResourcePool: An instance of the ResourcePool class corresponding to the specified name.
 
-        Returns:
-
-            obj     -- Instance of ResourcePool class
-
-        Raises:
-
-            SDKException:
-
-                if failed to find resource pool with given name
+    Raises:
+        SDKException: If a resource pool with the given name cannot be found.
 
     &#34;&#34;&#34;
     if not self.has(name):
@@ -1257,34 +1896,208 @@ if failed to find resource pool
     return ResourcePool(commcell_object=self._commcell_object, name=name, pool_id=self._pools[name.lower()][&#39;id&#39;])</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.resource_pool.ResourcePools.get_cleanroom_resource_pools"><code class="name flex">
+<span>def <span class="ident">get_cleanroom_resource_pools</span></span>(<span>self) ‑> dict</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Return all resource pools configured for the Cleanroom solution.</p>
+<p>This is a convenience wrapper over :meth:<code>get_resource_pools_by_solution</code>
+that filters pools where the <code>solutions</code> list contains the Cleanroom
+solution ID (<code>ResourcePoolSolutions.CLEANROOM.value</code>).</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>Mapping of resource pool name to its details dictionary for all Cleanroom pools.
+Returns an empty dict if no Cleanroom resource pools are found.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; cleanroom_pools = resource_pools.get_cleanroom_resource_pools()
+&gt;&gt;&gt; for name, details in cleanroom_pools.items():
+...     print(name)
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/resource_pool.py#L434-L452" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get_cleanroom_resource_pools(self) -&gt; dict:
+    &#34;&#34;&#34;Return all resource pools configured for the Cleanroom solution.
+
+    This is a convenience wrapper over :meth:`get_resource_pools_by_solution`
+    that filters pools where the ``solutions`` list contains the Cleanroom
+    solution ID (``ResourcePoolSolutions.CLEANROOM.value``).
+
+    Returns:
+        dict: Mapping of resource pool name to its details dictionary for all Cleanroom pools.
+              Returns an empty dict if no Cleanroom resource pools are found.
+
+    Example:
+        &gt;&gt;&gt; cleanroom_pools = resource_pools.get_cleanroom_resource_pools()
+        &gt;&gt;&gt; for name, details in cleanroom_pools.items():
+        ...     print(name)
+
+    &#34;&#34;&#34;
+    return self.get_resource_pools_by_solution(ResourcePoolSolutions.CLEANROOM.value)</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.resource_pool.ResourcePools.get_resource_pools_by_region"><code class="name flex">
+<span>def <span class="ident">get_resource_pools_by_region</span></span>(<span>self, region_name: str) ‑> dict</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Return resource pools filtered by region name.</p>
+<p>This method matches pools based on the region name present at
+<code>regionInfo.regionEntity.regionName</code> in each pool's details. Matching is
+case-insensitive.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>region_name</code></strong> :&ensp;<code>str</code></dt>
+<dd>Region name to filter by (case-insensitive), e.g. <code>"eastus2"</code>.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>Mapping of resource pool name to its details dictionary for all matching pools.
+Returns an empty dict if no pools match the given region or if a pool does not
+contain region information.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; eastus2_pools = resource_pools.get_resource_pools_by_region(&quot;eastus2&quot;)
+&gt;&gt;&gt; for name, details in eastus2_pools.items():
+...     pool_id = details.get(&quot;resourcePool&quot;, {}).get(&quot;resourcePoolId&quot;)
+...     print(f&quot;{name}: {pool_id}&quot;)
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/resource_pool.py#L405-L432" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get_resource_pools_by_region(self, region_name: str) -&gt; dict:
+    &#34;&#34;&#34;Return resource pools filtered by region name.
+
+    This method matches pools based on the region name present at
+    ``regionInfo.regionEntity.regionName`` in each pool&#39;s details. Matching is
+    case-insensitive.
+
+    Args:
+        region_name (str): Region name to filter by (case-insensitive), e.g. ``&#34;eastus2&#34;``.
+
+    Returns:
+        dict: Mapping of resource pool name to its details dictionary for all matching pools.
+              Returns an empty dict if no pools match the given region or if a pool does not
+              contain region information.
+
+    Example:
+        &gt;&gt;&gt; eastus2_pools = resource_pools.get_resource_pools_by_region(&#34;eastus2&#34;)
+        &gt;&gt;&gt; for name, details in eastus2_pools.items():
+        ...     pool_id = details.get(&#34;resourcePool&#34;, {}).get(&#34;resourcePoolId&#34;)
+        ...     print(f&#34;{name}: {pool_id}&#34;)
+
+    &#34;&#34;&#34;
+    resource_pools = {}
+    for pool_name, pool_details in self._pools.items():
+        if pool_details.get(&#39;region&#39;, {}).get(&#39;name&#39;, &#39;&#39;).lower() == region_name.lower():
+            resource_pools[pool_name] = pool_details
+    return resource_pools</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.resource_pool.ResourcePools.get_resource_pools_by_solution"><code class="name flex">
+<span>def <span class="ident">get_resource_pools_by_solution</span></span>(<span>self, solution_id: int) ‑> dict</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Return resource pools filtered by solution ID.</p>
+<p>This method checks each pool's <code>solutions</code> list and matches against the
+integer <code>solutionId</code> field. Pools that do not include the <code>solutions</code> key
+(or have an empty solutions list) are skipped.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>solution_id</code></strong> :&ensp;<code>int</code></dt>
+<dd>The solution ID to filter by, e.g. <code>25</code> for Cleanroom.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>Mapping of resource pool name to its details dictionary for all pools</dd>
+</dl>
+<p>whose <code>solutions</code> list contains the given <code>solution_id</code>. Returns an
+empty dict if no pools match.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; cleanroom_pools = resource_pools.get_resource_pools_by_solution(25)
+&gt;&gt;&gt; for name, details in cleanroom_pools.items():
+...     region = details.get(&quot;regionInfo&quot;, {}).get(&quot;regionEntity&quot;, {}).get(&quot;regionName&quot;, &quot;&quot;)
+...     print(f&quot;{name}: {region}&quot;)
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/resource_pool.py#L370-L403" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def get_resource_pools_by_solution(self, solution_id: int) -&gt; dict:
+    &#34;&#34;&#34;Return resource pools filtered by solution ID.
+
+    This method checks each pool&#39;s ``solutions`` list and matches against the
+    integer ``solutionId`` field. Pools that do not include the ``solutions`` key
+    (or have an empty solutions list) are skipped.
+
+    Args:
+        solution_id (int): The solution ID to filter by, e.g. ``25`` for Cleanroom.
+
+    Returns:
+        dict: Mapping of resource pool name to its details dictionary for all pools
+        whose ``solutions`` list contains the given ``solution_id``. Returns an
+        empty dict if no pools match.
+
+    Example:
+        &gt;&gt;&gt; cleanroom_pools = resource_pools.get_resource_pools_by_solution(25)
+        &gt;&gt;&gt; for name, details in cleanroom_pools.items():
+        ...     region = details.get(&#34;regionInfo&#34;, {}).get(&#34;regionEntity&#34;, {}).get(&#34;regionName&#34;, &#34;&#34;)
+        ...     print(f&#34;{name}: {region}&#34;)
+
+    &#34;&#34;&#34;
+    resource_pools = {}
+    for pool_name, pool_details in self._pools.items():
+        if solution_id == ResourcePoolTypes.THREATINDICATOR.value:
+             if pool_details.get(&#39;solutionType&#39;) == &#34;THREAT_INDICATORS&#34;:
+                resource_pools[pool_name] = pool_details
+        else:
+            for sol in pool_details.get(&#39;solutions&#39;, []):
+                if sol.get(&#39;id&#39;) == solution_id:
+                    resource_pools[pool_name] = pool_details
+                    break
+    return resource_pools</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.resource_pool.ResourcePools.has"><code class="name flex">
 <span>def <span class="ident">has</span></span>(<span>self, name: str) ‑> bool</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Checks whether given resource pool exists in cs or not</p>
-<h2 id="args">Args</h2>
-<p>name
-(str)
-&ndash; Resource pool name</p>
-<h2 id="returns">Returns</h2>
-<p>bool
-&ndash;
-True if resource pool exists in cs</p></div>
+<div class="desc"><p>Check if a resource pool with the specified name exists in the CommServe.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>name</code></strong></dt>
+<dd>The name of the resource pool to check.</dd>
+</dl>
+<p>Returns
+-----=
+True if the resource pool exists in the CommServe; False otherwise.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/resource_pool.py#L283-L296" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/resource_pool.py#L355-L368" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has(self, name: str) -&gt; bool:
-    &#34;&#34;&#34;Checks whether given resource pool exists in cs or not
+    &#34;&#34;&#34;Check if a resource pool with the specified name exists in the CommServe.
 
-        Args:
+    Args:
+        name: The name of the resource pool to check.
 
-            name        (str)       -- Resource pool name
+    Returns:
+        True if the resource pool exists in the CommServe; False otherwise.
 
-        Returns:
-
-           bool    --  True if resource pool exists in cs
     &#34;&#34;&#34;
     if name.lower() in self._pools:
         return True
@@ -1292,17 +2105,24 @@ True if resource pool exists in cs</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.resource_pool.ResourcePools.refresh"><code class="name flex">
-<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+<span>def <span class="ident">refresh</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Refresh the resource pools associated with CS</p></div>
+<div class="desc"><p>Reload the resource pools associated with the CommServe (CS).</p>
+<p>This method refreshes the internal state of the ResourcePools object, ensuring that
+any changes to resource pools on the CommServe are reflected in the current instance.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/resource_pool.py#L298-L301" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/resource_pool.py#L454-L463" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def refresh(self):
-    &#34;&#34;&#34;Refresh the resource pools associated with CS&#34;&#34;&#34;
+<pre><code class="python">def refresh(self) -&gt; None:
+    &#34;&#34;&#34;Reload the resource pools associated with the CommServe (CS).
+
+    This method refreshes the internal state of the ResourcePools object, ensuring that
+    any changes to resource pools on the CommServe are reflected in the current instance.
+
+    &#34;&#34;&#34;
     self._pools = {}
     self._pools = self._get_resource_pools()</code></pre>
 </details>
@@ -1383,8 +2203,17 @@ setTimeout(() => input.focus(), 100);
 <h4><code><a title="cvpysdk.resource_pool.ResourcePool" href="#cvpysdk.resource_pool.ResourcePool">ResourcePool</a></code></h4>
 <ul class="">
 <li><code><a title="cvpysdk.resource_pool.ResourcePool.refresh" href="#cvpysdk.resource_pool.ResourcePool.refresh">refresh</a></code></li>
+<li><code><a title="cvpysdk.resource_pool.ResourcePool.resource_pool_client_groups" href="#cvpysdk.resource_pool.ResourcePool.resource_pool_client_groups">resource_pool_client_groups</a></code></li>
 <li><code><a title="cvpysdk.resource_pool.ResourcePool.resource_pool_id" href="#cvpysdk.resource_pool.ResourcePool.resource_pool_id">resource_pool_id</a></code></li>
+<li><code><a title="cvpysdk.resource_pool.ResourcePool.resource_pool_region" href="#cvpysdk.resource_pool.ResourcePool.resource_pool_region">resource_pool_region</a></code></li>
+<li><code><a title="cvpysdk.resource_pool.ResourcePool.resource_pool_solution" href="#cvpysdk.resource_pool.ResourcePool.resource_pool_solution">resource_pool_solution</a></code></li>
 <li><code><a title="cvpysdk.resource_pool.ResourcePool.resource_pool_type" href="#cvpysdk.resource_pool.ResourcePool.resource_pool_type">resource_pool_type</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="cvpysdk.resource_pool.ResourcePoolSolutions" href="#cvpysdk.resource_pool.ResourcePoolSolutions">ResourcePoolSolutions</a></code></h4>
+<ul class="">
+<li><code><a title="cvpysdk.resource_pool.ResourcePoolSolutions.CLEANROOM" href="#cvpysdk.resource_pool.ResourcePoolSolutions.CLEANROOM">CLEANROOM</a></code></li>
 </ul>
 </li>
 <li>
@@ -1414,6 +2243,7 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.resource_pool.ResourcePoolTypes.SERVICENOW" href="#cvpysdk.resource_pool.ResourcePoolTypes.SERVICENOW">SERVICENOW</a></code></li>
 <li><code><a title="cvpysdk.resource_pool.ResourcePoolTypes.SHAREPOINT" href="#cvpysdk.resource_pool.ResourcePoolTypes.SHAREPOINT">SHAREPOINT</a></code></li>
 <li><code><a title="cvpysdk.resource_pool.ResourcePoolTypes.TEAMS" href="#cvpysdk.resource_pool.ResourcePoolTypes.TEAMS">TEAMS</a></code></li>
+<li><code><a title="cvpysdk.resource_pool.ResourcePoolTypes.THREATINDICATOR" href="#cvpysdk.resource_pool.ResourcePoolTypes.THREATINDICATOR">THREATINDICATOR</a></code></li>
 <li><code><a title="cvpysdk.resource_pool.ResourcePoolTypes.THREATSCAN" href="#cvpysdk.resource_pool.ResourcePoolTypes.THREATSCAN">THREATSCAN</a></code></li>
 <li><code><a title="cvpysdk.resource_pool.ResourcePoolTypes.VSA" href="#cvpysdk.resource_pool.ResourcePoolTypes.VSA">VSA</a></code></li>
 </ul>
@@ -1424,6 +2254,9 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.resource_pool.ResourcePools.create" href="#cvpysdk.resource_pool.ResourcePools.create">create</a></code></li>
 <li><code><a title="cvpysdk.resource_pool.ResourcePools.delete" href="#cvpysdk.resource_pool.ResourcePools.delete">delete</a></code></li>
 <li><code><a title="cvpysdk.resource_pool.ResourcePools.get" href="#cvpysdk.resource_pool.ResourcePools.get">get</a></code></li>
+<li><code><a title="cvpysdk.resource_pool.ResourcePools.get_cleanroom_resource_pools" href="#cvpysdk.resource_pool.ResourcePools.get_cleanroom_resource_pools">get_cleanroom_resource_pools</a></code></li>
+<li><code><a title="cvpysdk.resource_pool.ResourcePools.get_resource_pools_by_region" href="#cvpysdk.resource_pool.ResourcePools.get_resource_pools_by_region">get_resource_pools_by_region</a></code></li>
+<li><code><a title="cvpysdk.resource_pool.ResourcePools.get_resource_pools_by_solution" href="#cvpysdk.resource_pool.ResourcePools.get_resource_pools_by_solution">get_resource_pools_by_solution</a></code></li>
 <li><code><a title="cvpysdk.resource_pool.ResourcePools.has" href="#cvpysdk.resource_pool.ResourcePools.has">has</a></code></li>
 <li><code><a title="cvpysdk.resource_pool.ResourcePools.refresh" href="#cvpysdk.resource_pool.ResourcePools.refresh">refresh</a></code></li>
 </ul>

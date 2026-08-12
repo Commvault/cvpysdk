@@ -25,8 +25,9 @@
 <section id="section-intro">
 <p>File for performing tags related operations.</p>
 <p>Tags: Class for representing all the tags created by the user which is logged in.</p>
-<h2 id="tags">Tags</h2>
-<p>Methods:</p>
+<p>Tags
+-----=
+Methods:</p>
 <pre><code>has_tag()   --  checks whether the tag with given name exists or not
 
 add()       --  creates a new tag to commcell
@@ -40,8 +41,9 @@ refresh()   --  refreshes the tags list
 <p>Properties:</p>
 <pre><code>**all_tags  --  returns the dict containing all the tags and id
 </code></pre>
-<h2 id="tag">Tag</h2>
-<p>Properties:</p>
+<p>Tag
+-----=
+Properties:</p>
 <pre><code>**tag_id    --  returns tag id
 
 **tag_name  --  returns tag name
@@ -49,7 +51,7 @@ refresh()   --  refreshes the tags list
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/tags.py#L1-L286" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/tags.py#L1-L336" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -100,15 +102,31 @@ Tag:
         **tag_name  --  returns tag name
 
 &#34;&#34;&#34;
+from typing import TYPE_CHECKING
+
 from cvpysdk.exception import SDKException
 
+if TYPE_CHECKING:
+    from .commcell import Commcell
 
 class Tags:
-    &#34;&#34;&#34;Class for doing operations related to entity tags from backend&#34;&#34;&#34;
+    &#34;&#34;&#34;Class for doing operations related to entity tags from backend
 
-    DEFAULT_TAGSET_ID = -1
+    Attributes:
+        _commcell_object (object): Instance of the Commcell class.
+        _service (dict): Dictionary of service URLs.
+        _cvpysdk_object (object): Instance of the CVPYSDK class.
+        _get_tags_url (str): URL to get entity tags.
+        _create_tags_url (str): URL to create entity tags.
+        _tags (dict): Dictionary of tags.
 
-    def __init__(self, commcell_object: object) -&gt; None:
+    Usage:
+        &gt;&gt;&gt; tags = Tags(commcell_object)
+    &#34;&#34;&#34;
+
+    DEFAULT_TAGSET_ID: int = -1
+
+    def __init__(self, commcell_object: &#39;Commcell&#39;) -&gt; None:
         &#34;&#34;&#34;Method to initialize tags class
 
             Args:
@@ -121,7 +139,7 @@ class Tags:
         self._cvpysdk_object = commcell_object._cvpysdk_object
         self._get_tags_url = self._service[&#39;GET_ENTITY_TAGS&#39;]
         self._create_tags_url = self._service[&#39;CREATE_ENTITY_TAGS&#39;]
-        self._tags = None
+        self._tags: dict = None
 
         self.refresh()
 
@@ -154,7 +172,7 @@ class Tags:
 
         self.DEFAULT_TAGSET_ID = resp[&#39;tagSetInfo&#39;][&#39;id&#39;]
 
-        tag_dict = {}
+        tag_dict: dict = {}
         if &#39;tags&#39; in resp:
             for tag in resp.get(&#34;tags&#34;, []):
                 tag_dict[tag.get(&#34;name&#34;).lower()] = tag.get(&#34;id&#34;)
@@ -195,14 +213,14 @@ class Tags:
 
         return self._tags and tag_name.lower() in self._tags
 
-    def get(self, name: str):
+    def get(self, name: str) -&gt; &#39;Tag&#39;:
         &#34;&#34;&#34;Returns an instance of the Tag class for the given tag name.
 
             Args:
-                name    (str)   --  name of the tag to get the instance of
+                name (str): name of the tag to get the instance of
 
             Returns:
-                object  -   instance of the Tag class for the given tag name
+                object: instance of the Tag class for the given tag name
 
             Raises:
                 SDKException:
@@ -221,14 +239,25 @@ class Tags:
         &#34;&#34;&#34;Refresh the list of tags&#34;&#34;&#34;
         self._tags = self._get_tags()
 
-    def add(self, tag_name: str):
+    def add(self, tag_name: str) -&gt; &#39;Tag&#39;:
         &#34;&#34;&#34;Method to add an entity tag
 
             Args:
                 tag_name (str): entity tag name
 
             Returns:
-                object  -   instance of the Tag class, for the newly created entity tag
+                object: instance of the Tag class, for the newly created entity tag
+
+            Raises:
+                SDKException:
+                    if tag_name is not a string
+
+                    if response is not success
+
+                    if error occurs while creating tag
+
+            Usage:
+                &gt;&gt;&gt; tags.add(&#39;mytag&#39;)
         &#34;&#34;&#34;
         if not isinstance(tag_name, str):
             raise SDKException(&#39;EntityTags&#39;, &#39;101&#39;)
@@ -266,6 +295,17 @@ class Tags:
 
         Args:
             tag_name (str): entity tag name to delete
+
+        Raises:
+            SDKException:
+                if no tag exists with the given name
+
+                if response is not success
+
+                if error occurs while deleting tag
+
+        Usage:
+            &gt;&gt;&gt; tags.delete(&#39;mytag&#39;)
         &#34;&#34;&#34;
         if not self.has_tag(tag_name):
             raise SDKException(&#34;EntityTags&#34;, &#39;105&#39;)
@@ -280,8 +320,8 @@ class Tags:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
         resp = response.json()
-        err_code = 0
-        err_message = &#34;&#34;
+        err_code: int = 0
+        err_message: str = &#34;&#34;
         if resp:
             err_code = resp.get(&#39;errorCode&#39;, 0)
             err_message = resp.get(&#39;errorMessage&#39;, &#34;&#34;)
@@ -293,9 +333,21 @@ class Tags:
 
 
 class Tag:
-    &#34;&#34;&#34;Class for performing actions related to tag &#34;&#34;&#34;
+    &#34;&#34;&#34;Class for performing actions related to tag
 
-    def __init__(self, commcell_object, tag_name, tag_id=None):
+    Attributes:
+        _commcell_object (object): Instance of the Commcell class.
+        _cvpysdk_object (object): Instance of the CVPYSDK class.
+        _services (dict): Dictionary of service URLs.
+        _update_response_ (callable): Method to update the response.
+        _tag_name (str): Name of the entity tag.
+        _tag_id (str): ID of the entity tag.
+
+    Usage:
+        &gt;&gt;&gt; tag = Tag(commcell_object, &#39;mytag&#39;, &#39;123&#39;)
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_object: &#39;Commcell&#39;, tag_name: str, tag_id: str = None) -&gt; None:
         &#34;&#34;&#34;Initialise the Tag class instance.
 
             Args:
@@ -329,12 +381,12 @@ class Tag:
         return tags.get(self._tag_name).tag_id
 
     @property
-    def tag_id(self):
+    def tag_id(self) -&gt; str:
         &#34;&#34;&#34;Returns tag id&#34;&#34;&#34;
         return self._tag_id
 
     @property
-    def tag_name(self):
+    def tag_name(self) -&gt; str:
         &#34;&#34;&#34;Returns tag name&#34;&#34;&#34;
         return self._tag_name</code></pre>
 </details>
@@ -350,13 +402,34 @@ class Tag:
 <dl>
 <dt id="cvpysdk.tags.Tag"><code class="flex name class">
 <span>class <span class="ident">Tag</span></span>
-<span>(</span><span>commcell_object, tag_name, tag_id=None)</span>
+<span>(</span><span>commcell_object: Commcell, tag_name: str, tag_id: str = None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for performing actions related to tag </p>
+<div class="desc"><p>Class for performing actions related to tag</p>
+<dl>
+<dt>Attributes</dt>
+<dt>-----=</dt>
+<dt><strong><code>_commcell_object</code></strong> :&ensp;<code>object</code></dt>
+<dd>Instance of the Commcell class.</dd>
+<dt><strong><code>_cvpysdk_object</code></strong> :&ensp;<code>object</code></dt>
+<dd>Instance of the CVPYSDK class.</dd>
+<dt><strong><code>_services</code></strong> :&ensp;<code>dict</code></dt>
+<dd>Dictionary of service URLs.</dd>
+<dt><strong><code>_update_response_</code></strong> :&ensp;<code>callable</code></dt>
+<dd>Method to update the response.</dd>
+<dt><strong><code>_tag_name</code></strong> :&ensp;<code>str</code></dt>
+<dd>Name of the entity tag.</dd>
+<dt><strong><code>_tag_id</code></strong> :&ensp;<code>str</code></dt>
+<dd>ID of the entity tag.</dd>
+</dl>
+<p>Usage
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; tag = Tag(commcell_object, 'mytag', '123')
+</code></pre>
 <p>Initialise the Tag class instance.</p>
-<h2 id="args">Args</h2>
-<p>commcell_object
+<p>Args
+-----=
+commcell_object
 (object)
 &ndash;
 instance of the Commcell class</p>
@@ -369,19 +442,32 @@ name of the entity tag</p>
 &ndash;
 id of the entity tag
 default: None</p>
-<h2 id="returns">Returns</h2>
-<p>object
+<p>Returns
+-----=
+object
 -
 instance of the tag class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/tags.py#L242-L286" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/tags.py#L280-L336" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Tag:
-    &#34;&#34;&#34;Class for performing actions related to tag &#34;&#34;&#34;
+    &#34;&#34;&#34;Class for performing actions related to tag
 
-    def __init__(self, commcell_object, tag_name, tag_id=None):
+    Attributes:
+        _commcell_object (object): Instance of the Commcell class.
+        _cvpysdk_object (object): Instance of the CVPYSDK class.
+        _services (dict): Dictionary of service URLs.
+        _update_response_ (callable): Method to update the response.
+        _tag_name (str): Name of the entity tag.
+        _tag_id (str): ID of the entity tag.
+
+    Usage:
+        &gt;&gt;&gt; tag = Tag(commcell_object, &#39;mytag&#39;, &#39;123&#39;)
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_object: &#39;Commcell&#39;, tag_name: str, tag_id: str = None) -&gt; None:
         &#34;&#34;&#34;Initialise the Tag class instance.
 
             Args:
@@ -415,41 +501,41 @@ instance of the tag class</p></div>
         return tags.get(self._tag_name).tag_id
 
     @property
-    def tag_id(self):
+    def tag_id(self) -&gt; str:
         &#34;&#34;&#34;Returns tag id&#34;&#34;&#34;
         return self._tag_id
 
     @property
-    def tag_name(self):
+    def tag_name(self) -&gt; str:
         &#34;&#34;&#34;Returns tag name&#34;&#34;&#34;
         return self._tag_name</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.tags.Tag.tag_id"><code class="name">var <span class="ident">tag_id</span></code></dt>
+<dt id="cvpysdk.tags.Tag.tag_id"><code class="name">var <span class="ident">tag_id</span> : str</code></dt>
 <dd>
 <div class="desc"><p>Returns tag id</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/tags.py#L278-L281" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/tags.py#L328-L331" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def tag_id(self):
+def tag_id(self) -&gt; str:
     &#34;&#34;&#34;Returns tag id&#34;&#34;&#34;
     return self._tag_id</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.tags.Tag.tag_name"><code class="name">var <span class="ident">tag_name</span></code></dt>
+<dt id="cvpysdk.tags.Tag.tag_name"><code class="name">var <span class="ident">tag_name</span> : str</code></dt>
 <dd>
 <div class="desc"><p>Returns tag name</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/tags.py#L283-L286" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/tags.py#L333-L336" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def tag_name(self):
+def tag_name(self) -&gt; str:
     &#34;&#34;&#34;Returns tag name&#34;&#34;&#34;
     return self._tag_name</code></pre>
 </details>
@@ -458,28 +544,62 @@ def tag_name(self):
 </dd>
 <dt id="cvpysdk.tags.Tags"><code class="flex name class">
 <span>class <span class="ident">Tags</span></span>
-<span>(</span><span>commcell_object: object)</span>
+<span>(</span><span>commcell_object: Commcell)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Class for doing operations related to entity tags from backend</p>
+<dl>
+<dt>Attributes</dt>
+<dt>-----=</dt>
+<dt><strong><code>_commcell_object</code></strong> :&ensp;<code>object</code></dt>
+<dd>Instance of the Commcell class.</dd>
+<dt><strong><code>_service</code></strong> :&ensp;<code>dict</code></dt>
+<dd>Dictionary of service URLs.</dd>
+<dt><strong><code>_cvpysdk_object</code></strong> :&ensp;<code>object</code></dt>
+<dd>Instance of the CVPYSDK class.</dd>
+<dt><strong><code>_get_tags_url</code></strong> :&ensp;<code>str</code></dt>
+<dd>URL to get entity tags.</dd>
+<dt><strong><code>_create_tags_url</code></strong> :&ensp;<code>str</code></dt>
+<dd>URL to create entity tags.</dd>
+<dt><strong><code>_tags</code></strong> :&ensp;<code>dict</code></dt>
+<dd>Dictionary of tags.</dd>
+</dl>
+<p>Usage
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; tags = Tags(commcell_object)
+</code></pre>
 <p>Method to initialize tags class</p>
-<h2 id="args">Args</h2>
-<p>commcell_object (Commcell)
+<p>Args
+-----=
+commcell_object (Commcell)
 &ndash; instance of commcell class</p>
-<h2 id="returns">Returns</h2>
-<p>Tags (object)
+<p>Returns
+-----=
+Tags (object)
 &ndash; instance of tags class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/tags.py#L53-L239" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/tags.py#L57-L277" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Tags:
-    &#34;&#34;&#34;Class for doing operations related to entity tags from backend&#34;&#34;&#34;
+    &#34;&#34;&#34;Class for doing operations related to entity tags from backend
 
-    DEFAULT_TAGSET_ID = -1
+    Attributes:
+        _commcell_object (object): Instance of the Commcell class.
+        _service (dict): Dictionary of service URLs.
+        _cvpysdk_object (object): Instance of the CVPYSDK class.
+        _get_tags_url (str): URL to get entity tags.
+        _create_tags_url (str): URL to create entity tags.
+        _tags (dict): Dictionary of tags.
 
-    def __init__(self, commcell_object: object) -&gt; None:
+    Usage:
+        &gt;&gt;&gt; tags = Tags(commcell_object)
+    &#34;&#34;&#34;
+
+    DEFAULT_TAGSET_ID: int = -1
+
+    def __init__(self, commcell_object: &#39;Commcell&#39;) -&gt; None:
         &#34;&#34;&#34;Method to initialize tags class
 
             Args:
@@ -492,7 +612,7 @@ def tag_name(self):
         self._cvpysdk_object = commcell_object._cvpysdk_object
         self._get_tags_url = self._service[&#39;GET_ENTITY_TAGS&#39;]
         self._create_tags_url = self._service[&#39;CREATE_ENTITY_TAGS&#39;]
-        self._tags = None
+        self._tags: dict = None
 
         self.refresh()
 
@@ -525,7 +645,7 @@ def tag_name(self):
 
         self.DEFAULT_TAGSET_ID = resp[&#39;tagSetInfo&#39;][&#39;id&#39;]
 
-        tag_dict = {}
+        tag_dict: dict = {}
         if &#39;tags&#39; in resp:
             for tag in resp.get(&#34;tags&#34;, []):
                 tag_dict[tag.get(&#34;name&#34;).lower()] = tag.get(&#34;id&#34;)
@@ -566,14 +686,14 @@ def tag_name(self):
 
         return self._tags and tag_name.lower() in self._tags
 
-    def get(self, name: str):
+    def get(self, name: str) -&gt; &#39;Tag&#39;:
         &#34;&#34;&#34;Returns an instance of the Tag class for the given tag name.
 
             Args:
-                name    (str)   --  name of the tag to get the instance of
+                name (str): name of the tag to get the instance of
 
             Returns:
-                object  -   instance of the Tag class for the given tag name
+                object: instance of the Tag class for the given tag name
 
             Raises:
                 SDKException:
@@ -592,14 +712,25 @@ def tag_name(self):
         &#34;&#34;&#34;Refresh the list of tags&#34;&#34;&#34;
         self._tags = self._get_tags()
 
-    def add(self, tag_name: str):
+    def add(self, tag_name: str) -&gt; &#39;Tag&#39;:
         &#34;&#34;&#34;Method to add an entity tag
 
             Args:
                 tag_name (str): entity tag name
 
             Returns:
-                object  -   instance of the Tag class, for the newly created entity tag
+                object: instance of the Tag class, for the newly created entity tag
+
+            Raises:
+                SDKException:
+                    if tag_name is not a string
+
+                    if response is not success
+
+                    if error occurs while creating tag
+
+            Usage:
+                &gt;&gt;&gt; tags.add(&#39;mytag&#39;)
         &#34;&#34;&#34;
         if not isinstance(tag_name, str):
             raise SDKException(&#39;EntityTags&#39;, &#39;101&#39;)
@@ -637,6 +768,17 @@ def tag_name(self):
 
         Args:
             tag_name (str): entity tag name to delete
+
+        Raises:
+            SDKException:
+                if no tag exists with the given name
+
+                if response is not success
+
+                if error occurs while deleting tag
+
+        Usage:
+            &gt;&gt;&gt; tags.delete(&#39;mytag&#39;)
         &#34;&#34;&#34;
         if not self.has_tag(tag_name):
             raise SDKException(&#34;EntityTags&#34;, &#39;105&#39;)
@@ -651,8 +793,8 @@ def tag_name(self):
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
         resp = response.json()
-        err_code = 0
-        err_message = &#34;&#34;
+        err_code: int = 0
+        err_message: str = &#34;&#34;
         if resp:
             err_code = resp.get(&#39;errorCode&#39;, 0)
             err_message = resp.get(&#39;errorMessage&#39;, &#34;&#34;)
@@ -664,9 +806,9 @@ def tag_name(self):
 </details>
 <h3>Class variables</h3>
 <dl>
-<dt id="cvpysdk.tags.Tags.DEFAULT_TAGSET_ID"><code class="name">var <span class="ident">DEFAULT_TAGSET_ID</span></code></dt>
+<dt id="cvpysdk.tags.Tags.DEFAULT_TAGSET_ID"><code class="name">var <span class="ident">DEFAULT_TAGSET_ID</span> : int</code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 </dl>
 <h3>Instance variables</h3>
@@ -674,8 +816,9 @@ def tag_name(self):
 <dt id="cvpysdk.tags.Tags.all_tags"><code class="name">var <span class="ident">all_tags</span> : dict</code></dt>
 <dd>
 <div class="desc"><p>Returns a dictionary containing tags and their ID associated to a user</p>
-<h2 id="returns">Returns</h2>
 <dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
 <dt><code>tags</code></dt>
 <dd>name-id pair of tags associated to a user
 Example:
@@ -688,7 +831,7 @@ Example:
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/tags.py#L110-L124" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/tags.py#L126-L140" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def all_tags(self) -&gt; dict:
@@ -711,32 +854,56 @@ def all_tags(self) -&gt; dict:
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.tags.Tags.add"><code class="name flex">
-<span>def <span class="ident">add</span></span>(<span>self, tag_name: str)</span>
+<span>def <span class="ident">add</span></span>(<span>self, tag_name: str) ‑> <a title="cvpysdk.tags.Tag" href="#cvpysdk.tags.Tag">Tag</a></span>
 </code></dt>
 <dd>
 <div class="desc"><p>Method to add an entity tag</p>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>tag_name</code></strong> :&ensp;<code>str</code></dt>
 <dd>entity tag name</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>object</code></dt>
+<dd>instance of the Tag class, for the newly created entity tag</dd>
 </dl>
-<h2 id="returns">Returns</h2>
-<p>object
--
-instance of the Tag class, for the newly created entity tag</p></div>
+<p>Raises
+-----=
+SDKException:
+if tag_name is not a string</p>
+<pre><code>if response is not success
+
+if error occurs while creating tag
+</code></pre>
+<p>Usage
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; tags.add('mytag')
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/tags.py#L171-L209" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/tags.py#L187-L236" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def add(self, tag_name: str):
+<pre><code class="python">def add(self, tag_name: str) -&gt; &#39;Tag&#39;:
     &#34;&#34;&#34;Method to add an entity tag
 
         Args:
             tag_name (str): entity tag name
 
         Returns:
-            object  -   instance of the Tag class, for the newly created entity tag
+            object: instance of the Tag class, for the newly created entity tag
+
+        Raises:
+            SDKException:
+                if tag_name is not a string
+
+                if response is not success
+
+                if error occurs while creating tag
+
+        Usage:
+            &gt;&gt;&gt; tags.add(&#39;mytag&#39;)
     &#34;&#34;&#34;
     if not isinstance(tag_name, str):
         raise SDKException(&#39;EntityTags&#39;, &#39;101&#39;)
@@ -775,21 +942,45 @@ instance of the Tag class, for the newly created entity tag</p></div>
 </code></dt>
 <dd>
 <div class="desc"><p>Deletes the entity tag</p>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>tag_name</code></strong> :&ensp;<code>str</code></dt>
 <dd>entity tag name to delete</dd>
-</dl></div>
+</dl>
+<p>Raises
+-----=
+SDKException:
+if no tag exists with the given name</p>
+<pre><code>if response is not success
+
+if error occurs while deleting tag
+</code></pre>
+<p>Usage
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; tags.delete('mytag')
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/tags.py#L211-L239" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/tags.py#L238-L277" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def delete(self, tag_name: str) -&gt; None:
     &#34;&#34;&#34;Deletes the entity tag
 
     Args:
         tag_name (str): entity tag name to delete
+
+    Raises:
+        SDKException:
+            if no tag exists with the given name
+
+            if response is not success
+
+            if error occurs while deleting tag
+
+    Usage:
+        &gt;&gt;&gt; tags.delete(&#39;mytag&#39;)
     &#34;&#34;&#34;
     if not self.has_tag(tag_name):
         raise SDKException(&#34;EntityTags&#34;, &#39;105&#39;)
@@ -804,8 +995,8 @@ instance of the Tag class, for the newly created entity tag</p></div>
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
     resp = response.json()
-    err_code = 0
-    err_message = &#34;&#34;
+    err_code: int = 0
+    err_message: str = &#34;&#34;
     if resp:
         err_code = resp.get(&#39;errorCode&#39;, 0)
         err_message = resp.get(&#39;errorMessage&#39;, &#34;&#34;)
@@ -817,37 +1008,39 @@ instance of the Tag class, for the newly created entity tag</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.tags.Tags.get"><code class="name flex">
-<span>def <span class="ident">get</span></span>(<span>self, name: str)</span>
+<span>def <span class="ident">get</span></span>(<span>self, name: str) ‑> <a title="cvpysdk.tags.Tag" href="#cvpysdk.tags.Tag">Tag</a></span>
 </code></dt>
 <dd>
 <div class="desc"><p>Returns an instance of the Tag class for the given tag name.</p>
-<h2 id="args">Args</h2>
-<p>name
-(str)
-&ndash;
-name of the tag to get the instance of</p>
-<h2 id="returns">Returns</h2>
-<p>object
--
-instance of the Tag class for the given tag name</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>name</code></strong> :&ensp;<code>str</code></dt>
+<dd>name of the tag to get the instance of</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>object</code></dt>
+<dd>instance of the Tag class for the given tag name</dd>
+</dl>
+<p>Raises
+-----=
+SDKException:
 if type of the tag name argument is not string</p>
 <pre><code>if no tag exists with the given name
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/tags.py#L145-L165" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/tags.py#L161-L181" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def get(self, name: str):
+<pre><code class="python">def get(self, name: str) -&gt; &#39;Tag&#39;:
     &#34;&#34;&#34;Returns an instance of the Tag class for the given tag name.
 
         Args:
-            name    (str)   --  name of the tag to get the instance of
+            name (str): name of the tag to get the instance of
 
         Returns:
-            object  -   instance of the Tag class for the given tag name
+            object: instance of the Tag class for the given tag name
 
         Raises:
             SDKException:
@@ -868,23 +1061,24 @@ if type of the tag name argument is not string</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Checks if a tag exist for the logged-in user</p>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>tag_name</code></strong> :&ensp;<code>str</code></dt>
 <dd>name of the tag to search</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
 <dt><code>bool</code></dt>
 <dd>return True if tag is found, else returns false</dd>
 </dl>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
+<p>Raises
+-----=
+SDKException:
 if type of the tag name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/tags.py#L126-L143" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/tags.py#L142-L159" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def has_tag(self, tag_name: str) -&gt; bool:
     &#34;&#34;&#34;Checks if a tag exist for the logged-in user
@@ -914,7 +1108,7 @@ if type of the tag name argument is not string</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/tags.py#L167-L169" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/tags.py#L183-L185" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def refresh(self) -&gt; None:
     &#34;&#34;&#34;Refresh the list of tags&#34;&#34;&#34;

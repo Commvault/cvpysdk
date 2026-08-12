@@ -27,7 +27,8 @@
 <p>GoogleSpannerInstance is the only class defined in this file.</p>
 <p>GoogleSpannerInstance: Derived class from CloudAppsInstance Base class, representing a
 Google Cloud Spanner instance, and to perform operations on that instance</p>
-<h2 id="googlespannerinstance">Googlespannerinstance</h2>
+<p>Googlespannerinstance
+-----=</p>
 <p>_get_instance_properties()
 &ndash;
 Instance class method overwritten to add cloud apps
@@ -46,7 +47,7 @@ project_id              --  Returns the cloud spanner project id
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/cloudapps/spanner_instance.py#L1-L144" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/cloudapps/spanner_instance.py#L1-L198" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -96,16 +97,37 @@ from ..cainstance import CloudAppsInstance
 
 
 class GoogleSpannerInstance(CloudAppsInstance):
-    &#34;&#34;&#34;Class for representing an Instance of the Google Cloud Spanner instance type.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents an instance of the Google Cloud Spanner service.
 
-    def _get_instance_properties(self):
-        &#34;&#34;&#34;Gets the properties of this instance.
+    This class provides an interface for managing and interacting with a Google Cloud Spanner instance.
+    It exposes properties to access key attributes such as the instance type, Spanner instance ID,
+    proxy client, staging path, and project ID. Internal methods allow retrieval of instance-specific
+    properties for further configuration or inspection.
 
-            Raises:
-                SDKException:
-                    if response is empty
+    Key Features:
+        - Access to the type of Spanner instance via `instance_type`
+        - Retrieve the unique Spanner instance ID with `spanner_instance_id`
+        - Obtain the proxy client for communication with the Spanner instance using `proxy_client`
+        - Access the staging path for temporary data or operations via `staging_path`
+        - Retrieve the associated Google Cloud project ID with `project_id`
+        - Internal method for fetching instance properties
 
-                    if response is not success
+    &#34;&#34;&#34;
+
+    def _get_instance_properties(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve and update the properties of the current Google Spanner instance.
+
+        This method fetches the latest properties for the instance and updates the internal state.
+        It raises an SDKException if the response from the server is empty or unsuccessful.
+
+        Raises:
+            SDKException: If the response is empty or not successful.
+
+        Example:
+            &gt;&gt;&gt; instance = GoogleSpannerInstance(commcell_object, instance_name)
+            &gt;&gt;&gt; instance._get_instance_properties()
+            &gt;&gt;&gt; # The instance properties are now updated internally
 
         &#34;&#34;&#34;
         super(GoogleSpannerInstance, self)._get_instance_properties()
@@ -145,51 +167,77 @@ class GoogleSpannerInstance(CloudAppsInstance):
                     &#39;cloudSpannerInstance&#39;, {}).get(&#39;projectId&#39;)
 
     @property
-    def instance_type(self):
-        &#34;&#34;&#34;
-            Returns:
+    def instance_type(self) -&gt; int:
+        &#34;&#34;&#34;Get the instance type of the CloudAppsInstance.
 
-                 int:   CloudAppsInstance instance type
+        Returns:
+            int: The instance type identifier for the CloudAppsInstance.
+
+        Example:
+            &gt;&gt;&gt; spanner_instance = GoogleSpannerInstance()
+            &gt;&gt;&gt; inst_type = spanner_instance.instance_type
+            &gt;&gt;&gt; print(f&#34;Instance type: {inst_type}&#34;)
 
         &#34;&#34;&#34;
         return self._ca_instance_type
 
     @property
-    def spanner_instance_id(self):
-        &#34;&#34;&#34;
-            Returns:
+    def spanner_instance_id(self) -&gt; str:
+        &#34;&#34;&#34;Get the Google service account instance ID for this Spanner instance.
 
-                 str:   Google service account instance id
+        Returns:
+            The instance ID as a string.
+
+        Example:
+            &gt;&gt;&gt; spanner_instance = GoogleSpannerInstance()
+            &gt;&gt;&gt; instance_id = spanner_instance.spanner_instance_id
+            &gt;&gt;&gt; print(f&#34;Spanner Instance ID: {instance_id}&#34;)
 
         &#34;&#34;&#34;
         return self._google_instance_id
 
     @property
-    def proxy_client(self):
-        &#34;&#34;&#34;
-            Returns the proxy client name to this instance
+    def proxy_client(self) -&gt; str:
+        &#34;&#34;&#34;Get the proxy client name associated with this Google Spanner instance.
 
-                str:    Client name of proxy associated to cloud account
+        Returns:
+            str: The name of the proxy client linked to the cloud account for this instance.
+
+        Example:
+            &gt;&gt;&gt; instance = GoogleSpannerInstance()
+            &gt;&gt;&gt; proxy_name = instance.proxy_client
+            &gt;&gt;&gt; print(f&#34;Proxy client name: {proxy_name}&#34;)
 
         &#34;&#34;&#34;
         return self._proxy_client
 
     @property
-    def staging_path(self):
-        &#34;&#34;&#34;
-            Returns the instance staging path
+    def staging_path(self) -&gt; str:
+        &#34;&#34;&#34;Get the Cloud Spanner instance staging path.
 
-                str:    Cloud spanner staging path of instance
+        Returns:
+            The staging path for the Cloud Spanner instance as a string.
+
+        Example:
+            &gt;&gt;&gt; instance = GoogleSpannerInstance()
+            &gt;&gt;&gt; path = instance.staging_path  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Staging path: {path}&#34;)
 
         &#34;&#34;&#34;
         return self._staging_path
 
     @property
-    def project_id(self):
-        &#34;&#34;&#34;
-            Returns the cloud project id
+    def project_id(self) -&gt; str:
+        &#34;&#34;&#34;Get the Google Cloud Spanner project ID associated with this instance.
 
-                str:    Cloud spanner project id
+        Returns:
+            The project ID as a string.
+
+        Example:
+            &gt;&gt;&gt; instance = GoogleSpannerInstance()
+            &gt;&gt;&gt; project_id = instance.project_id  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Cloud Spanner project ID: {project_id}&#34;)
+
         &#34;&#34;&#34;
         return self._project_id</code></pre>
 </details>
@@ -208,40 +256,66 @@ class GoogleSpannerInstance(CloudAppsInstance):
 <span>(</span><span>agent_object, instance_name, instance_id=None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for representing an Instance of the Google Cloud Spanner instance type.</p>
-<p>Initialise the instance object.</p>
-<h2 id="args">Args</h2>
-<p>agent_object
-(object)
-&ndash;
-instance of the Agent class</p>
-<p>instance_name
-(str)
-&ndash;
-name of the instance</p>
-<p>instance_id
-(str)
-&ndash;
-id of the instance
-default: None</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Instance class</p></div>
+<div class="desc"><p>Represents an instance of the Google Cloud Spanner service.</p>
+<p>This class provides an interface for managing and interacting with a Google Cloud Spanner instance.
+It exposes properties to access key attributes such as the instance type, Spanner instance ID,
+proxy client, staging path, and project ID. Internal methods allow retrieval of instance-specific
+properties for further configuration or inspection.</p>
+<p>Key Features:
+- Access to the type of Spanner instance via <code>instance_type</code>
+- Retrieve the unique Spanner instance ID with <code>spanner_instance_id</code>
+- Obtain the proxy client for communication with the Spanner instance using <code>proxy_client</code>
+- Access the staging path for temporary data or operations via <code>staging_path</code>
+- Retrieve the associated Google Cloud project ID with <code>project_id</code>
+- Internal method for fetching instance properties</p>
+<p>Initialize a CloudAppsInstance object.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>agent_object</code></strong></dt>
+<dd>The agent object associated with this instance.</dd>
+<dt><strong><code>instance_name</code></strong></dt>
+<dd>The name of the cloud application instance.</dd>
+<dt><strong><code>instance_id</code></strong></dt>
+<dd>Optional unique identifier for the instance.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/cloudapps/spanner_instance.py#L48-L144" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/cloudapps/spanner_instance.py#L48-L198" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class GoogleSpannerInstance(CloudAppsInstance):
-    &#34;&#34;&#34;Class for representing an Instance of the Google Cloud Spanner instance type.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents an instance of the Google Cloud Spanner service.
 
-    def _get_instance_properties(self):
-        &#34;&#34;&#34;Gets the properties of this instance.
+    This class provides an interface for managing and interacting with a Google Cloud Spanner instance.
+    It exposes properties to access key attributes such as the instance type, Spanner instance ID,
+    proxy client, staging path, and project ID. Internal methods allow retrieval of instance-specific
+    properties for further configuration or inspection.
 
-            Raises:
-                SDKException:
-                    if response is empty
+    Key Features:
+        - Access to the type of Spanner instance via `instance_type`
+        - Retrieve the unique Spanner instance ID with `spanner_instance_id`
+        - Obtain the proxy client for communication with the Spanner instance using `proxy_client`
+        - Access the staging path for temporary data or operations via `staging_path`
+        - Retrieve the associated Google Cloud project ID with `project_id`
+        - Internal method for fetching instance properties
 
-                    if response is not success
+    &#34;&#34;&#34;
+
+    def _get_instance_properties(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve and update the properties of the current Google Spanner instance.
+
+        This method fetches the latest properties for the instance and updates the internal state.
+        It raises an SDKException if the response from the server is empty or unsuccessful.
+
+        Raises:
+            SDKException: If the response is empty or not successful.
+
+        Example:
+            &gt;&gt;&gt; instance = GoogleSpannerInstance(commcell_object, instance_name)
+            &gt;&gt;&gt; instance._get_instance_properties()
+            &gt;&gt;&gt; # The instance properties are now updated internally
 
         &#34;&#34;&#34;
         super(GoogleSpannerInstance, self)._get_instance_properties()
@@ -281,51 +355,77 @@ default: None</p>
                     &#39;cloudSpannerInstance&#39;, {}).get(&#39;projectId&#39;)
 
     @property
-    def instance_type(self):
-        &#34;&#34;&#34;
-            Returns:
+    def instance_type(self) -&gt; int:
+        &#34;&#34;&#34;Get the instance type of the CloudAppsInstance.
 
-                 int:   CloudAppsInstance instance type
+        Returns:
+            int: The instance type identifier for the CloudAppsInstance.
+
+        Example:
+            &gt;&gt;&gt; spanner_instance = GoogleSpannerInstance()
+            &gt;&gt;&gt; inst_type = spanner_instance.instance_type
+            &gt;&gt;&gt; print(f&#34;Instance type: {inst_type}&#34;)
 
         &#34;&#34;&#34;
         return self._ca_instance_type
 
     @property
-    def spanner_instance_id(self):
-        &#34;&#34;&#34;
-            Returns:
+    def spanner_instance_id(self) -&gt; str:
+        &#34;&#34;&#34;Get the Google service account instance ID for this Spanner instance.
 
-                 str:   Google service account instance id
+        Returns:
+            The instance ID as a string.
+
+        Example:
+            &gt;&gt;&gt; spanner_instance = GoogleSpannerInstance()
+            &gt;&gt;&gt; instance_id = spanner_instance.spanner_instance_id
+            &gt;&gt;&gt; print(f&#34;Spanner Instance ID: {instance_id}&#34;)
 
         &#34;&#34;&#34;
         return self._google_instance_id
 
     @property
-    def proxy_client(self):
-        &#34;&#34;&#34;
-            Returns the proxy client name to this instance
+    def proxy_client(self) -&gt; str:
+        &#34;&#34;&#34;Get the proxy client name associated with this Google Spanner instance.
 
-                str:    Client name of proxy associated to cloud account
+        Returns:
+            str: The name of the proxy client linked to the cloud account for this instance.
+
+        Example:
+            &gt;&gt;&gt; instance = GoogleSpannerInstance()
+            &gt;&gt;&gt; proxy_name = instance.proxy_client
+            &gt;&gt;&gt; print(f&#34;Proxy client name: {proxy_name}&#34;)
 
         &#34;&#34;&#34;
         return self._proxy_client
 
     @property
-    def staging_path(self):
-        &#34;&#34;&#34;
-            Returns the instance staging path
+    def staging_path(self) -&gt; str:
+        &#34;&#34;&#34;Get the Cloud Spanner instance staging path.
 
-                str:    Cloud spanner staging path of instance
+        Returns:
+            The staging path for the Cloud Spanner instance as a string.
+
+        Example:
+            &gt;&gt;&gt; instance = GoogleSpannerInstance()
+            &gt;&gt;&gt; path = instance.staging_path  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Staging path: {path}&#34;)
 
         &#34;&#34;&#34;
         return self._staging_path
 
     @property
-    def project_id(self):
-        &#34;&#34;&#34;
-            Returns the cloud project id
+    def project_id(self) -&gt; str:
+        &#34;&#34;&#34;Get the Google Cloud Spanner project ID associated with this instance.
 
-                str:    Cloud spanner project id
+        Returns:
+            The project ID as a string.
+
+        Example:
+            &gt;&gt;&gt; instance = GoogleSpannerInstance()
+            &gt;&gt;&gt; project_id = instance.project_id  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Cloud Spanner project ID: {project_id}&#34;)
+
         &#34;&#34;&#34;
         return self._project_id</code></pre>
 </details>
@@ -336,109 +436,172 @@ default: None</p>
 </ul>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.instances.cloudapps.spanner_instance.GoogleSpannerInstance.instance_type"><code class="name">var <span class="ident">instance_type</span></code></dt>
+<dt id="cvpysdk.instances.cloudapps.spanner_instance.GoogleSpannerInstance.instance_type"><code class="name">var <span class="ident">instance_type</span> : int</code></dt>
 <dd>
-<div class="desc"><h2 id="returns">Returns</h2>
+<div class="desc"><p>Get the instance type of the CloudAppsInstance.</p>
 <dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
 <dt><code>int</code></dt>
-<dd>CloudAppsInstance instance type</dd>
-</dl></div>
+<dd>The instance type identifier for the CloudAppsInstance.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; spanner_instance = GoogleSpannerInstance()
+&gt;&gt;&gt; inst_type = spanner_instance.instance_type
+&gt;&gt;&gt; print(f&quot;Instance type: {inst_type}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/cloudapps/spanner_instance.py#L97-L105" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/cloudapps/spanner_instance.py#L120-L134" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def instance_type(self):
-    &#34;&#34;&#34;
-        Returns:
+def instance_type(self) -&gt; int:
+    &#34;&#34;&#34;Get the instance type of the CloudAppsInstance.
 
-             int:   CloudAppsInstance instance type
+    Returns:
+        int: The instance type identifier for the CloudAppsInstance.
+
+    Example:
+        &gt;&gt;&gt; spanner_instance = GoogleSpannerInstance()
+        &gt;&gt;&gt; inst_type = spanner_instance.instance_type
+        &gt;&gt;&gt; print(f&#34;Instance type: {inst_type}&#34;)
 
     &#34;&#34;&#34;
     return self._ca_instance_type</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.cloudapps.spanner_instance.GoogleSpannerInstance.project_id"><code class="name">var <span class="ident">project_id</span></code></dt>
+<dt id="cvpysdk.instances.cloudapps.spanner_instance.GoogleSpannerInstance.project_id"><code class="name">var <span class="ident">project_id</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the cloud project id</p>
-<pre><code>str:    Cloud spanner project id
+<div class="desc"><p>Get the Google Cloud Spanner project ID associated with this instance.</p>
+<p>Returns
+-----=
+The project ID as a string.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; instance = GoogleSpannerInstance()
+&gt;&gt;&gt; project_id = instance.project_id  # Use dot notation for property access
+&gt;&gt;&gt; print(f&quot;Cloud Spanner project ID: {project_id}&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/cloudapps/spanner_instance.py#L137-L144" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/cloudapps/spanner_instance.py#L184-L198" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def project_id(self):
-    &#34;&#34;&#34;
-        Returns the cloud project id
+def project_id(self) -&gt; str:
+    &#34;&#34;&#34;Get the Google Cloud Spanner project ID associated with this instance.
 
-            str:    Cloud spanner project id
+    Returns:
+        The project ID as a string.
+
+    Example:
+        &gt;&gt;&gt; instance = GoogleSpannerInstance()
+        &gt;&gt;&gt; project_id = instance.project_id  # Use dot notation for property access
+        &gt;&gt;&gt; print(f&#34;Cloud Spanner project ID: {project_id}&#34;)
+
     &#34;&#34;&#34;
     return self._project_id</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.cloudapps.spanner_instance.GoogleSpannerInstance.proxy_client"><code class="name">var <span class="ident">proxy_client</span></code></dt>
+<dt id="cvpysdk.instances.cloudapps.spanner_instance.GoogleSpannerInstance.proxy_client"><code class="name">var <span class="ident">proxy_client</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the proxy client name to this instance</p>
-<pre><code>str:    Client name of proxy associated to cloud account
+<div class="desc"><p>Get the proxy client name associated with this Google Spanner instance.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>str</code></dt>
+<dd>The name of the proxy client linked to the cloud account for this instance.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; instance = GoogleSpannerInstance()
+&gt;&gt;&gt; proxy_name = instance.proxy_client
+&gt;&gt;&gt; print(f&quot;Proxy client name: {proxy_name}&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/cloudapps/spanner_instance.py#L117-L125" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/cloudapps/spanner_instance.py#L152-L166" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def proxy_client(self):
-    &#34;&#34;&#34;
-        Returns the proxy client name to this instance
+def proxy_client(self) -&gt; str:
+    &#34;&#34;&#34;Get the proxy client name associated with this Google Spanner instance.
 
-            str:    Client name of proxy associated to cloud account
+    Returns:
+        str: The name of the proxy client linked to the cloud account for this instance.
+
+    Example:
+        &gt;&gt;&gt; instance = GoogleSpannerInstance()
+        &gt;&gt;&gt; proxy_name = instance.proxy_client
+        &gt;&gt;&gt; print(f&#34;Proxy client name: {proxy_name}&#34;)
 
     &#34;&#34;&#34;
     return self._proxy_client</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.cloudapps.spanner_instance.GoogleSpannerInstance.spanner_instance_id"><code class="name">var <span class="ident">spanner_instance_id</span></code></dt>
+<dt id="cvpysdk.instances.cloudapps.spanner_instance.GoogleSpannerInstance.spanner_instance_id"><code class="name">var <span class="ident">spanner_instance_id</span> : str</code></dt>
 <dd>
-<div class="desc"><h2 id="returns">Returns</h2>
-<dl>
-<dt><code>str</code></dt>
-<dd>Google service account instance id</dd>
-</dl></div>
+<div class="desc"><p>Get the Google service account instance ID for this Spanner instance.</p>
+<p>Returns
+-----=
+The instance ID as a string.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; spanner_instance = GoogleSpannerInstance()
+&gt;&gt;&gt; instance_id = spanner_instance.spanner_instance_id
+&gt;&gt;&gt; print(f&quot;Spanner Instance ID: {instance_id}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/cloudapps/spanner_instance.py#L107-L115" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/cloudapps/spanner_instance.py#L136-L150" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def spanner_instance_id(self):
-    &#34;&#34;&#34;
-        Returns:
+def spanner_instance_id(self) -&gt; str:
+    &#34;&#34;&#34;Get the Google service account instance ID for this Spanner instance.
 
-             str:   Google service account instance id
+    Returns:
+        The instance ID as a string.
+
+    Example:
+        &gt;&gt;&gt; spanner_instance = GoogleSpannerInstance()
+        &gt;&gt;&gt; instance_id = spanner_instance.spanner_instance_id
+        &gt;&gt;&gt; print(f&#34;Spanner Instance ID: {instance_id}&#34;)
 
     &#34;&#34;&#34;
     return self._google_instance_id</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.cloudapps.spanner_instance.GoogleSpannerInstance.staging_path"><code class="name">var <span class="ident">staging_path</span></code></dt>
+<dt id="cvpysdk.instances.cloudapps.spanner_instance.GoogleSpannerInstance.staging_path"><code class="name">var <span class="ident">staging_path</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the instance staging path</p>
-<pre><code>str:    Cloud spanner staging path of instance
+<div class="desc"><p>Get the Cloud Spanner instance staging path.</p>
+<p>Returns
+-----=
+The staging path for the Cloud Spanner instance as a string.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; instance = GoogleSpannerInstance()
+&gt;&gt;&gt; path = instance.staging_path  # Use dot notation for property access
+&gt;&gt;&gt; print(f&quot;Staging path: {path}&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/cloudapps/spanner_instance.py#L127-L135" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/cloudapps/spanner_instance.py#L168-L182" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def staging_path(self):
-    &#34;&#34;&#34;
-        Returns the instance staging path
+def staging_path(self) -&gt; str:
+    &#34;&#34;&#34;Get the Cloud Spanner instance staging path.
 
-            str:    Cloud spanner staging path of instance
+    Returns:
+        The staging path for the Cloud Spanner instance as a string.
+
+    Example:
+        &gt;&gt;&gt; instance = GoogleSpannerInstance()
+        &gt;&gt;&gt; path = instance.staging_path  # Use dot notation for property access
+        &gt;&gt;&gt; print(f&#34;Staging path: {path}&#34;)
 
     &#34;&#34;&#34;
     return self._staging_path</code></pre>
@@ -449,13 +612,18 @@ def staging_path(self):
 <ul class="hlist">
 <li><code><b><a title="cvpysdk.instances.cainstance.CloudAppsInstance" href="../cainstance.html#cvpysdk.instances.cainstance.CloudAppsInstance">CloudAppsInstance</a></b></code>:
 <ul class="hlist">
+<li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.account_name" href="../cainstance.html#cvpysdk.instances.cainstance.CloudAppsInstance.account_name">account_name</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.backupsets" href="../../instance.html#cvpysdk.instance.Instance.backupsets">backupsets</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.browse" href="../../instance.html#cvpysdk.instance.Instance.browse">browse</a></code></li>
+<li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.ca_instance_type" href="../cainstance.html#cvpysdk.instances.cainstance.CloudAppsInstance.ca_instance_type">ca_instance_type</a></code></li>
+<li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.credential_id" href="../cainstance.html#cvpysdk.instances.cainstance.CloudAppsInstance.credential_id">credential_id</a></code></li>
+<li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.credential_name" href="../cainstance.html#cvpysdk.instances.cainstance.CloudAppsInstance.credential_name">credential_name</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.credentials" href="../../instance.html#cvpysdk.instance.Instance.credentials">credentials</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.find" href="../../instance.html#cvpysdk.instance.Instance.find">find</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.instance_id" href="../../instance.html#cvpysdk.instance.Instance.instance_id">instance_id</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.instance_name" href="../../instance.html#cvpysdk.instance.Instance.instance_name">instance_name</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.name" href="../../instance.html#cvpysdk.instance.Instance.name">name</a></code></li>
+<li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.plan_name" href="../cainstance.html#cvpysdk.instances.cainstance.CloudAppsInstance.plan_name">plan_name</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.properties" href="../../instance.html#cvpysdk.instance.Instance.properties">properties</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.refresh" href="../../instance.html#cvpysdk.instance.Instance.refresh">refresh</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.subclients" href="../../instance.html#cvpysdk.instance.Instance.subclients">subclients</a></code></li>

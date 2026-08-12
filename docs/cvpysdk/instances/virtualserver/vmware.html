@@ -29,7 +29,8 @@
 Derived class from VirtualServer
 Base class, representing a
 VMware instance, and to perform operations on that instance</p>
-<h2 id="vmwareinstance">Vmwareinstance</h2>
+<p>Vmwareinstance
+-----=</p>
 <p><strong>init</strong>(
 agent_object,
 instance_name,
@@ -48,7 +49,7 @@ related properties of this subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/vmware.py#L1-L121" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/vmware.py#L1-L179" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -95,19 +96,40 @@ VMwareInstance:
 
 from ..vsinstance import VirtualServerInstance
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ...agent import Agent
+
 
 class VMwareInstance(VirtualServerInstance):
-    &#34;&#34;&#34;Class for representing VMWare instance of the Virtual Server agent.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents a VMware instance managed by the Virtual Server agent.
 
-    def __init__(self, agent_object, instance_name, instance_id=None):
-        &#34;&#34;&#34;Initialize the Instance object for the given Virtual Server instance.
+    This class encapsulates the properties and behaviors specific to a VMware
+    virtual server instance, providing mechanisms to retrieve and manage
+    instance properties and metadata. It is designed to interface with the
+    broader Virtual Server agent framework, allowing for seamless integration
+    and management of VMware environments.
 
-            Args:
-                agent_object    (object)    --  instance of the Agent class
+    Key Features:
+        - Initialization with agent object, instance name, and instance ID
+        - Retrieval of instance properties and their JSON representation
+        - Access to server host name, username, and server name via properties
 
-                instance_name   (str)       --  instance name
+    &#34;&#34;&#34;
 
-                instance_id     (int)       --  instance id
+    def __init__(self, agent_object: &#39;Agent&#39;, instance_name: str, instance_id: str = None) -&gt; None:
+        &#34;&#34;&#34;Initialize a VMwareInstance object for the specified Virtual Server instance.
+
+        Args:
+            agent_object: An instance of the Agent class representing the associated agent.
+            instance_name: The name of the virtual server instance.
+            instance_id: Optional; the unique identifier for the instance. If not provided, it may be determined automatically.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(client_object, &#39;Virtual Server&#39;)
+            &gt;&gt;&gt; vmware_instance = VMwareInstance(agent, &#39;VM_Instance_01&#39;, &#39;123&#39;)
+            &gt;&gt;&gt; # The VMwareInstance object is now initialized and ready for use
 
         &#34;&#34;&#34;
         self._vendor_id = 1
@@ -116,14 +138,14 @@ class VMwareInstance(VirtualServerInstance):
         self._server_host_name = []
         super(VMwareInstance, self).__init__(agent_object, instance_name, instance_id)
 
-    def _get_instance_properties(self):
-        &#34;&#34;&#34;Gets the properties of this instance.
+    def _get_instance_properties(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve and update the properties of this VMware instance.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        This method fetches the current configuration and properties for the VMware instance
+        and updates the internal state accordingly.
 
-                    if response is not success
+        Raises:
+            SDKException: If the response from the server is empty or indicates a failure.
 
         &#34;&#34;&#34;
         super(VMwareInstance, self)._get_instance_properties()
@@ -135,11 +157,11 @@ class VMwareInstance(VirtualServerInstance):
 
             self._server_host_name.append(self._vmwarvendor[&#34;domainName&#34;])
 
-    def _get_instance_properties_json(self):
-        &#34;&#34;&#34;get the all instance related properties of this subclient.
+    def _get_instance_properties_json(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve all instance-related properties for this subclient as a dictionary.
 
-           Returns:
-                dict - all instance properties put inside a dict
+        Returns:
+            dict: A dictionary containing all properties associated with this VMware instance.
 
         &#34;&#34;&#34;
         instance_json = {
@@ -158,18 +180,48 @@ class VMwareInstance(VirtualServerInstance):
         return instance_json
 
     @property
-    def server_host_name(self):
-        &#34;&#34;&#34;getter for the domain name in the vmware vendor json&#34;&#34;&#34;
+    def server_host_name(self) -&gt; list:
+        &#34;&#34;&#34;Get the domain name (server host name) from the VMware vendor JSON.
+
+        Returns:
+            The domain name or server host name as a list.
+
+        Example:
+            &gt;&gt;&gt; vmware_instance = VMwareInstance()
+            &gt;&gt;&gt; host_name = vmware_instance.server_host_name
+            &gt;&gt;&gt; print(f&#34;VMware server host name: {host_name}&#34;)
+
+        &#34;&#34;&#34;
         return self._server_host_name
 
     @property
-    def _user_name(self):
-        &#34;&#34;&#34;getter for the username from the vmware vendor json&#34;&#34;&#34;
-        return self._vmwarvendor.get(&#34;userName&#34;, &#34;&#34;)
+    def _user_name(self) -&gt; str:
+        &#34;&#34;&#34;Get the username from the VMware vendor JSON configuration.
+
+        Returns:
+            The username string extracted from the VMware vendor JSON.
+
+        Example:
+            &gt;&gt;&gt; instance = VMwareInstance()
+            &gt;&gt;&gt; username = instance._user_name
+            &gt;&gt;&gt; print(f&#34;VMware username: {username}&#34;)
+
+        &#34;&#34;&#34;
+        return self._vmwarvendor.get(&#39;userName&#39;) or self._credential.get(&#39;userName&#39;, &#39;&#39;)
 
     @property
-    def server_name(self):
-        &#34;&#34;&#34;getter for the domain name in the vmware vendor json&#34;&#34;&#34;
+    def server_name(self) -&gt; list:
+        &#34;&#34;&#34;Get the domain name from the VMware vendor JSON.
+
+        Returns:
+            The domain name associated with this VMware instance as a list.
+
+        Example:
+            &gt;&gt;&gt; vmware_instance = VMwareInstance()
+            &gt;&gt;&gt; domain = vmware_instance.server_name
+            &gt;&gt;&gt; print(f&#34;VMware domain name: {domain}&#34;)
+
+        &#34;&#34;&#34;
         return self._server_name</code></pre>
 </details>
 </section>
@@ -184,41 +236,70 @@ class VMwareInstance(VirtualServerInstance):
 <dl>
 <dt id="cvpysdk.instances.virtualserver.vmware.VMwareInstance"><code class="flex name class">
 <span>class <span class="ident">VMwareInstance</span></span>
-<span>(</span><span>agent_object, instance_name, instance_id=None)</span>
+<span>(</span><span>agent_object: Agent, instance_name: str, instance_id: str = None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for representing VMWare instance of the Virtual Server agent.</p>
-<p>Initialize the Instance object for the given Virtual Server instance.</p>
-<h2 id="args">Args</h2>
-<p>agent_object
-(object)
-&ndash;
-instance of the Agent class</p>
-<p>instance_name
-(str)
-&ndash;
-instance name</p>
-<p>instance_id
-(int)
-&ndash;
-instance id</p></div>
+<div class="desc"><p>Represents a VMware instance managed by the Virtual Server agent.</p>
+<p>This class encapsulates the properties and behaviors specific to a VMware
+virtual server instance, providing mechanisms to retrieve and manage
+instance properties and metadata. It is designed to interface with the
+broader Virtual Server agent framework, allowing for seamless integration
+and management of VMware environments.</p>
+<p>Key Features:
+- Initialization with agent object, instance name, and instance ID
+- Retrieval of instance properties and their JSON representation
+- Access to server host name, username, and server name via properties</p>
+<p>Initialize a VMwareInstance object for the specified Virtual Server instance.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>agent_object</code></strong></dt>
+<dd>An instance of the Agent class representing the associated agent.</dd>
+<dt><strong><code>instance_name</code></strong></dt>
+<dd>The name of the virtual server instance.</dd>
+<dt><strong><code>instance_id</code></strong></dt>
+<dd>Optional; the unique identifier for the instance. If not provided, it may be determined automatically.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; agent = Agent(client_object, 'Virtual Server')
+&gt;&gt;&gt; vmware_instance = VMwareInstance(agent, 'VM_Instance_01', '123')
+&gt;&gt;&gt; # The VMwareInstance object is now initialized and ready for use
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/vmware.py#L47-L121" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/vmware.py#L51-L179" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class VMwareInstance(VirtualServerInstance):
-    &#34;&#34;&#34;Class for representing VMWare instance of the Virtual Server agent.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents a VMware instance managed by the Virtual Server agent.
 
-    def __init__(self, agent_object, instance_name, instance_id=None):
-        &#34;&#34;&#34;Initialize the Instance object for the given Virtual Server instance.
+    This class encapsulates the properties and behaviors specific to a VMware
+    virtual server instance, providing mechanisms to retrieve and manage
+    instance properties and metadata. It is designed to interface with the
+    broader Virtual Server agent framework, allowing for seamless integration
+    and management of VMware environments.
 
-            Args:
-                agent_object    (object)    --  instance of the Agent class
+    Key Features:
+        - Initialization with agent object, instance name, and instance ID
+        - Retrieval of instance properties and their JSON representation
+        - Access to server host name, username, and server name via properties
 
-                instance_name   (str)       --  instance name
+    &#34;&#34;&#34;
 
-                instance_id     (int)       --  instance id
+    def __init__(self, agent_object: &#39;Agent&#39;, instance_name: str, instance_id: str = None) -&gt; None:
+        &#34;&#34;&#34;Initialize a VMwareInstance object for the specified Virtual Server instance.
+
+        Args:
+            agent_object: An instance of the Agent class representing the associated agent.
+            instance_name: The name of the virtual server instance.
+            instance_id: Optional; the unique identifier for the instance. If not provided, it may be determined automatically.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(client_object, &#39;Virtual Server&#39;)
+            &gt;&gt;&gt; vmware_instance = VMwareInstance(agent, &#39;VM_Instance_01&#39;, &#39;123&#39;)
+            &gt;&gt;&gt; # The VMwareInstance object is now initialized and ready for use
 
         &#34;&#34;&#34;
         self._vendor_id = 1
@@ -227,14 +308,14 @@ instance id</p></div>
         self._server_host_name = []
         super(VMwareInstance, self).__init__(agent_object, instance_name, instance_id)
 
-    def _get_instance_properties(self):
-        &#34;&#34;&#34;Gets the properties of this instance.
+    def _get_instance_properties(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve and update the properties of this VMware instance.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        This method fetches the current configuration and properties for the VMware instance
+        and updates the internal state accordingly.
 
-                    if response is not success
+        Raises:
+            SDKException: If the response from the server is empty or indicates a failure.
 
         &#34;&#34;&#34;
         super(VMwareInstance, self)._get_instance_properties()
@@ -246,11 +327,11 @@ instance id</p></div>
 
             self._server_host_name.append(self._vmwarvendor[&#34;domainName&#34;])
 
-    def _get_instance_properties_json(self):
-        &#34;&#34;&#34;get the all instance related properties of this subclient.
+    def _get_instance_properties_json(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve all instance-related properties for this subclient as a dictionary.
 
-           Returns:
-                dict - all instance properties put inside a dict
+        Returns:
+            dict: A dictionary containing all properties associated with this VMware instance.
 
         &#34;&#34;&#34;
         instance_json = {
@@ -269,18 +350,48 @@ instance id</p></div>
         return instance_json
 
     @property
-    def server_host_name(self):
-        &#34;&#34;&#34;getter for the domain name in the vmware vendor json&#34;&#34;&#34;
+    def server_host_name(self) -&gt; list:
+        &#34;&#34;&#34;Get the domain name (server host name) from the VMware vendor JSON.
+
+        Returns:
+            The domain name or server host name as a list.
+
+        Example:
+            &gt;&gt;&gt; vmware_instance = VMwareInstance()
+            &gt;&gt;&gt; host_name = vmware_instance.server_host_name
+            &gt;&gt;&gt; print(f&#34;VMware server host name: {host_name}&#34;)
+
+        &#34;&#34;&#34;
         return self._server_host_name
 
     @property
-    def _user_name(self):
-        &#34;&#34;&#34;getter for the username from the vmware vendor json&#34;&#34;&#34;
-        return self._vmwarvendor.get(&#34;userName&#34;, &#34;&#34;)
+    def _user_name(self) -&gt; str:
+        &#34;&#34;&#34;Get the username from the VMware vendor JSON configuration.
+
+        Returns:
+            The username string extracted from the VMware vendor JSON.
+
+        Example:
+            &gt;&gt;&gt; instance = VMwareInstance()
+            &gt;&gt;&gt; username = instance._user_name
+            &gt;&gt;&gt; print(f&#34;VMware username: {username}&#34;)
+
+        &#34;&#34;&#34;
+        return self._vmwarvendor.get(&#39;userName&#39;) or self._credential.get(&#39;userName&#39;, &#39;&#39;)
 
     @property
-    def server_name(self):
-        &#34;&#34;&#34;getter for the domain name in the vmware vendor json&#34;&#34;&#34;
+    def server_name(self) -&gt; list:
+        &#34;&#34;&#34;Get the domain name from the VMware vendor JSON.
+
+        Returns:
+            The domain name associated with this VMware instance as a list.
+
+        Example:
+            &gt;&gt;&gt; vmware_instance = VMwareInstance()
+            &gt;&gt;&gt; domain = vmware_instance.server_name
+            &gt;&gt;&gt; print(f&#34;VMware domain name: {domain}&#34;)
+
+        &#34;&#34;&#34;
         return self._server_name</code></pre>
 </details>
 <h3>Ancestors</h3>
@@ -290,31 +401,69 @@ instance id</p></div>
 </ul>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.instances.virtualserver.vmware.VMwareInstance.server_host_name"><code class="name">var <span class="ident">server_host_name</span></code></dt>
+<dt id="cvpysdk.instances.virtualserver.vmware.VMwareInstance.server_host_name"><code class="name">var <span class="ident">server_host_name</span> : list</code></dt>
 <dd>
-<div class="desc"><p>getter for the domain name in the vmware vendor json</p></div>
+<div class="desc"><p>Get the domain name (server host name) from the VMware vendor JSON.</p>
+<p>Returns
+-----=
+The domain name or server host name as a list.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; vmware_instance = VMwareInstance()
+&gt;&gt;&gt; host_name = vmware_instance.server_host_name
+&gt;&gt;&gt; print(f&quot;VMware server host name: {host_name}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/vmware.py#L108-L111" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/vmware.py#L133-L147" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def server_host_name(self):
-    &#34;&#34;&#34;getter for the domain name in the vmware vendor json&#34;&#34;&#34;
+def server_host_name(self) -&gt; list:
+    &#34;&#34;&#34;Get the domain name (server host name) from the VMware vendor JSON.
+
+    Returns:
+        The domain name or server host name as a list.
+
+    Example:
+        &gt;&gt;&gt; vmware_instance = VMwareInstance()
+        &gt;&gt;&gt; host_name = vmware_instance.server_host_name
+        &gt;&gt;&gt; print(f&#34;VMware server host name: {host_name}&#34;)
+
+    &#34;&#34;&#34;
     return self._server_host_name</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.virtualserver.vmware.VMwareInstance.server_name"><code class="name">var <span class="ident">server_name</span></code></dt>
+<dt id="cvpysdk.instances.virtualserver.vmware.VMwareInstance.server_name"><code class="name">var <span class="ident">server_name</span> : list</code></dt>
 <dd>
-<div class="desc"><p>getter for the domain name in the vmware vendor json</p></div>
+<div class="desc"><p>Get the domain name from the VMware vendor JSON.</p>
+<p>Returns
+-----=
+The domain name associated with this VMware instance as a list.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; vmware_instance = VMwareInstance()
+&gt;&gt;&gt; domain = vmware_instance.server_name
+&gt;&gt;&gt; print(f&quot;VMware domain name: {domain}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/vmware.py#L118-L121" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/vmware.py#L165-L179" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def server_name(self):
-    &#34;&#34;&#34;getter for the domain name in the vmware vendor json&#34;&#34;&#34;
+def server_name(self) -&gt; list:
+    &#34;&#34;&#34;Get the domain name from the VMware vendor JSON.
+
+    Returns:
+        The domain name associated with this VMware instance as a list.
+
+    Example:
+        &gt;&gt;&gt; vmware_instance = VMwareInstance()
+        &gt;&gt;&gt; domain = vmware_instance.server_name
+        &gt;&gt;&gt; print(f&#34;VMware domain name: {domain}&#34;)
+
+    &#34;&#34;&#34;
     return self._server_name</code></pre>
 </details>
 </dd>

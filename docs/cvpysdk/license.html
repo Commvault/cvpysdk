@@ -26,8 +26,9 @@
 <p>File for License operations.</p>
 <p>LicenseDetails
 : Class for representing license details information</p>
-<h2 id="licensedetails">Licensedetails</h2>
-<p><strong>init</strong>(Commcell_object)
+<p>Licensedetails
+-----=
+<strong>init</strong>(Commcell_object)
 &ndash;
 initialise with object of CommCell</p>
 <p>_get_detailed_licenses()
@@ -95,7 +96,7 @@ other_licenses   --    Returns dictionary with the other licenses
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/license.py#L1-L412" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/license.py#L1-L701" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -121,81 +122,103 @@ LicenseDetails        : Class for representing license details information
 
 LicenseDetails:
     __init__(Commcell_object)    --  initialise with object of CommCell
-    
+
     _get_detailed_licenses()      --  Gets all types of license details associated to the commcell object
-    
+
     _get_capacity_details()       -- GET request to get capacity licenses property
-    
+
     _get_complete_oi_licenses()    --   GET request to get OI licenses property
-    
+
     _get_virtualization_licenses()    --   GET request to get virtualization licenses property
-    
+
     _get_user_licenses()    --   GET request to get user licenses property
-    
+
     _get_activate_licenses()    --   GET request to get activate licenses property
-    
+
     _get_metallic_licenses()    --   GET request to get metallic licenses property
-    
+
     _get_other_licenses()    --   GET request to get other licenses property
-    
+
     _get_license_details    --   GET request to get detailed license information
-    
-    
+
+
     refresh()    --    Updates License object with the latest configuration
-    
-    
+
+
 
 LicenseDetails Attributes
 -------------------------
     commcell_id   --    Returns the CommCell Id in decimal value
-    
+
     commcell_id_hex   --    Returns the hexadecimal value of commcell id
-    
+
     cs_hostname   --    Returns the csHostName Or Address of CommCell
-    
-    license_ipaddress   --    Returns the license Ip Address 
-    
+
+    license_ipaddress   --    Returns the license Ip Address
+
     oem_name   --    Returns the oem_name
-    
+
     license_mode   --    Returns the license mode of license
-    
+
     registration_code   --    Returns the registration code of CommCell
-    
+
     serial_number   --    Returns the serial number of CommCell
-    
+
     expiry_date   --    Returns the expiry date of License
-    
+
     capacity_licenses   --    Returns dictionary with the capacity licenses
-    
+
     complete_oi_licenses   --    Returns dictionary with the complete oi licenses
-    
+
     virtualization_licenses   --    Returns dictionary with the virtualization licenses
-    
+
     user_licenses   --    Returns dictionary with the user licenses
-    
+
     activate_licenses   --    Returns dictionary with the activate licenses
-    
+
     metallic_licenses   --    Returns dictionary with the metallic licenses
-    
+
     other_licenses   --    Returns dictionary with the other licenses
 
 &#34;&#34;&#34;
 from __future__ import absolute_import
 from __future__ import unicode_literals
+from typing import Any, Dict
 from .exception import SDKException
 
 
 class LicenseDetails(object):
-    &#34;&#34;&#34;Class for accessing license details information&#34;&#34;&#34;    
+    &#34;&#34;&#34;
+    Provides access to detailed license information for a CommCell environment.
 
-    def __init__(self, commcell_object):
-        &#34;&#34;&#34;Initialize object of the LicenseDetails class.
+    The LicenseDetails class enables retrieval and management of various license types
+    and their associated details within a CommCell. It offers methods to fetch detailed
+    license data, including capacity, virtualization, user, activation, metallic, and
+    other license categories. The class also provides properties to access key license
+    attributes such as CommCell ID, host information, license mode, registration code,
+    serial number, expiry date, and OEM name.
 
-            Args:
-                commcell_object (object)  --  instance of the Commcell class
+    Key Features:
+        - Retrieve detailed license information for a CommCell
+        - Access capacity, complete OI, virtualization, user, activation, metallic, and other license details
+        - Refresh license data to ensure up-to-date information
+        - Access license attributes via convenient properties (e.g., commcell_id, cs_hostname, expiry_date)
+        - Obtain license mode, registration code, serial number, and OEM name
 
-            Returns:
-                object - instance of the LicenseDetails class
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_object: object) -&gt; None:
+        &#34;&#34;&#34;Initialize a LicenseDetails object with the specified Commcell connection.
+
+        Args:
+            commcell_object: An instance of the Commcell class representing the active Commcell connection.
+
+        Example:
+            &gt;&gt;&gt; from cvpysdk.commcell import Commcell
+            &gt;&gt;&gt; cc = Commcell(&#39;commcell_host&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; license_details = LicenseDetails(cc)
+            &gt;&gt;&gt; print(&#34;LicenseDetails object created successfully&#34;)
+
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
         self._LICENSE = self._commcell_object._services[&#39;LICENSE&#39;]
@@ -209,9 +232,19 @@ class LicenseDetails(object):
         self._other_licenses = None
         self._get_license_details()
 
-    def _get_detailed_licenses(self):
-        &#34;&#34;&#34;
-        Gets all types of license details associated to the commcell object
+    def _get_detailed_licenses(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve all types of license details associated with the Commcell object.
+
+        Returns:
+            dict: A dictionary containing detailed information about all license types
+            associated with the Commcell.
+
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails(commcell_object)
+            &gt;&gt;&gt; licenses = license_details._get_detailed_licenses()
+            &gt;&gt;&gt; print(licenses)
+            &gt;&gt;&gt; # Output will be a dictionary with license type details
+
         &#34;&#34;&#34;
         self._get_capacity_details()
         self._get_complete_oi_licenses()
@@ -221,16 +254,23 @@ class LicenseDetails(object):
         self._get_metallic_licenses()
         self._get_other_licenses()
 
-    def _get_capacity_details(self):
-        &#34;&#34;&#34;
-        Request to get capacity licenses property
+    def _get_capacity_details(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the capacity license properties for the current environment.
+
+        This method sends a request to obtain details about capacity-based licenses,
+        such as usage and allocation information.
+
+        Returns:
+            dict: A dictionary containing capacity license properties.
 
         Raises:
-            SDKException:
+            SDKException: If the response is unsuccessful or empty.
 
-                if response is not success
-
-                if response is empty
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; capacity_info = license_details._get_capacity_details()
+            &gt;&gt;&gt; print(capacity_info)
+            {&#39;totalCapacity&#39;: 1000, &#39;usedCapacity&#39;: 750, ...}
 
         &#34;&#34;&#34;
 
@@ -240,22 +280,28 @@ class LicenseDetails(object):
 
         if flag:
             if response.json():
-                self._capacity_licenses = response.json().get(&#39;records&#39;,None)
+                self._capacity_licenses = response.json().get(&#39;records&#39;, None)
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
 
-    def _get_complete_oi_licenses(self):
-        &#34;&#34;&#34;
-       GET request to get OI licenses property
+    def _get_complete_oi_licenses(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the complete OI (Object Identification) licenses property via a GET request.
+
+        This method sends a GET request to obtain the OI licenses property details.
+
+        Returns:
+            dict: A dictionary containing the OI licenses property information.
 
         Raises:
-            SDKException:
+            SDKException: If the response is not successful or if the response is empty.
 
-                if response is not success
-
-                if response is empty
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; oi_licenses = license_details._get_complete_oi_licenses()
+            &gt;&gt;&gt; print(oi_licenses)
+            {&#39;licenseType&#39;: &#39;OI&#39;, &#39;status&#39;: &#39;Active&#39;, ...}
 
         &#34;&#34;&#34;
 
@@ -265,22 +311,29 @@ class LicenseDetails(object):
 
         if flag:
             if response.json():
-                self._complete_oi_licenses = response.json().get(&#39;records&#39;,None)
+                self._complete_oi_licenses = response.json().get(&#39;records&#39;, None)
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
 
-    def _get_virtualization_licenses(self):
-        &#34;&#34;&#34;
-       GET request to get virtualization licenses property
+    def _get_virtualization_licenses(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve virtualization license properties via a GET request.
+
+        This method fetches the virtualization license details associated with the current LicenseDetails instance.
+        It raises an SDKException if the response is unsuccessful or empty.
+
+        Returns:
+            dict: A dictionary containing the virtualization license properties.
 
         Raises:
-            SDKException:
+            SDKException: If the GET request fails or returns an empty response.
 
-                if response is not success
-
-                if response is empty
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; virtualization_licenses = license_details._get_virtualization_licenses()
+            &gt;&gt;&gt; print(virtualization_licenses)
+            &gt;&gt;&gt; # Output will be a dictionary with virtualization license information
 
         &#34;&#34;&#34;
         self._VIRTUALIZATION_LICENSE = self._commcell_object._services[&#39;VIRTUALIZATION_LICENSE&#39;]
@@ -289,22 +342,29 @@ class LicenseDetails(object):
 
         if flag:
             if response.json():
-                self._virtualization_licenses = response.json().get(&#39;records&#39;,None)
+                self._virtualization_licenses = response.json().get(&#39;records&#39;, None)
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
 
-    def _get_user_licenses(self):
-        &#34;&#34;&#34;
-       GET request to get user licenses property
+    def _get_user_licenses(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the user licenses property via a GET request.
+
+        This method fetches the user license details from the server. It is intended for internal use
+        to obtain license information associated with users.
+
+        Returns:
+            dict: A dictionary containing user license properties.
 
         Raises:
-            SDKException:
+            SDKException: If the server response is unsuccessful or empty.
 
-                if response is not success
-
-                if response is empty
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; user_licenses = license_details._get_user_licenses()
+            &gt;&gt;&gt; print(user_licenses)
+            &gt;&gt;&gt; # Output will be a dictionary with user license information
 
         &#34;&#34;&#34;
         self._USER_LICENSE = self._commcell_object._services[&#39;USER_LICENSE&#39;]
@@ -313,22 +373,28 @@ class LicenseDetails(object):
 
         if flag:
             if response.json():
-                self._user_licenses = response.json().get(&#39;records&#39;,None)
+                self._user_licenses = response.json().get(&#39;records&#39;, None)
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
 
-    def _get_activate_licenses(self):
-        &#34;&#34;&#34;
-       GET request to get activate licenses property
+    def _get_activate_licenses(self) -&gt; dict:
+        &#34;&#34;&#34;Send a GET request to retrieve the activated licenses property.
+
+        This method fetches the currently activated licenses from the server.
+
+        Returns:
+            dict: A dictionary containing the activated license properties.
 
         Raises:
-            SDKException:
+            SDKException: If the response is not successful or if the response is empty.
 
-                if response is not success
-
-                if response is empty
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; activated_licenses = license_details._get_activate_licenses()
+            &gt;&gt;&gt; print(activated_licenses)
+            &gt;&gt;&gt; # Output will be a dictionary with license information
 
         &#34;&#34;&#34;
         self._ACTIVATE_LICENSE = self._commcell_object._services[&#39;ACTIVATE_LICENSE&#39;]
@@ -337,22 +403,26 @@ class LicenseDetails(object):
 
         if flag:
             if response.json():
-                self._activate_licenses = response.json().get(&#39;records&#39;,None)
+                self._activate_licenses = response.json().get(&#39;records&#39;, None)
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
 
-    def _get_metallic_licenses(self):
-        &#34;&#34;&#34;
-       GET request to get metallic licenses property
+    def _get_metallic_licenses(self) -&gt; Any:
+        &#34;&#34;&#34;Send a GET request to retrieve the Metallic licenses property.
+
+        This method fetches the Metallic license details associated with the current LicenseDetails instance.
+        It raises an SDKException if the response is unsuccessful or empty.
 
         Raises:
-            SDKException:
+            SDKException: If the response is not successful or is empty.
 
-                if response is not success
-
-                if response is empty
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails(commcell_object)
+            &gt;&gt;&gt; metallic_licenses = license_details._get_metallic_licenses()
+            &gt;&gt;&gt; print(metallic_licenses)
+            &gt;&gt;&gt; # The returned value contains the Metallic license properties
 
         &#34;&#34;&#34;
         self._METALLIC_LICENSE = self._commcell_object._services[&#39;METALLIC_LICENSE&#39;]
@@ -361,23 +431,29 @@ class LicenseDetails(object):
 
         if flag:
             if response.json():
-                self._metallic_licenses = response.json().get(&#39;records&#39;,None)
+                self._metallic_licenses = response.json().get(&#39;records&#39;, None)
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
 
-    def _get_other_licenses(self):
-        &#34;&#34;&#34;
-       GET request to get other licenses property
+    def _get_other_licenses(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the details of other licenses via a GET request.
+
+        This method fetches information about additional licenses associated with the system.
+        It raises an SDKException if the response is unsuccessful or empty.
+
+        Returns:
+            dict: A dictionary containing details of other licenses.
 
         Raises:
-            SDKException:
+            SDKException: If the GET request fails or returns an empty response.
 
-                if response is not success
-
-                if response is empty
-
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; other_licenses = license_details._get_other_licenses()
+            &gt;&gt;&gt; print(other_licenses)
+            {&#39;licenseType&#39;: &#39;Trial&#39;, &#39;expiryDate&#39;: &#39;2024-12-31&#39;}
         &#34;&#34;&#34;
         self._OTHER_LICENSE = self._commcell_object._services[&#39;OTHER_LICENSE&#39;]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -385,22 +461,29 @@ class LicenseDetails(object):
 
         if flag:
             if response.json():
-                self._other_licenses = response.json().get(&#39;records&#39;,None)
+                self._other_licenses = response.json().get(&#39;records&#39;, None)
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
 
-    def _get_license_details(self):
-        &#34;&#34;&#34;
-       GET request to get detailed license information
+    def _get_license_details(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve detailed license information via a GET request.
+
+        This method sends a GET request to obtain comprehensive license details.
+        It raises an SDKException if the response is unsuccessful or empty.
+
+        Returns:
+            dict: A dictionary containing detailed license information.
 
         Raises:
-            SDKException:
+            SDKException: If the response is not successful or is empty.
 
-                if response is not success
-
-                if response is empty
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails(commcell_object)
+            &gt;&gt;&gt; details = license_details._get_license_details()
+            &gt;&gt;&gt; print(details)
+            # Output: {&#39;licenseType&#39;: &#39;Perpetual&#39;, &#39;expiryDate&#39;: &#39;2025-12-31&#39;, ...}
 
         &#34;&#34;&#34;
 
@@ -421,93 +504,272 @@ class LicenseDetails(object):
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
-        
-    def refresh(self):
-        &#34;&#34;&#34;Updates metrics object with the latest configuration&#34;&#34;&#34;
+
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Update the LicenseDetails metrics object with the latest configuration.
+
+        This method refreshes the internal state of the LicenseDetails object to ensure
+        it reflects the most current license configuration and metrics.
+
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; license_details.refresh()
+            &gt;&gt;&gt; print(&#34;License details refreshed successfully&#34;)
+
+        &#34;&#34;&#34;
         self._get_license_details()
         self._get_detailed_licenses()
 
     @property
-    def commcell_id(self):
-        &#34;&#34;&#34;Returns the CommCell Id in decimal value&#34;&#34;&#34;
+    def commcell_id(self) -&gt; int:
+        &#34;&#34;&#34;Get the CommCell ID in decimal format.
+
+        Returns:
+            The CommCell ID as an integer.
+
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; commcell_id = license_details.commcell_id  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;CommCell ID: {commcell_id}&#34;)
+
+        &#34;&#34;&#34;
         return self._commcell_id
 
     @property
-    def commcell_id_hex(self):
-        &#34;&#34;&#34;Returns the hexadecimal value of commcell id&#34;&#34;&#34;
+    def commcell_id_hex(self) -&gt; str:
+        &#34;&#34;&#34;Get the hexadecimal representation of the Commcell ID.
+
+        Returns:
+            str: The Commcell ID as a hexadecimal string.
+
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; hex_id = license_details.commcell_id_hex  # Access as a property
+            &gt;&gt;&gt; print(f&#34;Commcell ID (hex): {hex_id}&#34;)
+
+        &#34;&#34;&#34;
         ccid = self._commcell_id
         if ccid == -1:
             return &#39;FFFFF&#39;
         return hex(ccid).split(&#39;x&#39;)[1].upper()
 
     @property
-    def cs_hostname(self):
-        &#34;&#34;&#34; Returns the csHostName Or Address of CommCell&#34;&#34;&#34;
+    def cs_hostname(self) -&gt; str:
+        &#34;&#34;&#34;Get the CommCell server host name or address.
+
+        Returns:
+            The host name or address of the CommCell server as a string.
+
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; hostname = license_details.cs_hostname
+            &gt;&gt;&gt; print(f&#34;CommCell Hostname: {hostname}&#34;)
+
+        &#34;&#34;&#34;
         return self._cs_hostname
 
     @property
-    def license_ipaddress(self):
-        &#34;&#34;&#34; Returns the license Ip Address &#34;&#34;&#34;
+    def license_ipaddress(self) -&gt; str:
+        &#34;&#34;&#34;Get the IP address associated with the license.
+
+        Returns:
+            The license server&#39;s IP address as a string.
+
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; ip = license_details.license_ipaddress
+            &gt;&gt;&gt; print(f&#34;License server IP: {ip}&#34;)
+
+        &#34;&#34;&#34;
         return self._license_ipaddress
 
     @property
-    def oem_name(self):
-        &#34;&#34;&#34;Returns the oem_name&#34;&#34;&#34;
+    def oem_name(self) -&gt; str:
+        &#34;&#34;&#34;Get the OEM (Original Equipment Manufacturer) name associated with the license.
+
+        Returns:
+            The OEM name as a string.
+
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; oem = license_details.oem_name  # Access the OEM name property
+            &gt;&gt;&gt; print(f&#34;OEM Name: {oem}&#34;)
+
+        &#34;&#34;&#34;
         return self._oemname
 
     @property
-    def license_mode(self):
-        &#34;&#34;&#34; Returns the license mode of license&#34;&#34;&#34;
+    def license_mode(self) -&gt; str:
+        &#34;&#34;&#34;Get the license mode associated with this license.
+
+        Returns:
+            The license mode as a string.
+
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; mode = license_details.license_mode  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;License mode: {mode}&#34;)
+
+        &#34;&#34;&#34;
         return self._license_mode
 
     @property
-    def registration_code(self):
-        &#34;&#34;&#34;Returns the registration code of CommCell&#34;&#34;&#34;
+    def registration_code(self) -&gt; str:
+        &#34;&#34;&#34;Get the registration code associated with the CommCell.
+
+        Returns:
+            The registration code as a string.
+
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; reg_code = license_details.registration_code  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Registration Code: {reg_code}&#34;)
+
+        &#34;&#34;&#34;
         return self._regcode
 
     @property
-    def serial_number(self):
-        &#34;&#34;&#34;Returns the serial number of CommCell&#34;&#34;&#34;
+    def serial_number(self) -&gt; str:
+        &#34;&#34;&#34;Get the serial number of the CommCell.
+
+        Returns:
+            The serial number of the CommCell as a string.
+
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; sn = license_details.serial_number  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;CommCell Serial Number: {sn}&#34;)
+
+        &#34;&#34;&#34;
         return self._serialno
 
     @property
-    def expiry_date(self):
-        &#34;&#34;&#34; Returns the expiry date of License&#34;&#34;&#34;
+    def expiry_date(self) -&gt; str:
+        &#34;&#34;&#34;Get the expiry date of the license.
+
+        Returns:
+            The expiry date of the license as a string.
+
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; expiration = license_details.expiry_date  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;License expires on: {expiration}&#34;)
+
+        &#34;&#34;&#34;
         return self._expiry_date
 
     @property
-    def capacity_licenses(self):
-        &#34;&#34;&#34;Returns dictionary with the capacity licenses&#34;&#34;&#34;
+    def capacity_licenses(self) -&gt; Dict[str, Any]:
+        &#34;&#34;&#34;Get a dictionary containing the capacity licenses.
+
+        Returns:
+            Dictionary with details about the capacity licenses. The keys represent license types,
+            and the values provide associated license information.
+
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; capacity_info = license_details.capacity_licenses  # Use dot notation for property access
+            &gt;&gt;&gt; print(&#34;Capacity Licenses:&#34;, capacity_info)
+            &gt;&gt;&gt; # Output might be: {&#39;CapacityLicenseTypeA&#39;: {...}, &#39;CapacityLicenseTypeB&#39;: {...}}
+
+        &#34;&#34;&#34;
         return self._capacity_licenses
 
     @property
-    def complete_oi_licenses(self):
-        &#34;&#34;&#34;Returns dictionary with the complete oi licenses&#34;&#34;&#34;
+    def complete_oi_licenses(self) -&gt; dict:
+        &#34;&#34;&#34;Get a dictionary containing all complete Open Infrastructure (OI) licenses.
+
+        Returns:
+            dict: A dictionary where keys represent license identifiers and values contain license details.
+
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; oi_licenses = license_details.complete_oi_licenses
+            &gt;&gt;&gt; print(f&#34;Total OI licenses: {len(oi_licenses)}&#34;)
+            &gt;&gt;&gt; # Access license details by key
+            &gt;&gt;&gt; for license_id, details in oi_licenses.items():
+            ...     print(f&#34;License ID: {license_id}, Details: {details}&#34;)
+
+        &#34;&#34;&#34;
         return self._complete_oi_licenses
 
     @property
-    def virtualization_licenses(self):
-        &#34;&#34;&#34;Returns dictionary with the virtualization licenses&#34;&#34;&#34;
+    def virtualization_licenses(self) -&gt; Dict[str, Any]:
+        &#34;&#34;&#34;Get a dictionary containing the virtualization licenses.
+
+        Returns:
+            Dict[str, Any]: A dictionary where keys represent virtualization license types and values provide license details.
+
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; virtualization_info = license_details.virtualization_licenses
+            &gt;&gt;&gt; print(virtualization_info)
+            {&#39;VMware&#39;: {&#39;total&#39;: 10, &#39;used&#39;: 5}, &#39;Hyper-V&#39;: {&#39;total&#39;: 8, &#39;used&#39;: 3}}
+
+        &#34;&#34;&#34;
         return self._virtualization_licenses
 
     @property
-    def user_licenses(self):
-        &#34;&#34;&#34;Returns dictionary with the user licenses&#34;&#34;&#34;
+    def user_licenses(self) -&gt; Dict[str, Any]:
+        &#34;&#34;&#34;Get a dictionary containing details of user licenses.
+
+        Returns:
+            Dictionary where keys represent license types or categories, and values contain license details.
+
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; user_license_info = license_details.user_licenses  # Access property
+            &gt;&gt;&gt; print(user_license_info)
+            &gt;&gt;&gt; # Output might be: {&#39;UserLicenseTypeA&#39;: {&#39;count&#39;: 10, &#39;expiry&#39;: &#39;2024-12-31&#39;}, ...}
+
+        &#34;&#34;&#34;
         return self._user_licenses
 
     @property
-    def activate_licenses(self):
-        &#34;&#34;&#34;Returns dictionary with the activate licenses&#34;&#34;&#34;
+    def activate_licenses(self) -&gt; dict:
+        &#34;&#34;&#34;Get a dictionary containing the activated licenses.
+
+        Returns:
+            dict: A dictionary with details of the activated licenses.
+
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; activated = license_details.activate_licenses
+            &gt;&gt;&gt; print(f&#34;Activated licenses: {activated}&#34;)
+
+        &#34;&#34;&#34;
         return self._activate_licenses
 
     @property
-    def metallic_licenses(self):
-        &#34;&#34;&#34;Returns dictionary with the metallic licenses&#34;&#34;&#34;
+    def metallic_licenses(self) -&gt; dict:
+        &#34;&#34;&#34;Get a dictionary containing the Metallic licenses.
+
+        Returns:
+            dict: A dictionary with details of the Metallic licenses.
+
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; metallic_licenses = license_details.metallic_licenses
+            &gt;&gt;&gt; print(metallic_licenses)
+            {&#39;license_type&#39;: &#39;Metallic&#39;, &#39;expiry_date&#39;: &#39;2024-12-31&#39;, ...}
+
+        &#34;&#34;&#34;
         return self._metallic_licenses
 
     @property
-    def other_licenses(self):
-        &#34;&#34;&#34;Returns dictionary with the other licenses&#34;&#34;&#34;
+    def other_licenses(self) -&gt; dict:
+        &#34;&#34;&#34;Get a dictionary containing information about other licenses.
+
+        Returns:
+            dict: A dictionary with details of additional licenses associated with the system.
+
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; other_lics = license_details.other_licenses
+            &gt;&gt;&gt; print(other_lics)
+            {&#39;licenseA&#39;: {&#39;expiry&#39;: &#39;2025-01-01&#39;}, &#39;licenseB&#39;: {&#39;expiry&#39;: &#39;2024-12-31&#39;}}
+
+        &#34;&#34;&#34;
         return self._other_licenses</code></pre>
 </details>
 </section>
@@ -522,33 +784,73 @@ class LicenseDetails(object):
 <dl>
 <dt id="cvpysdk.license.LicenseDetails"><code class="flex name class">
 <span>class <span class="ident">LicenseDetails</span></span>
-<span>(</span><span>commcell_object)</span>
+<span>(</span><span>commcell_object: object)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for accessing license details information</p>
-<p>Initialize object of the LicenseDetails class.</p>
-<h2 id="args">Args</h2>
-<p>commcell_object (object)
-&ndash;
-instance of the Commcell class</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the LicenseDetails class</p></div>
+<div class="desc"><p>Provides access to detailed license information for a CommCell environment.</p>
+<p>The LicenseDetails class enables retrieval and management of various license types
+and their associated details within a CommCell. It offers methods to fetch detailed
+license data, including capacity, virtualization, user, activation, metallic, and
+other license categories. The class also provides properties to access key license
+attributes such as CommCell ID, host information, license mode, registration code,
+serial number, expiry date, and OEM name.</p>
+<p>Key Features:
+- Retrieve detailed license information for a CommCell
+- Access capacity, complete OI, virtualization, user, activation, metallic, and other license details
+- Refresh license data to ensure up-to-date information
+- Access license attributes via convenient properties (e.g., commcell_id, cs_hostname, expiry_date)
+- Obtain license mode, registration code, serial number, and OEM name</p>
+<p>Initialize a LicenseDetails object with the specified Commcell connection.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>commcell_object</code></strong></dt>
+<dd>An instance of the Commcell class representing the active Commcell connection.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; from cvpysdk.commcell import Commcell
+&gt;&gt;&gt; cc = Commcell('commcell_host', 'username', 'password')
+&gt;&gt;&gt; license_details = LicenseDetails(cc)
+&gt;&gt;&gt; print(&quot;LicenseDetails object created successfully&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/license.py#L89-L412" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/license.py#L90-L701" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class LicenseDetails(object):
-    &#34;&#34;&#34;Class for accessing license details information&#34;&#34;&#34;    
+    &#34;&#34;&#34;
+    Provides access to detailed license information for a CommCell environment.
 
-    def __init__(self, commcell_object):
-        &#34;&#34;&#34;Initialize object of the LicenseDetails class.
+    The LicenseDetails class enables retrieval and management of various license types
+    and their associated details within a CommCell. It offers methods to fetch detailed
+    license data, including capacity, virtualization, user, activation, metallic, and
+    other license categories. The class also provides properties to access key license
+    attributes such as CommCell ID, host information, license mode, registration code,
+    serial number, expiry date, and OEM name.
 
-            Args:
-                commcell_object (object)  --  instance of the Commcell class
+    Key Features:
+        - Retrieve detailed license information for a CommCell
+        - Access capacity, complete OI, virtualization, user, activation, metallic, and other license details
+        - Refresh license data to ensure up-to-date information
+        - Access license attributes via convenient properties (e.g., commcell_id, cs_hostname, expiry_date)
+        - Obtain license mode, registration code, serial number, and OEM name
 
-            Returns:
-                object - instance of the LicenseDetails class
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_object: object) -&gt; None:
+        &#34;&#34;&#34;Initialize a LicenseDetails object with the specified Commcell connection.
+
+        Args:
+            commcell_object: An instance of the Commcell class representing the active Commcell connection.
+
+        Example:
+            &gt;&gt;&gt; from cvpysdk.commcell import Commcell
+            &gt;&gt;&gt; cc = Commcell(&#39;commcell_host&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; license_details = LicenseDetails(cc)
+            &gt;&gt;&gt; print(&#34;LicenseDetails object created successfully&#34;)
+
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
         self._LICENSE = self._commcell_object._services[&#39;LICENSE&#39;]
@@ -562,9 +864,19 @@ instance of the Commcell class</p>
         self._other_licenses = None
         self._get_license_details()
 
-    def _get_detailed_licenses(self):
-        &#34;&#34;&#34;
-        Gets all types of license details associated to the commcell object
+    def _get_detailed_licenses(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve all types of license details associated with the Commcell object.
+
+        Returns:
+            dict: A dictionary containing detailed information about all license types
+            associated with the Commcell.
+
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails(commcell_object)
+            &gt;&gt;&gt; licenses = license_details._get_detailed_licenses()
+            &gt;&gt;&gt; print(licenses)
+            &gt;&gt;&gt; # Output will be a dictionary with license type details
+
         &#34;&#34;&#34;
         self._get_capacity_details()
         self._get_complete_oi_licenses()
@@ -574,16 +886,23 @@ instance of the Commcell class</p>
         self._get_metallic_licenses()
         self._get_other_licenses()
 
-    def _get_capacity_details(self):
-        &#34;&#34;&#34;
-        Request to get capacity licenses property
+    def _get_capacity_details(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the capacity license properties for the current environment.
+
+        This method sends a request to obtain details about capacity-based licenses,
+        such as usage and allocation information.
+
+        Returns:
+            dict: A dictionary containing capacity license properties.
 
         Raises:
-            SDKException:
+            SDKException: If the response is unsuccessful or empty.
 
-                if response is not success
-
-                if response is empty
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; capacity_info = license_details._get_capacity_details()
+            &gt;&gt;&gt; print(capacity_info)
+            {&#39;totalCapacity&#39;: 1000, &#39;usedCapacity&#39;: 750, ...}
 
         &#34;&#34;&#34;
 
@@ -593,22 +912,28 @@ instance of the Commcell class</p>
 
         if flag:
             if response.json():
-                self._capacity_licenses = response.json().get(&#39;records&#39;,None)
+                self._capacity_licenses = response.json().get(&#39;records&#39;, None)
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
 
-    def _get_complete_oi_licenses(self):
-        &#34;&#34;&#34;
-       GET request to get OI licenses property
+    def _get_complete_oi_licenses(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the complete OI (Object Identification) licenses property via a GET request.
+
+        This method sends a GET request to obtain the OI licenses property details.
+
+        Returns:
+            dict: A dictionary containing the OI licenses property information.
 
         Raises:
-            SDKException:
+            SDKException: If the response is not successful or if the response is empty.
 
-                if response is not success
-
-                if response is empty
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; oi_licenses = license_details._get_complete_oi_licenses()
+            &gt;&gt;&gt; print(oi_licenses)
+            {&#39;licenseType&#39;: &#39;OI&#39;, &#39;status&#39;: &#39;Active&#39;, ...}
 
         &#34;&#34;&#34;
 
@@ -618,22 +943,29 @@ instance of the Commcell class</p>
 
         if flag:
             if response.json():
-                self._complete_oi_licenses = response.json().get(&#39;records&#39;,None)
+                self._complete_oi_licenses = response.json().get(&#39;records&#39;, None)
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
 
-    def _get_virtualization_licenses(self):
-        &#34;&#34;&#34;
-       GET request to get virtualization licenses property
+    def _get_virtualization_licenses(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve virtualization license properties via a GET request.
+
+        This method fetches the virtualization license details associated with the current LicenseDetails instance.
+        It raises an SDKException if the response is unsuccessful or empty.
+
+        Returns:
+            dict: A dictionary containing the virtualization license properties.
 
         Raises:
-            SDKException:
+            SDKException: If the GET request fails or returns an empty response.
 
-                if response is not success
-
-                if response is empty
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; virtualization_licenses = license_details._get_virtualization_licenses()
+            &gt;&gt;&gt; print(virtualization_licenses)
+            &gt;&gt;&gt; # Output will be a dictionary with virtualization license information
 
         &#34;&#34;&#34;
         self._VIRTUALIZATION_LICENSE = self._commcell_object._services[&#39;VIRTUALIZATION_LICENSE&#39;]
@@ -642,22 +974,29 @@ instance of the Commcell class</p>
 
         if flag:
             if response.json():
-                self._virtualization_licenses = response.json().get(&#39;records&#39;,None)
+                self._virtualization_licenses = response.json().get(&#39;records&#39;, None)
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
 
-    def _get_user_licenses(self):
-        &#34;&#34;&#34;
-       GET request to get user licenses property
+    def _get_user_licenses(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the user licenses property via a GET request.
+
+        This method fetches the user license details from the server. It is intended for internal use
+        to obtain license information associated with users.
+
+        Returns:
+            dict: A dictionary containing user license properties.
 
         Raises:
-            SDKException:
+            SDKException: If the server response is unsuccessful or empty.
 
-                if response is not success
-
-                if response is empty
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; user_licenses = license_details._get_user_licenses()
+            &gt;&gt;&gt; print(user_licenses)
+            &gt;&gt;&gt; # Output will be a dictionary with user license information
 
         &#34;&#34;&#34;
         self._USER_LICENSE = self._commcell_object._services[&#39;USER_LICENSE&#39;]
@@ -666,22 +1005,28 @@ instance of the Commcell class</p>
 
         if flag:
             if response.json():
-                self._user_licenses = response.json().get(&#39;records&#39;,None)
+                self._user_licenses = response.json().get(&#39;records&#39;, None)
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
 
-    def _get_activate_licenses(self):
-        &#34;&#34;&#34;
-       GET request to get activate licenses property
+    def _get_activate_licenses(self) -&gt; dict:
+        &#34;&#34;&#34;Send a GET request to retrieve the activated licenses property.
+
+        This method fetches the currently activated licenses from the server.
+
+        Returns:
+            dict: A dictionary containing the activated license properties.
 
         Raises:
-            SDKException:
+            SDKException: If the response is not successful or if the response is empty.
 
-                if response is not success
-
-                if response is empty
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; activated_licenses = license_details._get_activate_licenses()
+            &gt;&gt;&gt; print(activated_licenses)
+            &gt;&gt;&gt; # Output will be a dictionary with license information
 
         &#34;&#34;&#34;
         self._ACTIVATE_LICENSE = self._commcell_object._services[&#39;ACTIVATE_LICENSE&#39;]
@@ -690,22 +1035,26 @@ instance of the Commcell class</p>
 
         if flag:
             if response.json():
-                self._activate_licenses = response.json().get(&#39;records&#39;,None)
+                self._activate_licenses = response.json().get(&#39;records&#39;, None)
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
 
-    def _get_metallic_licenses(self):
-        &#34;&#34;&#34;
-       GET request to get metallic licenses property
+    def _get_metallic_licenses(self) -&gt; Any:
+        &#34;&#34;&#34;Send a GET request to retrieve the Metallic licenses property.
+
+        This method fetches the Metallic license details associated with the current LicenseDetails instance.
+        It raises an SDKException if the response is unsuccessful or empty.
 
         Raises:
-            SDKException:
+            SDKException: If the response is not successful or is empty.
 
-                if response is not success
-
-                if response is empty
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails(commcell_object)
+            &gt;&gt;&gt; metallic_licenses = license_details._get_metallic_licenses()
+            &gt;&gt;&gt; print(metallic_licenses)
+            &gt;&gt;&gt; # The returned value contains the Metallic license properties
 
         &#34;&#34;&#34;
         self._METALLIC_LICENSE = self._commcell_object._services[&#39;METALLIC_LICENSE&#39;]
@@ -714,23 +1063,29 @@ instance of the Commcell class</p>
 
         if flag:
             if response.json():
-                self._metallic_licenses = response.json().get(&#39;records&#39;,None)
+                self._metallic_licenses = response.json().get(&#39;records&#39;, None)
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
 
-    def _get_other_licenses(self):
-        &#34;&#34;&#34;
-       GET request to get other licenses property
+    def _get_other_licenses(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the details of other licenses via a GET request.
+
+        This method fetches information about additional licenses associated with the system.
+        It raises an SDKException if the response is unsuccessful or empty.
+
+        Returns:
+            dict: A dictionary containing details of other licenses.
 
         Raises:
-            SDKException:
+            SDKException: If the GET request fails or returns an empty response.
 
-                if response is not success
-
-                if response is empty
-
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; other_licenses = license_details._get_other_licenses()
+            &gt;&gt;&gt; print(other_licenses)
+            {&#39;licenseType&#39;: &#39;Trial&#39;, &#39;expiryDate&#39;: &#39;2024-12-31&#39;}
         &#34;&#34;&#34;
         self._OTHER_LICENSE = self._commcell_object._services[&#39;OTHER_LICENSE&#39;]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -738,22 +1093,29 @@ instance of the Commcell class</p>
 
         if flag:
             if response.json():
-                self._other_licenses = response.json().get(&#39;records&#39;,None)
+                self._other_licenses = response.json().get(&#39;records&#39;, None)
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
 
-    def _get_license_details(self):
-        &#34;&#34;&#34;
-       GET request to get detailed license information
+    def _get_license_details(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve detailed license information via a GET request.
+
+        This method sends a GET request to obtain comprehensive license details.
+        It raises an SDKException if the response is unsuccessful or empty.
+
+        Returns:
+            dict: A dictionary containing detailed license information.
 
         Raises:
-            SDKException:
+            SDKException: If the response is not successful or is empty.
 
-                if response is not success
-
-                if response is empty
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails(commcell_object)
+            &gt;&gt;&gt; details = license_details._get_license_details()
+            &gt;&gt;&gt; print(details)
+            # Output: {&#39;licenseType&#39;: &#39;Perpetual&#39;, &#39;expiryDate&#39;: &#39;2025-12-31&#39;, ...}
 
         &#34;&#34;&#34;
 
@@ -774,321 +1136,840 @@ instance of the Commcell class</p>
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
-        
-    def refresh(self):
-        &#34;&#34;&#34;Updates metrics object with the latest configuration&#34;&#34;&#34;
+
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Update the LicenseDetails metrics object with the latest configuration.
+
+        This method refreshes the internal state of the LicenseDetails object to ensure
+        it reflects the most current license configuration and metrics.
+
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; license_details.refresh()
+            &gt;&gt;&gt; print(&#34;License details refreshed successfully&#34;)
+
+        &#34;&#34;&#34;
         self._get_license_details()
         self._get_detailed_licenses()
 
     @property
-    def commcell_id(self):
-        &#34;&#34;&#34;Returns the CommCell Id in decimal value&#34;&#34;&#34;
+    def commcell_id(self) -&gt; int:
+        &#34;&#34;&#34;Get the CommCell ID in decimal format.
+
+        Returns:
+            The CommCell ID as an integer.
+
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; commcell_id = license_details.commcell_id  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;CommCell ID: {commcell_id}&#34;)
+
+        &#34;&#34;&#34;
         return self._commcell_id
 
     @property
-    def commcell_id_hex(self):
-        &#34;&#34;&#34;Returns the hexadecimal value of commcell id&#34;&#34;&#34;
+    def commcell_id_hex(self) -&gt; str:
+        &#34;&#34;&#34;Get the hexadecimal representation of the Commcell ID.
+
+        Returns:
+            str: The Commcell ID as a hexadecimal string.
+
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; hex_id = license_details.commcell_id_hex  # Access as a property
+            &gt;&gt;&gt; print(f&#34;Commcell ID (hex): {hex_id}&#34;)
+
+        &#34;&#34;&#34;
         ccid = self._commcell_id
         if ccid == -1:
             return &#39;FFFFF&#39;
         return hex(ccid).split(&#39;x&#39;)[1].upper()
 
     @property
-    def cs_hostname(self):
-        &#34;&#34;&#34; Returns the csHostName Or Address of CommCell&#34;&#34;&#34;
+    def cs_hostname(self) -&gt; str:
+        &#34;&#34;&#34;Get the CommCell server host name or address.
+
+        Returns:
+            The host name or address of the CommCell server as a string.
+
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; hostname = license_details.cs_hostname
+            &gt;&gt;&gt; print(f&#34;CommCell Hostname: {hostname}&#34;)
+
+        &#34;&#34;&#34;
         return self._cs_hostname
 
     @property
-    def license_ipaddress(self):
-        &#34;&#34;&#34; Returns the license Ip Address &#34;&#34;&#34;
+    def license_ipaddress(self) -&gt; str:
+        &#34;&#34;&#34;Get the IP address associated with the license.
+
+        Returns:
+            The license server&#39;s IP address as a string.
+
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; ip = license_details.license_ipaddress
+            &gt;&gt;&gt; print(f&#34;License server IP: {ip}&#34;)
+
+        &#34;&#34;&#34;
         return self._license_ipaddress
 
     @property
-    def oem_name(self):
-        &#34;&#34;&#34;Returns the oem_name&#34;&#34;&#34;
+    def oem_name(self) -&gt; str:
+        &#34;&#34;&#34;Get the OEM (Original Equipment Manufacturer) name associated with the license.
+
+        Returns:
+            The OEM name as a string.
+
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; oem = license_details.oem_name  # Access the OEM name property
+            &gt;&gt;&gt; print(f&#34;OEM Name: {oem}&#34;)
+
+        &#34;&#34;&#34;
         return self._oemname
 
     @property
-    def license_mode(self):
-        &#34;&#34;&#34; Returns the license mode of license&#34;&#34;&#34;
+    def license_mode(self) -&gt; str:
+        &#34;&#34;&#34;Get the license mode associated with this license.
+
+        Returns:
+            The license mode as a string.
+
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; mode = license_details.license_mode  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;License mode: {mode}&#34;)
+
+        &#34;&#34;&#34;
         return self._license_mode
 
     @property
-    def registration_code(self):
-        &#34;&#34;&#34;Returns the registration code of CommCell&#34;&#34;&#34;
+    def registration_code(self) -&gt; str:
+        &#34;&#34;&#34;Get the registration code associated with the CommCell.
+
+        Returns:
+            The registration code as a string.
+
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; reg_code = license_details.registration_code  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Registration Code: {reg_code}&#34;)
+
+        &#34;&#34;&#34;
         return self._regcode
 
     @property
-    def serial_number(self):
-        &#34;&#34;&#34;Returns the serial number of CommCell&#34;&#34;&#34;
+    def serial_number(self) -&gt; str:
+        &#34;&#34;&#34;Get the serial number of the CommCell.
+
+        Returns:
+            The serial number of the CommCell as a string.
+
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; sn = license_details.serial_number  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;CommCell Serial Number: {sn}&#34;)
+
+        &#34;&#34;&#34;
         return self._serialno
 
     @property
-    def expiry_date(self):
-        &#34;&#34;&#34; Returns the expiry date of License&#34;&#34;&#34;
+    def expiry_date(self) -&gt; str:
+        &#34;&#34;&#34;Get the expiry date of the license.
+
+        Returns:
+            The expiry date of the license as a string.
+
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; expiration = license_details.expiry_date  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;License expires on: {expiration}&#34;)
+
+        &#34;&#34;&#34;
         return self._expiry_date
 
     @property
-    def capacity_licenses(self):
-        &#34;&#34;&#34;Returns dictionary with the capacity licenses&#34;&#34;&#34;
+    def capacity_licenses(self) -&gt; Dict[str, Any]:
+        &#34;&#34;&#34;Get a dictionary containing the capacity licenses.
+
+        Returns:
+            Dictionary with details about the capacity licenses. The keys represent license types,
+            and the values provide associated license information.
+
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; capacity_info = license_details.capacity_licenses  # Use dot notation for property access
+            &gt;&gt;&gt; print(&#34;Capacity Licenses:&#34;, capacity_info)
+            &gt;&gt;&gt; # Output might be: {&#39;CapacityLicenseTypeA&#39;: {...}, &#39;CapacityLicenseTypeB&#39;: {...}}
+
+        &#34;&#34;&#34;
         return self._capacity_licenses
 
     @property
-    def complete_oi_licenses(self):
-        &#34;&#34;&#34;Returns dictionary with the complete oi licenses&#34;&#34;&#34;
+    def complete_oi_licenses(self) -&gt; dict:
+        &#34;&#34;&#34;Get a dictionary containing all complete Open Infrastructure (OI) licenses.
+
+        Returns:
+            dict: A dictionary where keys represent license identifiers and values contain license details.
+
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; oi_licenses = license_details.complete_oi_licenses
+            &gt;&gt;&gt; print(f&#34;Total OI licenses: {len(oi_licenses)}&#34;)
+            &gt;&gt;&gt; # Access license details by key
+            &gt;&gt;&gt; for license_id, details in oi_licenses.items():
+            ...     print(f&#34;License ID: {license_id}, Details: {details}&#34;)
+
+        &#34;&#34;&#34;
         return self._complete_oi_licenses
 
     @property
-    def virtualization_licenses(self):
-        &#34;&#34;&#34;Returns dictionary with the virtualization licenses&#34;&#34;&#34;
+    def virtualization_licenses(self) -&gt; Dict[str, Any]:
+        &#34;&#34;&#34;Get a dictionary containing the virtualization licenses.
+
+        Returns:
+            Dict[str, Any]: A dictionary where keys represent virtualization license types and values provide license details.
+
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; virtualization_info = license_details.virtualization_licenses
+            &gt;&gt;&gt; print(virtualization_info)
+            {&#39;VMware&#39;: {&#39;total&#39;: 10, &#39;used&#39;: 5}, &#39;Hyper-V&#39;: {&#39;total&#39;: 8, &#39;used&#39;: 3}}
+
+        &#34;&#34;&#34;
         return self._virtualization_licenses
 
     @property
-    def user_licenses(self):
-        &#34;&#34;&#34;Returns dictionary with the user licenses&#34;&#34;&#34;
+    def user_licenses(self) -&gt; Dict[str, Any]:
+        &#34;&#34;&#34;Get a dictionary containing details of user licenses.
+
+        Returns:
+            Dictionary where keys represent license types or categories, and values contain license details.
+
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; user_license_info = license_details.user_licenses  # Access property
+            &gt;&gt;&gt; print(user_license_info)
+            &gt;&gt;&gt; # Output might be: {&#39;UserLicenseTypeA&#39;: {&#39;count&#39;: 10, &#39;expiry&#39;: &#39;2024-12-31&#39;}, ...}
+
+        &#34;&#34;&#34;
         return self._user_licenses
 
     @property
-    def activate_licenses(self):
-        &#34;&#34;&#34;Returns dictionary with the activate licenses&#34;&#34;&#34;
+    def activate_licenses(self) -&gt; dict:
+        &#34;&#34;&#34;Get a dictionary containing the activated licenses.
+
+        Returns:
+            dict: A dictionary with details of the activated licenses.
+
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; activated = license_details.activate_licenses
+            &gt;&gt;&gt; print(f&#34;Activated licenses: {activated}&#34;)
+
+        &#34;&#34;&#34;
         return self._activate_licenses
 
     @property
-    def metallic_licenses(self):
-        &#34;&#34;&#34;Returns dictionary with the metallic licenses&#34;&#34;&#34;
+    def metallic_licenses(self) -&gt; dict:
+        &#34;&#34;&#34;Get a dictionary containing the Metallic licenses.
+
+        Returns:
+            dict: A dictionary with details of the Metallic licenses.
+
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; metallic_licenses = license_details.metallic_licenses
+            &gt;&gt;&gt; print(metallic_licenses)
+            {&#39;license_type&#39;: &#39;Metallic&#39;, &#39;expiry_date&#39;: &#39;2024-12-31&#39;, ...}
+
+        &#34;&#34;&#34;
         return self._metallic_licenses
 
     @property
-    def other_licenses(self):
-        &#34;&#34;&#34;Returns dictionary with the other licenses&#34;&#34;&#34;
+    def other_licenses(self) -&gt; dict:
+        &#34;&#34;&#34;Get a dictionary containing information about other licenses.
+
+        Returns:
+            dict: A dictionary with details of additional licenses associated with the system.
+
+        Example:
+            &gt;&gt;&gt; license_details = LicenseDetails()
+            &gt;&gt;&gt; other_lics = license_details.other_licenses
+            &gt;&gt;&gt; print(other_lics)
+            {&#39;licenseA&#39;: {&#39;expiry&#39;: &#39;2025-01-01&#39;}, &#39;licenseB&#39;: {&#39;expiry&#39;: &#39;2024-12-31&#39;}}
+
+        &#34;&#34;&#34;
         return self._other_licenses</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.license.LicenseDetails.activate_licenses"><code class="name">var <span class="ident">activate_licenses</span></code></dt>
+<dt id="cvpysdk.license.LicenseDetails.activate_licenses"><code class="name">var <span class="ident">activate_licenses</span> : dict</code></dt>
 <dd>
-<div class="desc"><p>Returns dictionary with the activate licenses</p></div>
+<div class="desc"><p>Get a dictionary containing the activated licenses.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>A dictionary with details of the activated licenses.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; license_details = LicenseDetails()
+&gt;&gt;&gt; activated = license_details.activate_licenses
+&gt;&gt;&gt; print(f&quot;Activated licenses: {activated}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/license.py#L399-L402" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/license.py#L653-L667" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def activate_licenses(self):
-    &#34;&#34;&#34;Returns dictionary with the activate licenses&#34;&#34;&#34;
+def activate_licenses(self) -&gt; dict:
+    &#34;&#34;&#34;Get a dictionary containing the activated licenses.
+
+    Returns:
+        dict: A dictionary with details of the activated licenses.
+
+    Example:
+        &gt;&gt;&gt; license_details = LicenseDetails()
+        &gt;&gt;&gt; activated = license_details.activate_licenses
+        &gt;&gt;&gt; print(f&#34;Activated licenses: {activated}&#34;)
+
+    &#34;&#34;&#34;
     return self._activate_licenses</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.license.LicenseDetails.capacity_licenses"><code class="name">var <span class="ident">capacity_licenses</span></code></dt>
+<dt id="cvpysdk.license.LicenseDetails.capacity_licenses"><code class="name">var <span class="ident">capacity_licenses</span> : Dict[str, Any]</code></dt>
 <dd>
-<div class="desc"><p>Returns dictionary with the capacity licenses</p></div>
+<div class="desc"><p>Get a dictionary containing the capacity licenses.</p>
+<p>Returns
+-----=
+Dictionary with details about the capacity licenses. The keys represent license types,
+and the values provide associated license information.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; license_details = LicenseDetails()
+&gt;&gt;&gt; capacity_info = license_details.capacity_licenses  # Use dot notation for property access
+&gt;&gt;&gt; print(&quot;Capacity Licenses:&quot;, capacity_info)
+&gt;&gt;&gt; # Output might be: {'CapacityLicenseTypeA': {...}, 'CapacityLicenseTypeB': {...}}
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/license.py#L379-L382" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/license.py#L582-L598" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def capacity_licenses(self):
-    &#34;&#34;&#34;Returns dictionary with the capacity licenses&#34;&#34;&#34;
+def capacity_licenses(self) -&gt; Dict[str, Any]:
+    &#34;&#34;&#34;Get a dictionary containing the capacity licenses.
+
+    Returns:
+        Dictionary with details about the capacity licenses. The keys represent license types,
+        and the values provide associated license information.
+
+    Example:
+        &gt;&gt;&gt; license_details = LicenseDetails()
+        &gt;&gt;&gt; capacity_info = license_details.capacity_licenses  # Use dot notation for property access
+        &gt;&gt;&gt; print(&#34;Capacity Licenses:&#34;, capacity_info)
+        &gt;&gt;&gt; # Output might be: {&#39;CapacityLicenseTypeA&#39;: {...}, &#39;CapacityLicenseTypeB&#39;: {...}}
+
+    &#34;&#34;&#34;
     return self._capacity_licenses</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.license.LicenseDetails.commcell_id"><code class="name">var <span class="ident">commcell_id</span></code></dt>
+<dt id="cvpysdk.license.LicenseDetails.commcell_id"><code class="name">var <span class="ident">commcell_id</span> : int</code></dt>
 <dd>
-<div class="desc"><p>Returns the CommCell Id in decimal value</p></div>
+<div class="desc"><p>Get the CommCell ID in decimal format.</p>
+<p>Returns
+-----=
+The CommCell ID as an integer.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; license_details = LicenseDetails()
+&gt;&gt;&gt; commcell_id = license_details.commcell_id  # Use dot notation for property access
+&gt;&gt;&gt; print(f&quot;CommCell ID: {commcell_id}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/license.py#L331-L334" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/license.py#L435-L449" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def commcell_id(self):
-    &#34;&#34;&#34;Returns the CommCell Id in decimal value&#34;&#34;&#34;
+def commcell_id(self) -&gt; int:
+    &#34;&#34;&#34;Get the CommCell ID in decimal format.
+
+    Returns:
+        The CommCell ID as an integer.
+
+    Example:
+        &gt;&gt;&gt; license_details = LicenseDetails()
+        &gt;&gt;&gt; commcell_id = license_details.commcell_id  # Use dot notation for property access
+        &gt;&gt;&gt; print(f&#34;CommCell ID: {commcell_id}&#34;)
+
+    &#34;&#34;&#34;
     return self._commcell_id</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.license.LicenseDetails.commcell_id_hex"><code class="name">var <span class="ident">commcell_id_hex</span></code></dt>
+<dt id="cvpysdk.license.LicenseDetails.commcell_id_hex"><code class="name">var <span class="ident">commcell_id_hex</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the hexadecimal value of commcell id</p></div>
+<div class="desc"><p>Get the hexadecimal representation of the Commcell ID.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>str</code></dt>
+<dd>The Commcell ID as a hexadecimal string.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; license_details = LicenseDetails()
+&gt;&gt;&gt; hex_id = license_details.commcell_id_hex  # Access as a property
+&gt;&gt;&gt; print(f&quot;Commcell ID (hex): {hex_id}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/license.py#L336-L342" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/license.py#L451-L468" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def commcell_id_hex(self):
-    &#34;&#34;&#34;Returns the hexadecimal value of commcell id&#34;&#34;&#34;
+def commcell_id_hex(self) -&gt; str:
+    &#34;&#34;&#34;Get the hexadecimal representation of the Commcell ID.
+
+    Returns:
+        str: The Commcell ID as a hexadecimal string.
+
+    Example:
+        &gt;&gt;&gt; license_details = LicenseDetails()
+        &gt;&gt;&gt; hex_id = license_details.commcell_id_hex  # Access as a property
+        &gt;&gt;&gt; print(f&#34;Commcell ID (hex): {hex_id}&#34;)
+
+    &#34;&#34;&#34;
     ccid = self._commcell_id
     if ccid == -1:
         return &#39;FFFFF&#39;
     return hex(ccid).split(&#39;x&#39;)[1].upper()</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.license.LicenseDetails.complete_oi_licenses"><code class="name">var <span class="ident">complete_oi_licenses</span></code></dt>
+<dt id="cvpysdk.license.LicenseDetails.complete_oi_licenses"><code class="name">var <span class="ident">complete_oi_licenses</span> : dict</code></dt>
 <dd>
-<div class="desc"><p>Returns dictionary with the complete oi licenses</p></div>
+<div class="desc"><p>Get a dictionary containing all complete Open Infrastructure (OI) licenses.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>A dictionary where keys represent license identifiers and values contain license details.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; license_details = LicenseDetails()
+&gt;&gt;&gt; oi_licenses = license_details.complete_oi_licenses
+&gt;&gt;&gt; print(f&quot;Total OI licenses: {len(oi_licenses)}&quot;)
+&gt;&gt;&gt; # Access license details by key
+&gt;&gt;&gt; for license_id, details in oi_licenses.items():
+...     print(f&quot;License ID: {license_id}, Details: {details}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/license.py#L384-L387" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/license.py#L600-L617" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def complete_oi_licenses(self):
-    &#34;&#34;&#34;Returns dictionary with the complete oi licenses&#34;&#34;&#34;
+def complete_oi_licenses(self) -&gt; dict:
+    &#34;&#34;&#34;Get a dictionary containing all complete Open Infrastructure (OI) licenses.
+
+    Returns:
+        dict: A dictionary where keys represent license identifiers and values contain license details.
+
+    Example:
+        &gt;&gt;&gt; license_details = LicenseDetails()
+        &gt;&gt;&gt; oi_licenses = license_details.complete_oi_licenses
+        &gt;&gt;&gt; print(f&#34;Total OI licenses: {len(oi_licenses)}&#34;)
+        &gt;&gt;&gt; # Access license details by key
+        &gt;&gt;&gt; for license_id, details in oi_licenses.items():
+        ...     print(f&#34;License ID: {license_id}, Details: {details}&#34;)
+
+    &#34;&#34;&#34;
     return self._complete_oi_licenses</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.license.LicenseDetails.cs_hostname"><code class="name">var <span class="ident">cs_hostname</span></code></dt>
+<dt id="cvpysdk.license.LicenseDetails.cs_hostname"><code class="name">var <span class="ident">cs_hostname</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the csHostName Or Address of CommCell</p></div>
+<div class="desc"><p>Get the CommCell server host name or address.</p>
+<p>Returns
+-----=
+The host name or address of the CommCell server as a string.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; license_details = LicenseDetails()
+&gt;&gt;&gt; hostname = license_details.cs_hostname
+&gt;&gt;&gt; print(f&quot;CommCell Hostname: {hostname}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/license.py#L344-L347" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/license.py#L470-L484" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def cs_hostname(self):
-    &#34;&#34;&#34; Returns the csHostName Or Address of CommCell&#34;&#34;&#34;
+def cs_hostname(self) -&gt; str:
+    &#34;&#34;&#34;Get the CommCell server host name or address.
+
+    Returns:
+        The host name or address of the CommCell server as a string.
+
+    Example:
+        &gt;&gt;&gt; license_details = LicenseDetails()
+        &gt;&gt;&gt; hostname = license_details.cs_hostname
+        &gt;&gt;&gt; print(f&#34;CommCell Hostname: {hostname}&#34;)
+
+    &#34;&#34;&#34;
     return self._cs_hostname</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.license.LicenseDetails.expiry_date"><code class="name">var <span class="ident">expiry_date</span></code></dt>
+<dt id="cvpysdk.license.LicenseDetails.expiry_date"><code class="name">var <span class="ident">expiry_date</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the expiry date of License</p></div>
+<div class="desc"><p>Get the expiry date of the license.</p>
+<p>Returns
+-----=
+The expiry date of the license as a string.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; license_details = LicenseDetails()
+&gt;&gt;&gt; expiration = license_details.expiry_date  # Use dot notation for property access
+&gt;&gt;&gt; print(f&quot;License expires on: {expiration}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/license.py#L374-L377" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/license.py#L566-L580" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def expiry_date(self):
-    &#34;&#34;&#34; Returns the expiry date of License&#34;&#34;&#34;
+def expiry_date(self) -&gt; str:
+    &#34;&#34;&#34;Get the expiry date of the license.
+
+    Returns:
+        The expiry date of the license as a string.
+
+    Example:
+        &gt;&gt;&gt; license_details = LicenseDetails()
+        &gt;&gt;&gt; expiration = license_details.expiry_date  # Use dot notation for property access
+        &gt;&gt;&gt; print(f&#34;License expires on: {expiration}&#34;)
+
+    &#34;&#34;&#34;
     return self._expiry_date</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.license.LicenseDetails.license_ipaddress"><code class="name">var <span class="ident">license_ipaddress</span></code></dt>
+<dt id="cvpysdk.license.LicenseDetails.license_ipaddress"><code class="name">var <span class="ident">license_ipaddress</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the license Ip Address</p></div>
+<div class="desc"><p>Get the IP address associated with the license.</p>
+<p>Returns
+-----=
+The license server's IP address as a string.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; license_details = LicenseDetails()
+&gt;&gt;&gt; ip = license_details.license_ipaddress
+&gt;&gt;&gt; print(f&quot;License server IP: {ip}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/license.py#L349-L352" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/license.py#L486-L500" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def license_ipaddress(self):
-    &#34;&#34;&#34; Returns the license Ip Address &#34;&#34;&#34;
+def license_ipaddress(self) -&gt; str:
+    &#34;&#34;&#34;Get the IP address associated with the license.
+
+    Returns:
+        The license server&#39;s IP address as a string.
+
+    Example:
+        &gt;&gt;&gt; license_details = LicenseDetails()
+        &gt;&gt;&gt; ip = license_details.license_ipaddress
+        &gt;&gt;&gt; print(f&#34;License server IP: {ip}&#34;)
+
+    &#34;&#34;&#34;
     return self._license_ipaddress</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.license.LicenseDetails.license_mode"><code class="name">var <span class="ident">license_mode</span></code></dt>
+<dt id="cvpysdk.license.LicenseDetails.license_mode"><code class="name">var <span class="ident">license_mode</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the license mode of license</p></div>
+<div class="desc"><p>Get the license mode associated with this license.</p>
+<p>Returns
+-----=
+The license mode as a string.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; license_details = LicenseDetails()
+&gt;&gt;&gt; mode = license_details.license_mode  # Use dot notation for property access
+&gt;&gt;&gt; print(f&quot;License mode: {mode}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/license.py#L359-L362" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/license.py#L518-L532" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def license_mode(self):
-    &#34;&#34;&#34; Returns the license mode of license&#34;&#34;&#34;
+def license_mode(self) -&gt; str:
+    &#34;&#34;&#34;Get the license mode associated with this license.
+
+    Returns:
+        The license mode as a string.
+
+    Example:
+        &gt;&gt;&gt; license_details = LicenseDetails()
+        &gt;&gt;&gt; mode = license_details.license_mode  # Use dot notation for property access
+        &gt;&gt;&gt; print(f&#34;License mode: {mode}&#34;)
+
+    &#34;&#34;&#34;
     return self._license_mode</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.license.LicenseDetails.metallic_licenses"><code class="name">var <span class="ident">metallic_licenses</span></code></dt>
+<dt id="cvpysdk.license.LicenseDetails.metallic_licenses"><code class="name">var <span class="ident">metallic_licenses</span> : dict</code></dt>
 <dd>
-<div class="desc"><p>Returns dictionary with the metallic licenses</p></div>
+<div class="desc"><p>Get a dictionary containing the Metallic licenses.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>A dictionary with details of the Metallic licenses.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; license_details = LicenseDetails()
+&gt;&gt;&gt; metallic_licenses = license_details.metallic_licenses
+&gt;&gt;&gt; print(metallic_licenses)
+{'license_type': 'Metallic', 'expiry_date': '2024-12-31', ...}
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/license.py#L404-L407" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/license.py#L669-L684" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def metallic_licenses(self):
-    &#34;&#34;&#34;Returns dictionary with the metallic licenses&#34;&#34;&#34;
+def metallic_licenses(self) -&gt; dict:
+    &#34;&#34;&#34;Get a dictionary containing the Metallic licenses.
+
+    Returns:
+        dict: A dictionary with details of the Metallic licenses.
+
+    Example:
+        &gt;&gt;&gt; license_details = LicenseDetails()
+        &gt;&gt;&gt; metallic_licenses = license_details.metallic_licenses
+        &gt;&gt;&gt; print(metallic_licenses)
+        {&#39;license_type&#39;: &#39;Metallic&#39;, &#39;expiry_date&#39;: &#39;2024-12-31&#39;, ...}
+
+    &#34;&#34;&#34;
     return self._metallic_licenses</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.license.LicenseDetails.oem_name"><code class="name">var <span class="ident">oem_name</span></code></dt>
+<dt id="cvpysdk.license.LicenseDetails.oem_name"><code class="name">var <span class="ident">oem_name</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the oem_name</p></div>
+<div class="desc"><p>Get the OEM (Original Equipment Manufacturer) name associated with the license.</p>
+<p>Returns
+-----=
+The OEM name as a string.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; license_details = LicenseDetails()
+&gt;&gt;&gt; oem = license_details.oem_name  # Access the OEM name property
+&gt;&gt;&gt; print(f&quot;OEM Name: {oem}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/license.py#L354-L357" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/license.py#L502-L516" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def oem_name(self):
-    &#34;&#34;&#34;Returns the oem_name&#34;&#34;&#34;
+def oem_name(self) -&gt; str:
+    &#34;&#34;&#34;Get the OEM (Original Equipment Manufacturer) name associated with the license.
+
+    Returns:
+        The OEM name as a string.
+
+    Example:
+        &gt;&gt;&gt; license_details = LicenseDetails()
+        &gt;&gt;&gt; oem = license_details.oem_name  # Access the OEM name property
+        &gt;&gt;&gt; print(f&#34;OEM Name: {oem}&#34;)
+
+    &#34;&#34;&#34;
     return self._oemname</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.license.LicenseDetails.other_licenses"><code class="name">var <span class="ident">other_licenses</span></code></dt>
+<dt id="cvpysdk.license.LicenseDetails.other_licenses"><code class="name">var <span class="ident">other_licenses</span> : dict</code></dt>
 <dd>
-<div class="desc"><p>Returns dictionary with the other licenses</p></div>
+<div class="desc"><p>Get a dictionary containing information about other licenses.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>A dictionary with details of additional licenses associated with the system.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; license_details = LicenseDetails()
+&gt;&gt;&gt; other_lics = license_details.other_licenses
+&gt;&gt;&gt; print(other_lics)
+{'licenseA': {'expiry': '2025-01-01'}, 'licenseB': {'expiry': '2024-12-31'}}
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/license.py#L409-L412" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/license.py#L686-L701" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def other_licenses(self):
-    &#34;&#34;&#34;Returns dictionary with the other licenses&#34;&#34;&#34;
+def other_licenses(self) -&gt; dict:
+    &#34;&#34;&#34;Get a dictionary containing information about other licenses.
+
+    Returns:
+        dict: A dictionary with details of additional licenses associated with the system.
+
+    Example:
+        &gt;&gt;&gt; license_details = LicenseDetails()
+        &gt;&gt;&gt; other_lics = license_details.other_licenses
+        &gt;&gt;&gt; print(other_lics)
+        {&#39;licenseA&#39;: {&#39;expiry&#39;: &#39;2025-01-01&#39;}, &#39;licenseB&#39;: {&#39;expiry&#39;: &#39;2024-12-31&#39;}}
+
+    &#34;&#34;&#34;
     return self._other_licenses</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.license.LicenseDetails.registration_code"><code class="name">var <span class="ident">registration_code</span></code></dt>
+<dt id="cvpysdk.license.LicenseDetails.registration_code"><code class="name">var <span class="ident">registration_code</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the registration code of CommCell</p></div>
+<div class="desc"><p>Get the registration code associated with the CommCell.</p>
+<p>Returns
+-----=
+The registration code as a string.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; license_details = LicenseDetails()
+&gt;&gt;&gt; reg_code = license_details.registration_code  # Use dot notation for property access
+&gt;&gt;&gt; print(f&quot;Registration Code: {reg_code}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/license.py#L364-L367" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/license.py#L534-L548" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def registration_code(self):
-    &#34;&#34;&#34;Returns the registration code of CommCell&#34;&#34;&#34;
+def registration_code(self) -&gt; str:
+    &#34;&#34;&#34;Get the registration code associated with the CommCell.
+
+    Returns:
+        The registration code as a string.
+
+    Example:
+        &gt;&gt;&gt; license_details = LicenseDetails()
+        &gt;&gt;&gt; reg_code = license_details.registration_code  # Use dot notation for property access
+        &gt;&gt;&gt; print(f&#34;Registration Code: {reg_code}&#34;)
+
+    &#34;&#34;&#34;
     return self._regcode</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.license.LicenseDetails.serial_number"><code class="name">var <span class="ident">serial_number</span></code></dt>
+<dt id="cvpysdk.license.LicenseDetails.serial_number"><code class="name">var <span class="ident">serial_number</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the serial number of CommCell</p></div>
+<div class="desc"><p>Get the serial number of the CommCell.</p>
+<p>Returns
+-----=
+The serial number of the CommCell as a string.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; license_details = LicenseDetails()
+&gt;&gt;&gt; sn = license_details.serial_number  # Use dot notation for property access
+&gt;&gt;&gt; print(f&quot;CommCell Serial Number: {sn}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/license.py#L369-L372" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/license.py#L550-L564" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def serial_number(self):
-    &#34;&#34;&#34;Returns the serial number of CommCell&#34;&#34;&#34;
+def serial_number(self) -&gt; str:
+    &#34;&#34;&#34;Get the serial number of the CommCell.
+
+    Returns:
+        The serial number of the CommCell as a string.
+
+    Example:
+        &gt;&gt;&gt; license_details = LicenseDetails()
+        &gt;&gt;&gt; sn = license_details.serial_number  # Use dot notation for property access
+        &gt;&gt;&gt; print(f&#34;CommCell Serial Number: {sn}&#34;)
+
+    &#34;&#34;&#34;
     return self._serialno</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.license.LicenseDetails.user_licenses"><code class="name">var <span class="ident">user_licenses</span></code></dt>
+<dt id="cvpysdk.license.LicenseDetails.user_licenses"><code class="name">var <span class="ident">user_licenses</span> : Dict[str, Any]</code></dt>
 <dd>
-<div class="desc"><p>Returns dictionary with the user licenses</p></div>
+<div class="desc"><p>Get a dictionary containing details of user licenses.</p>
+<p>Returns
+-----=
+Dictionary where keys represent license types or categories, and values contain license details.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; license_details = LicenseDetails()
+&gt;&gt;&gt; user_license_info = license_details.user_licenses  # Access property
+&gt;&gt;&gt; print(user_license_info)
+&gt;&gt;&gt; # Output might be: {'UserLicenseTypeA': {'count': 10, 'expiry': '2024-12-31'}, ...}
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/license.py#L394-L397" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/license.py#L636-L651" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def user_licenses(self):
-    &#34;&#34;&#34;Returns dictionary with the user licenses&#34;&#34;&#34;
+def user_licenses(self) -&gt; Dict[str, Any]:
+    &#34;&#34;&#34;Get a dictionary containing details of user licenses.
+
+    Returns:
+        Dictionary where keys represent license types or categories, and values contain license details.
+
+    Example:
+        &gt;&gt;&gt; license_details = LicenseDetails()
+        &gt;&gt;&gt; user_license_info = license_details.user_licenses  # Access property
+        &gt;&gt;&gt; print(user_license_info)
+        &gt;&gt;&gt; # Output might be: {&#39;UserLicenseTypeA&#39;: {&#39;count&#39;: 10, &#39;expiry&#39;: &#39;2024-12-31&#39;}, ...}
+
+    &#34;&#34;&#34;
     return self._user_licenses</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.license.LicenseDetails.virtualization_licenses"><code class="name">var <span class="ident">virtualization_licenses</span></code></dt>
+<dt id="cvpysdk.license.LicenseDetails.virtualization_licenses"><code class="name">var <span class="ident">virtualization_licenses</span> : Dict[str, Any]</code></dt>
 <dd>
-<div class="desc"><p>Returns dictionary with the virtualization licenses</p></div>
+<div class="desc"><p>Get a dictionary containing the virtualization licenses.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Dict[str, Any]</code></dt>
+<dd>A dictionary where keys represent virtualization license types and values provide license details.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; license_details = LicenseDetails()
+&gt;&gt;&gt; virtualization_info = license_details.virtualization_licenses
+&gt;&gt;&gt; print(virtualization_info)
+{'VMware': {'total': 10, 'used': 5}, 'Hyper-V': {'total': 8, 'used': 3}}
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/license.py#L389-L392" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/license.py#L619-L634" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def virtualization_licenses(self):
-    &#34;&#34;&#34;Returns dictionary with the virtualization licenses&#34;&#34;&#34;
+def virtualization_licenses(self) -&gt; Dict[str, Any]:
+    &#34;&#34;&#34;Get a dictionary containing the virtualization licenses.
+
+    Returns:
+        Dict[str, Any]: A dictionary where keys represent virtualization license types and values provide license details.
+
+    Example:
+        &gt;&gt;&gt; license_details = LicenseDetails()
+        &gt;&gt;&gt; virtualization_info = license_details.virtualization_licenses
+        &gt;&gt;&gt; print(virtualization_info)
+        {&#39;VMware&#39;: {&#39;total&#39;: 10, &#39;used&#39;: 5}, &#39;Hyper-V&#39;: {&#39;total&#39;: 8, &#39;used&#39;: 3}}
+
+    &#34;&#34;&#34;
     return self._virtualization_licenses</code></pre>
 </details>
 </dd>
@@ -1096,17 +1977,35 @@ def virtualization_licenses(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.license.LicenseDetails.refresh"><code class="name flex">
-<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+<span>def <span class="ident">refresh</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Updates metrics object with the latest configuration</p></div>
+<div class="desc"><p>Update the LicenseDetails metrics object with the latest configuration.</p>
+<p>This method refreshes the internal state of the LicenseDetails object to ensure
+it reflects the most current license configuration and metrics.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; license_details = LicenseDetails()
+&gt;&gt;&gt; license_details.refresh()
+&gt;&gt;&gt; print(&quot;License details refreshed successfully&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/license.py#L326-L329" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/license.py#L419-L433" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def refresh(self):
-    &#34;&#34;&#34;Updates metrics object with the latest configuration&#34;&#34;&#34;
+<pre><code class="python">def refresh(self) -&gt; None:
+    &#34;&#34;&#34;Update the LicenseDetails metrics object with the latest configuration.
+
+    This method refreshes the internal state of the LicenseDetails object to ensure
+    it reflects the most current license configuration and metrics.
+
+    Example:
+        &gt;&gt;&gt; license_details = LicenseDetails()
+        &gt;&gt;&gt; license_details.refresh()
+        &gt;&gt;&gt; print(&#34;License details refreshed successfully&#34;)
+
+    &#34;&#34;&#34;
     self._get_license_details()
     self._get_detailed_licenses()</code></pre>
 </details>

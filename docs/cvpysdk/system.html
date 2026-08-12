@@ -34,7 +34,7 @@ set_gui_timeout()               --  To set GUI timeout value in minutes
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/system.py#L1-L61" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/system.py#L1-L87" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -71,24 +71,47 @@ System:
 
 
 class System:
-    &#34;&#34;&#34;Class for performing system related operations in the commcell&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Class for performing system-related operations within the Commcell environment.
 
-    def __init__(self, commcell_object):
-        &#34;&#34;&#34;Initialize the System class
+    This class provides an interface to manage and configure system-level settings
+    for a Commcell instance. It is initialized with a Commcell object and offers
+    methods to adjust system parameters such as GUI timeout values.
 
-            Args:
-                commcell_object    (object)    --  instance of the Commcell class
+    Key Features:
+        - Initialization with a Commcell object for context-specific operations
+        - Ability to set the GUI timeout value for system interactions
+
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_object: object) -&gt; None:
+        &#34;&#34;&#34;Initialize the System class with a Commcell connection.
+
+        Args:
+            commcell_object: An instance of the Commcell class representing the active Commcell connection.
+
+        Example:
+            &gt;&gt;&gt; from cvpysdk.commcell import Commcell
+            &gt;&gt;&gt; commcell = Commcell(&#39;commcell_host&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; system = System(commcell)
+            &gt;&gt;&gt; print(&#34;System object initialized successfully&#34;)
 
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
 
-    def set_gui_timeout(self, value):
-        &#34;&#34;&#34;Sets GUI timeout value in minutes
+    def set_gui_timeout(self, value: int) -&gt; None:
+        &#34;&#34;&#34;Set the GUI timeout value in minutes.
+
+        Setting the timeout value determines how long a GUI session remains active before timing out due to inactivity.
+        If the value is set to 0, GUI connections will not time out.
 
         Args:
-            value   (str)   -- GUI timeout value in minutes
+            value: The GUI timeout value in minutes. Use 0 to disable GUI session timeouts.
 
-        **Note** setting value to 0 will disable GUI connections to timeout
+        Example:
+            &gt;&gt;&gt; system = System()
+            &gt;&gt;&gt; system.set_gui_timeout(30)  # Set GUI timeout to 30 minutes
+            &gt;&gt;&gt; system.set_gui_timeout(0)   # Disable GUI timeout
 
         &#34;&#34;&#34;
         self._commcell_object._set_gxglobalparam_value(
@@ -110,40 +133,77 @@ class System:
 <dl>
 <dt id="cvpysdk.system.System"><code class="flex name class">
 <span>class <span class="ident">System</span></span>
-<span>(</span><span>commcell_object)</span>
+<span>(</span><span>commcell_object: object)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for performing system related operations in the commcell</p>
-<p>Initialize the System class</p>
-<h2 id="args">Args</h2>
-<p>commcell_object
-(object)
-&ndash;
-instance of the Commcell class</p></div>
+<div class="desc"><p>Class for performing system-related operations within the Commcell environment.</p>
+<p>This class provides an interface to manage and configure system-level settings
+for a Commcell instance. It is initialized with a Commcell object and offers
+methods to adjust system parameters such as GUI timeout values.</p>
+<p>Key Features:
+- Initialization with a Commcell object for context-specific operations
+- Ability to set the GUI timeout value for system interactions</p>
+<p>Initialize the System class with a Commcell connection.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>commcell_object</code></strong></dt>
+<dd>An instance of the Commcell class representing the active Commcell connection.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; from cvpysdk.commcell import Commcell
+&gt;&gt;&gt; commcell = Commcell('commcell_host', 'username', 'password')
+&gt;&gt;&gt; system = System(commcell)
+&gt;&gt;&gt; print(&quot;System object initialized successfully&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/system.py#L35-L61" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/system.py#L35-L87" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class System:
-    &#34;&#34;&#34;Class for performing system related operations in the commcell&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Class for performing system-related operations within the Commcell environment.
 
-    def __init__(self, commcell_object):
-        &#34;&#34;&#34;Initialize the System class
+    This class provides an interface to manage and configure system-level settings
+    for a Commcell instance. It is initialized with a Commcell object and offers
+    methods to adjust system parameters such as GUI timeout values.
 
-            Args:
-                commcell_object    (object)    --  instance of the Commcell class
+    Key Features:
+        - Initialization with a Commcell object for context-specific operations
+        - Ability to set the GUI timeout value for system interactions
+
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_object: object) -&gt; None:
+        &#34;&#34;&#34;Initialize the System class with a Commcell connection.
+
+        Args:
+            commcell_object: An instance of the Commcell class representing the active Commcell connection.
+
+        Example:
+            &gt;&gt;&gt; from cvpysdk.commcell import Commcell
+            &gt;&gt;&gt; commcell = Commcell(&#39;commcell_host&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; system = System(commcell)
+            &gt;&gt;&gt; print(&#34;System object initialized successfully&#34;)
 
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
 
-    def set_gui_timeout(self, value):
-        &#34;&#34;&#34;Sets GUI timeout value in minutes
+    def set_gui_timeout(self, value: int) -&gt; None:
+        &#34;&#34;&#34;Set the GUI timeout value in minutes.
+
+        Setting the timeout value determines how long a GUI session remains active before timing out due to inactivity.
+        If the value is set to 0, GUI connections will not time out.
 
         Args:
-            value   (str)   -- GUI timeout value in minutes
+            value: The GUI timeout value in minutes. Use 0 to disable GUI session timeouts.
 
-        **Note** setting value to 0 will disable GUI connections to timeout
+        Example:
+            &gt;&gt;&gt; system = System()
+            &gt;&gt;&gt; system.set_gui_timeout(30)  # Set GUI timeout to 30 minutes
+            &gt;&gt;&gt; system.set_gui_timeout(0)   # Disable GUI timeout
 
         &#34;&#34;&#34;
         self._commcell_object._set_gxglobalparam_value(
@@ -156,27 +216,42 @@ instance of the Commcell class</p></div>
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.system.System.set_gui_timeout"><code class="name flex">
-<span>def <span class="ident">set_gui_timeout</span></span>(<span>self, value)</span>
+<span>def <span class="ident">set_gui_timeout</span></span>(<span>self, value: int) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Sets GUI timeout value in minutes</p>
-<h2 id="args">Args</h2>
-<p>value
-(str)
-&ndash; GUI timeout value in minutes
-<strong>Note</strong> setting value to 0 will disable GUI connections to timeout</p></div>
+<div class="desc"><p>Set the GUI timeout value in minutes.</p>
+<p>Setting the timeout value determines how long a GUI session remains active before timing out due to inactivity.
+If the value is set to 0, GUI connections will not time out.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>value</code></strong></dt>
+<dd>The GUI timeout value in minutes. Use 0 to disable GUI session timeouts.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; system = System()
+&gt;&gt;&gt; system.set_gui_timeout(30)  # Set GUI timeout to 30 minutes
+&gt;&gt;&gt; system.set_gui_timeout(0)   # Disable GUI timeout
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/system.py#L47-L61" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/system.py#L66-L87" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def set_gui_timeout(self, value):
-    &#34;&#34;&#34;Sets GUI timeout value in minutes
+<pre><code class="python">def set_gui_timeout(self, value: int) -&gt; None:
+    &#34;&#34;&#34;Set the GUI timeout value in minutes.
+
+    Setting the timeout value determines how long a GUI session remains active before timing out due to inactivity.
+    If the value is set to 0, GUI connections will not time out.
 
     Args:
-        value   (str)   -- GUI timeout value in minutes
+        value: The GUI timeout value in minutes. Use 0 to disable GUI session timeouts.
 
-    **Note** setting value to 0 will disable GUI connections to timeout
+    Example:
+        &gt;&gt;&gt; system = System()
+        &gt;&gt;&gt; system.set_gui_timeout(30)  # Set GUI timeout to 30 minutes
+        &gt;&gt;&gt; system.set_gui_timeout(0)   # Disable GUI timeout
 
     &#34;&#34;&#34;
     self._commcell_object._set_gxglobalparam_value(

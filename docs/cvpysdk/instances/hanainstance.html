@@ -27,7 +27,8 @@
 <p>SAPHANAInstance is the only class defined in this file.</p>
 <p>SAPHANAInstance: Derived class from Instance Base class, representing a hana server instance,
 and to perform operations on that instance</p>
-<h2 id="saphanainstance">Saphanainstance</h2>
+<p>Saphanainstance
+-----=</p>
 <p>sps_version()
 &ndash;
 returns the SPS version of the instance</p>
@@ -59,7 +60,7 @@ runs the restore job for specified instance</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/hanainstance.py#L1-L496" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/hanainstance.py#L1-L487" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -112,157 +113,164 @@ SAPHANAInstance:
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-import threading
-
 from ..instance import Instance
 from ..exception import SDKException
+from ..job import Job
+
+from typing import Optional, TYPE_CHECKING
+if TYPE_CHECKING:
+    from ..agent import Agent
 
 
 class SAPHANAInstance(Instance):
-    &#34;&#34;&#34;Derived class from Instance Base class, representing a SAP HANA instance,
-        and to perform operations on that Instance.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents a SAP HANA instance and provides operations for instance management and restoration.
 
-    def __init__(self, agent_object, instance_name, instance_id=None):
-        &#34;&#34;&#34;Initialize the subclient object
+    This class is derived from the Instance base class and is specifically designed to handle SAP HANA
+    database instances. It encapsulates instance-specific properties such as SPS version, instance number,
+    SQL location directory, database username, client information, and HDB user store key. The class also
+    provides methods for generating restore request payloads, retrieving restore options, and performing
+    restore operations on SAP HANA instances.
+
+    Key Features:
+        - Initialization with agent object, instance name, and instance ID
+        - Access to SAP HANA instance properties (SPS version, instance number, SQL directory, DB username, client, user store key)
+        - Generation of restore request JSON for SAP HANA instance recovery
+        - Retrieval of restore options for a given destination client
+        - Execution of restore operations with advanced options (point-in-time restore, log area initialization, hardware revert, clone environment, access checks, stream management, catalog time, and more)
+
+    &#34;&#34;&#34;
+
+    def __init__(self, agent_object: &#39;Agent&#39;, instance_name: str, instance_id: int = None) -&gt; None:
+        &#34;&#34;&#34;Initialize a SAPHANAInstance object.
 
         Args:
-            agent_object    (object):       instance of the agent class
-
-            instance_name   (str):   name of the instance
-
-            instance_id     (int):          ID of the instance
+            agent_object: Instance of the agent class associated with this SAP HANA instance.
+            instance_name: The name of the SAP HANA instance.
+            instance_id: Optional; the unique integer ID of the SAP HANA instance. Defaults to None.
 
         &#34;&#34;&#34;
         super(SAPHANAInstance, self).__init__(agent_object, instance_name, instance_id)
         self.destination_instances_dict = {}
 
     @property
-    def sps_version(self):
-        &#34;&#34;&#34;
-        Returns the sps version of the HANA instance
+    def sps_version(self) -&gt; str:
+        &#34;&#34;&#34;Get the SPS (Support Package Stack) version of the HANA instance.
 
         Returns:
-            sps version
+            str: The SPS version string of the HANA instance.
+
         &#34;&#34;&#34;
         return self._properties[&#39;saphanaInstance&#39;][&#39;spsVersion&#39;]
 
     @property
-    def instance_number(self):
-        &#34;&#34;&#34;
-        Returns the instance number of the HANA instance
+    def instance_number(self) -&gt; int:
+        &#34;&#34;&#34;Get the instance number of the HANA instance.
 
         Returns:
-            instance number
+            The instance number as an integer.
+
         &#34;&#34;&#34;
         return self._properties[&#39;saphanaInstance&#39;][&#39;dbInstanceNumber&#39;]
 
     @property
-    def sql_location_directory(self):
-        &#34;&#34;&#34;
-        Returns the isql location directory of the HANA instance
+    def sql_location_directory(self) -&gt; str:
+        &#34;&#34;&#34;Get the isql location directory of the HANA instance.
 
         Returns:
-            SQL location directory
+            The file system path to the isql location directory for this SAP HANA instance.
+
         &#34;&#34;&#34;
         return self._properties[&#39;saphanaInstance&#39;][&#39;hdbsqlLocationDirectory&#39;]
 
     @property
-    def instance_db_username(self):
-        &#34;&#34;&#34;
-        Returns the username of the HANA instance database
+    def instance_db_username(self) -&gt; str:
+        &#34;&#34;&#34;Get the username of the HANA instance database.
 
         Returns:
-            instance db username
+            The username associated with the HANA instance database as a string.
+
         &#34;&#34;&#34;
         return self._properties[&#39;saphanaInstance&#39;][&#39;dbUser&#39;][&#39;userName&#39;]
 
     @property
-    def db_instance_client(self):
-        &#34;&#34;&#34;
-        Returns the client name of the HANA instance
+    def db_instance_client(self) -&gt; str:
+        &#34;&#34;&#34;Get the client name associated with the HANA database instance.
 
         Returns:
-            db instance client name
+            The client name of the HANA instance as a string.
+
         &#34;&#34;&#34;
         return self._properties[&#39;saphanaInstance&#39;][&#39;DBInstances&#39;][0]
 
     @property
-    def hdb_user_storekey(self):
-        &#34;&#34;&#34;
-        Returns the hdb user store key of the HANA instance
+    def hdb_user_storekey(self) -&gt; str:
+        &#34;&#34;&#34;Get the HDB user store key associated with the SAP HANA instance.
 
         Returns:
-            hdb user store key
+            The HDB user store key as a string.
+
         &#34;&#34;&#34;
         return self._properties[&#39;saphanaInstance&#39;][&#39;hdbuserstorekey&#39;]
 
     def _restore_request_json(
-            self,
-            destination_client,
-            destination_instance,
-            backupset_name=&#34;default&#34;,
-            backup_prefix=None,
-            point_in_time=None,
-            initialize_log_area=False,
-            use_hardware_revert=False,
-            clone_env=False,
-            check_access=False,
-            destination_instance_dir=None,
-            ignore_delta_backups=False,
-            no_of_streams=2,
-            catalog_time=None):
-        &#34;&#34;&#34;Returns the JSON request to pass to the API as per the options selected by the user.
+        self,
+        destination_client: str,
+        destination_instance: str,
+        backupset_name: str = &#34;default&#34;,
+        backup_prefix: Optional[str] = None,
+        point_in_time: Optional[str] = None,
+        initialize_log_area: bool = False,
+        use_hardware_revert: bool = False,
+        clone_env: bool = False,
+        check_access: bool = False,
+        destination_instance_dir: Optional[str] = None,
+        ignore_delta_backups: bool = False,
+        no_of_streams: int = 2,
+        catalog_time: Optional[str] = None
+    ) -&gt; dict:
+        &#34;&#34;&#34;Construct the JSON request payload for a SAP HANA restore operation.
 
-            Args:
-                destination_client          (str)   --  HANA client to restore the database at
+        This method generates a dictionary representing the restore request, 
+        based on the provided options and parameters. The resulting JSON can 
+        be sent to the API to initiate a restore operation for a SAP HANA instance.
 
-                destination_instance        (str)   --  destination instance to restore the db at
+        Args:
+            destination_client: The HANA client where the database will be restored.
+            destination_instance: The destination instance for the database restore.
+            backupset_name: Name of the backupset to restore. For single DB instances, use &#34;default&#34;.
+            backup_prefix: Optional prefix of the backup job to restore.
+            point_in_time: Optional point-in-time (as a string) to which the database should be restored.
+            initialize_log_area: Whether to initialize the new log area after restore.
+            use_hardware_revert: Whether to perform a hardware revert during restore.
+            clone_env: Whether to clone the database environment during restore.
+            check_access: Whether to check access permissions during restore.
+            destination_instance_dir: Optional HANA data directory for cross-instance or cross-machine restores.
+            ignore_delta_backups: Whether to ignore delta backups during restore.
+            no_of_streams: Number of streams to use for the restore operation.
+            catalog_time: Optional catalog time to use for the restore.
 
-                backupset_name              (str)   --  backupset name of the instance to be
-                                                            restored. If the instance is a single
-                                                            DB instance then the backupset name is
-                                                            ``default``.
-                    default: default
+        Returns:
+            dict: The JSON request payload to be sent to the API for the restore operation.
 
-                backup_prefix               (str)   --  prefix of the backup job
-                    default: None
-
-                point_in_time               (str)   --  time to which db should be restored to
-                    default: None
-
-                initialize_log_area         (bool)  --  boolean to specify whether to initialize
-                                                            the new log area after restore
-                    default: False
-
-                use_hardware_revert         (bool)  --  boolean to specify whether to do a
-                                                            hardware revert in restore
-                    default: False
-
-                clone_env                   (bool)  --  boolean to specify whether the database
-                                                            should be cloned or not
-                    default: False
-
-                check_access                (bool)  --  check access during restore or not
-                    default: True
-
-                destination_instance_dir    (str)   --  HANA data directory for snap cross instance
-                                                            restore or cross machine restores
-                    default: None
-
-                ignore_delta_backups        (bool)  --  whether to ignore delta backups during
-                                                            restore or not
-                    default: True
-
-                no_of_streams               (int)   --  number of streams to be used for restore
-
-                    default: 2
-
-                catalog_time                (str)   --  catalog time to which should be used to restore
-
-                    default: None
-
-            Returns:
-                dict    -   JSON request to pass to the API
+        Example:
+            &gt;&gt;&gt; restore_json = saphana_instance._restore_request_json(
+            ...     destination_client=&#34;hana_client01&#34;,
+            ...     destination_instance=&#34;HDB00&#34;,
+            ...     backupset_name=&#34;default&#34;,
+            ...     backup_prefix=&#34;backup_2023_01_01&#34;,
+            ...     point_in_time=&#34;2023-01-01 12:00:00&#34;,
+            ...     initialize_log_area=True,
+            ...     use_hardware_revert=False,
+            ...     clone_env=False,
+            ...     check_access=True,
+            ...     destination_instance_dir=&#34;/hana/data/HDB00&#34;,
+            ...     ignore_delta_backups=False,
+            ...     no_of_streams=4,
+            ...     catalog_time=None
+            ... )
+            &gt;&gt;&gt; print(restore_json)
+            # The printed dictionary can be sent as a JSON payload to the restore API.
 
         &#34;&#34;&#34;
         self._get_hana_restore_options(destination_client)
@@ -376,25 +384,22 @@ class SAPHANAInstance(Instance):
 
         return request_json
 
-    def _get_hana_restore_options(self, destination_client_name):
-        &#34;&#34;&#34;Runs the /GetDestinationsToRestore API,
-            and returns the contents after parsing the response.
+    def _get_hana_restore_options(self, destination_client_name: str) -&gt; None:
+        &#34;&#34;&#34;Retrieve HANA destination server options for restore operations.
 
-            Args:
-                destination_client_name     (str)   --  destination client to restore to
+        This method calls the /GetDestinationsToRestore API to obtain available HANA destination 
+        server options for the specified destination client. The response is parsed and returned 
+        as a dictionary.
 
-            Returns:
-                dict    -   dictionary consisting of the HANA destination server options
+        Args:
+            destination_client_name: The name of the destination client to which the restore will be performed.
 
-            Raises:
-                SDKException:
-                    if failed to get HANA clients
+        Returns:
+            None
 
-                    if no client exits on commcell
-
-                    if response is empty
-
-                    if response is not success
+        Raises:
+            SDKException: If the API call fails, if no client exists on the Commcell, 
+                if the response is empty, or if the response indicates failure.
 
         &#34;&#34;&#34;
         webservice = self._commcell_object._services[&#39;RESTORE_OPTIONS&#39;] % (
@@ -461,80 +466,56 @@ class SAPHANAInstance(Instance):
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
     def restore(
-            self,
-            pseudo_client,
-            instance,
-            backupset_name=&#34;default&#34;,
-            backup_prefix=None,
-            point_in_time=None,
-            initialize_log_area=False,
-            use_hardware_revert=False,
-            clone_env=False,
-            check_access=True,
-            destination_instance_dir=None,
-            ignore_delta_backups=True,
-            no_of_streams=2,
-            catalog_time=None):
-        &#34;&#34;&#34;Restores the databases specified in the input paths list.
+        self,
+        pseudo_client: str,
+        instance: str,
+        backupset_name: str = &#34;default&#34;,
+        backup_prefix: Optional[str] = None,
+        point_in_time: Optional[str] = None,
+        initialize_log_area: bool = False,
+        use_hardware_revert: bool = False,
+        clone_env: bool = False,
+        check_access: bool = True,
+        destination_instance_dir: Optional[str] = None,
+        ignore_delta_backups: bool = True,
+        no_of_streams: int = 2,
+        catalog_time: Optional[str] = None
+    ) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;Restore SAP HANA databases to a specified client and instance.
 
-            Args:
-                pseudo_client               (str)   --  HANA client to restore the database at
+        This method initiates a restore operation for SAP HANA databases, allowing for various restore options such as point-in-time recovery, hardware revert, cloning, and more.
 
-                instance                    (str)   --  destination instance to restore the db at
+        Args:
+            pseudo_client: The name of the HANA client where the database will be restored.
+            instance: The destination instance name for the database restore.
+            backupset_name: The backupset name of the instance to be restored. For single DB instances, use &#34;default&#34;.
+            backup_prefix: Optional prefix of the backup job to restore from.
+            point_in_time: Optional point-in-time (as a string) to which the database should be restored.
+            initialize_log_area: Whether to initialize the new log area after restore. Defaults to False.
+            use_hardware_revert: Whether to perform a hardware revert during restore. Defaults to False.
+            clone_env: Whether to clone the database environment during restore. Defaults to False.
+            check_access: Whether to check access during restore. Defaults to True.
+            destination_instance_dir: Optional HANA data directory for cross-instance or cross-machine restores.
+            ignore_delta_backups: Whether to ignore delta backups during restore. Defaults to True.
+            no_of_streams: Number of streams to use for the restore operation. Defaults to 2.
+            catalog_time: Optional catalog time to use for the restore.
 
-                backupset_name              (str)   --  backupset name of the instance to be
-                                                            restored. If the instance is a single
-                                                            DB instance then the backupset name is
-                                                            ``default``.
-                    default: default
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                backup_prefix               (str)   --  prefix of the backup job
-                    default: None
+        Raises:
+            SDKException: If the instance parameter is not a string or object, if the response is empty, or if the response is not successful.
 
-                point_in_time               (str)   --  time to which db should be restored to
-                    default: None
-
-                initialize_log_area         (bool)  --  boolean to specify whether to initialize
-                                                            the new log area after restore
-                    default: False
-
-                use_hardware_revert         (bool)  --  boolean to specify whether to do a
-                                                            hardware revert in restore
-                    default: False
-
-                clone_env                   (bool)  --  boolean to specify whether the database
-                                                            should be cloned or not
-                    default: False
-
-                check_access                (bool)  --  check access during restore or not
-                    default: True
-
-                destination_instance_dir    (str)   --  HANA data directory for snap cross instance
-                                                            restore or cross machine restores
-                    default: None
-
-                ignore_delta_backups        (bool)  --  whether to ignore delta backups during
-                                                            restore or not
-                    default: True
-
-                no_of_streams               (int)   --  number of streams to be used for restore
-
-                    default: 2
-
-                catalog_time                (str)   --  catalog time to which should be used to restore
-
-                    default: None
-
-            Returns:
-                object  -   instance of the Job class for this restore job
-
-            Raises:
-                SDKException:
-                    if instance is not a string or object
-
-                    if response is empty
-
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; job = saphana_instance.restore(
+            ...     pseudo_client=&#34;hana_client1&#34;,
+            ...     instance=&#34;HDB00&#34;,
+            ...     backupset_name=&#34;default&#34;,
+            ...     point_in_time=&#34;2023-05-01 12:00:00&#34;,
+            ...     initialize_log_area=True,
+            ...     no_of_streams=4
+            ... )
+            &gt;&gt;&gt; print(f&#34;Restore job started with ID: {job.job_id}&#34;)
 
         &#34;&#34;&#34;
         if not isinstance(instance, (str, Instance)):
@@ -570,172 +551,186 @@ class SAPHANAInstance(Instance):
 <dl>
 <dt id="cvpysdk.instances.hanainstance.SAPHANAInstance"><code class="flex name class">
 <span>class <span class="ident">SAPHANAInstance</span></span>
-<span>(</span><span>agent_object, instance_name, instance_id=None)</span>
+<span>(</span><span>agent_object: Agent, instance_name: str, instance_id: int = None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Derived class from Instance Base class, representing a SAP HANA instance,
-and to perform operations on that Instance.</p>
-<p>Initialize the subclient object</p>
-<h2 id="args">Args</h2>
-<p>agent_object
-(object):
-instance of the agent class</p>
-<p>instance_name
-(str):
-name of the instance</p>
-<p>instance_id
-(int):
-ID of the instance</p></div>
+<div class="desc"><p>Represents a SAP HANA instance and provides operations for instance management and restoration.</p>
+<p>This class is derived from the Instance base class and is specifically designed to handle SAP HANA
+database instances. It encapsulates instance-specific properties such as SPS version, instance number,
+SQL location directory, database username, client information, and HDB user store key. The class also
+provides methods for generating restore request payloads, retrieving restore options, and performing
+restore operations on SAP HANA instances.</p>
+<p>Key Features:
+- Initialization with agent object, instance name, and instance ID
+- Access to SAP HANA instance properties (SPS version, instance number, SQL directory, DB username, client, user store key)
+- Generation of restore request JSON for SAP HANA instance recovery
+- Retrieval of restore options for a given destination client
+- Execution of restore operations with advanced options (point-in-time restore, log area initialization, hardware revert, clone environment, access checks, stream management, catalog time, and more)</p>
+<p>Initialize a SAPHANAInstance object.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>agent_object</code></strong></dt>
+<dd>Instance of the agent class associated with this SAP HANA instance.</dd>
+<dt><strong><code>instance_name</code></strong></dt>
+<dd>The name of the SAP HANA instance.</dd>
+<dt><strong><code>instance_id</code></strong></dt>
+<dd>Optional; the unique integer ID of the SAP HANA instance. Defaults to None.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/hanainstance.py#L58-L496" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/hanainstance.py#L61-L487" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class SAPHANAInstance(Instance):
-    &#34;&#34;&#34;Derived class from Instance Base class, representing a SAP HANA instance,
-        and to perform operations on that Instance.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents a SAP HANA instance and provides operations for instance management and restoration.
 
-    def __init__(self, agent_object, instance_name, instance_id=None):
-        &#34;&#34;&#34;Initialize the subclient object
+    This class is derived from the Instance base class and is specifically designed to handle SAP HANA
+    database instances. It encapsulates instance-specific properties such as SPS version, instance number,
+    SQL location directory, database username, client information, and HDB user store key. The class also
+    provides methods for generating restore request payloads, retrieving restore options, and performing
+    restore operations on SAP HANA instances.
+
+    Key Features:
+        - Initialization with agent object, instance name, and instance ID
+        - Access to SAP HANA instance properties (SPS version, instance number, SQL directory, DB username, client, user store key)
+        - Generation of restore request JSON for SAP HANA instance recovery
+        - Retrieval of restore options for a given destination client
+        - Execution of restore operations with advanced options (point-in-time restore, log area initialization, hardware revert, clone environment, access checks, stream management, catalog time, and more)
+
+    &#34;&#34;&#34;
+
+    def __init__(self, agent_object: &#39;Agent&#39;, instance_name: str, instance_id: int = None) -&gt; None:
+        &#34;&#34;&#34;Initialize a SAPHANAInstance object.
 
         Args:
-            agent_object    (object):       instance of the agent class
-
-            instance_name   (str):   name of the instance
-
-            instance_id     (int):          ID of the instance
+            agent_object: Instance of the agent class associated with this SAP HANA instance.
+            instance_name: The name of the SAP HANA instance.
+            instance_id: Optional; the unique integer ID of the SAP HANA instance. Defaults to None.
 
         &#34;&#34;&#34;
         super(SAPHANAInstance, self).__init__(agent_object, instance_name, instance_id)
         self.destination_instances_dict = {}
 
     @property
-    def sps_version(self):
-        &#34;&#34;&#34;
-        Returns the sps version of the HANA instance
+    def sps_version(self) -&gt; str:
+        &#34;&#34;&#34;Get the SPS (Support Package Stack) version of the HANA instance.
 
         Returns:
-            sps version
+            str: The SPS version string of the HANA instance.
+
         &#34;&#34;&#34;
         return self._properties[&#39;saphanaInstance&#39;][&#39;spsVersion&#39;]
 
     @property
-    def instance_number(self):
-        &#34;&#34;&#34;
-        Returns the instance number of the HANA instance
+    def instance_number(self) -&gt; int:
+        &#34;&#34;&#34;Get the instance number of the HANA instance.
 
         Returns:
-            instance number
+            The instance number as an integer.
+
         &#34;&#34;&#34;
         return self._properties[&#39;saphanaInstance&#39;][&#39;dbInstanceNumber&#39;]
 
     @property
-    def sql_location_directory(self):
-        &#34;&#34;&#34;
-        Returns the isql location directory of the HANA instance
+    def sql_location_directory(self) -&gt; str:
+        &#34;&#34;&#34;Get the isql location directory of the HANA instance.
 
         Returns:
-            SQL location directory
+            The file system path to the isql location directory for this SAP HANA instance.
+
         &#34;&#34;&#34;
         return self._properties[&#39;saphanaInstance&#39;][&#39;hdbsqlLocationDirectory&#39;]
 
     @property
-    def instance_db_username(self):
-        &#34;&#34;&#34;
-        Returns the username of the HANA instance database
+    def instance_db_username(self) -&gt; str:
+        &#34;&#34;&#34;Get the username of the HANA instance database.
 
         Returns:
-            instance db username
+            The username associated with the HANA instance database as a string.
+
         &#34;&#34;&#34;
         return self._properties[&#39;saphanaInstance&#39;][&#39;dbUser&#39;][&#39;userName&#39;]
 
     @property
-    def db_instance_client(self):
-        &#34;&#34;&#34;
-        Returns the client name of the HANA instance
+    def db_instance_client(self) -&gt; str:
+        &#34;&#34;&#34;Get the client name associated with the HANA database instance.
 
         Returns:
-            db instance client name
+            The client name of the HANA instance as a string.
+
         &#34;&#34;&#34;
         return self._properties[&#39;saphanaInstance&#39;][&#39;DBInstances&#39;][0]
 
     @property
-    def hdb_user_storekey(self):
-        &#34;&#34;&#34;
-        Returns the hdb user store key of the HANA instance
+    def hdb_user_storekey(self) -&gt; str:
+        &#34;&#34;&#34;Get the HDB user store key associated with the SAP HANA instance.
 
         Returns:
-            hdb user store key
+            The HDB user store key as a string.
+
         &#34;&#34;&#34;
         return self._properties[&#39;saphanaInstance&#39;][&#39;hdbuserstorekey&#39;]
 
     def _restore_request_json(
-            self,
-            destination_client,
-            destination_instance,
-            backupset_name=&#34;default&#34;,
-            backup_prefix=None,
-            point_in_time=None,
-            initialize_log_area=False,
-            use_hardware_revert=False,
-            clone_env=False,
-            check_access=False,
-            destination_instance_dir=None,
-            ignore_delta_backups=False,
-            no_of_streams=2,
-            catalog_time=None):
-        &#34;&#34;&#34;Returns the JSON request to pass to the API as per the options selected by the user.
+        self,
+        destination_client: str,
+        destination_instance: str,
+        backupset_name: str = &#34;default&#34;,
+        backup_prefix: Optional[str] = None,
+        point_in_time: Optional[str] = None,
+        initialize_log_area: bool = False,
+        use_hardware_revert: bool = False,
+        clone_env: bool = False,
+        check_access: bool = False,
+        destination_instance_dir: Optional[str] = None,
+        ignore_delta_backups: bool = False,
+        no_of_streams: int = 2,
+        catalog_time: Optional[str] = None
+    ) -&gt; dict:
+        &#34;&#34;&#34;Construct the JSON request payload for a SAP HANA restore operation.
 
-            Args:
-                destination_client          (str)   --  HANA client to restore the database at
+        This method generates a dictionary representing the restore request, 
+        based on the provided options and parameters. The resulting JSON can 
+        be sent to the API to initiate a restore operation for a SAP HANA instance.
 
-                destination_instance        (str)   --  destination instance to restore the db at
+        Args:
+            destination_client: The HANA client where the database will be restored.
+            destination_instance: The destination instance for the database restore.
+            backupset_name: Name of the backupset to restore. For single DB instances, use &#34;default&#34;.
+            backup_prefix: Optional prefix of the backup job to restore.
+            point_in_time: Optional point-in-time (as a string) to which the database should be restored.
+            initialize_log_area: Whether to initialize the new log area after restore.
+            use_hardware_revert: Whether to perform a hardware revert during restore.
+            clone_env: Whether to clone the database environment during restore.
+            check_access: Whether to check access permissions during restore.
+            destination_instance_dir: Optional HANA data directory for cross-instance or cross-machine restores.
+            ignore_delta_backups: Whether to ignore delta backups during restore.
+            no_of_streams: Number of streams to use for the restore operation.
+            catalog_time: Optional catalog time to use for the restore.
 
-                backupset_name              (str)   --  backupset name of the instance to be
-                                                            restored. If the instance is a single
-                                                            DB instance then the backupset name is
-                                                            ``default``.
-                    default: default
+        Returns:
+            dict: The JSON request payload to be sent to the API for the restore operation.
 
-                backup_prefix               (str)   --  prefix of the backup job
-                    default: None
-
-                point_in_time               (str)   --  time to which db should be restored to
-                    default: None
-
-                initialize_log_area         (bool)  --  boolean to specify whether to initialize
-                                                            the new log area after restore
-                    default: False
-
-                use_hardware_revert         (bool)  --  boolean to specify whether to do a
-                                                            hardware revert in restore
-                    default: False
-
-                clone_env                   (bool)  --  boolean to specify whether the database
-                                                            should be cloned or not
-                    default: False
-
-                check_access                (bool)  --  check access during restore or not
-                    default: True
-
-                destination_instance_dir    (str)   --  HANA data directory for snap cross instance
-                                                            restore or cross machine restores
-                    default: None
-
-                ignore_delta_backups        (bool)  --  whether to ignore delta backups during
-                                                            restore or not
-                    default: True
-
-                no_of_streams               (int)   --  number of streams to be used for restore
-
-                    default: 2
-
-                catalog_time                (str)   --  catalog time to which should be used to restore
-
-                    default: None
-
-            Returns:
-                dict    -   JSON request to pass to the API
+        Example:
+            &gt;&gt;&gt; restore_json = saphana_instance._restore_request_json(
+            ...     destination_client=&#34;hana_client01&#34;,
+            ...     destination_instance=&#34;HDB00&#34;,
+            ...     backupset_name=&#34;default&#34;,
+            ...     backup_prefix=&#34;backup_2023_01_01&#34;,
+            ...     point_in_time=&#34;2023-01-01 12:00:00&#34;,
+            ...     initialize_log_area=True,
+            ...     use_hardware_revert=False,
+            ...     clone_env=False,
+            ...     check_access=True,
+            ...     destination_instance_dir=&#34;/hana/data/HDB00&#34;,
+            ...     ignore_delta_backups=False,
+            ...     no_of_streams=4,
+            ...     catalog_time=None
+            ... )
+            &gt;&gt;&gt; print(restore_json)
+            # The printed dictionary can be sent as a JSON payload to the restore API.
 
         &#34;&#34;&#34;
         self._get_hana_restore_options(destination_client)
@@ -849,25 +844,22 @@ ID of the instance</p></div>
 
         return request_json
 
-    def _get_hana_restore_options(self, destination_client_name):
-        &#34;&#34;&#34;Runs the /GetDestinationsToRestore API,
-            and returns the contents after parsing the response.
+    def _get_hana_restore_options(self, destination_client_name: str) -&gt; None:
+        &#34;&#34;&#34;Retrieve HANA destination server options for restore operations.
 
-            Args:
-                destination_client_name     (str)   --  destination client to restore to
+        This method calls the /GetDestinationsToRestore API to obtain available HANA destination 
+        server options for the specified destination client. The response is parsed and returned 
+        as a dictionary.
 
-            Returns:
-                dict    -   dictionary consisting of the HANA destination server options
+        Args:
+            destination_client_name: The name of the destination client to which the restore will be performed.
 
-            Raises:
-                SDKException:
-                    if failed to get HANA clients
+        Returns:
+            None
 
-                    if no client exits on commcell
-
-                    if response is empty
-
-                    if response is not success
+        Raises:
+            SDKException: If the API call fails, if no client exists on the Commcell, 
+                if the response is empty, or if the response indicates failure.
 
         &#34;&#34;&#34;
         webservice = self._commcell_object._services[&#39;RESTORE_OPTIONS&#39;] % (
@@ -934,80 +926,56 @@ ID of the instance</p></div>
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
     def restore(
-            self,
-            pseudo_client,
-            instance,
-            backupset_name=&#34;default&#34;,
-            backup_prefix=None,
-            point_in_time=None,
-            initialize_log_area=False,
-            use_hardware_revert=False,
-            clone_env=False,
-            check_access=True,
-            destination_instance_dir=None,
-            ignore_delta_backups=True,
-            no_of_streams=2,
-            catalog_time=None):
-        &#34;&#34;&#34;Restores the databases specified in the input paths list.
+        self,
+        pseudo_client: str,
+        instance: str,
+        backupset_name: str = &#34;default&#34;,
+        backup_prefix: Optional[str] = None,
+        point_in_time: Optional[str] = None,
+        initialize_log_area: bool = False,
+        use_hardware_revert: bool = False,
+        clone_env: bool = False,
+        check_access: bool = True,
+        destination_instance_dir: Optional[str] = None,
+        ignore_delta_backups: bool = True,
+        no_of_streams: int = 2,
+        catalog_time: Optional[str] = None
+    ) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;Restore SAP HANA databases to a specified client and instance.
 
-            Args:
-                pseudo_client               (str)   --  HANA client to restore the database at
+        This method initiates a restore operation for SAP HANA databases, allowing for various restore options such as point-in-time recovery, hardware revert, cloning, and more.
 
-                instance                    (str)   --  destination instance to restore the db at
+        Args:
+            pseudo_client: The name of the HANA client where the database will be restored.
+            instance: The destination instance name for the database restore.
+            backupset_name: The backupset name of the instance to be restored. For single DB instances, use &#34;default&#34;.
+            backup_prefix: Optional prefix of the backup job to restore from.
+            point_in_time: Optional point-in-time (as a string) to which the database should be restored.
+            initialize_log_area: Whether to initialize the new log area after restore. Defaults to False.
+            use_hardware_revert: Whether to perform a hardware revert during restore. Defaults to False.
+            clone_env: Whether to clone the database environment during restore. Defaults to False.
+            check_access: Whether to check access during restore. Defaults to True.
+            destination_instance_dir: Optional HANA data directory for cross-instance or cross-machine restores.
+            ignore_delta_backups: Whether to ignore delta backups during restore. Defaults to True.
+            no_of_streams: Number of streams to use for the restore operation. Defaults to 2.
+            catalog_time: Optional catalog time to use for the restore.
 
-                backupset_name              (str)   --  backupset name of the instance to be
-                                                            restored. If the instance is a single
-                                                            DB instance then the backupset name is
-                                                            ``default``.
-                    default: default
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                backup_prefix               (str)   --  prefix of the backup job
-                    default: None
+        Raises:
+            SDKException: If the instance parameter is not a string or object, if the response is empty, or if the response is not successful.
 
-                point_in_time               (str)   --  time to which db should be restored to
-                    default: None
-
-                initialize_log_area         (bool)  --  boolean to specify whether to initialize
-                                                            the new log area after restore
-                    default: False
-
-                use_hardware_revert         (bool)  --  boolean to specify whether to do a
-                                                            hardware revert in restore
-                    default: False
-
-                clone_env                   (bool)  --  boolean to specify whether the database
-                                                            should be cloned or not
-                    default: False
-
-                check_access                (bool)  --  check access during restore or not
-                    default: True
-
-                destination_instance_dir    (str)   --  HANA data directory for snap cross instance
-                                                            restore or cross machine restores
-                    default: None
-
-                ignore_delta_backups        (bool)  --  whether to ignore delta backups during
-                                                            restore or not
-                    default: True
-
-                no_of_streams               (int)   --  number of streams to be used for restore
-
-                    default: 2
-
-                catalog_time                (str)   --  catalog time to which should be used to restore
-
-                    default: None
-
-            Returns:
-                object  -   instance of the Job class for this restore job
-
-            Raises:
-                SDKException:
-                    if instance is not a string or object
-
-                    if response is empty
-
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; job = saphana_instance.restore(
+            ...     pseudo_client=&#34;hana_client1&#34;,
+            ...     instance=&#34;HDB00&#34;,
+            ...     backupset_name=&#34;default&#34;,
+            ...     point_in_time=&#34;2023-05-01 12:00:00&#34;,
+            ...     initialize_log_area=True,
+            ...     no_of_streams=4
+            ... )
+            &gt;&gt;&gt; print(f&#34;Restore job started with ID: {job.job_id}&#34;)
 
         &#34;&#34;&#34;
         if not isinstance(instance, (str, Instance)):
@@ -1037,128 +1005,137 @@ ID of the instance</p></div>
 </ul>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.instances.hanainstance.SAPHANAInstance.db_instance_client"><code class="name">var <span class="ident">db_instance_client</span></code></dt>
+<dt id="cvpysdk.instances.hanainstance.SAPHANAInstance.db_instance_client"><code class="name">var <span class="ident">db_instance_client</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the client name of the HANA instance</p>
-<h2 id="returns">Returns</h2>
-<p>db instance client name</p></div>
+<div class="desc"><p>Get the client name associated with the HANA database instance.</p>
+<p>Returns
+-----=
+The client name of the HANA instance as a string.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/hanainstance.py#L116-L124" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/hanainstance.py#L138-L147" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def db_instance_client(self):
-    &#34;&#34;&#34;
-    Returns the client name of the HANA instance
+def db_instance_client(self) -&gt; str:
+    &#34;&#34;&#34;Get the client name associated with the HANA database instance.
 
     Returns:
-        db instance client name
+        The client name of the HANA instance as a string.
+
     &#34;&#34;&#34;
     return self._properties[&#39;saphanaInstance&#39;][&#39;DBInstances&#39;][0]</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.hanainstance.SAPHANAInstance.hdb_user_storekey"><code class="name">var <span class="ident">hdb_user_storekey</span></code></dt>
+<dt id="cvpysdk.instances.hanainstance.SAPHANAInstance.hdb_user_storekey"><code class="name">var <span class="ident">hdb_user_storekey</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the hdb user store key of the HANA instance</p>
-<h2 id="returns">Returns</h2>
-<p>hdb user store key</p></div>
+<div class="desc"><p>Get the HDB user store key associated with the SAP HANA instance.</p>
+<p>Returns
+-----=
+The HDB user store key as a string.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/hanainstance.py#L126-L134" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/hanainstance.py#L149-L158" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def hdb_user_storekey(self):
-    &#34;&#34;&#34;
-    Returns the hdb user store key of the HANA instance
+def hdb_user_storekey(self) -&gt; str:
+    &#34;&#34;&#34;Get the HDB user store key associated with the SAP HANA instance.
 
     Returns:
-        hdb user store key
+        The HDB user store key as a string.
+
     &#34;&#34;&#34;
     return self._properties[&#39;saphanaInstance&#39;][&#39;hdbuserstorekey&#39;]</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.hanainstance.SAPHANAInstance.instance_db_username"><code class="name">var <span class="ident">instance_db_username</span></code></dt>
+<dt id="cvpysdk.instances.hanainstance.SAPHANAInstance.instance_db_username"><code class="name">var <span class="ident">instance_db_username</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the username of the HANA instance database</p>
-<h2 id="returns">Returns</h2>
-<p>instance db username</p></div>
+<div class="desc"><p>Get the username of the HANA instance database.</p>
+<p>Returns
+-----=
+The username associated with the HANA instance database as a string.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/hanainstance.py#L106-L114" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/hanainstance.py#L127-L136" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def instance_db_username(self):
-    &#34;&#34;&#34;
-    Returns the username of the HANA instance database
+def instance_db_username(self) -&gt; str:
+    &#34;&#34;&#34;Get the username of the HANA instance database.
 
     Returns:
-        instance db username
+        The username associated with the HANA instance database as a string.
+
     &#34;&#34;&#34;
     return self._properties[&#39;saphanaInstance&#39;][&#39;dbUser&#39;][&#39;userName&#39;]</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.hanainstance.SAPHANAInstance.instance_number"><code class="name">var <span class="ident">instance_number</span></code></dt>
+<dt id="cvpysdk.instances.hanainstance.SAPHANAInstance.instance_number"><code class="name">var <span class="ident">instance_number</span> : int</code></dt>
 <dd>
-<div class="desc"><p>Returns the instance number of the HANA instance</p>
-<h2 id="returns">Returns</h2>
-<p>instance number</p></div>
+<div class="desc"><p>Get the instance number of the HANA instance.</p>
+<p>Returns
+-----=
+The instance number as an integer.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/hanainstance.py#L86-L94" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/hanainstance.py#L105-L114" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def instance_number(self):
-    &#34;&#34;&#34;
-    Returns the instance number of the HANA instance
+def instance_number(self) -&gt; int:
+    &#34;&#34;&#34;Get the instance number of the HANA instance.
 
     Returns:
-        instance number
+        The instance number as an integer.
+
     &#34;&#34;&#34;
     return self._properties[&#39;saphanaInstance&#39;][&#39;dbInstanceNumber&#39;]</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.hanainstance.SAPHANAInstance.sps_version"><code class="name">var <span class="ident">sps_version</span></code></dt>
+<dt id="cvpysdk.instances.hanainstance.SAPHANAInstance.sps_version"><code class="name">var <span class="ident">sps_version</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the sps version of the HANA instance</p>
-<h2 id="returns">Returns</h2>
-<p>sps version</p></div>
+<div class="desc"><p>Get the SPS (Support Package Stack) version of the HANA instance.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>str</code></dt>
+<dd>The SPS version string of the HANA instance.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/hanainstance.py#L76-L84" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/hanainstance.py#L94-L103" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def sps_version(self):
-    &#34;&#34;&#34;
-    Returns the sps version of the HANA instance
+def sps_version(self) -&gt; str:
+    &#34;&#34;&#34;Get the SPS (Support Package Stack) version of the HANA instance.
 
     Returns:
-        sps version
+        str: The SPS version string of the HANA instance.
+
     &#34;&#34;&#34;
     return self._properties[&#39;saphanaInstance&#39;][&#39;spsVersion&#39;]</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.hanainstance.SAPHANAInstance.sql_location_directory"><code class="name">var <span class="ident">sql_location_directory</span></code></dt>
+<dt id="cvpysdk.instances.hanainstance.SAPHANAInstance.sql_location_directory"><code class="name">var <span class="ident">sql_location_directory</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the isql location directory of the HANA instance</p>
-<h2 id="returns">Returns</h2>
-<p>SQL location directory</p></div>
+<div class="desc"><p>Get the isql location directory of the HANA instance.</p>
+<p>Returns
+-----=
+The file system path to the isql location directory for this SAP HANA instance.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/hanainstance.py#L96-L104" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/hanainstance.py#L116-L125" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def sql_location_directory(self):
-    &#34;&#34;&#34;
-    Returns the isql location directory of the HANA instance
+def sql_location_directory(self) -&gt; str:
+    &#34;&#34;&#34;Get the isql location directory of the HANA instance.
 
     Returns:
-        SQL location directory
+        The file system path to the isql location directory for this SAP HANA instance.
+
     &#34;&#34;&#34;
     return self._properties[&#39;saphanaInstance&#39;][&#39;hdbsqlLocationDirectory&#39;]</code></pre>
 </details>
@@ -1167,175 +1144,117 @@ def sql_location_directory(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.instances.hanainstance.SAPHANAInstance.restore"><code class="name flex">
-<span>def <span class="ident">restore</span></span>(<span>self, pseudo_client, instance, backupset_name='default', backup_prefix=None, point_in_time=None, initialize_log_area=False, use_hardware_revert=False, clone_env=False, check_access=True, destination_instance_dir=None, ignore_delta_backups=True, no_of_streams=2, catalog_time=None)</span>
+<span>def <span class="ident">restore</span></span>(<span>self, pseudo_client: str, instance: str, backupset_name: str = 'default', backup_prefix: Optional[str] = None, point_in_time: Optional[str] = None, initialize_log_area: bool = False, use_hardware_revert: bool = False, clone_env: bool = False, check_access: bool = True, destination_instance_dir: Optional[str] = None, ignore_delta_backups: bool = True, no_of_streams: int = 2, catalog_time: Optional[str] = None) ‑> <a title="cvpysdk.job.Job" href="../job.html#cvpysdk.job.Job">Job</a></span>
 </code></dt>
 <dd>
-<div class="desc"><p>Restores the databases specified in the input paths list.</p>
-<h2 id="args">Args</h2>
-<p>pseudo_client
-(str)
-&ndash;
-HANA client to restore the database at</p>
-<p>instance
-(str)
-&ndash;
-destination instance to restore the db at</p>
-<p>backupset_name
-(str)
-&ndash;
-backupset name of the instance to be
-restored. If the instance is a single
-DB instance then the backupset name is
-<code>default</code>.
-default: default</p>
-<p>backup_prefix
-(str)
-&ndash;
-prefix of the backup job
-default: None</p>
-<p>point_in_time
-(str)
-&ndash;
-time to which db should be restored to
-default: None</p>
-<p>initialize_log_area
-(bool)
-&ndash;
-boolean to specify whether to initialize
-the new log area after restore
-default: False</p>
-<p>use_hardware_revert
-(bool)
-&ndash;
-boolean to specify whether to do a
-hardware revert in restore
-default: False</p>
-<p>clone_env
-(bool)
-&ndash;
-boolean to specify whether the database
-should be cloned or not
-default: False</p>
-<p>check_access
-(bool)
-&ndash;
-check access during restore or not
-default: True</p>
-<p>destination_instance_dir
-(str)
-&ndash;
-HANA data directory for snap cross instance
-restore or cross machine restores
-default: None</p>
-<p>ignore_delta_backups
-(bool)
-&ndash;
-whether to ignore delta backups during
-restore or not
-default: True</p>
-<p>no_of_streams
-(int)
-&ndash;
-number of streams to be used for restore</p>
-<pre><code>default: 2
-</code></pre>
-<p>catalog_time
-(str)
-&ndash;
-catalog time to which should be used to restore</p>
-<pre><code>default: None
-</code></pre>
-<h2 id="returns">Returns</h2>
-<p>object
--
-instance of the Job class for this restore job</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if instance is not a string or object</p>
-<pre><code>if response is empty
-
-if response is not success
+<div class="desc"><p>Restore SAP HANA databases to a specified client and instance.</p>
+<p>This method initiates a restore operation for SAP HANA databases, allowing for various restore options such as point-in-time recovery, hardware revert, cloning, and more.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>pseudo_client</code></strong></dt>
+<dd>The name of the HANA client where the database will be restored.</dd>
+<dt><strong><code>instance</code></strong></dt>
+<dd>The destination instance name for the database restore.</dd>
+<dt><strong><code>backupset_name</code></strong></dt>
+<dd>The backupset name of the instance to be restored. For single DB instances, use "default".</dd>
+<dt><strong><code>backup_prefix</code></strong></dt>
+<dd>Optional prefix of the backup job to restore from.</dd>
+<dt><strong><code>point_in_time</code></strong></dt>
+<dd>Optional point-in-time (as a string) to which the database should be restored.</dd>
+<dt><strong><code>initialize_log_area</code></strong></dt>
+<dd>Whether to initialize the new log area after restore. Defaults to False.</dd>
+<dt><strong><code>use_hardware_revert</code></strong></dt>
+<dd>Whether to perform a hardware revert during restore. Defaults to False.</dd>
+<dt><strong><code>clone_env</code></strong></dt>
+<dd>Whether to clone the database environment during restore. Defaults to False.</dd>
+<dt><strong><code>check_access</code></strong></dt>
+<dd>Whether to check access during restore. Defaults to True.</dd>
+<dt><strong><code>destination_instance_dir</code></strong></dt>
+<dd>Optional HANA data directory for cross-instance or cross-machine restores.</dd>
+<dt><strong><code>ignore_delta_backups</code></strong></dt>
+<dd>Whether to ignore delta backups during restore. Defaults to True.</dd>
+<dt><strong><code>no_of_streams</code></strong></dt>
+<dd>Number of streams to use for the restore operation. Defaults to 2.</dd>
+<dt><strong><code>catalog_time</code></strong></dt>
+<dd>Optional catalog time to use for the restore.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Job</code></dt>
+<dd>An instance of the Job class representing the restore job.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the instance parameter is not a string or object, if the response is empty, or if the response is not successful.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; job = saphana_instance.restore(
+...     pseudo_client=&quot;hana_client1&quot;,
+...     instance=&quot;HDB00&quot;,
+...     backupset_name=&quot;default&quot;,
+...     point_in_time=&quot;2023-05-01 12:00:00&quot;,
+...     initialize_log_area=True,
+...     no_of_streams=4
+... )
+&gt;&gt;&gt; print(f&quot;Restore job started with ID: {job.job_id}&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/hanainstance.py#L400-L496" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/hanainstance.py#L414-L487" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore(
-        self,
-        pseudo_client,
-        instance,
-        backupset_name=&#34;default&#34;,
-        backup_prefix=None,
-        point_in_time=None,
-        initialize_log_area=False,
-        use_hardware_revert=False,
-        clone_env=False,
-        check_access=True,
-        destination_instance_dir=None,
-        ignore_delta_backups=True,
-        no_of_streams=2,
-        catalog_time=None):
-    &#34;&#34;&#34;Restores the databases specified in the input paths list.
+    self,
+    pseudo_client: str,
+    instance: str,
+    backupset_name: str = &#34;default&#34;,
+    backup_prefix: Optional[str] = None,
+    point_in_time: Optional[str] = None,
+    initialize_log_area: bool = False,
+    use_hardware_revert: bool = False,
+    clone_env: bool = False,
+    check_access: bool = True,
+    destination_instance_dir: Optional[str] = None,
+    ignore_delta_backups: bool = True,
+    no_of_streams: int = 2,
+    catalog_time: Optional[str] = None
+) -&gt; &#39;Job&#39;:
+    &#34;&#34;&#34;Restore SAP HANA databases to a specified client and instance.
 
-        Args:
-            pseudo_client               (str)   --  HANA client to restore the database at
+    This method initiates a restore operation for SAP HANA databases, allowing for various restore options such as point-in-time recovery, hardware revert, cloning, and more.
 
-            instance                    (str)   --  destination instance to restore the db at
+    Args:
+        pseudo_client: The name of the HANA client where the database will be restored.
+        instance: The destination instance name for the database restore.
+        backupset_name: The backupset name of the instance to be restored. For single DB instances, use &#34;default&#34;.
+        backup_prefix: Optional prefix of the backup job to restore from.
+        point_in_time: Optional point-in-time (as a string) to which the database should be restored.
+        initialize_log_area: Whether to initialize the new log area after restore. Defaults to False.
+        use_hardware_revert: Whether to perform a hardware revert during restore. Defaults to False.
+        clone_env: Whether to clone the database environment during restore. Defaults to False.
+        check_access: Whether to check access during restore. Defaults to True.
+        destination_instance_dir: Optional HANA data directory for cross-instance or cross-machine restores.
+        ignore_delta_backups: Whether to ignore delta backups during restore. Defaults to True.
+        no_of_streams: Number of streams to use for the restore operation. Defaults to 2.
+        catalog_time: Optional catalog time to use for the restore.
 
-            backupset_name              (str)   --  backupset name of the instance to be
-                                                        restored. If the instance is a single
-                                                        DB instance then the backupset name is
-                                                        ``default``.
-                default: default
+    Returns:
+        Job: An instance of the Job class representing the restore job.
 
-            backup_prefix               (str)   --  prefix of the backup job
-                default: None
+    Raises:
+        SDKException: If the instance parameter is not a string or object, if the response is empty, or if the response is not successful.
 
-            point_in_time               (str)   --  time to which db should be restored to
-                default: None
-
-            initialize_log_area         (bool)  --  boolean to specify whether to initialize
-                                                        the new log area after restore
-                default: False
-
-            use_hardware_revert         (bool)  --  boolean to specify whether to do a
-                                                        hardware revert in restore
-                default: False
-
-            clone_env                   (bool)  --  boolean to specify whether the database
-                                                        should be cloned or not
-                default: False
-
-            check_access                (bool)  --  check access during restore or not
-                default: True
-
-            destination_instance_dir    (str)   --  HANA data directory for snap cross instance
-                                                        restore or cross machine restores
-                default: None
-
-            ignore_delta_backups        (bool)  --  whether to ignore delta backups during
-                                                        restore or not
-                default: True
-
-            no_of_streams               (int)   --  number of streams to be used for restore
-
-                default: 2
-
-            catalog_time                (str)   --  catalog time to which should be used to restore
-
-                default: None
-
-        Returns:
-            object  -   instance of the Job class for this restore job
-
-        Raises:
-            SDKException:
-                if instance is not a string or object
-
-                if response is empty
-
-                if response is not success
+    Example:
+        &gt;&gt;&gt; job = saphana_instance.restore(
+        ...     pseudo_client=&#34;hana_client1&#34;,
+        ...     instance=&#34;HDB00&#34;,
+        ...     backupset_name=&#34;default&#34;,
+        ...     point_in_time=&#34;2023-05-01 12:00:00&#34;,
+        ...     initialize_log_area=True,
+        ...     no_of_streams=4
+        ... )
+        &gt;&gt;&gt; print(f&#34;Restore job started with ID: {job.job_id}&#34;)
 
     &#34;&#34;&#34;
     if not isinstance(instance, (str, Instance)):

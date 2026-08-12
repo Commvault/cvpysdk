@@ -27,8 +27,9 @@
 <p>Activity Control is the only class defined in this file.</p>
 <p>ActivityControl: Class for managing Activity Control enable/disable
 for various entities within the comcell.</p>
-<h2 id="activitycontrol">Activitycontrol</h2>
-<p><strong>init</strong>(commcell_object) &ndash; initialise object of Class associated to the commcell</p>
+<p>Activitycontrol
+-----=
+<strong>init</strong>(commcell_object) &ndash; initialise object of Class associated to the commcell</p>
 <p><strong>repr</strong>()
 &ndash;
 String representation of the instance of this class.</p>
@@ -51,7 +52,7 @@ returns the Enable back time zone</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activitycontrol.py#L1-L271" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activitycontrol.py#L1-L375" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">#!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -99,20 +100,42 @@ ActivityControl:
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
+from typing import Any, Dict
+
 from .exception import SDKException
 
-
 class ActivityControl(object):
-    &#34;&#34;&#34;Class for performing activity control operations.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Class for managing and controlling activity operations within a CommCell environment.
 
-    def __init__(self, commcell_object):
-        &#34;&#34;&#34;Initialise the Activity control class instance.
+    The ActivityControl class provides an interface to perform various activity control operations,
+    such as enabling, disabling, and scheduling activities with specific actions and time delays.
+    It allows querying the status of activities, checking if an activity is enabled, and accessing
+    properties related to re-enabling activities, including the time and time zone settings.
 
-            Args:
-                commcell_object (object)  --  instance of the Commcell class
+    Key Features:
+        - Initialize with a CommCell object for context-specific activity control
+        - Set activity actions (enable/disable) for specified activity types
+        - Enable activities after a specified delay
+        - Generate request JSON for activity control operations
+        - Retrieve current activity control status
+        - Check if a particular activity type is enabled
+        - Access re-enable time and time zone properties
 
-            Returns:
-                object - instance of the ActivityControl class
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_object) -&gt; None:
+        &#34;&#34;&#34;Initialize an ActivityControl instance for managing activity controls in the Commcell.
+
+        Args:
+            commcell_object: Instance of the Commcell class representing the connected Commcell environment.
+
+        Example:
+            &gt;&gt;&gt; from cvpysdk.commcell import Commcell
+            &gt;&gt;&gt; commcell = Commcell(command_center_hostname, username, password)
+            &gt;&gt;&gt; activity_control = ActivityControl(commcell)
+            &gt;&gt;&gt; # The ActivityControl object can now be used to manage activity controls
+
         &#34;&#34;&#34;
 
         self._commcell_object = commcell_object
@@ -129,17 +152,54 @@ class ActivityControl(object):
         }
         self._get_activity_control_status()
 
-    def __repr__(self):
-        &#34;&#34;&#34;String representation of the instance of this class.&#34;&#34;&#34;
+    def __repr__(self) -&gt; str:
+        &#34;&#34;&#34;Return a string representation of the ActivityControl instance.
+
+        Returns:
+            A string indicating that this object is an instance of the ActivityControl class.
+
+        Example:
+            &gt;&gt;&gt; activity_control = ActivityControl(...)
+            &gt;&gt;&gt; print(repr(activity_control))
+            ActivityControl class instance
+
+        &#34;&#34;&#34;
         representation_string = &#39;ActivityControl class instance&#39;
         return representation_string
 
-    def _request_json_(self, activity_type, enable_time):
-        &#34;&#34;&#34;Returns the JSON request to pass to the API
-            as per the options selected by the user.
+    def _request_json_(self, activity_type: str, enable_time: int) -&gt; Dict[str, Any]:
+        &#34;&#34;&#34;Generate the JSON request payload for activity control API operations.
 
-            Returns:
-                dict - JSON request to pass to the API
+        Constructs a JSON dictionary based on the specified activity type and enable time,
+        suitable for passing to the activity control API.
+
+        Args:
+            activity_type: The type of activity to control (e.g., &#39;Backup&#39;, &#39;Restore&#39;).
+            enable_time: The time (as an integer, typically a Unix timestamp) when the activity should be enabled.
+
+        Returns:
+            Dictionary representing the JSON request to be sent to the API.
+
+        Example:
+            &gt;&gt;&gt; activity_control = ActivityControl()
+            &gt;&gt;&gt; request_payload = activity_control._request_json_(&#39;Backup&#39;, 1712345678)
+            &gt;&gt;&gt; print(request_payload)
+            {
+                &#34;commCellInfo&#34;: {
+                    &#34;commCellActivityControlInfo&#34;: {
+                        &#34;activityControlOptions&#34;: [
+                            {
+                                &#34;activityType&#34;: ...,
+                                &#34;enableAfterADelay&#34;: True,
+                                &#34;enableActivityType&#34;: False,
+                                &#34;dateTime&#34;: {
+                                    &#34;time&#34;: 1712345678
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
         &#34;&#34;&#34;
 
         request_json = {
@@ -155,33 +215,27 @@ class ActivityControl(object):
 
         return request_json
 
-    def set(self, activity_type, action):
-        &#34;&#34;&#34;Sets activity control on Commcell.
+    def set(self, activity_type: str, action: str) -&gt; None:
+        &#34;&#34;&#34;Set the activity control status for a specific activity type on the Commcell.
 
-            Args:
-                activity_type (str)  --  Activity Type to be Enabled or Disabled
-                Values:
-                    &#34;ALL ACTIVITY&#34;,
-                    &#34;DATA MANAGEMENT&#34;,
-                    &#34;DATA RECOVERY&#34;,
-                    &#34;DATA AGING&#34;,
-                    &#34;AUX COPY&#34;,
-                    &#34;DATA VERIFICATION&#34;,
-                    &#34;DDB ACTIVITY&#34;,
-                    &#34;SCHEDULER&#34;,
-                    &#34;OFFLINE CONTENT INDEXING&#34;,
+        This method enables or disables a specified activity type on the Commcell, such as data management,
+        data recovery, or scheduler activities.
 
-                action (str)    --    Enable or Disable
-                Values:
-                    Enable
-                    Disable
-            Raises:
-                SDKException:
-                    if failed to set
+        Args:
+            activity_type: The type of activity to be enabled or disabled. Valid values include:
+                &#34;ALL ACTIVITY&#34;, &#34;DATA MANAGEMENT&#34;, &#34;DATA RECOVERY&#34;, &#34;DATA AGING&#34;, &#34;AUX COPY&#34;,
+                &#34;DATA VERIFICATION&#34;, &#34;DDB ACTIVITY&#34;, &#34;SCHEDULER&#34;, &#34;OFFLINE CONTENT INDEXING&#34;.
+            action: The action to perform on the activity type. Valid values are &#34;Enable&#34; or &#34;Disable&#34;.
 
-                    if response is empty
+        Raises:
+            SDKException: If the activity control could not be set, if the response is empty,
+                or if the response indicates failure.
 
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; activity_control = ActivityControl(commcell_object)
+            &gt;&gt;&gt; activity_control.set(&#34;DATA MANAGEMENT&#34;, &#34;Enable&#34;)
+            &gt;&gt;&gt; # This will enable data management activity on the Commcell
+
         &#34;&#34;&#34;
         set_request = self._commcell_object._services[&#39;SET_ACTIVITY_CONTROL&#39;] % (
             str(self._activity_type_dict[activity_type]), str(action))
@@ -205,31 +259,27 @@ class ActivityControl(object):
                 response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def enable_after_delay(self, activity_type, enable_time):
-        &#34;&#34;&#34;Disables activity if not already disabled
-            and enables at the time specified.
+    def enable_after_delay(self, activity_type: str, enable_time: str) -&gt; None:
+        &#34;&#34;&#34;Disable the specified activity if not already disabled, and enable it at the given time.
 
-            Args:
-                activity_type (str)  --  Activity Type to be Enabled or Disabled
-                Values:
-                    &#34;ALL ACTIVITY&#34;,
-                    &#34;DATA MANAGEMENT&#34;,
-                    &#34;DATA RECOVERY&#34;,
-                    &#34;DATA AGING&#34;,
-                    &#34;AUX COPY&#34;,
-                    &#34;DATA VERIFICATION&#34;,
-                    &#34;DDB ACTIVITY&#34;,
-                    &#34;SCHEDULER&#34;,
-                    &#34;OFFLINE CONTENT INDEXING&#34;,
+        This method schedules the enabling of a Commcell activity after a specified delay, using a Unix timestamp in UTC.
+        If the activity is not already disabled, it will be disabled first, then enabled at the provided time.
 
-                enable_time (str)-- Unix Timestamp in UTC timezone
-            Raises:
-                SDKException:
-                    if failed to enable activity control after a time
+        Args:
+            activity_type: The type of activity to be enabled or disabled. Valid values include:
+                &#34;ALL ACTIVITY&#34;, &#34;DATA MANAGEMENT&#34;, &#34;DATA RECOVERY&#34;, &#34;DATA AGING&#34;, &#34;AUX COPY&#34;,
+                &#34;DATA VERIFICATION&#34;, &#34;DDB ACTIVITY&#34;, &#34;SCHEDULER&#34;, &#34;OFFLINE CONTENT INDEXING&#34;.
+            enable_time: The Unix timestamp (as a string) in UTC timezone when the activity should be enabled.
 
-                    if response is empty
+        Raises:
+            SDKException: If enabling the activity control after the specified time fails,
+                if the response is empty, or if the response indicates failure.
 
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; activity_control = ActivityControl(commcell_object)
+            &gt;&gt;&gt; # Schedule enabling &#39;DATA MANAGEMENT&#39; activity at a specific UTC timestamp
+            &gt;&gt;&gt; activity_control.enable_after_delay(&#34;DATA MANAGEMENT&#34;, &#34;1712345678&#34;)
+            &gt;&gt;&gt; print(&#34;Activity scheduled for enablement after delay.&#34;)
         &#34;&#34;&#34;
         request_json = self._request_json_(activity_type, enable_time)
 
@@ -260,14 +310,20 @@ class ActivityControl(object):
                 response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def _get_activity_control_status(self):
-        &#34;&#34;&#34;Gets the activity control status
+    def _get_activity_control_status(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve and update the activity control status for the Commcell.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        This method sends a GET request to the Commcell to obtain the current activity control status.
+        The retrieved status is stored in the internal activity control properties list.
 
-                    if response is not success
+        Raises:
+            SDKException: If the response from the Commcell is empty or indicates a failure.
+
+        Example:
+            &gt;&gt;&gt; activity_control = ActivityControl(commcell_object)
+            &gt;&gt;&gt; activity_control._get_activity_control_status()
+            &gt;&gt;&gt; # The activity control properties are now updated internally
+
         &#34;&#34;&#34;
         get_request = self._commcell_object._services[&#39;GET_ACTIVITY_CONTROL&#39;]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -285,22 +341,38 @@ class ActivityControl(object):
                 response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def is_enabled(self, activity_type):
-        &#34;&#34;&#34;Returns True/False based on the enabled flag and also sets
-                     other relevant properties for a given activity type.
+    def is_enabled(self, activity_type: str) -&gt; bool:
+        &#34;&#34;&#34;Check if a specific activity type is enabled and update related properties.
 
-            Args:
-                activity_type (str)  --  Activity Type to be Enabled or Disabled
-                Values:
-                    &#34;ALL ACTIVITY&#34;,
-                    &#34;DATA MANAGEMENT&#34;,
-                    &#34;DATA RECOVERY&#34;,
-                    &#34;DATA AGING&#34;,
-                    &#34;AUX COPY&#34;,
-                    &#34;DATA VERIFICATION&#34;,
-                    &#34;DDB ACTIVITY&#34;,
-                    &#34;SCHEDULER&#34;,
-                    &#34;OFFLINE CONTENT INDEXING&#34;,
+        This method verifies whether the specified activity type is currently enabled.
+        It also updates internal properties such as re-enable time, scheduling status,
+        and time zone for the activity. If the activity type is not found, an SDKException
+        is raised.
+
+        Args:
+            activity_type: The name of the activity type to check. Supported values include:
+                - &#34;ALL ACTIVITY&#34;
+                - &#34;DATA MANAGEMENT&#34;
+                - &#34;DATA RECOVERY&#34;
+                - &#34;DATA AGING&#34;
+                - &#34;AUX COPY&#34;
+                - &#34;DATA VERIFICATION&#34;
+                - &#34;DDB ACTIVITY&#34;
+                - &#34;SCHEDULER&#34;
+                - &#34;OFFLINE CONTENT INDEXING&#34;
+
+        Returns:
+            True if the activity type is enabled, False otherwise.
+
+        Raises:
+            SDKException: If the specified activity type is not found.
+
+        Example:
+            &gt;&gt;&gt; activity_control = ActivityControl(...)
+            &gt;&gt;&gt; is_data_management_enabled = activity_control.is_enabled(&#34;DATA MANAGEMENT&#34;)
+            &gt;&gt;&gt; print(f&#34;Data Management Enabled: {is_data_management_enabled}&#34;)
+            &gt;&gt;&gt; # Internal properties such as reEnableTime and noSchedEnable are updated after this call
+
         &#34;&#34;&#34;
         self._get_activity_control_status()
         for each_activity in self._activity_control_properties_list:
@@ -316,13 +388,36 @@ class ActivityControl(object):
         raise SDKException(&#39;Client&#39;, &#39;102&#39;, o_str)
 
     @property
-    def reEnableTime(self):
-        &#34;&#34;&#34;Treats the reEnableTime as a read-only attribute.&#34;&#34;&#34;
+    def reEnableTime(self) -&gt; str:
+        &#34;&#34;&#34;Get the reEnableTime value as a read-only property.
+
+        Returns:
+            The reEnableTime value as a string, representing the time when the activity can be re-enabled.
+
+        Example:
+            &gt;&gt;&gt; activity_control = ActivityControl(...)
+            &gt;&gt;&gt; time = activity_control.reEnableTime  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Re-enable time: {time}&#34;)
+
+        &#34;&#34;&#34;
         return self._reEnableTime
 
     @property
-    def reEnableTimeZone(self):
-        &#34;&#34;&#34;Treats the reEnableTimeZone as a read-only attribute.&#34;&#34;&#34;
+    def reEnableTimeZone(self) -&gt; bool:
+        &#34;&#34;&#34;Get the value of the reEnableTimeZone attribute.
+
+        This property provides read-only access to the reEnableTimeZone flag, which indicates
+        whether the time zone re-enablement feature is active for the current ActivityControl instance.
+
+        Returns:
+            True if time zone re-enablement is enabled, False otherwise.
+
+        Example:
+            &gt;&gt;&gt; activity_control = ActivityControl(...)
+            &gt;&gt;&gt; is_enabled = activity_control.reEnableTimeZone  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Time zone re-enablement enabled: {is_enabled}&#34;)
+
+        &#34;&#34;&#34;
         return self._reenableTimeZone</code></pre>
 </details>
 </section>
@@ -340,30 +435,70 @@ class ActivityControl(object):
 <span>(</span><span>commcell_object)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for performing activity control operations.</p>
-<p>Initialise the Activity control class instance.</p>
-<h2 id="args">Args</h2>
-<p>commcell_object (object)
-&ndash;
-instance of the Commcell class</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the ActivityControl class</p></div>
+<div class="desc"><p>Class for managing and controlling activity operations within a CommCell environment.</p>
+<p>The ActivityControl class provides an interface to perform various activity control operations,
+such as enabling, disabling, and scheduling activities with specific actions and time delays.
+It allows querying the status of activities, checking if an activity is enabled, and accessing
+properties related to re-enabling activities, including the time and time zone settings.</p>
+<p>Key Features:
+- Initialize with a CommCell object for context-specific activity control
+- Set activity actions (enable/disable) for specified activity types
+- Enable activities after a specified delay
+- Generate request JSON for activity control operations
+- Retrieve current activity control status
+- Check if a particular activity type is enabled
+- Access re-enable time and time zone properties</p>
+<p>Initialize an ActivityControl instance for managing activity controls in the Commcell.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>commcell_object</code></strong></dt>
+<dd>Instance of the Commcell class representing the connected Commcell environment.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; from cvpysdk.commcell import Commcell
+&gt;&gt;&gt; commcell = Commcell(command_center_hostname, username, password)
+&gt;&gt;&gt; activity_control = ActivityControl(commcell)
+&gt;&gt;&gt; # The ActivityControl object can now be used to manage activity controls
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activitycontrol.py#L50-L271" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activitycontrol.py#L51-L375" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ActivityControl(object):
-    &#34;&#34;&#34;Class for performing activity control operations.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Class for managing and controlling activity operations within a CommCell environment.
 
-    def __init__(self, commcell_object):
-        &#34;&#34;&#34;Initialise the Activity control class instance.
+    The ActivityControl class provides an interface to perform various activity control operations,
+    such as enabling, disabling, and scheduling activities with specific actions and time delays.
+    It allows querying the status of activities, checking if an activity is enabled, and accessing
+    properties related to re-enabling activities, including the time and time zone settings.
 
-            Args:
-                commcell_object (object)  --  instance of the Commcell class
+    Key Features:
+        - Initialize with a CommCell object for context-specific activity control
+        - Set activity actions (enable/disable) for specified activity types
+        - Enable activities after a specified delay
+        - Generate request JSON for activity control operations
+        - Retrieve current activity control status
+        - Check if a particular activity type is enabled
+        - Access re-enable time and time zone properties
 
-            Returns:
-                object - instance of the ActivityControl class
+    &#34;&#34;&#34;
+
+    def __init__(self, commcell_object) -&gt; None:
+        &#34;&#34;&#34;Initialize an ActivityControl instance for managing activity controls in the Commcell.
+
+        Args:
+            commcell_object: Instance of the Commcell class representing the connected Commcell environment.
+
+        Example:
+            &gt;&gt;&gt; from cvpysdk.commcell import Commcell
+            &gt;&gt;&gt; commcell = Commcell(command_center_hostname, username, password)
+            &gt;&gt;&gt; activity_control = ActivityControl(commcell)
+            &gt;&gt;&gt; # The ActivityControl object can now be used to manage activity controls
+
         &#34;&#34;&#34;
 
         self._commcell_object = commcell_object
@@ -380,17 +515,54 @@ instance of the Commcell class</p>
         }
         self._get_activity_control_status()
 
-    def __repr__(self):
-        &#34;&#34;&#34;String representation of the instance of this class.&#34;&#34;&#34;
+    def __repr__(self) -&gt; str:
+        &#34;&#34;&#34;Return a string representation of the ActivityControl instance.
+
+        Returns:
+            A string indicating that this object is an instance of the ActivityControl class.
+
+        Example:
+            &gt;&gt;&gt; activity_control = ActivityControl(...)
+            &gt;&gt;&gt; print(repr(activity_control))
+            ActivityControl class instance
+
+        &#34;&#34;&#34;
         representation_string = &#39;ActivityControl class instance&#39;
         return representation_string
 
-    def _request_json_(self, activity_type, enable_time):
-        &#34;&#34;&#34;Returns the JSON request to pass to the API
-            as per the options selected by the user.
+    def _request_json_(self, activity_type: str, enable_time: int) -&gt; Dict[str, Any]:
+        &#34;&#34;&#34;Generate the JSON request payload for activity control API operations.
 
-            Returns:
-                dict - JSON request to pass to the API
+        Constructs a JSON dictionary based on the specified activity type and enable time,
+        suitable for passing to the activity control API.
+
+        Args:
+            activity_type: The type of activity to control (e.g., &#39;Backup&#39;, &#39;Restore&#39;).
+            enable_time: The time (as an integer, typically a Unix timestamp) when the activity should be enabled.
+
+        Returns:
+            Dictionary representing the JSON request to be sent to the API.
+
+        Example:
+            &gt;&gt;&gt; activity_control = ActivityControl()
+            &gt;&gt;&gt; request_payload = activity_control._request_json_(&#39;Backup&#39;, 1712345678)
+            &gt;&gt;&gt; print(request_payload)
+            {
+                &#34;commCellInfo&#34;: {
+                    &#34;commCellActivityControlInfo&#34;: {
+                        &#34;activityControlOptions&#34;: [
+                            {
+                                &#34;activityType&#34;: ...,
+                                &#34;enableAfterADelay&#34;: True,
+                                &#34;enableActivityType&#34;: False,
+                                &#34;dateTime&#34;: {
+                                    &#34;time&#34;: 1712345678
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
         &#34;&#34;&#34;
 
         request_json = {
@@ -406,33 +578,27 @@ instance of the Commcell class</p>
 
         return request_json
 
-    def set(self, activity_type, action):
-        &#34;&#34;&#34;Sets activity control on Commcell.
+    def set(self, activity_type: str, action: str) -&gt; None:
+        &#34;&#34;&#34;Set the activity control status for a specific activity type on the Commcell.
 
-            Args:
-                activity_type (str)  --  Activity Type to be Enabled or Disabled
-                Values:
-                    &#34;ALL ACTIVITY&#34;,
-                    &#34;DATA MANAGEMENT&#34;,
-                    &#34;DATA RECOVERY&#34;,
-                    &#34;DATA AGING&#34;,
-                    &#34;AUX COPY&#34;,
-                    &#34;DATA VERIFICATION&#34;,
-                    &#34;DDB ACTIVITY&#34;,
-                    &#34;SCHEDULER&#34;,
-                    &#34;OFFLINE CONTENT INDEXING&#34;,
+        This method enables or disables a specified activity type on the Commcell, such as data management,
+        data recovery, or scheduler activities.
 
-                action (str)    --    Enable or Disable
-                Values:
-                    Enable
-                    Disable
-            Raises:
-                SDKException:
-                    if failed to set
+        Args:
+            activity_type: The type of activity to be enabled or disabled. Valid values include:
+                &#34;ALL ACTIVITY&#34;, &#34;DATA MANAGEMENT&#34;, &#34;DATA RECOVERY&#34;, &#34;DATA AGING&#34;, &#34;AUX COPY&#34;,
+                &#34;DATA VERIFICATION&#34;, &#34;DDB ACTIVITY&#34;, &#34;SCHEDULER&#34;, &#34;OFFLINE CONTENT INDEXING&#34;.
+            action: The action to perform on the activity type. Valid values are &#34;Enable&#34; or &#34;Disable&#34;.
 
-                    if response is empty
+        Raises:
+            SDKException: If the activity control could not be set, if the response is empty,
+                or if the response indicates failure.
 
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; activity_control = ActivityControl(commcell_object)
+            &gt;&gt;&gt; activity_control.set(&#34;DATA MANAGEMENT&#34;, &#34;Enable&#34;)
+            &gt;&gt;&gt; # This will enable data management activity on the Commcell
+
         &#34;&#34;&#34;
         set_request = self._commcell_object._services[&#39;SET_ACTIVITY_CONTROL&#39;] % (
             str(self._activity_type_dict[activity_type]), str(action))
@@ -456,31 +622,27 @@ instance of the Commcell class</p>
                 response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def enable_after_delay(self, activity_type, enable_time):
-        &#34;&#34;&#34;Disables activity if not already disabled
-            and enables at the time specified.
+    def enable_after_delay(self, activity_type: str, enable_time: str) -&gt; None:
+        &#34;&#34;&#34;Disable the specified activity if not already disabled, and enable it at the given time.
 
-            Args:
-                activity_type (str)  --  Activity Type to be Enabled or Disabled
-                Values:
-                    &#34;ALL ACTIVITY&#34;,
-                    &#34;DATA MANAGEMENT&#34;,
-                    &#34;DATA RECOVERY&#34;,
-                    &#34;DATA AGING&#34;,
-                    &#34;AUX COPY&#34;,
-                    &#34;DATA VERIFICATION&#34;,
-                    &#34;DDB ACTIVITY&#34;,
-                    &#34;SCHEDULER&#34;,
-                    &#34;OFFLINE CONTENT INDEXING&#34;,
+        This method schedules the enabling of a Commcell activity after a specified delay, using a Unix timestamp in UTC.
+        If the activity is not already disabled, it will be disabled first, then enabled at the provided time.
 
-                enable_time (str)-- Unix Timestamp in UTC timezone
-            Raises:
-                SDKException:
-                    if failed to enable activity control after a time
+        Args:
+            activity_type: The type of activity to be enabled or disabled. Valid values include:
+                &#34;ALL ACTIVITY&#34;, &#34;DATA MANAGEMENT&#34;, &#34;DATA RECOVERY&#34;, &#34;DATA AGING&#34;, &#34;AUX COPY&#34;,
+                &#34;DATA VERIFICATION&#34;, &#34;DDB ACTIVITY&#34;, &#34;SCHEDULER&#34;, &#34;OFFLINE CONTENT INDEXING&#34;.
+            enable_time: The Unix timestamp (as a string) in UTC timezone when the activity should be enabled.
 
-                    if response is empty
+        Raises:
+            SDKException: If enabling the activity control after the specified time fails,
+                if the response is empty, or if the response indicates failure.
 
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; activity_control = ActivityControl(commcell_object)
+            &gt;&gt;&gt; # Schedule enabling &#39;DATA MANAGEMENT&#39; activity at a specific UTC timestamp
+            &gt;&gt;&gt; activity_control.enable_after_delay(&#34;DATA MANAGEMENT&#34;, &#34;1712345678&#34;)
+            &gt;&gt;&gt; print(&#34;Activity scheduled for enablement after delay.&#34;)
         &#34;&#34;&#34;
         request_json = self._request_json_(activity_type, enable_time)
 
@@ -511,14 +673,20 @@ instance of the Commcell class</p>
                 response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def _get_activity_control_status(self):
-        &#34;&#34;&#34;Gets the activity control status
+    def _get_activity_control_status(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve and update the activity control status for the Commcell.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        This method sends a GET request to the Commcell to obtain the current activity control status.
+        The retrieved status is stored in the internal activity control properties list.
 
-                    if response is not success
+        Raises:
+            SDKException: If the response from the Commcell is empty or indicates a failure.
+
+        Example:
+            &gt;&gt;&gt; activity_control = ActivityControl(commcell_object)
+            &gt;&gt;&gt; activity_control._get_activity_control_status()
+            &gt;&gt;&gt; # The activity control properties are now updated internally
+
         &#34;&#34;&#34;
         get_request = self._commcell_object._services[&#39;GET_ACTIVITY_CONTROL&#39;]
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -536,22 +704,38 @@ instance of the Commcell class</p>
                 response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def is_enabled(self, activity_type):
-        &#34;&#34;&#34;Returns True/False based on the enabled flag and also sets
-                     other relevant properties for a given activity type.
+    def is_enabled(self, activity_type: str) -&gt; bool:
+        &#34;&#34;&#34;Check if a specific activity type is enabled and update related properties.
 
-            Args:
-                activity_type (str)  --  Activity Type to be Enabled or Disabled
-                Values:
-                    &#34;ALL ACTIVITY&#34;,
-                    &#34;DATA MANAGEMENT&#34;,
-                    &#34;DATA RECOVERY&#34;,
-                    &#34;DATA AGING&#34;,
-                    &#34;AUX COPY&#34;,
-                    &#34;DATA VERIFICATION&#34;,
-                    &#34;DDB ACTIVITY&#34;,
-                    &#34;SCHEDULER&#34;,
-                    &#34;OFFLINE CONTENT INDEXING&#34;,
+        This method verifies whether the specified activity type is currently enabled.
+        It also updates internal properties such as re-enable time, scheduling status,
+        and time zone for the activity. If the activity type is not found, an SDKException
+        is raised.
+
+        Args:
+            activity_type: The name of the activity type to check. Supported values include:
+                - &#34;ALL ACTIVITY&#34;
+                - &#34;DATA MANAGEMENT&#34;
+                - &#34;DATA RECOVERY&#34;
+                - &#34;DATA AGING&#34;
+                - &#34;AUX COPY&#34;
+                - &#34;DATA VERIFICATION&#34;
+                - &#34;DDB ACTIVITY&#34;
+                - &#34;SCHEDULER&#34;
+                - &#34;OFFLINE CONTENT INDEXING&#34;
+
+        Returns:
+            True if the activity type is enabled, False otherwise.
+
+        Raises:
+            SDKException: If the specified activity type is not found.
+
+        Example:
+            &gt;&gt;&gt; activity_control = ActivityControl(...)
+            &gt;&gt;&gt; is_data_management_enabled = activity_control.is_enabled(&#34;DATA MANAGEMENT&#34;)
+            &gt;&gt;&gt; print(f&#34;Data Management Enabled: {is_data_management_enabled}&#34;)
+            &gt;&gt;&gt; # Internal properties such as reEnableTime and noSchedEnable are updated after this call
+
         &#34;&#34;&#34;
         self._get_activity_control_status()
         for each_activity in self._activity_control_properties_list:
@@ -567,42 +751,108 @@ instance of the Commcell class</p>
         raise SDKException(&#39;Client&#39;, &#39;102&#39;, o_str)
 
     @property
-    def reEnableTime(self):
-        &#34;&#34;&#34;Treats the reEnableTime as a read-only attribute.&#34;&#34;&#34;
+    def reEnableTime(self) -&gt; str:
+        &#34;&#34;&#34;Get the reEnableTime value as a read-only property.
+
+        Returns:
+            The reEnableTime value as a string, representing the time when the activity can be re-enabled.
+
+        Example:
+            &gt;&gt;&gt; activity_control = ActivityControl(...)
+            &gt;&gt;&gt; time = activity_control.reEnableTime  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Re-enable time: {time}&#34;)
+
+        &#34;&#34;&#34;
         return self._reEnableTime
 
     @property
-    def reEnableTimeZone(self):
-        &#34;&#34;&#34;Treats the reEnableTimeZone as a read-only attribute.&#34;&#34;&#34;
+    def reEnableTimeZone(self) -&gt; bool:
+        &#34;&#34;&#34;Get the value of the reEnableTimeZone attribute.
+
+        This property provides read-only access to the reEnableTimeZone flag, which indicates
+        whether the time zone re-enablement feature is active for the current ActivityControl instance.
+
+        Returns:
+            True if time zone re-enablement is enabled, False otherwise.
+
+        Example:
+            &gt;&gt;&gt; activity_control = ActivityControl(...)
+            &gt;&gt;&gt; is_enabled = activity_control.reEnableTimeZone  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Time zone re-enablement enabled: {is_enabled}&#34;)
+
+        &#34;&#34;&#34;
         return self._reenableTimeZone</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.activitycontrol.ActivityControl.reEnableTime"><code class="name">var <span class="ident">reEnableTime</span></code></dt>
+<dt id="cvpysdk.activitycontrol.ActivityControl.reEnableTime"><code class="name">var <span class="ident">reEnableTime</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Treats the reEnableTime as a read-only attribute.</p></div>
+<div class="desc"><p>Get the reEnableTime value as a read-only property.</p>
+<p>Returns
+-----=
+The reEnableTime value as a string, representing the time when the activity can be re-enabled.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; activity_control = ActivityControl(...)
+&gt;&gt;&gt; time = activity_control.reEnableTime  # Use dot notation for property access
+&gt;&gt;&gt; print(f&quot;Re-enable time: {time}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activitycontrol.py#L263-L266" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activitycontrol.py#L342-L356" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def reEnableTime(self):
-    &#34;&#34;&#34;Treats the reEnableTime as a read-only attribute.&#34;&#34;&#34;
+def reEnableTime(self) -&gt; str:
+    &#34;&#34;&#34;Get the reEnableTime value as a read-only property.
+
+    Returns:
+        The reEnableTime value as a string, representing the time when the activity can be re-enabled.
+
+    Example:
+        &gt;&gt;&gt; activity_control = ActivityControl(...)
+        &gt;&gt;&gt; time = activity_control.reEnableTime  # Use dot notation for property access
+        &gt;&gt;&gt; print(f&#34;Re-enable time: {time}&#34;)
+
+    &#34;&#34;&#34;
     return self._reEnableTime</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.activitycontrol.ActivityControl.reEnableTimeZone"><code class="name">var <span class="ident">reEnableTimeZone</span></code></dt>
+<dt id="cvpysdk.activitycontrol.ActivityControl.reEnableTimeZone"><code class="name">var <span class="ident">reEnableTimeZone</span> : bool</code></dt>
 <dd>
-<div class="desc"><p>Treats the reEnableTimeZone as a read-only attribute.</p></div>
+<div class="desc"><p>Get the value of the reEnableTimeZone attribute.</p>
+<p>This property provides read-only access to the reEnableTimeZone flag, which indicates
+whether the time zone re-enablement feature is active for the current ActivityControl instance.</p>
+<p>Returns
+-----=
+True if time zone re-enablement is enabled, False otherwise.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; activity_control = ActivityControl(...)
+&gt;&gt;&gt; is_enabled = activity_control.reEnableTimeZone  # Use dot notation for property access
+&gt;&gt;&gt; print(f&quot;Time zone re-enablement enabled: {is_enabled}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activitycontrol.py#L268-L271" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activitycontrol.py#L358-L375" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def reEnableTimeZone(self):
-    &#34;&#34;&#34;Treats the reEnableTimeZone as a read-only attribute.&#34;&#34;&#34;
+def reEnableTimeZone(self) -&gt; bool:
+    &#34;&#34;&#34;Get the value of the reEnableTimeZone attribute.
+
+    This property provides read-only access to the reEnableTimeZone flag, which indicates
+    whether the time zone re-enablement feature is active for the current ActivityControl instance.
+
+    Returns:
+        True if time zone re-enablement is enabled, False otherwise.
+
+    Example:
+        &gt;&gt;&gt; activity_control = ActivityControl(...)
+        &gt;&gt;&gt; is_enabled = activity_control.reEnableTimeZone  # Use dot notation for property access
+        &gt;&gt;&gt; print(f&#34;Time zone re-enablement enabled: {is_enabled}&#34;)
+
+    &#34;&#34;&#34;
     return self._reenableTimeZone</code></pre>
 </details>
 </dd>
@@ -610,63 +860,60 @@ def reEnableTimeZone(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.activitycontrol.ActivityControl.enable_after_delay"><code class="name flex">
-<span>def <span class="ident">enable_after_delay</span></span>(<span>self, activity_type, enable_time)</span>
+<span>def <span class="ident">enable_after_delay</span></span>(<span>self, activity_type: str, enable_time: str) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Disables activity if not already disabled
-and enables at the time specified.</p>
-<h2 id="args">Args</h2>
-<p>activity_type (str)
-&ndash;
-Activity Type to be Enabled or Disabled
-Values:
-"ALL ACTIVITY",
-"DATA MANAGEMENT",
-"DATA RECOVERY",
-"DATA AGING",
-"AUX COPY",
-"DATA VERIFICATION",
-"DDB ACTIVITY",
-"SCHEDULER",
-"OFFLINE CONTENT INDEXING",</p>
-<p>enable_time (str)&ndash; Unix Timestamp in UTC timezone</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if failed to enable activity control after a time</p>
-<pre><code>if response is empty
-
-if response is not success
+<div class="desc"><p>Disable the specified activity if not already disabled, and enable it at the given time.</p>
+<p>This method schedules the enabling of a Commcell activity after a specified delay, using a Unix timestamp in UTC.
+If the activity is not already disabled, it will be disabled first, then enabled at the provided time.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>activity_type</code></strong></dt>
+<dd>The type of activity to be enabled or disabled. Valid values include:
+"ALL ACTIVITY", "DATA MANAGEMENT", "DATA RECOVERY", "DATA AGING", "AUX COPY",
+"DATA VERIFICATION", "DDB ACTIVITY", "SCHEDULER", "OFFLINE CONTENT INDEXING".</dd>
+<dt><strong><code>enable_time</code></strong></dt>
+<dd>The Unix timestamp (as a string) in UTC timezone when the activity should be enabled.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If enabling the activity control after the specified time fails,
+if the response is empty, or if the response indicates failure.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; activity_control = ActivityControl(commcell_object)
+&gt;&gt;&gt; # Schedule enabling 'DATA MANAGEMENT' activity at a specific UTC timestamp
+&gt;&gt;&gt; activity_control.enable_after_delay(&quot;DATA MANAGEMENT&quot;, &quot;1712345678&quot;)
+&gt;&gt;&gt; print(&quot;Activity scheduled for enablement after delay.&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activitycontrol.py#L153-L206" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activitycontrol.py#L211-L261" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def enable_after_delay(self, activity_type, enable_time):
-    &#34;&#34;&#34;Disables activity if not already disabled
-        and enables at the time specified.
+<pre><code class="python">def enable_after_delay(self, activity_type: str, enable_time: str) -&gt; None:
+    &#34;&#34;&#34;Disable the specified activity if not already disabled, and enable it at the given time.
 
-        Args:
-            activity_type (str)  --  Activity Type to be Enabled or Disabled
-            Values:
-                &#34;ALL ACTIVITY&#34;,
-                &#34;DATA MANAGEMENT&#34;,
-                &#34;DATA RECOVERY&#34;,
-                &#34;DATA AGING&#34;,
-                &#34;AUX COPY&#34;,
-                &#34;DATA VERIFICATION&#34;,
-                &#34;DDB ACTIVITY&#34;,
-                &#34;SCHEDULER&#34;,
-                &#34;OFFLINE CONTENT INDEXING&#34;,
+    This method schedules the enabling of a Commcell activity after a specified delay, using a Unix timestamp in UTC.
+    If the activity is not already disabled, it will be disabled first, then enabled at the provided time.
 
-            enable_time (str)-- Unix Timestamp in UTC timezone
-        Raises:
-            SDKException:
-                if failed to enable activity control after a time
+    Args:
+        activity_type: The type of activity to be enabled or disabled. Valid values include:
+            &#34;ALL ACTIVITY&#34;, &#34;DATA MANAGEMENT&#34;, &#34;DATA RECOVERY&#34;, &#34;DATA AGING&#34;, &#34;AUX COPY&#34;,
+            &#34;DATA VERIFICATION&#34;, &#34;DDB ACTIVITY&#34;, &#34;SCHEDULER&#34;, &#34;OFFLINE CONTENT INDEXING&#34;.
+        enable_time: The Unix timestamp (as a string) in UTC timezone when the activity should be enabled.
 
-                if response is empty
+    Raises:
+        SDKException: If enabling the activity control after the specified time fails,
+            if the response is empty, or if the response indicates failure.
 
-                if response is not success
+    Example:
+        &gt;&gt;&gt; activity_control = ActivityControl(commcell_object)
+        &gt;&gt;&gt; # Schedule enabling &#39;DATA MANAGEMENT&#39; activity at a specific UTC timestamp
+        &gt;&gt;&gt; activity_control.enable_after_delay(&#34;DATA MANAGEMENT&#34;, &#34;1712345678&#34;)
+        &gt;&gt;&gt; print(&#34;Activity scheduled for enablement after delay.&#34;)
     &#34;&#34;&#34;
     request_json = self._request_json_(activity_type, enable_time)
 
@@ -699,46 +946,82 @@ if response is not success
 </details>
 </dd>
 <dt id="cvpysdk.activitycontrol.ActivityControl.is_enabled"><code class="name flex">
-<span>def <span class="ident">is_enabled</span></span>(<span>self, activity_type)</span>
+<span>def <span class="ident">is_enabled</span></span>(<span>self, activity_type: str) ‑> bool</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Returns True/False based on the enabled flag and also sets
-other relevant properties for a given activity type.</p>
-<h2 id="args">Args</h2>
-<p>activity_type (str)
-&ndash;
-Activity Type to be Enabled or Disabled
-Values:
-"ALL ACTIVITY",
-"DATA MANAGEMENT",
-"DATA RECOVERY",
-"DATA AGING",
-"AUX COPY",
-"DATA VERIFICATION",
-"DDB ACTIVITY",
-"SCHEDULER",
-"OFFLINE CONTENT INDEXING",</p></div>
+<div class="desc"><p>Check if a specific activity type is enabled and update related properties.</p>
+<p>This method verifies whether the specified activity type is currently enabled.
+It also updates internal properties such as re-enable time, scheduling status,
+and time zone for the activity. If the activity type is not found, an SDKException
+is raised.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>activity_type</code></strong></dt>
+<dd>The name of the activity type to check. Supported values include:
+- "ALL ACTIVITY"
+- "DATA MANAGEMENT"
+- "DATA RECOVERY"
+- "DATA AGING"
+- "AUX COPY"
+- "DATA VERIFICATION"
+- "DDB ACTIVITY"
+- "SCHEDULER"
+- "OFFLINE CONTENT INDEXING"</dd>
+</dl>
+<p>Returns
+-----=
+True if the activity type is enabled, False otherwise.</p>
+<dl>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the specified activity type is not found.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; activity_control = ActivityControl(...)
+&gt;&gt;&gt; is_data_management_enabled = activity_control.is_enabled(&quot;DATA MANAGEMENT&quot;)
+&gt;&gt;&gt; print(f&quot;Data Management Enabled: {is_data_management_enabled}&quot;)
+&gt;&gt;&gt; # Internal properties such as reEnableTime and noSchedEnable are updated after this call
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activitycontrol.py#L233-L261" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activitycontrol.py#L295-L340" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def is_enabled(self, activity_type):
-    &#34;&#34;&#34;Returns True/False based on the enabled flag and also sets
-                 other relevant properties for a given activity type.
+<pre><code class="python">def is_enabled(self, activity_type: str) -&gt; bool:
+    &#34;&#34;&#34;Check if a specific activity type is enabled and update related properties.
 
-        Args:
-            activity_type (str)  --  Activity Type to be Enabled or Disabled
-            Values:
-                &#34;ALL ACTIVITY&#34;,
-                &#34;DATA MANAGEMENT&#34;,
-                &#34;DATA RECOVERY&#34;,
-                &#34;DATA AGING&#34;,
-                &#34;AUX COPY&#34;,
-                &#34;DATA VERIFICATION&#34;,
-                &#34;DDB ACTIVITY&#34;,
-                &#34;SCHEDULER&#34;,
-                &#34;OFFLINE CONTENT INDEXING&#34;,
+    This method verifies whether the specified activity type is currently enabled.
+    It also updates internal properties such as re-enable time, scheduling status,
+    and time zone for the activity. If the activity type is not found, an SDKException
+    is raised.
+
+    Args:
+        activity_type: The name of the activity type to check. Supported values include:
+            - &#34;ALL ACTIVITY&#34;
+            - &#34;DATA MANAGEMENT&#34;
+            - &#34;DATA RECOVERY&#34;
+            - &#34;DATA AGING&#34;
+            - &#34;AUX COPY&#34;
+            - &#34;DATA VERIFICATION&#34;
+            - &#34;DDB ACTIVITY&#34;
+            - &#34;SCHEDULER&#34;
+            - &#34;OFFLINE CONTENT INDEXING&#34;
+
+    Returns:
+        True if the activity type is enabled, False otherwise.
+
+    Raises:
+        SDKException: If the specified activity type is not found.
+
+    Example:
+        &gt;&gt;&gt; activity_control = ActivityControl(...)
+        &gt;&gt;&gt; is_data_management_enabled = activity_control.is_enabled(&#34;DATA MANAGEMENT&#34;)
+        &gt;&gt;&gt; print(f&#34;Data Management Enabled: {is_data_management_enabled}&#34;)
+        &gt;&gt;&gt; # Internal properties such as reEnableTime and noSchedEnable are updated after this call
+
     &#34;&#34;&#34;
     self._get_activity_control_status()
     for each_activity in self._activity_control_properties_list:
@@ -755,69 +1038,59 @@ Values:
 </details>
 </dd>
 <dt id="cvpysdk.activitycontrol.ActivityControl.set"><code class="name flex">
-<span>def <span class="ident">set</span></span>(<span>self, activity_type, action)</span>
+<span>def <span class="ident">set</span></span>(<span>self, activity_type: str, action: str) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Sets activity control on Commcell.</p>
-<h2 id="args">Args</h2>
-<p>activity_type (str)
-&ndash;
-Activity Type to be Enabled or Disabled
-Values:
-"ALL ACTIVITY",
-"DATA MANAGEMENT",
-"DATA RECOVERY",
-"DATA AGING",
-"AUX COPY",
-"DATA VERIFICATION",
-"DDB ACTIVITY",
-"SCHEDULER",
-"OFFLINE CONTENT INDEXING",</p>
-<p>action (str)
-&ndash;
-Enable or Disable
-Values:
-Enable
-Disable</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if failed to set</p>
-<pre><code>if response is empty
-
-if response is not success
+<div class="desc"><p>Set the activity control status for a specific activity type on the Commcell.</p>
+<p>This method enables or disables a specified activity type on the Commcell, such as data management,
+data recovery, or scheduler activities.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>activity_type</code></strong></dt>
+<dd>The type of activity to be enabled or disabled. Valid values include:
+"ALL ACTIVITY", "DATA MANAGEMENT", "DATA RECOVERY", "DATA AGING", "AUX COPY",
+"DATA VERIFICATION", "DDB ACTIVITY", "SCHEDULER", "OFFLINE CONTENT INDEXING".</dd>
+<dt><strong><code>action</code></strong></dt>
+<dd>The action to perform on the activity type. Valid values are "Enable" or "Disable".</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the activity control could not be set, if the response is empty,
+or if the response indicates failure.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; activity_control = ActivityControl(commcell_object)
+&gt;&gt;&gt; activity_control.set(&quot;DATA MANAGEMENT&quot;, &quot;Enable&quot;)
+&gt;&gt;&gt; # This will enable data management activity on the Commcell
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/activitycontrol.py#L103-L151" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/activitycontrol.py#L166-L209" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def set(self, activity_type, action):
-    &#34;&#34;&#34;Sets activity control on Commcell.
+<pre><code class="python">def set(self, activity_type: str, action: str) -&gt; None:
+    &#34;&#34;&#34;Set the activity control status for a specific activity type on the Commcell.
 
-        Args:
-            activity_type (str)  --  Activity Type to be Enabled or Disabled
-            Values:
-                &#34;ALL ACTIVITY&#34;,
-                &#34;DATA MANAGEMENT&#34;,
-                &#34;DATA RECOVERY&#34;,
-                &#34;DATA AGING&#34;,
-                &#34;AUX COPY&#34;,
-                &#34;DATA VERIFICATION&#34;,
-                &#34;DDB ACTIVITY&#34;,
-                &#34;SCHEDULER&#34;,
-                &#34;OFFLINE CONTENT INDEXING&#34;,
+    This method enables or disables a specified activity type on the Commcell, such as data management,
+    data recovery, or scheduler activities.
 
-            action (str)    --    Enable or Disable
-            Values:
-                Enable
-                Disable
-        Raises:
-            SDKException:
-                if failed to set
+    Args:
+        activity_type: The type of activity to be enabled or disabled. Valid values include:
+            &#34;ALL ACTIVITY&#34;, &#34;DATA MANAGEMENT&#34;, &#34;DATA RECOVERY&#34;, &#34;DATA AGING&#34;, &#34;AUX COPY&#34;,
+            &#34;DATA VERIFICATION&#34;, &#34;DDB ACTIVITY&#34;, &#34;SCHEDULER&#34;, &#34;OFFLINE CONTENT INDEXING&#34;.
+        action: The action to perform on the activity type. Valid values are &#34;Enable&#34; or &#34;Disable&#34;.
 
-                if response is empty
+    Raises:
+        SDKException: If the activity control could not be set, if the response is empty,
+            or if the response indicates failure.
 
-                if response is not success
+    Example:
+        &gt;&gt;&gt; activity_control = ActivityControl(commcell_object)
+        &gt;&gt;&gt; activity_control.set(&#34;DATA MANAGEMENT&#34;, &#34;Enable&#34;)
+        &gt;&gt;&gt; # This will enable data management activity on the Commcell
+
     &#34;&#34;&#34;
     set_request = self._commcell_object._services[&#39;SET_ACTIVITY_CONTROL&#39;] % (
         str(self._activity_type_dict[activity_type]), str(action))

@@ -26,7 +26,8 @@
 <p>Main file for performing operations related to Datacube APIs.</p>
 <p>The class <code><a title="cvpysdk.datacube.datacube.Datacube" href="#cvpysdk.datacube.datacube.Datacube">Datacube</a></code> is defined here in this file,
 that will directly interact with all the Datacube APIs.</p>
-<h2 id="datacube">Datacube</h2>
+<p>Datacube
+-----=</p>
 <p><strong>init</strong>(commcell_object)
 &ndash;
 initialise object of the Datacube class</p>
@@ -54,7 +55,7 @@ refresh the index server associated with datacube</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/datacube.py#L1-L193" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/datacube.py#L1-L283" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -103,10 +104,11 @@ Datacube:
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
+from typing import Any
+
 from .datasource import Datasources
 
 from ..exception import SDKException
-
 
 USER_LOGGED_OUT_MESSAGE = &#39;User Logged Out. Please initialize the Commcell object again.&#39;
 &#34;&#34;&#34;str:     Message to be returned to the user, when trying the get the value of an attribute
@@ -116,17 +118,35 @@ of the Commcell class, after the user was logged out.
 
 
 class Datacube(object):
+    &#34;&#34;&#34;
+    Represents a datacube instance running on the Commcell platform.
 
-    &#34;&#34;&#34; Represents a datacube running on the commcell &#34;&#34;&#34;
+    This class provides an interface for interacting with datacube resources,
+    including analytics engines and data sources. It allows users to retrieve
+    information about available analytics engines, access data sources, manage
+    JDBC drivers for analytics engines, and refresh datacube metadata and engine
+    information.
 
-    def __init__(self, commcell_object):
-        &#34;&#34;&#34;Initialize an instance of the Datacube class.
+    Key Features:
+        - Initialization with a Commcell object for context
+        - Access to analytics engines and data sources via properties
+        - Retrieval of JDBC drivers for specific analytics engines
+        - Refreshing datacube metadata and engine information
+        - Internal handling of unsuccessful responses
 
-            Args:
-                commcell_object     (object)    --  instance of the Commcell class
+    &#34;&#34;&#34;
 
-            Returns:
-                object  -   instance of the Datacube class
+    def __init__(self, commcell_object: object) -&gt; None:
+        &#34;&#34;&#34;Initialize a Datacube instance with the specified Commcell connection.
+
+        Args:
+            commcell_object: An instance of the Commcell class representing the active Commcell connection.
+
+        Example:
+            &gt;&gt;&gt; from cvpysdk.commcell import Commcell
+            &gt;&gt;&gt; commcell = Commcell(&#39;commcell_host&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; datacube = Datacube(commcell)
+            &gt;&gt;&gt; print(&#34;Datacube instance created successfully&#34;)
 
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
@@ -142,11 +162,19 @@ class Datacube(object):
         self._analytics_engines = self._get_analytics_engines()
         self._datasources = None
 
-    def __repr__(self):
-        &#34;&#34;&#34;String representation of the instance of this class.
+    def __repr__(self) -&gt; str:
+        &#34;&#34;&#34;Return a string representation of the Datacube instance.
 
-            Returns:
-                str     -   string consisting of the details of the instance of this class
+        This method provides a human-readable string that describes the current Datacube object,
+        which is useful for debugging and logging purposes.
+
+        Returns:
+            A string containing details about the Datacube instance.
+
+        Example:
+            &gt;&gt;&gt; datacube = Datacube()
+            &gt;&gt;&gt; print(repr(datacube))
+            &lt;Datacube object at 0x7f8b2c1d2e80&gt;
 
         &#34;&#34;&#34;
         o_str = &#34;Datacube class instance for CommServ &#39;{0}&#39;&#34;.format(
@@ -155,28 +183,38 @@ class Datacube(object):
 
         return o_str
 
-    def _response_not_success(self, response):
-        &#34;&#34;&#34;Helper function to raise an exception when reponse status is not 200 (OK).
+    def _response_not_success(self, response: object) -&gt; None:
+        &#34;&#34;&#34;Raise an exception if the API response status is not 200 (OK).
 
-            Args:
-                response    (object)    --  response class object,
+        This helper function checks the status of the provided response object,
+        typically obtained from the `requests` Python package, and raises an
+        exception if the response indicates a failure (i.e., status code is not 200).
 
-                received upon running an API request, using the `requests` python package
+        Args:
+            response: The response object returned from an API request.
+
+        Example:
+            &gt;&gt;&gt; response = requests.get(&#39;https://api.example.com/data&#39;)
+            &gt;&gt;&gt; datacube = Datacube()
+            &gt;&gt;&gt; datacube._response_not_success(response)
+            # Raises an exception if response.status_code is not 200
 
         &#34;&#34;&#34;
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
-    def _get_analytics_engines(self):
-        &#34;&#34;&#34;Gets the list all the analytics engines associated with the datacube.
+    def _get_analytics_engines(self) -&gt; list:
+        &#34;&#34;&#34;Retrieve the list of all analytics engines associated with the datacube.
 
-            Returns:
-                list    -   array consisting details of all analytics engines
+        Returns:
+            list: A list containing details of all analytics engines linked to this datacube.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException: If the response is empty or if the response indicates a failure.
 
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; engines = datacube._get_analytics_engines()
+            &gt;&gt;&gt; print(f&#34;Number of analytics engines: {len(engines)}&#34;)
+            &gt;&gt;&gt; # Each item in the list contains details about an analytics engine
 
         &#34;&#34;&#34;
         flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._ANALYTICS_ENGINES)
@@ -188,13 +226,34 @@ class Datacube(object):
         self._response_not_success(response)
 
     @property
-    def analytics_engines(self):
-        &#34;&#34;&#34;Returns the value of the analytics engines attributes.&#34;&#34;&#34;
+    def analytics_engines(self) -&gt; list:
+        &#34;&#34;&#34;Get the value of the analytics engines attributes for this Datacube instance.
+
+        Returns:
+            The analytics engines attributes associated with the Datacube. The exact type depends on the implementation.
+
+        Example:
+            &gt;&gt;&gt; datacube = Datacube()
+            &gt;&gt;&gt; engines = datacube.analytics_engines  # Access the analytics engines property
+            &gt;&gt;&gt; print(f&#34;Analytics engines: {engines}&#34;)
+
+        &#34;&#34;&#34;
         return self._analytics_engines
 
     @property
-    def datasources(self):
-        &#34;&#34;&#34;Returns the instance of the Datasources class.&#34;&#34;&#34;
+    def datasources(self) -&gt; &#39;Datasources&#39;:
+        &#34;&#34;&#34;Get the Datasources instance associated with this Datacube object.
+
+        Returns:
+            Datasources: An instance for managing data sources within the Datacube.
+
+        Example:
+            &gt;&gt;&gt; datacube = Datacube(commcell_object)
+            &gt;&gt;&gt; ds = datacube.datasources  # Access the datasources property
+            &gt;&gt;&gt; print(f&#34;Datasources object: {ds}&#34;)
+            &gt;&gt;&gt; # The returned Datasources object can be used to manage data sources
+
+        &#34;&#34;&#34;
         try:
             if self._datasources is None:
                 self._datasources = Datasources(self)
@@ -203,20 +262,22 @@ class Datacube(object):
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
 
-    def get_jdbc_drivers(self, analytics_engine):
-        &#34;&#34;&#34;Gets the list all jdbc_drivers associated with the datacube.
+    def get_jdbc_drivers(self, analytics_engine: str) -&gt; list:
+        &#34;&#34;&#34;Retrieve the list of all JDBC drivers associated with the specified analytics engine in the datacube.
 
-            Args:
-                analytics_engine (str) -- client name of analytics_engine
+        Args:
+            analytics_engine: The client name of the analytics engine for which to fetch JDBC drivers.
 
-            Returns:
-                list    -   consists of all jdbc_drivers in the datacube
+        Returns:
+            A list containing the names or details of all JDBC drivers available in the datacube for the given analytics engine.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException: If the response from the server is empty or indicates a failure.
 
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; datacube = Datacube()
+            &gt;&gt;&gt; drivers = datacube.get_jdbc_drivers(&#39;analytics_engine_01&#39;)
+            &gt;&gt;&gt; print(f&#34;Available JDBC drivers: {drivers}&#34;)
 
         &#34;&#34;&#34;
         if not isinstance(analytics_engine, str):
@@ -242,12 +303,32 @@ class Datacube(object):
         else:
             self._response_not_success(response)
 
-    def refresh(self):
-        &#34;&#34;&#34;Refresh the datasources associated to the Datacube Engine.&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Reload the datasources associated with the Datacube Engine.
+
+        This method refreshes the internal state of the Datacube object, ensuring that
+        any changes to the underlying datasources are reflected in the Datacube Engine.
+
+        Example:
+            &gt;&gt;&gt; datacube = Datacube()
+            &gt;&gt;&gt; datacube.refresh()
+            &gt;&gt;&gt; print(&#34;Datasources refreshed successfully&#34;)
+
+        &#34;&#34;&#34;
         self._datasources = None
 
-    def refresh_engine(self):
-        &#34;&#34;&#34;Refresh the Index server associated to the Datacube.&#34;&#34;&#34;
+    def refresh_engine(self) -&gt; None:
+        &#34;&#34;&#34;Refresh the Index server associated with the Datacube.
+
+        This method reloads or updates the Index server connection or configuration
+        for the current Datacube instance, ensuring that the latest state is reflected.
+
+        Example:
+            &gt;&gt;&gt; datacube = Datacube()
+            &gt;&gt;&gt; datacube.refresh_engine()
+            &gt;&gt;&gt; print(&#34;Index server refreshed successfully&#34;)
+
+        &#34;&#34;&#34;
         self._analytics_engines = self._get_analytics_engines()</code></pre>
 </details>
 </section>
@@ -271,37 +352,70 @@ of the Commcell class, after the user was logged out.</p></div>
 <dl>
 <dt id="cvpysdk.datacube.datacube.Datacube"><code class="flex name class">
 <span>class <span class="ident">Datacube</span></span>
-<span>(</span><span>commcell_object)</span>
+<span>(</span><span>commcell_object: object)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Represents a datacube running on the commcell </p>
-<p>Initialize an instance of the Datacube class.</p>
-<h2 id="args">Args</h2>
-<p>commcell_object
-(object)
-&ndash;
-instance of the Commcell class</p>
-<h2 id="returns">Returns</h2>
-<p>object
--
-instance of the Datacube class</p></div>
+<div class="desc"><p>Represents a datacube instance running on the Commcell platform.</p>
+<p>This class provides an interface for interacting with datacube resources,
+including analytics engines and data sources. It allows users to retrieve
+information about available analytics engines, access data sources, manage
+JDBC drivers for analytics engines, and refresh datacube metadata and engine
+information.</p>
+<p>Key Features:
+- Initialization with a Commcell object for context
+- Access to analytics engines and data sources via properties
+- Retrieval of JDBC drivers for specific analytics engines
+- Refreshing datacube metadata and engine information
+- Internal handling of unsuccessful responses</p>
+<p>Initialize a Datacube instance with the specified Commcell connection.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>commcell_object</code></strong></dt>
+<dd>An instance of the Commcell class representing the active Commcell connection.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; from cvpysdk.commcell import Commcell
+&gt;&gt;&gt; commcell = Commcell('commcell_host', 'username', 'password')
+&gt;&gt;&gt; datacube = Datacube(commcell)
+&gt;&gt;&gt; print(&quot;Datacube instance created successfully&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/datacube.py#L60-L193" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/datacube.py#L61-L283" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Datacube(object):
+    &#34;&#34;&#34;
+    Represents a datacube instance running on the Commcell platform.
 
-    &#34;&#34;&#34; Represents a datacube running on the commcell &#34;&#34;&#34;
+    This class provides an interface for interacting with datacube resources,
+    including analytics engines and data sources. It allows users to retrieve
+    information about available analytics engines, access data sources, manage
+    JDBC drivers for analytics engines, and refresh datacube metadata and engine
+    information.
 
-    def __init__(self, commcell_object):
-        &#34;&#34;&#34;Initialize an instance of the Datacube class.
+    Key Features:
+        - Initialization with a Commcell object for context
+        - Access to analytics engines and data sources via properties
+        - Retrieval of JDBC drivers for specific analytics engines
+        - Refreshing datacube metadata and engine information
+        - Internal handling of unsuccessful responses
 
-            Args:
-                commcell_object     (object)    --  instance of the Commcell class
+    &#34;&#34;&#34;
 
-            Returns:
-                object  -   instance of the Datacube class
+    def __init__(self, commcell_object: object) -&gt; None:
+        &#34;&#34;&#34;Initialize a Datacube instance with the specified Commcell connection.
+
+        Args:
+            commcell_object: An instance of the Commcell class representing the active Commcell connection.
+
+        Example:
+            &gt;&gt;&gt; from cvpysdk.commcell import Commcell
+            &gt;&gt;&gt; commcell = Commcell(&#39;commcell_host&#39;, &#39;username&#39;, &#39;password&#39;)
+            &gt;&gt;&gt; datacube = Datacube(commcell)
+            &gt;&gt;&gt; print(&#34;Datacube instance created successfully&#34;)
 
         &#34;&#34;&#34;
         self._commcell_object = commcell_object
@@ -317,11 +431,19 @@ instance of the Datacube class</p></div>
         self._analytics_engines = self._get_analytics_engines()
         self._datasources = None
 
-    def __repr__(self):
-        &#34;&#34;&#34;String representation of the instance of this class.
+    def __repr__(self) -&gt; str:
+        &#34;&#34;&#34;Return a string representation of the Datacube instance.
 
-            Returns:
-                str     -   string consisting of the details of the instance of this class
+        This method provides a human-readable string that describes the current Datacube object,
+        which is useful for debugging and logging purposes.
+
+        Returns:
+            A string containing details about the Datacube instance.
+
+        Example:
+            &gt;&gt;&gt; datacube = Datacube()
+            &gt;&gt;&gt; print(repr(datacube))
+            &lt;Datacube object at 0x7f8b2c1d2e80&gt;
 
         &#34;&#34;&#34;
         o_str = &#34;Datacube class instance for CommServ &#39;{0}&#39;&#34;.format(
@@ -330,28 +452,38 @@ instance of the Datacube class</p></div>
 
         return o_str
 
-    def _response_not_success(self, response):
-        &#34;&#34;&#34;Helper function to raise an exception when reponse status is not 200 (OK).
+    def _response_not_success(self, response: object) -&gt; None:
+        &#34;&#34;&#34;Raise an exception if the API response status is not 200 (OK).
 
-            Args:
-                response    (object)    --  response class object,
+        This helper function checks the status of the provided response object,
+        typically obtained from the `requests` Python package, and raises an
+        exception if the response indicates a failure (i.e., status code is not 200).
 
-                received upon running an API request, using the `requests` python package
+        Args:
+            response: The response object returned from an API request.
+
+        Example:
+            &gt;&gt;&gt; response = requests.get(&#39;https://api.example.com/data&#39;)
+            &gt;&gt;&gt; datacube = Datacube()
+            &gt;&gt;&gt; datacube._response_not_success(response)
+            # Raises an exception if response.status_code is not 200
 
         &#34;&#34;&#34;
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
-    def _get_analytics_engines(self):
-        &#34;&#34;&#34;Gets the list all the analytics engines associated with the datacube.
+    def _get_analytics_engines(self) -&gt; list:
+        &#34;&#34;&#34;Retrieve the list of all analytics engines associated with the datacube.
 
-            Returns:
-                list    -   array consisting details of all analytics engines
+        Returns:
+            list: A list containing details of all analytics engines linked to this datacube.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException: If the response is empty or if the response indicates a failure.
 
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; engines = datacube._get_analytics_engines()
+            &gt;&gt;&gt; print(f&#34;Number of analytics engines: {len(engines)}&#34;)
+            &gt;&gt;&gt; # Each item in the list contains details about an analytics engine
 
         &#34;&#34;&#34;
         flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._ANALYTICS_ENGINES)
@@ -363,13 +495,34 @@ instance of the Datacube class</p></div>
         self._response_not_success(response)
 
     @property
-    def analytics_engines(self):
-        &#34;&#34;&#34;Returns the value of the analytics engines attributes.&#34;&#34;&#34;
+    def analytics_engines(self) -&gt; list:
+        &#34;&#34;&#34;Get the value of the analytics engines attributes for this Datacube instance.
+
+        Returns:
+            The analytics engines attributes associated with the Datacube. The exact type depends on the implementation.
+
+        Example:
+            &gt;&gt;&gt; datacube = Datacube()
+            &gt;&gt;&gt; engines = datacube.analytics_engines  # Access the analytics engines property
+            &gt;&gt;&gt; print(f&#34;Analytics engines: {engines}&#34;)
+
+        &#34;&#34;&#34;
         return self._analytics_engines
 
     @property
-    def datasources(self):
-        &#34;&#34;&#34;Returns the instance of the Datasources class.&#34;&#34;&#34;
+    def datasources(self) -&gt; &#39;Datasources&#39;:
+        &#34;&#34;&#34;Get the Datasources instance associated with this Datacube object.
+
+        Returns:
+            Datasources: An instance for managing data sources within the Datacube.
+
+        Example:
+            &gt;&gt;&gt; datacube = Datacube(commcell_object)
+            &gt;&gt;&gt; ds = datacube.datasources  # Access the datasources property
+            &gt;&gt;&gt; print(f&#34;Datasources object: {ds}&#34;)
+            &gt;&gt;&gt; # The returned Datasources object can be used to manage data sources
+
+        &#34;&#34;&#34;
         try:
             if self._datasources is None:
                 self._datasources = Datasources(self)
@@ -378,20 +531,22 @@ instance of the Datacube class</p></div>
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
 
-    def get_jdbc_drivers(self, analytics_engine):
-        &#34;&#34;&#34;Gets the list all jdbc_drivers associated with the datacube.
+    def get_jdbc_drivers(self, analytics_engine: str) -&gt; list:
+        &#34;&#34;&#34;Retrieve the list of all JDBC drivers associated with the specified analytics engine in the datacube.
 
-            Args:
-                analytics_engine (str) -- client name of analytics_engine
+        Args:
+            analytics_engine: The client name of the analytics engine for which to fetch JDBC drivers.
 
-            Returns:
-                list    -   consists of all jdbc_drivers in the datacube
+        Returns:
+            A list containing the names or details of all JDBC drivers available in the datacube for the given analytics engine.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException: If the response from the server is empty or indicates a failure.
 
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; datacube = Datacube()
+            &gt;&gt;&gt; drivers = datacube.get_jdbc_drivers(&#39;analytics_engine_01&#39;)
+            &gt;&gt;&gt; print(f&#34;Available JDBC drivers: {drivers}&#34;)
 
         &#34;&#34;&#34;
         if not isinstance(analytics_engine, str):
@@ -417,41 +572,104 @@ instance of the Datacube class</p></div>
         else:
             self._response_not_success(response)
 
-    def refresh(self):
-        &#34;&#34;&#34;Refresh the datasources associated to the Datacube Engine.&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Reload the datasources associated with the Datacube Engine.
+
+        This method refreshes the internal state of the Datacube object, ensuring that
+        any changes to the underlying datasources are reflected in the Datacube Engine.
+
+        Example:
+            &gt;&gt;&gt; datacube = Datacube()
+            &gt;&gt;&gt; datacube.refresh()
+            &gt;&gt;&gt; print(&#34;Datasources refreshed successfully&#34;)
+
+        &#34;&#34;&#34;
         self._datasources = None
 
-    def refresh_engine(self):
-        &#34;&#34;&#34;Refresh the Index server associated to the Datacube.&#34;&#34;&#34;
+    def refresh_engine(self) -&gt; None:
+        &#34;&#34;&#34;Refresh the Index server associated with the Datacube.
+
+        This method reloads or updates the Index server connection or configuration
+        for the current Datacube instance, ensuring that the latest state is reflected.
+
+        Example:
+            &gt;&gt;&gt; datacube = Datacube()
+            &gt;&gt;&gt; datacube.refresh_engine()
+            &gt;&gt;&gt; print(&#34;Index server refreshed successfully&#34;)
+
+        &#34;&#34;&#34;
         self._analytics_engines = self._get_analytics_engines()</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.datacube.datacube.Datacube.analytics_engines"><code class="name">var <span class="ident">analytics_engines</span></code></dt>
+<dt id="cvpysdk.datacube.datacube.Datacube.analytics_engines"><code class="name">var <span class="ident">analytics_engines</span> : list</code></dt>
 <dd>
-<div class="desc"><p>Returns the value of the analytics engines attributes.</p></div>
+<div class="desc"><p>Get the value of the analytics engines attributes for this Datacube instance.</p>
+<p>Returns
+-----=
+The analytics engines attributes associated with the Datacube. The exact type depends on the implementation.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; datacube = Datacube()
+&gt;&gt;&gt; engines = datacube.analytics_engines  # Access the analytics engines property
+&gt;&gt;&gt; print(f&quot;Analytics engines: {engines}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/datacube.py#L132-L135" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/datacube.py#L174-L188" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def analytics_engines(self):
-    &#34;&#34;&#34;Returns the value of the analytics engines attributes.&#34;&#34;&#34;
+def analytics_engines(self) -&gt; list:
+    &#34;&#34;&#34;Get the value of the analytics engines attributes for this Datacube instance.
+
+    Returns:
+        The analytics engines attributes associated with the Datacube. The exact type depends on the implementation.
+
+    Example:
+        &gt;&gt;&gt; datacube = Datacube()
+        &gt;&gt;&gt; engines = datacube.analytics_engines  # Access the analytics engines property
+        &gt;&gt;&gt; print(f&#34;Analytics engines: {engines}&#34;)
+
+    &#34;&#34;&#34;
     return self._analytics_engines</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.datacube.datacube.Datacube.datasources"><code class="name">var <span class="ident">datasources</span></code></dt>
+<dt id="cvpysdk.datacube.datacube.Datacube.datasources"><code class="name">var <span class="ident">datasources</span> : <a title="cvpysdk.datacube.datasource.Datasources" href="datasource.html#cvpysdk.datacube.datasource.Datasources">Datasources</a></code></dt>
 <dd>
-<div class="desc"><p>Returns the instance of the Datasources class.</p></div>
+<div class="desc"><p>Get the Datasources instance associated with this Datacube object.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Datasources</code></dt>
+<dd>An instance for managing data sources within the Datacube.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; datacube = Datacube(commcell_object)
+&gt;&gt;&gt; ds = datacube.datasources  # Access the datasources property
+&gt;&gt;&gt; print(f&quot;Datasources object: {ds}&quot;)
+&gt;&gt;&gt; # The returned Datasources object can be used to manage data sources
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/datacube.py#L137-L146" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/datacube.py#L190-L211" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def datasources(self):
-    &#34;&#34;&#34;Returns the instance of the Datasources class.&#34;&#34;&#34;
+def datasources(self) -&gt; &#39;Datasources&#39;:
+    &#34;&#34;&#34;Get the Datasources instance associated with this Datacube object.
+
+    Returns:
+        Datasources: An instance for managing data sources within the Datacube.
+
+    Example:
+        &gt;&gt;&gt; datacube = Datacube(commcell_object)
+        &gt;&gt;&gt; ds = datacube.datasources  # Access the datasources property
+        &gt;&gt;&gt; print(f&#34;Datasources object: {ds}&#34;)
+        &gt;&gt;&gt; # The returned Datasources object can be used to manage data sources
+
+    &#34;&#34;&#34;
     try:
         if self._datasources is None:
             self._datasources = Datasources(self)
@@ -465,40 +683,52 @@ def datasources(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.datacube.datacube.Datacube.get_jdbc_drivers"><code class="name flex">
-<span>def <span class="ident">get_jdbc_drivers</span></span>(<span>self, analytics_engine)</span>
+<span>def <span class="ident">get_jdbc_drivers</span></span>(<span>self, analytics_engine: str) ‑> list</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Gets the list all jdbc_drivers associated with the datacube.</p>
-<h2 id="args">Args</h2>
-<p>analytics_engine (str) &ndash; client name of analytics_engine</p>
-<h2 id="returns">Returns</h2>
-<p>list
--
-consists of all jdbc_drivers in the datacube</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if response is empty</p>
-<pre><code>if response is not success
+<div class="desc"><p>Retrieve the list of all JDBC drivers associated with the specified analytics engine in the datacube.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>analytics_engine</code></strong></dt>
+<dd>The client name of the analytics engine for which to fetch JDBC drivers.</dd>
+</dl>
+<p>Returns
+-----=
+A list containing the names or details of all JDBC drivers available in the datacube for the given analytics engine.</p>
+<dl>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the response from the server is empty or indicates a failure.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; datacube = Datacube()
+&gt;&gt;&gt; drivers = datacube.get_jdbc_drivers('analytics_engine_01')
+&gt;&gt;&gt; print(f&quot;Available JDBC drivers: {drivers}&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/datacube.py#L148-L185" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/datacube.py#L213-L253" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def get_jdbc_drivers(self, analytics_engine):
-    &#34;&#34;&#34;Gets the list all jdbc_drivers associated with the datacube.
+<pre><code class="python">def get_jdbc_drivers(self, analytics_engine: str) -&gt; list:
+    &#34;&#34;&#34;Retrieve the list of all JDBC drivers associated with the specified analytics engine in the datacube.
 
-        Args:
-            analytics_engine (str) -- client name of analytics_engine
+    Args:
+        analytics_engine: The client name of the analytics engine for which to fetch JDBC drivers.
 
-        Returns:
-            list    -   consists of all jdbc_drivers in the datacube
+    Returns:
+        A list containing the names or details of all JDBC drivers available in the datacube for the given analytics engine.
 
-        Raises:
-            SDKException:
-                if response is empty
+    Raises:
+        SDKException: If the response from the server is empty or indicates a failure.
 
-                if response is not success
+    Example:
+        &gt;&gt;&gt; datacube = Datacube()
+        &gt;&gt;&gt; drivers = datacube.get_jdbc_drivers(&#39;analytics_engine_01&#39;)
+        &gt;&gt;&gt; print(f&#34;Available JDBC drivers: {drivers}&#34;)
 
     &#34;&#34;&#34;
     if not isinstance(analytics_engine, str):
@@ -526,32 +756,68 @@ if response is empty</p>
 </details>
 </dd>
 <dt id="cvpysdk.datacube.datacube.Datacube.refresh"><code class="name flex">
-<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+<span>def <span class="ident">refresh</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Refresh the datasources associated to the Datacube Engine.</p></div>
+<div class="desc"><p>Reload the datasources associated with the Datacube Engine.</p>
+<p>This method refreshes the internal state of the Datacube object, ensuring that
+any changes to the underlying datasources are reflected in the Datacube Engine.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; datacube = Datacube()
+&gt;&gt;&gt; datacube.refresh()
+&gt;&gt;&gt; print(&quot;Datasources refreshed successfully&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/datacube.py#L187-L189" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/datacube.py#L255-L268" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def refresh(self):
-    &#34;&#34;&#34;Refresh the datasources associated to the Datacube Engine.&#34;&#34;&#34;
+<pre><code class="python">def refresh(self) -&gt; None:
+    &#34;&#34;&#34;Reload the datasources associated with the Datacube Engine.
+
+    This method refreshes the internal state of the Datacube object, ensuring that
+    any changes to the underlying datasources are reflected in the Datacube Engine.
+
+    Example:
+        &gt;&gt;&gt; datacube = Datacube()
+        &gt;&gt;&gt; datacube.refresh()
+        &gt;&gt;&gt; print(&#34;Datasources refreshed successfully&#34;)
+
+    &#34;&#34;&#34;
     self._datasources = None</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.datacube.datacube.Datacube.refresh_engine"><code class="name flex">
-<span>def <span class="ident">refresh_engine</span></span>(<span>self)</span>
+<span>def <span class="ident">refresh_engine</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Refresh the Index server associated to the Datacube.</p></div>
+<div class="desc"><p>Refresh the Index server associated with the Datacube.</p>
+<p>This method reloads or updates the Index server connection or configuration
+for the current Datacube instance, ensuring that the latest state is reflected.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; datacube = Datacube()
+&gt;&gt;&gt; datacube.refresh_engine()
+&gt;&gt;&gt; print(&quot;Index server refreshed successfully&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/datacube.py#L191-L193" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/datacube.py#L270-L283" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def refresh_engine(self):
-    &#34;&#34;&#34;Refresh the Index server associated to the Datacube.&#34;&#34;&#34;
+<pre><code class="python">def refresh_engine(self) -&gt; None:
+    &#34;&#34;&#34;Refresh the Index server associated with the Datacube.
+
+    This method reloads or updates the Index server connection or configuration
+    for the current Datacube instance, ensuring that the latest state is reflected.
+
+    Example:
+        &gt;&gt;&gt; datacube = Datacube()
+        &gt;&gt;&gt; datacube.refresh_engine()
+        &gt;&gt;&gt; print(&#34;Index server refreshed successfully&#34;)
+
+    &#34;&#34;&#34;
     self._analytics_engines = self._get_analytics_engines()</code></pre>
 </details>
 </dd>

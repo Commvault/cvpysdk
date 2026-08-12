@@ -29,7 +29,8 @@
 Derived class from CloudAppsInstance Base class, representing a
 Cloud Database instance( Amazon RDS,Redshift,DocumentDB and DynamoDB), and to
 perform operations on that instance</p>
-<h2 id="clouddatabaseinstance">Clouddatabaseinstance</h2>
+<p>Clouddatabaseinstance
+-----=</p>
 <p><strong>init</strong>()
 &ndash;
 Initializes cloud database instance object with associated
@@ -51,7 +52,7 @@ Browse and returns the contents of this instance backup</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/cloudapps/cloud_database_instance.py#L1-L234" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/cloudapps/cloud_database_instance.py#L1-L329" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -98,30 +99,44 @@ CloudDatabaseInstance:
 
 from __future__ import unicode_literals
 import time
+from typing import Any, Dict
+
 from ..cainstance import CloudAppsInstance
 from ...exception import SDKException
-
+from ...job import Job
 
 class CloudDatabaseInstance(CloudAppsInstance):
     &#34;&#34;&#34;
-    Class for representing an Instance of the Cloud Database such as
-    Amazon RDS/Redshift/DocumentDB/DynamoDB/Cloud Spanner
+    Represents an instance of a cloud database service, such as Amazon RDS, Redshift, DocumentDB, DynamoDB, or Cloud Spanner.
+
+    This class provides an interface for managing and interacting with cloud database instances within a cloud application environment.
+    It supports operations such as browsing database contents, restoring data, and retrieving instance properties. The class is designed
+    to be used as part of a larger cloud management framework, enabling seamless integration and automation of database management tasks.
+
+    Key Features:
+        - Initialization with agent object, instance name, and instance ID
+        - Retrieval of instance properties
+        - Access to and modification of browse request JSON payloads
+        - Processing of browse responses
+        - Browsing of database contents
+        - Restoration of data to specified destinations with customizable options
+        - Property for accessing the cloud application instance type
 
     &#34;&#34;&#34;
 
-    def __init__(self, agent_object, instance_name, instance_id=None):
-        &#34;&#34;&#34;Initializes the object of the CloudDatabaseInstance class
+    def __init__(self, agent_object: object, instance_name: str, instance_id: str = None) -&gt; None:
+        &#34;&#34;&#34;Initialize a new CloudDatabaseInstance object.
 
-            Args:
-                agent_object    (object)  --  instance of the Agent class
+        Args:
+            agent_object: Instance of the Agent class associated with this cloud database instance.
+            instance_name: The name of the cloud database instance.
+            instance_id: Optional; the unique identifier for the instance. If not provided, it will be determined automatically.
 
-                instance_name   (str)     --  name of the instance
-
-                instance_id     (str)     --  id of the instance
-                    default: None
-
-            Returns:
-                object - instance of the Instance class
+        Example:
+            &gt;&gt;&gt; agent = Agent(commcell_object, &#39;CloudDBAgent&#39;)
+            &gt;&gt;&gt; cloud_db_instance = CloudDatabaseInstance(agent, &#39;MyCloudDBInstance&#39;)
+            &gt;&gt;&gt; # Optionally, provide an instance ID
+            &gt;&gt;&gt; cloud_db_instance_with_id = CloudDatabaseInstance(agent, &#39;MyCloudDBInstance&#39;, &#39;12345&#39;)
 
         &#34;&#34;&#34;
 
@@ -136,29 +151,65 @@ class CloudDatabaseInstance(CloudAppsInstance):
                 instance_name,
                 instance_id)
 
-    def _get_instance_properties(self):
-        &#34;&#34;&#34;Gets the properties of this instance&#34;&#34;&#34;
+    def _get_instance_properties(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the properties of the current cloud database instance.
+
+        Returns:
+            dict: A dictionary containing the properties and configuration details of this cloud database instance.
+
+        Example:
+            &gt;&gt;&gt; instance = CloudDatabaseInstance()
+            &gt;&gt;&gt; properties = instance._get_instance_properties()
+            &gt;&gt;&gt; print(properties)
+            {&#39;instanceName&#39;: &#39;CloudDB01&#39;, &#39;status&#39;: &#39;Active&#39;, ...}
+        &#34;&#34;&#34;
         super(CloudDatabaseInstance, self)._get_instance_properties()
         if &#39;cloudAppsInstance&#39; in self._properties:
             cloud_apps_instance = self._properties[&#39;cloudAppsInstance&#39;]
             self._ca_instance_type = cloud_apps_instance[&#39;instanceType&#39;]
 
     @property
-    def ca_instance_type(self):
-        &#34;&#34;&#34;Returns the CloudApps instance type as a read-only attribute.&#34;&#34;&#34;
+    def ca_instance_type(self) -&gt; str:
+        &#34;&#34;&#34;Get the CloudApps instance type for this cloud database instance.
+
+        This property provides the type of the CloudApps instance as a read-only string attribute.
+
+        Returns:
+            The CloudApps instance type as a string.
+
+        Example:
+            &gt;&gt;&gt; cloud_db_instance = CloudDatabaseInstance()
+            &gt;&gt;&gt; instance_type = cloud_db_instance.ca_instance_type
+            &gt;&gt;&gt; print(f&#34;CloudApps instance type: {instance_type}&#34;)
+
+        &#34;&#34;&#34;
         return self._ca_instance_type
 
     @property
-    def _browse_request_json(self):
-        &#34;&#34;&#34;Returns the CloudApps instance browse request json&#34;&#34;&#34;
+    def _browse_request_json(self) -&gt; dict:
+        &#34;&#34;&#34;Get the browse request JSON for the CloudApps instance.
+
+        Returns:
+            dict: The JSON structure required to perform a browse operation on the CloudApps instance.
+
+        Example:
+            &gt;&gt;&gt; instance = CloudDatabaseInstance()
+            &gt;&gt;&gt; browse_json = instance._browse_request_json
+            &gt;&gt;&gt; print(browse_json)
+            &gt;&gt;&gt; # Use the returned JSON to initiate a browse request
+
+        &#34;&#34;&#34;
         return self._browse_request
 
     @_browse_request_json.setter
-    def _browse_request_json(self, value):
-        &#34;&#34;&#34; Creates CloudApps instance browse request json based on the options
+    def _browse_request_json(self, value: Dict[str, Any]) -&gt; None:
+        &#34;&#34;&#34;Set the CloudApps instance browse request JSON options.
 
-            Args: Dictionary of browse options
+        This setter method configures the browse request JSON for the CloudDatabaseInstance
+        based on the provided options dictionary.
 
+        Args:
+            value: A dictionary containing browse options for the CloudApps instance.
                 Example:
                     {
                         &#39;start_time&#39;: 0,
@@ -166,6 +217,16 @@ class CloudDatabaseInstance(CloudAppsInstance):
                         &#39;include_aged_data&#39;: 0,
                         &#39;copy_precedence&#39;: 0,
                     }
+
+        Example:
+            &gt;&gt;&gt; options = {
+            ...     &#39;start_time&#39;: 0,
+            ...     &#39;end_time&#39;: 1570808875,
+            ...     &#39;include_aged_data&#39;: 0,
+            ...     &#39;copy_precedence&#39;: 0,
+            ... }
+            &gt;&gt;&gt; instance = CloudDatabaseInstance()
+            &gt;&gt;&gt; instance._browse_request_json = options  # Use assignment for property setter
 
         &#34;&#34;&#34;
         start_time = value.get(&#39;start_time&#39;, 0)
@@ -182,20 +243,30 @@ class CloudDatabaseInstance(CloudAppsInstance):
             &#34;endTime&#34;: end_time
         }
 
-    def _process_browse_response(self, flag, response):
-        &#34;&#34;&#34; Process browse request response
+    def _process_browse_response(self, flag: bool, response: dict) -&gt; dict:
+        &#34;&#34;&#34;Process the response from a browse request.
 
-            Args:
+        This method evaluates the result of a browse operation, typically performed via a REST API call.
+        If the request was successful (flag is True), it returns the JSON response dictionary.
+        If the request failed, an exception is raised.
 
-                flag -- indicates whether the rest API request is successful
+        Args:
+            flag: Indicates whether the REST API request was successful (True) or not (False).
+            response: The response dictionary returned if the request was successful.
 
-                response -- response returned if the request was successful.
+        Returns:
+            dict: The JSON response received from the browse request.
 
-            Returns:
+        Raises:
+            Exception: If the browse request failed (flag is False).
 
-                dict    - The JSON response received from the browse request
-
-                Exception - If the browse request failed
+        Example:
+            &gt;&gt;&gt; instance = CloudDatabaseInstance()
+            &gt;&gt;&gt; try:
+            ...     result = instance._process_browse_response(True, {&#34;data&#34;: &#34;sample&#34;})
+            ...     print(result)
+            ... except Exception as e:
+            ...     print(f&#34;Browse failed: {e}&#34;)
 
         &#34;&#34;&#34;
         if flag:
@@ -204,34 +275,42 @@ class CloudDatabaseInstance(CloudAppsInstance):
         o_str = &#39;Failed to browse content of this instance backups.\nError: &#34;{0}&#34;&#39;
         raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, o_str.format(response))
 
-    def browse(self, *args, **kwargs):
-        &#34;&#34;&#34;
-            Browses the content of cloud database instance
+    def browse(self, *args: Any, **kwargs: Any) -&gt; dict:
+        &#34;&#34;&#34;Browse the content of the cloud database instance.
 
-            args: Dictionary of browse options
+        This method allows you to browse the contents of a cloud database instance by specifying
+        browse options either as positional arguments (typically a dictionary) or as keyword arguments.
 
-                Example:
+        Args:
+            *args: Optional positional arguments, typically a dictionary containing browse options such as:
+                - &#39;start_time&#39;: The start time for the browse operation (epoch timestamp).
+                - &#39;end_time&#39;: The end time for the browse operation (epoch timestamp).
+                - &#39;include_aged_data&#39;: Whether to include aged data (0 or 1).
+                - &#39;copy_precedence&#39;: The copy precedence value.
+            **kwargs: Optional keyword arguments for browse options. Keys correspond to browse parameters.
 
-                        {
-                            &#39;start_time&#39;: 0,
-                            &#39;end_time&#39;: 1570808875,
-                            &#39;include_aged_data&#39;: 0,
-                            &#39;copy_precedence&#39;: 0,
-                        }
+        Returns:
+            dict: The JSON response from the browse operation, containing the results of the browse.
 
-            kwargs: keyword argument of browse options
+        Example:
+            &gt;&gt;&gt; # Using a dictionary as a positional argument
+            &gt;&gt;&gt; options = {
+            ...     &#39;start_time&#39;: 0,
+            ...     &#39;end_time&#39;: 1570808875,
+            ...     &#39;include_aged_data&#39;: 0,
+            ...     &#39;copy_precedence&#39;: 0,
+            ... }
+            &gt;&gt;&gt; response = cloud_db_instance.browse(options)
+            &gt;&gt;&gt; print(response)
 
-                Example:
-
-                        {
-                            start_time: 0,
-                            end_time: 1570808875,
-                            include_aged_data: 0,
-                            copy_precedence: 0,
-                        }
-
-            Returns:
-                dict - Browse response json
+            &gt;&gt;&gt; # Using keyword arguments
+            &gt;&gt;&gt; response = cloud_db_instance.browse(
+            ...     start_time=0,
+            ...     end_time=1570808875,
+            ...     include_aged_data=0,
+            ...     copy_precedence=0
+            ... )
+            &gt;&gt;&gt; print(response)
 
         &#34;&#34;&#34;
 
@@ -244,42 +323,50 @@ class CloudDatabaseInstance(CloudAppsInstance):
         flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._browse_url, self._browse_request)
         return self._process_browse_response(flag, response)
 
-    def restore(self,
-                destination,
-                source,
-                options):
-        &#34;&#34;&#34;
-            Restores the content of this instance content
+    def restore(self, destination: str, source: str, options: dict) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;Restore the content of this cloud database instance from a specified snapshot.
 
-            Args:
+        Args:
+            destination: The name of the destination cluster to restore to.
+            source: The name of the source snapshot to restore from.
+            options: A dictionary of restore options required to submit the restore request.
+                Example options for restoring an Amazon Redshift instance cluster from a snapshot:
+                    {
+                        &#39;allowVersionUpgrade&#39;: True,
+                        &#39;publicallyAccessible&#39;: True,
+                        &#39;restoreTags&#39;: False,
+                        &#39;enableDeletionProtection&#39;: False,
+                        &#39;availabilityZone&#39;: &#39;us-east-2a&#39;,
+                        &#39;targetParameterGroup&#39;: &#39;param&#39;,
+                        &#39;targetSubnetGroup&#39;: &#39;subnet&#39;,
+                        &#39;nodeType&#39;: &#39;dc-large-8&#39;,
+                        &#39;targetPort&#39;: 2990,
+                        &#39;numberOfNodes&#39;: 1
+                    }
 
-                destination : Destination cluster name we want to restore to.
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                source   : Source snapshot we want to restore from.
+        Example:
+            &gt;&gt;&gt; restore_options = {
+            ...     &#39;allowVersionUpgrade&#39;: True,
+            ...     &#39;publicallyAccessible&#39;: True,
+            ...     &#39;restoreTags&#39;: False,
+            ...     &#39;enableDeletionProtection&#39;: False,
+            ...     &#39;availabilityZone&#39;: &#39;us-east-2a&#39;,
+            ...     &#39;targetParameterGroup&#39;: &#39;param&#39;,
+            ...     &#39;targetSubnetGroup&#39;: &#39;subnet&#39;,
+            ...     &#39;nodeType&#39;: &#39;dc-large-8&#39;,
+            ...     &#39;targetPort&#39;: 2990,
+            ...     &#39;numberOfNodes&#39;: 1
+            ... }
+            &gt;&gt;&gt; job = cloud_db_instance.restore(
+            ...     destination=&#39;target_cluster&#39;,
+            ...     source=&#39;snapshot_2023_01_01&#39;,
+            ...     options=restore_options
+            ... )
+            &gt;&gt;&gt; print(f&#34;Restore job started: {job}&#34;)
 
-                options  : Restore options needed to submit a restore request.
-
-                    Example:    Restore of amazon redshift instance cluster from snapshot
-                        {
-                            destination : &#39;cluster&#39;,
-                            source : &#39;snapshot&#39;,
-                            options :   {
-                                            &#39;allowVersionUpgrade&#39; : true,
-                                            &#39;publicallyAccessible&#39; : true,
-                                            &#39;restoreTags&#39; : false,
-                                            &#39;enableDeletionProtection&#39;: false,
-                                            &#39;availabilityZone&#39;: &#39;us-east-2a&#39;,
-                                            &#39;targetParameterGroup&#39;: &#39;param&#39;,
-                                            &#39;targetSubnetGroup&#39;: &#39;subnet&#39;,
-                                            &#39;nodeType&#39;: &#39;dc-large-8&#39;,
-                                            &#39;targetPort&#39;: 2990,
-                                            &#39;numberOfNodes&#39;: 1
-                                        }
-                        }
-
-            Returns:
-
-                object - instance of the Job class for this restore job
         &#34;&#34;&#34;
         if not (isinstance(source, str) or
                 isinstance(destination, str) or
@@ -300,53 +387,76 @@ class CloudDatabaseInstance(CloudAppsInstance):
 <dl>
 <dt id="cvpysdk.instances.cloudapps.cloud_database_instance.CloudDatabaseInstance"><code class="flex name class">
 <span>class <span class="ident">CloudDatabaseInstance</span></span>
-<span>(</span><span>agent_object, instance_name, instance_id=None)</span>
+<span>(</span><span>agent_object: object, instance_name: str, instance_id: str = None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for representing an Instance of the Cloud Database such as
-Amazon RDS/Redshift/DocumentDB/DynamoDB/Cloud Spanner</p>
-<p>Initializes the object of the CloudDatabaseInstance class</p>
-<h2 id="args">Args</h2>
-<p>agent_object
-(object)
-&ndash;
-instance of the Agent class</p>
-<p>instance_name
-(str)
-&ndash;
-name of the instance</p>
-<p>instance_id
-(str)
-&ndash;
-id of the instance
-default: None</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Instance class</p></div>
+<div class="desc"><p>Represents an instance of a cloud database service, such as Amazon RDS, Redshift, DocumentDB, DynamoDB, or Cloud Spanner.</p>
+<p>This class provides an interface for managing and interacting with cloud database instances within a cloud application environment.
+It supports operations such as browsing database contents, restoring data, and retrieving instance properties. The class is designed
+to be used as part of a larger cloud management framework, enabling seamless integration and automation of database management tasks.</p>
+<p>Key Features:
+- Initialization with agent object, instance name, and instance ID
+- Retrieval of instance properties
+- Access to and modification of browse request JSON payloads
+- Processing of browse responses
+- Browsing of database contents
+- Restoration of data to specified destinations with customizable options
+- Property for accessing the cloud application instance type</p>
+<p>Initialize a new CloudDatabaseInstance object.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>agent_object</code></strong></dt>
+<dd>Instance of the Agent class associated with this cloud database instance.</dd>
+<dt><strong><code>instance_name</code></strong></dt>
+<dd>The name of the cloud database instance.</dd>
+<dt><strong><code>instance_id</code></strong></dt>
+<dd>Optional; the unique identifier for the instance. If not provided, it will be determined automatically.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; agent = Agent(commcell_object, 'CloudDBAgent')
+&gt;&gt;&gt; cloud_db_instance = CloudDatabaseInstance(agent, 'MyCloudDBInstance')
+&gt;&gt;&gt; # Optionally, provide an instance ID
+&gt;&gt;&gt; cloud_db_instance_with_id = CloudDatabaseInstance(agent, 'MyCloudDBInstance', '12345')
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/cloudapps/cloud_database_instance.py#L50-L234" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/cloudapps/cloud_database_instance.py#L52-L329" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class CloudDatabaseInstance(CloudAppsInstance):
     &#34;&#34;&#34;
-    Class for representing an Instance of the Cloud Database such as
-    Amazon RDS/Redshift/DocumentDB/DynamoDB/Cloud Spanner
+    Represents an instance of a cloud database service, such as Amazon RDS, Redshift, DocumentDB, DynamoDB, or Cloud Spanner.
+
+    This class provides an interface for managing and interacting with cloud database instances within a cloud application environment.
+    It supports operations such as browsing database contents, restoring data, and retrieving instance properties. The class is designed
+    to be used as part of a larger cloud management framework, enabling seamless integration and automation of database management tasks.
+
+    Key Features:
+        - Initialization with agent object, instance name, and instance ID
+        - Retrieval of instance properties
+        - Access to and modification of browse request JSON payloads
+        - Processing of browse responses
+        - Browsing of database contents
+        - Restoration of data to specified destinations with customizable options
+        - Property for accessing the cloud application instance type
 
     &#34;&#34;&#34;
 
-    def __init__(self, agent_object, instance_name, instance_id=None):
-        &#34;&#34;&#34;Initializes the object of the CloudDatabaseInstance class
+    def __init__(self, agent_object: object, instance_name: str, instance_id: str = None) -&gt; None:
+        &#34;&#34;&#34;Initialize a new CloudDatabaseInstance object.
 
-            Args:
-                agent_object    (object)  --  instance of the Agent class
+        Args:
+            agent_object: Instance of the Agent class associated with this cloud database instance.
+            instance_name: The name of the cloud database instance.
+            instance_id: Optional; the unique identifier for the instance. If not provided, it will be determined automatically.
 
-                instance_name   (str)     --  name of the instance
-
-                instance_id     (str)     --  id of the instance
-                    default: None
-
-            Returns:
-                object - instance of the Instance class
+        Example:
+            &gt;&gt;&gt; agent = Agent(commcell_object, &#39;CloudDBAgent&#39;)
+            &gt;&gt;&gt; cloud_db_instance = CloudDatabaseInstance(agent, &#39;MyCloudDBInstance&#39;)
+            &gt;&gt;&gt; # Optionally, provide an instance ID
+            &gt;&gt;&gt; cloud_db_instance_with_id = CloudDatabaseInstance(agent, &#39;MyCloudDBInstance&#39;, &#39;12345&#39;)
 
         &#34;&#34;&#34;
 
@@ -361,29 +471,65 @@ default: None</p>
                 instance_name,
                 instance_id)
 
-    def _get_instance_properties(self):
-        &#34;&#34;&#34;Gets the properties of this instance&#34;&#34;&#34;
+    def _get_instance_properties(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the properties of the current cloud database instance.
+
+        Returns:
+            dict: A dictionary containing the properties and configuration details of this cloud database instance.
+
+        Example:
+            &gt;&gt;&gt; instance = CloudDatabaseInstance()
+            &gt;&gt;&gt; properties = instance._get_instance_properties()
+            &gt;&gt;&gt; print(properties)
+            {&#39;instanceName&#39;: &#39;CloudDB01&#39;, &#39;status&#39;: &#39;Active&#39;, ...}
+        &#34;&#34;&#34;
         super(CloudDatabaseInstance, self)._get_instance_properties()
         if &#39;cloudAppsInstance&#39; in self._properties:
             cloud_apps_instance = self._properties[&#39;cloudAppsInstance&#39;]
             self._ca_instance_type = cloud_apps_instance[&#39;instanceType&#39;]
 
     @property
-    def ca_instance_type(self):
-        &#34;&#34;&#34;Returns the CloudApps instance type as a read-only attribute.&#34;&#34;&#34;
+    def ca_instance_type(self) -&gt; str:
+        &#34;&#34;&#34;Get the CloudApps instance type for this cloud database instance.
+
+        This property provides the type of the CloudApps instance as a read-only string attribute.
+
+        Returns:
+            The CloudApps instance type as a string.
+
+        Example:
+            &gt;&gt;&gt; cloud_db_instance = CloudDatabaseInstance()
+            &gt;&gt;&gt; instance_type = cloud_db_instance.ca_instance_type
+            &gt;&gt;&gt; print(f&#34;CloudApps instance type: {instance_type}&#34;)
+
+        &#34;&#34;&#34;
         return self._ca_instance_type
 
     @property
-    def _browse_request_json(self):
-        &#34;&#34;&#34;Returns the CloudApps instance browse request json&#34;&#34;&#34;
+    def _browse_request_json(self) -&gt; dict:
+        &#34;&#34;&#34;Get the browse request JSON for the CloudApps instance.
+
+        Returns:
+            dict: The JSON structure required to perform a browse operation on the CloudApps instance.
+
+        Example:
+            &gt;&gt;&gt; instance = CloudDatabaseInstance()
+            &gt;&gt;&gt; browse_json = instance._browse_request_json
+            &gt;&gt;&gt; print(browse_json)
+            &gt;&gt;&gt; # Use the returned JSON to initiate a browse request
+
+        &#34;&#34;&#34;
         return self._browse_request
 
     @_browse_request_json.setter
-    def _browse_request_json(self, value):
-        &#34;&#34;&#34; Creates CloudApps instance browse request json based on the options
+    def _browse_request_json(self, value: Dict[str, Any]) -&gt; None:
+        &#34;&#34;&#34;Set the CloudApps instance browse request JSON options.
 
-            Args: Dictionary of browse options
+        This setter method configures the browse request JSON for the CloudDatabaseInstance
+        based on the provided options dictionary.
 
+        Args:
+            value: A dictionary containing browse options for the CloudApps instance.
                 Example:
                     {
                         &#39;start_time&#39;: 0,
@@ -391,6 +537,16 @@ default: None</p>
                         &#39;include_aged_data&#39;: 0,
                         &#39;copy_precedence&#39;: 0,
                     }
+
+        Example:
+            &gt;&gt;&gt; options = {
+            ...     &#39;start_time&#39;: 0,
+            ...     &#39;end_time&#39;: 1570808875,
+            ...     &#39;include_aged_data&#39;: 0,
+            ...     &#39;copy_precedence&#39;: 0,
+            ... }
+            &gt;&gt;&gt; instance = CloudDatabaseInstance()
+            &gt;&gt;&gt; instance._browse_request_json = options  # Use assignment for property setter
 
         &#34;&#34;&#34;
         start_time = value.get(&#39;start_time&#39;, 0)
@@ -407,20 +563,30 @@ default: None</p>
             &#34;endTime&#34;: end_time
         }
 
-    def _process_browse_response(self, flag, response):
-        &#34;&#34;&#34; Process browse request response
+    def _process_browse_response(self, flag: bool, response: dict) -&gt; dict:
+        &#34;&#34;&#34;Process the response from a browse request.
 
-            Args:
+        This method evaluates the result of a browse operation, typically performed via a REST API call.
+        If the request was successful (flag is True), it returns the JSON response dictionary.
+        If the request failed, an exception is raised.
 
-                flag -- indicates whether the rest API request is successful
+        Args:
+            flag: Indicates whether the REST API request was successful (True) or not (False).
+            response: The response dictionary returned if the request was successful.
 
-                response -- response returned if the request was successful.
+        Returns:
+            dict: The JSON response received from the browse request.
 
-            Returns:
+        Raises:
+            Exception: If the browse request failed (flag is False).
 
-                dict    - The JSON response received from the browse request
-
-                Exception - If the browse request failed
+        Example:
+            &gt;&gt;&gt; instance = CloudDatabaseInstance()
+            &gt;&gt;&gt; try:
+            ...     result = instance._process_browse_response(True, {&#34;data&#34;: &#34;sample&#34;})
+            ...     print(result)
+            ... except Exception as e:
+            ...     print(f&#34;Browse failed: {e}&#34;)
 
         &#34;&#34;&#34;
         if flag:
@@ -429,34 +595,42 @@ default: None</p>
         o_str = &#39;Failed to browse content of this instance backups.\nError: &#34;{0}&#34;&#39;
         raise SDKException(&#39;Subclient&#39;, &#39;102&#39;, o_str.format(response))
 
-    def browse(self, *args, **kwargs):
-        &#34;&#34;&#34;
-            Browses the content of cloud database instance
+    def browse(self, *args: Any, **kwargs: Any) -&gt; dict:
+        &#34;&#34;&#34;Browse the content of the cloud database instance.
 
-            args: Dictionary of browse options
+        This method allows you to browse the contents of a cloud database instance by specifying
+        browse options either as positional arguments (typically a dictionary) or as keyword arguments.
 
-                Example:
+        Args:
+            *args: Optional positional arguments, typically a dictionary containing browse options such as:
+                - &#39;start_time&#39;: The start time for the browse operation (epoch timestamp).
+                - &#39;end_time&#39;: The end time for the browse operation (epoch timestamp).
+                - &#39;include_aged_data&#39;: Whether to include aged data (0 or 1).
+                - &#39;copy_precedence&#39;: The copy precedence value.
+            **kwargs: Optional keyword arguments for browse options. Keys correspond to browse parameters.
 
-                        {
-                            &#39;start_time&#39;: 0,
-                            &#39;end_time&#39;: 1570808875,
-                            &#39;include_aged_data&#39;: 0,
-                            &#39;copy_precedence&#39;: 0,
-                        }
+        Returns:
+            dict: The JSON response from the browse operation, containing the results of the browse.
 
-            kwargs: keyword argument of browse options
+        Example:
+            &gt;&gt;&gt; # Using a dictionary as a positional argument
+            &gt;&gt;&gt; options = {
+            ...     &#39;start_time&#39;: 0,
+            ...     &#39;end_time&#39;: 1570808875,
+            ...     &#39;include_aged_data&#39;: 0,
+            ...     &#39;copy_precedence&#39;: 0,
+            ... }
+            &gt;&gt;&gt; response = cloud_db_instance.browse(options)
+            &gt;&gt;&gt; print(response)
 
-                Example:
-
-                        {
-                            start_time: 0,
-                            end_time: 1570808875,
-                            include_aged_data: 0,
-                            copy_precedence: 0,
-                        }
-
-            Returns:
-                dict - Browse response json
+            &gt;&gt;&gt; # Using keyword arguments
+            &gt;&gt;&gt; response = cloud_db_instance.browse(
+            ...     start_time=0,
+            ...     end_time=1570808875,
+            ...     include_aged_data=0,
+            ...     copy_precedence=0
+            ... )
+            &gt;&gt;&gt; print(response)
 
         &#34;&#34;&#34;
 
@@ -469,42 +643,50 @@ default: None</p>
         flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._browse_url, self._browse_request)
         return self._process_browse_response(flag, response)
 
-    def restore(self,
-                destination,
-                source,
-                options):
-        &#34;&#34;&#34;
-            Restores the content of this instance content
+    def restore(self, destination: str, source: str, options: dict) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;Restore the content of this cloud database instance from a specified snapshot.
 
-            Args:
+        Args:
+            destination: The name of the destination cluster to restore to.
+            source: The name of the source snapshot to restore from.
+            options: A dictionary of restore options required to submit the restore request.
+                Example options for restoring an Amazon Redshift instance cluster from a snapshot:
+                    {
+                        &#39;allowVersionUpgrade&#39;: True,
+                        &#39;publicallyAccessible&#39;: True,
+                        &#39;restoreTags&#39;: False,
+                        &#39;enableDeletionProtection&#39;: False,
+                        &#39;availabilityZone&#39;: &#39;us-east-2a&#39;,
+                        &#39;targetParameterGroup&#39;: &#39;param&#39;,
+                        &#39;targetSubnetGroup&#39;: &#39;subnet&#39;,
+                        &#39;nodeType&#39;: &#39;dc-large-8&#39;,
+                        &#39;targetPort&#39;: 2990,
+                        &#39;numberOfNodes&#39;: 1
+                    }
 
-                destination : Destination cluster name we want to restore to.
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                source   : Source snapshot we want to restore from.
+        Example:
+            &gt;&gt;&gt; restore_options = {
+            ...     &#39;allowVersionUpgrade&#39;: True,
+            ...     &#39;publicallyAccessible&#39;: True,
+            ...     &#39;restoreTags&#39;: False,
+            ...     &#39;enableDeletionProtection&#39;: False,
+            ...     &#39;availabilityZone&#39;: &#39;us-east-2a&#39;,
+            ...     &#39;targetParameterGroup&#39;: &#39;param&#39;,
+            ...     &#39;targetSubnetGroup&#39;: &#39;subnet&#39;,
+            ...     &#39;nodeType&#39;: &#39;dc-large-8&#39;,
+            ...     &#39;targetPort&#39;: 2990,
+            ...     &#39;numberOfNodes&#39;: 1
+            ... }
+            &gt;&gt;&gt; job = cloud_db_instance.restore(
+            ...     destination=&#39;target_cluster&#39;,
+            ...     source=&#39;snapshot_2023_01_01&#39;,
+            ...     options=restore_options
+            ... )
+            &gt;&gt;&gt; print(f&#34;Restore job started: {job}&#34;)
 
-                options  : Restore options needed to submit a restore request.
-
-                    Example:    Restore of amazon redshift instance cluster from snapshot
-                        {
-                            destination : &#39;cluster&#39;,
-                            source : &#39;snapshot&#39;,
-                            options :   {
-                                            &#39;allowVersionUpgrade&#39; : true,
-                                            &#39;publicallyAccessible&#39; : true,
-                                            &#39;restoreTags&#39; : false,
-                                            &#39;enableDeletionProtection&#39;: false,
-                                            &#39;availabilityZone&#39;: &#39;us-east-2a&#39;,
-                                            &#39;targetParameterGroup&#39;: &#39;param&#39;,
-                                            &#39;targetSubnetGroup&#39;: &#39;subnet&#39;,
-                                            &#39;nodeType&#39;: &#39;dc-large-8&#39;,
-                                            &#39;targetPort&#39;: 2990,
-                                            &#39;numberOfNodes&#39;: 1
-                                        }
-                        }
-
-            Returns:
-
-                object - instance of the Job class for this restore job
         &#34;&#34;&#34;
         if not (isinstance(source, str) or
                 isinstance(destination, str) or
@@ -527,17 +709,39 @@ default: None</p>
 </ul>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.instances.cloudapps.cloud_database_instance.CloudDatabaseInstance.ca_instance_type"><code class="name">var <span class="ident">ca_instance_type</span></code></dt>
+<dt id="cvpysdk.instances.cloudapps.cloud_database_instance.CloudDatabaseInstance.ca_instance_type"><code class="name">var <span class="ident">ca_instance_type</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the CloudApps instance type as a read-only attribute.</p></div>
+<div class="desc"><p>Get the CloudApps instance type for this cloud database instance.</p>
+<p>This property provides the type of the CloudApps instance as a read-only string attribute.</p>
+<p>Returns
+-----=
+The CloudApps instance type as a string.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; cloud_db_instance = CloudDatabaseInstance()
+&gt;&gt;&gt; instance_type = cloud_db_instance.ca_instance_type
+&gt;&gt;&gt; print(f&quot;CloudApps instance type: {instance_type}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/cloudapps/cloud_database_instance.py#L91-L94" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/cloudapps/cloud_database_instance.py#L118-L134" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def ca_instance_type(self):
-    &#34;&#34;&#34;Returns the CloudApps instance type as a read-only attribute.&#34;&#34;&#34;
+def ca_instance_type(self) -&gt; str:
+    &#34;&#34;&#34;Get the CloudApps instance type for this cloud database instance.
+
+    This property provides the type of the CloudApps instance as a read-only string attribute.
+
+    Returns:
+        The CloudApps instance type as a string.
+
+    Example:
+        &gt;&gt;&gt; cloud_db_instance = CloudDatabaseInstance()
+        &gt;&gt;&gt; instance_type = cloud_db_instance.ca_instance_type
+        &gt;&gt;&gt; print(f&#34;CloudApps instance type: {instance_type}&#34;)
+
+    &#34;&#34;&#34;
     return self._ca_instance_type</code></pre>
 </details>
 </dd>
@@ -545,65 +749,90 @@ def ca_instance_type(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.instances.cloudapps.cloud_database_instance.CloudDatabaseInstance.browse"><code class="name flex">
-<span>def <span class="ident">browse</span></span>(<span>self, *args, **kwargs)</span>
+<span>def <span class="ident">browse</span></span>(<span>self, *args: Any, **kwargs: Any) ‑> dict</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Browses the content of cloud database instance</p>
-<p>args: Dictionary of browse options</p>
-<pre><code>Example:
-
-        {
-            'start_time': 0,
-            'end_time': 1570808875,
-            'include_aged_data': 0,
-            'copy_precedence': 0,
-        }
+<div class="desc"><p>Browse the content of the cloud database instance.</p>
+<p>This method allows you to browse the contents of a cloud database instance by specifying
+browse options either as positional arguments (typically a dictionary) or as keyword arguments.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>*args</code></strong></dt>
+<dd>Optional positional arguments, typically a dictionary containing browse options such as:
+- 'start_time': The start time for the browse operation (epoch timestamp).
+- 'end_time': The end time for the browse operation (epoch timestamp).
+- 'include_aged_data': Whether to include aged data (0 or 1).
+- 'copy_precedence': The copy precedence value.</dd>
+<dt><strong><code>**kwargs</code></strong></dt>
+<dd>Optional keyword arguments for browse options. Keys correspond to browse parameters.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>The JSON response from the browse operation, containing the results of the browse.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; # Using a dictionary as a positional argument
+&gt;&gt;&gt; options = {
+...     'start_time': 0,
+...     'end_time': 1570808875,
+...     'include_aged_data': 0,
+...     'copy_precedence': 0,
+... }
+&gt;&gt;&gt; response = cloud_db_instance.browse(options)
+&gt;&gt;&gt; print(response)
 </code></pre>
-<p>kwargs: keyword argument of browse options</p>
-<pre><code>Example:
-
-        {
-            start_time: 0,
-            end_time: 1570808875,
-            include_aged_data: 0,
-            copy_precedence: 0,
-        }
-</code></pre>
-<h2 id="returns">Returns</h2>
-<p>dict - Browse response json</p></div>
+<pre><code class="language-python-repl">&gt;&gt;&gt; # Using keyword arguments
+&gt;&gt;&gt; response = cloud_db_instance.browse(
+...     start_time=0,
+...     end_time=1570808875,
+...     include_aged_data=0,
+...     copy_precedence=0
+... )
+&gt;&gt;&gt; print(response)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/cloudapps/cloud_database_instance.py#L152-L190" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/cloudapps/cloud_database_instance.py#L229-L276" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def browse(self, *args, **kwargs):
-    &#34;&#34;&#34;
-        Browses the content of cloud database instance
+<pre><code class="python">def browse(self, *args: Any, **kwargs: Any) -&gt; dict:
+    &#34;&#34;&#34;Browse the content of the cloud database instance.
 
-        args: Dictionary of browse options
+    This method allows you to browse the contents of a cloud database instance by specifying
+    browse options either as positional arguments (typically a dictionary) or as keyword arguments.
 
-            Example:
+    Args:
+        *args: Optional positional arguments, typically a dictionary containing browse options such as:
+            - &#39;start_time&#39;: The start time for the browse operation (epoch timestamp).
+            - &#39;end_time&#39;: The end time for the browse operation (epoch timestamp).
+            - &#39;include_aged_data&#39;: Whether to include aged data (0 or 1).
+            - &#39;copy_precedence&#39;: The copy precedence value.
+        **kwargs: Optional keyword arguments for browse options. Keys correspond to browse parameters.
 
-                    {
-                        &#39;start_time&#39;: 0,
-                        &#39;end_time&#39;: 1570808875,
-                        &#39;include_aged_data&#39;: 0,
-                        &#39;copy_precedence&#39;: 0,
-                    }
+    Returns:
+        dict: The JSON response from the browse operation, containing the results of the browse.
 
-        kwargs: keyword argument of browse options
+    Example:
+        &gt;&gt;&gt; # Using a dictionary as a positional argument
+        &gt;&gt;&gt; options = {
+        ...     &#39;start_time&#39;: 0,
+        ...     &#39;end_time&#39;: 1570808875,
+        ...     &#39;include_aged_data&#39;: 0,
+        ...     &#39;copy_precedence&#39;: 0,
+        ... }
+        &gt;&gt;&gt; response = cloud_db_instance.browse(options)
+        &gt;&gt;&gt; print(response)
 
-            Example:
-
-                    {
-                        start_time: 0,
-                        end_time: 1570808875,
-                        include_aged_data: 0,
-                        copy_precedence: 0,
-                    }
-
-        Returns:
-            dict - Browse response json
+        &gt;&gt;&gt; # Using keyword arguments
+        &gt;&gt;&gt; response = cloud_db_instance.browse(
+        ...     start_time=0,
+        ...     end_time=1570808875,
+        ...     include_aged_data=0,
+        ...     copy_precedence=0
+        ... )
+        &gt;&gt;&gt; print(response)
 
     &#34;&#34;&#34;
 
@@ -618,77 +847,107 @@ def ca_instance_type(self):
 </details>
 </dd>
 <dt id="cvpysdk.instances.cloudapps.cloud_database_instance.CloudDatabaseInstance.restore"><code class="name flex">
-<span>def <span class="ident">restore</span></span>(<span>self, destination, source, options)</span>
+<span>def <span class="ident">restore</span></span>(<span>self, destination: str, source: str, options: dict) ‑> <a title="cvpysdk.job.Job" href="../../job.html#cvpysdk.job.Job">Job</a></span>
 </code></dt>
 <dd>
-<div class="desc"><p>Restores the content of this instance content</p>
-<h2 id="args">Args</h2>
-<p>destination : Destination cluster name we want to restore to.</p>
-<p>source
-: Source snapshot we want to restore from.</p>
-<p>options
-: Restore options needed to submit a restore request.</p>
-<pre><code>Example:    Restore of amazon redshift instance cluster from snapshot
-    {
-        destination : 'cluster',
-        source : 'snapshot',
-        options :   {
-                        'allowVersionUpgrade' : true,
-                        'publicallyAccessible' : true,
-                        'restoreTags' : false,
-                        'enableDeletionProtection': false,
-                        'availabilityZone': 'us-east-2a',
-                        'targetParameterGroup': 'param',
-                        'targetSubnetGroup': 'subnet',
-                        'nodeType': 'dc-large-8',
-                        'targetPort': 2990,
-                        'numberOfNodes': 1
-                    }
-    }
-</code></pre>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this restore job</p></div>
+<div class="desc"><p>Restore the content of this cloud database instance from a specified snapshot.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>destination</code></strong></dt>
+<dd>The name of the destination cluster to restore to.</dd>
+<dt><strong><code>source</code></strong></dt>
+<dd>The name of the source snapshot to restore from.</dd>
+<dt><strong><code>options</code></strong></dt>
+<dd>A dictionary of restore options required to submit the restore request.
+Example options for restoring an Amazon Redshift instance cluster from a snapshot:
+{
+'allowVersionUpgrade': True,
+'publicallyAccessible': True,
+'restoreTags': False,
+'enableDeletionProtection': False,
+'availabilityZone': 'us-east-2a',
+'targetParameterGroup': 'param',
+'targetSubnetGroup': 'subnet',
+'nodeType': 'dc-large-8',
+'targetPort': 2990,
+'numberOfNodes': 1
+}</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Job</code></dt>
+<dd>An instance of the Job class representing the restore job.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; restore_options = {
+...     'allowVersionUpgrade': True,
+...     'publicallyAccessible': True,
+...     'restoreTags': False,
+...     'enableDeletionProtection': False,
+...     'availabilityZone': 'us-east-2a',
+...     'targetParameterGroup': 'param',
+...     'targetSubnetGroup': 'subnet',
+...     'nodeType': 'dc-large-8',
+...     'targetPort': 2990,
+...     'numberOfNodes': 1
+... }
+&gt;&gt;&gt; job = cloud_db_instance.restore(
+...     destination='target_cluster',
+...     source='snapshot_2023_01_01',
+...     options=restore_options
+... )
+&gt;&gt;&gt; print(f&quot;Restore job started: {job}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/cloudapps/cloud_database_instance.py#L192-L234" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/cloudapps/cloud_database_instance.py#L278-L329" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def restore(self,
-            destination,
-            source,
-            options):
-    &#34;&#34;&#34;
-        Restores the content of this instance content
+<pre><code class="python">def restore(self, destination: str, source: str, options: dict) -&gt; &#39;Job&#39;:
+    &#34;&#34;&#34;Restore the content of this cloud database instance from a specified snapshot.
 
-        Args:
+    Args:
+        destination: The name of the destination cluster to restore to.
+        source: The name of the source snapshot to restore from.
+        options: A dictionary of restore options required to submit the restore request.
+            Example options for restoring an Amazon Redshift instance cluster from a snapshot:
+                {
+                    &#39;allowVersionUpgrade&#39;: True,
+                    &#39;publicallyAccessible&#39;: True,
+                    &#39;restoreTags&#39;: False,
+                    &#39;enableDeletionProtection&#39;: False,
+                    &#39;availabilityZone&#39;: &#39;us-east-2a&#39;,
+                    &#39;targetParameterGroup&#39;: &#39;param&#39;,
+                    &#39;targetSubnetGroup&#39;: &#39;subnet&#39;,
+                    &#39;nodeType&#39;: &#39;dc-large-8&#39;,
+                    &#39;targetPort&#39;: 2990,
+                    &#39;numberOfNodes&#39;: 1
+                }
 
-            destination : Destination cluster name we want to restore to.
+    Returns:
+        Job: An instance of the Job class representing the restore job.
 
-            source   : Source snapshot we want to restore from.
+    Example:
+        &gt;&gt;&gt; restore_options = {
+        ...     &#39;allowVersionUpgrade&#39;: True,
+        ...     &#39;publicallyAccessible&#39;: True,
+        ...     &#39;restoreTags&#39;: False,
+        ...     &#39;enableDeletionProtection&#39;: False,
+        ...     &#39;availabilityZone&#39;: &#39;us-east-2a&#39;,
+        ...     &#39;targetParameterGroup&#39;: &#39;param&#39;,
+        ...     &#39;targetSubnetGroup&#39;: &#39;subnet&#39;,
+        ...     &#39;nodeType&#39;: &#39;dc-large-8&#39;,
+        ...     &#39;targetPort&#39;: 2990,
+        ...     &#39;numberOfNodes&#39;: 1
+        ... }
+        &gt;&gt;&gt; job = cloud_db_instance.restore(
+        ...     destination=&#39;target_cluster&#39;,
+        ...     source=&#39;snapshot_2023_01_01&#39;,
+        ...     options=restore_options
+        ... )
+        &gt;&gt;&gt; print(f&#34;Restore job started: {job}&#34;)
 
-            options  : Restore options needed to submit a restore request.
-
-                Example:    Restore of amazon redshift instance cluster from snapshot
-                    {
-                        destination : &#39;cluster&#39;,
-                        source : &#39;snapshot&#39;,
-                        options :   {
-                                        &#39;allowVersionUpgrade&#39; : true,
-                                        &#39;publicallyAccessible&#39; : true,
-                                        &#39;restoreTags&#39; : false,
-                                        &#39;enableDeletionProtection&#39;: false,
-                                        &#39;availabilityZone&#39;: &#39;us-east-2a&#39;,
-                                        &#39;targetParameterGroup&#39;: &#39;param&#39;,
-                                        &#39;targetSubnetGroup&#39;: &#39;subnet&#39;,
-                                        &#39;nodeType&#39;: &#39;dc-large-8&#39;,
-                                        &#39;targetPort&#39;: 2990,
-                                        &#39;numberOfNodes&#39;: 1
-                                    }
-                    }
-
-        Returns:
-
-            object - instance of the Job class for this restore job
     &#34;&#34;&#34;
     if not (isinstance(source, str) or
             isinstance(destination, str) or
@@ -703,13 +962,18 @@ def ca_instance_type(self):
 <ul class="hlist">
 <li><code><b><a title="cvpysdk.instances.cainstance.CloudAppsInstance" href="../cainstance.html#cvpysdk.instances.cainstance.CloudAppsInstance">CloudAppsInstance</a></b></code>:
 <ul class="hlist">
+<li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.account_name" href="../cainstance.html#cvpysdk.instances.cainstance.CloudAppsInstance.account_name">account_name</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.backupsets" href="../../instance.html#cvpysdk.instance.Instance.backupsets">backupsets</a></code></li>
+<li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.credential_id" href="../cainstance.html#cvpysdk.instances.cainstance.CloudAppsInstance.credential_id">credential_id</a></code></li>
+<li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.credential_name" href="../cainstance.html#cvpysdk.instances.cainstance.CloudAppsInstance.credential_name">credential_name</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.credentials" href="../../instance.html#cvpysdk.instance.Instance.credentials">credentials</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.find" href="../../instance.html#cvpysdk.instance.Instance.find">find</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.instance_id" href="../../instance.html#cvpysdk.instance.Instance.instance_id">instance_id</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.instance_name" href="../../instance.html#cvpysdk.instance.Instance.instance_name">instance_name</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.name" href="../../instance.html#cvpysdk.instance.Instance.name">name</a></code></li>
+<li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.plan_name" href="../cainstance.html#cvpysdk.instances.cainstance.CloudAppsInstance.plan_name">plan_name</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.properties" href="../../instance.html#cvpysdk.instance.Instance.properties">properties</a></code></li>
+<li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.proxy_client" href="../cainstance.html#cvpysdk.instances.cainstance.CloudAppsInstance.proxy_client">proxy_client</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.refresh" href="../../instance.html#cvpysdk.instance.Instance.refresh">refresh</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.subclients" href="../../instance.html#cvpysdk.instance.Instance.subclients">subclients</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.update_properties" href="../../instance.html#cvpysdk.instance.Instance.update_properties">update_properties</a></code></li>

@@ -27,8 +27,9 @@
 <p>SAPOracleInstance is the only class defined in this file.</p>
 <p>SAPOracleInstance: Derived class from Instance Base class, representing a SAPOracle instance,
 and to perform operations on that instance</p>
-<h2 id="saporacleinstance">Saporacleinstance</h2>
-<p><strong>init</strong>()
+<p>Saporacleinstance
+-----=
+<strong>init</strong>()
 &ndash; Constructor for the class</p>
 <p>oracle_home()
 &ndash; Getter for $ORACLE_HOME of this instance</p>
@@ -68,7 +69,7 @@ and to perform operations on that instance</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/saporacleinstance.py#L1-L429" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/saporacleinstance.py#L1-L436" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -97,7 +98,6 @@ SAPOracleInstance: Derived class from Instance Base class, representing a SAPOra
 
 SAPOracleInstance:
     __init__()                          -- Constructor for the class
-
 
     oracle_home()                       -- Getter for $ORACLE_HOME of this instance
 
@@ -147,136 +147,192 @@ from ..exception import SDKException
 
 
 class SAPOracleInstance(Instance):
-    &#34;&#34;&#34;Derived class from Instance Base class, representing a SAPOracle instance,
-        and to perform operations on that Instance.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents a SAP Oracle instance, extending the base Instance class to provide
+    specialized operations and properties for managing SAP Oracle environments.
 
-    def __init__(self, agent_object, instance_name, instance_id=None):
-        &#34;&#34;&#34;
-        Constructor for the class
+    This class encapsulates configuration details and operational methods specific
+    to SAP Oracle instances, including access to key paths, user information,
+    and SAP Oracle-specific settings. It also provides mechanisms for restoring
+    SAP Oracle instances, both through internal request generation and in-place
+    restoration operations.
+
+    Key Features:
+        - Initialization with agent object, instance name, and instance ID
+        - Properties for accessing Oracle home, SAP data home, SAP executable path, and OS user
+        - Properties for command and log service providers
+        - Access to SAP Oracle database user, connect string, block size, and secure store
+        - Properties for archive log backup streams, instance ID, snapshot backup enablement, and snap engine name
+        - Internal method for generating SAP Oracle restore request JSON
+        - Method for performing in-place restore operations with custom SAP options
+
+    &#34;&#34;&#34;
+
+    def __init__(self, agent_object: Agent, instance_name: str, instance_id: int = None) -&gt; None:
+        &#34;&#34;&#34;Initialize a SAPOracleInstance object.
 
         Args:
-            agent_object    -- instance of the Agent class
-            instance_name   -- name of the instance
-            instance_id     --  id of the instance
+            agent_object: Instance of the Agent class associated with this SAP Oracle instance.
+            instance_name: The name of the SAP Oracle instance.
+            instance_id: Optional; the unique identifier for the SAP Oracle instance.
 
         &#34;&#34;&#34;
         super(SAPOracleInstance, self).__init__(agent_object, instance_name, instance_id)
         self._instanceprop = {}  # variable to hold instance properties to be changed
 
     @property
-    def oracle_home(self):
-        &#34;&#34;&#34;
-        getter for oracle home
+    def oracle_home(self) -&gt; str:
+        &#34;&#34;&#34;Get the Oracle home directory path for the SAP Oracle instance.
+
         Returns:
-            string - string of oracle_home
+            The Oracle home directory as a string.
+
         &#34;&#34;&#34;
         return self._properties[&#39;sapOracleInstance&#39;][&#39;oracleHome&#39;]
 
     @property
-    def sapdata_home(self):
-        &#34;&#34;&#34;
-        getter for sapdata home
+    def sapdata_home(self) -&gt; str:
+        &#34;&#34;&#34;Get the SAPDATA home directory path for the SAP Oracle instance.
+
         Returns:
-            string - string of sapdata_home
+            The path to the SAPDATA home directory as a string.
+
         &#34;&#34;&#34;
         return self._properties[&#39;sapOracleInstance&#39;][&#39;sapDataPath&#39;]
 
     @property
-    def sapexepath(self):
-        &#34;&#34;&#34;
-        getter for sapexepath
+    def sapexepath(self) -&gt; str:
+        &#34;&#34;&#34;Get the SAP executable path (sapexepath) for the SAP Oracle instance.
+
         Returns:
-            string - string of sapexepath
+            The SAP executable path as a string.
+
         &#34;&#34;&#34;
         return self._properties[&#39;sapOracleInstance&#39;][&#39;sapExeFolder&#39;]
 
     @property
-    def os_user(self):
-        &#34;&#34;&#34;
-        Getter for oracle software owner
+    def os_user(self) -&gt; str:
+        &#34;&#34;&#34;Get the Oracle software owner username for this SAP Oracle instance.
+
         Returns:
-            string - string of oracle software owner
+            The username of the Oracle software owner as a string.
+
         &#34;&#34;&#34;
         return self._properties[&#39;sapOracleInstance&#39;][&#39;oracleUser&#39;][&#39;userName&#39;]
 
     @property
-    def cmd_sp(self):
-        &#34;&#34;&#34;
-        Getter for Command Line storage policy
+    def cmd_sp(self) -&gt; str:
+        &#34;&#34;&#34;Get the command line storage policy string for the SAP Oracle instance.
+
         Returns:
-            string - string for command line storage policy
+            The storage policy string used for command line operations.
+
         &#34;&#34;&#34;
         return self._properties[&#39;sapOracleInstance&#39;][&#39;oracleStorageDevice&#39;][
             &#39;commandLineStoragePolicy&#39;][&#39;storagePolicyName&#39;]
 
     @property
-    def log_sp(self):
-        &#34;&#34;&#34;
-        Oracle Instance&#39;s Log Storage Poplicy
+    def log_sp(self) -&gt; str:
+        &#34;&#34;&#34;Get the log storage policy associated with the Oracle instance.
+
         Returns:
-            string  -- string containing log storage policy
+            The name of the log storage policy as a string.
+
         &#34;&#34;&#34;
         return self._properties[&#39;sapOracleInstance&#39;][&#39;oracleStorageDevice&#39;][
             &#39;logBackupStoragePolicy&#39;][&#39;storagePolicyName&#39;]
 
     @property
-    def saporacle_db_user(self):
-        &#34;&#34;&#34;
-        Returns: Oracle database user for the instance
+    def saporacle_db_user(self) -&gt; str:
+        &#34;&#34;&#34;Get the Oracle database user associated with this SAP Oracle instance.
+
+        Returns:
+            The Oracle database user name as a string.
+
         &#34;&#34;&#34;
         return self._properties[&#39;sapOracleInstance&#39;][&#39;sqlConnect&#39;][&#39;userName&#39;]
 
     @property
-    def saporacle_db_connectstring(self):
-        &#34;&#34;&#34;
-        Returns: Oracle database connect string for the instance
+    def saporacle_db_connectstring(self) -&gt; str:
+        &#34;&#34;&#34;Get the Oracle database connect string for this SAP Oracle instance.
+
+        Returns:
+            The Oracle database connect string associated with the instance.
+
         &#34;&#34;&#34;
         return self._properties[&#39;sapOracleInstance&#39;][&#39;sqlConnect&#39;][&#39;domainName&#39;]
 
     @property
-    def saporacle_blocksize(self):
-        &#34;&#34;&#34;
-        Returns: blocksize for the instance
+    def saporacle_blocksize(self) -&gt; int:
+        &#34;&#34;&#34;Get the block size configured for the SAP Oracle instance.
+
+        Returns:
+            The block size value for the instance as an integer.
+
         &#34;&#34;&#34;
         return self._properties[&#39;sapOracleInstance&#39;][&#39;blockSize&#39;]
 
     @property
-    def saporacle_sapsecurestore(self):
-        &#34;&#34;&#34;
-        Returns: sapsecurestore option for the instance
+    def saporacle_sapsecurestore(self) -&gt; str:
+        &#34;&#34;&#34;Get the SAP Secure Store option configured for this SAP Oracle instance.
+
+        Returns:
+            str: The SAP Secure Store option value for the instance.
+
         &#34;&#34;&#34;
         return self._properties[&#39;sapOracleInstance&#39;][&#39;useSAPSecureStore&#39;]
 
     @property
-    def saporacle_archivelogbackupstreams(self):
-        &#34;&#34;&#34;
-        Returns: archivelogbackupstreams option for the instance
+    def saporacle_archivelogbackupstreams(self) -&gt; int:
+        &#34;&#34;&#34;Get the number of archive log backup streams configured for the SAP Oracle instance.
+
+        Returns:
+            int: The number of backup streams used for archiving logs in this SAP Oracle instance.
+
         &#34;&#34;&#34;
         return self._properties[&#39;sapOracleInstance&#39;][&#39;numberOfArchiveLogBackupStreams&#39;]
 
     @property
-    def saporacle_instanceid(self):
-        &#34;&#34;&#34;
-        Returns: saporacle_instanceid option for the instance
+    def saporacle_instanceid(self) -&gt; int:
+        &#34;&#34;&#34;Get the SAP Oracle instance ID option for this instance.
+
+        Returns:
+            The SAP Oracle instance ID as an integer.
+
         &#34;&#34;&#34;
         return self._properties[&#39;instance&#39;][&#39;instanceId&#39;]
     
     @property
-    def saporacle_snapbackup_enable(self):
-        &#34;&#34;&#34;
-        Returns: saporacle_snapbackup_enable option for the instance
+    def saporacle_snapbackup_enable(self) -&gt; bool:
+        &#34;&#34;&#34;Get the status of the SAP Oracle SnapBackup enable option for this instance.
+
+        Returns:
+            bool: True if SnapBackup is enabled for the SAP Oracle instance, False otherwise.
+
         &#34;&#34;&#34;
         return self._properties[&#39;sapOracleInstance&#39;][&#39;snapProtectInfo&#39;][&#39;isSnapBackupEnabled&#39;]
     
     @property
-    def saporacle_snapengine_name(self):
-        &#34;&#34;&#34;
-        Returns: saporacle_snapengine_name option for the instance
+    def saporacle_snapengine_name(self) -&gt; str:
+        &#34;&#34;&#34;Get the Snap Engine name option for the SAP Oracle instance.
+
+        Returns:
+            The Snap Engine name configured for this SAP Oracle instance as a string.
+
         &#34;&#34;&#34;
         return self._properties[&#39;sapOracleInstance&#39;][&#39;snapProtectInfo&#39;][&#39;snapSelectedEngine&#39;][&#39;snapShotEngineName&#39;]
 
-    def _restore_saporacle_request_json(self, value):
-        &#34;&#34;&#34;Returns the JSON request to pass to the API as per the options selected by the user.
+    def _restore_saporacle_request_json(self, value: dict) -&gt; dict:
+        &#34;&#34;&#34;Generate the JSON request payload for SAP Oracle restore operations.
+
+        This method constructs and returns a JSON dictionary formatted according to the options
+        specified by the user, suitable for submission to the SAP Oracle restore API.
+
+        Args:
+            value: A dictionary containing user-selected restore options and parameters.
+
+        Returns:
+            A dictionary representing the JSON request payload for the SAP Oracle restore API.
 
         &#34;&#34;&#34;
         if self._restore_association is None:
@@ -338,127 +394,65 @@ class SAPOracleInstance(Instance):
         return request_json
 
     def restore_in_place(
-            self,
-            destination_client=None,
-            destination_instance=None,
-            sap_options=None):
-        &#34;&#34;&#34;perform inplace restore and recover  of sap oracle database
-         Args:
+        self,
+        destination_client: str = None,
+        destination_instance: str = None,
+        sap_options: dict = None
+    ) -&gt; None:
+        &#34;&#34;&#34;Perform an in-place restore and recovery of a SAP Oracle database.
 
-            destination_client        (str)         --  destination client name where saporacle
-                                                          client package exists if this value
-                                                          not provided,it will automatically
-                                                          use source backup client
-            destination_instance        (str)       --  destination instance name where saporacle
-                                                        client package exists if this value not
-                                                         provided,it will automatically use
-                                                          source backup instance
-            sap_options                (dict)
+        This method restores and recovers a SAP Oracle database on the original or specified destination client and instance.
+        The restore operation can be customized using the `sap_options` dictionary to control various restore and recovery parameters.
 
-                backupset_name         (str)        --  backupset name of the instance to be
-                                                            restored. If the instance is a single
-                                                            DB instance then the backupset name is
-                                                            ``default``.
-                    default: default
+        Args:
+            destination_client: The name of the destination client where the SAP Oracle client package exists.
+                If not provided, the source backup client will be used.
+            destination_instance: The name of the destination SAP Oracle instance.
+                If not provided, the source backup instance will be used.
+            sap_options: Dictionary of SAP Oracle restore options. Supported keys include:
+                - backupset_name (str): Name of the backupset to restore. Default is &#34;default&#34;.
+                - restoreData (bool): Whether to restore data. Default is True.
+                - streams (int): Number of streams to use for restore. Default is 2.
+                - copyPrecedence (int): Copy number to use for restore. Default is 0.
+                - archiveLog (bool): Whether to restore archive logs. Default is True.
+                - recover (bool): Whether to recover the database. Default is True.
+                - switchDatabaseMode (bool): Whether to switch database mode. Default is True.
+                - restoreControlFile (bool): Whether to restore the control file. Default is True.
+                - partialRestore (bool): Whether to perform a partial restore. Default is False.
+                - openDatabase (bool): Whether to open the database after restore. Default is True.
+                - resetLogs (bool): Whether to reset logs after restore. Default is True.
+                - point_in_time (str): Point-in-time for restore in &#34;dd/MM/YYYY&#34; format. Default is &#34;0&#34; (from 01/01/1970).
+                - backupValidationOnly (bool): Whether to perform backup validation only. Default is False.
+                - restoreTablespace (bool): Whether to restore tablespace. Default is False.
+                - noCatalog (bool): Whether to use no catalog. Default is True.
+                - sourceItem (list): Browse options for SAP Oracle restores (e.g., [&#39;/+BROWSE+&#39;]).
+                - databaseCopy (bool): Whether to perform a database copy. Default is False.
+                - archiveLogBy (str): Archive log restore option. Default is &#34;default&#34;.
 
-                restoreData               (bool)   --  RestoreData  if true mean restore data
-                                                          is selected.
-                                                        true - restore data selected
-                                                        false - restore data unselected
+        Raises:
+            SDKException: If the restore operation fails due to:
+                - Failed to browse content
+                - Empty response from the server
+                - Unsuccessful response from the server
+                - Destination client does not exist on Commcell
+                - Destination instance does not exist on Commcell
 
-                    default:true
+        Example:
+            &gt;&gt;&gt; sap_instance = SAPOracleInstance()
+            &gt;&gt;&gt; sap_instance.restore_in_place(
+            ...     destination_client=&#34;prod-db-server&#34;,
+            ...     destination_instance=&#34;ORCL&#34;,
+            ...     sap_options={
+            ...         &#34;backupset_name&#34;: &#34;default&#34;,
+            ...         &#34;restoreData&#34;: True,
+            ...         &#34;streams&#34;: 4,
+            ...         &#34;archiveLog&#34;: True,
+            ...         &#34;recover&#34;: True,
+            ...         &#34;point_in_time&#34;: &#34;15/03/2024&#34;
+            ...     }
+            ... )
+            &gt;&gt;&gt; print(&#34;Restore operation initiated successfully.&#34;)
 
-                streams                  (int)      :  no of streams to use for restore
-                    default:2
-
-                copyPrecedence          (int)      :  copy number to use for restore
-                    default:0
-
-                archiveLog               (bool)     :  Restore archive log
-                                                        true - restore archive log selected
-                                                        false - restore archive log unselected
-                     default: True
-
-                recover                  (bool)     :  recover database
-                                                        true - recover database selected
-                                                        false - recover database unselected
-                     default: True
-
-                switchDatabaseMode       (bool)     :  switchDatabaseMode option
-                                                        true - switchDatabaseMode selected
-                                                        false - switchDatabaseMode unselected
-                     default: True
-
-                restoreControlFile       (bool)     :  restoreControlFile option
-                                                        true - restoreControlFile selected
-                                                        false - restoreControlFile unselected
-                     default: True
-
-                partialRestore       (bool)         :  partialRestore option
-                                                        true - partialRestore selected
-                                                        false - partialRestore unselected
-                     default: False
-
-                openDatabase       (bool)           :  openDatabase option
-                                                        true - openDatabase selected
-                                                        false - openDatabase unselected
-                     default: True
-
-                resetLogs       (bool)              :  resetLogs option
-                                                        true - resetLogs selected
-                                                        false - resetLogs unselected
-                     default: True
-
-                point_in_time            (str)      :  date to use for restore and recover  database
-                                                       format: dd/MM/YYYY
-                                                       gets content from 01/01/1970 if not specified
-                    default: 0
-
-                backupValidationOnly       (bool)   :  backupValidationOnly option
-                                                        true - backupValidationOnly selected
-                                                        false - backupValidationOnly unselected
-                     default: False
-
-                 restoreTablespace       (bool)     :  restoreTablespace option
-                                                        true - restoreTablespace selected
-                                                        false - restoreTablespace unselected
-                     default: False
-
-                noCatalog       (bool)              :  noCatalog option
-                                                        true - noCatalog selected
-                                                        false - noCatalog unselected
-                     default: True
-
-                sourceItem       (list)              :  sourceItem means browse options for
-                                                         sap oracle restores
-                                                        /+BROWSE+ - means both data and logs
-                                                        are selected
-                                                        /+BROWSE+DATA -data only selected
-                                                        /+BROWSE+LOG -log only selected
-                     default: /+BROWSE+
-                databaseCopy       (bool)            :  databaseCopy option
-                                                        true - databaseCopy selected
-                                                        false - databaseCopy unselected
-                     default: False
-
-                archiveLogBy       (str)            :  for restore archive log options,
-                                                        default means restore archivelogall
-                                                        is selected
-
-                     default: default
-
-         Raises:
-                SDKException:
-
-                    if failed to browse content
-
-                    if response is empty
-
-                    if response is not success
-
-                    if destination client does not exist on commcell
-
-                    if destination instance does not exist on commcell
         &#34;&#34;&#34;
 
         if sap_options is None:
@@ -467,18 +461,16 @@ class SAPOracleInstance(Instance):
         # check if client name is correct
         if destination_client is None:
             destination_client = self._agent_object._client_object.client_name
-            
 
         if isinstance(destination_client, Client):
             destination_client = destination_client
             
         elif isinstance(destination_client, str):
             destination_client = Client(self._commcell_object, destination_client)
-            #print(destination_client)
         else:
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
 
-        dest_agent = Agent(destination_client, &#39;sap for oracle&#39;,&#39;61&#39;)
+        dest_agent = Agent(destination_client, &#39;sap for oracle&#39;, &#39;61&#39;)
 
         # check if instance name is correct
         if destination_instance is None:
@@ -492,13 +484,11 @@ class SAPOracleInstance(Instance):
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
         sap_options[&#34;destination_client&#34;] = destination_client.client_name
         sap_options[&#34;destination_instance&#34;] = destination_instance.instance_name
-        #sap_options[&#34;copyPrecedence&#34;] = sap_options.get(&#34;copyPrecedence&#34;, &#34;0&#34;)
+        # sap_options[&#34;copyPrecedence&#34;] = sap_options.get(&#34;copyPrecedence&#34;, &#34;0&#34;)
 
         # prepare and execute
         request_json = self._restore_saporacle_request_json(sap_options)
-        return self._process_restore_response(request_json)
-    
-    </code></pre>
+        return self._process_restore_response(request_json)</code></pre>
 </details>
 </section>
 <section>
@@ -512,156 +502,227 @@ class SAPOracleInstance(Instance):
 <dl>
 <dt id="cvpysdk.instances.saporacleinstance.SAPOracleInstance"><code class="flex name class">
 <span>class <span class="ident">SAPOracleInstance</span></span>
-<span>(</span><span>agent_object, instance_name, instance_id=None)</span>
+<span>(</span><span>agent_object: <a title="cvpysdk.agent.Agent" href="../agent.html#cvpysdk.agent.Agent">Agent</a>, instance_name: str, instance_id: int = None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Derived class from Instance Base class, representing a SAPOracle instance,
-and to perform operations on that Instance.</p>
-<p>Constructor for the class</p>
-<h2 id="args">Args</h2>
-<p>agent_object
-&ndash; instance of the Agent class
-instance_name
-&ndash; name of the instance
-instance_id
-&ndash;
-id of the instance</p></div>
+<div class="desc"><p>Represents a SAP Oracle instance, extending the base Instance class to provide
+specialized operations and properties for managing SAP Oracle environments.</p>
+<p>This class encapsulates configuration details and operational methods specific
+to SAP Oracle instances, including access to key paths, user information,
+and SAP Oracle-specific settings. It also provides mechanisms for restoring
+SAP Oracle instances, both through internal request generation and in-place
+restoration operations.</p>
+<p>Key Features:
+- Initialization with agent object, instance name, and instance ID
+- Properties for accessing Oracle home, SAP data home, SAP executable path, and OS user
+- Properties for command and log service providers
+- Access to SAP Oracle database user, connect string, block size, and secure store
+- Properties for archive log backup streams, instance ID, snapshot backup enablement, and snap engine name
+- Internal method for generating SAP Oracle restore request JSON
+- Method for performing in-place restore operations with custom SAP options</p>
+<p>Initialize a SAPOracleInstance object.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>agent_object</code></strong></dt>
+<dd>Instance of the Agent class associated with this SAP Oracle instance.</dd>
+<dt><strong><code>instance_name</code></strong></dt>
+<dd>The name of the SAP Oracle instance.</dd>
+<dt><strong><code>instance_id</code></strong></dt>
+<dd>Optional; the unique identifier for the SAP Oracle instance.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/saporacleinstance.py#L77-L427" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/saporacleinstance.py#L76-L436" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class SAPOracleInstance(Instance):
-    &#34;&#34;&#34;Derived class from Instance Base class, representing a SAPOracle instance,
-        and to perform operations on that Instance.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents a SAP Oracle instance, extending the base Instance class to provide
+    specialized operations and properties for managing SAP Oracle environments.
 
-    def __init__(self, agent_object, instance_name, instance_id=None):
-        &#34;&#34;&#34;
-        Constructor for the class
+    This class encapsulates configuration details and operational methods specific
+    to SAP Oracle instances, including access to key paths, user information,
+    and SAP Oracle-specific settings. It also provides mechanisms for restoring
+    SAP Oracle instances, both through internal request generation and in-place
+    restoration operations.
+
+    Key Features:
+        - Initialization with agent object, instance name, and instance ID
+        - Properties for accessing Oracle home, SAP data home, SAP executable path, and OS user
+        - Properties for command and log service providers
+        - Access to SAP Oracle database user, connect string, block size, and secure store
+        - Properties for archive log backup streams, instance ID, snapshot backup enablement, and snap engine name
+        - Internal method for generating SAP Oracle restore request JSON
+        - Method for performing in-place restore operations with custom SAP options
+
+    &#34;&#34;&#34;
+
+    def __init__(self, agent_object: Agent, instance_name: str, instance_id: int = None) -&gt; None:
+        &#34;&#34;&#34;Initialize a SAPOracleInstance object.
 
         Args:
-            agent_object    -- instance of the Agent class
-            instance_name   -- name of the instance
-            instance_id     --  id of the instance
+            agent_object: Instance of the Agent class associated with this SAP Oracle instance.
+            instance_name: The name of the SAP Oracle instance.
+            instance_id: Optional; the unique identifier for the SAP Oracle instance.
 
         &#34;&#34;&#34;
         super(SAPOracleInstance, self).__init__(agent_object, instance_name, instance_id)
         self._instanceprop = {}  # variable to hold instance properties to be changed
 
     @property
-    def oracle_home(self):
-        &#34;&#34;&#34;
-        getter for oracle home
+    def oracle_home(self) -&gt; str:
+        &#34;&#34;&#34;Get the Oracle home directory path for the SAP Oracle instance.
+
         Returns:
-            string - string of oracle_home
+            The Oracle home directory as a string.
+
         &#34;&#34;&#34;
         return self._properties[&#39;sapOracleInstance&#39;][&#39;oracleHome&#39;]
 
     @property
-    def sapdata_home(self):
-        &#34;&#34;&#34;
-        getter for sapdata home
+    def sapdata_home(self) -&gt; str:
+        &#34;&#34;&#34;Get the SAPDATA home directory path for the SAP Oracle instance.
+
         Returns:
-            string - string of sapdata_home
+            The path to the SAPDATA home directory as a string.
+
         &#34;&#34;&#34;
         return self._properties[&#39;sapOracleInstance&#39;][&#39;sapDataPath&#39;]
 
     @property
-    def sapexepath(self):
-        &#34;&#34;&#34;
-        getter for sapexepath
+    def sapexepath(self) -&gt; str:
+        &#34;&#34;&#34;Get the SAP executable path (sapexepath) for the SAP Oracle instance.
+
         Returns:
-            string - string of sapexepath
+            The SAP executable path as a string.
+
         &#34;&#34;&#34;
         return self._properties[&#39;sapOracleInstance&#39;][&#39;sapExeFolder&#39;]
 
     @property
-    def os_user(self):
-        &#34;&#34;&#34;
-        Getter for oracle software owner
+    def os_user(self) -&gt; str:
+        &#34;&#34;&#34;Get the Oracle software owner username for this SAP Oracle instance.
+
         Returns:
-            string - string of oracle software owner
+            The username of the Oracle software owner as a string.
+
         &#34;&#34;&#34;
         return self._properties[&#39;sapOracleInstance&#39;][&#39;oracleUser&#39;][&#39;userName&#39;]
 
     @property
-    def cmd_sp(self):
-        &#34;&#34;&#34;
-        Getter for Command Line storage policy
+    def cmd_sp(self) -&gt; str:
+        &#34;&#34;&#34;Get the command line storage policy string for the SAP Oracle instance.
+
         Returns:
-            string - string for command line storage policy
+            The storage policy string used for command line operations.
+
         &#34;&#34;&#34;
         return self._properties[&#39;sapOracleInstance&#39;][&#39;oracleStorageDevice&#39;][
             &#39;commandLineStoragePolicy&#39;][&#39;storagePolicyName&#39;]
 
     @property
-    def log_sp(self):
-        &#34;&#34;&#34;
-        Oracle Instance&#39;s Log Storage Poplicy
+    def log_sp(self) -&gt; str:
+        &#34;&#34;&#34;Get the log storage policy associated with the Oracle instance.
+
         Returns:
-            string  -- string containing log storage policy
+            The name of the log storage policy as a string.
+
         &#34;&#34;&#34;
         return self._properties[&#39;sapOracleInstance&#39;][&#39;oracleStorageDevice&#39;][
             &#39;logBackupStoragePolicy&#39;][&#39;storagePolicyName&#39;]
 
     @property
-    def saporacle_db_user(self):
-        &#34;&#34;&#34;
-        Returns: Oracle database user for the instance
+    def saporacle_db_user(self) -&gt; str:
+        &#34;&#34;&#34;Get the Oracle database user associated with this SAP Oracle instance.
+
+        Returns:
+            The Oracle database user name as a string.
+
         &#34;&#34;&#34;
         return self._properties[&#39;sapOracleInstance&#39;][&#39;sqlConnect&#39;][&#39;userName&#39;]
 
     @property
-    def saporacle_db_connectstring(self):
-        &#34;&#34;&#34;
-        Returns: Oracle database connect string for the instance
+    def saporacle_db_connectstring(self) -&gt; str:
+        &#34;&#34;&#34;Get the Oracle database connect string for this SAP Oracle instance.
+
+        Returns:
+            The Oracle database connect string associated with the instance.
+
         &#34;&#34;&#34;
         return self._properties[&#39;sapOracleInstance&#39;][&#39;sqlConnect&#39;][&#39;domainName&#39;]
 
     @property
-    def saporacle_blocksize(self):
-        &#34;&#34;&#34;
-        Returns: blocksize for the instance
+    def saporacle_blocksize(self) -&gt; int:
+        &#34;&#34;&#34;Get the block size configured for the SAP Oracle instance.
+
+        Returns:
+            The block size value for the instance as an integer.
+
         &#34;&#34;&#34;
         return self._properties[&#39;sapOracleInstance&#39;][&#39;blockSize&#39;]
 
     @property
-    def saporacle_sapsecurestore(self):
-        &#34;&#34;&#34;
-        Returns: sapsecurestore option for the instance
+    def saporacle_sapsecurestore(self) -&gt; str:
+        &#34;&#34;&#34;Get the SAP Secure Store option configured for this SAP Oracle instance.
+
+        Returns:
+            str: The SAP Secure Store option value for the instance.
+
         &#34;&#34;&#34;
         return self._properties[&#39;sapOracleInstance&#39;][&#39;useSAPSecureStore&#39;]
 
     @property
-    def saporacle_archivelogbackupstreams(self):
-        &#34;&#34;&#34;
-        Returns: archivelogbackupstreams option for the instance
+    def saporacle_archivelogbackupstreams(self) -&gt; int:
+        &#34;&#34;&#34;Get the number of archive log backup streams configured for the SAP Oracle instance.
+
+        Returns:
+            int: The number of backup streams used for archiving logs in this SAP Oracle instance.
+
         &#34;&#34;&#34;
         return self._properties[&#39;sapOracleInstance&#39;][&#39;numberOfArchiveLogBackupStreams&#39;]
 
     @property
-    def saporacle_instanceid(self):
-        &#34;&#34;&#34;
-        Returns: saporacle_instanceid option for the instance
+    def saporacle_instanceid(self) -&gt; int:
+        &#34;&#34;&#34;Get the SAP Oracle instance ID option for this instance.
+
+        Returns:
+            The SAP Oracle instance ID as an integer.
+
         &#34;&#34;&#34;
         return self._properties[&#39;instance&#39;][&#39;instanceId&#39;]
     
     @property
-    def saporacle_snapbackup_enable(self):
-        &#34;&#34;&#34;
-        Returns: saporacle_snapbackup_enable option for the instance
+    def saporacle_snapbackup_enable(self) -&gt; bool:
+        &#34;&#34;&#34;Get the status of the SAP Oracle SnapBackup enable option for this instance.
+
+        Returns:
+            bool: True if SnapBackup is enabled for the SAP Oracle instance, False otherwise.
+
         &#34;&#34;&#34;
         return self._properties[&#39;sapOracleInstance&#39;][&#39;snapProtectInfo&#39;][&#39;isSnapBackupEnabled&#39;]
     
     @property
-    def saporacle_snapengine_name(self):
-        &#34;&#34;&#34;
-        Returns: saporacle_snapengine_name option for the instance
+    def saporacle_snapengine_name(self) -&gt; str:
+        &#34;&#34;&#34;Get the Snap Engine name option for the SAP Oracle instance.
+
+        Returns:
+            The Snap Engine name configured for this SAP Oracle instance as a string.
+
         &#34;&#34;&#34;
         return self._properties[&#39;sapOracleInstance&#39;][&#39;snapProtectInfo&#39;][&#39;snapSelectedEngine&#39;][&#39;snapShotEngineName&#39;]
 
-    def _restore_saporacle_request_json(self, value):
-        &#34;&#34;&#34;Returns the JSON request to pass to the API as per the options selected by the user.
+    def _restore_saporacle_request_json(self, value: dict) -&gt; dict:
+        &#34;&#34;&#34;Generate the JSON request payload for SAP Oracle restore operations.
+
+        This method constructs and returns a JSON dictionary formatted according to the options
+        specified by the user, suitable for submission to the SAP Oracle restore API.
+
+        Args:
+            value: A dictionary containing user-selected restore options and parameters.
+
+        Returns:
+            A dictionary representing the JSON request payload for the SAP Oracle restore API.
 
         &#34;&#34;&#34;
         if self._restore_association is None:
@@ -723,127 +784,65 @@ id of the instance</p></div>
         return request_json
 
     def restore_in_place(
-            self,
-            destination_client=None,
-            destination_instance=None,
-            sap_options=None):
-        &#34;&#34;&#34;perform inplace restore and recover  of sap oracle database
-         Args:
+        self,
+        destination_client: str = None,
+        destination_instance: str = None,
+        sap_options: dict = None
+    ) -&gt; None:
+        &#34;&#34;&#34;Perform an in-place restore and recovery of a SAP Oracle database.
 
-            destination_client        (str)         --  destination client name where saporacle
-                                                          client package exists if this value
-                                                          not provided,it will automatically
-                                                          use source backup client
-            destination_instance        (str)       --  destination instance name where saporacle
-                                                        client package exists if this value not
-                                                         provided,it will automatically use
-                                                          source backup instance
-            sap_options                (dict)
+        This method restores and recovers a SAP Oracle database on the original or specified destination client and instance.
+        The restore operation can be customized using the `sap_options` dictionary to control various restore and recovery parameters.
 
-                backupset_name         (str)        --  backupset name of the instance to be
-                                                            restored. If the instance is a single
-                                                            DB instance then the backupset name is
-                                                            ``default``.
-                    default: default
+        Args:
+            destination_client: The name of the destination client where the SAP Oracle client package exists.
+                If not provided, the source backup client will be used.
+            destination_instance: The name of the destination SAP Oracle instance.
+                If not provided, the source backup instance will be used.
+            sap_options: Dictionary of SAP Oracle restore options. Supported keys include:
+                - backupset_name (str): Name of the backupset to restore. Default is &#34;default&#34;.
+                - restoreData (bool): Whether to restore data. Default is True.
+                - streams (int): Number of streams to use for restore. Default is 2.
+                - copyPrecedence (int): Copy number to use for restore. Default is 0.
+                - archiveLog (bool): Whether to restore archive logs. Default is True.
+                - recover (bool): Whether to recover the database. Default is True.
+                - switchDatabaseMode (bool): Whether to switch database mode. Default is True.
+                - restoreControlFile (bool): Whether to restore the control file. Default is True.
+                - partialRestore (bool): Whether to perform a partial restore. Default is False.
+                - openDatabase (bool): Whether to open the database after restore. Default is True.
+                - resetLogs (bool): Whether to reset logs after restore. Default is True.
+                - point_in_time (str): Point-in-time for restore in &#34;dd/MM/YYYY&#34; format. Default is &#34;0&#34; (from 01/01/1970).
+                - backupValidationOnly (bool): Whether to perform backup validation only. Default is False.
+                - restoreTablespace (bool): Whether to restore tablespace. Default is False.
+                - noCatalog (bool): Whether to use no catalog. Default is True.
+                - sourceItem (list): Browse options for SAP Oracle restores (e.g., [&#39;/+BROWSE+&#39;]).
+                - databaseCopy (bool): Whether to perform a database copy. Default is False.
+                - archiveLogBy (str): Archive log restore option. Default is &#34;default&#34;.
 
-                restoreData               (bool)   --  RestoreData  if true mean restore data
-                                                          is selected.
-                                                        true - restore data selected
-                                                        false - restore data unselected
+        Raises:
+            SDKException: If the restore operation fails due to:
+                - Failed to browse content
+                - Empty response from the server
+                - Unsuccessful response from the server
+                - Destination client does not exist on Commcell
+                - Destination instance does not exist on Commcell
 
-                    default:true
+        Example:
+            &gt;&gt;&gt; sap_instance = SAPOracleInstance()
+            &gt;&gt;&gt; sap_instance.restore_in_place(
+            ...     destination_client=&#34;prod-db-server&#34;,
+            ...     destination_instance=&#34;ORCL&#34;,
+            ...     sap_options={
+            ...         &#34;backupset_name&#34;: &#34;default&#34;,
+            ...         &#34;restoreData&#34;: True,
+            ...         &#34;streams&#34;: 4,
+            ...         &#34;archiveLog&#34;: True,
+            ...         &#34;recover&#34;: True,
+            ...         &#34;point_in_time&#34;: &#34;15/03/2024&#34;
+            ...     }
+            ... )
+            &gt;&gt;&gt; print(&#34;Restore operation initiated successfully.&#34;)
 
-                streams                  (int)      :  no of streams to use for restore
-                    default:2
-
-                copyPrecedence          (int)      :  copy number to use for restore
-                    default:0
-
-                archiveLog               (bool)     :  Restore archive log
-                                                        true - restore archive log selected
-                                                        false - restore archive log unselected
-                     default: True
-
-                recover                  (bool)     :  recover database
-                                                        true - recover database selected
-                                                        false - recover database unselected
-                     default: True
-
-                switchDatabaseMode       (bool)     :  switchDatabaseMode option
-                                                        true - switchDatabaseMode selected
-                                                        false - switchDatabaseMode unselected
-                     default: True
-
-                restoreControlFile       (bool)     :  restoreControlFile option
-                                                        true - restoreControlFile selected
-                                                        false - restoreControlFile unselected
-                     default: True
-
-                partialRestore       (bool)         :  partialRestore option
-                                                        true - partialRestore selected
-                                                        false - partialRestore unselected
-                     default: False
-
-                openDatabase       (bool)           :  openDatabase option
-                                                        true - openDatabase selected
-                                                        false - openDatabase unselected
-                     default: True
-
-                resetLogs       (bool)              :  resetLogs option
-                                                        true - resetLogs selected
-                                                        false - resetLogs unselected
-                     default: True
-
-                point_in_time            (str)      :  date to use for restore and recover  database
-                                                       format: dd/MM/YYYY
-                                                       gets content from 01/01/1970 if not specified
-                    default: 0
-
-                backupValidationOnly       (bool)   :  backupValidationOnly option
-                                                        true - backupValidationOnly selected
-                                                        false - backupValidationOnly unselected
-                     default: False
-
-                 restoreTablespace       (bool)     :  restoreTablespace option
-                                                        true - restoreTablespace selected
-                                                        false - restoreTablespace unselected
-                     default: False
-
-                noCatalog       (bool)              :  noCatalog option
-                                                        true - noCatalog selected
-                                                        false - noCatalog unselected
-                     default: True
-
-                sourceItem       (list)              :  sourceItem means browse options for
-                                                         sap oracle restores
-                                                        /+BROWSE+ - means both data and logs
-                                                        are selected
-                                                        /+BROWSE+DATA -data only selected
-                                                        /+BROWSE+LOG -log only selected
-                     default: /+BROWSE+
-                databaseCopy       (bool)            :  databaseCopy option
-                                                        true - databaseCopy selected
-                                                        false - databaseCopy unselected
-                     default: False
-
-                archiveLogBy       (str)            :  for restore archive log options,
-                                                        default means restore archivelogall
-                                                        is selected
-
-                     default: default
-
-         Raises:
-                SDKException:
-
-                    if failed to browse content
-
-                    if response is empty
-
-                    if response is not success
-
-                    if destination client does not exist on commcell
-
-                    if destination instance does not exist on commcell
         &#34;&#34;&#34;
 
         if sap_options is None:
@@ -852,18 +851,16 @@ id of the instance</p></div>
         # check if client name is correct
         if destination_client is None:
             destination_client = self._agent_object._client_object.client_name
-            
 
         if isinstance(destination_client, Client):
             destination_client = destination_client
             
         elif isinstance(destination_client, str):
             destination_client = Client(self._commcell_object, destination_client)
-            #print(destination_client)
         else:
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
 
-        dest_agent = Agent(destination_client, &#39;sap for oracle&#39;,&#39;61&#39;)
+        dest_agent = Agent(destination_client, &#39;sap for oracle&#39;, &#39;61&#39;)
 
         # check if instance name is correct
         if destination_instance is None:
@@ -877,7 +874,7 @@ id of the instance</p></div>
             raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
         sap_options[&#34;destination_client&#34;] = destination_client.client_name
         sap_options[&#34;destination_instance&#34;] = destination_instance.instance_name
-        #sap_options[&#34;copyPrecedence&#34;] = sap_options.get(&#34;copyPrecedence&#34;, &#34;0&#34;)
+        # sap_options[&#34;copyPrecedence&#34;] = sap_options.get(&#34;copyPrecedence&#34;, &#34;0&#34;)
 
         # prepare and execute
         request_json = self._restore_saporacle_request_json(sap_options)
@@ -889,253 +886,321 @@ id of the instance</p></div>
 </ul>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.instances.saporacleinstance.SAPOracleInstance.cmd_sp"><code class="name">var <span class="ident">cmd_sp</span></code></dt>
+<dt id="cvpysdk.instances.saporacleinstance.SAPOracleInstance.cmd_sp"><code class="name">var <span class="ident">cmd_sp</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Getter for Command Line storage policy</p>
-<h2 id="returns">Returns</h2>
-<p>string - string for command line storage policy</p></div>
+<div class="desc"><p>Get the command line storage policy string for the SAP Oracle instance.</p>
+<p>Returns
+-----=
+The storage policy string used for command line operations.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/saporacleinstance.py#L130-L138" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/saporacleinstance.py#L156-L166" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def cmd_sp(self):
-    &#34;&#34;&#34;
-    Getter for Command Line storage policy
+def cmd_sp(self) -&gt; str:
+    &#34;&#34;&#34;Get the command line storage policy string for the SAP Oracle instance.
+
     Returns:
-        string - string for command line storage policy
+        The storage policy string used for command line operations.
+
     &#34;&#34;&#34;
     return self._properties[&#39;sapOracleInstance&#39;][&#39;oracleStorageDevice&#39;][
         &#39;commandLineStoragePolicy&#39;][&#39;storagePolicyName&#39;]</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.saporacleinstance.SAPOracleInstance.log_sp"><code class="name">var <span class="ident">log_sp</span></code></dt>
+<dt id="cvpysdk.instances.saporacleinstance.SAPOracleInstance.log_sp"><code class="name">var <span class="ident">log_sp</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Oracle Instance's Log Storage Poplicy</p>
-<h2 id="returns">Returns</h2>
-<p>string
-&ndash; string containing log storage policy</p></div>
+<div class="desc"><p>Get the log storage policy associated with the Oracle instance.</p>
+<p>Returns
+-----=
+The name of the log storage policy as a string.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/saporacleinstance.py#L140-L148" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/saporacleinstance.py#L168-L178" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def log_sp(self):
-    &#34;&#34;&#34;
-    Oracle Instance&#39;s Log Storage Poplicy
+def log_sp(self) -&gt; str:
+    &#34;&#34;&#34;Get the log storage policy associated with the Oracle instance.
+
     Returns:
-        string  -- string containing log storage policy
+        The name of the log storage policy as a string.
+
     &#34;&#34;&#34;
     return self._properties[&#39;sapOracleInstance&#39;][&#39;oracleStorageDevice&#39;][
         &#39;logBackupStoragePolicy&#39;][&#39;storagePolicyName&#39;]</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.saporacleinstance.SAPOracleInstance.oracle_home"><code class="name">var <span class="ident">oracle_home</span></code></dt>
+<dt id="cvpysdk.instances.saporacleinstance.SAPOracleInstance.oracle_home"><code class="name">var <span class="ident">oracle_home</span> : str</code></dt>
 <dd>
-<div class="desc"><p>getter for oracle home</p>
-<h2 id="returns">Returns</h2>
-<p>string - string of oracle_home</p></div>
+<div class="desc"><p>Get the Oracle home directory path for the SAP Oracle instance.</p>
+<p>Returns
+-----=
+The Oracle home directory as a string.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/saporacleinstance.py#L94-L101" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/saporacleinstance.py#L112-L121" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def oracle_home(self):
-    &#34;&#34;&#34;
-    getter for oracle home
+def oracle_home(self) -&gt; str:
+    &#34;&#34;&#34;Get the Oracle home directory path for the SAP Oracle instance.
+
     Returns:
-        string - string of oracle_home
+        The Oracle home directory as a string.
+
     &#34;&#34;&#34;
     return self._properties[&#39;sapOracleInstance&#39;][&#39;oracleHome&#39;]</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.saporacleinstance.SAPOracleInstance.os_user"><code class="name">var <span class="ident">os_user</span></code></dt>
+<dt id="cvpysdk.instances.saporacleinstance.SAPOracleInstance.os_user"><code class="name">var <span class="ident">os_user</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Getter for oracle software owner</p>
-<h2 id="returns">Returns</h2>
-<p>string - string of oracle software owner</p></div>
+<div class="desc"><p>Get the Oracle software owner username for this SAP Oracle instance.</p>
+<p>Returns
+-----=
+The username of the Oracle software owner as a string.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/saporacleinstance.py#L121-L128" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/saporacleinstance.py#L145-L154" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def os_user(self):
-    &#34;&#34;&#34;
-    Getter for oracle software owner
+def os_user(self) -&gt; str:
+    &#34;&#34;&#34;Get the Oracle software owner username for this SAP Oracle instance.
+
     Returns:
-        string - string of oracle software owner
+        The username of the Oracle software owner as a string.
+
     &#34;&#34;&#34;
     return self._properties[&#39;sapOracleInstance&#39;][&#39;oracleUser&#39;][&#39;userName&#39;]</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.saporacleinstance.SAPOracleInstance.sapdata_home"><code class="name">var <span class="ident">sapdata_home</span></code></dt>
+<dt id="cvpysdk.instances.saporacleinstance.SAPOracleInstance.sapdata_home"><code class="name">var <span class="ident">sapdata_home</span> : str</code></dt>
 <dd>
-<div class="desc"><p>getter for sapdata home</p>
-<h2 id="returns">Returns</h2>
-<p>string - string of sapdata_home</p></div>
+<div class="desc"><p>Get the SAPDATA home directory path for the SAP Oracle instance.</p>
+<p>Returns
+-----=
+The path to the SAPDATA home directory as a string.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/saporacleinstance.py#L103-L110" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/saporacleinstance.py#L123-L132" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def sapdata_home(self):
-    &#34;&#34;&#34;
-    getter for sapdata home
+def sapdata_home(self) -&gt; str:
+    &#34;&#34;&#34;Get the SAPDATA home directory path for the SAP Oracle instance.
+
     Returns:
-        string - string of sapdata_home
+        The path to the SAPDATA home directory as a string.
+
     &#34;&#34;&#34;
     return self._properties[&#39;sapOracleInstance&#39;][&#39;sapDataPath&#39;]</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.saporacleinstance.SAPOracleInstance.sapexepath"><code class="name">var <span class="ident">sapexepath</span></code></dt>
+<dt id="cvpysdk.instances.saporacleinstance.SAPOracleInstance.sapexepath"><code class="name">var <span class="ident">sapexepath</span> : str</code></dt>
 <dd>
-<div class="desc"><p>getter for sapexepath</p>
-<h2 id="returns">Returns</h2>
-<p>string - string of sapexepath</p></div>
+<div class="desc"><p>Get the SAP executable path (sapexepath) for the SAP Oracle instance.</p>
+<p>Returns
+-----=
+The SAP executable path as a string.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/saporacleinstance.py#L112-L119" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/saporacleinstance.py#L134-L143" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def sapexepath(self):
-    &#34;&#34;&#34;
-    getter for sapexepath
+def sapexepath(self) -&gt; str:
+    &#34;&#34;&#34;Get the SAP executable path (sapexepath) for the SAP Oracle instance.
+
     Returns:
-        string - string of sapexepath
+        The SAP executable path as a string.
+
     &#34;&#34;&#34;
     return self._properties[&#39;sapOracleInstance&#39;][&#39;sapExeFolder&#39;]</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.saporacleinstance.SAPOracleInstance.saporacle_archivelogbackupstreams"><code class="name">var <span class="ident">saporacle_archivelogbackupstreams</span></code></dt>
+<dt id="cvpysdk.instances.saporacleinstance.SAPOracleInstance.saporacle_archivelogbackupstreams"><code class="name">var <span class="ident">saporacle_archivelogbackupstreams</span> : int</code></dt>
 <dd>
-<div class="desc"><p>Returns: archivelogbackupstreams option for the instance</p></div>
+<div class="desc"><p>Get the number of archive log backup streams configured for the SAP Oracle instance.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>int</code></dt>
+<dd>The number of backup streams used for archiving logs in this SAP Oracle instance.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/saporacleinstance.py#L178-L183" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/saporacleinstance.py#L224-L233" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def saporacle_archivelogbackupstreams(self):
-    &#34;&#34;&#34;
-    Returns: archivelogbackupstreams option for the instance
+def saporacle_archivelogbackupstreams(self) -&gt; int:
+    &#34;&#34;&#34;Get the number of archive log backup streams configured for the SAP Oracle instance.
+
+    Returns:
+        int: The number of backup streams used for archiving logs in this SAP Oracle instance.
+
     &#34;&#34;&#34;
     return self._properties[&#39;sapOracleInstance&#39;][&#39;numberOfArchiveLogBackupStreams&#39;]</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.saporacleinstance.SAPOracleInstance.saporacle_blocksize"><code class="name">var <span class="ident">saporacle_blocksize</span></code></dt>
+<dt id="cvpysdk.instances.saporacleinstance.SAPOracleInstance.saporacle_blocksize"><code class="name">var <span class="ident">saporacle_blocksize</span> : int</code></dt>
 <dd>
-<div class="desc"><p>Returns: blocksize for the instance</p></div>
+<div class="desc"><p>Get the block size configured for the SAP Oracle instance.</p>
+<p>Returns
+-----=
+The block size value for the instance as an integer.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/saporacleinstance.py#L164-L169" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/saporacleinstance.py#L202-L211" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def saporacle_blocksize(self):
-    &#34;&#34;&#34;
-    Returns: blocksize for the instance
+def saporacle_blocksize(self) -&gt; int:
+    &#34;&#34;&#34;Get the block size configured for the SAP Oracle instance.
+
+    Returns:
+        The block size value for the instance as an integer.
+
     &#34;&#34;&#34;
     return self._properties[&#39;sapOracleInstance&#39;][&#39;blockSize&#39;]</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.saporacleinstance.SAPOracleInstance.saporacle_db_connectstring"><code class="name">var <span class="ident">saporacle_db_connectstring</span></code></dt>
+<dt id="cvpysdk.instances.saporacleinstance.SAPOracleInstance.saporacle_db_connectstring"><code class="name">var <span class="ident">saporacle_db_connectstring</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns: Oracle database connect string for the instance</p></div>
+<div class="desc"><p>Get the Oracle database connect string for this SAP Oracle instance.</p>
+<p>Returns
+-----=
+The Oracle database connect string associated with the instance.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/saporacleinstance.py#L157-L162" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/saporacleinstance.py#L191-L200" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def saporacle_db_connectstring(self):
-    &#34;&#34;&#34;
-    Returns: Oracle database connect string for the instance
+def saporacle_db_connectstring(self) -&gt; str:
+    &#34;&#34;&#34;Get the Oracle database connect string for this SAP Oracle instance.
+
+    Returns:
+        The Oracle database connect string associated with the instance.
+
     &#34;&#34;&#34;
     return self._properties[&#39;sapOracleInstance&#39;][&#39;sqlConnect&#39;][&#39;domainName&#39;]</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.saporacleinstance.SAPOracleInstance.saporacle_db_user"><code class="name">var <span class="ident">saporacle_db_user</span></code></dt>
+<dt id="cvpysdk.instances.saporacleinstance.SAPOracleInstance.saporacle_db_user"><code class="name">var <span class="ident">saporacle_db_user</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns: Oracle database user for the instance</p></div>
+<div class="desc"><p>Get the Oracle database user associated with this SAP Oracle instance.</p>
+<p>Returns
+-----=
+The Oracle database user name as a string.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/saporacleinstance.py#L150-L155" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/saporacleinstance.py#L180-L189" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def saporacle_db_user(self):
-    &#34;&#34;&#34;
-    Returns: Oracle database user for the instance
+def saporacle_db_user(self) -&gt; str:
+    &#34;&#34;&#34;Get the Oracle database user associated with this SAP Oracle instance.
+
+    Returns:
+        The Oracle database user name as a string.
+
     &#34;&#34;&#34;
     return self._properties[&#39;sapOracleInstance&#39;][&#39;sqlConnect&#39;][&#39;userName&#39;]</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.saporacleinstance.SAPOracleInstance.saporacle_instanceid"><code class="name">var <span class="ident">saporacle_instanceid</span></code></dt>
+<dt id="cvpysdk.instances.saporacleinstance.SAPOracleInstance.saporacle_instanceid"><code class="name">var <span class="ident">saporacle_instanceid</span> : int</code></dt>
 <dd>
-<div class="desc"><p>Returns: saporacle_instanceid option for the instance</p></div>
+<div class="desc"><p>Get the SAP Oracle instance ID option for this instance.</p>
+<p>Returns
+-----=
+The SAP Oracle instance ID as an integer.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/saporacleinstance.py#L185-L190" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/saporacleinstance.py#L235-L244" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def saporacle_instanceid(self):
-    &#34;&#34;&#34;
-    Returns: saporacle_instanceid option for the instance
+def saporacle_instanceid(self) -&gt; int:
+    &#34;&#34;&#34;Get the SAP Oracle instance ID option for this instance.
+
+    Returns:
+        The SAP Oracle instance ID as an integer.
+
     &#34;&#34;&#34;
     return self._properties[&#39;instance&#39;][&#39;instanceId&#39;]</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.saporacleinstance.SAPOracleInstance.saporacle_sapsecurestore"><code class="name">var <span class="ident">saporacle_sapsecurestore</span></code></dt>
+<dt id="cvpysdk.instances.saporacleinstance.SAPOracleInstance.saporacle_sapsecurestore"><code class="name">var <span class="ident">saporacle_sapsecurestore</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns: sapsecurestore option for the instance</p></div>
+<div class="desc"><p>Get the SAP Secure Store option configured for this SAP Oracle instance.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>str</code></dt>
+<dd>The SAP Secure Store option value for the instance.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/saporacleinstance.py#L171-L176" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/saporacleinstance.py#L213-L222" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def saporacle_sapsecurestore(self):
-    &#34;&#34;&#34;
-    Returns: sapsecurestore option for the instance
+def saporacle_sapsecurestore(self) -&gt; str:
+    &#34;&#34;&#34;Get the SAP Secure Store option configured for this SAP Oracle instance.
+
+    Returns:
+        str: The SAP Secure Store option value for the instance.
+
     &#34;&#34;&#34;
     return self._properties[&#39;sapOracleInstance&#39;][&#39;useSAPSecureStore&#39;]</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.saporacleinstance.SAPOracleInstance.saporacle_snapbackup_enable"><code class="name">var <span class="ident">saporacle_snapbackup_enable</span></code></dt>
+<dt id="cvpysdk.instances.saporacleinstance.SAPOracleInstance.saporacle_snapbackup_enable"><code class="name">var <span class="ident">saporacle_snapbackup_enable</span> : bool</code></dt>
 <dd>
-<div class="desc"><p>Returns: saporacle_snapbackup_enable option for the instance</p></div>
+<div class="desc"><p>Get the status of the SAP Oracle SnapBackup enable option for this instance.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>bool</code></dt>
+<dd>True if SnapBackup is enabled for the SAP Oracle instance, False otherwise.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/saporacleinstance.py#L192-L197" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/saporacleinstance.py#L246-L255" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def saporacle_snapbackup_enable(self):
-    &#34;&#34;&#34;
-    Returns: saporacle_snapbackup_enable option for the instance
+def saporacle_snapbackup_enable(self) -&gt; bool:
+    &#34;&#34;&#34;Get the status of the SAP Oracle SnapBackup enable option for this instance.
+
+    Returns:
+        bool: True if SnapBackup is enabled for the SAP Oracle instance, False otherwise.
+
     &#34;&#34;&#34;
     return self._properties[&#39;sapOracleInstance&#39;][&#39;snapProtectInfo&#39;][&#39;isSnapBackupEnabled&#39;]</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.saporacleinstance.SAPOracleInstance.saporacle_snapengine_name"><code class="name">var <span class="ident">saporacle_snapengine_name</span></code></dt>
+<dt id="cvpysdk.instances.saporacleinstance.SAPOracleInstance.saporacle_snapengine_name"><code class="name">var <span class="ident">saporacle_snapengine_name</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns: saporacle_snapengine_name option for the instance</p></div>
+<div class="desc"><p>Get the Snap Engine name option for the SAP Oracle instance.</p>
+<p>Returns
+-----=
+The Snap Engine name configured for this SAP Oracle instance as a string.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/saporacleinstance.py#L199-L204" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/saporacleinstance.py#L257-L266" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def saporacle_snapengine_name(self):
-    &#34;&#34;&#34;
-    Returns: saporacle_snapengine_name option for the instance
+def saporacle_snapengine_name(self) -&gt; str:
+    &#34;&#34;&#34;Get the Snap Engine name option for the SAP Oracle instance.
+
+    Returns:
+        The Snap Engine name configured for this SAP Oracle instance as a string.
+
     &#34;&#34;&#34;
     return self._properties[&#39;sapOracleInstance&#39;][&#39;snapProtectInfo&#39;][&#39;snapSelectedEngine&#39;][&#39;snapShotEngineName&#39;]</code></pre>
 </details>
@@ -1144,259 +1209,133 @@ def saporacle_snapengine_name(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.instances.saporacleinstance.SAPOracleInstance.restore_in_place"><code class="name flex">
-<span>def <span class="ident">restore_in_place</span></span>(<span>self, destination_client=None, destination_instance=None, sap_options=None)</span>
+<span>def <span class="ident">restore_in_place</span></span>(<span>self, destination_client: str = None, destination_instance: str = None, sap_options: dict = None) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>perform inplace restore and recover
-of sap oracle database</p>
-<h2 id="args">Args</h2>
-<p>destination_client
-(str)
-&ndash;
-destination client name where saporacle
-client package exists if this value
-not provided,it will automatically
-use source backup client
-destination_instance
-(str)
-&ndash;
-destination instance name where saporacle
-client package exists if this value not
-provided,it will automatically use
-source backup instance
-sap_options
-(dict)</p>
-<pre><code>backupset_name         (str)        --  backupset name of the instance to be
-                                            restored. If the instance is a single
-                                            DB instance then the backupset name is
-                                            &lt;code&gt;default&lt;/code&gt;.
-    default: default
-
-restoreData               (bool)   --  RestoreData  if true mean restore data
-                                          is selected.
-                                        true - restore data selected
-                                        false - restore data unselected
-
-    default:true
-
-streams                  (int)      :  no of streams to use for restore
-    default:2
-
-copyPrecedence          (int)      :  copy number to use for restore
-    default:0
-
-archiveLog               (bool)     :  Restore archive log
-                                        true - restore archive log selected
-                                        false - restore archive log unselected
-     default: True
-
-recover                  (bool)     :  recover database
-                                        true - recover database selected
-                                        false - recover database unselected
-     default: True
-
-switchDatabaseMode       (bool)     :  switchDatabaseMode option
-                                        true - switchDatabaseMode selected
-                                        false - switchDatabaseMode unselected
-     default: True
-
-restoreControlFile       (bool)     :  restoreControlFile option
-                                        true - restoreControlFile selected
-                                        false - restoreControlFile unselected
-     default: True
-
-partialRestore       (bool)         :  partialRestore option
-                                        true - partialRestore selected
-                                        false - partialRestore unselected
-     default: False
-
-openDatabase       (bool)           :  openDatabase option
-                                        true - openDatabase selected
-                                        false - openDatabase unselected
-     default: True
-
-resetLogs       (bool)              :  resetLogs option
-                                        true - resetLogs selected
-                                        false - resetLogs unselected
-     default: True
-
-point_in_time            (str)      :  date to use for restore and recover  database
-                                       format: dd/MM/YYYY
-                                       gets content from 01/01/1970 if not specified
-    default: 0
-
-backupValidationOnly       (bool)   :  backupValidationOnly option
-                                        true - backupValidationOnly selected
-                                        false - backupValidationOnly unselected
-     default: False
-
- restoreTablespace       (bool)     :  restoreTablespace option
-                                        true - restoreTablespace selected
-                                        false - restoreTablespace unselected
-     default: False
-
-noCatalog       (bool)              :  noCatalog option
-                                        true - noCatalog selected
-                                        false - noCatalog unselected
-     default: True
-
-sourceItem       (list)              :  sourceItem means browse options for
-                                         sap oracle restores
-                                        /+BROWSE+ - means both data and logs
-                                        are selected
-                                        /+BROWSE+DATA -data only selected
-                                        /+BROWSE+LOG -log only selected
-     default: /+BROWSE+
-databaseCopy       (bool)            :  databaseCopy option
-                                        true - databaseCopy selected
-                                        false - databaseCopy unselected
-     default: False
-
-archiveLogBy       (str)            :  for restore archive log options,
-                                        default means restore archivelogall
-                                        is selected
-
-     default: default
-</code></pre>
-<h2 id="raises">Raises</h2>
-<p>SDKException:</p>
-<pre><code>if failed to browse content
-
-if response is empty
-
-if response is not success
-
-if destination client does not exist on commcell
-
-if destination instance does not exist on commcell
+<div class="desc"><p>Perform an in-place restore and recovery of a SAP Oracle database.</p>
+<p>This method restores and recovers a SAP Oracle database on the original or specified destination client and instance.
+The restore operation can be customized using the <code>sap_options</code> dictionary to control various restore and recovery parameters.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>destination_client</code></strong></dt>
+<dd>The name of the destination client where the SAP Oracle client package exists.
+If not provided, the source backup client will be used.</dd>
+<dt><strong><code>destination_instance</code></strong></dt>
+<dd>The name of the destination SAP Oracle instance.
+If not provided, the source backup instance will be used.</dd>
+<dt><strong><code>sap_options</code></strong></dt>
+<dd>Dictionary of SAP Oracle restore options. Supported keys include:
+- backupset_name (str): Name of the backupset to restore. Default is "default".
+- restoreData (bool): Whether to restore data. Default is True.
+- streams (int): Number of streams to use for restore. Default is 2.
+- copyPrecedence (int): Copy number to use for restore. Default is 0.
+- archiveLog (bool): Whether to restore archive logs. Default is True.
+- recover (bool): Whether to recover the database. Default is True.
+- switchDatabaseMode (bool): Whether to switch database mode. Default is True.
+- restoreControlFile (bool): Whether to restore the control file. Default is True.
+- partialRestore (bool): Whether to perform a partial restore. Default is False.
+- openDatabase (bool): Whether to open the database after restore. Default is True.
+- resetLogs (bool): Whether to reset logs after restore. Default is True.
+- point_in_time (str): Point-in-time for restore in "dd/MM/YYYY" format. Default is "0" (from 01/01/1970).
+- backupValidationOnly (bool): Whether to perform backup validation only. Default is False.
+- restoreTablespace (bool): Whether to restore tablespace. Default is False.
+- noCatalog (bool): Whether to use no catalog. Default is True.
+- sourceItem (list): Browse options for SAP Oracle restores (e.g., ['/+BROWSE+']).
+- databaseCopy (bool): Whether to perform a database copy. Default is False.
+- archiveLogBy (str): Archive log restore option. Default is "default".</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the restore operation fails due to:
+- Failed to browse content
+- Empty response from the server
+- Unsuccessful response from the server
+- Destination client does not exist on Commcell
+- Destination instance does not exist on Commcell</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; sap_instance = SAPOracleInstance()
+&gt;&gt;&gt; sap_instance.restore_in_place(
+...     destination_client=&quot;prod-db-server&quot;,
+...     destination_instance=&quot;ORCL&quot;,
+...     sap_options={
+...         &quot;backupset_name&quot;: &quot;default&quot;,
+...         &quot;restoreData&quot;: True,
+...         &quot;streams&quot;: 4,
+...         &quot;archiveLog&quot;: True,
+...         &quot;recover&quot;: True,
+...         &quot;point_in_time&quot;: &quot;15/03/2024&quot;
+...     }
+... )
+&gt;&gt;&gt; print(&quot;Restore operation initiated successfully.&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/saporacleinstance.py#L268-L427" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/saporacleinstance.py#L340-L436" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_in_place(
-        self,
-        destination_client=None,
-        destination_instance=None,
-        sap_options=None):
-    &#34;&#34;&#34;perform inplace restore and recover  of sap oracle database
-     Args:
+    self,
+    destination_client: str = None,
+    destination_instance: str = None,
+    sap_options: dict = None
+) -&gt; None:
+    &#34;&#34;&#34;Perform an in-place restore and recovery of a SAP Oracle database.
 
-        destination_client        (str)         --  destination client name where saporacle
-                                                      client package exists if this value
-                                                      not provided,it will automatically
-                                                      use source backup client
-        destination_instance        (str)       --  destination instance name where saporacle
-                                                    client package exists if this value not
-                                                     provided,it will automatically use
-                                                      source backup instance
-        sap_options                (dict)
+    This method restores and recovers a SAP Oracle database on the original or specified destination client and instance.
+    The restore operation can be customized using the `sap_options` dictionary to control various restore and recovery parameters.
 
-            backupset_name         (str)        --  backupset name of the instance to be
-                                                        restored. If the instance is a single
-                                                        DB instance then the backupset name is
-                                                        ``default``.
-                default: default
+    Args:
+        destination_client: The name of the destination client where the SAP Oracle client package exists.
+            If not provided, the source backup client will be used.
+        destination_instance: The name of the destination SAP Oracle instance.
+            If not provided, the source backup instance will be used.
+        sap_options: Dictionary of SAP Oracle restore options. Supported keys include:
+            - backupset_name (str): Name of the backupset to restore. Default is &#34;default&#34;.
+            - restoreData (bool): Whether to restore data. Default is True.
+            - streams (int): Number of streams to use for restore. Default is 2.
+            - copyPrecedence (int): Copy number to use for restore. Default is 0.
+            - archiveLog (bool): Whether to restore archive logs. Default is True.
+            - recover (bool): Whether to recover the database. Default is True.
+            - switchDatabaseMode (bool): Whether to switch database mode. Default is True.
+            - restoreControlFile (bool): Whether to restore the control file. Default is True.
+            - partialRestore (bool): Whether to perform a partial restore. Default is False.
+            - openDatabase (bool): Whether to open the database after restore. Default is True.
+            - resetLogs (bool): Whether to reset logs after restore. Default is True.
+            - point_in_time (str): Point-in-time for restore in &#34;dd/MM/YYYY&#34; format. Default is &#34;0&#34; (from 01/01/1970).
+            - backupValidationOnly (bool): Whether to perform backup validation only. Default is False.
+            - restoreTablespace (bool): Whether to restore tablespace. Default is False.
+            - noCatalog (bool): Whether to use no catalog. Default is True.
+            - sourceItem (list): Browse options for SAP Oracle restores (e.g., [&#39;/+BROWSE+&#39;]).
+            - databaseCopy (bool): Whether to perform a database copy. Default is False.
+            - archiveLogBy (str): Archive log restore option. Default is &#34;default&#34;.
 
-            restoreData               (bool)   --  RestoreData  if true mean restore data
-                                                      is selected.
-                                                    true - restore data selected
-                                                    false - restore data unselected
+    Raises:
+        SDKException: If the restore operation fails due to:
+            - Failed to browse content
+            - Empty response from the server
+            - Unsuccessful response from the server
+            - Destination client does not exist on Commcell
+            - Destination instance does not exist on Commcell
 
-                default:true
+    Example:
+        &gt;&gt;&gt; sap_instance = SAPOracleInstance()
+        &gt;&gt;&gt; sap_instance.restore_in_place(
+        ...     destination_client=&#34;prod-db-server&#34;,
+        ...     destination_instance=&#34;ORCL&#34;,
+        ...     sap_options={
+        ...         &#34;backupset_name&#34;: &#34;default&#34;,
+        ...         &#34;restoreData&#34;: True,
+        ...         &#34;streams&#34;: 4,
+        ...         &#34;archiveLog&#34;: True,
+        ...         &#34;recover&#34;: True,
+        ...         &#34;point_in_time&#34;: &#34;15/03/2024&#34;
+        ...     }
+        ... )
+        &gt;&gt;&gt; print(&#34;Restore operation initiated successfully.&#34;)
 
-            streams                  (int)      :  no of streams to use for restore
-                default:2
-
-            copyPrecedence          (int)      :  copy number to use for restore
-                default:0
-
-            archiveLog               (bool)     :  Restore archive log
-                                                    true - restore archive log selected
-                                                    false - restore archive log unselected
-                 default: True
-
-            recover                  (bool)     :  recover database
-                                                    true - recover database selected
-                                                    false - recover database unselected
-                 default: True
-
-            switchDatabaseMode       (bool)     :  switchDatabaseMode option
-                                                    true - switchDatabaseMode selected
-                                                    false - switchDatabaseMode unselected
-                 default: True
-
-            restoreControlFile       (bool)     :  restoreControlFile option
-                                                    true - restoreControlFile selected
-                                                    false - restoreControlFile unselected
-                 default: True
-
-            partialRestore       (bool)         :  partialRestore option
-                                                    true - partialRestore selected
-                                                    false - partialRestore unselected
-                 default: False
-
-            openDatabase       (bool)           :  openDatabase option
-                                                    true - openDatabase selected
-                                                    false - openDatabase unselected
-                 default: True
-
-            resetLogs       (bool)              :  resetLogs option
-                                                    true - resetLogs selected
-                                                    false - resetLogs unselected
-                 default: True
-
-            point_in_time            (str)      :  date to use for restore and recover  database
-                                                   format: dd/MM/YYYY
-                                                   gets content from 01/01/1970 if not specified
-                default: 0
-
-            backupValidationOnly       (bool)   :  backupValidationOnly option
-                                                    true - backupValidationOnly selected
-                                                    false - backupValidationOnly unselected
-                 default: False
-
-             restoreTablespace       (bool)     :  restoreTablespace option
-                                                    true - restoreTablespace selected
-                                                    false - restoreTablespace unselected
-                 default: False
-
-            noCatalog       (bool)              :  noCatalog option
-                                                    true - noCatalog selected
-                                                    false - noCatalog unselected
-                 default: True
-
-            sourceItem       (list)              :  sourceItem means browse options for
-                                                     sap oracle restores
-                                                    /+BROWSE+ - means both data and logs
-                                                    are selected
-                                                    /+BROWSE+DATA -data only selected
-                                                    /+BROWSE+LOG -log only selected
-                 default: /+BROWSE+
-            databaseCopy       (bool)            :  databaseCopy option
-                                                    true - databaseCopy selected
-                                                    false - databaseCopy unselected
-                 default: False
-
-            archiveLogBy       (str)            :  for restore archive log options,
-                                                    default means restore archivelogall
-                                                    is selected
-
-                 default: default
-
-     Raises:
-            SDKException:
-
-                if failed to browse content
-
-                if response is empty
-
-                if response is not success
-
-                if destination client does not exist on commcell
-
-                if destination instance does not exist on commcell
     &#34;&#34;&#34;
 
     if sap_options is None:
@@ -1405,18 +1344,16 @@ if destination instance does not exist on commcell
     # check if client name is correct
     if destination_client is None:
         destination_client = self._agent_object._client_object.client_name
-        
 
     if isinstance(destination_client, Client):
         destination_client = destination_client
         
     elif isinstance(destination_client, str):
         destination_client = Client(self._commcell_object, destination_client)
-        #print(destination_client)
     else:
         raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
 
-    dest_agent = Agent(destination_client, &#39;sap for oracle&#39;,&#39;61&#39;)
+    dest_agent = Agent(destination_client, &#39;sap for oracle&#39;, &#39;61&#39;)
 
     # check if instance name is correct
     if destination_instance is None:
@@ -1430,7 +1367,7 @@ if destination instance does not exist on commcell
         raise SDKException(&#39;Instance&#39;, &#39;101&#39;)
     sap_options[&#34;destination_client&#34;] = destination_client.client_name
     sap_options[&#34;destination_instance&#34;] = destination_instance.instance_name
-    #sap_options[&#34;copyPrecedence&#34;] = sap_options.get(&#34;copyPrecedence&#34;, &#34;0&#34;)
+    # sap_options[&#34;copyPrecedence&#34;] = sap_options.get(&#34;copyPrecedence&#34;, &#34;0&#34;)
 
     # prepare and execute
     request_json = self._restore_saporacle_request_json(sap_options)

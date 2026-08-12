@@ -28,7 +28,8 @@
 <p>XenInstance: Derived class from VirtualServer
 Base class, representing a
 Xen Server instance, and to perform operations on that instance</p>
-<h2 id="xeninstance">Xeninstance</h2>
+<p>Xeninstance
+-----=</p>
 <p><strong>init</strong>(agent_object,instance_name,instance_id)
 &ndash; initialize object of FusionCompute
 Instance object associated with the
@@ -45,7 +46,7 @@ to set Xen Specific instance properties</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/xen.py#L1-L112" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/xen.py#L1-L171" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -91,18 +92,40 @@ XenInstance:
 
 from ..vsinstance import VirtualServerInstance
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ...agent import Agent
+
 
 class Xen(VirtualServerInstance):
-    &#34;&#34;&#34;Class for representing an Xen Server instance of the Virtual Server agent.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents a Xen Server instance managed by the Virtual Server agent.
 
-    def __init__(self, agent, instance_name, instance_id=None):
-        &#34;&#34;&#34;Initialize the Instance object for the given Virtual Server instance.
+    This class encapsulates the properties and behaviors specific to a Xen Server
+    instance, providing mechanisms to retrieve and manage instance properties,
+    as well as access and modify server host and server names. It is designed to
+    integrate with the broader Virtual Server agent framework.
 
-            Args:
-                class_object (agent_object,instance_name,instance_id)  --  instance of the
-                                                                            Agent class,
-                                                                            instance name,
-                                                                            instance id
+    Key Features:
+        - Initialization with agent, instance name, and instance ID
+        - Retrieval of instance properties and their JSON representation
+        - Access and modification of the server host name via property
+        - Access to the server name via property
+
+    &#34;&#34;&#34;
+
+    def __init__(self, agent: &#39;Agent&#39;, instance_name: str, instance_id: str = None) -&gt; None:
+        &#34;&#34;&#34;Initialize the Xen Instance object for a given Virtual Server instance.
+
+        Args:
+            agent: An instance of the Agent class representing the associated agent.
+            instance_name: The name of the virtual server instance.
+            instance_id: Optional; the unique identifier for the instance. If not provided, a default may be used.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(client_object, &#39;Virtual Server&#39;)
+            &gt;&gt;&gt; xen_instance = Xen(agent, &#39;XenInstance01&#39;, &#39;12345&#39;)
+            &gt;&gt;&gt; # The Xen instance is now initialized and ready for further operations
 
         &#34;&#34;&#34;
         super(Xen, self).__init__(agent, instance_name, instance_id)
@@ -110,24 +133,24 @@ class Xen(VirtualServerInstance):
         self._server_name = None
         self._server_host_name = None
 
-    def _get_instance_properties(self):
-        &#34;&#34;&#34;
-        Get the properties of this instance
+    def _get_instance_properties(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve and update the properties of the current Xen instance.
 
-        Raise:
-            SDK Exception:
-                if response is not empty
-                if response is not success
+        This method fetches the latest properties for the Xen instance and updates the internal state accordingly.
+
+        Raises:
+            SDKException: If the response is not empty or the response indicates failure.
+
         &#34;&#34;&#34;
 
         super(Xen, self)._get_instance_properties()
         self._server_name = self._instance.get(&#39;clientName&#39;, &#39;&#39;)
 
-    def _get_instance_properties_json(self):
-        &#34;&#34;&#34;get the all instance related properties of this subclient.
+    def _get_instance_properties_json(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve all instance-related properties for this subclient as a dictionary.
 
-          Returns:
-               dict - all instance properties put inside a dict
+        Returns:
+            dict: A dictionary containing all properties associated with this instance.
 
         &#34;&#34;&#34;
         instance_json = {
@@ -145,19 +168,49 @@ class Xen(VirtualServerInstance):
         return instance_json
 
     @property
-    def server_host_name(self):
-        &#34;&#34;&#34;Getter for server_host_name property&#34;&#34;&#34;
+    def server_host_name(self) -&gt; str:
+        &#34;&#34;&#34;Get the host name of the Xen server.
+
+        Returns:
+            The host name of the Xen server as a string.
+
+        Example:
+            &gt;&gt;&gt; xen = Xen()
+            &gt;&gt;&gt; host_name = xen.server_host_name  # Access the server host name property
+            &gt;&gt;&gt; print(f&#34;Xen server host name: {host_name}&#34;)
+
+        &#34;&#34;&#34;
         # This property will be set during TC execution. 
         return self._server_host_name
 
     @server_host_name.setter
-    def server_host_name(self, value):
-        &#34;&#34;&#34;Setter for server_host_name property&#34;&#34;&#34;
+    def server_host_name(self, value: str) -&gt; None:
+        &#34;&#34;&#34;Set the Xen server host name.
+
+        Args:
+            value: The host name to assign to the Xen server.
+
+        Example:
+            &gt;&gt;&gt; xen = Xen()
+            &gt;&gt;&gt; xen.server_host_name = &#34;xen-server-01.example.com&#34;  # Use assignment for property setter
+            &gt;&gt;&gt; # The Xen server host name is now set to &#34;xen-server-01.example.com&#34;
+
+        &#34;&#34;&#34;
         self._server_host_name = value
 
     @property
-    def server_name(self):
-        &#34;&#34;&#34;Getter for the server_name property&#34;&#34;&#34;
+    def server_name(self) -&gt; str:
+        &#34;&#34;&#34;Get the name of the Xen server associated with this instance.
+
+        Returns:
+            The server name as a string.
+
+        Example:
+            &gt;&gt;&gt; xen = Xen()
+            &gt;&gt;&gt; name = xen.server_name  # Use dot notation to access the property
+            &gt;&gt;&gt; print(f&#34;Xen server name: {name}&#34;)
+
+        &#34;&#34;&#34;
         return self._server_name</code></pre>
 </details>
 </section>
@@ -172,34 +225,70 @@ class Xen(VirtualServerInstance):
 <dl>
 <dt id="cvpysdk.instances.virtualserver.xen.Xen"><code class="flex name class">
 <span>class <span class="ident">Xen</span></span>
-<span>(</span><span>agent, instance_name, instance_id=None)</span>
+<span>(</span><span>agent: Agent, instance_name: str, instance_id: str = None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for representing an Xen Server instance of the Virtual Server agent.</p>
-<p>Initialize the Instance object for the given Virtual Server instance.</p>
-<h2 id="args">Args</h2>
-<p>class_object (agent_object,instance_name,instance_id)
-&ndash;
-instance of the
-Agent class,
-instance name,
-instance id</p></div>
+<div class="desc"><p>Represents a Xen Server instance managed by the Virtual Server agent.</p>
+<p>This class encapsulates the properties and behaviors specific to a Xen Server
+instance, providing mechanisms to retrieve and manage instance properties,
+as well as access and modify server host and server names. It is designed to
+integrate with the broader Virtual Server agent framework.</p>
+<p>Key Features:
+- Initialization with agent, instance name, and instance ID
+- Retrieval of instance properties and their JSON representation
+- Access and modification of the server host name via property
+- Access to the server name via property</p>
+<p>Initialize the Xen Instance object for a given Virtual Server instance.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>agent</code></strong></dt>
+<dd>An instance of the Agent class representing the associated agent.</dd>
+<dt><strong><code>instance_name</code></strong></dt>
+<dd>The name of the virtual server instance.</dd>
+<dt><strong><code>instance_id</code></strong></dt>
+<dd>Optional; the unique identifier for the instance. If not provided, a default may be used.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; agent = Agent(client_object, 'Virtual Server')
+&gt;&gt;&gt; xen_instance = Xen(agent, 'XenInstance01', '12345')
+&gt;&gt;&gt; # The Xen instance is now initialized and ready for further operations
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/xen.py#L46-L112" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/xen.py#L50-L171" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Xen(VirtualServerInstance):
-    &#34;&#34;&#34;Class for representing an Xen Server instance of the Virtual Server agent.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents a Xen Server instance managed by the Virtual Server agent.
 
-    def __init__(self, agent, instance_name, instance_id=None):
-        &#34;&#34;&#34;Initialize the Instance object for the given Virtual Server instance.
+    This class encapsulates the properties and behaviors specific to a Xen Server
+    instance, providing mechanisms to retrieve and manage instance properties,
+    as well as access and modify server host and server names. It is designed to
+    integrate with the broader Virtual Server agent framework.
 
-            Args:
-                class_object (agent_object,instance_name,instance_id)  --  instance of the
-                                                                            Agent class,
-                                                                            instance name,
-                                                                            instance id
+    Key Features:
+        - Initialization with agent, instance name, and instance ID
+        - Retrieval of instance properties and their JSON representation
+        - Access and modification of the server host name via property
+        - Access to the server name via property
+
+    &#34;&#34;&#34;
+
+    def __init__(self, agent: &#39;Agent&#39;, instance_name: str, instance_id: str = None) -&gt; None:
+        &#34;&#34;&#34;Initialize the Xen Instance object for a given Virtual Server instance.
+
+        Args:
+            agent: An instance of the Agent class representing the associated agent.
+            instance_name: The name of the virtual server instance.
+            instance_id: Optional; the unique identifier for the instance. If not provided, a default may be used.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(client_object, &#39;Virtual Server&#39;)
+            &gt;&gt;&gt; xen_instance = Xen(agent, &#39;XenInstance01&#39;, &#39;12345&#39;)
+            &gt;&gt;&gt; # The Xen instance is now initialized and ready for further operations
 
         &#34;&#34;&#34;
         super(Xen, self).__init__(agent, instance_name, instance_id)
@@ -207,24 +296,24 @@ instance id</p></div>
         self._server_name = None
         self._server_host_name = None
 
-    def _get_instance_properties(self):
-        &#34;&#34;&#34;
-        Get the properties of this instance
+    def _get_instance_properties(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve and update the properties of the current Xen instance.
 
-        Raise:
-            SDK Exception:
-                if response is not empty
-                if response is not success
+        This method fetches the latest properties for the Xen instance and updates the internal state accordingly.
+
+        Raises:
+            SDKException: If the response is not empty or the response indicates failure.
+
         &#34;&#34;&#34;
 
         super(Xen, self)._get_instance_properties()
         self._server_name = self._instance.get(&#39;clientName&#39;, &#39;&#39;)
 
-    def _get_instance_properties_json(self):
-        &#34;&#34;&#34;get the all instance related properties of this subclient.
+    def _get_instance_properties_json(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve all instance-related properties for this subclient as a dictionary.
 
-          Returns:
-               dict - all instance properties put inside a dict
+        Returns:
+            dict: A dictionary containing all properties associated with this instance.
 
         &#34;&#34;&#34;
         instance_json = {
@@ -242,19 +331,49 @@ instance id</p></div>
         return instance_json
 
     @property
-    def server_host_name(self):
-        &#34;&#34;&#34;Getter for server_host_name property&#34;&#34;&#34;
+    def server_host_name(self) -&gt; str:
+        &#34;&#34;&#34;Get the host name of the Xen server.
+
+        Returns:
+            The host name of the Xen server as a string.
+
+        Example:
+            &gt;&gt;&gt; xen = Xen()
+            &gt;&gt;&gt; host_name = xen.server_host_name  # Access the server host name property
+            &gt;&gt;&gt; print(f&#34;Xen server host name: {host_name}&#34;)
+
+        &#34;&#34;&#34;
         # This property will be set during TC execution. 
         return self._server_host_name
 
     @server_host_name.setter
-    def server_host_name(self, value):
-        &#34;&#34;&#34;Setter for server_host_name property&#34;&#34;&#34;
+    def server_host_name(self, value: str) -&gt; None:
+        &#34;&#34;&#34;Set the Xen server host name.
+
+        Args:
+            value: The host name to assign to the Xen server.
+
+        Example:
+            &gt;&gt;&gt; xen = Xen()
+            &gt;&gt;&gt; xen.server_host_name = &#34;xen-server-01.example.com&#34;  # Use assignment for property setter
+            &gt;&gt;&gt; # The Xen server host name is now set to &#34;xen-server-01.example.com&#34;
+
+        &#34;&#34;&#34;
         self._server_host_name = value
 
     @property
-    def server_name(self):
-        &#34;&#34;&#34;Getter for the server_name property&#34;&#34;&#34;
+    def server_name(self) -&gt; str:
+        &#34;&#34;&#34;Get the name of the Xen server associated with this instance.
+
+        Returns:
+            The server name as a string.
+
+        Example:
+            &gt;&gt;&gt; xen = Xen()
+            &gt;&gt;&gt; name = xen.server_name  # Use dot notation to access the property
+            &gt;&gt;&gt; print(f&#34;Xen server name: {name}&#34;)
+
+        &#34;&#34;&#34;
         return self._server_name</code></pre>
 </details>
 <h3>Ancestors</h3>
@@ -264,32 +383,70 @@ instance id</p></div>
 </ul>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.instances.virtualserver.xen.Xen.server_host_name"><code class="name">var <span class="ident">server_host_name</span></code></dt>
+<dt id="cvpysdk.instances.virtualserver.xen.Xen.server_host_name"><code class="name">var <span class="ident">server_host_name</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Getter for server_host_name property</p></div>
+<div class="desc"><p>Get the host name of the Xen server.</p>
+<p>Returns
+-----=
+The host name of the Xen server as a string.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; xen = Xen()
+&gt;&gt;&gt; host_name = xen.server_host_name  # Access the server host name property
+&gt;&gt;&gt; print(f&quot;Xen server host name: {host_name}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/xen.py#L98-L102" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/xen.py#L124-L139" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def server_host_name(self):
-    &#34;&#34;&#34;Getter for server_host_name property&#34;&#34;&#34;
+def server_host_name(self) -&gt; str:
+    &#34;&#34;&#34;Get the host name of the Xen server.
+
+    Returns:
+        The host name of the Xen server as a string.
+
+    Example:
+        &gt;&gt;&gt; xen = Xen()
+        &gt;&gt;&gt; host_name = xen.server_host_name  # Access the server host name property
+        &gt;&gt;&gt; print(f&#34;Xen server host name: {host_name}&#34;)
+
+    &#34;&#34;&#34;
     # This property will be set during TC execution. 
     return self._server_host_name</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.virtualserver.xen.Xen.server_name"><code class="name">var <span class="ident">server_name</span></code></dt>
+<dt id="cvpysdk.instances.virtualserver.xen.Xen.server_name"><code class="name">var <span class="ident">server_name</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Getter for the server_name property</p></div>
+<div class="desc"><p>Get the name of the Xen server associated with this instance.</p>
+<p>Returns
+-----=
+The server name as a string.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; xen = Xen()
+&gt;&gt;&gt; name = xen.server_name  # Use dot notation to access the property
+&gt;&gt;&gt; print(f&quot;Xen server name: {name}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/xen.py#L109-L112" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/xen.py#L157-L171" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def server_name(self):
-    &#34;&#34;&#34;Getter for the server_name property&#34;&#34;&#34;
+def server_name(self) -&gt; str:
+    &#34;&#34;&#34;Get the name of the Xen server associated with this instance.
+
+    Returns:
+        The server name as a string.
+
+    Example:
+        &gt;&gt;&gt; xen = Xen()
+        &gt;&gt;&gt; name = xen.server_name  # Use dot notation to access the property
+        &gt;&gt;&gt; print(f&#34;Xen server name: {name}&#34;)
+
+    &#34;&#34;&#34;
     return self._server_name</code></pre>
 </details>
 </dd>

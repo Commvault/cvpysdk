@@ -38,7 +38,7 @@ install_software                 --  Installs the features selected on the machi
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/deployment/install.py#L1-L757" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/deployment/install.py#L1-L756" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -79,19 +79,32 @@ from ..job import Job
 from ..exception import SDKException
 from ..deployment.deploymentconstants import UnixDownloadFeatures, WindowsDownloadFeatures, InstallUpdateOptions
 from ..schedules import SchedulePattern, Schedules
+from typing import Optional, List, Dict, Any, Union, TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from ..commcell import Commcell
 
 class Install(object):
-    &#34;&#34;&#34;&#34;class for installing software packages&#34;&#34;&#34;
+    &#34;&#34;&#34;class for installing software packages
 
-    def __init__(self, commcell_object):
+    Attributes:
+        commcell_object (object): Instance of the Commcell class.
+        _services (dict): Dictionary of Commcell services.
+        _cvpysdk_object (object): Instance of the CVPySDK class.
+    
+    Usage:
+        install_obj = Install(commcell_object)
+    &#34;&#34;&#34;
+
+
+    def __init__(self, commcell_object: &#39;Commcell&#39;) -&gt; None:
         &#34;&#34;&#34;Initialize object of the Install class.
 
-            Args:
-                commcell_object (object)  --  instance of the Commcell class
+        Args:
+            commcell_object (object): instance of the Commcell class
 
-            Returns:
-                object - instance of the Install class
+        Returns:
+            Install: instance of the Install class
 
         &#34;&#34;&#34;
 
@@ -99,43 +112,32 @@ class Install(object):
         self._services = commcell_object._services
         self._cvpysdk_object = commcell_object._cvpysdk_object
 
+
     def repair_software(self,
-                        client=None,
-                        client_group=None,
-                        username=None,
-                        password=None,
-                        reboot_client=False):
+                        client: Optional[str] = None,
+                        client_group: Optional[str] = None,
+                        username: Optional[str] = None,
+                        password: Optional[str] = None,
+                        reboot_client: bool = False) -&gt; Job:
         &#34;&#34;&#34;triggers Repair of the software for a specified client machine
 
-                Args:
-                    client (str)               -- Client machine to re-install service pack on
+        Args:
+            client (str, optional): Client machine to re-install service pack on. Defaults to None.
+            client_group (str, optional): Client group to re-install service pack on (eg : &#39;Media Agent&#39;). Defaults to None.
+            username (str, optional): username of the machine to re-install features on. Defaults to None.
+            password (str, optional): base64 encoded password. Defaults to None.
+            reboot_client (bool, optional): boolean to specify whether to reboot the client or not. Defaults to False.
 
-                    client_group (str)         -- Client group to re-install service pack on
-                                                            (eg : &#39;Media Agent&#39;)
+        Returns:
+            Job: instance of the Job class for this download job
 
-                    username    (str)               -- username of the machine to re-install features on
+        Raises:
+            SDKException:
+                if re-install job failed
 
-                        default : None
+                if response is empty
 
-                    password    (str)               -- base64 encoded password
-
-                        default : None
-
-                    reboot_client (bool)            -- boolean to specify whether to reboot the client
-                    or not
-
-                        default: False
-
-                Returns:
-                    object - instance of the Job class for this download job
-
-                Raises:
-                        SDKException:
-                        if re-install job failed
-
-                        if response is empty
-
-                        if response is not success
+                if response is not success
 
         **NOTE:** repair_software can be used for client/ client_group not both; When both inputs are given only the
                   client computer will be repaired
@@ -234,73 +236,57 @@ class Install(object):
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;)
 
+
     def push_servicepack_and_hotfix(
             self,
-            client_computers=None,
-            client_computer_groups=None,
-            all_client_computers=False,
-            all_client_computer_groups=False,
-            reboot_client=False,
-            run_db_maintenance=True,
-            maintenance_release_only=False,
-            **kwargs):
+            client_computers: Optional[List[str]] = None,
+            client_computer_groups: Optional[List[str]] = None,
+            all_client_computers: bool = False,
+            all_client_computer_groups: bool = False,
+            reboot_client: bool = False,
+            run_db_maintenance: bool = True,
+            maintenance_release_only: bool = False,
+            **kwargs: Dict[str, Any]) -&gt; Union[Job, Schedules]:
         &#34;&#34;&#34;Installs the software packages on the clients
 
         Args:
-            client_computers (list)               -- Client machines to install service pack on
-
-            client_computer_groups (list)         -- Client groups to install service pack on
-
-            all_client_computers (bool)           -- boolean to specify whether to install on
-            all client computers or not
-
-                default: False
-
-            all_client _computer_groups (bool)    -- boolean to specify whether to install on all
-            client computer groups or not
-
-                default: False
-
-            reboot_client (bool)                  -- boolean to specify whether to reboot the
-            client or not
-
-                default: False
-
-            run_db_maintenance (bool)             -- boolean to specify whether to run db
-            maintenance not
-
-                default: True
-
-            maintenance_release_only (bool)       -- for clients of feature releases lesser than CS, this option
-            maintenance release of that client FR, if present in cache
-
-            **kwargs: (dict) -- Key value pairs for supporting conditional initializations
+            client_computers (list, optional): Client machines to install service pack on. Defaults to None.
+            client_computer_groups (list, optional): Client groups to install service pack on. Defaults to None.
+            all_client_computers (bool, optional): boolean to specify whether to install on all client computers or not. Defaults to False.
+            all_client_computer_groups (bool, optional): boolean to specify whether to install on all client computer groups or not. Defaults to False.
+            reboot_client (bool, optional): boolean to specify whether to reboot the client or not. Defaults to False.
+            run_db_maintenance (bool, optional): boolean to specify whether to run db maintenance not. Defaults to True.
+            maintenance_release_only (bool, optional): for clients of feature releases lesser than CS, this option maintenance release of that client FR, if present in cache. Defaults to False.
+            **kwargs (dict): Key value pairs for supporting conditional initializations
                 Supported -
                 schedule_pattern        (dict)      -- Request JSON for scheduling the operation
                 install_update_options  (int)       -- Refer InstallUpdateOptions from deploymentconstants module
+                cs_version              (int)       -- cs sp version should be passed if push install is triggered
+                                                        by tenant admin
 
         Returns:
-            object - instance of the Job/Task class for this download
+            Job or Schedules: instance of the Job/Schedules class for this download
 
         Raises:
-                SDKException:
-                    if schedule is not of type dictionary
+            SDKException:
+                if schedule is not of type dictionary
 
-                    if Download job failed
+                if Download job failed
 
-                    if response is empty
+                if response is empty
 
-                    if response is not success
+                if response is not success
 
-                    if another download job is already running
+                if another download job is already running
 
         **NOTE:** push_serivcepack_and_hotfixes cannot be used for revision upgrades
 
         &#34;&#34;&#34;
-        version = self.commcell_object.commserv_version
+        version = int(kwargs.get(&#34;cs_version&#34;, self.commcell_object.commserv_version))
         selected_clients = []
         selected_client_groups = []
         schedule_pattern = kwargs.get(&#39;schedule_pattern&#39;, None)
+        direct_upgrade = version &gt;= 36 and not schedule_pattern
         if schedule_pattern:
             if not isinstance(schedule_pattern, dict):
                 raise SDKException(&#34;Install&#34;, &#34;101&#34;)
@@ -321,7 +307,7 @@ class Install(object):
             client_computers = [x.lower() for x in client_computers]
             if not set(client_computers).issubset(commcell_client_computers):
                 raise SDKException(&#39;Install&#39;, &#39;102&#39;)
-            if version &gt;= 36:
+            if direct_upgrade:
                 for client in client_computers:
                     selected_clients.append({&#34;id&#34;: int(commcell_client_computers[client][&#39;id&#39;]),
                                             &#34;type&#34;: &#34;CLIENT_ENTITY&#34;})
@@ -333,7 +319,7 @@ class Install(object):
             if not set(client_computer_groups).issubset(commcell_client_computer_groups):
                 raise SDKException(&#39;Install&#39;, &#39;103&#39;)
 
-            if version &gt;= 36:
+            if direct_upgrade:
                 for client_group in client_computer_groups:
                     selected_client_groups.append({&#34;id&#34;: int(commcell_client_computer_groups[client_group]),
                                                     &#34;type&#34;: &#34;CLIENT_GROUP_ENTITY&#34;})
@@ -350,7 +336,7 @@ class Install(object):
             selected_client_groups = [{&#34;_type_&#34;: 27}]
 
         all_clients = selected_clients + selected_client_groups
-        if version &gt;= 36:
+        if direct_upgrade:
             request_json = {
                 &#34;rebootIfRequired&#34;: reboot_client,
                 &#34;runDBMaintenance&#34;: run_db_maintenance,
@@ -420,8 +406,8 @@ class Install(object):
                 adminOpts = request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;]
                 adminOpts[&#39;updateOption&#39;][&#39;installUpdateOptions&#39;] = install_update_options
 
-        method = &#39;PUT&#39; if version &gt;= 36 else &#39;POST&#39;
-        url = self._services[&#39;UPGRADE_SOFTWARE&#39;] if version &gt;= 36 else self._services[&#39;CREATE_TASK&#39;]
+        method = &#39;PUT&#39; if direct_upgrade else &#39;POST&#39;
+        url = self._services[&#39;UPGRADE_SOFTWARE&#39;] if direct_upgrade else self._services[&#39;CREATE_TASK&#39;]
 
         flag, response = self._cvpysdk_object.make_request(
             method, url, request_json
@@ -446,66 +432,49 @@ class Install(object):
 
     def install_software(
             self,
-            client_computers=None,
-            windows_features=None,
-            unix_features=None,
-            username=None,
-            password=None,
-            install_path=None,
-            log_file_loc=None,
-            client_group_name=None,
-            storage_policy_name=None,
-            sw_cache_client=None,
-            **kwargs):
+            client_computers: list = None,
+            windows_features: list = None,
+            unix_features: list = None,
+            username: str = None,
+            password: str = None,
+            install_path: str = None,
+            log_file_loc: str = None,
+            client_group_name: list = None,
+            storage_policy_name: str = None,
+            sw_cache_client: str = None,
+            **kwargs) -&gt; Job:
         &#34;&#34;&#34;
         Installs the features selected on the given machines
         Args:
-
             client_computers    (list)      -- list of hostnames/IP address to install the
-            features on
-
-                default : None
-
+                                                features on
+                                                default : None
             windows_features (list of enum) -- list of windows features to be installed
-
-                default : None
-
+                                                default : None
             unix_features (list of enum)    -- list of unix features to be installed
-
-                default : None
-
+                                                default : None
             username    (str)               -- username of the machine to install features on
-
-                default : None
-
+                                                default : None
             password    (str)               -- base64 encoded password
-
-                default : None
-
+                                                default : None
             install_path (str)              -- Install to a specified path on the client
-
-                 default : None
-
+                                                 default : None
             log_file_loc (str)              -- Install to a specified log path on the client
-
-                 default : None
-
+                                                 default : None
             client_group_name (list)        -- List of client groups for the client
-
-                 default : None
-
+                                                 default : None
             storage_policy_name (str)       -- Storage policy for the default subclient
-
-                 default : None
-
+                                                 default : None
             sw_cache_client (str)           -- Remote Cache Client Name/ Over-riding Software Cache
-
-                default : None (Use CS Cache by default)
-
+                                                default : None (Use CS Cache by default)
             **kwargs: (dict) -- Key value pairs for supporting conditional initializations
             Supported -
+            commserv_name (str) - Name of the CommServe (if user doesn&#39;t have view permission on CommServe)
             install_flags (dict) - dictionary of install flag values
             Ex : install_flags = {&#34;preferredIPFamily&#34;:2, &#34;install32Base&#34;:True}
+            ssh (dict) - dictionary for ssh key details for linux clients
+            Ex : ssh ={&#34;location&#34;: &#34;C:\\path&#34;, &#34;content&#34;: &#34;base64 encoded&#34;,
+                &#34;passphrase&#34;: &#34;base64 encoded passphrase if any&#34;} # Optional, include only if a passphrase is required}
 
             db2_logs_location (dict) - dictionary of db2 logs location
             Ex: db2_logs_location = {
@@ -566,7 +535,7 @@ class Install(object):
 
 
         Returns:
-                object - instance of the Job class for this install_software job
+                Job - instance of the Job class for this install_software job
 
         Raises:
             SDKException:
@@ -592,7 +561,7 @@ class Install(object):
                                 unix_features=None,
                                 username=&#39;username&#39;,
                                 password=&#39;password&#39;,
-                                install_path=&#39;C:\\Temp,
+                                install_path=&#39;C:\\Temp&#39;,
                                 log_file_loc=&#39;/var/log&#39;,
                                 client_group_name=[My_Servers],
                                 storage_policy_name=&#39;My_Storage_Policy&#39;,
@@ -602,6 +571,23 @@ class Install(object):
                     not both
 
         &#34;&#34;&#34;
+        commcell_name = kwargs.get(&#39;commserv_name&#39;)
+        if not commcell_name:
+            try:
+                commcell_name = self.commcell_object.commserv_name
+            except SDKException as err:
+                raise SDKException(
+                    &#39;Install&#39;,
+                    &#39;101&#39;,
+                    (
+                        &#39;Please ensure user has VIEW permission on the CommServe or provide the commserv_name parameter explicitly. &#39;
+                        f&#39;Original error: {err}&#39;
+                    )
+                ) from err
+        elif not isinstance(commcell_name, str) or not commcell_name.strip():
+            raise SDKException(
+                &#39;Install&#39;, &#39;101&#39;, &#39;Invalid CommServe name provided. CommServe name cannot be empty.&#39;)
+
         db2_install = False
         ma_install = False
         if windows_features:
@@ -626,8 +612,6 @@ class Install(object):
             raise SDKException(&#39;Install&#39;, &#39;105&#39;)
 
         if client_computers:
-            commcell_name = self.commcell_object.commserv_name
-
             client_details = []
             for client_name in client_computers:
                 client_details.append(
@@ -654,6 +638,8 @@ class Install(object):
         index_cache_location = kwargs.get(&#39;index_cache_location&#39;, None)
         firewall_inputs = kwargs.get(&#39;firewall_inputs&#39;, {})
         web_console_input = kwargs.get(&#39;webconsole_inputs&#39;, {})
+        dataDirectory = kwargs.get(&#34;dataDirectory&#34;, None)
+        ssh = kwargs.get(&#34;ssh&#34;, None)
 
         request_json = {
             &#34;taskInfo&#34;: {
@@ -684,8 +670,7 @@ class Install(object):
                                     &#34;installerOption&#34;: {
                                         &#34;requestType&#34;: 0,
                                         &#34;Operationtype&#34;: 0,
-                                        &#34;CommServeHostName&#34;:
-                                            self.commcell_object.commserv_name,
+                                        &#34;CommServeHostName&#34;: commcell_name,
                                         &#34;RemoteClient&#34;: False,
                                         &#34;installFlags&#34;: {
                                             &#34;allowMultipleInstances&#34;: kwargs.get(&#39;allowMultipleInstances&#39;, False),
@@ -700,6 +685,7 @@ class Install(object):
                                             &#34;ignoreJobsRunning&#34;: False,
                                             &#34;forceReboot&#34;: False,
                                             &#34;overrideClientInfo&#34;: True,
+                                            &#34;dataDirectory&#34;: dataDirectory if dataDirectory is not None else &#34;&#34;,
                                             &#34;preferredIPFamily&#34;: install_flags.get(&#39;preferredIPFamily&#39;,
                                                                                    1) if install_flags else 1,
                                             &#34;firewallInstall&#34;: {
@@ -749,7 +735,7 @@ class Install(object):
                                     },
                                     &#34;clientDetails&#34;: client_details,
                                     &#34;clientAuthForJob&#34;: {
-                                        &#34;password&#34;: password,
+                                        &#34;password&#34;: password if password else &#34;&#34;,
                                         &#34;userName&#34;: username
                                     }
                                 },
@@ -762,6 +748,19 @@ class Install(object):
                 ]
             }
         }
+
+        if unix_features and (ssh is not None):
+            request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;adminOpts&#34;][&#34;clientInstallOption&#34;][
+                &#34;useSSHKey&#34;] = True
+            request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;adminOpts&#34;][&#34;clientInstallOption&#34;][
+                &#34;sshKeyFileLocation&#34;] = ssh[&#34;location&#34;]
+            request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;adminOpts&#34;][&#34;clientInstallOption&#34;][
+                &#34;sshKeyFileContent&#34;] = ssh[&#34;content&#34;]
+            if ssh.get(&#34;passphrase&#34;):
+                request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;adminOpts&#34;][&#34;clientInstallOption&#34;][
+                    &#34;useSSHKeyPassphrase&#34;] = True
+                request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;adminOpts&#34;][&#34;clientInstallOption&#34;][
+                    &#34;sshKeyFilePassphrase&#34;] = {&#34;password&#34;: ssh[&#34;passphrase&#34;]}
 
         if db2_install and db2_logs:
             request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;adminOpts&#34;][&#34;clientInstallOption&#34;][&#34;installerOption&#34;][
@@ -810,33 +809,60 @@ class Install(object):
 <dl>
 <dt id="cvpysdk.deployment.install.Install"><code class="flex name class">
 <span>class <span class="ident">Install</span></span>
-<span>(</span><span>commcell_object)</span>
+<span>(</span><span>commcell_object: Commcell)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>"class for installing software packages</p>
+<div class="desc"><p>class for installing software packages</p>
+<dl>
+<dt>Attributes</dt>
+<dt>-----=</dt>
+<dt><strong><code>commcell_object</code></strong> :&ensp;<code>object</code></dt>
+<dd>Instance of the Commcell class.</dd>
+<dt><strong><code>_services</code></strong> :&ensp;<code>dict</code></dt>
+<dd>Dictionary of Commcell services.</dd>
+<dt><strong><code>_cvpysdk_object</code></strong> :&ensp;<code>object</code></dt>
+<dd>Instance of the CVPySDK class.</dd>
+</dl>
+<p>Usage
+-----=
+install_obj = Install(commcell_object)</p>
 <p>Initialize object of the Install class.</p>
-<h2 id="args">Args</h2>
-<p>commcell_object (object)
-&ndash;
-instance of the Commcell class</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Install class</p></div>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>commcell_object</code></strong> :&ensp;<code>object</code></dt>
+<dd>instance of the Commcell class</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code><a title="cvpysdk.deployment.install.Install" href="#cvpysdk.deployment.install.Install">Install</a></code></dt>
+<dd>instance of the Install class</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/deployment/install.py#L42-L757" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/deployment/install.py#L45-L756" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Install(object):
-    &#34;&#34;&#34;&#34;class for installing software packages&#34;&#34;&#34;
+    &#34;&#34;&#34;class for installing software packages
 
-    def __init__(self, commcell_object):
+    Attributes:
+        commcell_object (object): Instance of the Commcell class.
+        _services (dict): Dictionary of Commcell services.
+        _cvpysdk_object (object): Instance of the CVPySDK class.
+    
+    Usage:
+        install_obj = Install(commcell_object)
+    &#34;&#34;&#34;
+
+
+    def __init__(self, commcell_object: &#39;Commcell&#39;) -&gt; None:
         &#34;&#34;&#34;Initialize object of the Install class.
 
-            Args:
-                commcell_object (object)  --  instance of the Commcell class
+        Args:
+            commcell_object (object): instance of the Commcell class
 
-            Returns:
-                object - instance of the Install class
+        Returns:
+            Install: instance of the Install class
 
         &#34;&#34;&#34;
 
@@ -844,43 +870,32 @@ instance of the Commcell class</p>
         self._services = commcell_object._services
         self._cvpysdk_object = commcell_object._cvpysdk_object
 
+
     def repair_software(self,
-                        client=None,
-                        client_group=None,
-                        username=None,
-                        password=None,
-                        reboot_client=False):
+                        client: Optional[str] = None,
+                        client_group: Optional[str] = None,
+                        username: Optional[str] = None,
+                        password: Optional[str] = None,
+                        reboot_client: bool = False) -&gt; Job:
         &#34;&#34;&#34;triggers Repair of the software for a specified client machine
 
-                Args:
-                    client (str)               -- Client machine to re-install service pack on
+        Args:
+            client (str, optional): Client machine to re-install service pack on. Defaults to None.
+            client_group (str, optional): Client group to re-install service pack on (eg : &#39;Media Agent&#39;). Defaults to None.
+            username (str, optional): username of the machine to re-install features on. Defaults to None.
+            password (str, optional): base64 encoded password. Defaults to None.
+            reboot_client (bool, optional): boolean to specify whether to reboot the client or not. Defaults to False.
 
-                    client_group (str)         -- Client group to re-install service pack on
-                                                            (eg : &#39;Media Agent&#39;)
+        Returns:
+            Job: instance of the Job class for this download job
 
-                    username    (str)               -- username of the machine to re-install features on
+        Raises:
+            SDKException:
+                if re-install job failed
 
-                        default : None
+                if response is empty
 
-                    password    (str)               -- base64 encoded password
-
-                        default : None
-
-                    reboot_client (bool)            -- boolean to specify whether to reboot the client
-                    or not
-
-                        default: False
-
-                Returns:
-                    object - instance of the Job class for this download job
-
-                Raises:
-                        SDKException:
-                        if re-install job failed
-
-                        if response is empty
-
-                        if response is not success
+                if response is not success
 
         **NOTE:** repair_software can be used for client/ client_group not both; When both inputs are given only the
                   client computer will be repaired
@@ -979,73 +994,57 @@ instance of the Commcell class</p>
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;)
 
+
     def push_servicepack_and_hotfix(
             self,
-            client_computers=None,
-            client_computer_groups=None,
-            all_client_computers=False,
-            all_client_computer_groups=False,
-            reboot_client=False,
-            run_db_maintenance=True,
-            maintenance_release_only=False,
-            **kwargs):
+            client_computers: Optional[List[str]] = None,
+            client_computer_groups: Optional[List[str]] = None,
+            all_client_computers: bool = False,
+            all_client_computer_groups: bool = False,
+            reboot_client: bool = False,
+            run_db_maintenance: bool = True,
+            maintenance_release_only: bool = False,
+            **kwargs: Dict[str, Any]) -&gt; Union[Job, Schedules]:
         &#34;&#34;&#34;Installs the software packages on the clients
 
         Args:
-            client_computers (list)               -- Client machines to install service pack on
-
-            client_computer_groups (list)         -- Client groups to install service pack on
-
-            all_client_computers (bool)           -- boolean to specify whether to install on
-            all client computers or not
-
-                default: False
-
-            all_client _computer_groups (bool)    -- boolean to specify whether to install on all
-            client computer groups or not
-
-                default: False
-
-            reboot_client (bool)                  -- boolean to specify whether to reboot the
-            client or not
-
-                default: False
-
-            run_db_maintenance (bool)             -- boolean to specify whether to run db
-            maintenance not
-
-                default: True
-
-            maintenance_release_only (bool)       -- for clients of feature releases lesser than CS, this option
-            maintenance release of that client FR, if present in cache
-
-            **kwargs: (dict) -- Key value pairs for supporting conditional initializations
+            client_computers (list, optional): Client machines to install service pack on. Defaults to None.
+            client_computer_groups (list, optional): Client groups to install service pack on. Defaults to None.
+            all_client_computers (bool, optional): boolean to specify whether to install on all client computers or not. Defaults to False.
+            all_client_computer_groups (bool, optional): boolean to specify whether to install on all client computer groups or not. Defaults to False.
+            reboot_client (bool, optional): boolean to specify whether to reboot the client or not. Defaults to False.
+            run_db_maintenance (bool, optional): boolean to specify whether to run db maintenance not. Defaults to True.
+            maintenance_release_only (bool, optional): for clients of feature releases lesser than CS, this option maintenance release of that client FR, if present in cache. Defaults to False.
+            **kwargs (dict): Key value pairs for supporting conditional initializations
                 Supported -
                 schedule_pattern        (dict)      -- Request JSON for scheduling the operation
                 install_update_options  (int)       -- Refer InstallUpdateOptions from deploymentconstants module
+                cs_version              (int)       -- cs sp version should be passed if push install is triggered
+                                                        by tenant admin
 
         Returns:
-            object - instance of the Job/Task class for this download
+            Job or Schedules: instance of the Job/Schedules class for this download
 
         Raises:
-                SDKException:
-                    if schedule is not of type dictionary
+            SDKException:
+                if schedule is not of type dictionary
 
-                    if Download job failed
+                if Download job failed
 
-                    if response is empty
+                if response is empty
 
-                    if response is not success
+                if response is not success
 
-                    if another download job is already running
+                if another download job is already running
 
         **NOTE:** push_serivcepack_and_hotfixes cannot be used for revision upgrades
 
         &#34;&#34;&#34;
-        version = self.commcell_object.commserv_version
+        version = int(kwargs.get(&#34;cs_version&#34;, self.commcell_object.commserv_version))
         selected_clients = []
         selected_client_groups = []
         schedule_pattern = kwargs.get(&#39;schedule_pattern&#39;, None)
+        direct_upgrade = version &gt;= 36 and not schedule_pattern
         if schedule_pattern:
             if not isinstance(schedule_pattern, dict):
                 raise SDKException(&#34;Install&#34;, &#34;101&#34;)
@@ -1066,7 +1065,7 @@ instance of the Commcell class</p>
             client_computers = [x.lower() for x in client_computers]
             if not set(client_computers).issubset(commcell_client_computers):
                 raise SDKException(&#39;Install&#39;, &#39;102&#39;)
-            if version &gt;= 36:
+            if direct_upgrade:
                 for client in client_computers:
                     selected_clients.append({&#34;id&#34;: int(commcell_client_computers[client][&#39;id&#39;]),
                                             &#34;type&#34;: &#34;CLIENT_ENTITY&#34;})
@@ -1078,7 +1077,7 @@ instance of the Commcell class</p>
             if not set(client_computer_groups).issubset(commcell_client_computer_groups):
                 raise SDKException(&#39;Install&#39;, &#39;103&#39;)
 
-            if version &gt;= 36:
+            if direct_upgrade:
                 for client_group in client_computer_groups:
                     selected_client_groups.append({&#34;id&#34;: int(commcell_client_computer_groups[client_group]),
                                                     &#34;type&#34;: &#34;CLIENT_GROUP_ENTITY&#34;})
@@ -1095,7 +1094,7 @@ instance of the Commcell class</p>
             selected_client_groups = [{&#34;_type_&#34;: 27}]
 
         all_clients = selected_clients + selected_client_groups
-        if version &gt;= 36:
+        if direct_upgrade:
             request_json = {
                 &#34;rebootIfRequired&#34;: reboot_client,
                 &#34;runDBMaintenance&#34;: run_db_maintenance,
@@ -1165,8 +1164,8 @@ instance of the Commcell class</p>
                 adminOpts = request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;]
                 adminOpts[&#39;updateOption&#39;][&#39;installUpdateOptions&#39;] = install_update_options
 
-        method = &#39;PUT&#39; if version &gt;= 36 else &#39;POST&#39;
-        url = self._services[&#39;UPGRADE_SOFTWARE&#39;] if version &gt;= 36 else self._services[&#39;CREATE_TASK&#39;]
+        method = &#39;PUT&#39; if direct_upgrade else &#39;POST&#39;
+        url = self._services[&#39;UPGRADE_SOFTWARE&#39;] if direct_upgrade else self._services[&#39;CREATE_TASK&#39;]
 
         flag, response = self._cvpysdk_object.make_request(
             method, url, request_json
@@ -1191,66 +1190,49 @@ instance of the Commcell class</p>
 
     def install_software(
             self,
-            client_computers=None,
-            windows_features=None,
-            unix_features=None,
-            username=None,
-            password=None,
-            install_path=None,
-            log_file_loc=None,
-            client_group_name=None,
-            storage_policy_name=None,
-            sw_cache_client=None,
-            **kwargs):
+            client_computers: list = None,
+            windows_features: list = None,
+            unix_features: list = None,
+            username: str = None,
+            password: str = None,
+            install_path: str = None,
+            log_file_loc: str = None,
+            client_group_name: list = None,
+            storage_policy_name: str = None,
+            sw_cache_client: str = None,
+            **kwargs) -&gt; Job:
         &#34;&#34;&#34;
         Installs the features selected on the given machines
         Args:
-
             client_computers    (list)      -- list of hostnames/IP address to install the
-            features on
-
-                default : None
-
+                                                features on
+                                                default : None
             windows_features (list of enum) -- list of windows features to be installed
-
-                default : None
-
+                                                default : None
             unix_features (list of enum)    -- list of unix features to be installed
-
-                default : None
-
+                                                default : None
             username    (str)               -- username of the machine to install features on
-
-                default : None
-
+                                                default : None
             password    (str)               -- base64 encoded password
-
-                default : None
-
+                                                default : None
             install_path (str)              -- Install to a specified path on the client
-
-                 default : None
-
+                                                 default : None
             log_file_loc (str)              -- Install to a specified log path on the client
-
-                 default : None
-
+                                                 default : None
             client_group_name (list)        -- List of client groups for the client
-
-                 default : None
-
+                                                 default : None
             storage_policy_name (str)       -- Storage policy for the default subclient
-
-                 default : None
-
+                                                 default : None
             sw_cache_client (str)           -- Remote Cache Client Name/ Over-riding Software Cache
-
-                default : None (Use CS Cache by default)
-
+                                                default : None (Use CS Cache by default)
             **kwargs: (dict) -- Key value pairs for supporting conditional initializations
             Supported -
+            commserv_name (str) - Name of the CommServe (if user doesn&#39;t have view permission on CommServe)
             install_flags (dict) - dictionary of install flag values
             Ex : install_flags = {&#34;preferredIPFamily&#34;:2, &#34;install32Base&#34;:True}
+            ssh (dict) - dictionary for ssh key details for linux clients
+            Ex : ssh ={&#34;location&#34;: &#34;C:\\path&#34;, &#34;content&#34;: &#34;base64 encoded&#34;,
+                &#34;passphrase&#34;: &#34;base64 encoded passphrase if any&#34;} # Optional, include only if a passphrase is required}
 
             db2_logs_location (dict) - dictionary of db2 logs location
             Ex: db2_logs_location = {
@@ -1311,7 +1293,7 @@ instance of the Commcell class</p>
 
 
         Returns:
-                object - instance of the Job class for this install_software job
+                Job - instance of the Job class for this install_software job
 
         Raises:
             SDKException:
@@ -1337,7 +1319,7 @@ instance of the Commcell class</p>
                                 unix_features=None,
                                 username=&#39;username&#39;,
                                 password=&#39;password&#39;,
-                                install_path=&#39;C:\\Temp,
+                                install_path=&#39;C:\\Temp&#39;,
                                 log_file_loc=&#39;/var/log&#39;,
                                 client_group_name=[My_Servers],
                                 storage_policy_name=&#39;My_Storage_Policy&#39;,
@@ -1347,6 +1329,23 @@ instance of the Commcell class</p>
                     not both
 
         &#34;&#34;&#34;
+        commcell_name = kwargs.get(&#39;commserv_name&#39;)
+        if not commcell_name:
+            try:
+                commcell_name = self.commcell_object.commserv_name
+            except SDKException as err:
+                raise SDKException(
+                    &#39;Install&#39;,
+                    &#39;101&#39;,
+                    (
+                        &#39;Please ensure user has VIEW permission on the CommServe or provide the commserv_name parameter explicitly. &#39;
+                        f&#39;Original error: {err}&#39;
+                    )
+                ) from err
+        elif not isinstance(commcell_name, str) or not commcell_name.strip():
+            raise SDKException(
+                &#39;Install&#39;, &#39;101&#39;, &#39;Invalid CommServe name provided. CommServe name cannot be empty.&#39;)
+
         db2_install = False
         ma_install = False
         if windows_features:
@@ -1371,8 +1370,6 @@ instance of the Commcell class</p>
             raise SDKException(&#39;Install&#39;, &#39;105&#39;)
 
         if client_computers:
-            commcell_name = self.commcell_object.commserv_name
-
             client_details = []
             for client_name in client_computers:
                 client_details.append(
@@ -1399,6 +1396,8 @@ instance of the Commcell class</p>
         index_cache_location = kwargs.get(&#39;index_cache_location&#39;, None)
         firewall_inputs = kwargs.get(&#39;firewall_inputs&#39;, {})
         web_console_input = kwargs.get(&#39;webconsole_inputs&#39;, {})
+        dataDirectory = kwargs.get(&#34;dataDirectory&#34;, None)
+        ssh = kwargs.get(&#34;ssh&#34;, None)
 
         request_json = {
             &#34;taskInfo&#34;: {
@@ -1429,8 +1428,7 @@ instance of the Commcell class</p>
                                     &#34;installerOption&#34;: {
                                         &#34;requestType&#34;: 0,
                                         &#34;Operationtype&#34;: 0,
-                                        &#34;CommServeHostName&#34;:
-                                            self.commcell_object.commserv_name,
+                                        &#34;CommServeHostName&#34;: commcell_name,
                                         &#34;RemoteClient&#34;: False,
                                         &#34;installFlags&#34;: {
                                             &#34;allowMultipleInstances&#34;: kwargs.get(&#39;allowMultipleInstances&#39;, False),
@@ -1445,6 +1443,7 @@ instance of the Commcell class</p>
                                             &#34;ignoreJobsRunning&#34;: False,
                                             &#34;forceReboot&#34;: False,
                                             &#34;overrideClientInfo&#34;: True,
+                                            &#34;dataDirectory&#34;: dataDirectory if dataDirectory is not None else &#34;&#34;,
                                             &#34;preferredIPFamily&#34;: install_flags.get(&#39;preferredIPFamily&#39;,
                                                                                    1) if install_flags else 1,
                                             &#34;firewallInstall&#34;: {
@@ -1494,7 +1493,7 @@ instance of the Commcell class</p>
                                     },
                                     &#34;clientDetails&#34;: client_details,
                                     &#34;clientAuthForJob&#34;: {
-                                        &#34;password&#34;: password,
+                                        &#34;password&#34;: password if password else &#34;&#34;,
                                         &#34;userName&#34;: username
                                     }
                                 },
@@ -1507,6 +1506,19 @@ instance of the Commcell class</p>
                 ]
             }
         }
+
+        if unix_features and (ssh is not None):
+            request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;adminOpts&#34;][&#34;clientInstallOption&#34;][
+                &#34;useSSHKey&#34;] = True
+            request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;adminOpts&#34;][&#34;clientInstallOption&#34;][
+                &#34;sshKeyFileLocation&#34;] = ssh[&#34;location&#34;]
+            request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;adminOpts&#34;][&#34;clientInstallOption&#34;][
+                &#34;sshKeyFileContent&#34;] = ssh[&#34;content&#34;]
+            if ssh.get(&#34;passphrase&#34;):
+                request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;adminOpts&#34;][&#34;clientInstallOption&#34;][
+                    &#34;useSSHKeyPassphrase&#34;] = True
+                request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;adminOpts&#34;][&#34;clientInstallOption&#34;][
+                    &#34;sshKeyFilePassphrase&#34;] = {&#34;password&#34;: ssh[&#34;passphrase&#34;]}
 
         if db2_install and db2_logs:
             request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;adminOpts&#34;][&#34;clientInstallOption&#34;][&#34;installerOption&#34;][
@@ -1546,61 +1558,56 @@ instance of the Commcell class</p>
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.deployment.install.Install.install_software"><code class="name flex">
-<span>def <span class="ident">install_software</span></span>(<span>self, client_computers=None, windows_features=None, unix_features=None, username=None, password=None, install_path=None, log_file_loc=None, client_group_name=None, storage_policy_name=None, sw_cache_client=None, **kwargs)</span>
+<span>def <span class="ident">install_software</span></span>(<span>self, client_computers: list = None, windows_features: list = None, unix_features: list = None, username: str = None, password: str = None, install_path: str = None, log_file_loc: str = None, client_group_name: list = None, storage_policy_name: str = None, sw_cache_client: str = None, **kwargs) ‑> <a title="cvpysdk.job.Job" href="../job.html#cvpysdk.job.Job">Job</a></span>
 </code></dt>
 <dd>
 <div class="desc"><p>Installs the features selected on the given machines</p>
-<h2 id="args">Args</h2>
-<p>client_computers
-(list)
-&ndash; list of hostnames/IP address to install the
-features on</p>
-<pre><code>default : None
-</code></pre>
-<p>windows_features (list of enum) &ndash; list of windows features to be installed</p>
-<pre><code>default : None
-</code></pre>
-<p>unix_features (list of enum)
-&ndash; list of unix features to be installed</p>
-<pre><code>default : None
-</code></pre>
-<p>username
-(str)
-&ndash; username of the machine to install features on</p>
-<pre><code>default : None
-</code></pre>
-<p>password
-(str)
-&ndash; base64 encoded password</p>
-<pre><code>default : None
-</code></pre>
-<p>install_path (str)
-&ndash; Install to a specified path on the client</p>
-<pre><code> default : None
-</code></pre>
-<p>log_file_loc (str)
-&ndash; Install to a specified log path on the client</p>
-<pre><code> default : None
-</code></pre>
-<p>client_group_name (list)
-&ndash; List of client groups for the client</p>
-<pre><code> default : None
-</code></pre>
-<p>storage_policy_name (str)
-&ndash; Storage policy for the default subclient</p>
-<pre><code> default : None
-</code></pre>
-<p>sw_cache_client (str)
-&ndash; Remote Cache Client Name/ Over-riding Software Cache</p>
-<pre><code>default : None (Use CS Cache by default)
-</code></pre>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt>client_computers
+(list)
+&ndash; list of hostnames/IP address to install the</dt>
+<dt>features on</dt>
+<dt>default : None</dt>
+<dt>windows_features (list of enum) &ndash; list of windows features to be installed</dt>
+<dt>default : None</dt>
+<dt>unix_features (list of enum)
+&ndash; list of unix features to be installed</dt>
+<dt>default : None</dt>
+<dt>username
+(str)
+&ndash; username of the machine to install features on</dt>
+<dt>default : None</dt>
+<dt>password
+(str)
+&ndash; base64 encoded password</dt>
+<dt>default : None</dt>
+<dt>install_path (str)
+&ndash; Install to a specified path on the client</dt>
+<dt>default : None</dt>
+<dt>log_file_loc (str)
+&ndash; Install to a specified log path on the client</dt>
+<dt>default : None</dt>
+<dt>client_group_name (list)
+&ndash; List of client groups for the client</dt>
+<dt>default : None</dt>
+<dt>storage_policy_name (str)
+&ndash; Storage policy for the default subclient</dt>
+<dt>default : None</dt>
+<dt>sw_cache_client (str)
+&ndash; Remote Cache Client Name/ Over-riding Software Cache</dt>
+<dt>default : None (Use CS Cache by default)</dt>
 <dt><strong><code>**kwargs</code></strong></dt>
 <dd>(dict) &ndash; Key value pairs for supporting conditional initializations</dd>
 </dl>
 <p>Supported -
+commserv_name (str) - Name of the CommServe (if user doesn't have view permission on CommServe)
 install_flags (dict) - dictionary of install flag values
-Ex : install_flags = {"preferredIPFamily":2, "install32Base":True}</p>
+Ex : install_flags = {"preferredIPFamily":2, "install32Base":True}
+ssh (dict) - dictionary for ssh key details for linux clients
+Ex : ssh ={"location": "C:\path", "content": "base64 encoded",
+"passphrase": "base64 encoded passphrase if any"} # Optional, include only if a passphrase is required}</p>
 <dl>
 <dt>db2_logs_location (dict) - dictionary of db2 logs location</dt>
 <dt><strong><code>Ex</code></strong></dt>
@@ -1662,16 +1669,19 @@ firewall_inputs = {
 "webServerClientId": "webservername"
 }</dd>
 </dl>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this install_software job</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
+<p>Returns
+-----=
+Job - instance of the Job class for this install_software job</p>
+<p>Raises
+-----=
+SDKException:
 if install job failed</p>
 <pre><code>if response is empty
 
 if response is not success
 </code></pre>
-<h2 id="usage">Usage</h2>
+<p>Usage
+-----=</p>
 <ul>
 <li>
 <p>UnixDownloadFeatures and WindowsDownloadFeatures enum is used for providing
@@ -1696,7 +1706,7 @@ windows_features=[WindowsDownloadFeatures.FILE_SYSTEM.value],
 unix_features=None,
 username='username',
 password='password',
-install_path='C:\Temp,
+install_path='C:\Temp',
 log_file_loc='/var/log',
 client_group_name=[My_Servers],
 storage_policy_name='My_Storage_Policy',
@@ -1712,70 +1722,53 @@ not both
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/deployment/install.py#L405-L757" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/deployment/install.py#L391-L756" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def install_software(
         self,
-        client_computers=None,
-        windows_features=None,
-        unix_features=None,
-        username=None,
-        password=None,
-        install_path=None,
-        log_file_loc=None,
-        client_group_name=None,
-        storage_policy_name=None,
-        sw_cache_client=None,
-        **kwargs):
+        client_computers: list = None,
+        windows_features: list = None,
+        unix_features: list = None,
+        username: str = None,
+        password: str = None,
+        install_path: str = None,
+        log_file_loc: str = None,
+        client_group_name: list = None,
+        storage_policy_name: str = None,
+        sw_cache_client: str = None,
+        **kwargs) -&gt; Job:
     &#34;&#34;&#34;
     Installs the features selected on the given machines
     Args:
-
         client_computers    (list)      -- list of hostnames/IP address to install the
-        features on
-
-            default : None
-
+                                            features on
+                                            default : None
         windows_features (list of enum) -- list of windows features to be installed
-
-            default : None
-
+                                            default : None
         unix_features (list of enum)    -- list of unix features to be installed
-
-            default : None
-
+                                            default : None
         username    (str)               -- username of the machine to install features on
-
-            default : None
-
+                                            default : None
         password    (str)               -- base64 encoded password
-
-            default : None
-
+                                            default : None
         install_path (str)              -- Install to a specified path on the client
-
-             default : None
-
+                                             default : None
         log_file_loc (str)              -- Install to a specified log path on the client
-
-             default : None
-
+                                             default : None
         client_group_name (list)        -- List of client groups for the client
-
-             default : None
-
+                                             default : None
         storage_policy_name (str)       -- Storage policy for the default subclient
-
-             default : None
-
+                                             default : None
         sw_cache_client (str)           -- Remote Cache Client Name/ Over-riding Software Cache
-
-            default : None (Use CS Cache by default)
-
+                                            default : None (Use CS Cache by default)
         **kwargs: (dict) -- Key value pairs for supporting conditional initializations
         Supported -
+        commserv_name (str) - Name of the CommServe (if user doesn&#39;t have view permission on CommServe)
         install_flags (dict) - dictionary of install flag values
         Ex : install_flags = {&#34;preferredIPFamily&#34;:2, &#34;install32Base&#34;:True}
+        ssh (dict) - dictionary for ssh key details for linux clients
+        Ex : ssh ={&#34;location&#34;: &#34;C:\\path&#34;, &#34;content&#34;: &#34;base64 encoded&#34;,
+            &#34;passphrase&#34;: &#34;base64 encoded passphrase if any&#34;} # Optional, include only if a passphrase is required}
 
         db2_logs_location (dict) - dictionary of db2 logs location
         Ex: db2_logs_location = {
@@ -1836,7 +1829,7 @@ not both
 
 
     Returns:
-            object - instance of the Job class for this install_software job
+            Job - instance of the Job class for this install_software job
 
     Raises:
         SDKException:
@@ -1862,7 +1855,7 @@ not both
                             unix_features=None,
                             username=&#39;username&#39;,
                             password=&#39;password&#39;,
-                            install_path=&#39;C:\\Temp,
+                            install_path=&#39;C:\\Temp&#39;,
                             log_file_loc=&#39;/var/log&#39;,
                             client_group_name=[My_Servers],
                             storage_policy_name=&#39;My_Storage_Policy&#39;,
@@ -1872,6 +1865,23 @@ not both
                 not both
 
     &#34;&#34;&#34;
+    commcell_name = kwargs.get(&#39;commserv_name&#39;)
+    if not commcell_name:
+        try:
+            commcell_name = self.commcell_object.commserv_name
+        except SDKException as err:
+            raise SDKException(
+                &#39;Install&#39;,
+                &#39;101&#39;,
+                (
+                    &#39;Please ensure user has VIEW permission on the CommServe or provide the commserv_name parameter explicitly. &#39;
+                    f&#39;Original error: {err}&#39;
+                )
+            ) from err
+    elif not isinstance(commcell_name, str) or not commcell_name.strip():
+        raise SDKException(
+            &#39;Install&#39;, &#39;101&#39;, &#39;Invalid CommServe name provided. CommServe name cannot be empty.&#39;)
+
     db2_install = False
     ma_install = False
     if windows_features:
@@ -1896,8 +1906,6 @@ not both
         raise SDKException(&#39;Install&#39;, &#39;105&#39;)
 
     if client_computers:
-        commcell_name = self.commcell_object.commserv_name
-
         client_details = []
         for client_name in client_computers:
             client_details.append(
@@ -1924,6 +1932,8 @@ not both
     index_cache_location = kwargs.get(&#39;index_cache_location&#39;, None)
     firewall_inputs = kwargs.get(&#39;firewall_inputs&#39;, {})
     web_console_input = kwargs.get(&#39;webconsole_inputs&#39;, {})
+    dataDirectory = kwargs.get(&#34;dataDirectory&#34;, None)
+    ssh = kwargs.get(&#34;ssh&#34;, None)
 
     request_json = {
         &#34;taskInfo&#34;: {
@@ -1954,8 +1964,7 @@ not both
                                 &#34;installerOption&#34;: {
                                     &#34;requestType&#34;: 0,
                                     &#34;Operationtype&#34;: 0,
-                                    &#34;CommServeHostName&#34;:
-                                        self.commcell_object.commserv_name,
+                                    &#34;CommServeHostName&#34;: commcell_name,
                                     &#34;RemoteClient&#34;: False,
                                     &#34;installFlags&#34;: {
                                         &#34;allowMultipleInstances&#34;: kwargs.get(&#39;allowMultipleInstances&#39;, False),
@@ -1970,6 +1979,7 @@ not both
                                         &#34;ignoreJobsRunning&#34;: False,
                                         &#34;forceReboot&#34;: False,
                                         &#34;overrideClientInfo&#34;: True,
+                                        &#34;dataDirectory&#34;: dataDirectory if dataDirectory is not None else &#34;&#34;,
                                         &#34;preferredIPFamily&#34;: install_flags.get(&#39;preferredIPFamily&#39;,
                                                                                1) if install_flags else 1,
                                         &#34;firewallInstall&#34;: {
@@ -2019,7 +2029,7 @@ not both
                                 },
                                 &#34;clientDetails&#34;: client_details,
                                 &#34;clientAuthForJob&#34;: {
-                                    &#34;password&#34;: password,
+                                    &#34;password&#34;: password if password else &#34;&#34;,
                                     &#34;userName&#34;: username
                                 }
                             },
@@ -2032,6 +2042,19 @@ not both
             ]
         }
     }
+
+    if unix_features and (ssh is not None):
+        request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;adminOpts&#34;][&#34;clientInstallOption&#34;][
+            &#34;useSSHKey&#34;] = True
+        request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;adminOpts&#34;][&#34;clientInstallOption&#34;][
+            &#34;sshKeyFileLocation&#34;] = ssh[&#34;location&#34;]
+        request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;adminOpts&#34;][&#34;clientInstallOption&#34;][
+            &#34;sshKeyFileContent&#34;] = ssh[&#34;content&#34;]
+        if ssh.get(&#34;passphrase&#34;):
+            request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;adminOpts&#34;][&#34;clientInstallOption&#34;][
+                &#34;useSSHKeyPassphrase&#34;] = True
+            request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;adminOpts&#34;][&#34;clientInstallOption&#34;][
+                &#34;sshKeyFilePassphrase&#34;] = {&#34;password&#34;: ssh[&#34;passphrase&#34;]}
 
     if db2_install and db2_logs:
         request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][&#34;adminOpts&#34;][&#34;clientInstallOption&#34;][&#34;installerOption&#34;][
@@ -2070,53 +2093,48 @@ not both
 </details>
 </dd>
 <dt id="cvpysdk.deployment.install.Install.push_servicepack_and_hotfix"><code class="name flex">
-<span>def <span class="ident">push_servicepack_and_hotfix</span></span>(<span>self, client_computers=None, client_computer_groups=None, all_client_computers=False, all_client_computer_groups=False, reboot_client=False, run_db_maintenance=True, maintenance_release_only=False, **kwargs)</span>
+<span>def <span class="ident">push_servicepack_and_hotfix</span></span>(<span>self, client_computers: Optional[List[str]] = None, client_computer_groups: Optional[List[str]] = None, all_client_computers: bool = False, all_client_computer_groups: bool = False, reboot_client: bool = False, run_db_maintenance: bool = True, maintenance_release_only: bool = False, **kwargs: Dict[str, Any]) ‑> Union[<a title="cvpysdk.job.Job" href="../job.html#cvpysdk.job.Job">Job</a>, <a title="cvpysdk.schedules.Schedules" href="../schedules.html#cvpysdk.schedules.Schedules">Schedules</a>]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Installs the software packages on the clients</p>
-<h2 id="args">Args</h2>
-<p>client_computers (list)
-&ndash; Client machines to install service pack on</p>
-<p>client_computer_groups (list)
-&ndash; Client groups to install service pack on</p>
-<p>all_client_computers (bool)
-&ndash; boolean to specify whether to install on
-all client computers or not</p>
-<pre><code>default: False
-</code></pre>
-<p>all_client _computer_groups (bool)
-&ndash; boolean to specify whether to install on all
-client computer groups or not</p>
-<pre><code>default: False
-</code></pre>
-<p>reboot_client (bool)
-&ndash; boolean to specify whether to reboot the
-client or not</p>
-<pre><code>default: False
-</code></pre>
-<p>run_db_maintenance (bool)
-&ndash; boolean to specify whether to run db
-maintenance not</p>
-<pre><code>default: True
-</code></pre>
-<p>maintenance_release_only (bool)
-&ndash; for clients of feature releases lesser than CS, this option
-maintenance release of that client FR, if present in cache</p>
 <dl>
-<dt><strong><code>**kwargs</code></strong></dt>
-<dd>(dict) &ndash; Key value pairs for supporting conditional initializations
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>client_computers</code></strong> :&ensp;<code>list</code>, optional</dt>
+<dd>Client machines to install service pack on. Defaults to None.</dd>
+<dt><strong><code>client_computer_groups</code></strong> :&ensp;<code>list</code>, optional</dt>
+<dd>Client groups to install service pack on. Defaults to None.</dd>
+<dt><strong><code>all_client_computers</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>boolean to specify whether to install on all client computers or not. Defaults to False.</dd>
+<dt><strong><code>all_client_computer_groups</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>boolean to specify whether to install on all client computer groups or not. Defaults to False.</dd>
+<dt><strong><code>reboot_client</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>boolean to specify whether to reboot the client or not. Defaults to False.</dd>
+<dt><strong><code>run_db_maintenance</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>boolean to specify whether to run db maintenance not. Defaults to True.</dd>
+<dt><strong><code>maintenance_release_only</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>for clients of feature releases lesser than CS, this option maintenance release of that client FR, if present in cache. Defaults to False.</dd>
+<dt><strong><code>**kwargs</code></strong> :&ensp;<code>dict</code></dt>
+<dd>Key value pairs for supporting conditional initializations
 Supported -
 schedule_pattern
 (dict)
 &ndash; Request JSON for scheduling the operation
 install_update_options
 (int)
-&ndash; Refer InstallUpdateOptions from deploymentconstants module</dd>
+&ndash; Refer InstallUpdateOptions from deploymentconstants module
+cs_version
+(int)
+&ndash; cs sp version should be passed if push install is triggered
+by tenant admin</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Job</code> or <code>Schedules</code></dt>
+<dd>instance of the Job/Schedules class for this download</dd>
 </dl>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job/Task class for this download</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
+<p>Raises
+-----=
+SDKException:
 if schedule is not of type dictionary</p>
 <pre><code>if Download job failed
 
@@ -2130,75 +2148,58 @@ if another download job is already running
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/deployment/install.py#L195-L403" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/deployment/install.py#L198-L389" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def push_servicepack_and_hotfix(
         self,
-        client_computers=None,
-        client_computer_groups=None,
-        all_client_computers=False,
-        all_client_computer_groups=False,
-        reboot_client=False,
-        run_db_maintenance=True,
-        maintenance_release_only=False,
-        **kwargs):
+        client_computers: Optional[List[str]] = None,
+        client_computer_groups: Optional[List[str]] = None,
+        all_client_computers: bool = False,
+        all_client_computer_groups: bool = False,
+        reboot_client: bool = False,
+        run_db_maintenance: bool = True,
+        maintenance_release_only: bool = False,
+        **kwargs: Dict[str, Any]) -&gt; Union[Job, Schedules]:
     &#34;&#34;&#34;Installs the software packages on the clients
 
     Args:
-        client_computers (list)               -- Client machines to install service pack on
-
-        client_computer_groups (list)         -- Client groups to install service pack on
-
-        all_client_computers (bool)           -- boolean to specify whether to install on
-        all client computers or not
-
-            default: False
-
-        all_client _computer_groups (bool)    -- boolean to specify whether to install on all
-        client computer groups or not
-
-            default: False
-
-        reboot_client (bool)                  -- boolean to specify whether to reboot the
-        client or not
-
-            default: False
-
-        run_db_maintenance (bool)             -- boolean to specify whether to run db
-        maintenance not
-
-            default: True
-
-        maintenance_release_only (bool)       -- for clients of feature releases lesser than CS, this option
-        maintenance release of that client FR, if present in cache
-
-        **kwargs: (dict) -- Key value pairs for supporting conditional initializations
+        client_computers (list, optional): Client machines to install service pack on. Defaults to None.
+        client_computer_groups (list, optional): Client groups to install service pack on. Defaults to None.
+        all_client_computers (bool, optional): boolean to specify whether to install on all client computers or not. Defaults to False.
+        all_client_computer_groups (bool, optional): boolean to specify whether to install on all client computer groups or not. Defaults to False.
+        reboot_client (bool, optional): boolean to specify whether to reboot the client or not. Defaults to False.
+        run_db_maintenance (bool, optional): boolean to specify whether to run db maintenance not. Defaults to True.
+        maintenance_release_only (bool, optional): for clients of feature releases lesser than CS, this option maintenance release of that client FR, if present in cache. Defaults to False.
+        **kwargs (dict): Key value pairs for supporting conditional initializations
             Supported -
             schedule_pattern        (dict)      -- Request JSON for scheduling the operation
             install_update_options  (int)       -- Refer InstallUpdateOptions from deploymentconstants module
+            cs_version              (int)       -- cs sp version should be passed if push install is triggered
+                                                    by tenant admin
 
     Returns:
-        object - instance of the Job/Task class for this download
+        Job or Schedules: instance of the Job/Schedules class for this download
 
     Raises:
-            SDKException:
-                if schedule is not of type dictionary
+        SDKException:
+            if schedule is not of type dictionary
 
-                if Download job failed
+            if Download job failed
 
-                if response is empty
+            if response is empty
 
-                if response is not success
+            if response is not success
 
-                if another download job is already running
+            if another download job is already running
 
     **NOTE:** push_serivcepack_and_hotfixes cannot be used for revision upgrades
 
     &#34;&#34;&#34;
-    version = self.commcell_object.commserv_version
+    version = int(kwargs.get(&#34;cs_version&#34;, self.commcell_object.commserv_version))
     selected_clients = []
     selected_client_groups = []
     schedule_pattern = kwargs.get(&#39;schedule_pattern&#39;, None)
+    direct_upgrade = version &gt;= 36 and not schedule_pattern
     if schedule_pattern:
         if not isinstance(schedule_pattern, dict):
             raise SDKException(&#34;Install&#34;, &#34;101&#34;)
@@ -2219,7 +2220,7 @@ if another download job is already running
         client_computers = [x.lower() for x in client_computers]
         if not set(client_computers).issubset(commcell_client_computers):
             raise SDKException(&#39;Install&#39;, &#39;102&#39;)
-        if version &gt;= 36:
+        if direct_upgrade:
             for client in client_computers:
                 selected_clients.append({&#34;id&#34;: int(commcell_client_computers[client][&#39;id&#39;]),
                                         &#34;type&#34;: &#34;CLIENT_ENTITY&#34;})
@@ -2231,7 +2232,7 @@ if another download job is already running
         if not set(client_computer_groups).issubset(commcell_client_computer_groups):
             raise SDKException(&#39;Install&#39;, &#39;103&#39;)
 
-        if version &gt;= 36:
+        if direct_upgrade:
             for client_group in client_computer_groups:
                 selected_client_groups.append({&#34;id&#34;: int(commcell_client_computer_groups[client_group]),
                                                 &#34;type&#34;: &#34;CLIENT_GROUP_ENTITY&#34;})
@@ -2248,7 +2249,7 @@ if another download job is already running
         selected_client_groups = [{&#34;_type_&#34;: 27}]
 
     all_clients = selected_clients + selected_client_groups
-    if version &gt;= 36:
+    if direct_upgrade:
         request_json = {
             &#34;rebootIfRequired&#34;: reboot_client,
             &#34;runDBMaintenance&#34;: run_db_maintenance,
@@ -2318,8 +2319,8 @@ if another download job is already running
             adminOpts = request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;]
             adminOpts[&#39;updateOption&#39;][&#39;installUpdateOptions&#39;] = install_update_options
 
-    method = &#39;PUT&#39; if version &gt;= 36 else &#39;POST&#39;
-    url = self._services[&#39;UPGRADE_SOFTWARE&#39;] if version &gt;= 36 else self._services[&#39;CREATE_TASK&#39;]
+    method = &#39;PUT&#39; if direct_upgrade else &#39;POST&#39;
+    url = self._services[&#39;UPGRADE_SOFTWARE&#39;] if direct_upgrade else self._services[&#39;CREATE_TASK&#39;]
 
     flag, response = self._cvpysdk_object.make_request(
         method, url, request_json
@@ -2344,39 +2345,35 @@ if another download job is already running
 </details>
 </dd>
 <dt id="cvpysdk.deployment.install.Install.repair_software"><code class="name flex">
-<span>def <span class="ident">repair_software</span></span>(<span>self, client=None, client_group=None, username=None, password=None, reboot_client=False)</span>
+<span>def <span class="ident">repair_software</span></span>(<span>self, client: Optional[str] = None, client_group: Optional[str] = None, username: Optional[str] = None, password: Optional[str] = None, reboot_client: bool = False) ‑> <a title="cvpysdk.job.Job" href="../job.html#cvpysdk.job.Job">Job</a></span>
 </code></dt>
 <dd>
 <div class="desc"><p>triggers Repair of the software for a specified client machine</p>
-<pre><code>    Args:
-        client (str)               -- Client machine to re-install service pack on
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>client</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>Client machine to re-install service pack on. Defaults to None.</dd>
+<dt><strong><code>client_group</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>Client group to re-install service pack on (eg : 'Media Agent'). Defaults to None.</dd>
+<dt><strong><code>username</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>username of the machine to re-install features on. Defaults to None.</dd>
+<dt><strong><code>password</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>base64 encoded password. Defaults to None.</dd>
+<dt><strong><code>reboot_client</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>boolean to specify whether to reboot the client or not. Defaults to False.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Job</code></dt>
+<dd>instance of the Job class for this download job</dd>
+</dl>
+<p>Raises
+-----=
+SDKException:
+if re-install job failed</p>
+<pre><code>if response is empty
 
-        client_group (str)         -- Client group to re-install service pack on
-                                                (eg : 'Media Agent')
-
-        username    (str)               -- username of the machine to re-install features on
-
-            default : None
-
-        password    (str)               -- base64 encoded password
-
-            default : None
-
-        reboot_client (bool)            -- boolean to specify whether to reboot the client
-        or not
-
-            default: False
-
-    Returns:
-        object - instance of the Job class for this download job
-
-    Raises:
-            SDKException:
-            if re-install job failed
-
-            if response is empty
-
-            if response is not success
+if response is not success
 </code></pre>
 <p><strong>NOTE:</strong> repair_software can be used for client/ client_group not both; When both inputs are given only the
 client computer will be repaired</p>
@@ -2385,45 +2382,33 @@ client computer will be repaired</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/deployment/install.py#L60-L193" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/deployment/install.py#L74-L195" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def repair_software(self,
-                    client=None,
-                    client_group=None,
-                    username=None,
-                    password=None,
-                    reboot_client=False):
+                    client: Optional[str] = None,
+                    client_group: Optional[str] = None,
+                    username: Optional[str] = None,
+                    password: Optional[str] = None,
+                    reboot_client: bool = False) -&gt; Job:
     &#34;&#34;&#34;triggers Repair of the software for a specified client machine
 
-            Args:
-                client (str)               -- Client machine to re-install service pack on
+    Args:
+        client (str, optional): Client machine to re-install service pack on. Defaults to None.
+        client_group (str, optional): Client group to re-install service pack on (eg : &#39;Media Agent&#39;). Defaults to None.
+        username (str, optional): username of the machine to re-install features on. Defaults to None.
+        password (str, optional): base64 encoded password. Defaults to None.
+        reboot_client (bool, optional): boolean to specify whether to reboot the client or not. Defaults to False.
 
-                client_group (str)         -- Client group to re-install service pack on
-                                                        (eg : &#39;Media Agent&#39;)
+    Returns:
+        Job: instance of the Job class for this download job
 
-                username    (str)               -- username of the machine to re-install features on
+    Raises:
+        SDKException:
+            if re-install job failed
 
-                    default : None
+            if response is empty
 
-                password    (str)               -- base64 encoded password
-
-                    default : None
-
-                reboot_client (bool)            -- boolean to specify whether to reboot the client
-                or not
-
-                    default: False
-
-            Returns:
-                object - instance of the Job class for this download job
-
-            Raises:
-                    SDKException:
-                    if re-install job failed
-
-                    if response is empty
-
-                    if response is not success
+            if response is not success
 
     **NOTE:** repair_software can be used for client/ client_group not both; When both inputs are given only the
               client computer will be repaired

@@ -25,10 +25,12 @@
 <section id="section-intro">
 <p>File for performing operations on a MS Dynamics 365 Instance.</p>
 <p>MSDynamics365Instance is the only class defined in this file.</p>
-<h2 id="msdynamics365instance">Msdynamics365Instance</h2>
-<p>Class derived from CloudAppsInstance Base class and representing a
+<p>Msdynamics365Instance
+-----=
+Class derived from CloudAppsInstance Base class and representing a
 Dynamics 365 CRM instance,</p>
-<h2 id="msdynamics365instance_1">Msdynamics365Instance</h2>
+<p>Msdynamics365Instance
+-----=</p>
 <p><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>
 Methods
 </em></strong><strong><em>*</em></strong><strong><em>*</em></strong></p>
@@ -54,7 +56,7 @@ Returns the App type of the MS Dynamics 365 instance</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/cloudapps/dynamics365_instance.py#L1-L159" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/cloudapps/dynamics365_instance.py#L1-L225" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -107,16 +109,35 @@ from ..cainstance import CloudAppsInstance
 
 
 class MSDynamics365Instance(CloudAppsInstance):
-    &#34;&#34;&#34;Class for representing an Instance of the MSDynamics365 instance type.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents an instance of the MSDynamics365 application within a cloud environment.
 
-    def _get_instance_properties(self):
-        &#34;&#34;&#34;Gets the properties of this instance.
+    This class provides mechanisms for managing and interacting with MSDynamics365 instances,
+    including retrieving instance properties, accessing configuration details, and discovering
+    content within specific environments. It is designed to be used as part of a cloud application
+    management framework, inheriting core functionality from CloudAppsInstance.
 
-            Raises:
-                SDKException:
-                    if response is empty
+    Key Features:
+        - Retrieve instance properties in both object and JSON formats
+        - Access node and application type information via properties
+        - Discover content within specified environments for MSDynamics365
+        - Seamless integration with cloud application management workflows
 
-                    if response is not success
+    &#34;&#34;&#34;
+
+    def _get_instance_properties(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve and update the properties of the current MSDynamics365 instance.
+
+        This method fetches the latest properties for the instance and updates the internal state.
+        It should be called to ensure the instance properties are current.
+
+        Raises:
+            SDKException: If the response is empty or the response status is not successful.
+
+        Example:
+            &gt;&gt;&gt; instance = MSDynamics365Instance()
+            &gt;&gt;&gt; instance._get_instance_properties()
+            &gt;&gt;&gt; # The instance properties are now updated
 
         &#34;&#34;&#34;
         super(MSDynamics365Instance, self)._get_instance_properties()
@@ -160,32 +181,73 @@ class MSDynamics365Instance(CloudAppsInstance):
                     &#34;clientName&#34;, None)
                 self._index_server = general_cloud_properties.get(&#34;indexServer&#34;, {}).get(&#34;clientName&#34;, None)
 
-    def _get_instance_properties_json(self):
-        &#34;&#34;&#34;Returns the instance properties json.&#34;&#34;&#34;
+    def _get_instance_properties_json(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the instance properties as a JSON dictionary.
+
+        Returns:
+            dict: A dictionary containing the properties of the MSDynamics365 instance.
+
+        Example:
+            &gt;&gt;&gt; instance = MSDynamics365Instance()
+            &gt;&gt;&gt; properties = instance._get_instance_properties_json()
+            &gt;&gt;&gt; print(properties)
+            {&#39;property1&#39;: &#39;value1&#39;, &#39;property2&#39;: &#39;value2&#39;, ...}
+
+        &#34;&#34;&#34;
 
         return {&#39;instanceProperties&#39;: self._properties}
 
     @property
-    def access_node(self):
-        &#34;&#34;&#34;Returns the name of the access node for this MS Dynamics 365 instance&#34;&#34;&#34;
+    def access_node(self) -&gt; str:
+        &#34;&#34;&#34;Get the name of the access node for this MS Dynamics 365 instance.
+
+        Returns:
+            The name of the access node as a string.
+
+        Example:
+            &gt;&gt;&gt; instance = MSDynamics365Instance()
+            &gt;&gt;&gt; node_name = instance.access_node
+            &gt;&gt;&gt; print(f&#34;Access node: {node_name}&#34;)
+
+        &#34;&#34;&#34;
         return self._access_node
 
     @property
     def idx_app_type(self) -&gt; int:
-        &#34;&#34;&#34;Returns the App type of the MS Dynamics 365 instance&#34;&#34;&#34;
+        &#34;&#34;&#34;Get the application type identifier for the MS Dynamics 365 instance.
+
+        Returns:
+            int: The integer value representing the application type of this MS Dynamics 365 instance.
+
+        Example:
+            &gt;&gt;&gt; msd_instance = MSDynamics365Instance()
+            &gt;&gt;&gt; app_type = msd_instance.idx_app_type
+            &gt;&gt;&gt; print(f&#34;MS Dynamics 365 App Type: {app_type}&#34;)
+
+        &#34;&#34;&#34;
         return 200127
 
-    def discover_content(self, environment_discovery: bool = False):
-        &#34;&#34;&#34;
-            Run Discovery for a MS Dynamics 365 Instance
-            Arguments:
-                environment_discovery            (bool)--     Whether to run discovery for Dynamics 365 environments
-                    If True
-                        Discovery will run for Dynamics 365 environments
-                    If False
-                        Table level discovered content would be run
-            Returns:
-                discovered_content              (dict)--        Dictionary of the discovered content
+    def discover_content(self, environment_discovery: bool = False) -&gt; dict:
+        &#34;&#34;&#34;Run discovery for a Microsoft Dynamics 365 Instance.
+
+        This method performs content discovery on the MS Dynamics 365 instance. 
+        If `environment_discovery` is set to True, the discovery process will target Dynamics 365 environments.
+        If set to False (default), the discovery will be performed at the table level.
+
+        Args:
+            environment_discovery: Whether to run discovery for Dynamics 365 environments (True) 
+                or at the table level (False).
+
+        Returns:
+            dict: A dictionary containing the discovered content.
+
+        Example:
+            &gt;&gt;&gt; msd_instance = MSDynamics365Instance()
+            &gt;&gt;&gt; content = msd_instance.discover_content()
+            &gt;&gt;&gt; print(content)
+            &gt;&gt;&gt; # To discover environments instead of tables:
+            &gt;&gt;&gt; env_content = msd_instance.discover_content(environment_discovery=True)
+            &gt;&gt;&gt; print(env_content)
 
         &#34;&#34;&#34;
         discovery_type: int
@@ -231,40 +293,62 @@ class MSDynamics365Instance(CloudAppsInstance):
 <span>(</span><span>agent_object, instance_name, instance_id=None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for representing an Instance of the MSDynamics365 instance type.</p>
-<p>Initialise the instance object.</p>
-<h2 id="args">Args</h2>
-<p>agent_object
-(object)
-&ndash;
-instance of the Agent class</p>
-<p>instance_name
-(str)
-&ndash;
-name of the instance</p>
-<p>instance_id
-(str)
-&ndash;
-id of the instance
-default: None</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Instance class</p></div>
+<div class="desc"><p>Represents an instance of the MSDynamics365 application within a cloud environment.</p>
+<p>This class provides mechanisms for managing and interacting with MSDynamics365 instances,
+including retrieving instance properties, accessing configuration details, and discovering
+content within specific environments. It is designed to be used as part of a cloud application
+management framework, inheriting core functionality from CloudAppsInstance.</p>
+<p>Key Features:
+- Retrieve instance properties in both object and JSON formats
+- Access node and application type information via properties
+- Discover content within specified environments for MSDynamics365
+- Seamless integration with cloud application management workflows</p>
+<p>Initialize a CloudAppsInstance object.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>agent_object</code></strong></dt>
+<dd>The agent object associated with this instance.</dd>
+<dt><strong><code>instance_name</code></strong></dt>
+<dd>The name of the cloud application instance.</dd>
+<dt><strong><code>instance_id</code></strong></dt>
+<dd>Optional unique identifier for the instance.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/cloudapps/dynamics365_instance.py#L51-L159" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/cloudapps/dynamics365_instance.py#L51-L225" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class MSDynamics365Instance(CloudAppsInstance):
-    &#34;&#34;&#34;Class for representing an Instance of the MSDynamics365 instance type.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents an instance of the MSDynamics365 application within a cloud environment.
 
-    def _get_instance_properties(self):
-        &#34;&#34;&#34;Gets the properties of this instance.
+    This class provides mechanisms for managing and interacting with MSDynamics365 instances,
+    including retrieving instance properties, accessing configuration details, and discovering
+    content within specific environments. It is designed to be used as part of a cloud application
+    management framework, inheriting core functionality from CloudAppsInstance.
 
-            Raises:
-                SDKException:
-                    if response is empty
+    Key Features:
+        - Retrieve instance properties in both object and JSON formats
+        - Access node and application type information via properties
+        - Discover content within specified environments for MSDynamics365
+        - Seamless integration with cloud application management workflows
 
-                    if response is not success
+    &#34;&#34;&#34;
+
+    def _get_instance_properties(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve and update the properties of the current MSDynamics365 instance.
+
+        This method fetches the latest properties for the instance and updates the internal state.
+        It should be called to ensure the instance properties are current.
+
+        Raises:
+            SDKException: If the response is empty or the response status is not successful.
+
+        Example:
+            &gt;&gt;&gt; instance = MSDynamics365Instance()
+            &gt;&gt;&gt; instance._get_instance_properties()
+            &gt;&gt;&gt; # The instance properties are now updated
 
         &#34;&#34;&#34;
         super(MSDynamics365Instance, self)._get_instance_properties()
@@ -308,32 +392,73 @@ default: None</p>
                     &#34;clientName&#34;, None)
                 self._index_server = general_cloud_properties.get(&#34;indexServer&#34;, {}).get(&#34;clientName&#34;, None)
 
-    def _get_instance_properties_json(self):
-        &#34;&#34;&#34;Returns the instance properties json.&#34;&#34;&#34;
+    def _get_instance_properties_json(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the instance properties as a JSON dictionary.
+
+        Returns:
+            dict: A dictionary containing the properties of the MSDynamics365 instance.
+
+        Example:
+            &gt;&gt;&gt; instance = MSDynamics365Instance()
+            &gt;&gt;&gt; properties = instance._get_instance_properties_json()
+            &gt;&gt;&gt; print(properties)
+            {&#39;property1&#39;: &#39;value1&#39;, &#39;property2&#39;: &#39;value2&#39;, ...}
+
+        &#34;&#34;&#34;
 
         return {&#39;instanceProperties&#39;: self._properties}
 
     @property
-    def access_node(self):
-        &#34;&#34;&#34;Returns the name of the access node for this MS Dynamics 365 instance&#34;&#34;&#34;
+    def access_node(self) -&gt; str:
+        &#34;&#34;&#34;Get the name of the access node for this MS Dynamics 365 instance.
+
+        Returns:
+            The name of the access node as a string.
+
+        Example:
+            &gt;&gt;&gt; instance = MSDynamics365Instance()
+            &gt;&gt;&gt; node_name = instance.access_node
+            &gt;&gt;&gt; print(f&#34;Access node: {node_name}&#34;)
+
+        &#34;&#34;&#34;
         return self._access_node
 
     @property
     def idx_app_type(self) -&gt; int:
-        &#34;&#34;&#34;Returns the App type of the MS Dynamics 365 instance&#34;&#34;&#34;
+        &#34;&#34;&#34;Get the application type identifier for the MS Dynamics 365 instance.
+
+        Returns:
+            int: The integer value representing the application type of this MS Dynamics 365 instance.
+
+        Example:
+            &gt;&gt;&gt; msd_instance = MSDynamics365Instance()
+            &gt;&gt;&gt; app_type = msd_instance.idx_app_type
+            &gt;&gt;&gt; print(f&#34;MS Dynamics 365 App Type: {app_type}&#34;)
+
+        &#34;&#34;&#34;
         return 200127
 
-    def discover_content(self, environment_discovery: bool = False):
-        &#34;&#34;&#34;
-            Run Discovery for a MS Dynamics 365 Instance
-            Arguments:
-                environment_discovery            (bool)--     Whether to run discovery for Dynamics 365 environments
-                    If True
-                        Discovery will run for Dynamics 365 environments
-                    If False
-                        Table level discovered content would be run
-            Returns:
-                discovered_content              (dict)--        Dictionary of the discovered content
+    def discover_content(self, environment_discovery: bool = False) -&gt; dict:
+        &#34;&#34;&#34;Run discovery for a Microsoft Dynamics 365 Instance.
+
+        This method performs content discovery on the MS Dynamics 365 instance. 
+        If `environment_discovery` is set to True, the discovery process will target Dynamics 365 environments.
+        If set to False (default), the discovery will be performed at the table level.
+
+        Args:
+            environment_discovery: Whether to run discovery for Dynamics 365 environments (True) 
+                or at the table level (False).
+
+        Returns:
+            dict: A dictionary containing the discovered content.
+
+        Example:
+            &gt;&gt;&gt; msd_instance = MSDynamics365Instance()
+            &gt;&gt;&gt; content = msd_instance.discover_content()
+            &gt;&gt;&gt; print(content)
+            &gt;&gt;&gt; # To discover environments instead of tables:
+            &gt;&gt;&gt; env_content = msd_instance.discover_content(environment_discovery=True)
+            &gt;&gt;&gt; print(env_content)
 
         &#34;&#34;&#34;
         discovery_type: int
@@ -371,31 +496,72 @@ default: None</p>
 </ul>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.instances.cloudapps.dynamics365_instance.MSDynamics365Instance.access_node"><code class="name">var <span class="ident">access_node</span></code></dt>
+<dt id="cvpysdk.instances.cloudapps.dynamics365_instance.MSDynamics365Instance.access_node"><code class="name">var <span class="ident">access_node</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the name of the access node for this MS Dynamics 365 instance</p></div>
+<div class="desc"><p>Get the name of the access node for this MS Dynamics 365 instance.</p>
+<p>Returns
+-----=
+The name of the access node as a string.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; instance = MSDynamics365Instance()
+&gt;&gt;&gt; node_name = instance.access_node
+&gt;&gt;&gt; print(f&quot;Access node: {node_name}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/cloudapps/dynamics365_instance.py#L110-L113" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/cloudapps/dynamics365_instance.py#L143-L157" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def access_node(self):
-    &#34;&#34;&#34;Returns the name of the access node for this MS Dynamics 365 instance&#34;&#34;&#34;
+def access_node(self) -&gt; str:
+    &#34;&#34;&#34;Get the name of the access node for this MS Dynamics 365 instance.
+
+    Returns:
+        The name of the access node as a string.
+
+    Example:
+        &gt;&gt;&gt; instance = MSDynamics365Instance()
+        &gt;&gt;&gt; node_name = instance.access_node
+        &gt;&gt;&gt; print(f&#34;Access node: {node_name}&#34;)
+
+    &#34;&#34;&#34;
     return self._access_node</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.instances.cloudapps.dynamics365_instance.MSDynamics365Instance.idx_app_type"><code class="name">var <span class="ident">idx_app_type</span> : int</code></dt>
 <dd>
-<div class="desc"><p>Returns the App type of the MS Dynamics 365 instance</p></div>
+<div class="desc"><p>Get the application type identifier for the MS Dynamics 365 instance.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>int</code></dt>
+<dd>The integer value representing the application type of this MS Dynamics 365 instance.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; msd_instance = MSDynamics365Instance()
+&gt;&gt;&gt; app_type = msd_instance.idx_app_type
+&gt;&gt;&gt; print(f&quot;MS Dynamics 365 App Type: {app_type}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/cloudapps/dynamics365_instance.py#L115-L118" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/cloudapps/dynamics365_instance.py#L159-L173" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
 def idx_app_type(self) -&gt; int:
-    &#34;&#34;&#34;Returns the App type of the MS Dynamics 365 instance&#34;&#34;&#34;
+    &#34;&#34;&#34;Get the application type identifier for the MS Dynamics 365 instance.
+
+    Returns:
+        int: The integer value representing the application type of this MS Dynamics 365 instance.
+
+    Example:
+        &gt;&gt;&gt; msd_instance = MSDynamics365Instance()
+        &gt;&gt;&gt; app_type = msd_instance.idx_app_type
+        &gt;&gt;&gt; print(f&#34;MS Dynamics 365 App Type: {app_type}&#34;)
+
+    &#34;&#34;&#34;
     return 200127</code></pre>
 </details>
 </dd>
@@ -403,38 +569,59 @@ def idx_app_type(self) -&gt; int:
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.instances.cloudapps.dynamics365_instance.MSDynamics365Instance.discover_content"><code class="name flex">
-<span>def <span class="ident">discover_content</span></span>(<span>self, environment_discovery: bool = False)</span>
+<span>def <span class="ident">discover_content</span></span>(<span>self, environment_discovery: bool = False) ‑> dict</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Run Discovery for a MS Dynamics 365 Instance</p>
-<h2 id="arguments">Arguments</h2>
-<p>environment_discovery
-(bool)&ndash;
-Whether to run discovery for Dynamics 365 environments
-If True
-Discovery will run for Dynamics 365 environments
-If False
-Table level discovered content would be run</p>
-<h2 id="returns">Returns</h2>
-<p>discovered_content
-(dict)&ndash;
-Dictionary of the discovered content</p></div>
+<div class="desc"><p>Run discovery for a Microsoft Dynamics 365 Instance.</p>
+<p>This method performs content discovery on the MS Dynamics 365 instance.
+If <code>environment_discovery</code> is set to True, the discovery process will target Dynamics 365 environments.
+If set to False (default), the discovery will be performed at the table level.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>environment_discovery</code></strong></dt>
+<dd>Whether to run discovery for Dynamics 365 environments (True)
+or at the table level (False).</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>A dictionary containing the discovered content.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; msd_instance = MSDynamics365Instance()
+&gt;&gt;&gt; content = msd_instance.discover_content()
+&gt;&gt;&gt; print(content)
+&gt;&gt;&gt; # To discover environments instead of tables:
+&gt;&gt;&gt; env_content = msd_instance.discover_content(environment_discovery=True)
+&gt;&gt;&gt; print(env_content)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/cloudapps/dynamics365_instance.py#L120-L159" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/cloudapps/dynamics365_instance.py#L175-L225" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def discover_content(self, environment_discovery: bool = False):
-    &#34;&#34;&#34;
-        Run Discovery for a MS Dynamics 365 Instance
-        Arguments:
-            environment_discovery            (bool)--     Whether to run discovery for Dynamics 365 environments
-                If True
-                    Discovery will run for Dynamics 365 environments
-                If False
-                    Table level discovered content would be run
-        Returns:
-            discovered_content              (dict)--        Dictionary of the discovered content
+<pre><code class="python">def discover_content(self, environment_discovery: bool = False) -&gt; dict:
+    &#34;&#34;&#34;Run discovery for a Microsoft Dynamics 365 Instance.
+
+    This method performs content discovery on the MS Dynamics 365 instance. 
+    If `environment_discovery` is set to True, the discovery process will target Dynamics 365 environments.
+    If set to False (default), the discovery will be performed at the table level.
+
+    Args:
+        environment_discovery: Whether to run discovery for Dynamics 365 environments (True) 
+            or at the table level (False).
+
+    Returns:
+        dict: A dictionary containing the discovered content.
+
+    Example:
+        &gt;&gt;&gt; msd_instance = MSDynamics365Instance()
+        &gt;&gt;&gt; content = msd_instance.discover_content()
+        &gt;&gt;&gt; print(content)
+        &gt;&gt;&gt; # To discover environments instead of tables:
+        &gt;&gt;&gt; env_content = msd_instance.discover_content(environment_discovery=True)
+        &gt;&gt;&gt; print(env_content)
 
     &#34;&#34;&#34;
     discovery_type: int
@@ -471,14 +658,20 @@ Dictionary of the discovered content</p></div>
 <ul class="hlist">
 <li><code><b><a title="cvpysdk.instances.cainstance.CloudAppsInstance" href="../cainstance.html#cvpysdk.instances.cainstance.CloudAppsInstance">CloudAppsInstance</a></b></code>:
 <ul class="hlist">
+<li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.account_name" href="../cainstance.html#cvpysdk.instances.cainstance.CloudAppsInstance.account_name">account_name</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.backupsets" href="../../instance.html#cvpysdk.instance.Instance.backupsets">backupsets</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.browse" href="../../instance.html#cvpysdk.instance.Instance.browse">browse</a></code></li>
+<li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.ca_instance_type" href="../cainstance.html#cvpysdk.instances.cainstance.CloudAppsInstance.ca_instance_type">ca_instance_type</a></code></li>
+<li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.credential_id" href="../cainstance.html#cvpysdk.instances.cainstance.CloudAppsInstance.credential_id">credential_id</a></code></li>
+<li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.credential_name" href="../cainstance.html#cvpysdk.instances.cainstance.CloudAppsInstance.credential_name">credential_name</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.credentials" href="../../instance.html#cvpysdk.instance.Instance.credentials">credentials</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.find" href="../../instance.html#cvpysdk.instance.Instance.find">find</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.instance_id" href="../../instance.html#cvpysdk.instance.Instance.instance_id">instance_id</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.instance_name" href="../../instance.html#cvpysdk.instance.Instance.instance_name">instance_name</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.name" href="../../instance.html#cvpysdk.instance.Instance.name">name</a></code></li>
+<li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.plan_name" href="../cainstance.html#cvpysdk.instances.cainstance.CloudAppsInstance.plan_name">plan_name</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.properties" href="../../instance.html#cvpysdk.instance.Instance.properties">properties</a></code></li>
+<li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.proxy_client" href="../cainstance.html#cvpysdk.instances.cainstance.CloudAppsInstance.proxy_client">proxy_client</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.refresh" href="../../instance.html#cvpysdk.instance.Instance.refresh">refresh</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.subclients" href="../../instance.html#cvpysdk.instance.Instance.subclients">subclients</a></code></li>
 <li><code><a title="cvpysdk.instances.cainstance.CloudAppsInstance.update_properties" href="../../instance.html#cvpysdk.instance.Instance.update_properties">update_properties</a></code></li>

@@ -25,8 +25,9 @@
 <section id="section-intro">
 <p>Module for doing operations on an Exchange Database Agent.</p>
 <p>This module has operations that are applicable at the Agent level for Exchange Database.</p>
-<h2 id="exchangedatabasesubclient">Exchangedatabasesubclient</h2>
-<p>_get_subclient_properties()
+<p>Exchangedatabasesubclient
+-----=
+_get_subclient_properties()
 &ndash;
 get the properties of the subclient, and initialize
 the basic properties</p>
@@ -60,7 +61,7 @@ create recovery point for a database</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/exchange_database_subclient.py#L1-L445" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/exchange/exchange_database_subclient.py#L1-L583" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -117,16 +118,49 @@ Attributes
 
 from __future__ import unicode_literals
 
+from typing import Any
+
 from ...subclient import Subclient
 from ...exception import SDKException
 from ...job import Job
 
-class ExchangeDatabaseSubclient(Subclient):
-    &#34;&#34;&#34;Derived class from the Subclient Base class,
-        to perform operations specific to an Exchange Database Subclient.&#34;&#34;&#34;
+from requests import Response
 
-    def _get_subclient_properties(self):
-        &#34;&#34;&#34;Gets the subclient  related properties of Exchange Database subclient..&#34;&#34;&#34;
+
+class ExchangeDatabaseSubclient(Subclient):
+    &#34;&#34;&#34;
+    Specialized subclient class for managing Exchange Database operations.
+
+    This class extends the Subclient base class to provide functionality
+    specific to Exchange Database subclients, including property management,
+    content handling, and advanced restore operations. It supports both
+    in-place and out-of-place restores, recovery point creation, session
+    management, mailbox tag retrieval, and message restoration.
+
+    Key Features:
+        - Retrieve and manage subclient properties and content
+        - Set Exchange Database-specific subclient properties
+        - Generate and handle subclient property JSON representations
+        - Perform in-place and out-of-place restore operations for Exchange databases
+        - Create recovery points for Exchange databases with configurable expiry
+        - Manage restore sessions and retrieve mailbox tags
+        - Restore messages using session and mailbox tag information
+
+    &#34;&#34;&#34;
+
+    def _get_subclient_properties(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the properties related to the Exchange Database subclient.
+
+        Returns:
+            dict: A dictionary containing the subclient properties specific to the Exchange Database subclient.
+
+        Example:
+            &gt;&gt;&gt; subclient = ExchangeDatabaseSubclient()
+            &gt;&gt;&gt; properties = subclient._get_subclient_properties()
+            &gt;&gt;&gt; print(properties)
+            &gt;&gt;&gt; # Output will be a dictionary with subclient property details
+
+        &#34;&#34;&#34;
         super(ExchangeDatabaseSubclient, self)._get_subclient_properties()
 
         self._content = self._subclient_properties.get(&#39;content&#39;, [])
@@ -134,12 +168,19 @@ class ExchangeDatabaseSubclient(Subclient):
             &#39;exchangeDBSubClientProp&#39;, {}
         )
 
-    def _get_subclient_properties_json(self):
-        &#34;&#34;&#34;Returns the JSON with the properties for the Subclient, that can be used for a POST
-        request to update the properties of the Subclient.
+    def _get_subclient_properties_json(self) -&gt; dict:
+        &#34;&#34;&#34;Generate a JSON-compatible dictionary of the subclient&#39;s properties.
 
-           Returns:
-               dict     -   all subclient properties put inside a dict
+        This method prepares all relevant subclient properties in a dictionary format,
+        suitable for use in a POST request to update the subclient&#39;s configuration.
+
+        Returns:
+            dict: A dictionary containing all subclient properties.
+
+        Example:
+            &gt;&gt;&gt; subclient = ExchangeDatabaseSubclient()
+            &gt;&gt;&gt; properties_json = subclient._get_subclient_properties_json()
+            &gt;&gt;&gt; # Use properties_json in a POST request to update subclient settings
 
         &#34;&#34;&#34;
         subclient_json = {
@@ -155,27 +196,37 @@ class ExchangeDatabaseSubclient(Subclient):
         return subclient_json
 
     @property
-    def content(self):
-        &#34;&#34;&#34;Gets the appropriate content from the Subclient relevant to the user.
+    def content(self) -&gt; list:
+        &#34;&#34;&#34;Retrieve the list of content items added to the Exchange Database Subclient.
 
-            Returns:
-                list    -   list of content added to the subclient
+        Returns:
+            list: A list containing the content items currently associated with the subclient.
+
+        Example:
+            &gt;&gt;&gt; subclient = ExchangeDatabaseSubclient()
+            &gt;&gt;&gt; content_list = subclient.content
+            &gt;&gt;&gt; print(f&#34;Subclient content: {content_list}&#34;)
 
         &#34;&#34;&#34;
         return self._content
 
     @content.setter
-    def content(self, subclient_content):
-        &#34;&#34;&#34;Update the content of the subclient with the content list given by the user.
+    def content(self, subclient_content: list) -&gt; None:
+        &#34;&#34;&#34;Set the content of the subclient with the provided list.
 
-            Args:
-                subclient_content   (list)  --  list of the content to add to the subclient
+        Updates the subclient&#39;s content to match the specified list. The input must be a list,
+        and each item in the list should represent a content item to be added to the subclient.
 
-            Raises:
-                SDKException:
-                    if specified input is not a list
+        Args:
+            subclient_content: A list containing the content items to set for the subclient.
 
-                    if failed to update subclient content
+        Raises:
+            SDKException: If the input is not a list or if updating the subclient content fails.
+
+        Example:
+            &gt;&gt;&gt; new_content = [&#39;Mailbox Database 1&#39;, &#39;Mailbox Database 2&#39;]
+            &gt;&gt;&gt; subclient.content = new_content  # Use assignment for property setter
+            &gt;&gt;&gt; print(&#34;Subclient content updated successfully&#34;)
 
         &#34;&#34;&#34;
         if isinstance(subclient_content, list) and subclient_content != []:
@@ -185,11 +236,16 @@ class ExchangeDatabaseSubclient(Subclient):
                 &#39;Subclient&#39;, &#39;102&#39;, &#39;Subclient content should be a list value and not empty&#39;
             )
 
-    def _set_content(self, content):
-        &#34;&#34;&#34;Sets the subclient content
+    def _set_content(self, content: list) -&gt; None:
+        &#34;&#34;&#34;Set the content for the Exchange Database subclient.
 
-            Args:
-                content                 (list)      --  list of subclient content
+        Args:
+            content: A list containing the subclient content items to be set.
+
+        Example:
+            &gt;&gt;&gt; subclient = ExchangeDatabaseSubclient()
+            &gt;&gt;&gt; subclient._set_content([&#39;MailboxDB1&#39;, &#39;MailboxDB2&#39;])
+            &gt;&gt;&gt; # The subclient content is now set to the specified databases
 
         &#34;&#34;&#34;
         temp = []
@@ -205,13 +261,20 @@ class ExchangeDatabaseSubclient(Subclient):
 
         self._set_subclient_properties(&#34;_content&#34;, temp)
 
-    def set_exchangedb_subclient_prop(self, key, value):
-        &#34;&#34;&#34;Sets the exchange DB sublcient properties
+    def set_exchangedb_subclient_prop(self, key: str, value: object) -&gt; None:
+        &#34;&#34;&#34;Set a property for the Exchange Database subclient.
 
-            Args:
-                key             (str)       --  property to be changed
+        This method allows you to update a specific property of the Exchange Database subclient
+        by specifying the property key and the value to assign.
 
-                value           (obj)       --  value to be set
+        Args:
+            key: The name of the property to be changed.
+            value: The value to set for the specified property.
+
+        Example:
+            &gt;&gt;&gt; subclient = ExchangeDatabaseSubclient()
+            &gt;&gt;&gt; subclient.set_exchangedb_subclient_prop(&#39;retentionDays&#39;, 30)
+            &gt;&gt;&gt; subclient.set_exchangedb_subclient_prop(&#39;enableCircularLogging&#39;, True)
 
         &#34;&#34;&#34;
         self._set_subclient_properties(
@@ -219,15 +282,29 @@ class ExchangeDatabaseSubclient(Subclient):
             value
         )
 
+    def _restore_json(self, **kwargs: Any) -&gt; dict:
+        &#34;&#34;&#34;Generate the JSON request payload for the restore API based on user-selected options.
 
-    def _restore_json(self, **kwargs):
-        &#34;&#34;&#34;Returns the JSON request to pass to the API as per the options selected by the user.
+        This method constructs a dictionary representing the restore request, using the provided keyword arguments
+        to set specific restore options.
 
-            Args:
-                kwargs   (dict)  --  dict of options need to be set for restore
+        Args:
+            **kwargs: Arbitrary keyword arguments specifying restore options. Each key-value pair represents
+                an option to be included in the restore request.
 
-            Returns:
-                dict - JSON request to pass to the API
+        Returns:
+            dict: The JSON request dictionary to be sent to the API.
+
+        Example:
+            &gt;&gt;&gt; options = {
+            ...     &#34;database_name&#34;: &#34;ExchangeDB1&#34;,
+            ...     &#34;restore_type&#34;: &#34;in_place&#34;,
+            ...     &#34;overwrite&#34;: True
+            ... }
+            &gt;&gt;&gt; json_request = subclient._restore_json(**options)
+            &gt;&gt;&gt; print(json_request)
+            {&#39;database_name&#39;: &#39;ExchangeDB1&#39;, &#39;restore_type&#39;: &#39;in_place&#39;, &#39;overwrite&#39;: True}
+
         &#34;&#34;&#34;
         self._instance_object._restore_association = self._subClientEntity
 
@@ -245,17 +322,25 @@ class ExchangeDatabaseSubclient(Subclient):
 
         return restore_json
 
-    def restore_in_place(self, paths, client=None):
-        &#34;&#34;&#34;
-         Run inplace restore for Exchange database subclient
+    def restore_in_place(self, paths: list, client: object = None) -&gt; object:
+        &#34;&#34;&#34;Perform an in-place restore for the Exchange database subclient.
 
-         Args:
-             paths      (list)   -- list of path used for inplace restore
+        This method initiates an in-place restore operation for the specified Exchange database paths.
+        Optionally, a specific client object can be provided to target the restore.
 
-             client     (object) -- object of client class
+        Args:
+            paths: List of database paths to restore in place.
+            client: Optional; the client object representing the target client for the restore.
 
         Returns:
-            object  -   Job class object for restore job
+            An object representing the Job for the restore operation.
+
+        Example:
+            &gt;&gt;&gt; subclient = ExchangeDatabaseSubclient()
+            &gt;&gt;&gt; restore_paths = [r&#39;C:\\ExchangeDB1&#39;, r&#39;C:\\ExchangeDB2&#39;]
+            &gt;&gt;&gt; job = subclient.restore_in_place(restore_paths)
+            &gt;&gt;&gt; print(f&#34;Restore job started with ID: {job.job_id}&#34;)
+
         &#34;&#34;&#34;
         if client is None:
             client = self._client_object
@@ -263,35 +348,49 @@ class ExchangeDatabaseSubclient(Subclient):
 
         return self._process_restore_response(restore_json)
 
-    def restore_out_of_place(self, client, paths):
-        &#34;&#34;&#34;
-         Run out of place restore for Exchange database subclient
-            Args:
-                client      (str)       -- destination client on which the restore should run
+    def restore_out_of_place(self, client: str, paths: list) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;Run an out-of-place restore for an Exchange database subclient.
 
-                paths       (list)      -- list of path used for out of place restore
+        This method initiates a restore operation where the selected Exchange database(s)
+        are restored to a different client (destination) than the original source.
 
-            Returns:
-                object  -   Job class object for restore job
+        Args:
+            client: The name of the destination client where the restore should be performed.
+            paths: A list of database paths to be restored out of place.
+
+        Returns:
+            Job: An instance of the Job class representing the restore job.
+
+        Example:
+            &gt;&gt;&gt; subclient = ExchangeDatabaseSubclient()
+            &gt;&gt;&gt; restore_job = subclient.restore_out_of_place(&#39;DestinationClient&#39;, [&#39;/db1&#39;, &#39;/db2&#39;])
+            &gt;&gt;&gt; print(f&#34;Restore job started with ID: {restore_job.job_id}&#34;)
+
         &#34;&#34;&#34;
         restore_json = self._restore_json(paths=paths, client=client)
 
         return self._process_restore_response(restore_json)
 
-    def create_recovery_point(self, db_name, media_agent, expiry_days=5):
-        &#34;&#34;&#34;&#34;
-        Run a create recovery point job on a backup
+    def create_recovery_point(self, db_name: str, media_agent: str, expiry_days: int = 5) -&gt; int:
+        &#34;&#34;&#34;Create a recovery point for a specified Exchange database.
 
-            Args:
-                db_name            (str)   --  database name
+        This method initiates a job to create a recovery point for the given database
+        using the specified media agent. The recovery point will be retained for the
+        specified number of days.
 
-                media_agent        (str)   --  media agent name to create recovery point on
+        Args:
+            db_name: The name of the Exchange database for which to create the recovery point.
+            media_agent: The name of the media agent to use for creating the recovery point.
+            expiry_days: The number of days to retain the recovery point. Defaults to 5.
 
-                expiry_days         (int)   --  no of days to keep the recovery point
-                                                default : 5
+        Returns:
+            The job ID of the initiated recovery point creation job.
 
-            Returns:
-                job     - Job id of recovery point
+        Example:
+            &gt;&gt;&gt; subclient = ExchangeDatabaseSubclient()
+            &gt;&gt;&gt; job_id = subclient.create_recovery_point(&#39;MailboxDB01&#39;, &#39;MediaAgent01&#39;, expiry_days=7)
+            &gt;&gt;&gt; print(f&#34;Recovery point creation job started with ID: {job_id}&#34;)
+
         &#34;&#34;&#34;
         options = {
             &#39;path&#39;: db_name,
@@ -309,12 +408,12 @@ class ExchangeDatabaseSubclient(Subclient):
                         &#34;appMinType&#34;: 2,
                         &#34;bCreateRecoveryPoint&#34;: True,
                         &#34;expireDays&#34;: expiry_days
-                        },
+                    },
                     &#34;isApplicationMiningReq&#34;: True,
                     &#34;appType&#34;: int(self._agent_object._agent_id)
-                    }
                 }
             }
+        }
 
         flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._BROWSE, request_json)
 
@@ -331,22 +430,26 @@ class ExchangeDatabaseSubclient(Subclient):
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;)
 
+    def get_session(self, path: str, media_agent: str, edb_paths: dict, recovery_point_ids: dict) -&gt; dict:
+        &#34;&#34;&#34;Retrieve session IDs for a recovery point in an Exchange database.
 
-    def get_session(self, path, media_agent, edb_paths, recovery_point_ids):
-        &#34;&#34;&#34;&#34;
-        Get session ids for a recovery point
+        Args:
+            path: The name of the Exchange database.
+            media_agent: The name of the media agent to use for creating the recovery point.
+            edb_paths: A dictionary mapping EDB paths to their corresponding job IDs.
+            recovery_point_ids: A dictionary mapping job IDs to recovery point IDs (e.g., {97297: 834, 97298: 835}).
 
-            Args:
-                path            (str)   --  database name
+        Returns:
+            dict: A dictionary containing session IDs associated with the specified recovery points.
 
-                media_agent     (str)   --  media agent name to create recovery point on
+        Example:
+            &gt;&gt;&gt; subclient = ExchangeDatabaseSubclient()
+            &gt;&gt;&gt; edb_paths = {&#39;/db1/edb&#39;: 12345, &#39;/db2/edb&#39;: 12346}
+            &gt;&gt;&gt; recovery_points = {12345: 67890, 12346: 67891}
+            &gt;&gt;&gt; sessions = subclient.get_session(&#39;MailboxDB01&#39;, &#39;MediaAgent01&#39;, edb_paths, recovery_points)
+            &gt;&gt;&gt; print(sessions)
+            {&#39;/db1/edb&#39;: 555, &#39;/db2/edb&#39;: 556}
 
-                edb_paths       (dict)   --  edb paths with job Ids
-
-                recovery_point_ids (dict)   --  ids of recovery point jobs
-                ex: {97297: 834, 97298: 835}
-            Returns:
-                Sessionids     - dictionary of sessionids
         &#34;&#34;&#34;
         session_ids = {}
         for jobid, edb_path in edb_paths.items():
@@ -377,7 +480,7 @@ class ExchangeDatabaseSubclient(Subclient):
             flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._BROWSE, request_json)
 
             if flag:
-                if response and response.json() :
+                if response and response.json():
                     response = response.json()
                     response = response[&#39;browseResponses&#39;][0]
                     edb = response[&#39;browseResult&#39;][&#39;advConfig&#39;][&#39;applicationMining&#39;][&#39;browseInitResp&#39;][&#39;edbPath&#39;]
@@ -389,22 +492,25 @@ class ExchangeDatabaseSubclient(Subclient):
 
         return session_ids
 
+    def get_mailbox_tags(self, path: str, media_agent: str, edb_paths: dict, session_ids: dict) -&gt; dict:
+        &#34;&#34;&#34;Retrieve mailbox tags for a recovery point in an Exchange database.
 
-    def get_mailbox_tags(self, path, media_agent, edb_paths, session_ids):
-        &#34;&#34;&#34;&#34;
-        Get the mailbox tags for a recovery point
+        Args:
+            path: The name of the Exchange database.
+            media_agent: The name of the media agent to use for creating the recovery point.
+            edb_paths: A dictionary mapping EDB file paths to their corresponding job IDs.
+            session_ids: A dictionary containing session IDs of recovery point jobs.
 
-            Args:
-                path            (str)   --  database name
+        Returns:
+            A dictionary where each key is a mailbox identifier and the value is a list or set of associated tags.
 
-                media_agent     (str)   --  media agent name to create recovery point on
+        Example:
+            &gt;&gt;&gt; edb_paths = {&#39;C:\\ExchangeDB\\db1.edb&#39;: 12345}
+            &gt;&gt;&gt; session_ids = {&#39;session1&#39;: 67890}
+            &gt;&gt;&gt; tags = subclient.get_mailbox_tags(&#39;DB1&#39;, &#39;MediaAgent01&#39;, edb_paths, session_ids)
+            &gt;&gt;&gt; print(tags)
+            {&#39;mailbox1&#39;: [&#39;tag1&#39;, &#39;tag2&#39;], &#39;mailbox2&#39;: [&#39;tag3&#39;]}
 
-                edb_paths       (dict)   --  edb paths with job Ids
-
-                session_ids      (dict)   --  sessionIDs of recovery point jobs
-
-            Returns:
-                mailboxTags     - dictionary of mailboxes and their tags
         &#34;&#34;&#34;
         mailbox_tags = {}
         for jobid, edb_path in edb_paths.items():
@@ -438,8 +544,11 @@ class ExchangeDatabaseSubclient(Subclient):
                     response = response.json()
                     response = response[&#39;browseResponses&#39;][0]
                     response = response[&#39;browseResult&#39;][&#39;dataResultSet&#39;][0]
-                    db_name = response[&#39;advancedData&#39;][&#39;advConfig&#39;][&#39;applicationMining&#39;][&#39;browseResp&#39;][&#39;exMiningRsp&#39;][&#39;edbPath&#39;]
-                    mailbox_tags[db_name] = response[&#39;advancedData&#39;][&#39;advConfig&#39;][&#39;applicationMining&#39;][&#39;browseResp&#39;][&#39;exMiningRsp&#39;][&#39;mailboxTag&#39;]
+                    db_name = response[&#39;advancedData&#39;][&#39;advConfig&#39;][&#39;applicationMining&#39;][&#39;browseResp&#39;][&#39;exMiningRsp&#39;][
+                        &#39;edbPath&#39;]
+                    mailbox_tags[db_name] = \
+                    response[&#39;advancedData&#39;][&#39;advConfig&#39;][&#39;applicationMining&#39;][&#39;browseResp&#39;][&#39;exMiningRsp&#39;][
+                        &#39;mailboxTag&#39;]
                 else:
                     raise SDKException(&#39;Response&#39;, &#39;102&#39;)
             else:
@@ -447,26 +556,43 @@ class ExchangeDatabaseSubclient(Subclient):
 
         return mailbox_tags
 
-    def run_restore_messages(self, path, media_agent, oop_path,
-                             session_id, edb_path, mailbox_tags):
-        &#34;&#34;&#34;&#34;
-        Run a create recovery point job on a backup
+    def run_restore_messages(
+            self,
+            path: str,
+            media_agent: str,
+            oop_path: str,
+            session_id: dict,
+            edb_path: dict,
+            mailbox_tags: dict
+    ) -&gt; &#39;Response&#39;:
+        &#34;&#34;&#34;Run a restore operation to recover messages from a backup.
 
-            Args:
-                path            (str)   --  database name
+        This method initiates a recovery point job for a specified Exchange database backup,
+        restoring messages for the given mailbox tags to a PST file at the specified output path.
 
-                media_agent              (str)   --  media agent name to create recovery point on
+        Args:
+            path: The name of the Exchange database to restore from.
+            media_agent: The name of the media agent to use for the recovery point job.
+            oop_path: The output path where the PST file will be created.
+            session_id: A dictionary containing session IDs of recovery point jobs.
+            edb_path: A dictionary mapping EDB paths to their corresponding job IDs.
+            mailbox_tags: A dictionary specifying mailbox tags for which the restore should be performed.
 
-                oop_path        (str)   --  path for pst restore
+        Returns:
+            Response: The response object containing the result of the restore operation.
 
-                edb_path       (dict)   --  edb paths with job Ids
+        Example:
+            &gt;&gt;&gt; response = subclient.run_restore_messages(
+            ...     path=&#34;MailboxDB01&#34;,
+            ...     media_agent=&#34;MediaAgent1&#34;,
+            ...     oop_path=&#34;C:/Restores/Output.pst&#34;,
+            ...     session_id={&#34;job1&#34;: 12345},
+            ...     edb_path={&#34;edb1&#34;: &#34;C:/EDB/edb1.edb&#34;},
+            ...     mailbox_tags={&#34;mailbox1&#34;: &#34;tag1&#34;}
+            ... )
+            &gt;&gt;&gt; print(response)
+            &gt;&gt;&gt; # The response object contains details about the restore job
 
-                session_id      (dict)   --  sessionIDs of recovery point jobs
-
-                mailbox_tags    (dict)  --  mailbox tags for which restore has to run
-
-            Returns:
-                Response
         &#34;&#34;&#34;
         options = {
             &#39;path&#39;: path,
@@ -491,8 +617,8 @@ class ExchangeDatabaseSubclient(Subclient):
                             &#34;mailboxTag&#34;: mailbox_tags,
                             &#34;destLocation&#34;: oop_path,
                             &#34;restoreDestType&#34;: 0
-                            }
-                        },
+                        }
+                    },
                 }
             }
         }
@@ -519,38 +645,79 @@ class ExchangeDatabaseSubclient(Subclient):
 <dl>
 <dt id="cvpysdk.subclients.exchange.exchange_database_subclient.ExchangeDatabaseSubclient"><code class="flex name class">
 <span>class <span class="ident">ExchangeDatabaseSubclient</span></span>
-<span>(</span><span>backupset_object, subclient_name, subclient_id=None)</span>
+<span>(</span><span>backupset_object: object, subclient_name: str, subclient_id: str = None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Derived class from the Subclient Base class,
-to perform operations specific to an Exchange Database Subclient.</p>
-<p>Initialise the Subclient object.</p>
-<h2 id="args">Args</h2>
-<p>backupset_object (object)
-&ndash;
-instance of the Backupset class</p>
-<p>subclient_name
-(str)
-&ndash;
-name of the subclient</p>
-<p>subclient_id
-(str)
-&ndash;
-id of the subclient
-default: None</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Subclient class</p></div>
+<div class="desc"><p>Specialized subclient class for managing Exchange Database operations.</p>
+<p>This class extends the Subclient base class to provide functionality
+specific to Exchange Database subclients, including property management,
+content handling, and advanced restore operations. It supports both
+in-place and out-of-place restores, recovery point creation, session
+management, mailbox tag retrieval, and message restoration.</p>
+<p>Key Features:
+- Retrieve and manage subclient properties and content
+- Set Exchange Database-specific subclient properties
+- Generate and handle subclient property JSON representations
+- Perform in-place and out-of-place restore operations for Exchange databases
+- Create recovery points for Exchange databases with configurable expiry
+- Manage restore sessions and retrieve mailbox tags
+- Restore messages using session and mailbox tag information</p>
+<p>Initialize a Subclient object.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>backupset_object</code></strong></dt>
+<dd>Instance of the Backupset class to which this subclient belongs.</dd>
+<dt><strong><code>subclient_name</code></strong></dt>
+<dd>Name of the subclient.</dd>
+<dt><strong><code>subclient_id</code></strong></dt>
+<dd>Optional; ID of the subclient. If not provided, it will be determined automatically.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; backupset = Backupset(client_object, 'defaultBackupSet')
+&gt;&gt;&gt; subclient = Subclient(backupset, 'default')
+&gt;&gt;&gt; print(f&quot;Subclient created: {subclient}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/exchange_database_subclient.py#L60-L444" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/exchange/exchange_database_subclient.py#L65-L583" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ExchangeDatabaseSubclient(Subclient):
-    &#34;&#34;&#34;Derived class from the Subclient Base class,
-        to perform operations specific to an Exchange Database Subclient.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Specialized subclient class for managing Exchange Database operations.
 
-    def _get_subclient_properties(self):
-        &#34;&#34;&#34;Gets the subclient  related properties of Exchange Database subclient..&#34;&#34;&#34;
+    This class extends the Subclient base class to provide functionality
+    specific to Exchange Database subclients, including property management,
+    content handling, and advanced restore operations. It supports both
+    in-place and out-of-place restores, recovery point creation, session
+    management, mailbox tag retrieval, and message restoration.
+
+    Key Features:
+        - Retrieve and manage subclient properties and content
+        - Set Exchange Database-specific subclient properties
+        - Generate and handle subclient property JSON representations
+        - Perform in-place and out-of-place restore operations for Exchange databases
+        - Create recovery points for Exchange databases with configurable expiry
+        - Manage restore sessions and retrieve mailbox tags
+        - Restore messages using session and mailbox tag information
+
+    &#34;&#34;&#34;
+
+    def _get_subclient_properties(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the properties related to the Exchange Database subclient.
+
+        Returns:
+            dict: A dictionary containing the subclient properties specific to the Exchange Database subclient.
+
+        Example:
+            &gt;&gt;&gt; subclient = ExchangeDatabaseSubclient()
+            &gt;&gt;&gt; properties = subclient._get_subclient_properties()
+            &gt;&gt;&gt; print(properties)
+            &gt;&gt;&gt; # Output will be a dictionary with subclient property details
+
+        &#34;&#34;&#34;
         super(ExchangeDatabaseSubclient, self)._get_subclient_properties()
 
         self._content = self._subclient_properties.get(&#39;content&#39;, [])
@@ -558,12 +725,19 @@ default: None</p>
             &#39;exchangeDBSubClientProp&#39;, {}
         )
 
-    def _get_subclient_properties_json(self):
-        &#34;&#34;&#34;Returns the JSON with the properties for the Subclient, that can be used for a POST
-        request to update the properties of the Subclient.
+    def _get_subclient_properties_json(self) -&gt; dict:
+        &#34;&#34;&#34;Generate a JSON-compatible dictionary of the subclient&#39;s properties.
 
-           Returns:
-               dict     -   all subclient properties put inside a dict
+        This method prepares all relevant subclient properties in a dictionary format,
+        suitable for use in a POST request to update the subclient&#39;s configuration.
+
+        Returns:
+            dict: A dictionary containing all subclient properties.
+
+        Example:
+            &gt;&gt;&gt; subclient = ExchangeDatabaseSubclient()
+            &gt;&gt;&gt; properties_json = subclient._get_subclient_properties_json()
+            &gt;&gt;&gt; # Use properties_json in a POST request to update subclient settings
 
         &#34;&#34;&#34;
         subclient_json = {
@@ -579,27 +753,37 @@ default: None</p>
         return subclient_json
 
     @property
-    def content(self):
-        &#34;&#34;&#34;Gets the appropriate content from the Subclient relevant to the user.
+    def content(self) -&gt; list:
+        &#34;&#34;&#34;Retrieve the list of content items added to the Exchange Database Subclient.
 
-            Returns:
-                list    -   list of content added to the subclient
+        Returns:
+            list: A list containing the content items currently associated with the subclient.
+
+        Example:
+            &gt;&gt;&gt; subclient = ExchangeDatabaseSubclient()
+            &gt;&gt;&gt; content_list = subclient.content
+            &gt;&gt;&gt; print(f&#34;Subclient content: {content_list}&#34;)
 
         &#34;&#34;&#34;
         return self._content
 
     @content.setter
-    def content(self, subclient_content):
-        &#34;&#34;&#34;Update the content of the subclient with the content list given by the user.
+    def content(self, subclient_content: list) -&gt; None:
+        &#34;&#34;&#34;Set the content of the subclient with the provided list.
 
-            Args:
-                subclient_content   (list)  --  list of the content to add to the subclient
+        Updates the subclient&#39;s content to match the specified list. The input must be a list,
+        and each item in the list should represent a content item to be added to the subclient.
 
-            Raises:
-                SDKException:
-                    if specified input is not a list
+        Args:
+            subclient_content: A list containing the content items to set for the subclient.
 
-                    if failed to update subclient content
+        Raises:
+            SDKException: If the input is not a list or if updating the subclient content fails.
+
+        Example:
+            &gt;&gt;&gt; new_content = [&#39;Mailbox Database 1&#39;, &#39;Mailbox Database 2&#39;]
+            &gt;&gt;&gt; subclient.content = new_content  # Use assignment for property setter
+            &gt;&gt;&gt; print(&#34;Subclient content updated successfully&#34;)
 
         &#34;&#34;&#34;
         if isinstance(subclient_content, list) and subclient_content != []:
@@ -609,11 +793,16 @@ default: None</p>
                 &#39;Subclient&#39;, &#39;102&#39;, &#39;Subclient content should be a list value and not empty&#39;
             )
 
-    def _set_content(self, content):
-        &#34;&#34;&#34;Sets the subclient content
+    def _set_content(self, content: list) -&gt; None:
+        &#34;&#34;&#34;Set the content for the Exchange Database subclient.
 
-            Args:
-                content                 (list)      --  list of subclient content
+        Args:
+            content: A list containing the subclient content items to be set.
+
+        Example:
+            &gt;&gt;&gt; subclient = ExchangeDatabaseSubclient()
+            &gt;&gt;&gt; subclient._set_content([&#39;MailboxDB1&#39;, &#39;MailboxDB2&#39;])
+            &gt;&gt;&gt; # The subclient content is now set to the specified databases
 
         &#34;&#34;&#34;
         temp = []
@@ -629,13 +818,20 @@ default: None</p>
 
         self._set_subclient_properties(&#34;_content&#34;, temp)
 
-    def set_exchangedb_subclient_prop(self, key, value):
-        &#34;&#34;&#34;Sets the exchange DB sublcient properties
+    def set_exchangedb_subclient_prop(self, key: str, value: object) -&gt; None:
+        &#34;&#34;&#34;Set a property for the Exchange Database subclient.
 
-            Args:
-                key             (str)       --  property to be changed
+        This method allows you to update a specific property of the Exchange Database subclient
+        by specifying the property key and the value to assign.
 
-                value           (obj)       --  value to be set
+        Args:
+            key: The name of the property to be changed.
+            value: The value to set for the specified property.
+
+        Example:
+            &gt;&gt;&gt; subclient = ExchangeDatabaseSubclient()
+            &gt;&gt;&gt; subclient.set_exchangedb_subclient_prop(&#39;retentionDays&#39;, 30)
+            &gt;&gt;&gt; subclient.set_exchangedb_subclient_prop(&#39;enableCircularLogging&#39;, True)
 
         &#34;&#34;&#34;
         self._set_subclient_properties(
@@ -643,15 +839,29 @@ default: None</p>
             value
         )
 
+    def _restore_json(self, **kwargs: Any) -&gt; dict:
+        &#34;&#34;&#34;Generate the JSON request payload for the restore API based on user-selected options.
 
-    def _restore_json(self, **kwargs):
-        &#34;&#34;&#34;Returns the JSON request to pass to the API as per the options selected by the user.
+        This method constructs a dictionary representing the restore request, using the provided keyword arguments
+        to set specific restore options.
 
-            Args:
-                kwargs   (dict)  --  dict of options need to be set for restore
+        Args:
+            **kwargs: Arbitrary keyword arguments specifying restore options. Each key-value pair represents
+                an option to be included in the restore request.
 
-            Returns:
-                dict - JSON request to pass to the API
+        Returns:
+            dict: The JSON request dictionary to be sent to the API.
+
+        Example:
+            &gt;&gt;&gt; options = {
+            ...     &#34;database_name&#34;: &#34;ExchangeDB1&#34;,
+            ...     &#34;restore_type&#34;: &#34;in_place&#34;,
+            ...     &#34;overwrite&#34;: True
+            ... }
+            &gt;&gt;&gt; json_request = subclient._restore_json(**options)
+            &gt;&gt;&gt; print(json_request)
+            {&#39;database_name&#39;: &#39;ExchangeDB1&#39;, &#39;restore_type&#39;: &#39;in_place&#39;, &#39;overwrite&#39;: True}
+
         &#34;&#34;&#34;
         self._instance_object._restore_association = self._subClientEntity
 
@@ -669,17 +879,25 @@ default: None</p>
 
         return restore_json
 
-    def restore_in_place(self, paths, client=None):
-        &#34;&#34;&#34;
-         Run inplace restore for Exchange database subclient
+    def restore_in_place(self, paths: list, client: object = None) -&gt; object:
+        &#34;&#34;&#34;Perform an in-place restore for the Exchange database subclient.
 
-         Args:
-             paths      (list)   -- list of path used for inplace restore
+        This method initiates an in-place restore operation for the specified Exchange database paths.
+        Optionally, a specific client object can be provided to target the restore.
 
-             client     (object) -- object of client class
+        Args:
+            paths: List of database paths to restore in place.
+            client: Optional; the client object representing the target client for the restore.
 
         Returns:
-            object  -   Job class object for restore job
+            An object representing the Job for the restore operation.
+
+        Example:
+            &gt;&gt;&gt; subclient = ExchangeDatabaseSubclient()
+            &gt;&gt;&gt; restore_paths = [r&#39;C:\\ExchangeDB1&#39;, r&#39;C:\\ExchangeDB2&#39;]
+            &gt;&gt;&gt; job = subclient.restore_in_place(restore_paths)
+            &gt;&gt;&gt; print(f&#34;Restore job started with ID: {job.job_id}&#34;)
+
         &#34;&#34;&#34;
         if client is None:
             client = self._client_object
@@ -687,35 +905,49 @@ default: None</p>
 
         return self._process_restore_response(restore_json)
 
-    def restore_out_of_place(self, client, paths):
-        &#34;&#34;&#34;
-         Run out of place restore for Exchange database subclient
-            Args:
-                client      (str)       -- destination client on which the restore should run
+    def restore_out_of_place(self, client: str, paths: list) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;Run an out-of-place restore for an Exchange database subclient.
 
-                paths       (list)      -- list of path used for out of place restore
+        This method initiates a restore operation where the selected Exchange database(s)
+        are restored to a different client (destination) than the original source.
 
-            Returns:
-                object  -   Job class object for restore job
+        Args:
+            client: The name of the destination client where the restore should be performed.
+            paths: A list of database paths to be restored out of place.
+
+        Returns:
+            Job: An instance of the Job class representing the restore job.
+
+        Example:
+            &gt;&gt;&gt; subclient = ExchangeDatabaseSubclient()
+            &gt;&gt;&gt; restore_job = subclient.restore_out_of_place(&#39;DestinationClient&#39;, [&#39;/db1&#39;, &#39;/db2&#39;])
+            &gt;&gt;&gt; print(f&#34;Restore job started with ID: {restore_job.job_id}&#34;)
+
         &#34;&#34;&#34;
         restore_json = self._restore_json(paths=paths, client=client)
 
         return self._process_restore_response(restore_json)
 
-    def create_recovery_point(self, db_name, media_agent, expiry_days=5):
-        &#34;&#34;&#34;&#34;
-        Run a create recovery point job on a backup
+    def create_recovery_point(self, db_name: str, media_agent: str, expiry_days: int = 5) -&gt; int:
+        &#34;&#34;&#34;Create a recovery point for a specified Exchange database.
 
-            Args:
-                db_name            (str)   --  database name
+        This method initiates a job to create a recovery point for the given database
+        using the specified media agent. The recovery point will be retained for the
+        specified number of days.
 
-                media_agent        (str)   --  media agent name to create recovery point on
+        Args:
+            db_name: The name of the Exchange database for which to create the recovery point.
+            media_agent: The name of the media agent to use for creating the recovery point.
+            expiry_days: The number of days to retain the recovery point. Defaults to 5.
 
-                expiry_days         (int)   --  no of days to keep the recovery point
-                                                default : 5
+        Returns:
+            The job ID of the initiated recovery point creation job.
 
-            Returns:
-                job     - Job id of recovery point
+        Example:
+            &gt;&gt;&gt; subclient = ExchangeDatabaseSubclient()
+            &gt;&gt;&gt; job_id = subclient.create_recovery_point(&#39;MailboxDB01&#39;, &#39;MediaAgent01&#39;, expiry_days=7)
+            &gt;&gt;&gt; print(f&#34;Recovery point creation job started with ID: {job_id}&#34;)
+
         &#34;&#34;&#34;
         options = {
             &#39;path&#39;: db_name,
@@ -733,12 +965,12 @@ default: None</p>
                         &#34;appMinType&#34;: 2,
                         &#34;bCreateRecoveryPoint&#34;: True,
                         &#34;expireDays&#34;: expiry_days
-                        },
+                    },
                     &#34;isApplicationMiningReq&#34;: True,
                     &#34;appType&#34;: int(self._agent_object._agent_id)
-                    }
                 }
             }
+        }
 
         flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._BROWSE, request_json)
 
@@ -755,22 +987,26 @@ default: None</p>
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;)
 
+    def get_session(self, path: str, media_agent: str, edb_paths: dict, recovery_point_ids: dict) -&gt; dict:
+        &#34;&#34;&#34;Retrieve session IDs for a recovery point in an Exchange database.
 
-    def get_session(self, path, media_agent, edb_paths, recovery_point_ids):
-        &#34;&#34;&#34;&#34;
-        Get session ids for a recovery point
+        Args:
+            path: The name of the Exchange database.
+            media_agent: The name of the media agent to use for creating the recovery point.
+            edb_paths: A dictionary mapping EDB paths to their corresponding job IDs.
+            recovery_point_ids: A dictionary mapping job IDs to recovery point IDs (e.g., {97297: 834, 97298: 835}).
 
-            Args:
-                path            (str)   --  database name
+        Returns:
+            dict: A dictionary containing session IDs associated with the specified recovery points.
 
-                media_agent     (str)   --  media agent name to create recovery point on
+        Example:
+            &gt;&gt;&gt; subclient = ExchangeDatabaseSubclient()
+            &gt;&gt;&gt; edb_paths = {&#39;/db1/edb&#39;: 12345, &#39;/db2/edb&#39;: 12346}
+            &gt;&gt;&gt; recovery_points = {12345: 67890, 12346: 67891}
+            &gt;&gt;&gt; sessions = subclient.get_session(&#39;MailboxDB01&#39;, &#39;MediaAgent01&#39;, edb_paths, recovery_points)
+            &gt;&gt;&gt; print(sessions)
+            {&#39;/db1/edb&#39;: 555, &#39;/db2/edb&#39;: 556}
 
-                edb_paths       (dict)   --  edb paths with job Ids
-
-                recovery_point_ids (dict)   --  ids of recovery point jobs
-                ex: {97297: 834, 97298: 835}
-            Returns:
-                Sessionids     - dictionary of sessionids
         &#34;&#34;&#34;
         session_ids = {}
         for jobid, edb_path in edb_paths.items():
@@ -801,7 +1037,7 @@ default: None</p>
             flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._BROWSE, request_json)
 
             if flag:
-                if response and response.json() :
+                if response and response.json():
                     response = response.json()
                     response = response[&#39;browseResponses&#39;][0]
                     edb = response[&#39;browseResult&#39;][&#39;advConfig&#39;][&#39;applicationMining&#39;][&#39;browseInitResp&#39;][&#39;edbPath&#39;]
@@ -813,22 +1049,25 @@ default: None</p>
 
         return session_ids
 
+    def get_mailbox_tags(self, path: str, media_agent: str, edb_paths: dict, session_ids: dict) -&gt; dict:
+        &#34;&#34;&#34;Retrieve mailbox tags for a recovery point in an Exchange database.
 
-    def get_mailbox_tags(self, path, media_agent, edb_paths, session_ids):
-        &#34;&#34;&#34;&#34;
-        Get the mailbox tags for a recovery point
+        Args:
+            path: The name of the Exchange database.
+            media_agent: The name of the media agent to use for creating the recovery point.
+            edb_paths: A dictionary mapping EDB file paths to their corresponding job IDs.
+            session_ids: A dictionary containing session IDs of recovery point jobs.
 
-            Args:
-                path            (str)   --  database name
+        Returns:
+            A dictionary where each key is a mailbox identifier and the value is a list or set of associated tags.
 
-                media_agent     (str)   --  media agent name to create recovery point on
+        Example:
+            &gt;&gt;&gt; edb_paths = {&#39;C:\\ExchangeDB\\db1.edb&#39;: 12345}
+            &gt;&gt;&gt; session_ids = {&#39;session1&#39;: 67890}
+            &gt;&gt;&gt; tags = subclient.get_mailbox_tags(&#39;DB1&#39;, &#39;MediaAgent01&#39;, edb_paths, session_ids)
+            &gt;&gt;&gt; print(tags)
+            {&#39;mailbox1&#39;: [&#39;tag1&#39;, &#39;tag2&#39;], &#39;mailbox2&#39;: [&#39;tag3&#39;]}
 
-                edb_paths       (dict)   --  edb paths with job Ids
-
-                session_ids      (dict)   --  sessionIDs of recovery point jobs
-
-            Returns:
-                mailboxTags     - dictionary of mailboxes and their tags
         &#34;&#34;&#34;
         mailbox_tags = {}
         for jobid, edb_path in edb_paths.items():
@@ -862,8 +1101,11 @@ default: None</p>
                     response = response.json()
                     response = response[&#39;browseResponses&#39;][0]
                     response = response[&#39;browseResult&#39;][&#39;dataResultSet&#39;][0]
-                    db_name = response[&#39;advancedData&#39;][&#39;advConfig&#39;][&#39;applicationMining&#39;][&#39;browseResp&#39;][&#39;exMiningRsp&#39;][&#39;edbPath&#39;]
-                    mailbox_tags[db_name] = response[&#39;advancedData&#39;][&#39;advConfig&#39;][&#39;applicationMining&#39;][&#39;browseResp&#39;][&#39;exMiningRsp&#39;][&#39;mailboxTag&#39;]
+                    db_name = response[&#39;advancedData&#39;][&#39;advConfig&#39;][&#39;applicationMining&#39;][&#39;browseResp&#39;][&#39;exMiningRsp&#39;][
+                        &#39;edbPath&#39;]
+                    mailbox_tags[db_name] = \
+                    response[&#39;advancedData&#39;][&#39;advConfig&#39;][&#39;applicationMining&#39;][&#39;browseResp&#39;][&#39;exMiningRsp&#39;][
+                        &#39;mailboxTag&#39;]
                 else:
                     raise SDKException(&#39;Response&#39;, &#39;102&#39;)
             else:
@@ -871,26 +1113,43 @@ default: None</p>
 
         return mailbox_tags
 
-    def run_restore_messages(self, path, media_agent, oop_path,
-                             session_id, edb_path, mailbox_tags):
-        &#34;&#34;&#34;&#34;
-        Run a create recovery point job on a backup
+    def run_restore_messages(
+            self,
+            path: str,
+            media_agent: str,
+            oop_path: str,
+            session_id: dict,
+            edb_path: dict,
+            mailbox_tags: dict
+    ) -&gt; &#39;Response&#39;:
+        &#34;&#34;&#34;Run a restore operation to recover messages from a backup.
 
-            Args:
-                path            (str)   --  database name
+        This method initiates a recovery point job for a specified Exchange database backup,
+        restoring messages for the given mailbox tags to a PST file at the specified output path.
 
-                media_agent              (str)   --  media agent name to create recovery point on
+        Args:
+            path: The name of the Exchange database to restore from.
+            media_agent: The name of the media agent to use for the recovery point job.
+            oop_path: The output path where the PST file will be created.
+            session_id: A dictionary containing session IDs of recovery point jobs.
+            edb_path: A dictionary mapping EDB paths to their corresponding job IDs.
+            mailbox_tags: A dictionary specifying mailbox tags for which the restore should be performed.
 
-                oop_path        (str)   --  path for pst restore
+        Returns:
+            Response: The response object containing the result of the restore operation.
 
-                edb_path       (dict)   --  edb paths with job Ids
+        Example:
+            &gt;&gt;&gt; response = subclient.run_restore_messages(
+            ...     path=&#34;MailboxDB01&#34;,
+            ...     media_agent=&#34;MediaAgent1&#34;,
+            ...     oop_path=&#34;C:/Restores/Output.pst&#34;,
+            ...     session_id={&#34;job1&#34;: 12345},
+            ...     edb_path={&#34;edb1&#34;: &#34;C:/EDB/edb1.edb&#34;},
+            ...     mailbox_tags={&#34;mailbox1&#34;: &#34;tag1&#34;}
+            ... )
+            &gt;&gt;&gt; print(response)
+            &gt;&gt;&gt; # The response object contains details about the restore job
 
-                session_id      (dict)   --  sessionIDs of recovery point jobs
-
-                mailbox_tags    (dict)  --  mailbox tags for which restore has to run
-
-            Returns:
-                Response
         &#34;&#34;&#34;
         options = {
             &#39;path&#39;: path,
@@ -915,8 +1174,8 @@ default: None</p>
                             &#34;mailboxTag&#34;: mailbox_tags,
                             &#34;destLocation&#34;: oop_path,
                             &#34;restoreDestType&#34;: 0
-                            }
-                        },
+                        }
+                    },
                 }
             }
         }
@@ -937,24 +1196,37 @@ default: None</p>
 </ul>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.subclients.exchange.exchange_database_subclient.ExchangeDatabaseSubclient.content"><code class="name">var <span class="ident">content</span></code></dt>
+<dt id="cvpysdk.subclients.exchange.exchange_database_subclient.ExchangeDatabaseSubclient.content"><code class="name">var <span class="ident">content</span> : list</code></dt>
 <dd>
-<div class="desc"><p>Gets the appropriate content from the Subclient relevant to the user.</p>
-<h2 id="returns">Returns</h2>
-<p>list
--
-list of content added to the subclient</p></div>
+<div class="desc"><p>Retrieve the list of content items added to the Exchange Database Subclient.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>list</code></dt>
+<dd>A list containing the content items currently associated with the subclient.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; subclient = ExchangeDatabaseSubclient()
+&gt;&gt;&gt; content_list = subclient.content
+&gt;&gt;&gt; print(f&quot;Subclient content: {content_list}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/exchange_database_subclient.py#L93-L101" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/exchange/exchange_database_subclient.py#L136-L150" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def content(self):
-    &#34;&#34;&#34;Gets the appropriate content from the Subclient relevant to the user.
+def content(self) -&gt; list:
+    &#34;&#34;&#34;Retrieve the list of content items added to the Exchange Database Subclient.
 
-        Returns:
-            list    -   list of content added to the subclient
+    Returns:
+        list: A list containing the content items currently associated with the subclient.
+
+    Example:
+        &gt;&gt;&gt; subclient = ExchangeDatabaseSubclient()
+        &gt;&gt;&gt; content_list = subclient.content
+        &gt;&gt;&gt; print(f&#34;Subclient content: {content_list}&#34;)
 
     &#34;&#34;&#34;
     return self._content</code></pre>
@@ -964,41 +1236,57 @@ def content(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.subclients.exchange.exchange_database_subclient.ExchangeDatabaseSubclient.create_recovery_point"><code class="name flex">
-<span>def <span class="ident">create_recovery_point</span></span>(<span>self, db_name, media_agent, expiry_days=5)</span>
+<span>def <span class="ident">create_recovery_point</span></span>(<span>self, db_name: str, media_agent: str, expiry_days: int = 5) ‑> int</span>
 </code></dt>
 <dd>
-<div class="desc"><p>"
-Run a create recovery point job on a backup</p>
-<pre><code>Args:
-    db_name            (str)   --  database name
-
-    media_agent        (str)   --  media agent name to create recovery point on
-
-    expiry_days         (int)   --  no of days to keep the recovery point
-                                    default : 5
-
-Returns:
-    job     - Job id of recovery point
+<div class="desc"><p>Create a recovery point for a specified Exchange database.</p>
+<p>This method initiates a job to create a recovery point for the given database
+using the specified media agent. The recovery point will be retained for the
+specified number of days.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>db_name</code></strong></dt>
+<dd>The name of the Exchange database for which to create the recovery point.</dd>
+<dt><strong><code>media_agent</code></strong></dt>
+<dd>The name of the media agent to use for creating the recovery point.</dd>
+<dt><strong><code>expiry_days</code></strong></dt>
+<dd>The number of days to retain the recovery point. Defaults to 5.</dd>
+</dl>
+<p>Returns
+-----=
+The job ID of the initiated recovery point creation job.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; subclient = ExchangeDatabaseSubclient()
+&gt;&gt;&gt; job_id = subclient.create_recovery_point('MailboxDB01', 'MediaAgent01', expiry_days=7)
+&gt;&gt;&gt; print(f&quot;Recovery point creation job started with ID: {job_id}&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/exchange_database_subclient.py#L217-L268" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/exchange/exchange_database_subclient.py#L319-L377" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def create_recovery_point(self, db_name, media_agent, expiry_days=5):
-    &#34;&#34;&#34;&#34;
-    Run a create recovery point job on a backup
+<pre><code class="python">def create_recovery_point(self, db_name: str, media_agent: str, expiry_days: int = 5) -&gt; int:
+    &#34;&#34;&#34;Create a recovery point for a specified Exchange database.
 
-        Args:
-            db_name            (str)   --  database name
+    This method initiates a job to create a recovery point for the given database
+    using the specified media agent. The recovery point will be retained for the
+    specified number of days.
 
-            media_agent        (str)   --  media agent name to create recovery point on
+    Args:
+        db_name: The name of the Exchange database for which to create the recovery point.
+        media_agent: The name of the media agent to use for creating the recovery point.
+        expiry_days: The number of days to retain the recovery point. Defaults to 5.
 
-            expiry_days         (int)   --  no of days to keep the recovery point
-                                            default : 5
+    Returns:
+        The job ID of the initiated recovery point creation job.
 
-        Returns:
-            job     - Job id of recovery point
+    Example:
+        &gt;&gt;&gt; subclient = ExchangeDatabaseSubclient()
+        &gt;&gt;&gt; job_id = subclient.create_recovery_point(&#39;MailboxDB01&#39;, &#39;MediaAgent01&#39;, expiry_days=7)
+        &gt;&gt;&gt; print(f&#34;Recovery point creation job started with ID: {job_id}&#34;)
+
     &#34;&#34;&#34;
     options = {
         &#39;path&#39;: db_name,
@@ -1016,12 +1304,12 @@ Returns:
                     &#34;appMinType&#34;: 2,
                     &#34;bCreateRecoveryPoint&#34;: True,
                     &#34;expireDays&#34;: expiry_days
-                    },
+                },
                 &#34;isApplicationMiningReq&#34;: True,
                 &#34;appType&#34;: int(self._agent_object._agent_id)
-                }
             }
         }
+    }
 
     flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._BROWSE, request_json)
 
@@ -1040,43 +1328,57 @@ Returns:
 </details>
 </dd>
 <dt id="cvpysdk.subclients.exchange.exchange_database_subclient.ExchangeDatabaseSubclient.get_mailbox_tags"><code class="name flex">
-<span>def <span class="ident">get_mailbox_tags</span></span>(<span>self, path, media_agent, edb_paths, session_ids)</span>
+<span>def <span class="ident">get_mailbox_tags</span></span>(<span>self, path: str, media_agent: str, edb_paths: dict, session_ids: dict) ‑> dict</span>
 </code></dt>
 <dd>
-<div class="desc"><p>"
-Get the mailbox tags for a recovery point</p>
-<pre><code>Args:
-    path            (str)   --  database name
-
-    media_agent     (str)   --  media agent name to create recovery point on
-
-    edb_paths       (dict)   --  edb paths with job Ids
-
-    session_ids      (dict)   --  sessionIDs of recovery point jobs
-
-Returns:
-    mailboxTags     - dictionary of mailboxes and their tags
+<div class="desc"><p>Retrieve mailbox tags for a recovery point in an Exchange database.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>path</code></strong></dt>
+<dd>The name of the Exchange database.</dd>
+<dt><strong><code>media_agent</code></strong></dt>
+<dd>The name of the media agent to use for creating the recovery point.</dd>
+<dt><strong><code>edb_paths</code></strong></dt>
+<dd>A dictionary mapping EDB file paths to their corresponding job IDs.</dd>
+<dt><strong><code>session_ids</code></strong></dt>
+<dd>A dictionary containing session IDs of recovery point jobs.</dd>
+</dl>
+<p>Returns
+-----=
+A dictionary where each key is a mailbox identifier and the value is a list or set of associated tags.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; edb_paths = {'C:\ExchangeDB\db1.edb': 12345}
+&gt;&gt;&gt; session_ids = {'session1': 67890}
+&gt;&gt;&gt; tags = subclient.get_mailbox_tags('DB1', 'MediaAgent01', edb_paths, session_ids)
+&gt;&gt;&gt; print(tags)
+{'mailbox1': ['tag1', 'tag2'], 'mailbox2': ['tag3']}
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/exchange_database_subclient.py#L329-L384" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/exchange/exchange_database_subclient.py#L442-L505" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def get_mailbox_tags(self, path, media_agent, edb_paths, session_ids):
-    &#34;&#34;&#34;&#34;
-    Get the mailbox tags for a recovery point
+<pre><code class="python">def get_mailbox_tags(self, path: str, media_agent: str, edb_paths: dict, session_ids: dict) -&gt; dict:
+    &#34;&#34;&#34;Retrieve mailbox tags for a recovery point in an Exchange database.
 
-        Args:
-            path            (str)   --  database name
+    Args:
+        path: The name of the Exchange database.
+        media_agent: The name of the media agent to use for creating the recovery point.
+        edb_paths: A dictionary mapping EDB file paths to their corresponding job IDs.
+        session_ids: A dictionary containing session IDs of recovery point jobs.
 
-            media_agent     (str)   --  media agent name to create recovery point on
+    Returns:
+        A dictionary where each key is a mailbox identifier and the value is a list or set of associated tags.
 
-            edb_paths       (dict)   --  edb paths with job Ids
+    Example:
+        &gt;&gt;&gt; edb_paths = {&#39;C:\\ExchangeDB\\db1.edb&#39;: 12345}
+        &gt;&gt;&gt; session_ids = {&#39;session1&#39;: 67890}
+        &gt;&gt;&gt; tags = subclient.get_mailbox_tags(&#39;DB1&#39;, &#39;MediaAgent01&#39;, edb_paths, session_ids)
+        &gt;&gt;&gt; print(tags)
+        {&#39;mailbox1&#39;: [&#39;tag1&#39;, &#39;tag2&#39;], &#39;mailbox2&#39;: [&#39;tag3&#39;]}
 
-            session_ids      (dict)   --  sessionIDs of recovery point jobs
-
-        Returns:
-            mailboxTags     - dictionary of mailboxes and their tags
     &#34;&#34;&#34;
     mailbox_tags = {}
     for jobid, edb_path in edb_paths.items():
@@ -1110,8 +1412,11 @@ Returns:
                 response = response.json()
                 response = response[&#39;browseResponses&#39;][0]
                 response = response[&#39;browseResult&#39;][&#39;dataResultSet&#39;][0]
-                db_name = response[&#39;advancedData&#39;][&#39;advConfig&#39;][&#39;applicationMining&#39;][&#39;browseResp&#39;][&#39;exMiningRsp&#39;][&#39;edbPath&#39;]
-                mailbox_tags[db_name] = response[&#39;advancedData&#39;][&#39;advConfig&#39;][&#39;applicationMining&#39;][&#39;browseResp&#39;][&#39;exMiningRsp&#39;][&#39;mailboxTag&#39;]
+                db_name = response[&#39;advancedData&#39;][&#39;advConfig&#39;][&#39;applicationMining&#39;][&#39;browseResp&#39;][&#39;exMiningRsp&#39;][
+                    &#39;edbPath&#39;]
+                mailbox_tags[db_name] = \
+                response[&#39;advancedData&#39;][&#39;advConfig&#39;][&#39;applicationMining&#39;][&#39;browseResp&#39;][&#39;exMiningRsp&#39;][
+                    &#39;mailboxTag&#39;]
             else:
                 raise SDKException(&#39;Response&#39;, &#39;102&#39;)
         else:
@@ -1121,43 +1426,60 @@ Returns:
 </details>
 </dd>
 <dt id="cvpysdk.subclients.exchange.exchange_database_subclient.ExchangeDatabaseSubclient.get_session"><code class="name flex">
-<span>def <span class="ident">get_session</span></span>(<span>self, path, media_agent, edb_paths, recovery_point_ids)</span>
+<span>def <span class="ident">get_session</span></span>(<span>self, path: str, media_agent: str, edb_paths: dict, recovery_point_ids: dict) ‑> dict</span>
 </code></dt>
 <dd>
-<div class="desc"><p>"
-Get session ids for a recovery point</p>
-<pre><code>Args:
-    path            (str)   --  database name
-
-    media_agent     (str)   --  media agent name to create recovery point on
-
-    edb_paths       (dict)   --  edb paths with job Ids
-
-    recovery_point_ids (dict)   --  ids of recovery point jobs
-    ex: {97297: 834, 97298: 835}
-Returns:
-    Sessionids     - dictionary of sessionids
+<div class="desc"><p>Retrieve session IDs for a recovery point in an Exchange database.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>path</code></strong></dt>
+<dd>The name of the Exchange database.</dd>
+<dt><strong><code>media_agent</code></strong></dt>
+<dd>The name of the media agent to use for creating the recovery point.</dd>
+<dt><strong><code>edb_paths</code></strong></dt>
+<dd>A dictionary mapping EDB paths to their corresponding job IDs.</dd>
+<dt><strong><code>recovery_point_ids</code></strong></dt>
+<dd>A dictionary mapping job IDs to recovery point IDs (e.g., {97297: 834, 97298: 835}).</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>A dictionary containing session IDs associated with the specified recovery points.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; subclient = ExchangeDatabaseSubclient()
+&gt;&gt;&gt; edb_paths = {'/db1/edb': 12345, '/db2/edb': 12346}
+&gt;&gt;&gt; recovery_points = {12345: 67890, 12346: 67891}
+&gt;&gt;&gt; sessions = subclient.get_session('MailboxDB01', 'MediaAgent01', edb_paths, recovery_points)
+&gt;&gt;&gt; print(sessions)
+{'/db1/edb': 555, '/db2/edb': 556}
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/exchange_database_subclient.py#L271-L326" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/exchange/exchange_database_subclient.py#L379-L440" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def get_session(self, path, media_agent, edb_paths, recovery_point_ids):
-    &#34;&#34;&#34;&#34;
-    Get session ids for a recovery point
+<pre><code class="python">def get_session(self, path: str, media_agent: str, edb_paths: dict, recovery_point_ids: dict) -&gt; dict:
+    &#34;&#34;&#34;Retrieve session IDs for a recovery point in an Exchange database.
 
-        Args:
-            path            (str)   --  database name
+    Args:
+        path: The name of the Exchange database.
+        media_agent: The name of the media agent to use for creating the recovery point.
+        edb_paths: A dictionary mapping EDB paths to their corresponding job IDs.
+        recovery_point_ids: A dictionary mapping job IDs to recovery point IDs (e.g., {97297: 834, 97298: 835}).
 
-            media_agent     (str)   --  media agent name to create recovery point on
+    Returns:
+        dict: A dictionary containing session IDs associated with the specified recovery points.
 
-            edb_paths       (dict)   --  edb paths with job Ids
+    Example:
+        &gt;&gt;&gt; subclient = ExchangeDatabaseSubclient()
+        &gt;&gt;&gt; edb_paths = {&#39;/db1/edb&#39;: 12345, &#39;/db2/edb&#39;: 12346}
+        &gt;&gt;&gt; recovery_points = {12345: 67890, 12346: 67891}
+        &gt;&gt;&gt; sessions = subclient.get_session(&#39;MailboxDB01&#39;, &#39;MediaAgent01&#39;, edb_paths, recovery_points)
+        &gt;&gt;&gt; print(sessions)
+        {&#39;/db1/edb&#39;: 555, &#39;/db2/edb&#39;: 556}
 
-            recovery_point_ids (dict)   --  ids of recovery point jobs
-            ex: {97297: 834, 97298: 835}
-        Returns:
-            Sessionids     - dictionary of sessionids
     &#34;&#34;&#34;
     session_ids = {}
     for jobid, edb_path in edb_paths.items():
@@ -1188,7 +1510,7 @@ Returns:
         flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._BROWSE, request_json)
 
         if flag:
-            if response and response.json() :
+            if response and response.json():
                 response = response.json()
                 response = response[&#39;browseResponses&#39;][0]
                 edb = response[&#39;browseResult&#39;][&#39;advConfig&#39;][&#39;applicationMining&#39;][&#39;browseInitResp&#39;][&#39;edbPath&#39;]
@@ -1202,36 +1524,54 @@ Returns:
 </details>
 </dd>
 <dt id="cvpysdk.subclients.exchange.exchange_database_subclient.ExchangeDatabaseSubclient.restore_in_place"><code class="name flex">
-<span>def <span class="ident">restore_in_place</span></span>(<span>self, paths, client=None)</span>
+<span>def <span class="ident">restore_in_place</span></span>(<span>self, paths: list, client: object = None) ‑> object</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Run inplace restore for Exchange database subclient</p>
-<p>Args:
-paths
-(list)
-&ndash; list of path used for inplace restore</p>
-<pre><code> client     (object) -- object of client class
-</code></pre>
-<h2 id="returns">Returns</h2>
-<p>object
--
-Job class object for restore job</p></div>
+<div class="desc"><p>Perform an in-place restore for the Exchange database subclient.</p>
+<p>This method initiates an in-place restore operation for the specified Exchange database paths.
+Optionally, a specific client object can be provided to target the restore.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>paths</code></strong></dt>
+<dd>List of database paths to restore in place.</dd>
+<dt><strong><code>client</code></strong></dt>
+<dd>Optional; the client object representing the target client for the restore.</dd>
+</dl>
+<p>Returns
+-----=
+An object representing the Job for the restore operation.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; subclient = ExchangeDatabaseSubclient()
+&gt;&gt;&gt; restore_paths = [r'C:\ExchangeDB1', r'C:\ExchangeDB2']
+&gt;&gt;&gt; job = subclient.restore_in_place(restore_paths)
+&gt;&gt;&gt; print(f&quot;Restore job started with ID: {job.job_id}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/exchange_database_subclient.py#L184-L200" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/exchange/exchange_database_subclient.py#L268-L293" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def restore_in_place(self, paths, client=None):
-    &#34;&#34;&#34;
-     Run inplace restore for Exchange database subclient
+<pre><code class="python">def restore_in_place(self, paths: list, client: object = None) -&gt; object:
+    &#34;&#34;&#34;Perform an in-place restore for the Exchange database subclient.
 
-     Args:
-         paths      (list)   -- list of path used for inplace restore
+    This method initiates an in-place restore operation for the specified Exchange database paths.
+    Optionally, a specific client object can be provided to target the restore.
 
-         client     (object) -- object of client class
+    Args:
+        paths: List of database paths to restore in place.
+        client: Optional; the client object representing the target client for the restore.
 
     Returns:
-        object  -   Job class object for restore job
+        An object representing the Job for the restore operation.
+
+    Example:
+        &gt;&gt;&gt; subclient = ExchangeDatabaseSubclient()
+        &gt;&gt;&gt; restore_paths = [r&#39;C:\\ExchangeDB1&#39;, r&#39;C:\\ExchangeDB2&#39;]
+        &gt;&gt;&gt; job = subclient.restore_in_place(restore_paths)
+        &gt;&gt;&gt; print(f&#34;Restore job started with ID: {job.job_id}&#34;)
+
     &#34;&#34;&#34;
     if client is None:
         client = self._client_object
@@ -1241,35 +1581,53 @@ Job class object for restore job</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.subclients.exchange.exchange_database_subclient.ExchangeDatabaseSubclient.restore_out_of_place"><code class="name flex">
-<span>def <span class="ident">restore_out_of_place</span></span>(<span>self, client, paths)</span>
+<span>def <span class="ident">restore_out_of_place</span></span>(<span>self, client: str, paths: list) ‑> <a title="cvpysdk.job.Job" href="../../job.html#cvpysdk.job.Job">Job</a></span>
 </code></dt>
 <dd>
-<div class="desc"><p>Run out of place restore for Exchange database subclient
-Args:
-client
-(str)
-&ndash; destination client on which the restore should run</p>
-<pre><code>   paths       (list)      -- list of path used for out of place restore
-</code></pre>
-<p>Returns:
-object
--
-Job class object for restore job</p></div>
+<div class="desc"><p>Run an out-of-place restore for an Exchange database subclient.</p>
+<p>This method initiates a restore operation where the selected Exchange database(s)
+are restored to a different client (destination) than the original source.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>client</code></strong></dt>
+<dd>The name of the destination client where the restore should be performed.</dd>
+<dt><strong><code>paths</code></strong></dt>
+<dd>A list of database paths to be restored out of place.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Job</code></dt>
+<dd>An instance of the Job class representing the restore job.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; subclient = ExchangeDatabaseSubclient()
+&gt;&gt;&gt; restore_job = subclient.restore_out_of_place('DestinationClient', ['/db1', '/db2'])
+&gt;&gt;&gt; print(f&quot;Restore job started with ID: {restore_job.job_id}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/exchange_database_subclient.py#L202-L215" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/exchange/exchange_database_subclient.py#L295-L317" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def restore_out_of_place(self, client, paths):
-    &#34;&#34;&#34;
-     Run out of place restore for Exchange database subclient
-        Args:
-            client      (str)       -- destination client on which the restore should run
+<pre><code class="python">def restore_out_of_place(self, client: str, paths: list) -&gt; &#39;Job&#39;:
+    &#34;&#34;&#34;Run an out-of-place restore for an Exchange database subclient.
 
-            paths       (list)      -- list of path used for out of place restore
+    This method initiates a restore operation where the selected Exchange database(s)
+    are restored to a different client (destination) than the original source.
 
-        Returns:
-            object  -   Job class object for restore job
+    Args:
+        client: The name of the destination client where the restore should be performed.
+        paths: A list of database paths to be restored out of place.
+
+    Returns:
+        Job: An instance of the Job class representing the restore job.
+
+    Example:
+        &gt;&gt;&gt; subclient = ExchangeDatabaseSubclient()
+        &gt;&gt;&gt; restore_job = subclient.restore_out_of_place(&#39;DestinationClient&#39;, [&#39;/db1&#39;, &#39;/db2&#39;])
+        &gt;&gt;&gt; print(f&#34;Restore job started with ID: {restore_job.job_id}&#34;)
+
     &#34;&#34;&#34;
     restore_json = self._restore_json(paths=paths, client=client)
 
@@ -1277,52 +1635,87 @@ Job class object for restore job</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.subclients.exchange.exchange_database_subclient.ExchangeDatabaseSubclient.run_restore_messages"><code class="name flex">
-<span>def <span class="ident">run_restore_messages</span></span>(<span>self, path, media_agent, oop_path, session_id, edb_path, mailbox_tags)</span>
+<span>def <span class="ident">run_restore_messages</span></span>(<span>self, path: str, media_agent: str, oop_path: str, session_id: dict, edb_path: dict, mailbox_tags: dict) ‑> requests.models.Response</span>
 </code></dt>
 <dd>
-<div class="desc"><p>"
-Run a create recovery point job on a backup</p>
-<pre><code>Args:
-    path            (str)   --  database name
-
-    media_agent              (str)   --  media agent name to create recovery point on
-
-    oop_path        (str)   --  path for pst restore
-
-    edb_path       (dict)   --  edb paths with job Ids
-
-    session_id      (dict)   --  sessionIDs of recovery point jobs
-
-    mailbox_tags    (dict)  --  mailbox tags for which restore has to run
-
-Returns:
-    Response
+<div class="desc"><p>Run a restore operation to recover messages from a backup.</p>
+<p>This method initiates a recovery point job for a specified Exchange database backup,
+restoring messages for the given mailbox tags to a PST file at the specified output path.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>path</code></strong></dt>
+<dd>The name of the Exchange database to restore from.</dd>
+<dt><strong><code>media_agent</code></strong></dt>
+<dd>The name of the media agent to use for the recovery point job.</dd>
+<dt><strong><code>oop_path</code></strong></dt>
+<dd>The output path where the PST file will be created.</dd>
+<dt><strong><code>session_id</code></strong></dt>
+<dd>A dictionary containing session IDs of recovery point jobs.</dd>
+<dt><strong><code>edb_path</code></strong></dt>
+<dd>A dictionary mapping EDB paths to their corresponding job IDs.</dd>
+<dt><strong><code>mailbox_tags</code></strong></dt>
+<dd>A dictionary specifying mailbox tags for which the restore should be performed.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Response</code></dt>
+<dd>The response object containing the result of the restore operation.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; response = subclient.run_restore_messages(
+...     path=&quot;MailboxDB01&quot;,
+...     media_agent=&quot;MediaAgent1&quot;,
+...     oop_path=&quot;C:/Restores/Output.pst&quot;,
+...     session_id={&quot;job1&quot;: 12345},
+...     edb_path={&quot;edb1&quot;: &quot;C:/EDB/edb1.edb&quot;},
+...     mailbox_tags={&quot;mailbox1&quot;: &quot;tag1&quot;}
+... )
+&gt;&gt;&gt; print(response)
+&gt;&gt;&gt; # The response object contains details about the restore job
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/exchange_database_subclient.py#L386-L444" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/exchange/exchange_database_subclient.py#L507-L583" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def run_restore_messages(self, path, media_agent, oop_path,
-                         session_id, edb_path, mailbox_tags):
-    &#34;&#34;&#34;&#34;
-    Run a create recovery point job on a backup
+<pre><code class="python">def run_restore_messages(
+        self,
+        path: str,
+        media_agent: str,
+        oop_path: str,
+        session_id: dict,
+        edb_path: dict,
+        mailbox_tags: dict
+) -&gt; &#39;Response&#39;:
+    &#34;&#34;&#34;Run a restore operation to recover messages from a backup.
 
-        Args:
-            path            (str)   --  database name
+    This method initiates a recovery point job for a specified Exchange database backup,
+    restoring messages for the given mailbox tags to a PST file at the specified output path.
 
-            media_agent              (str)   --  media agent name to create recovery point on
+    Args:
+        path: The name of the Exchange database to restore from.
+        media_agent: The name of the media agent to use for the recovery point job.
+        oop_path: The output path where the PST file will be created.
+        session_id: A dictionary containing session IDs of recovery point jobs.
+        edb_path: A dictionary mapping EDB paths to their corresponding job IDs.
+        mailbox_tags: A dictionary specifying mailbox tags for which the restore should be performed.
 
-            oop_path        (str)   --  path for pst restore
+    Returns:
+        Response: The response object containing the result of the restore operation.
 
-            edb_path       (dict)   --  edb paths with job Ids
+    Example:
+        &gt;&gt;&gt; response = subclient.run_restore_messages(
+        ...     path=&#34;MailboxDB01&#34;,
+        ...     media_agent=&#34;MediaAgent1&#34;,
+        ...     oop_path=&#34;C:/Restores/Output.pst&#34;,
+        ...     session_id={&#34;job1&#34;: 12345},
+        ...     edb_path={&#34;edb1&#34;: &#34;C:/EDB/edb1.edb&#34;},
+        ...     mailbox_tags={&#34;mailbox1&#34;: &#34;tag1&#34;}
+        ... )
+        &gt;&gt;&gt; print(response)
+        &gt;&gt;&gt; # The response object contains details about the restore job
 
-            session_id      (dict)   --  sessionIDs of recovery point jobs
-
-            mailbox_tags    (dict)  --  mailbox tags for which restore has to run
-
-        Returns:
-            Response
     &#34;&#34;&#34;
     options = {
         &#39;path&#39;: path,
@@ -1347,8 +1740,8 @@ Returns:
                         &#34;mailboxTag&#34;: mailbox_tags,
                         &#34;destLocation&#34;: oop_path,
                         &#34;restoreDestType&#34;: 0
-                        }
-                    },
+                    }
+                },
             }
         }
     }
@@ -1365,31 +1758,45 @@ Returns:
 </details>
 </dd>
 <dt id="cvpysdk.subclients.exchange.exchange_database_subclient.ExchangeDatabaseSubclient.set_exchangedb_subclient_prop"><code class="name flex">
-<span>def <span class="ident">set_exchangedb_subclient_prop</span></span>(<span>self, key, value)</span>
+<span>def <span class="ident">set_exchangedb_subclient_prop</span></span>(<span>self, key: str, value: object) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Sets the exchange DB sublcient properties</p>
-<h2 id="args">Args</h2>
-<p>key
-(str)
-&ndash;
-property to be changed</p>
-<p>value
-(obj)
-&ndash;
-value to be set</p></div>
+<div class="desc"><p>Set a property for the Exchange Database subclient.</p>
+<p>This method allows you to update a specific property of the Exchange Database subclient
+by specifying the property key and the value to assign.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>key</code></strong></dt>
+<dd>The name of the property to be changed.</dd>
+<dt><strong><code>value</code></strong></dt>
+<dd>The value to set for the specified property.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; subclient = ExchangeDatabaseSubclient()
+&gt;&gt;&gt; subclient.set_exchangedb_subclient_prop('retentionDays', 30)
+&gt;&gt;&gt; subclient.set_exchangedb_subclient_prop('enableCircularLogging', True)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/exchange_database_subclient.py#L144-L156" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/exchange/exchange_database_subclient.py#L205-L225" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def set_exchangedb_subclient_prop(self, key, value):
-    &#34;&#34;&#34;Sets the exchange DB sublcient properties
+<pre><code class="python">def set_exchangedb_subclient_prop(self, key: str, value: object) -&gt; None:
+    &#34;&#34;&#34;Set a property for the Exchange Database subclient.
 
-        Args:
-            key             (str)       --  property to be changed
+    This method allows you to update a specific property of the Exchange Database subclient
+    by specifying the property key and the value to assign.
 
-            value           (obj)       --  value to be set
+    Args:
+        key: The name of the property to be changed.
+        value: The value to set for the specified property.
+
+    Example:
+        &gt;&gt;&gt; subclient = ExchangeDatabaseSubclient()
+        &gt;&gt;&gt; subclient.set_exchangedb_subclient_prop(&#39;retentionDays&#39;, 30)
+        &gt;&gt;&gt; subclient.set_exchangedb_subclient_prop(&#39;enableCircularLogging&#39;, True)
 
     &#34;&#34;&#34;
     self._set_subclient_properties(
@@ -1403,9 +1810,11 @@ value to be set</p></div>
 <ul class="hlist">
 <li><code><b><a title="cvpysdk.subclient.Subclient" href="../../subclient.html#cvpysdk.subclient.Subclient">Subclient</a></b></code>:
 <ul class="hlist">
+<li><code><a title="cvpysdk.subclient.Subclient.additional_settings" href="../../subclient.html#cvpysdk.subclient.Subclient.additional_settings">additional_settings</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.allow_multiple_readers" href="../../subclient.html#cvpysdk.subclient.Subclient.allow_multiple_readers">allow_multiple_readers</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.backup" href="../../subclient.html#cvpysdk.subclient.Subclient.backup">backup</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.browse" href="../../subclient.html#cvpysdk.subclient.Subclient.browse">browse</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.browse_Cosmos_Content" href="../../subclient.html#cvpysdk.subclient.Subclient.browse_Cosmos_Content">browse_Cosmos_Content</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.data_readers" href="../../subclient.html#cvpysdk.subclient.Subclient.data_readers">data_readers</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.deduplication_options" href="../../subclient.html#cvpysdk.subclient.Subclient.deduplication_options">deduplication_options</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.description" href="../../subclient.html#cvpysdk.subclient.Subclient.description">description</a></code></li>
@@ -1439,6 +1848,7 @@ value to be set</p></div>
 <li><code><a title="cvpysdk.subclient.Subclient.refresh" href="../../subclient.html#cvpysdk.subclient.Subclient.refresh">refresh</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.run_content_indexing" href="../../subclient.html#cvpysdk.subclient.Subclient.run_content_indexing">run_content_indexing</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.set_backup_nodes" href="../../subclient.html#cvpysdk.subclient.Subclient.set_backup_nodes">set_backup_nodes</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.set_proxy_for_backup_copy" href="../../subclient.html#cvpysdk.subclient.Subclient.set_proxy_for_backup_copy">set_proxy_for_backup_copy</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.set_proxy_for_snap" href="../../subclient.html#cvpysdk.subclient.Subclient.set_proxy_for_snap">set_proxy_for_snap</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.snapshot_engine_name" href="../../subclient.html#cvpysdk.subclient.Subclient.snapshot_engine_name">snapshot_engine_name</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.software_compression" href="../../subclient.html#cvpysdk.subclient.Subclient.software_compression">software_compression</a></code></li>
@@ -1448,7 +1858,9 @@ value to be set</p></div>
 <li><code><a title="cvpysdk.subclient.Subclient.subclient_guid" href="../../subclient.html#cvpysdk.subclient.Subclient.subclient_guid">subclient_guid</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.subclient_id" href="../../subclient.html#cvpysdk.subclient.Subclient.subclient_id">subclient_id</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.subclient_name" href="../../subclient.html#cvpysdk.subclient.Subclient.subclient_name">subclient_name</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.unset_proxy_for_backup_copy" href="../../subclient.html#cvpysdk.subclient.Subclient.unset_proxy_for_backup_copy">unset_proxy_for_backup_copy</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.unset_proxy_for_snap" href="../../subclient.html#cvpysdk.subclient.Subclient.unset_proxy_for_snap">unset_proxy_for_snap</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.update_atlas_instance" href="../../subclient.html#cvpysdk.subclient.Subclient.update_atlas_instance">update_atlas_instance</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.update_properties" href="../../subclient.html#cvpysdk.subclient.Subclient.update_properties">update_properties</a></code></li>
 </ul>
 </li>

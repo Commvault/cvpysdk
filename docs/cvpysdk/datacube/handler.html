@@ -27,7 +27,8 @@
 <p>Handlers and Handler are 2 classes defined in this file.</p>
 <p>Handlers: Class for representing all the Handlers associated with the datasource</p>
 <p>Handler: Class for a single Handler of the datasource</p>
-<h2 id="handlers">Handlers</h2>
+<p>Handlers
+-----=</p>
 <p><strong>init</strong>()
 &ndash;
 initialize object of Handlers class associated with commcell</p>
@@ -56,7 +57,8 @@ refresh the handlers associated with the datasource</p>
 &ndash; gets the object for the given handler name</p>
 <p>delete()
 &ndash; deletes the given handler name</p>
-<h2 id="handler">Handler</h2>
+<p>Handler
+-----=</p>
 <p><strong>init</strong>()
 &ndash; Initialize object for Handler</p>
 <p>get_handler_data()
@@ -66,7 +68,7 @@ refresh the handlers associated with the datasource</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/handler.py#L1-L500" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/handler.py#L1-L597" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -134,16 +136,37 @@ from ..exception import SDKException
 
 
 class Handlers(object):
-    &#34;&#34;&#34;Class for representing all the handlers associated with the datasource.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Manages all handlers associated with a datasource.
 
-    def __init__(self, datasource_object):
-        &#34;&#34;&#34;Initialize object of the Handlers class.
+    The Handlers class provides a comprehensive interface for managing, accessing,
+    and manipulating handlers linked to a datasource object. It supports operations
+    such as adding, deleting, retrieving, and refreshing handlers, as well as
+    querying handler properties and existence.
 
-            Args:
-                _datasource_object (object)  --  instance of the datastore class
+    Key Features:
+        - Initialization with a datasource object
+        - String and representation methods for easy inspection
+        - Internal retrieval of all handlers
+        - Check for the existence of a handler by name
+        - Retrieve properties of a specific handler
+        - Get a handler by name
+        - Delete a handler by name
+        - Add a new handler with customizable parameters (search, filter, facet, rows, response type, sorting)
+        - Refresh the handler list to reflect current datasource state
 
-            Returns:
-                object - instance of the Handlers class
+    &#34;&#34;&#34;
+
+    def __init__(self, datasource_object: object) -&gt; None:
+        &#34;&#34;&#34;Initialize a new instance of the Handlers class.
+
+        Args:
+            datasource_object: An instance of the datastore class to be used by the Handlers.
+
+        Example:
+            &gt;&gt;&gt; datastore = Datastore()
+            &gt;&gt;&gt; handlers = Handlers(datastore)
+            &gt;&gt;&gt; print(f&#34;Handlers object created: {handlers}&#34;)
 
         &#34;&#34;&#34;
 
@@ -157,11 +180,19 @@ class Handlers(object):
         self._handlers = None
         self.refresh()
 
-    def __str__(self):
-        &#34;&#34;&#34;Representation string consisting of all handlers of the datasource.
+    def __str__(self) -&gt; str:
+        &#34;&#34;&#34;Return a string representation of all handlers associated with the datasource.
 
-            Returns:
-                str - string of all the handlers associated with the datasource
+        This method provides a human-readable summary of all handlers managed by the Handlers object.
+
+        Returns:
+            A string listing all handlers associated with the datasource.
+
+        Example:
+            &gt;&gt;&gt; handlers = Handlers()
+            &gt;&gt;&gt; print(str(handlers))
+            Handler1, Handler2, Handler3
+            &gt;&gt;&gt; # The output will display all handlers as a comma-separated string
 
         &#34;&#34;&#34;
         representation_string = &#39;{:^5}\t{:^20}\n\n&#39;.format(&#39;S. No.&#39;, &#39;Handler&#39;)
@@ -171,27 +202,45 @@ class Handlers(object):
 
         return representation_string.strip()
 
-    def __repr__(self):
-        &#34;&#34;&#34;Representation string for the instance of the Handlers class.&#34;&#34;&#34;
+    def __repr__(self) -&gt; str:
+        &#34;&#34;&#34;Return a string representation of the Handlers instance.
+
+        This method provides a developer-friendly string that represents the current
+        Handlers object, useful for debugging and logging purposes.
+
+        Returns:
+            A string representation of the Handlers instance.
+
+        Example:
+            &gt;&gt;&gt; handlers = Handlers()
+            &gt;&gt;&gt; print(repr(handlers))
+            &lt;Handlers object at 0x7f8b2c1d2e80&gt;
+        &#34;&#34;&#34;
         return &#34;Handlers class instance for Datasource: &#39;{0}&#39;&#34;.format(
             self._datasource_object.datasource_name
         )
 
-    def _get_handlers(self):
-        &#34;&#34;&#34;Gets all the handlers associated with the datasource
+    def _get_handlers(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve all handlers associated with the datasource.
 
-            Returns:
-                dict - consists of all handlers in the datasource
-                    {
-                         &#34;handler1_name&#34;: dict of handler1 properties,
-                         &#34;handler2_name&#34;: dict of handler2 properties
-                    }
+        Returns:
+            dict: A dictionary containing all handlers in the datasource, where each key is a handler name
+            and the value is a dictionary of that handler&#39;s properties.
+            Example format:
+                {
+                    &#34;handler1_name&#34;: { ... handler1 properties ... },
+                    &#34;handler2_name&#34;: { ... handler2 properties ... }
+                }
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException: If the response is empty or if the response indicates failure.
 
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; handlers = handlers_obj._get_handlers()
+            &gt;&gt;&gt; print(f&#34;Available handlers: {list(handlers.keys())}&#34;)
+            &gt;&gt;&gt; # Access properties of a specific handler
+            &gt;&gt;&gt; if &#39;handler1_name&#39; in handlers:
+            &gt;&gt;&gt;     print(handlers[&#39;handler1_name&#39;])
 
         &#34;&#34;&#34;
 
@@ -209,18 +258,23 @@ class Handlers(object):
             response.text)
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def has_handler(self, handler_name):
-        &#34;&#34;&#34;Checks if a handler exists in the datasource with the input handler name.
+    def has_handler(self, handler_name: str) -&gt; bool:
+        &#34;&#34;&#34;Check if a handler with the specified name exists in the datasource.
 
-            Args:
-                handler_name (str)  --  name of the handler
+        Args:
+            handler_name: The name of the handler to check for existence.
 
-            Returns:
-                bool - boolean output whether the handler exists in the commcell or not
+        Returns:
+            True if the handler exists in the datasource; False otherwise.
 
-            Raises:
-                SDKException:
-                    if type of the handler name argument is not string
+        Raises:
+            SDKException: If the handler_name argument is not a string.
+
+        Example:
+            &gt;&gt;&gt; handlers = Handlers()
+            &gt;&gt;&gt; exists = handlers.has_handler(&#34;MyHandler&#34;)
+            &gt;&gt;&gt; print(f&#34;Handler exists: {exists}&#34;)
+            # Output: Handler exists: True
 
         &#34;&#34;&#34;
         if not isinstance(handler_name, str):
@@ -228,29 +282,38 @@ class Handlers(object):
 
         return self._handlers and handler_name.lower() in map(str.lower, self._handlers)
 
-    def get_properties(self, handler_name):
-        &#34;&#34;&#34;Returns a handler object of the specified handler name.
+    def get_properties(self, handler_name: str) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the properties of a specified handler by name.
 
-            Args:
-                handler_name (str)  --  name of the handler
+        Args:
+            handler_name: The name of the handler whose properties are to be retrieved.
 
-            Returns:
-                dict -  properties for the given handler name
+        Returns:
+            A dictionary containing the properties for the given handler name.
 
+        Example:
+            &gt;&gt;&gt; handlers = Handlers()
+            &gt;&gt;&gt; props = handlers.get_properties(&#34;FileHandler&#34;)
+            &gt;&gt;&gt; print(props)
+            {&#39;type&#39;: &#39;file&#39;, &#39;path&#39;: &#39;/var/log/app.log&#39;, &#39;level&#39;: &#39;INFO&#39;}
 
         &#34;&#34;&#34;
         return self._handlers[handler_name]
 
-    def get(self, handler_name):
-        &#34;&#34;&#34;Returns a handler object of the specified handler name.
+    def get(self, handler_name: str) -&gt; &#39;Handler&#39;:
+        &#34;&#34;&#34;Retrieve a handler object by its name.
 
-            Args:
-                handler_name (str)  --  name of the handler
+        Args:
+            handler_name: The name of the handler to retrieve.
 
-            Returns:
+        Returns:
+            Handler: An instance of the Handler class corresponding to the specified name.
 
-                obj                 -- Object of Handler class
-
+        Example:
+            &gt;&gt;&gt; handlers = Handlers()
+            &gt;&gt;&gt; my_handler = handlers.get(&#39;backup_handler&#39;)
+            &gt;&gt;&gt; print(f&#34;Handler type: {type(my_handler)}&#34;)
+            &gt;&gt;&gt; # Use the returned Handler object for further operations
 
         &#34;&#34;&#34;
         if not isinstance(handler_name, str):
@@ -261,23 +324,20 @@ class Handlers(object):
             return Handler(self._datasource_object, handler_name, handler_id)
         raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, &#34;Unable to get handler class object&#34;)
 
-    def delete(self, handler_name):
-        &#34;&#34;&#34; deletes the handler associated with this handler object
-                Args:
+    def delete(self, handler_name: str) -&gt; None:
+        &#34;&#34;&#34;Delete the handler associated with this handler object.
 
-                    handler_name (str)     -- Name of the handler which needs to be deleted
+        Args:
+            handler_name: The name of the handler to be deleted.
 
-                Returns:
+        Raises:
+            SDKExpception: If the response is empty or if the deletion is not successful.
 
-                    None
+        Example:
+            &gt;&gt;&gt; handlers = Handlers()
+            &gt;&gt;&gt; handlers.delete(&#34;my_handler&#34;)
+            &gt;&gt;&gt; print(&#34;Handler deleted successfully&#34;)
 
-                Raises:
-
-                    SDKExpception:
-
-                        if response is empty
-
-                        if response is not success
         &#34;&#34;&#34;
         handler_id = self.get(handler_name).handler_id
         self._delete_handler = self.commcell_obj._services[&#39;DELETE_HANDLER&#39;] % (
@@ -298,56 +358,46 @@ class Handlers(object):
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
 
     def add(self,
-            handler_name,
-            search_query,
-            filter_query=None,
-            facet_field=None,
-            facet_query=None,
-            rows=10,
-            response_type=&#34;json&#34;,
-            sort_column=[]):
-        &#34;&#34;&#34;Adds a new handler to the commcell.
+            handler_name: str,
+            search_query: list,
+            filter_query: list = None,
+            facet_field: list = None,
+            facet_query: list = None,
+            rows: int = 10,
+            response_type: str = &#34;json&#34;,
+            sort_column: list = []) -&gt; None:
+        &#34;&#34;&#34;Add a new handler to the Commcell datastore.
 
-            Args:
-                handler_name    (str)   --  name of the handler to add to the datastore
+        This method registers a new handler with the specified configuration, including search and filter queries,
+        faceting options, result formatting, and sorting preferences.
 
-                search_query    (list)  --  list of keywords on which the search is performed.
+        Args:
+            handler_name: Name of the handler to add to the datastore.
+            search_query: List of keywords on which the search is performed.
+            filter_query: Optional list of conditional queries to apply when retrieving data.
+            facet_field: Optional list of fields to be faceted.
+            facet_query: Optional list of conditional queries for which the facet count should be retrieved.
+            rows: Number of rows (results) to retrieve. Default is 10.
+            response_type: Format in which search results are retrieved. Supported types: &#34;json&#34; (default), &#34;csv&#34;, &#34;xml&#34;.
+            sort_column: List of column names to sort the results by.
 
-                filter_query    (list)  --  list of conditional queries which needs to be performed
-                                                when the data is retrieved
+        Raises:
+            SDKException: If the handler name is not a string, if the handler could not be added,
+                if the response is empty or unsuccessful, or if no handler exists with the given name.
 
-                facet_field     (list)  --  list of fields to be faceted.
-
-                facet_query     (list)  --  list of conditional queries for which the facet count
-                                                should be retrieved
-
-                rows            (int)   --  list of keywords on which the search is performed.
-
-                response_type   (str)   --  format in which search results are retrieved.
-                    default: json
-
-                    Supported Types:
-                        json
-
-                        csv
-
-                        xml
-
-
-                sort_column     (list)  --  list of column name to be sorted
-
-
-            Raises:
-                SDKException:
-                    if type of the handler name argument is not string
-
-                    if failed to delete handler
-
-                    if response is empty
-
-                    if response is not success
-
-                    if no handler exists with the given name
+        Example:
+            &gt;&gt;&gt; handlers = Handlers()
+            &gt;&gt;&gt; handlers.add(
+            ...     handler_name=&#34;my_handler&#34;,
+            ...     search_query=[&#34;backup&#34;, &#34;restore&#34;],
+            ...     filter_query=[&#34;client:Server01&#34;],
+            ...     facet_field=[&#34;status&#34;],
+            ...     facet_query=[&#34;status:completed&#34;],
+            ...     rows=20,
+            ...     response_type=&#34;json&#34;,
+            ...     sort_column=[&#34;date&#34;]
+            ... )
+            &gt;&gt;&gt; print(&#34;Handler &#39;my_handler&#39; added successfully.&#34;)
 
         &#34;&#34;&#34;
         request_json = {
@@ -397,27 +447,53 @@ class Handlers(object):
             response.text)
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def refresh(self):
-        &#34;&#34;&#34;Refresh the handlers associated with the Datasource.&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Reload the handlers associated with the Datasource.
+
+        This method refreshes the internal state of the handlers, ensuring that any changes 
+        to the underlying Datasource are reflected in the handler objects.
+
+        Example:
+            &gt;&gt;&gt; handlers = Handlers()
+            &gt;&gt;&gt; handlers.refresh()  # Reloads the handlers to reflect current Datasource state
+            &gt;&gt;&gt; print(&#34;Handlers refreshed successfully&#34;)
+
+        &#34;&#34;&#34;
         self._handlers = self._get_handlers()
 
 
 class Handler(object):
-    &#34;&#34;&#34;Class for performing operations on a single Handler&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Handler class for managing and operating on individual handler instances.
 
-    def __init__(self, datasource_object, handler_name, handler_id=None):
-        &#34;&#34;&#34;Initialize an object of the Handler class.
+    This class provides functionality to initialize handler objects with specific
+    data sources, names, and IDs. It offers methods to retrieve handler data based
+    on filters, access handler IDs, and share handler resources with specified
+    permissions and user details.
 
-            Args:
-                datasource_object     (object)    --  instance of the Datacube class
+    Key Features:
+        - Initialization with datasource, handler name, and handler ID
+        - Property access for handler ID
+        - Retrieval of handler data using filters
+        - Internal method for obtaining handler ID by name
+        - Sharing handler resources with customizable permissions and user information
 
-                handler_name          (str)       --  name of the Handler
+    &#34;&#34;&#34;
 
-                handler_id            (int)       --  Id of the Handler. Default = None
+    def __init__(self, datasource_object: object, handler_name: str, handler_id: int = None) -&gt; None:
+        &#34;&#34;&#34;Initialize a Handler object for managing data sources.
 
-            Returns:
+        Args:
+            datasource_object: Instance of the Datacube class representing the data source.
+            handler_name: Name to assign to the Handler.
+            handler_id: Optional integer ID for the Handler. If not provided, defaults to None.
 
-                object  -   instance of the Handler class
+        Example:
+            &gt;&gt;&gt; datacube = Datacube()
+            &gt;&gt;&gt; handler = Handler(datacube, &#34;MyHandler&#34;)
+            &gt;&gt;&gt; # Optionally specify a handler ID
+            &gt;&gt;&gt; handler_with_id = Handler(datacube, &#34;MyHandler&#34;, handler_id=101)
+
         &#34;&#34;&#34;
         self._datasource_object = datasource_object
         self._handler_name = handler_name
@@ -429,51 +505,62 @@ class Handler(object):
         self._share_handler = self.commcell_obj._services[&#39;SHARE_HANDLER&#39;]
 
     @property
-    def handler_id(self):
-        &#34;&#34;&#34;Returns the value of the handler id attribute.&#34;&#34;&#34;
+    def handler_id(self) -&gt; int:
+        &#34;&#34;&#34;Get the unique identifier for this handler.
+
+        Returns:
+            int: The handler&#39;s unique ID.
+
+        Example:
+            &gt;&gt;&gt; handler = Handler()
+            &gt;&gt;&gt; handler_id = handler.handler_id  # Access the handler&#39;s ID using the property
+            &gt;&gt;&gt; print(f&#34;Handler ID: {handler_id}&#34;)
+
+        &#34;&#34;&#34;
         return self._handler_id
 
-    def _get_handler_id(self, handler_name):
-        &#34;&#34;&#34; Get handler id for given handler name
-                Args:
+    def _get_handler_id(self, handler_name: str) -&gt; int:
+        &#34;&#34;&#34;Retrieve the handler ID for a given handler name.
 
-                    handler_name (str) -- Name of the Handler
+        Args:
+            handler_name: The name of the handler for which the ID is required.
 
-                Returns:
+        Returns:
+            The integer ID corresponding to the specified handler name.
 
-                    int                -- Handler id
+        Raises:
+            SDKExpception: If the response is empty or the response indicates failure.
 
-                Raises:
+        Example:
+            &gt;&gt;&gt; handler = Handler()
+            &gt;&gt;&gt; handler_id = handler._get_handler_id(&#34;MyHandler&#34;)
+            &gt;&gt;&gt; print(f&#34;Handler ID: {handler_id}&#34;)
 
-                    SDKExpception:
-
-                        if response is empty
-
-                        if response is not success
-
-                &#34;&#34;&#34;
+        &#34;&#34;&#34;
 
         handlers = self.commcell_obj.Datacube.datasources.ds_handlers
         return handlers.get_properties(handler_name=handler_name)[&#39;handlerId&#39;]
 
-    def get_handler_data(self, handler_filter=&#34;&#34;):
-        &#34;&#34;&#34; Executes handler for fetching data
-                Args:
+    def get_handler_data(self, handler_filter: str = &#34;&#34;) -&gt; dict:
+        &#34;&#34;&#34;Execute the handler to fetch data with an optional filter.
 
-                     handler_filter    (str)  -- Filter which needs to applied for handler execution
+        Args:
+            handler_filter: Optional string filter to apply during handler execution. 
+                If not provided, all handler data will be fetched.
 
-                Returns:
+        Returns:
+            dict: Dictionary containing the values fetched from the handler execution.
 
-                    dict        --  Dictionary of values fetched from handler execution
+        Raises:
+            SDKExpception: 
+                If the response is empty, not successful, or if there is an error fetching handler data.
 
-                Raises:
-                    SDKExpception:
+        Example:
+            &gt;&gt;&gt; handler = Handler()
+            &gt;&gt;&gt; data = handler.get_handler_data(&#34;status=active&#34;)
+            &gt;&gt;&gt; print(data)
+            {&#39;result&#39;: &#39;success&#39;, &#39;data&#39;: [...]}
 
-                        if response is empty
-
-                        if response is not success
-
-                        if error in fetching handler data
         &#34;&#34;&#34;
 
         if not isinstance(handler_filter, str):
@@ -493,32 +580,27 @@ class Handler(object):
             raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, &#34;No response object in Json&#34;)
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
 
-    def share(self, permission_list, operation_type, user_id, user_name, user_type):
-        &#34;&#34;&#34; Share handler with user/usergroup
-                Args:
-                    permission_list (list)      -- List of permission
+    def share(self, permission_list: list, operation_type: int, user_id: int, user_name: str, user_type: int) -&gt; None:
+        &#34;&#34;&#34;Share the handler with a specified user or user group.
 
-                    operation_type  (int)       -- Operation type (2-add / 3- delete)
+        This method assigns or removes permissions for a user or user group on the handler,
+        based on the provided operation type and permission list.
 
-                    user_id         (int)       -- User id of share user
+        Args:
+            permission_list: List of permissions to assign or remove.
+            operation_type: Operation type (2 for add, 3 for delete).
+            user_id: The unique identifier of the user or user group to share with.
+            user_name: The name of the user or user group to share with.
+            user_type: The type of user (e.g., 13 for User).
 
-                    user_name       (str)       -- Share user name
+        Raises:
+            SDKExpception: If the response is empty, not successful, or if sharing the handler fails.
 
-                    user_type       (int)       -- Share user type (Ex : 13- User)
-
-                Returns:
-
-                    None
-
-                Raises:
-
-                     SDKExpception:
-
-                        if response is empty
-
-                        if response is not success
-
-                        if failed to share handler with User/Usergroup
+        Example:
+            &gt;&gt;&gt; handler = Handler()
+            &gt;&gt;&gt; permissions = [1, 2, 3]  # Example permission IDs
+            &gt;&gt;&gt; handler.share(permissions, 2, 101, &#34;jdoe&#34;, 13)
+            &gt;&gt;&gt; print(&#34;Handler shared successfully with user jdoe&#34;)
         &#34;&#34;&#34;
 
         category_permission_list = []
@@ -581,49 +663,75 @@ class Handler(object):
 <dl>
 <dt id="cvpysdk.datacube.handler.Handler"><code class="flex name class">
 <span>class <span class="ident">Handler</span></span>
-<span>(</span><span>datasource_object, handler_name, handler_id=None)</span>
+<span>(</span><span>datasource_object: object, handler_name: str, handler_id: int = None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for performing operations on a single Handler</p>
-<p>Initialize an object of the Handler class.</p>
-<h2 id="args">Args</h2>
-<p>datasource_object
-(object)
-&ndash;
-instance of the Datacube class</p>
-<p>handler_name
-(str)
-&ndash;
-name of the Handler</p>
-<p>handler_id
-(int)
-&ndash;
-Id of the Handler. Default = None</p>
-<h2 id="returns">Returns</h2>
-<p>object
--
-instance of the Handler class</p></div>
+<div class="desc"><p>Handler class for managing and operating on individual handler instances.</p>
+<p>This class provides functionality to initialize handler objects with specific
+data sources, names, and IDs. It offers methods to retrieve handler data based
+on filters, access handler IDs, and share handler resources with specified
+permissions and user details.</p>
+<p>Key Features:
+- Initialization with datasource, handler name, and handler ID
+- Property access for handler ID
+- Retrieval of handler data using filters
+- Internal method for obtaining handler ID by name
+- Sharing handler resources with customizable permissions and user information</p>
+<p>Initialize a Handler object for managing data sources.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>datasource_object</code></strong></dt>
+<dd>Instance of the Datacube class representing the data source.</dd>
+<dt><strong><code>handler_name</code></strong></dt>
+<dd>Name to assign to the Handler.</dd>
+<dt><strong><code>handler_id</code></strong></dt>
+<dd>Optional integer ID for the Handler. If not provided, defaults to None.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; datacube = Datacube()
+&gt;&gt;&gt; handler = Handler(datacube, &quot;MyHandler&quot;)
+&gt;&gt;&gt; # Optionally specify a handler ID
+&gt;&gt;&gt; handler_with_id = Handler(datacube, &quot;MyHandler&quot;, handler_id=101)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/handler.py#L335-L500" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/handler.py#L404-L597" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Handler(object):
-    &#34;&#34;&#34;Class for performing operations on a single Handler&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Handler class for managing and operating on individual handler instances.
 
-    def __init__(self, datasource_object, handler_name, handler_id=None):
-        &#34;&#34;&#34;Initialize an object of the Handler class.
+    This class provides functionality to initialize handler objects with specific
+    data sources, names, and IDs. It offers methods to retrieve handler data based
+    on filters, access handler IDs, and share handler resources with specified
+    permissions and user details.
 
-            Args:
-                datasource_object     (object)    --  instance of the Datacube class
+    Key Features:
+        - Initialization with datasource, handler name, and handler ID
+        - Property access for handler ID
+        - Retrieval of handler data using filters
+        - Internal method for obtaining handler ID by name
+        - Sharing handler resources with customizable permissions and user information
 
-                handler_name          (str)       --  name of the Handler
+    &#34;&#34;&#34;
 
-                handler_id            (int)       --  Id of the Handler. Default = None
+    def __init__(self, datasource_object: object, handler_name: str, handler_id: int = None) -&gt; None:
+        &#34;&#34;&#34;Initialize a Handler object for managing data sources.
 
-            Returns:
+        Args:
+            datasource_object: Instance of the Datacube class representing the data source.
+            handler_name: Name to assign to the Handler.
+            handler_id: Optional integer ID for the Handler. If not provided, defaults to None.
 
-                object  -   instance of the Handler class
+        Example:
+            &gt;&gt;&gt; datacube = Datacube()
+            &gt;&gt;&gt; handler = Handler(datacube, &#34;MyHandler&#34;)
+            &gt;&gt;&gt; # Optionally specify a handler ID
+            &gt;&gt;&gt; handler_with_id = Handler(datacube, &#34;MyHandler&#34;, handler_id=101)
+
         &#34;&#34;&#34;
         self._datasource_object = datasource_object
         self._handler_name = handler_name
@@ -635,51 +743,62 @@ instance of the Handler class</p></div>
         self._share_handler = self.commcell_obj._services[&#39;SHARE_HANDLER&#39;]
 
     @property
-    def handler_id(self):
-        &#34;&#34;&#34;Returns the value of the handler id attribute.&#34;&#34;&#34;
+    def handler_id(self) -&gt; int:
+        &#34;&#34;&#34;Get the unique identifier for this handler.
+
+        Returns:
+            int: The handler&#39;s unique ID.
+
+        Example:
+            &gt;&gt;&gt; handler = Handler()
+            &gt;&gt;&gt; handler_id = handler.handler_id  # Access the handler&#39;s ID using the property
+            &gt;&gt;&gt; print(f&#34;Handler ID: {handler_id}&#34;)
+
+        &#34;&#34;&#34;
         return self._handler_id
 
-    def _get_handler_id(self, handler_name):
-        &#34;&#34;&#34; Get handler id for given handler name
-                Args:
+    def _get_handler_id(self, handler_name: str) -&gt; int:
+        &#34;&#34;&#34;Retrieve the handler ID for a given handler name.
 
-                    handler_name (str) -- Name of the Handler
+        Args:
+            handler_name: The name of the handler for which the ID is required.
 
-                Returns:
+        Returns:
+            The integer ID corresponding to the specified handler name.
 
-                    int                -- Handler id
+        Raises:
+            SDKExpception: If the response is empty or the response indicates failure.
 
-                Raises:
+        Example:
+            &gt;&gt;&gt; handler = Handler()
+            &gt;&gt;&gt; handler_id = handler._get_handler_id(&#34;MyHandler&#34;)
+            &gt;&gt;&gt; print(f&#34;Handler ID: {handler_id}&#34;)
 
-                    SDKExpception:
-
-                        if response is empty
-
-                        if response is not success
-
-                &#34;&#34;&#34;
+        &#34;&#34;&#34;
 
         handlers = self.commcell_obj.Datacube.datasources.ds_handlers
         return handlers.get_properties(handler_name=handler_name)[&#39;handlerId&#39;]
 
-    def get_handler_data(self, handler_filter=&#34;&#34;):
-        &#34;&#34;&#34; Executes handler for fetching data
-                Args:
+    def get_handler_data(self, handler_filter: str = &#34;&#34;) -&gt; dict:
+        &#34;&#34;&#34;Execute the handler to fetch data with an optional filter.
 
-                     handler_filter    (str)  -- Filter which needs to applied for handler execution
+        Args:
+            handler_filter: Optional string filter to apply during handler execution. 
+                If not provided, all handler data will be fetched.
 
-                Returns:
+        Returns:
+            dict: Dictionary containing the values fetched from the handler execution.
 
-                    dict        --  Dictionary of values fetched from handler execution
+        Raises:
+            SDKExpception: 
+                If the response is empty, not successful, or if there is an error fetching handler data.
 
-                Raises:
-                    SDKExpception:
+        Example:
+            &gt;&gt;&gt; handler = Handler()
+            &gt;&gt;&gt; data = handler.get_handler_data(&#34;status=active&#34;)
+            &gt;&gt;&gt; print(data)
+            {&#39;result&#39;: &#39;success&#39;, &#39;data&#39;: [...]}
 
-                        if response is empty
-
-                        if response is not success
-
-                        if error in fetching handler data
         &#34;&#34;&#34;
 
         if not isinstance(handler_filter, str):
@@ -699,32 +818,27 @@ instance of the Handler class</p></div>
             raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, &#34;No response object in Json&#34;)
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
 
-    def share(self, permission_list, operation_type, user_id, user_name, user_type):
-        &#34;&#34;&#34; Share handler with user/usergroup
-                Args:
-                    permission_list (list)      -- List of permission
+    def share(self, permission_list: list, operation_type: int, user_id: int, user_name: str, user_type: int) -&gt; None:
+        &#34;&#34;&#34;Share the handler with a specified user or user group.
 
-                    operation_type  (int)       -- Operation type (2-add / 3- delete)
+        This method assigns or removes permissions for a user or user group on the handler,
+        based on the provided operation type and permission list.
 
-                    user_id         (int)       -- User id of share user
+        Args:
+            permission_list: List of permissions to assign or remove.
+            operation_type: Operation type (2 for add, 3 for delete).
+            user_id: The unique identifier of the user or user group to share with.
+            user_name: The name of the user or user group to share with.
+            user_type: The type of user (e.g., 13 for User).
 
-                    user_name       (str)       -- Share user name
+        Raises:
+            SDKExpception: If the response is empty, not successful, or if sharing the handler fails.
 
-                    user_type       (int)       -- Share user type (Ex : 13- User)
-
-                Returns:
-
-                    None
-
-                Raises:
-
-                     SDKExpception:
-
-                        if response is empty
-
-                        if response is not success
-
-                        if failed to share handler with User/Usergroup
+        Example:
+            &gt;&gt;&gt; handler = Handler()
+            &gt;&gt;&gt; permissions = [1, 2, 3]  # Example permission IDs
+            &gt;&gt;&gt; handler.share(permissions, 2, 101, &#34;jdoe&#34;, 13)
+            &gt;&gt;&gt; print(&#34;Handler shared successfully with user jdoe&#34;)
         &#34;&#34;&#34;
 
         category_permission_list = []
@@ -777,17 +891,39 @@ instance of the Handler class</p></div>
 </details>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.datacube.handler.Handler.handler_id"><code class="name">var <span class="ident">handler_id</span></code></dt>
+<dt id="cvpysdk.datacube.handler.Handler.handler_id"><code class="name">var <span class="ident">handler_id</span> : int</code></dt>
 <dd>
-<div class="desc"><p>Returns the value of the handler id attribute.</p></div>
+<div class="desc"><p>Get the unique identifier for this handler.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>int</code></dt>
+<dd>The handler's unique ID.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; handler = Handler()
+&gt;&gt;&gt; handler_id = handler.handler_id  # Access the handler's ID using the property
+&gt;&gt;&gt; print(f&quot;Handler ID: {handler_id}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/handler.py#L361-L364" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/handler.py#L448-L462" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def handler_id(self):
-    &#34;&#34;&#34;Returns the value of the handler id attribute.&#34;&#34;&#34;
+def handler_id(self) -&gt; int:
+    &#34;&#34;&#34;Get the unique identifier for this handler.
+
+    Returns:
+        int: The handler&#39;s unique ID.
+
+    Example:
+        &gt;&gt;&gt; handler = Handler()
+        &gt;&gt;&gt; handler_id = handler.handler_id  # Access the handler&#39;s ID using the property
+        &gt;&gt;&gt; print(f&#34;Handler ID: {handler_id}&#34;)
+
+    &#34;&#34;&#34;
     return self._handler_id</code></pre>
 </details>
 </dd>
@@ -795,49 +931,57 @@ def handler_id(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.datacube.handler.Handler.get_handler_data"><code class="name flex">
-<span>def <span class="ident">get_handler_data</span></span>(<span>self, handler_filter='')</span>
+<span>def <span class="ident">get_handler_data</span></span>(<span>self, handler_filter: str = '') ‑> dict</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Executes handler for fetching data</p>
-<h2 id="args">Args</h2>
-<p>handler_filter
-(str)
-&ndash; Filter which needs to applied for handler execution</p>
-<h2 id="returns">Returns</h2>
-<p>dict
-&ndash;
-Dictionary of values fetched from handler execution</p>
-<h2 id="raises">Raises</h2>
-<p>SDKExpception:</p>
-<pre><code>if response is empty
-
-if response is not success
-
-if error in fetching handler data
+<div class="desc"><p>Execute the handler to fetch data with an optional filter.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>handler_filter</code></strong></dt>
+<dd>Optional string filter to apply during handler execution.
+If not provided, all handler data will be fetched.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>dict</code></dt>
+<dd>Dictionary containing the values fetched from the handler execution.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKExpception</code></dt>
+<dd>If the response is empty, not successful, or if there is an error fetching handler data.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; handler = Handler()
+&gt;&gt;&gt; data = handler.get_handler_data(&quot;status=active&quot;)
+&gt;&gt;&gt; print(data)
+{'result': 'success', 'data': [...]}
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/handler.py#L389-L424" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/handler.py#L487-L525" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def get_handler_data(self, handler_filter=&#34;&#34;):
-    &#34;&#34;&#34; Executes handler for fetching data
-            Args:
+<pre><code class="python">def get_handler_data(self, handler_filter: str = &#34;&#34;) -&gt; dict:
+    &#34;&#34;&#34;Execute the handler to fetch data with an optional filter.
 
-                 handler_filter    (str)  -- Filter which needs to applied for handler execution
+    Args:
+        handler_filter: Optional string filter to apply during handler execution. 
+            If not provided, all handler data will be fetched.
 
-            Returns:
+    Returns:
+        dict: Dictionary containing the values fetched from the handler execution.
 
-                dict        --  Dictionary of values fetched from handler execution
+    Raises:
+        SDKExpception: 
+            If the response is empty, not successful, or if there is an error fetching handler data.
 
-            Raises:
-                SDKExpception:
+    Example:
+        &gt;&gt;&gt; handler = Handler()
+        &gt;&gt;&gt; data = handler.get_handler_data(&#34;status=active&#34;)
+        &gt;&gt;&gt; print(data)
+        {&#39;result&#39;: &#39;success&#39;, &#39;data&#39;: [...]}
 
-                    if response is empty
-
-                    if response is not success
-
-                    if error in fetching handler data
     &#34;&#34;&#34;
 
     if not isinstance(handler_filter, str):
@@ -859,63 +1003,63 @@ if error in fetching handler data
 </details>
 </dd>
 <dt id="cvpysdk.datacube.handler.Handler.share"><code class="name flex">
-<span>def <span class="ident">share</span></span>(<span>self, permission_list, operation_type, user_id, user_name, user_type)</span>
+<span>def <span class="ident">share</span></span>(<span>self, permission_list: list, operation_type: int, user_id: int, user_name: str, user_type: int) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Share handler with user/usergroup</p>
-<h2 id="args">Args</h2>
-<p>permission_list (list)
-&ndash; List of permission</p>
-<p>operation_type
-(int)
-&ndash; Operation type (2-add / 3- delete)</p>
-<p>user_id
-(int)
-&ndash; User id of share user</p>
-<p>user_name
-(str)
-&ndash; Share user name</p>
-<p>user_type
-(int)
-&ndash; Share user type (Ex : 13- User)</p>
-<h2 id="returns">Returns</h2>
-<p>None</p>
-<h2 id="raises">Raises</h2>
-<p>SDKExpception:</p>
-<p>if response is empty</p>
-<p>if response is not success</p>
-<p>if failed to share handler with User/Usergroup</p></div>
+<div class="desc"><p>Share the handler with a specified user or user group.</p>
+<p>This method assigns or removes permissions for a user or user group on the handler,
+based on the provided operation type and permission list.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>permission_list</code></strong></dt>
+<dd>List of permissions to assign or remove.</dd>
+<dt><strong><code>operation_type</code></strong></dt>
+<dd>Operation type (2 for add, 3 for delete).</dd>
+<dt><strong><code>user_id</code></strong></dt>
+<dd>The unique identifier of the user or user group to share with.</dd>
+<dt><strong><code>user_name</code></strong></dt>
+<dd>The name of the user or user group to share with.</dd>
+<dt><strong><code>user_type</code></strong></dt>
+<dd>The type of user (e.g., 13 for User).</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKExpception</code></dt>
+<dd>If the response is empty, not successful, or if sharing the handler fails.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; handler = Handler()
+&gt;&gt;&gt; permissions = [1, 2, 3]  # Example permission IDs
+&gt;&gt;&gt; handler.share(permissions, 2, 101, &quot;jdoe&quot;, 13)
+&gt;&gt;&gt; print(&quot;Handler shared successfully with user jdoe&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/handler.py#L426-L500" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/handler.py#L527-L597" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def share(self, permission_list, operation_type, user_id, user_name, user_type):
-    &#34;&#34;&#34; Share handler with user/usergroup
-            Args:
-                permission_list (list)      -- List of permission
+<pre><code class="python">def share(self, permission_list: list, operation_type: int, user_id: int, user_name: str, user_type: int) -&gt; None:
+    &#34;&#34;&#34;Share the handler with a specified user or user group.
 
-                operation_type  (int)       -- Operation type (2-add / 3- delete)
+    This method assigns or removes permissions for a user or user group on the handler,
+    based on the provided operation type and permission list.
 
-                user_id         (int)       -- User id of share user
+    Args:
+        permission_list: List of permissions to assign or remove.
+        operation_type: Operation type (2 for add, 3 for delete).
+        user_id: The unique identifier of the user or user group to share with.
+        user_name: The name of the user or user group to share with.
+        user_type: The type of user (e.g., 13 for User).
 
-                user_name       (str)       -- Share user name
+    Raises:
+        SDKExpception: If the response is empty, not successful, or if sharing the handler fails.
 
-                user_type       (int)       -- Share user type (Ex : 13- User)
-
-            Returns:
-
-                None
-
-            Raises:
-
-                 SDKExpception:
-
-                    if response is empty
-
-                    if response is not success
-
-                    if failed to share handler with User/Usergroup
+    Example:
+        &gt;&gt;&gt; handler = Handler()
+        &gt;&gt;&gt; permissions = [1, 2, 3]  # Example permission IDs
+        &gt;&gt;&gt; handler.share(permissions, 2, 101, &#34;jdoe&#34;, 13)
+        &gt;&gt;&gt; print(&#34;Handler shared successfully with user jdoe&#34;)
     &#34;&#34;&#34;
 
     category_permission_list = []
@@ -971,33 +1115,74 @@ if error in fetching handler data
 </dd>
 <dt id="cvpysdk.datacube.handler.Handlers"><code class="flex name class">
 <span>class <span class="ident">Handlers</span></span>
-<span>(</span><span>datasource_object)</span>
+<span>(</span><span>datasource_object: object)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for representing all the handlers associated with the datasource.</p>
-<p>Initialize object of the Handlers class.</p>
-<h2 id="args">Args</h2>
-<p>_datasource_object (object)
-&ndash;
-instance of the datastore class</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Handlers class</p></div>
+<div class="desc"><p>Manages all handlers associated with a datasource.</p>
+<p>The Handlers class provides a comprehensive interface for managing, accessing,
+and manipulating handlers linked to a datasource object. It supports operations
+such as adding, deleting, retrieving, and refreshing handlers, as well as
+querying handler properties and existence.</p>
+<p>Key Features:
+- Initialization with a datasource object
+- String and representation methods for easy inspection
+- Internal retrieval of all handlers
+- Check for the existence of a handler by name
+- Retrieve properties of a specific handler
+- Get a handler by name
+- Delete a handler by name
+- Add a new handler with customizable parameters (search, filter, facet, rows, response type, sorting)
+- Refresh the handler list to reflect current datasource state</p>
+<p>Initialize a new instance of the Handlers class.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>datasource_object</code></strong></dt>
+<dd>An instance of the datastore class to be used by the Handlers.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; datastore = Datastore()
+&gt;&gt;&gt; handlers = Handlers(datastore)
+&gt;&gt;&gt; print(f&quot;Handlers object created: {handlers}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/handler.py#L66-L332" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/handler.py#L66-L401" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Handlers(object):
-    &#34;&#34;&#34;Class for representing all the handlers associated with the datasource.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Manages all handlers associated with a datasource.
 
-    def __init__(self, datasource_object):
-        &#34;&#34;&#34;Initialize object of the Handlers class.
+    The Handlers class provides a comprehensive interface for managing, accessing,
+    and manipulating handlers linked to a datasource object. It supports operations
+    such as adding, deleting, retrieving, and refreshing handlers, as well as
+    querying handler properties and existence.
 
-            Args:
-                _datasource_object (object)  --  instance of the datastore class
+    Key Features:
+        - Initialization with a datasource object
+        - String and representation methods for easy inspection
+        - Internal retrieval of all handlers
+        - Check for the existence of a handler by name
+        - Retrieve properties of a specific handler
+        - Get a handler by name
+        - Delete a handler by name
+        - Add a new handler with customizable parameters (search, filter, facet, rows, response type, sorting)
+        - Refresh the handler list to reflect current datasource state
 
-            Returns:
-                object - instance of the Handlers class
+    &#34;&#34;&#34;
+
+    def __init__(self, datasource_object: object) -&gt; None:
+        &#34;&#34;&#34;Initialize a new instance of the Handlers class.
+
+        Args:
+            datasource_object: An instance of the datastore class to be used by the Handlers.
+
+        Example:
+            &gt;&gt;&gt; datastore = Datastore()
+            &gt;&gt;&gt; handlers = Handlers(datastore)
+            &gt;&gt;&gt; print(f&#34;Handlers object created: {handlers}&#34;)
 
         &#34;&#34;&#34;
 
@@ -1011,11 +1196,19 @@ instance of the datastore class</p>
         self._handlers = None
         self.refresh()
 
-    def __str__(self):
-        &#34;&#34;&#34;Representation string consisting of all handlers of the datasource.
+    def __str__(self) -&gt; str:
+        &#34;&#34;&#34;Return a string representation of all handlers associated with the datasource.
 
-            Returns:
-                str - string of all the handlers associated with the datasource
+        This method provides a human-readable summary of all handlers managed by the Handlers object.
+
+        Returns:
+            A string listing all handlers associated with the datasource.
+
+        Example:
+            &gt;&gt;&gt; handlers = Handlers()
+            &gt;&gt;&gt; print(str(handlers))
+            Handler1, Handler2, Handler3
+            &gt;&gt;&gt; # The output will display all handlers as a comma-separated string
 
         &#34;&#34;&#34;
         representation_string = &#39;{:^5}\t{:^20}\n\n&#39;.format(&#39;S. No.&#39;, &#39;Handler&#39;)
@@ -1025,27 +1218,45 @@ instance of the datastore class</p>
 
         return representation_string.strip()
 
-    def __repr__(self):
-        &#34;&#34;&#34;Representation string for the instance of the Handlers class.&#34;&#34;&#34;
+    def __repr__(self) -&gt; str:
+        &#34;&#34;&#34;Return a string representation of the Handlers instance.
+
+        This method provides a developer-friendly string that represents the current
+        Handlers object, useful for debugging and logging purposes.
+
+        Returns:
+            A string representation of the Handlers instance.
+
+        Example:
+            &gt;&gt;&gt; handlers = Handlers()
+            &gt;&gt;&gt; print(repr(handlers))
+            &lt;Handlers object at 0x7f8b2c1d2e80&gt;
+        &#34;&#34;&#34;
         return &#34;Handlers class instance for Datasource: &#39;{0}&#39;&#34;.format(
             self._datasource_object.datasource_name
         )
 
-    def _get_handlers(self):
-        &#34;&#34;&#34;Gets all the handlers associated with the datasource
+    def _get_handlers(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve all handlers associated with the datasource.
 
-            Returns:
-                dict - consists of all handlers in the datasource
-                    {
-                         &#34;handler1_name&#34;: dict of handler1 properties,
-                         &#34;handler2_name&#34;: dict of handler2 properties
-                    }
+        Returns:
+            dict: A dictionary containing all handlers in the datasource, where each key is a handler name
+            and the value is a dictionary of that handler&#39;s properties.
+            Example format:
+                {
+                    &#34;handler1_name&#34;: { ... handler1 properties ... },
+                    &#34;handler2_name&#34;: { ... handler2 properties ... }
+                }
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException: If the response is empty or if the response indicates failure.
 
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; handlers = handlers_obj._get_handlers()
+            &gt;&gt;&gt; print(f&#34;Available handlers: {list(handlers.keys())}&#34;)
+            &gt;&gt;&gt; # Access properties of a specific handler
+            &gt;&gt;&gt; if &#39;handler1_name&#39; in handlers:
+            &gt;&gt;&gt;     print(handlers[&#39;handler1_name&#39;])
 
         &#34;&#34;&#34;
 
@@ -1063,18 +1274,23 @@ instance of the datastore class</p>
             response.text)
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def has_handler(self, handler_name):
-        &#34;&#34;&#34;Checks if a handler exists in the datasource with the input handler name.
+    def has_handler(self, handler_name: str) -&gt; bool:
+        &#34;&#34;&#34;Check if a handler with the specified name exists in the datasource.
 
-            Args:
-                handler_name (str)  --  name of the handler
+        Args:
+            handler_name: The name of the handler to check for existence.
 
-            Returns:
-                bool - boolean output whether the handler exists in the commcell or not
+        Returns:
+            True if the handler exists in the datasource; False otherwise.
 
-            Raises:
-                SDKException:
-                    if type of the handler name argument is not string
+        Raises:
+            SDKException: If the handler_name argument is not a string.
+
+        Example:
+            &gt;&gt;&gt; handlers = Handlers()
+            &gt;&gt;&gt; exists = handlers.has_handler(&#34;MyHandler&#34;)
+            &gt;&gt;&gt; print(f&#34;Handler exists: {exists}&#34;)
+            # Output: Handler exists: True
 
         &#34;&#34;&#34;
         if not isinstance(handler_name, str):
@@ -1082,29 +1298,38 @@ instance of the datastore class</p>
 
         return self._handlers and handler_name.lower() in map(str.lower, self._handlers)
 
-    def get_properties(self, handler_name):
-        &#34;&#34;&#34;Returns a handler object of the specified handler name.
+    def get_properties(self, handler_name: str) -&gt; dict:
+        &#34;&#34;&#34;Retrieve the properties of a specified handler by name.
 
-            Args:
-                handler_name (str)  --  name of the handler
+        Args:
+            handler_name: The name of the handler whose properties are to be retrieved.
 
-            Returns:
-                dict -  properties for the given handler name
+        Returns:
+            A dictionary containing the properties for the given handler name.
 
+        Example:
+            &gt;&gt;&gt; handlers = Handlers()
+            &gt;&gt;&gt; props = handlers.get_properties(&#34;FileHandler&#34;)
+            &gt;&gt;&gt; print(props)
+            {&#39;type&#39;: &#39;file&#39;, &#39;path&#39;: &#39;/var/log/app.log&#39;, &#39;level&#39;: &#39;INFO&#39;}
 
         &#34;&#34;&#34;
         return self._handlers[handler_name]
 
-    def get(self, handler_name):
-        &#34;&#34;&#34;Returns a handler object of the specified handler name.
+    def get(self, handler_name: str) -&gt; &#39;Handler&#39;:
+        &#34;&#34;&#34;Retrieve a handler object by its name.
 
-            Args:
-                handler_name (str)  --  name of the handler
+        Args:
+            handler_name: The name of the handler to retrieve.
 
-            Returns:
+        Returns:
+            Handler: An instance of the Handler class corresponding to the specified name.
 
-                obj                 -- Object of Handler class
-
+        Example:
+            &gt;&gt;&gt; handlers = Handlers()
+            &gt;&gt;&gt; my_handler = handlers.get(&#39;backup_handler&#39;)
+            &gt;&gt;&gt; print(f&#34;Handler type: {type(my_handler)}&#34;)
+            &gt;&gt;&gt; # Use the returned Handler object for further operations
 
         &#34;&#34;&#34;
         if not isinstance(handler_name, str):
@@ -1115,23 +1340,20 @@ instance of the datastore class</p>
             return Handler(self._datasource_object, handler_name, handler_id)
         raise SDKException(&#39;Datacube&#39;, &#39;102&#39;, &#34;Unable to get handler class object&#34;)
 
-    def delete(self, handler_name):
-        &#34;&#34;&#34; deletes the handler associated with this handler object
-                Args:
+    def delete(self, handler_name: str) -&gt; None:
+        &#34;&#34;&#34;Delete the handler associated with this handler object.
 
-                    handler_name (str)     -- Name of the handler which needs to be deleted
+        Args:
+            handler_name: The name of the handler to be deleted.
 
-                Returns:
+        Raises:
+            SDKExpception: If the response is empty or if the deletion is not successful.
 
-                    None
+        Example:
+            &gt;&gt;&gt; handlers = Handlers()
+            &gt;&gt;&gt; handlers.delete(&#34;my_handler&#34;)
+            &gt;&gt;&gt; print(&#34;Handler deleted successfully&#34;)
 
-                Raises:
-
-                    SDKExpception:
-
-                        if response is empty
-
-                        if response is not success
         &#34;&#34;&#34;
         handler_id = self.get(handler_name).handler_id
         self._delete_handler = self.commcell_obj._services[&#39;DELETE_HANDLER&#39;] % (
@@ -1152,56 +1374,46 @@ instance of the datastore class</p>
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response.text)
 
     def add(self,
-            handler_name,
-            search_query,
-            filter_query=None,
-            facet_field=None,
-            facet_query=None,
-            rows=10,
-            response_type=&#34;json&#34;,
-            sort_column=[]):
-        &#34;&#34;&#34;Adds a new handler to the commcell.
+            handler_name: str,
+            search_query: list,
+            filter_query: list = None,
+            facet_field: list = None,
+            facet_query: list = None,
+            rows: int = 10,
+            response_type: str = &#34;json&#34;,
+            sort_column: list = []) -&gt; None:
+        &#34;&#34;&#34;Add a new handler to the Commcell datastore.
 
-            Args:
-                handler_name    (str)   --  name of the handler to add to the datastore
+        This method registers a new handler with the specified configuration, including search and filter queries,
+        faceting options, result formatting, and sorting preferences.
 
-                search_query    (list)  --  list of keywords on which the search is performed.
+        Args:
+            handler_name: Name of the handler to add to the datastore.
+            search_query: List of keywords on which the search is performed.
+            filter_query: Optional list of conditional queries to apply when retrieving data.
+            facet_field: Optional list of fields to be faceted.
+            facet_query: Optional list of conditional queries for which the facet count should be retrieved.
+            rows: Number of rows (results) to retrieve. Default is 10.
+            response_type: Format in which search results are retrieved. Supported types: &#34;json&#34; (default), &#34;csv&#34;, &#34;xml&#34;.
+            sort_column: List of column names to sort the results by.
 
-                filter_query    (list)  --  list of conditional queries which needs to be performed
-                                                when the data is retrieved
+        Raises:
+            SDKException: If the handler name is not a string, if the handler could not be added,
+                if the response is empty or unsuccessful, or if no handler exists with the given name.
 
-                facet_field     (list)  --  list of fields to be faceted.
-
-                facet_query     (list)  --  list of conditional queries for which the facet count
-                                                should be retrieved
-
-                rows            (int)   --  list of keywords on which the search is performed.
-
-                response_type   (str)   --  format in which search results are retrieved.
-                    default: json
-
-                    Supported Types:
-                        json
-
-                        csv
-
-                        xml
-
-
-                sort_column     (list)  --  list of column name to be sorted
-
-
-            Raises:
-                SDKException:
-                    if type of the handler name argument is not string
-
-                    if failed to delete handler
-
-                    if response is empty
-
-                    if response is not success
-
-                    if no handler exists with the given name
+        Example:
+            &gt;&gt;&gt; handlers = Handlers()
+            &gt;&gt;&gt; handlers.add(
+            ...     handler_name=&#34;my_handler&#34;,
+            ...     search_query=[&#34;backup&#34;, &#34;restore&#34;],
+            ...     filter_query=[&#34;client:Server01&#34;],
+            ...     facet_field=[&#34;status&#34;],
+            ...     facet_query=[&#34;status:completed&#34;],
+            ...     rows=20,
+            ...     response_type=&#34;json&#34;,
+            ...     sort_column=[&#34;date&#34;]
+            ... )
+            &gt;&gt;&gt; print(&#34;Handler &#39;my_handler&#39; added successfully.&#34;)
 
         &#34;&#34;&#34;
         request_json = {
@@ -1251,127 +1463,115 @@ instance of the datastore class</p>
             response.text)
         raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def refresh(self):
-        &#34;&#34;&#34;Refresh the handlers associated with the Datasource.&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Reload the handlers associated with the Datasource.
+
+        This method refreshes the internal state of the handlers, ensuring that any changes 
+        to the underlying Datasource are reflected in the handler objects.
+
+        Example:
+            &gt;&gt;&gt; handlers = Handlers()
+            &gt;&gt;&gt; handlers.refresh()  # Reloads the handlers to reflect current Datasource state
+            &gt;&gt;&gt; print(&#34;Handlers refreshed successfully&#34;)
+
+        &#34;&#34;&#34;
         self._handlers = self._get_handlers()</code></pre>
 </details>
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.datacube.handler.Handlers.add"><code class="name flex">
-<span>def <span class="ident">add</span></span>(<span>self, handler_name, search_query, filter_query=None, facet_field=None, facet_query=None, rows=10, response_type='json', sort_column=[])</span>
+<span>def <span class="ident">add</span></span>(<span>self, handler_name: str, search_query: list, filter_query: list = None, facet_field: list = None, facet_query: list = None, rows: int = 10, response_type: str = 'json', sort_column: list = []) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Adds a new handler to the commcell.</p>
-<h2 id="args">Args</h2>
-<p>handler_name
-(str)
-&ndash;
-name of the handler to add to the datastore</p>
-<p>search_query
-(list)
-&ndash;
-list of keywords on which the search is performed.</p>
-<p>filter_query
-(list)
-&ndash;
-list of conditional queries which needs to be performed
-when the data is retrieved</p>
-<p>facet_field
-(list)
-&ndash;
-list of fields to be faceted.</p>
-<p>facet_query
-(list)
-&ndash;
-list of conditional queries for which the facet count
-should be retrieved</p>
-<p>rows
-(int)
-&ndash;
-list of keywords on which the search is performed.</p>
-<p>response_type
-(str)
-&ndash;
-format in which search results are retrieved.
-default: json</p>
-<pre><code>Supported Types:
-    json
-
-    csv
-
-    xml
-</code></pre>
-<p>sort_column
-(list)
-&ndash;
-list of column name to be sorted</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if type of the handler name argument is not string</p>
-<pre><code>if failed to delete handler
-
-if response is empty
-
-if response is not success
-
-if no handler exists with the given name
+<div class="desc"><p>Add a new handler to the Commcell datastore.</p>
+<p>This method registers a new handler with the specified configuration, including search and filter queries,
+faceting options, result formatting, and sorting preferences.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>handler_name</code></strong></dt>
+<dd>Name of the handler to add to the datastore.</dd>
+<dt><strong><code>search_query</code></strong></dt>
+<dd>List of keywords on which the search is performed.</dd>
+<dt><strong><code>filter_query</code></strong></dt>
+<dd>Optional list of conditional queries to apply when retrieving data.</dd>
+<dt><strong><code>facet_field</code></strong></dt>
+<dd>Optional list of fields to be faceted.</dd>
+<dt><strong><code>facet_query</code></strong></dt>
+<dd>Optional list of conditional queries for which the facet count should be retrieved.</dd>
+<dt><strong><code>rows</code></strong></dt>
+<dd>Number of rows (results) to retrieve. Default is 10.</dd>
+<dt><strong><code>response_type</code></strong></dt>
+<dd>Format in which search results are retrieved. Supported types: "json" (default), "csv", "xml".</dd>
+<dt><strong><code>sort_column</code></strong></dt>
+<dd>List of column names to sort the results by.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the handler name is not a string, if the handler could not be added,
+if the response is empty or unsuccessful, or if no handler exists with the given name.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; handlers = Handlers()
+&gt;&gt;&gt; handlers.add(
+...     handler_name=&quot;my_handler&quot;,
+...     search_query=[&quot;backup&quot;, &quot;restore&quot;],
+...     filter_query=[&quot;client:Server01&quot;],
+...     facet_field=[&quot;status&quot;],
+...     facet_query=[&quot;status:completed&quot;],
+...     rows=20,
+...     response_type=&quot;json&quot;,
+...     sort_column=[&quot;date&quot;]
+... )
+&gt;&gt;&gt; print(&quot;Handler 'my_handler' added successfully.&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/handler.py#L230-L328" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/handler.py#L297-L386" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def add(self,
-        handler_name,
-        search_query,
-        filter_query=None,
-        facet_field=None,
-        facet_query=None,
-        rows=10,
-        response_type=&#34;json&#34;,
-        sort_column=[]):
-    &#34;&#34;&#34;Adds a new handler to the commcell.
+        handler_name: str,
+        search_query: list,
+        filter_query: list = None,
+        facet_field: list = None,
+        facet_query: list = None,
+        rows: int = 10,
+        response_type: str = &#34;json&#34;,
+        sort_column: list = []) -&gt; None:
+    &#34;&#34;&#34;Add a new handler to the Commcell datastore.
 
-        Args:
-            handler_name    (str)   --  name of the handler to add to the datastore
+    This method registers a new handler with the specified configuration, including search and filter queries,
+    faceting options, result formatting, and sorting preferences.
 
-            search_query    (list)  --  list of keywords on which the search is performed.
+    Args:
+        handler_name: Name of the handler to add to the datastore.
+        search_query: List of keywords on which the search is performed.
+        filter_query: Optional list of conditional queries to apply when retrieving data.
+        facet_field: Optional list of fields to be faceted.
+        facet_query: Optional list of conditional queries for which the facet count should be retrieved.
+        rows: Number of rows (results) to retrieve. Default is 10.
+        response_type: Format in which search results are retrieved. Supported types: &#34;json&#34; (default), &#34;csv&#34;, &#34;xml&#34;.
+        sort_column: List of column names to sort the results by.
 
-            filter_query    (list)  --  list of conditional queries which needs to be performed
-                                            when the data is retrieved
+    Raises:
+        SDKException: If the handler name is not a string, if the handler could not be added,
+            if the response is empty or unsuccessful, or if no handler exists with the given name.
 
-            facet_field     (list)  --  list of fields to be faceted.
-
-            facet_query     (list)  --  list of conditional queries for which the facet count
-                                            should be retrieved
-
-            rows            (int)   --  list of keywords on which the search is performed.
-
-            response_type   (str)   --  format in which search results are retrieved.
-                default: json
-
-                Supported Types:
-                    json
-
-                    csv
-
-                    xml
-
-
-            sort_column     (list)  --  list of column name to be sorted
-
-
-        Raises:
-            SDKException:
-                if type of the handler name argument is not string
-
-                if failed to delete handler
-
-                if response is empty
-
-                if response is not success
-
-                if no handler exists with the given name
+    Example:
+        &gt;&gt;&gt; handlers = Handlers()
+        &gt;&gt;&gt; handlers.add(
+        ...     handler_name=&#34;my_handler&#34;,
+        ...     search_query=[&#34;backup&#34;, &#34;restore&#34;],
+        ...     filter_query=[&#34;client:Server01&#34;],
+        ...     facet_field=[&#34;status&#34;],
+        ...     facet_query=[&#34;status:completed&#34;],
+        ...     rows=20,
+        ...     response_type=&#34;json&#34;,
+        ...     sort_column=[&#34;date&#34;]
+        ... )
+        &gt;&gt;&gt; print(&#34;Handler &#39;my_handler&#39; added successfully.&#34;)
 
     &#34;&#34;&#34;
     request_json = {
@@ -1423,43 +1623,45 @@ if no handler exists with the given name
 </details>
 </dd>
 <dt id="cvpysdk.datacube.handler.Handlers.delete"><code class="name flex">
-<span>def <span class="ident">delete</span></span>(<span>self, handler_name)</span>
+<span>def <span class="ident">delete</span></span>(<span>self, handler_name: str) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>deletes the handler associated with this handler object</p>
-<h2 id="args">Args</h2>
-<p>handler_name (str)
-&ndash; Name of the handler which needs to be deleted</p>
-<h2 id="returns">Returns</h2>
-<p>None</p>
-<h2 id="raises">Raises</h2>
-<p>SDKExpception:</p>
-<pre><code>if response is empty
-
-if response is not success
+<div class="desc"><p>Delete the handler associated with this handler object.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>handler_name</code></strong></dt>
+<dd>The name of the handler to be deleted.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKExpception</code></dt>
+<dd>If the response is empty or if the deletion is not successful.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; handlers = Handlers()
+&gt;&gt;&gt; handlers.delete(&quot;my_handler&quot;)
+&gt;&gt;&gt; print(&quot;Handler deleted successfully&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/handler.py#L194-L228" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/handler.py#L263-L295" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def delete(self, handler_name):
-    &#34;&#34;&#34; deletes the handler associated with this handler object
-            Args:
+<pre><code class="python">def delete(self, handler_name: str) -&gt; None:
+    &#34;&#34;&#34;Delete the handler associated with this handler object.
 
-                handler_name (str)     -- Name of the handler which needs to be deleted
+    Args:
+        handler_name: The name of the handler to be deleted.
 
-            Returns:
+    Raises:
+        SDKExpception: If the response is empty or if the deletion is not successful.
 
-                None
+    Example:
+        &gt;&gt;&gt; handlers = Handlers()
+        &gt;&gt;&gt; handlers.delete(&#34;my_handler&#34;)
+        &gt;&gt;&gt; print(&#34;Handler deleted successfully&#34;)
 
-            Raises:
-
-                SDKExpception:
-
-                    if response is empty
-
-                    if response is not success
     &#34;&#34;&#34;
     handler_id = self.get(handler_name).handler_id
     self._delete_handler = self.commcell_obj._services[&#39;DELETE_HANDLER&#39;] % (
@@ -1481,32 +1683,46 @@ if response is not success
 </details>
 </dd>
 <dt id="cvpysdk.datacube.handler.Handlers.get"><code class="name flex">
-<span>def <span class="ident">get</span></span>(<span>self, handler_name)</span>
+<span>def <span class="ident">get</span></span>(<span>self, handler_name: str) ‑> <a title="cvpysdk.datacube.handler.Handler" href="#cvpysdk.datacube.handler.Handler">Handler</a></span>
 </code></dt>
 <dd>
-<div class="desc"><p>Returns a handler object of the specified handler name.</p>
-<h2 id="args">Args</h2>
-<p>handler_name (str)
-&ndash;
-name of the handler</p>
-<h2 id="returns">Returns</h2>
-<p>obj
-&ndash; Object of Handler class</p></div>
+<div class="desc"><p>Retrieve a handler object by its name.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>handler_name</code></strong></dt>
+<dd>The name of the handler to retrieve.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code><a title="cvpysdk.datacube.handler.Handler" href="#cvpysdk.datacube.handler.Handler">Handler</a></code></dt>
+<dd>An instance of the Handler class corresponding to the specified name.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; handlers = Handlers()
+&gt;&gt;&gt; my_handler = handlers.get('backup_handler')
+&gt;&gt;&gt; print(f&quot;Handler type: {type(my_handler)}&quot;)
+&gt;&gt;&gt; # Use the returned Handler object for further operations
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/handler.py#L174-L192" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/handler.py#L238-L261" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def get(self, handler_name):
-    &#34;&#34;&#34;Returns a handler object of the specified handler name.
+<pre><code class="python">def get(self, handler_name: str) -&gt; &#39;Handler&#39;:
+    &#34;&#34;&#34;Retrieve a handler object by its name.
 
-        Args:
-            handler_name (str)  --  name of the handler
+    Args:
+        handler_name: The name of the handler to retrieve.
 
-        Returns:
+    Returns:
+        Handler: An instance of the Handler class corresponding to the specified name.
 
-            obj                 -- Object of Handler class
-
+    Example:
+        &gt;&gt;&gt; handlers = Handlers()
+        &gt;&gt;&gt; my_handler = handlers.get(&#39;backup_handler&#39;)
+        &gt;&gt;&gt; print(f&#34;Handler type: {type(my_handler)}&#34;)
+        &gt;&gt;&gt; # Use the returned Handler object for further operations
 
     &#34;&#34;&#34;
     if not isinstance(handler_name, str):
@@ -1519,67 +1735,99 @@ name of the handler</p>
 </details>
 </dd>
 <dt id="cvpysdk.datacube.handler.Handlers.get_properties"><code class="name flex">
-<span>def <span class="ident">get_properties</span></span>(<span>self, handler_name)</span>
+<span>def <span class="ident">get_properties</span></span>(<span>self, handler_name: str) ‑> dict</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Returns a handler object of the specified handler name.</p>
-<h2 id="args">Args</h2>
-<p>handler_name (str)
-&ndash;
-name of the handler</p>
-<h2 id="returns">Returns</h2>
-<p>dict -
-properties for the given handler name</p></div>
+<div class="desc"><p>Retrieve the properties of a specified handler by name.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>handler_name</code></strong></dt>
+<dd>The name of the handler whose properties are to be retrieved.</dd>
+</dl>
+<p>Returns
+-----=
+A dictionary containing the properties for the given handler name.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; handlers = Handlers()
+&gt;&gt;&gt; props = handlers.get_properties(&quot;FileHandler&quot;)
+&gt;&gt;&gt; print(props)
+{'type': 'file', 'path': '/var/log/app.log', 'level': 'INFO'}
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/handler.py#L161-L172" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/handler.py#L219-L236" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def get_properties(self, handler_name):
-    &#34;&#34;&#34;Returns a handler object of the specified handler name.
+<pre><code class="python">def get_properties(self, handler_name: str) -&gt; dict:
+    &#34;&#34;&#34;Retrieve the properties of a specified handler by name.
 
-        Args:
-            handler_name (str)  --  name of the handler
+    Args:
+        handler_name: The name of the handler whose properties are to be retrieved.
 
-        Returns:
-            dict -  properties for the given handler name
+    Returns:
+        A dictionary containing the properties for the given handler name.
 
+    Example:
+        &gt;&gt;&gt; handlers = Handlers()
+        &gt;&gt;&gt; props = handlers.get_properties(&#34;FileHandler&#34;)
+        &gt;&gt;&gt; print(props)
+        {&#39;type&#39;: &#39;file&#39;, &#39;path&#39;: &#39;/var/log/app.log&#39;, &#39;level&#39;: &#39;INFO&#39;}
 
     &#34;&#34;&#34;
     return self._handlers[handler_name]</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.datacube.handler.Handlers.has_handler"><code class="name flex">
-<span>def <span class="ident">has_handler</span></span>(<span>self, handler_name)</span>
+<span>def <span class="ident">has_handler</span></span>(<span>self, handler_name: str) ‑> bool</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Checks if a handler exists in the datasource with the input handler name.</p>
-<h2 id="args">Args</h2>
-<p>handler_name (str)
-&ndash;
-name of the handler</p>
-<h2 id="returns">Returns</h2>
-<p>bool - boolean output whether the handler exists in the commcell or not</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if type of the handler name argument is not string</p></div>
+<div class="desc"><p>Check if a handler with the specified name exists in the datasource.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>handler_name</code></strong></dt>
+<dd>The name of the handler to check for existence.</dd>
+</dl>
+<p>Returns
+-----=
+True if the handler exists in the datasource; False otherwise.</p>
+<dl>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the handler_name argument is not a string.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; handlers = Handlers()
+&gt;&gt;&gt; exists = handlers.has_handler(&quot;MyHandler&quot;)
+&gt;&gt;&gt; print(f&quot;Handler exists: {exists}&quot;)
+# Output: Handler exists: True
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/handler.py#L142-L159" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/handler.py#L194-L217" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def has_handler(self, handler_name):
-    &#34;&#34;&#34;Checks if a handler exists in the datasource with the input handler name.
+<pre><code class="python">def has_handler(self, handler_name: str) -&gt; bool:
+    &#34;&#34;&#34;Check if a handler with the specified name exists in the datasource.
 
-        Args:
-            handler_name (str)  --  name of the handler
+    Args:
+        handler_name: The name of the handler to check for existence.
 
-        Returns:
-            bool - boolean output whether the handler exists in the commcell or not
+    Returns:
+        True if the handler exists in the datasource; False otherwise.
 
-        Raises:
-            SDKException:
-                if type of the handler name argument is not string
+    Raises:
+        SDKException: If the handler_name argument is not a string.
+
+    Example:
+        &gt;&gt;&gt; handlers = Handlers()
+        &gt;&gt;&gt; exists = handlers.has_handler(&#34;MyHandler&#34;)
+        &gt;&gt;&gt; print(f&#34;Handler exists: {exists}&#34;)
+        # Output: Handler exists: True
 
     &#34;&#34;&#34;
     if not isinstance(handler_name, str):
@@ -1589,17 +1837,35 @@ if type of the handler name argument is not string</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.datacube.handler.Handlers.refresh"><code class="name flex">
-<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+<span>def <span class="ident">refresh</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Refresh the handlers associated with the Datasource.</p></div>
+<div class="desc"><p>Reload the handlers associated with the Datasource.</p>
+<p>This method refreshes the internal state of the handlers, ensuring that any changes
+to the underlying Datasource are reflected in the handler objects.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; handlers = Handlers()
+&gt;&gt;&gt; handlers.refresh()  # Reloads the handlers to reflect current Datasource state
+&gt;&gt;&gt; print(&quot;Handlers refreshed successfully&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/datacube/handler.py#L330-L332" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/datacube/handler.py#L388-L401" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def refresh(self):
-    &#34;&#34;&#34;Refresh the handlers associated with the Datasource.&#34;&#34;&#34;
+<pre><code class="python">def refresh(self) -&gt; None:
+    &#34;&#34;&#34;Reload the handlers associated with the Datasource.
+
+    This method refreshes the internal state of the handlers, ensuring that any changes 
+    to the underlying Datasource are reflected in the handler objects.
+
+    Example:
+        &gt;&gt;&gt; handlers = Handlers()
+        &gt;&gt;&gt; handlers.refresh()  # Reloads the handlers to reflect current Datasource state
+        &gt;&gt;&gt; print(&#34;Handlers refreshed successfully&#34;)
+
+    &#34;&#34;&#34;
     self._handlers = self._get_handlers()</code></pre>
 </details>
 </dd>

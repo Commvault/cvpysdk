@@ -29,7 +29,8 @@
 Derived class from Subclient Base class,
 representing an Exchange Mailbox
 Agent subclient, and to perform operations on that subclient.</p>
-<h2 id="exchangesubclient">Exchangesubclient</h2>
+<p>Exchangesubclient
+-----=</p>
 <p><strong>new</strong>()
 &ndash;
 Method to create object based on the backupset name</p>
@@ -42,10 +43,12 @@ Method to create object based on the backupset name</p>
 <p>_get_ad_group_backup_subtask_json &ndash; Gets the subtask json for ad group backup</p>
 <p>_get_ad_group_backup_options_json &ndash; Gets the option json for ad group backup</p>
 <p>_get_ad_group_backup_backupoptions_json &ndash; Gets the backup option json for ad group backup</p>
+<p>_get_live_update_job_json &ndash; Method to create xml for live update job</p>
+<p>live_update_job &ndash; Method to run live update job</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchsubclient.py#L1-L1436" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/exchsubclient.py#L1-L1614" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -93,6 +96,10 @@ ExchangeSubclient:
     _get_ad_group_backup_options_json -- Gets the option json for ad group backup
 
     _get_ad_group_backup_backupoptions_json -- Gets the backup option json for ad group backup
+
+    _get_live_update_job_json -- Method to create xml for live update job
+
+    live_update_job -- Method to run live update job
 
 
 &#34;&#34;&#34;
@@ -397,8 +404,8 @@ class ExchangeSubclient(Subclient):
         new_link = value.get(&#39;new_recall_link&#39;, None)
 
         base = {
-            JobOptionKeys.STUB_REHYDRATION.value: True,
-            JobOptionKeys.STUB_REHYDRATION_OPTION.value: stub_rehydration_option
+            JobOptionKeys.EXCH_STUB_REHYDRATION.value: True,
+            JobOptionKeys.EXCH_STUB_REHYDRATION_OPTION.value: stub_rehydration_option
         }
 
         additional_options = {}
@@ -425,7 +432,7 @@ class ExchangeSubclient(Subclient):
             JobOptionKeys.IS_JOURNAL_REPORT.value: value.get(&#34;journal_report&#34;, False),
             JobOptionKeys.PST_FILE_PATH.value: &#34;&#34;,
             JobOptionKeys.TARGET_MAILBOX.value: value.get(&#34;target_mailbox&#34;, None),
-            JobOptionKeys.STUB_REHYDRATION.value: base
+            JobOptionKeys.STUB_REHYDRATION_SMALL.value: base
         }
 
         return self._json_exchange_options
@@ -507,6 +514,22 @@ class ExchangeSubclient(Subclient):
             &#34;pstSize&#34;: value.get(&#34;pst_size&#34;, 2048)
         }
 
+    def _json_msg_restore_exchange_restore_option(self, value):
+        &#34;&#34;&#34;Setter for  the Exchange Mailbox MSG restore option in restore json
+            Args:
+                value   (dict)  --  restore option need to be included
+        &#34;&#34;&#34;
+
+        if not isinstance(value, dict):
+            raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
+
+        self._exchange_msg_option_restore_json = {
+            &#34;exchangeRestoreChoice&#34;: 3,
+            &#34;exchangeRestoreDrive&#34;: 1,
+            &#34;isJournalReport&#34;: value.get(&#34;journal_report&#34;, False),
+            &#34;diskFilePath&#34;: value.get(&#34;destination_path&#34;)
+        }
+
     @property
     def _json_content_indexing_subtasks(self):
         &#34;&#34;&#34;Getter for the contentindexing subtask in restore JSON.
@@ -558,6 +581,51 @@ class ExchangeSubclient(Subclient):
         request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][
             &#39;options&#39;][&#39;restoreOptions&#39;][
                 &#39;exchangeOption&#39;] = self._exchange_pst_option_restore_json
+
+        request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][
+            &#34;restoreOptions&#34;][&#34;browseOption&#34;][&#39;backupset&#39;] = self._exchange_backupset_json
+
+        return request_json
+
+    def _prepare_msg_restore_json(self, _msg_restore_option=None):
+        &#34;&#34;&#34;
+        Prepare MSG restore Json with all getters
+
+        Args:
+            _msg_restore_option - dictionary with all PST restore options
+
+            value:
+                paths                   (list)  --  list of paths of mailboxes/folders to restore
+
+                destination_client              --  client where the mailboxes needs to be restored
+                destination_path                --  MSG path where the mailboxes needs to be
+                                                    restored
+                unconditional_overwrite (bool)  --  unconditional overwrite files during restore
+                    default: True
+                journal_report          (bool)  --  Journal report is true for journal and
+                                                    contentStore Mailbox
+                    default: False
+
+        returns:
+            request_json   -- complete json for performing PST Restore options
+        &#34;&#34;&#34;
+
+        if _msg_restore_option is None:
+            _msg_restore_option = {}
+
+        paths = self._filter_paths(_msg_restore_option[&#39;paths&#39;])
+        self._json_msg_restore_exchange_restore_option(_msg_restore_option)
+        self._json_backupset()
+
+        _msg_restore_option[&#39;paths&#39;] = paths
+
+        # set the setters
+        self._instance_object._restore_association = self._subClientEntity
+        request_json = self._restore_json(restore_option=_msg_restore_option)
+
+        request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][
+            &#39;options&#39;][&#39;restoreOptions&#39;][
+                &#39;exchangeOption&#39;] = self._exchange_msg_option_restore_json
 
         request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][
             &#34;restoreOptions&#34;][&#34;browseOption&#34;][&#39;backupset&#39;] = self._exchange_backupset_json
@@ -928,6 +996,51 @@ class ExchangeSubclient(Subclient):
         restore_option[&#39;destination_path&#39;] = pst_path
 
         request_json = self._prepare_pst_restore_json(restore_option)
+        return self._process_restore_response(request_json)
+
+    def msg_restore(
+            self,
+            paths,
+            destination_client,
+            msg_path,
+            overwrite=True,
+            journal_report=False):
+        &#34;&#34;&#34;Restores the Mailbox/Emails specified in the input paths list to the MSG PATH location.
+
+            Args:
+                paths                   (list)  --  list of paths of mailboxes/folders to restore
+
+                overwrite               (bool)  --  unconditional overwrite files during restore
+                    default: True
+                journal_report          (bool)  --  Journal report is true for journal and
+                                                    contentStore Mailbox
+                    default: False
+
+            Returns:
+                object - instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+                    if paths is not a list
+
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+
+        restore_option = {}
+        if paths == []:
+            raise SDKException(&#39;Subclient&#39;, &#39;104&#39;)
+        restore_option[&#39;journal_report&#39;] = journal_report
+        restore_option[&#39;unconditional_overwrite&#39;] = overwrite
+        restore_option[&#39;paths&#39;] = paths
+        restore_option[&#39;client&#39;] = destination_client
+        restore_option[&#39;destination_path&#39;] = msg_path
+
+        request_json = self._prepare_msg_restore_json(restore_option)
         return self._process_restore_response(request_json)
 
     def pst_ingestion(self):
@@ -1482,7 +1595,75 @@ class ExchangeSubclient(Subclient):
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             &#39;POST&#39;, create_task, task_json
         )
-        return self._process_backup_response(flag, response)</code></pre>
+        return self._process_backup_response(flag, response)
+
+    def _get_live_update_job_json(self):
+        &#34;&#34;&#34;
+        Method to create xml for live update job
+        Returns:
+            task_xml(str)   -   xml as a string to trigger live update job
+        &#34;&#34;&#34;
+        task_json = {
+            &#34;taskInfo&#34;: {
+                &#34;taskOperation&#34;: 1,
+                &#34;associations&#34;: [
+                    {
+                        &#34;subclientId&#34;: int(self.subclient_id),
+                        &#34;entityType&#34;: 7,
+                        &#34;_SubclType_&#34;: 0,
+                        &#34;_type_&#34;: 7
+                    }
+                ],
+                &#34;task&#34;: {
+                    &#34;isEZOperation&#34;: False,
+                    &#34;description&#34;: &#34;&#34;,
+                    &#34;ownerId&#34;: 1,
+                    &#34;runUserId&#34;: 1,
+                    &#34;taskType&#34;: 1,
+                    &#34;ownerName&#34;: &#34;&#34;,
+                    &#34;alertName&#34;: &#34;&#34;,
+                    &#34;sequenceNumber&#34;: 0,
+                    &#34;isEditing&#34;: False,
+                    &#34;GUID&#34;: &#34;&#34;,
+                    &#34;isFromCommNetBrowserRootNode&#34;: False,
+                    &#34;initiatedFrom&#34;: 3,
+                    &#34;policyType&#34;: 0,
+                    &#34;associatedObjects&#34;: 0,
+                    &#34;taskName&#34;: &#34;&#34;
+                },
+                &#34;subTasks&#34;: [
+                    {
+                        &#34;subTaskOperation&#34;: 1,
+                        &#34;subTask&#34;: {
+                            &#34;subTaskOrder&#34;: 0,
+                            &#34;subTaskType&#34;: 2,
+                            &#34;flags&#34;: 0,
+                            &#34;operationType&#34;: 5027,
+                            &#34;subTaskId&#34;: 1
+                        }
+                    }
+                ]
+            }
+        }
+        return task_json
+
+    def live_update_job(self):
+        &#34;&#34;&#34;
+        Method to run live update job
+        &#34;&#34;&#34;
+        task_json = self._get_live_update_job_json()
+        create_task = self._services[&#39;CREATE_TASK&#39;]
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, create_task, task_json)
+        if flag:
+            if not response.status_code == 200:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(
+                &#39;Response&#39;,
+                &#39;101&#39;,
+                self._update_response_(
+                    response.text))</code></pre>
 </details>
 </section>
 <section>
@@ -1496,31 +1677,32 @@ class ExchangeSubclient(Subclient):
 <dl>
 <dt id="cvpysdk.subclients.exchsubclient.ExchangeSubclient"><code class="flex name class">
 <span>class <span class="ident">ExchangeSubclient</span></span>
-<span>(</span><span>backupset_object, subclient_name, subclient_id=None)</span>
+<span>(</span><span>backupset_object: object, subclient_name: str, subclient_id: str = None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Derived class from Subclient Base class, representing an Exchange subclient,
 and to perform operations on that subclient.</p>
-<p>Initialise the Subclient object.</p>
-<h2 id="args">Args</h2>
-<p>backupset_object (object)
-&ndash;
-instance of the Backupset class</p>
-<p>subclient_name
-(str)
-&ndash;
-name of the subclient</p>
-<p>subclient_id
-(str)
-&ndash;
-id of the subclient
-default: None</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Subclient class</p></div>
+<p>Initialize a Subclient object.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>backupset_object</code></strong></dt>
+<dd>Instance of the Backupset class to which this subclient belongs.</dd>
+<dt><strong><code>subclient_name</code></strong></dt>
+<dd>Name of the subclient.</dd>
+<dt><strong><code>subclient_id</code></strong></dt>
+<dd>Optional; ID of the subclient. If not provided, it will be determined automatically.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; backupset = Backupset(client_object, 'defaultBackupSet')
+&gt;&gt;&gt; subclient = Subclient(backupset, 'default')
+&gt;&gt;&gt; print(f&quot;Subclient created: {subclient}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchsubclient.py#L60-L1436" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/exchsubclient.py#L64-L1614" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ExchangeSubclient(Subclient):
     &#34;&#34;&#34;Derived class from Subclient Base class, representing an Exchange subclient,
@@ -1813,8 +1995,8 @@ default: None</p>
         new_link = value.get(&#39;new_recall_link&#39;, None)
 
         base = {
-            JobOptionKeys.STUB_REHYDRATION.value: True,
-            JobOptionKeys.STUB_REHYDRATION_OPTION.value: stub_rehydration_option
+            JobOptionKeys.EXCH_STUB_REHYDRATION.value: True,
+            JobOptionKeys.EXCH_STUB_REHYDRATION_OPTION.value: stub_rehydration_option
         }
 
         additional_options = {}
@@ -1841,7 +2023,7 @@ default: None</p>
             JobOptionKeys.IS_JOURNAL_REPORT.value: value.get(&#34;journal_report&#34;, False),
             JobOptionKeys.PST_FILE_PATH.value: &#34;&#34;,
             JobOptionKeys.TARGET_MAILBOX.value: value.get(&#34;target_mailbox&#34;, None),
-            JobOptionKeys.STUB_REHYDRATION.value: base
+            JobOptionKeys.STUB_REHYDRATION_SMALL.value: base
         }
 
         return self._json_exchange_options
@@ -1923,6 +2105,22 @@ default: None</p>
             &#34;pstSize&#34;: value.get(&#34;pst_size&#34;, 2048)
         }
 
+    def _json_msg_restore_exchange_restore_option(self, value):
+        &#34;&#34;&#34;Setter for  the Exchange Mailbox MSG restore option in restore json
+            Args:
+                value   (dict)  --  restore option need to be included
+        &#34;&#34;&#34;
+
+        if not isinstance(value, dict):
+            raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
+
+        self._exchange_msg_option_restore_json = {
+            &#34;exchangeRestoreChoice&#34;: 3,
+            &#34;exchangeRestoreDrive&#34;: 1,
+            &#34;isJournalReport&#34;: value.get(&#34;journal_report&#34;, False),
+            &#34;diskFilePath&#34;: value.get(&#34;destination_path&#34;)
+        }
+
     @property
     def _json_content_indexing_subtasks(self):
         &#34;&#34;&#34;Getter for the contentindexing subtask in restore JSON.
@@ -1974,6 +2172,51 @@ default: None</p>
         request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][
             &#39;options&#39;][&#39;restoreOptions&#39;][
                 &#39;exchangeOption&#39;] = self._exchange_pst_option_restore_json
+
+        request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][
+            &#34;restoreOptions&#34;][&#34;browseOption&#34;][&#39;backupset&#39;] = self._exchange_backupset_json
+
+        return request_json
+
+    def _prepare_msg_restore_json(self, _msg_restore_option=None):
+        &#34;&#34;&#34;
+        Prepare MSG restore Json with all getters
+
+        Args:
+            _msg_restore_option - dictionary with all PST restore options
+
+            value:
+                paths                   (list)  --  list of paths of mailboxes/folders to restore
+
+                destination_client              --  client where the mailboxes needs to be restored
+                destination_path                --  MSG path where the mailboxes needs to be
+                                                    restored
+                unconditional_overwrite (bool)  --  unconditional overwrite files during restore
+                    default: True
+                journal_report          (bool)  --  Journal report is true for journal and
+                                                    contentStore Mailbox
+                    default: False
+
+        returns:
+            request_json   -- complete json for performing PST Restore options
+        &#34;&#34;&#34;
+
+        if _msg_restore_option is None:
+            _msg_restore_option = {}
+
+        paths = self._filter_paths(_msg_restore_option[&#39;paths&#39;])
+        self._json_msg_restore_exchange_restore_option(_msg_restore_option)
+        self._json_backupset()
+
+        _msg_restore_option[&#39;paths&#39;] = paths
+
+        # set the setters
+        self._instance_object._restore_association = self._subClientEntity
+        request_json = self._restore_json(restore_option=_msg_restore_option)
+
+        request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][
+            &#39;options&#39;][&#39;restoreOptions&#39;][
+                &#39;exchangeOption&#39;] = self._exchange_msg_option_restore_json
 
         request_json[&#34;taskInfo&#34;][&#34;subTasks&#34;][0][&#34;options&#34;][
             &#34;restoreOptions&#34;][&#34;browseOption&#34;][&#39;backupset&#39;] = self._exchange_backupset_json
@@ -2344,6 +2587,51 @@ default: None</p>
         restore_option[&#39;destination_path&#39;] = pst_path
 
         request_json = self._prepare_pst_restore_json(restore_option)
+        return self._process_restore_response(request_json)
+
+    def msg_restore(
+            self,
+            paths,
+            destination_client,
+            msg_path,
+            overwrite=True,
+            journal_report=False):
+        &#34;&#34;&#34;Restores the Mailbox/Emails specified in the input paths list to the MSG PATH location.
+
+            Args:
+                paths                   (list)  --  list of paths of mailboxes/folders to restore
+
+                overwrite               (bool)  --  unconditional overwrite files during restore
+                    default: True
+                journal_report          (bool)  --  Journal report is true for journal and
+                                                    contentStore Mailbox
+                    default: False
+
+            Returns:
+                object - instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+                    if paths is not a list
+
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if response is not success
+
+        &#34;&#34;&#34;
+
+        restore_option = {}
+        if paths == []:
+            raise SDKException(&#39;Subclient&#39;, &#39;104&#39;)
+        restore_option[&#39;journal_report&#39;] = journal_report
+        restore_option[&#39;unconditional_overwrite&#39;] = overwrite
+        restore_option[&#39;paths&#39;] = paths
+        restore_option[&#39;client&#39;] = destination_client
+        restore_option[&#39;destination_path&#39;] = msg_path
+
+        request_json = self._prepare_msg_restore_json(restore_option)
         return self._process_restore_response(request_json)
 
     def pst_ingestion(self):
@@ -2898,7 +3186,75 @@ default: None</p>
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             &#39;POST&#39;, create_task, task_json
         )
-        return self._process_backup_response(flag, response)</code></pre>
+        return self._process_backup_response(flag, response)
+
+    def _get_live_update_job_json(self):
+        &#34;&#34;&#34;
+        Method to create xml for live update job
+        Returns:
+            task_xml(str)   -   xml as a string to trigger live update job
+        &#34;&#34;&#34;
+        task_json = {
+            &#34;taskInfo&#34;: {
+                &#34;taskOperation&#34;: 1,
+                &#34;associations&#34;: [
+                    {
+                        &#34;subclientId&#34;: int(self.subclient_id),
+                        &#34;entityType&#34;: 7,
+                        &#34;_SubclType_&#34;: 0,
+                        &#34;_type_&#34;: 7
+                    }
+                ],
+                &#34;task&#34;: {
+                    &#34;isEZOperation&#34;: False,
+                    &#34;description&#34;: &#34;&#34;,
+                    &#34;ownerId&#34;: 1,
+                    &#34;runUserId&#34;: 1,
+                    &#34;taskType&#34;: 1,
+                    &#34;ownerName&#34;: &#34;&#34;,
+                    &#34;alertName&#34;: &#34;&#34;,
+                    &#34;sequenceNumber&#34;: 0,
+                    &#34;isEditing&#34;: False,
+                    &#34;GUID&#34;: &#34;&#34;,
+                    &#34;isFromCommNetBrowserRootNode&#34;: False,
+                    &#34;initiatedFrom&#34;: 3,
+                    &#34;policyType&#34;: 0,
+                    &#34;associatedObjects&#34;: 0,
+                    &#34;taskName&#34;: &#34;&#34;
+                },
+                &#34;subTasks&#34;: [
+                    {
+                        &#34;subTaskOperation&#34;: 1,
+                        &#34;subTask&#34;: {
+                            &#34;subTaskOrder&#34;: 0,
+                            &#34;subTaskType&#34;: 2,
+                            &#34;flags&#34;: 0,
+                            &#34;operationType&#34;: 5027,
+                            &#34;subTaskId&#34;: 1
+                        }
+                    }
+                ]
+            }
+        }
+        return task_json
+
+    def live_update_job(self):
+        &#34;&#34;&#34;
+        Method to run live update job
+        &#34;&#34;&#34;
+        task_json = self._get_live_update_job_json()
+        create_task = self._services[&#39;CREATE_TASK&#39;]
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            &#39;POST&#39;, create_task, task_json)
+        if flag:
+            if not response.status_code == 200:
+                raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+        else:
+            raise SDKException(
+                &#39;Response&#39;,
+                &#39;101&#39;,
+                self._update_response_(
+                    response.text))</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -2917,15 +3273,17 @@ default: None</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Run backup of AD Group</p>
-<h2 id="args">Args</h2>
-<p>ad_group_name(str):
+<p>Args
+-----=
+ad_group_name(str):
 Name of ad group</p>
-<h2 id="returns">Returns</h2>
-<p>Processed job</p></div>
+<p>Returns
+-----=
+Processed job</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchsubclient.py#L1423-L1436" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/exchsubclient.py#L1533-L1546" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def ad_group_backup(self, ad_group_name):
     &#34;&#34;&#34;
@@ -2948,12 +3306,13 @@ Name of ad group</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Runs a cleanup job for the subclient .</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this backup job</p></div>
+<p>Returns
+-----=
+object - instance of the Job class for this backup job</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchsubclient.py#L638-L647" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/exchsubclient.py#L703-L712" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def cleanup(self):
     &#34;&#34;&#34;Runs a cleanup job for the subclient .
@@ -2972,8 +3331,9 @@ Name of ad group</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Restores the mailboxes/folders specified in the input paths list to the same location.</p>
-<h2 id="args">Args</h2>
-<p>paths
+<p>Args
+-----=
+paths
 (list)
 &ndash;
 list of paths of mailboxes/folders to restore
@@ -2994,10 +3354,12 @@ journal_report
 Journal report is true for journal and
 contentStore Mailbox
 default: False</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this restore job</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
+<p>Returns
+-----=
+object - instance of the Job class for this restore job</p>
+<p>Raises
+-----=
+SDKException:
 if paths is not a list</p>
 <pre><code>if failed to initialize job
 
@@ -3008,7 +3370,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchsubclient.py#L792-L837" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/exchsubclient.py#L857-L902" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def disk_restore(
         self,
@@ -3063,12 +3425,13 @@ if response is not success
 </code></dt>
 <dd>
 <div class="desc"><p>Get backup options json for pst ingestion job</p>
-<h2 id="returns">Returns</h2>
-<p>Pst backup options json</p></div>
+<p>Returns
+-----=
+Pst backup options json</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchsubclient.py#L1020-L1043" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/exchsubclient.py#L1130-L1153" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_pst_backup_opt_json(self):
     &#34;&#34;&#34;Get backup options json for pst ingestion job
@@ -3101,12 +3464,13 @@ if response is not success
 </code></dt>
 <dd>
 <div class="desc"><p>Get data options json for pst ingestion job</p>
-<h2 id="returns">Returns</h2>
-<p>Pst data options json</p></div>
+<p>Returns
+-----=
+Pst data options json</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchsubclient.py#L1045-L1059" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/exchsubclient.py#L1155-L1169" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_pst_data_opt_json(self):
     &#34;&#34;&#34;Get data options json for pst ingestion job
@@ -3130,12 +3494,13 @@ if response is not success
 </code></dt>
 <dd>
 <div class="desc"><p>Get task json for pst ingestion job</p>
-<h2 id="returns">Returns</h2>
-<p>Pst task json</p></div>
+<p>Returns
+-----=
+Pst task json</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchsubclient.py#L999-L1018" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/exchsubclient.py#L1109-L1128" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def get_pst_task_json(self):
     &#34;&#34;&#34;Get task json for pst ingestion job
@@ -3159,13 +3524,129 @@ if response is not success
     return task_json</code></pre>
 </details>
 </dd>
+<dt id="cvpysdk.subclients.exchsubclient.ExchangeSubclient.live_update_job"><code class="name flex">
+<span>def <span class="ident">live_update_job</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Method to run live update job</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/exchsubclient.py#L1598-L1614" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def live_update_job(self):
+    &#34;&#34;&#34;
+    Method to run live update job
+    &#34;&#34;&#34;
+    task_json = self._get_live_update_job_json()
+    create_task = self._services[&#39;CREATE_TASK&#39;]
+    flag, response = self._commcell_object._cvpysdk_object.make_request(
+        &#39;POST&#39;, create_task, task_json)
+    if flag:
+        if not response.status_code == 200:
+            raise SDKException(&#39;Response&#39;, &#39;102&#39;)
+    else:
+        raise SDKException(
+            &#39;Response&#39;,
+            &#39;101&#39;,
+            self._update_response_(
+                response.text))</code></pre>
+</details>
+</dd>
+<dt id="cvpysdk.subclients.exchsubclient.ExchangeSubclient.msg_restore"><code class="name flex">
+<span>def <span class="ident">msg_restore</span></span>(<span>self, paths, destination_client, msg_path, overwrite=True, journal_report=False)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Restores the Mailbox/Emails specified in the input paths list to the MSG PATH location.</p>
+<p>Args
+-----=
+paths
+(list)
+&ndash;
+list of paths of mailboxes/folders to restore</p>
+<p>overwrite
+(bool)
+&ndash;
+unconditional overwrite files during restore
+default: True
+journal_report
+(bool)
+&ndash;
+Journal report is true for journal and
+contentStore Mailbox
+default: False</p>
+<p>Returns
+-----=
+object - instance of the Job class for this restore job</p>
+<p>Raises
+-----=
+SDKException:
+if paths is not a list</p>
+<pre><code>if failed to initialize job
+
+if response is empty
+
+if response is not success
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/exchsubclient.py#L949-L992" class="git-link">Browse git</a>
+</summary>
+<pre><code class="python">def msg_restore(
+        self,
+        paths,
+        destination_client,
+        msg_path,
+        overwrite=True,
+        journal_report=False):
+    &#34;&#34;&#34;Restores the Mailbox/Emails specified in the input paths list to the MSG PATH location.
+
+        Args:
+            paths                   (list)  --  list of paths of mailboxes/folders to restore
+
+            overwrite               (bool)  --  unconditional overwrite files during restore
+                default: True
+            journal_report          (bool)  --  Journal report is true for journal and
+                                                contentStore Mailbox
+                default: False
+
+        Returns:
+            object - instance of the Job class for this restore job
+
+        Raises:
+            SDKException:
+                if paths is not a list
+
+                if failed to initialize job
+
+                if response is empty
+
+                if response is not success
+
+    &#34;&#34;&#34;
+
+    restore_option = {}
+    if paths == []:
+        raise SDKException(&#39;Subclient&#39;, &#39;104&#39;)
+    restore_option[&#39;journal_report&#39;] = journal_report
+    restore_option[&#39;unconditional_overwrite&#39;] = overwrite
+    restore_option[&#39;paths&#39;] = paths
+    restore_option[&#39;client&#39;] = destination_client
+    restore_option[&#39;destination_path&#39;] = msg_path
+
+    request_json = self._prepare_msg_restore_json(restore_option)
+    return self._process_restore_response(request_json)</code></pre>
+</details>
+</dd>
 <dt id="cvpysdk.subclients.exchsubclient.ExchangeSubclient.out_of_place_restore"><code class="name flex">
 <span>def <span class="ident">out_of_place_restore</span></span>(<span>self, paths, destination_path, overwrite=True, journal_report=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Restores the mailboxes/folders specified in the input paths list to the same location.</p>
-<h2 id="args">Args</h2>
-<p>paths
+<p>Args
+-----=
+paths
 (list)
 &ndash;
 list of paths of mailboxes/folders to restore
@@ -3186,10 +3667,12 @@ journal_report
 Journal report is true for journal and
 contentStore Mailbox
 default: False</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this restore job</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
+<p>Returns
+-----=
+object - instance of the Job class for this restore job</p>
+<p>Raises
+-----=
+SDKException:
 if paths is not a list</p>
 <pre><code>if failed to initialize job
 
@@ -3200,7 +3683,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchsubclient.py#L745-L790" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/exchsubclient.py#L810-L855" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def out_of_place_restore(
         self,
@@ -3255,17 +3738,20 @@ if response is not success
 </code></dt>
 <dd>
 <div class="desc"><p>Gets the preview content for the subclient.</p>
-<h2 id="params">Params</h2>
-<p>file_path (str)
+<p>Params
+-----=
+file_path (str)
 &ndash;
 path of the file for which preview is needed</p>
-<h2 id="returns">Returns</h2>
-<p>html
+<p>Returns
+-----=
+html
 (str)
 &ndash;
 html content of the preview</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
+<p>Raises
+-----=
+SDKException:
 if file is not found</p>
 <pre><code>if response is empty
 
@@ -3274,7 +3760,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchsubclient.py#L1196-L1317" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/exchsubclient.py#L1306-L1427" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def preview_backedup_file(self, file_path):
     &#34;&#34;&#34;Gets the preview content for the subclient.
@@ -3405,12 +3891,13 @@ if response is not success
 </code></dt>
 <dd>
 <div class="desc"><p>Runs a backup job for the subclient of the level specified.</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this backup job</p></div>
+<p>Returns
+-----=
+object - instance of the Job class for this backup job</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchsubclient.py#L884-L920" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/exchsubclient.py#L994-L1030" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def pst_ingestion(self):
     &#34;&#34;&#34;Runs a backup job for the subclient of the level specified.
@@ -3456,8 +3943,9 @@ if response is not success
 </code></dt>
 <dd>
 <div class="desc"><p>Restores the Mailbox/Emails specified in the input paths list to the PST PATH location.</p>
-<h2 id="args">Args</h2>
-<p>paths
+<p>Args
+-----=
+paths
 (list)
 &ndash;
 list of paths of mailboxes/folders to restore</p>
@@ -3472,10 +3960,12 @@ journal_report
 Journal report is true for journal and
 contentStore Mailbox
 default: False</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this restore job</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
+<p>Returns
+-----=
+object - instance of the Job class for this restore job</p>
+<p>Raises
+-----=
+SDKException:
 if paths is not a list</p>
 <pre><code>if failed to initialize job
 
@@ -3486,7 +3976,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchsubclient.py#L839-L882" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/exchsubclient.py#L904-L947" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def pst_restore(
         self,
@@ -3539,8 +4029,9 @@ if response is not success
 </code></dt>
 <dd>
 <div class="desc"><p>Restores the mailboxes/folders specified in the input paths list to the same location.</p>
-<h2 id="args">Args</h2>
-<p>paths
+<p>Args
+-----=
+paths
 (list)
 &ndash;
 list of paths of mailboxes/folders to restore</p>
@@ -3576,10 +4067,12 @@ Default: None</p>
 &ndash;
 filter values for find and restore
 Default: None</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this restore job</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
+<p>Returns
+-----=
+object - instance of the Job class for this restore job</p>
+<p>Raises
+-----=
+SDKException:
 if paths is not a list</p>
 <pre><code>if failed to initialize job
 
@@ -3590,7 +4083,7 @@ if response is not success
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchsubclient.py#L649-L743" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/exchsubclient.py#L714-L808" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore_in_place(
         self,
@@ -3694,8 +4187,9 @@ if response is not success
 </code></dt>
 <dd>
 <div class="desc"><p>Run content Indexing on Subclient .</p>
-<h2 id="args">Args</h2>
-<p>pick_failed_items
+<p>Args
+-----=
+pick_failed_items
 default:False
 (bool)
 &ndash;
@@ -3716,12 +4210,13 @@ Streams for Content Indexing job</p>
 (list) &ndash;
 provide the proxies to run CI
 default: None</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Job class for this ContentIndexing job</p></div>
+<p>Returns
+-----=
+object - instance of the Job class for this ContentIndexing job</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchsubclient.py#L922-L997" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/exchsubclient.py#L1032-L1107" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def subclient_content_indexing(self,
                                pick_failed_items=False,
@@ -3806,9 +4301,11 @@ default: None</p>
 <ul class="hlist">
 <li><code><b><a title="cvpysdk.subclient.Subclient" href="../subclient.html#cvpysdk.subclient.Subclient">Subclient</a></b></code>:
 <ul class="hlist">
+<li><code><a title="cvpysdk.subclient.Subclient.additional_settings" href="../subclient.html#cvpysdk.subclient.Subclient.additional_settings">additional_settings</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.allow_multiple_readers" href="../subclient.html#cvpysdk.subclient.Subclient.allow_multiple_readers">allow_multiple_readers</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.backup" href="../subclient.html#cvpysdk.subclient.Subclient.backup">backup</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.browse" href="../subclient.html#cvpysdk.subclient.Subclient.browse">browse</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.browse_Cosmos_Content" href="../subclient.html#cvpysdk.subclient.Subclient.browse_Cosmos_Content">browse_Cosmos_Content</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.data_readers" href="../subclient.html#cvpysdk.subclient.Subclient.data_readers">data_readers</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.deduplication_options" href="../subclient.html#cvpysdk.subclient.Subclient.deduplication_options">deduplication_options</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.description" href="../subclient.html#cvpysdk.subclient.Subclient.description">description</a></code></li>
@@ -3843,6 +4340,7 @@ default: None</p>
 <li><code><a title="cvpysdk.subclient.Subclient.restore_out_of_place" href="../subclient.html#cvpysdk.subclient.Subclient.restore_out_of_place">restore_out_of_place</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.run_content_indexing" href="../subclient.html#cvpysdk.subclient.Subclient.run_content_indexing">run_content_indexing</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.set_backup_nodes" href="../subclient.html#cvpysdk.subclient.Subclient.set_backup_nodes">set_backup_nodes</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.set_proxy_for_backup_copy" href="../subclient.html#cvpysdk.subclient.Subclient.set_proxy_for_backup_copy">set_proxy_for_backup_copy</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.set_proxy_for_snap" href="../subclient.html#cvpysdk.subclient.Subclient.set_proxy_for_snap">set_proxy_for_snap</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.snapshot_engine_name" href="../subclient.html#cvpysdk.subclient.Subclient.snapshot_engine_name">snapshot_engine_name</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.software_compression" href="../subclient.html#cvpysdk.subclient.Subclient.software_compression">software_compression</a></code></li>
@@ -3852,7 +4350,9 @@ default: None</p>
 <li><code><a title="cvpysdk.subclient.Subclient.subclient_guid" href="../subclient.html#cvpysdk.subclient.Subclient.subclient_guid">subclient_guid</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.subclient_id" href="../subclient.html#cvpysdk.subclient.Subclient.subclient_id">subclient_id</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.subclient_name" href="../subclient.html#cvpysdk.subclient.Subclient.subclient_name">subclient_name</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.unset_proxy_for_backup_copy" href="../subclient.html#cvpysdk.subclient.Subclient.unset_proxy_for_backup_copy">unset_proxy_for_backup_copy</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.unset_proxy_for_snap" href="../subclient.html#cvpysdk.subclient.Subclient.unset_proxy_for_snap">unset_proxy_for_snap</a></code></li>
+<li><code><a title="cvpysdk.subclient.Subclient.update_atlas_instance" href="../subclient.html#cvpysdk.subclient.Subclient.update_atlas_instance">update_atlas_instance</a></code></li>
 <li><code><a title="cvpysdk.subclient.Subclient.update_properties" href="../subclient.html#cvpysdk.subclient.Subclient.update_properties">update_properties</a></code></li>
 </ul>
 </li>
@@ -3935,6 +4435,8 @@ setTimeout(() => input.focus(), 100);
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.get_pst_backup_opt_json" href="#cvpysdk.subclients.exchsubclient.ExchangeSubclient.get_pst_backup_opt_json">get_pst_backup_opt_json</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.get_pst_data_opt_json" href="#cvpysdk.subclients.exchsubclient.ExchangeSubclient.get_pst_data_opt_json">get_pst_data_opt_json</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.get_pst_task_json" href="#cvpysdk.subclients.exchsubclient.ExchangeSubclient.get_pst_task_json">get_pst_task_json</a></code></li>
+<li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.live_update_job" href="#cvpysdk.subclients.exchsubclient.ExchangeSubclient.live_update_job">live_update_job</a></code></li>
+<li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.msg_restore" href="#cvpysdk.subclients.exchsubclient.ExchangeSubclient.msg_restore">msg_restore</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.out_of_place_restore" href="#cvpysdk.subclients.exchsubclient.ExchangeSubclient.out_of_place_restore">out_of_place_restore</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.preview_backedup_file" href="#cvpysdk.subclients.exchsubclient.ExchangeSubclient.preview_backedup_file">preview_backedup_file</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.pst_ingestion" href="#cvpysdk.subclients.exchsubclient.ExchangeSubclient.pst_ingestion">pst_ingestion</a></code></li>

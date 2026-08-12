@@ -44,7 +44,7 @@ _get_instance_properties_json()              --  get the all instance related
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/nutanix_ahv.py#L1-L134" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/nutanix_ahv.py#L1-L179" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -87,22 +87,39 @@ nutanixinstance:            Derived class from VirtualServer
 &#34;&#34;&#34;
 
 from ..vsinstance import VirtualServerInstance
-from ...exception import SDKException
-from ...instance import Instance
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ...agent import Agent
 
 
 class nutanixinstance(VirtualServerInstance):
-    &#34;&#34;&#34;Class for representing Nutanix AHV instance of the Virtual Server agent&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents a Nutanix AHV instance managed by the Virtual Server agent.
 
-    def __init__(self, agent, name, iid):
-        &#34;&#34;&#34; Initialize the Instance object for the given Virtual Server instance
+    This class encapsulates the properties and behaviors specific to a Nutanix AHV
+    virtual server instance, providing mechanisms to retrieve and manage instance
+    properties, as well as access key configuration details such as server host name,
+    Nutanix cluster, and associated username.
 
-            Args:
-                agent               (object)    --  the instance of the agent class
+    Key Features:
+        - Initialization with agent, instance name, and instance ID
+        - Retrieval of instance properties and their JSON representation
+        - Access to server host name, Nutanix cluster, and username via properties
 
-                name                (str)       --  the name of the instance
+    &#34;&#34;&#34;
 
-                iid                 (int)       --  the instance id
+    def __init__(self, agent: &#39;Agent&#39;, name: str, iid: str) -&gt; None:
+        &#34;&#34;&#34;Initialize a nutanixinstance object for the specified Virtual Server instance.
+
+        Args:
+            agent: The agent class instance associated with this Virtual Server instance.
+            name: The name of the Virtual Server instance.
+            iid: The unique identifier (ID) for the Virtual Server instance.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(client_object, &#39;Virtual Server&#39;)
+            &gt;&gt;&gt; instance = nutanixinstance(agent, &#39;Nutanix_Instance_01&#39;, &#39;101&#39;)
 
         &#34;&#34;&#34;
         self._nutanix_cluster = None
@@ -111,14 +128,15 @@ class nutanixinstance(VirtualServerInstance):
         self._vendor_id = 601
         super(nutanixinstance, self).__init__(agent, name, iid)
 
-    def _get_instance_properties(self):
-        &#34;&#34;&#34;
-        Get the properties of this instance
+    def _get_instance_properties(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve and update the properties of this Nutanix instance.
 
-        Raise:
-            SDK Exception:
-                if response is not empty
-                if response is not success
+        This method fetches the current properties of the Nutanix instance and updates the internal state accordingly.
+        It raises an SDK Exception if the response is not empty or if the response indicates a failure.
+
+        Raises:
+            SDK Exception: If the response is not empty or if the response is not successful.
+
         &#34;&#34;&#34;
 
         super(nutanixinstance, self)._get_instance_properties()
@@ -126,9 +144,6 @@ class nutanixinstance(VirtualServerInstance):
         if &#34;vmwareVendor&#34; in self._virtualserverinstance:
             self._nutanix_cluster = self._virtualserverinstance[&#39;vmwareVendor&#39;][
                 &#39;virtualCenter&#39;][&#39;domainName&#39;]
-
-            self._username = self._virtualserverinstance[&#39;vmwareVendor&#39;][
-                &#39;virtualCenter&#39;][&#39;userName&#39;]
 
         if &#39;virtualServerInstance&#39; in self._properties:
             _member_servers = self._properties[&#34;virtualServerInstance&#34;] \
@@ -138,11 +153,11 @@ class nutanixinstance(VirtualServerInstance):
                 if &#39;clientName&#39; in client.keys():
                     self._server_name.append(str(client[&#39;clientName&#39;]))
 
-    def _get_instance_properties_json(self):
-        &#34;&#34;&#34;get the all instance related properties of this subclient.
+    def _get_instance_properties_json(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve all instance-related properties for this subclient as a dictionary.
 
-          Returns:
-               dict - all instance properties put inside a dict
+        Returns:
+            dict: A dictionary containing all properties associated with this instance.
 
         &#34;&#34;&#34;
         instance_json = {
@@ -160,24 +175,47 @@ class nutanixinstance(VirtualServerInstance):
         return instance_json
 
     @property
-    def server_host_name(self):
-        &#34;&#34;&#34;
-        return the associated clients with the instance
+    def server_host_name(self) -&gt; list:
+        &#34;&#34;&#34;Get the server host name associated with this Nutanix instance.
+
+        Returns:
+            The host name of the server as a string.
+
+        Example:
+            &gt;&gt;&gt; instance = nutanixinstance()
+            &gt;&gt;&gt; host_name = instance.server_host_name  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Server host name: {host_name}&#34;)
+
         &#34;&#34;&#34;
         return self._server_name
 
     @property
-    def nutanix_cluster(self):
-        &#34;&#34;&#34;
-        returns the nutanix cluster of the instance
+    def nutanix_cluster(self) -&gt; str:
+        &#34;&#34;&#34;Get the Nutanix cluster associated with this instance.
+
+        Returns:
+            The name of the Nutanix cluster as a string.
+
+        Example:
+            &gt;&gt;&gt; instance = nutanixinstance()
+            &gt;&gt;&gt; cluster_name = instance.nutanix_cluster  # Access the Nutanix cluster property
+            &gt;&gt;&gt; print(f&#34;Nutanix cluster: {cluster_name}&#34;)
 
         &#34;&#34;&#34;
         return self._nutanix_cluster
 
     @property
-    def username(self):
-        &#34;&#34;&#34;
-        returns the username of the nuatnix cluster
+    def username(self) -&gt; str:
+        &#34;&#34;&#34;Get the username associated with the Nutanix cluster instance.
+
+        Returns:
+            The username as a string.
+
+        Example:
+            &gt;&gt;&gt; nutanix = nutanixinstance()
+            &gt;&gt;&gt; user = nutanix.username  # Access the username property
+            &gt;&gt;&gt; print(f&#34;Nutanix cluster username: {user}&#34;)
+
         &#34;&#34;&#34;
         return self._username</code></pre>
 </details>
@@ -193,41 +231,66 @@ class nutanixinstance(VirtualServerInstance):
 <dl>
 <dt id="cvpysdk.instances.virtualserver.nutanix_ahv.nutanixinstance"><code class="flex name class">
 <span>class <span class="ident">nutanixinstance</span></span>
-<span>(</span><span>agent, name, iid)</span>
+<span>(</span><span>agent: Agent, name: str, iid: str)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for representing Nutanix AHV instance of the Virtual Server agent</p>
-<p>Initialize the Instance object for the given Virtual Server instance</p>
-<h2 id="args">Args</h2>
-<p>agent
-(object)
-&ndash;
-the instance of the agent class</p>
-<p>name
-(str)
-&ndash;
-the name of the instance</p>
-<p>iid
-(int)
-&ndash;
-the instance id</p></div>
+<div class="desc"><p>Represents a Nutanix AHV instance managed by the Virtual Server agent.</p>
+<p>This class encapsulates the properties and behaviors specific to a Nutanix AHV
+virtual server instance, providing mechanisms to retrieve and manage instance
+properties, as well as access key configuration details such as server host name,
+Nutanix cluster, and associated username.</p>
+<p>Key Features:
+- Initialization with agent, instance name, and instance ID
+- Retrieval of instance properties and their JSON representation
+- Access to server host name, Nutanix cluster, and username via properties</p>
+<p>Initialize a nutanixinstance object for the specified Virtual Server instance.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>agent</code></strong></dt>
+<dd>The agent class instance associated with this Virtual Server instance.</dd>
+<dt><strong><code>name</code></strong></dt>
+<dd>The name of the Virtual Server instance.</dd>
+<dt><strong><code>iid</code></strong></dt>
+<dd>The unique identifier (ID) for the Virtual Server instance.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; agent = Agent(client_object, 'Virtual Server')
+&gt;&gt;&gt; instance = nutanixinstance(agent, 'Nutanix_Instance_01', '101')
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/nutanix_ahv.py#L46-L134" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/nutanix_ahv.py#L48-L179" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class nutanixinstance(VirtualServerInstance):
-    &#34;&#34;&#34;Class for representing Nutanix AHV instance of the Virtual Server agent&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents a Nutanix AHV instance managed by the Virtual Server agent.
 
-    def __init__(self, agent, name, iid):
-        &#34;&#34;&#34; Initialize the Instance object for the given Virtual Server instance
+    This class encapsulates the properties and behaviors specific to a Nutanix AHV
+    virtual server instance, providing mechanisms to retrieve and manage instance
+    properties, as well as access key configuration details such as server host name,
+    Nutanix cluster, and associated username.
 
-            Args:
-                agent               (object)    --  the instance of the agent class
+    Key Features:
+        - Initialization with agent, instance name, and instance ID
+        - Retrieval of instance properties and their JSON representation
+        - Access to server host name, Nutanix cluster, and username via properties
 
-                name                (str)       --  the name of the instance
+    &#34;&#34;&#34;
 
-                iid                 (int)       --  the instance id
+    def __init__(self, agent: &#39;Agent&#39;, name: str, iid: str) -&gt; None:
+        &#34;&#34;&#34;Initialize a nutanixinstance object for the specified Virtual Server instance.
+
+        Args:
+            agent: The agent class instance associated with this Virtual Server instance.
+            name: The name of the Virtual Server instance.
+            iid: The unique identifier (ID) for the Virtual Server instance.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(client_object, &#39;Virtual Server&#39;)
+            &gt;&gt;&gt; instance = nutanixinstance(agent, &#39;Nutanix_Instance_01&#39;, &#39;101&#39;)
 
         &#34;&#34;&#34;
         self._nutanix_cluster = None
@@ -236,14 +299,15 @@ the instance id</p></div>
         self._vendor_id = 601
         super(nutanixinstance, self).__init__(agent, name, iid)
 
-    def _get_instance_properties(self):
-        &#34;&#34;&#34;
-        Get the properties of this instance
+    def _get_instance_properties(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve and update the properties of this Nutanix instance.
 
-        Raise:
-            SDK Exception:
-                if response is not empty
-                if response is not success
+        This method fetches the current properties of the Nutanix instance and updates the internal state accordingly.
+        It raises an SDK Exception if the response is not empty or if the response indicates a failure.
+
+        Raises:
+            SDK Exception: If the response is not empty or if the response is not successful.
+
         &#34;&#34;&#34;
 
         super(nutanixinstance, self)._get_instance_properties()
@@ -251,9 +315,6 @@ the instance id</p></div>
         if &#34;vmwareVendor&#34; in self._virtualserverinstance:
             self._nutanix_cluster = self._virtualserverinstance[&#39;vmwareVendor&#39;][
                 &#39;virtualCenter&#39;][&#39;domainName&#39;]
-
-            self._username = self._virtualserverinstance[&#39;vmwareVendor&#39;][
-                &#39;virtualCenter&#39;][&#39;userName&#39;]
 
         if &#39;virtualServerInstance&#39; in self._properties:
             _member_servers = self._properties[&#34;virtualServerInstance&#34;] \
@@ -263,11 +324,11 @@ the instance id</p></div>
                 if &#39;clientName&#39; in client.keys():
                     self._server_name.append(str(client[&#39;clientName&#39;]))
 
-    def _get_instance_properties_json(self):
-        &#34;&#34;&#34;get the all instance related properties of this subclient.
+    def _get_instance_properties_json(self) -&gt; dict:
+        &#34;&#34;&#34;Retrieve all instance-related properties for this subclient as a dictionary.
 
-          Returns:
-               dict - all instance properties put inside a dict
+        Returns:
+            dict: A dictionary containing all properties associated with this instance.
 
         &#34;&#34;&#34;
         instance_json = {
@@ -285,24 +346,47 @@ the instance id</p></div>
         return instance_json
 
     @property
-    def server_host_name(self):
-        &#34;&#34;&#34;
-        return the associated clients with the instance
+    def server_host_name(self) -&gt; list:
+        &#34;&#34;&#34;Get the server host name associated with this Nutanix instance.
+
+        Returns:
+            The host name of the server as a string.
+
+        Example:
+            &gt;&gt;&gt; instance = nutanixinstance()
+            &gt;&gt;&gt; host_name = instance.server_host_name  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Server host name: {host_name}&#34;)
+
         &#34;&#34;&#34;
         return self._server_name
 
     @property
-    def nutanix_cluster(self):
-        &#34;&#34;&#34;
-        returns the nutanix cluster of the instance
+    def nutanix_cluster(self) -&gt; str:
+        &#34;&#34;&#34;Get the Nutanix cluster associated with this instance.
+
+        Returns:
+            The name of the Nutanix cluster as a string.
+
+        Example:
+            &gt;&gt;&gt; instance = nutanixinstance()
+            &gt;&gt;&gt; cluster_name = instance.nutanix_cluster  # Access the Nutanix cluster property
+            &gt;&gt;&gt; print(f&#34;Nutanix cluster: {cluster_name}&#34;)
 
         &#34;&#34;&#34;
         return self._nutanix_cluster
 
     @property
-    def username(self):
-        &#34;&#34;&#34;
-        returns the username of the nuatnix cluster
+    def username(self) -&gt; str:
+        &#34;&#34;&#34;Get the username associated with the Nutanix cluster instance.
+
+        Returns:
+            The username as a string.
+
+        Example:
+            &gt;&gt;&gt; nutanix = nutanixinstance()
+            &gt;&gt;&gt; user = nutanix.username  # Access the username property
+            &gt;&gt;&gt; print(f&#34;Nutanix cluster username: {user}&#34;)
+
         &#34;&#34;&#34;
         return self._username</code></pre>
 </details>
@@ -313,51 +397,101 @@ the instance id</p></div>
 </ul>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.instances.virtualserver.nutanix_ahv.nutanixinstance.nutanix_cluster"><code class="name">var <span class="ident">nutanix_cluster</span></code></dt>
+<dt id="cvpysdk.instances.virtualserver.nutanix_ahv.nutanixinstance.nutanix_cluster"><code class="name">var <span class="ident">nutanix_cluster</span> : str</code></dt>
 <dd>
-<div class="desc"><p>returns the nutanix cluster of the instance</p></div>
+<div class="desc"><p>Get the Nutanix cluster associated with this instance.</p>
+<p>Returns
+-----=
+The name of the Nutanix cluster as a string.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; instance = nutanixinstance()
+&gt;&gt;&gt; cluster_name = instance.nutanix_cluster  # Access the Nutanix cluster property
+&gt;&gt;&gt; print(f&quot;Nutanix cluster: {cluster_name}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/nutanix_ahv.py#L121-L127" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/nutanix_ahv.py#L149-L163" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def nutanix_cluster(self):
-    &#34;&#34;&#34;
-    returns the nutanix cluster of the instance
+def nutanix_cluster(self) -&gt; str:
+    &#34;&#34;&#34;Get the Nutanix cluster associated with this instance.
+
+    Returns:
+        The name of the Nutanix cluster as a string.
+
+    Example:
+        &gt;&gt;&gt; instance = nutanixinstance()
+        &gt;&gt;&gt; cluster_name = instance.nutanix_cluster  # Access the Nutanix cluster property
+        &gt;&gt;&gt; print(f&#34;Nutanix cluster: {cluster_name}&#34;)
 
     &#34;&#34;&#34;
     return self._nutanix_cluster</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.virtualserver.nutanix_ahv.nutanixinstance.server_host_name"><code class="name">var <span class="ident">server_host_name</span></code></dt>
+<dt id="cvpysdk.instances.virtualserver.nutanix_ahv.nutanixinstance.server_host_name"><code class="name">var <span class="ident">server_host_name</span> : list</code></dt>
 <dd>
-<div class="desc"><p>return the associated clients with the instance</p></div>
+<div class="desc"><p>Get the server host name associated with this Nutanix instance.</p>
+<p>Returns
+-----=
+The host name of the server as a string.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; instance = nutanixinstance()
+&gt;&gt;&gt; host_name = instance.server_host_name  # Use dot notation for property access
+&gt;&gt;&gt; print(f&quot;Server host name: {host_name}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/nutanix_ahv.py#L114-L119" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/nutanix_ahv.py#L133-L147" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def server_host_name(self):
-    &#34;&#34;&#34;
-    return the associated clients with the instance
+def server_host_name(self) -&gt; list:
+    &#34;&#34;&#34;Get the server host name associated with this Nutanix instance.
+
+    Returns:
+        The host name of the server as a string.
+
+    Example:
+        &gt;&gt;&gt; instance = nutanixinstance()
+        &gt;&gt;&gt; host_name = instance.server_host_name  # Use dot notation for property access
+        &gt;&gt;&gt; print(f&#34;Server host name: {host_name}&#34;)
+
     &#34;&#34;&#34;
     return self._server_name</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.instances.virtualserver.nutanix_ahv.nutanixinstance.username"><code class="name">var <span class="ident">username</span></code></dt>
+<dt id="cvpysdk.instances.virtualserver.nutanix_ahv.nutanixinstance.username"><code class="name">var <span class="ident">username</span> : str</code></dt>
 <dd>
-<div class="desc"><p>returns the username of the nuatnix cluster</p></div>
+<div class="desc"><p>Get the username associated with the Nutanix cluster instance.</p>
+<p>Returns
+-----=
+The username as a string.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; nutanix = nutanixinstance()
+&gt;&gt;&gt; user = nutanix.username  # Access the username property
+&gt;&gt;&gt; print(f&quot;Nutanix cluster username: {user}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/instances/virtualserver/nutanix_ahv.py#L129-L134" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/instances/virtualserver/nutanix_ahv.py#L165-L179" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def username(self):
-    &#34;&#34;&#34;
-    returns the username of the nuatnix cluster
+def username(self) -&gt; str:
+    &#34;&#34;&#34;Get the username associated with the Nutanix cluster instance.
+
+    Returns:
+        The username as a string.
+
+    Example:
+        &gt;&gt;&gt; nutanix = nutanixinstance()
+        &gt;&gt;&gt; user = nutanix.username  # Access the username property
+        &gt;&gt;&gt; print(f&#34;Nutanix cluster username: {user}&#34;)
+
     &#34;&#34;&#34;
     return self._username</code></pre>
 </details>

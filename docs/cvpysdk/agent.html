@@ -29,8 +29,9 @@
 Class for representing all the agents associated with a specific client</p>
 <p>Agent:
 Class for a single agent selected for a client, and to perform operations on that agent</p>
-<h2 id="agents">Agents</h2>
-<p><strong>init</strong>(client_object)
+<p>Agents
+-----=
+<strong>init</strong>(client_object)
 &ndash;
 initialize object of Agents class associated with
 the specified client</p>
@@ -66,8 +67,9 @@ processes add agent request response</p>
 <p>add_database_agent()
 &ndash;
 adds database agent</p>
-<h2 id="agent">Agent</h2>
-<p><strong>init</strong>(client_object,
+<p>Agent
+-----=
+<strong>init</strong>(client_object,
 agent_name,
 agent_id=None)
 &ndash;
@@ -118,7 +120,7 @@ refresh the object properties</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/agent.py#L1-L957" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/agent.py#L1-L1342" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -214,28 +216,52 @@ Agent:
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
+import copy
 import string
 import time
-import copy
+from typing import TYPE_CHECKING, Any, Dict, Optional, Union
 
 from .constants import AppIDAName
 from .instance import Instances
 from .backupset import Backupsets
 from .schedules import Schedules
 from .exception import SDKException
-
+if TYPE_CHECKING:
+    from .client import Client
 
 class Agents(object):
-    &#34;&#34;&#34;Class for getting all the agents associated with a client.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Manages and interacts with agents associated with a client.
 
-    def __init__(self, client_object):
-        &#34;&#34;&#34;Initialize object of the Agents class.
+    The Agents class provides a comprehensive interface for retrieving, managing,
+    and interacting with agents linked to a specific client object. It supports
+    agent enumeration, access, addition, and refresh operations, making it easy
+    to handle agent-related tasks programmatically.
 
-            Args:
-                client_object (object)  --  instance of the Client class
+    Key Features:
+        - Initialization with a client object for context
+        - String and representation methods for readable output
+        - Length and item access for agent collection-like behavior
+        - Retrieval of all agents via the `all_agents` property
+        - Check for existence of an agent by name
+        - Get a specific agent by name
+        - Refresh the agent list from the source
+        - Add a new database agent with specified access node
+        - Internal processing of agent addition responses
 
-            Returns:
-                object - instance of the Agents class
+    &#34;&#34;&#34;
+
+    def __init__(self, client_object: &#39;Client&#39;) -&gt; None:
+        &#34;&#34;&#34;Initialize an Agents object for managing agents on a specific client.
+
+        Args:
+            client_object: Instance of the Client class representing the target client.
+
+        Example:
+            &gt;&gt;&gt; client = Client(...)
+            &gt;&gt;&gt; agents = Agents(client)
+            &gt;&gt;&gt; # The Agents object can now be used to manage agents for the specified client
+
         &#34;&#34;&#34;
         self._client_object = client_object
         self._commcell_object = self._client_object._commcell_object
@@ -249,11 +275,22 @@ class Agents(object):
         self._agents = None
         self.refresh()
 
-    def __str__(self):
-        &#34;&#34;&#34;Representation string consisting of all agents of the client.
+    def __str__(self) -&gt; str:
+        &#34;&#34;&#34;Return a formatted string representation of all agents associated with the client.
 
-            Returns:
-                str     -   string of all the agents of a client
+        The output includes a table listing the serial number, agent name, and client name for each agent.
+
+        Returns:
+            Formatted string listing all agents of the client.
+
+        Example:
+            &gt;&gt;&gt; agents = Agents(client_object)
+            &gt;&gt;&gt; print(str(agents))
+            &gt;&gt;&gt; # Output:
+            &gt;&gt;&gt; # S. No.   Agent                Client
+            &gt;&gt;&gt; #
+            &gt;&gt;&gt; #   1      FileSystem           ClientA
+            &gt;&gt;&gt; #   2      SQLServer            ClientA
 
         &#34;&#34;&#34;
         representation_string = &#39;{:^5}\t{:^20}\t{:^20}\n\n&#39;.format(&#39;S. No.&#39;, &#39;Agent&#39;, &#39;Client&#39;)
@@ -268,29 +305,61 @@ class Agents(object):
 
         return representation_string.strip()
 
-    def __repr__(self):
-        &#34;&#34;&#34;Representation string for the instance of the Agents class.&#34;&#34;&#34;
+    def __repr__(self) -&gt; str:
+        &#34;&#34;&#34;Return a string representation of the Agents class instance.
+
+        This method provides a human-readable description of the Agents object,
+        including the associated client name.
+
+        Returns:
+            String representation of the Agents instance.
+
+        Example:
+            &gt;&gt;&gt; agents = Agents(client_object)
+            &gt;&gt;&gt; print(repr(agents))
+            Agents class instance for Client: &#39;Client01&#39;
+
+        &#34;&#34;&#34;
         return &#34;Agents class instance for Client: &#39;{0}&#39;&#34;.format(self._client_object.client_name)
 
-    def __len__(self):
-        &#34;&#34;&#34;Returns the number of the Agents licensed for the selected Client.&#34;&#34;&#34;
+    def __len__(self) -&gt; int:
+        &#34;&#34;&#34;Get the number of agents licensed for the selected client.
+
+        Returns:
+            The total count of licensed agents as an integer.
+
+        Example:
+            &gt;&gt;&gt; agents = Agents(client_object)
+            &gt;&gt;&gt; num_agents = len(agents)
+            &gt;&gt;&gt; print(f&#34;Licensed agents: {num_agents}&#34;)
+
+        &#34;&#34;&#34;
         return len(self.all_agents)
 
-    def __getitem__(self, value):
-        &#34;&#34;&#34;Returns the name of the agent for the given agent ID or
-            the details of the agent for given agent Name.
+    def __getitem__(self, value: Union[str, int]) -&gt; Union[str, Dict[str, Any]]:
+        &#34;&#34;&#34;Retrieve agent information by agent ID or agent name.
 
-            Args:
-                value   (str / int)     --  Name or ID of the agent
+        If an agent ID (as int or str) is provided, returns the name of the agent.
+        If an agent name (as str) is provided, returns the details dictionary for that agent.
 
-            Returns:
-                str     -   name of the agent, if the agent id was given
+        Args:
+            value: The agent&#39;s name (str) or ID (int or str).
 
-                dict    -   dict of details of the agent, if agent name was given
+        Returns:
+            str: Name of the agent if the agent ID was provided.
+            dict: Details of the agent if the agent name was provided.
 
-            Raises:
-                IndexError:
-                    no agent exists with the given Name / Id
+        Raises:
+            IndexError: If no agent exists with the given name or ID.
+
+        Example:
+            &gt;&gt;&gt; agents = Agents()
+            &gt;&gt;&gt; # Get agent details by name
+            &gt;&gt;&gt; details = agents[&#39;FileSystem&#39;]
+            &gt;&gt;&gt; print(details)
+            &gt;&gt;&gt; # Get agent name by ID
+            &gt;&gt;&gt; name = agents[101]
+            &gt;&gt;&gt; print(f&#34;Agent name for ID 101: {name}&#34;)
 
         &#34;&#34;&#34;
         value = str(value)
@@ -303,21 +372,26 @@ class Agents(object):
             except IndexError:
                 raise IndexError(&#39;No agent exists with the given Name / Id&#39;)
 
-    def _get_agents(self):
-        &#34;&#34;&#34;Gets all the agents associated to the client specified with this client object.
+    def _get_agents(self) -&gt; Dict[str, str]:
+        &#34;&#34;&#34;Retrieve all agents associated with the current client object.
 
-            Returns:
-                dict - consists of all agents in the client
-                    {
-                         &#34;agent1_name&#34;: agent1_id,
-                         &#34;agent2_name&#34;: agent2_id
-                    }
+        Returns:
+            Dictionary mapping agent names (as lowercase strings) to their corresponding agent IDs.
+            Example:
+                {
+                    &#34;agent1_name&#34;: &#34;agent1_id&#34;,
+                    &#34;agent2_name&#34;: &#34;agent2_id&#34;
+                }
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException: If the response is empty or unsuccessful.
 
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; agents = client_obj._get_agents()
+            &gt;&gt;&gt; print(agents)
+            &gt;&gt;&gt; # Output: {&#39;file_system&#39;: &#39;1&#39;, &#39;sql_server&#39;: &#39;2&#39;}
+            &gt;&gt;&gt; # Each key is the agent name, and each value is the agent ID as a string.
+
         &#34;&#34;&#34;
         flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._AGENTS)
 
@@ -341,52 +415,66 @@ class Agents(object):
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
     @property
-    def all_agents(self):
-        &#34;&#34;&#34;Returns dict of all the agents installed on client.
+    def all_agents(self) -&gt; Dict[str, int]:
+        &#34;&#34;&#34;Get a dictionary of all agents installed on the client.
 
-            dict    -   consists of all agents in the client
+        Returns:
+            Dictionary mapping agent names (str) to their corresponding agent IDs (int).
 
-                {
-                    &#34;agent1_name&#34;: agent1_id,
-
-                    &#34;agent2_name&#34;: agent2_id
-                }
+        Example:
+            &gt;&gt;&gt; agents = Agents(client_object)
+            &gt;&gt;&gt; agent_dict = agents.all_agents  # Use dot notation for property access
+            &gt;&gt;&gt; print(agent_dict)
+            &gt;&gt;&gt; # Output: {&#39;FileSystem&#39;: 1, &#39;SQLServer&#39;: 2}
+            &gt;&gt;&gt; # You can access agent IDs by name:
+            &gt;&gt;&gt; fs_agent_id = agent_dict.get(&#39;FileSystem&#39;)
+            &gt;&gt;&gt; print(f&#34;FileSystem agent ID: {fs_agent_id}&#34;)
 
         &#34;&#34;&#34;
         return self._agents
 
-    def has_agent(self, agent_name):
-        &#34;&#34;&#34;Checks if an agent is installed for the client with the input agent name.
+    def has_agent(self, agent_name: str) -&gt; bool:
+        &#34;&#34;&#34;Check if a specific agent is installed for the client.
 
-            Args:
-                agent_name (str)  --  name of the agent
+        Args:
+            agent_name: Name of the agent to check, as a string.
 
-            Returns:
-                bool - boolean output whether the agent is installed for the client or not
+        Returns:
+            True if the agent is installed for the client, False otherwise.
 
-            Raises:
-                SDKException:
-                    if type of the agent name argument is not string
+        Raises:
+            SDKException: If the agent_name argument is not a string.
+
+        Example:
+            &gt;&gt;&gt; agents = Agents(client_object)
+            &gt;&gt;&gt; is_installed = agents.has_agent(&#34;File System&#34;)
+            &gt;&gt;&gt; print(f&#34;File System agent installed: {is_installed}&#34;)
+            &gt;&gt;&gt; # Returns True if the agent is present, False otherwise
+
         &#34;&#34;&#34;
         if not isinstance(agent_name, str):
             raise SDKException(&#39;Agent&#39;, &#39;101&#39;)
 
         return self._agents and agent_name.lower() in self._agents
 
-    def get(self, agent_name):
-        &#34;&#34;&#34;Returns a agent object of the specified client.
+    def get(self, agent_name: str) -&gt; &#39;Agent&#39;:
+        &#34;&#34;&#34;Retrieve an Agent object for the specified agent name.
 
-            Args:
-                agent_name (str)  --  name of the agent
+        Args:
+            agent_name: Name of the agent as a string.
 
-            Returns:
-                object - instance of the Agent class for the given agent name
+        Returns:
+            Agent instance corresponding to the given agent name.
 
-            Raises:
-                SDKException:
-                    if type of the agent name argument is not string
+        Raises:
+            SDKException: If the agent_name is not a string or if no agent exists with the given name.
 
-                    if no agent exists with the given name
+        Example:
+            &gt;&gt;&gt; agents = Agents(client_object)
+            &gt;&gt;&gt; file_system_agent = agents.get(&#39;File System&#39;)
+            &gt;&gt;&gt; print(f&#34;Retrieved agent: {file_system_agent}&#34;)
+            &gt;&gt;&gt; # The returned Agent object can be used for further agent operations
+
         &#34;&#34;&#34;
         if not isinstance(agent_name, str):
             raise SDKException(&#39;Agent&#39;, &#39;101&#39;)
@@ -398,30 +486,47 @@ class Agents(object):
 
             raise SDKException(&#39;Agent&#39;, &#39;102&#39;, &#39;No agent exists with name: {0}&#39;.format(agent_name))
 
-    def refresh(self):
-        &#34;&#34;&#34;Refresh the agents installed on the Client.&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Reload the list of agents installed on the client.
+
+        This method updates the internal agent cache to reflect the current state
+        of agents installed on the client. Use this method to ensure you are working
+        with the latest agent information.
+
+        Example:
+            &gt;&gt;&gt; agents = Agents(client_object)
+            &gt;&gt;&gt; agents.refresh()  # Refresh the agent list after installation or removal
+            &gt;&gt;&gt; print(&#34;Agent list refreshed successfully&#34;)
+
+        &#34;&#34;&#34;
         self._agents = self._get_agents()
 
-    def _process_add_response(self, request_json):
-        &#34;&#34;&#34;Runs the Agent Add API with the request JSON provided,
-            and returns the contents after parsing the response.
+    def _process_add_response(self, request_json: Dict[str, Any]) -&gt; Any:
+        &#34;&#34;&#34;Process the response from the Agent Add API using the provided request JSON.
 
-            Args:
-                request_json    (dict)  --  JSON request to run for the API
+        This method sends a POST request to the Agent Add API with the given JSON payload,
+        parses the response, and returns the created agent object if successful. If the API
+        response indicates an error or is empty, an SDKException is raised.
 
-            Returns:
-                (bool, str, str):
-                    bool -  flag specifies whether success / failure
+        Args:
+            request_json: Dictionary containing the JSON request payload for the Agent Add API.
 
-                    str  -  error code received in the response
+        Returns:
+            The agent object corresponding to the newly created agent if the operation is successful.
 
-                    str  -  error message received
+        Raises:
+            SDKException: If the API response is empty, indicates failure, or contains an error message.
 
-            Raises:
-                SDKException:
-                    if response is empty
-
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; agents = Agents(commcell_object)
+            &gt;&gt;&gt; request_json = {
+            ...     &#34;association&#34;: {
+            ...         &#34;entity&#34;: [{&#34;appName&#34;: &#34;File System&#34;}]
+            ...     },
+            ...     &#34;properties&#34;: {...}
+            ... }
+            &gt;&gt;&gt; new_agent = agents._process_add_response(request_json)
+            &gt;&gt;&gt; print(f&#34;Agent created: {new_agent}&#34;)
         &#34;&#34;&#34;
         flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._services[&#39;AGENT&#39;], request_json)
         if flag:
@@ -450,26 +555,38 @@ class Agents(object):
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
-    def add_database_agent(self, agent_name, access_node, **kwargs):
-        &#34;&#34;&#34;Adds database agent to cloud client
-            Args:
-                agent_name      (str)   --  agent name
-                access_node     (str)   --  access node name
-                **kwargs        (dict)  --  dict of keyword arguments as follows
-                                            install_dir     (str)   --  database client install directory
-                                            version         (str)   --  database version
-            Returns:
-                object - instance of the Agent class
+    def add_database_agent(self, agent_name: str, access_node: str, **kwargs: Any):
+        &#34;&#34;&#34;Add a database agent to the cloud client.
 
-            Raises:
-                SDKException:
-                  if agent with given name already exists
+        This method creates and associates a new database agent with the specified cloud client,
+        using the provided agent name and access node. Additional configuration options such as
+        installation directory and database version can be specified via keyword arguments.
 
-                    if failed to add the agent
+        Args:
+            agent_name: Name of the database agent to add.
+            access_node: Name of the access node client for the database agent.
+            **kwargs: Optional keyword arguments for agent configuration:
+                install_dir (str): Directory where the database client should be installed.
+                version (str): Version of the database software (default is &#34;10.0&#34;).
 
-                    if response is empty
+        Returns:
+            Instance of the Agent class representing the newly added database agent.
 
-                    if response is not success
+        Raises:
+            SDKException: If an agent with the given name already exists, if the agent addition fails,
+                if the response is empty, or if the response indicates failure.
+
+        Example:
+            &gt;&gt;&gt; agents = Agents(client_object)
+            &gt;&gt;&gt; # Add a database agent with custom install directory and version
+            &gt;&gt;&gt; agent = agents.add_database_agent(
+            ...     agent_name=&#34;SQLServer&#34;,
+            ...     access_node=&#34;AccessNode01&#34;,
+            ...     install_dir=&#34;/opt/dbclient&#34;,
+            ...     version=&#34;12.0&#34;
+            ... )
+            &gt;&gt;&gt; print(f&#34;Added agent: {agent}&#34;)
+
         &#34;&#34;&#34;
 
         if self.has_agent(agent_name):
@@ -525,8 +642,50 @@ class Agents(object):
 
 
 class Agent(object):
-    &#34;&#34;&#34;Class for performing agent operations of an agent for a specific client.&#34;&#34;&#34;
-    def __new__(cls, client_object, agent_name, agent_id=None):
+    &#34;&#34;&#34;
+    Agent class for managing operations related to a specific client agent.
+
+    This class provides a comprehensive interface for interacting with and managing
+    agent entities associated with a client. It supports initialization, property
+    management, backup and restore operations, and integration with Exchange On-Prem
+    environments. The Agent class exposes various properties and methods to facilitate
+    agent configuration, status monitoring, and operational control.
+
+    Key Features:
+        - Agent instantiation and representation
+        - Retrieval of agent ID and properties
+        - JSON-based request handling for agent operations
+        - Processing and updating agent properties
+        - Access to agent metadata (name, description, ID)
+        - Backup and restore enable/disable operations (immediate or scheduled)
+        - Support for Exchange On-Prem EWS integration
+        - Access to related entities: instances, backupsets, schedules
+        - Refreshing agent state and properties
+
+    &#34;&#34;&#34;
+    def __new__(cls, client_object: Any, agent_name: str, agent_id: Optional[int] = None):
+        &#34;&#34;&#34;Create a new instance of the Agent class or its specialized subclass.
+
+        This method dynamically selects the appropriate agent subclass based on the provided
+        agent_name. If a specialized agent class exists for the given agent_name, an instance
+        of that class is created; otherwise, a generic Agent instance is returned.
+
+        Args:
+            client_object: The client object associated with the agent. Type may vary depending on context.
+            agent_name: Name of the agent as a string (e.g., &#39;exchange database&#39;).
+            agent_id: Optional identifier for the agent.
+
+        Example:
+            &gt;&gt;&gt; client = Client(...)
+            &gt;&gt;&gt; agent = Agent(client, &#39;exchange database&#39;, agent_id=101)
+            &gt;&gt;&gt; print(type(agent))
+            &lt;class &#39;cvpysdk.agents.exchange_database_agent.ExchangeDatabaseAgent&#39;&gt;
+            &gt;&gt;&gt; # For unknown agent names, a generic Agent instance is returned
+            &gt;&gt;&gt; generic_agent = Agent(client, &#39;unknown_agent&#39;)
+            &gt;&gt;&gt; print(type(generic_agent))
+            &lt;class &#39;Agent&#39;&gt;
+
+        &#34;&#34;&#34;
         from cvpysdk.agents.exchange_database_agent import ExchangeDatabaseAgent
         # add the agent name to this dict, and its class as the value
         # the appropriate class object will be initialized based on the agent
@@ -542,22 +701,19 @@ class Agent(object):
         else:
             return object.__new__(cls)
 
-    def __init__(self, client_object, agent_name, agent_id=None):
-        &#34;&#34;&#34;Initialize the instance of the Agent class.
+    def __init__(self, client_object: &#39;Client&#39;, agent_name: str, agent_id: Optional[str] = None) -&gt; None:
+        &#34;&#34;&#34;Initialize an Agent instance for the specified client and agent name.
 
-            Args:
-                client_object   (object)    --  instance of the Client class
+        Args:
+            client_object: Instance of the Client class representing the target client.
+            agent_name: Name of the agent (e.g., &#34;File System&#34;, &#34;Virtual Server&#34;).
+            agent_id: Optional string specifying the agent ID. If not provided, the agent ID will be determined automatically.
 
-                agent_name      (str)       --  name of the agent
-
-                    (File System, Virtual Server, etc.)
-
-                agent_id        (str)       --  id of the agent
-
-                    default: None
-
-            Returns:
-                object  -   instance of the Agent class
+        Example:
+            &gt;&gt;&gt; client = Client(...)
+            &gt;&gt;&gt; agent = Agent(client, &#34;File System&#34;)
+            &gt;&gt;&gt; # Optionally specify agent_id
+            &gt;&gt;&gt; agent_with_id = Agent(client, &#34;Virtual Server&#34;, agent_id=&#34;12345&#34;)
 
         &#34;&#34;&#34;
         self._client_object = client_object
@@ -588,31 +744,54 @@ class Agent(object):
 
         self.refresh()
 
-    def __repr__(self):
-        &#34;&#34;&#34;String representation of the instance of this class.&#34;&#34;&#34;
+    def __repr__(self) -&gt; str:
+        &#34;&#34;&#34;Return a string representation of the Agent instance.
+
+        The returned string includes the agent name (capitalized) and the associated client name.
+
+        Returns:
+            A formatted string describing the Agent instance and its client.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; print(repr(agent))
+            &#34;File System&#34; Agent instance for Client: &#34;Server01&#34;
+
+        &#34;&#34;&#34;
         representation_string = &#39;&#34;{0}&#34; Agent instance for Client: &#34;{1}&#34;&#39;
 
         return representation_string.format(
             string.capwords(self.agent_name), self._client_object.client_name
         )
 
-    def _get_agent_id(self):
-        &#34;&#34;&#34;Gets the agent id associated with this agent.
+    def _get_agent_id(self) -&gt; str:
+        &#34;&#34;&#34;Retrieve the agent ID associated with this Agent instance.
 
-            Returns:
-                str - id associated with this agent
+        Returns:
+            The unique agent ID as a string.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(client_object, agent_name)
+            &gt;&gt;&gt; agent_id = agent._get_agent_id()
+            &gt;&gt;&gt; print(f&#34;Agent ID: {agent_id}&#34;)
+
         &#34;&#34;&#34;
         agents = Agents(self._client_object)
         return agents.get(self.agent_name).agent_id
 
-    def _get_agent_properties(self):
-        &#34;&#34;&#34;Gets the agent properties of this agent.
+    def _get_agent_properties(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve and update the agent properties for this Agent instance.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        This method sends a GET request to fetch the agent properties from the Commcell server.
+        The retrieved properties are stored in the internal `_agent_properties` attribute.
 
-                    if response is not success
+        Raises:
+            SDKException: If the response is empty or unsuccessful.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(commcell_object, agent_name)
+            &gt;&gt;&gt; agent._get_agent_properties()
+            &gt;&gt;&gt; # The agent&#39;s properties are now updated and accessible via agent._agent_properties
 
         &#34;&#34;&#34;
         flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self.GET_AGENT)
@@ -625,16 +804,25 @@ class Agent(object):
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
-    def _request_json_(self, option, enable=True, enable_time=None):
-        &#34;&#34;&#34;Returns the JSON request to pass to the API as per the options selected by the user.
+    def _request_json_(self, option: str, enable: bool = True, enable_time: Optional[int] = None) -&gt; Dict[str, Any]:
+        &#34;&#34;&#34;Generate the JSON request payload for the API based on the selected option.
 
-            Args:
-                option  (str)   --  string option for which to run the API for
+        Args:
+            option: The operation type for which to generate the API request (e.g., &#34;Backup&#34; or &#34;Restore&#34;).
+            enable: Whether to enable the activity type immediately. Defaults to True.
+            enable_time: Optional epoch time (as an integer) to enable the activity type after a delay. If provided, the request will include delayed activation.
 
-                    e.g.; Backup / Restore
+        Returns:
+            Dictionary representing the JSON request to be sent to the API.
 
-            Returns:
-                dict    -   JSON request to pass to the API
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; # Immediate backup activity
+            &gt;&gt;&gt; backup_request = agent._request_json_(&#34;Backup&#34;, enable=True)
+            &gt;&gt;&gt; print(backup_request)
+            &gt;&gt;&gt; # Delayed restore activity
+            &gt;&gt;&gt; restore_request = agent._request_json_(&#34;Restore&#34;, enable=False, enable_time=1680307200)
+            &gt;&gt;&gt; print(restore_request)
 
         &#34;&#34;&#34;
         options_dict = {
@@ -687,17 +875,23 @@ class Agent(object):
         else:
             return request_json1
 
-    def _process_update_request(self, request_json):
-        &#34;&#34;&#34;Runs the Agent update API
+    def _process_update_request(self, request_json: Dict[str, Any]) -&gt; None:
+        &#34;&#34;&#34;Run the Agent update API with the provided request payload.
 
-            Args:
-                request_json    (dict)  -- request json sent as payload
+        This method sends an update request for the Agent using the specified JSON payload.
+        It validates the response and raises an SDKException if the update fails or if the response is empty.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Args:
+            request_json: Dictionary containing the request payload for the Agent update.
 
-                    if response is not success
+        Raises:
+            SDKException: If the response is empty or the update operation is unsuccessful.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; update_payload = {&#34;property&#34;: &#34;value&#34;}
+            &gt;&gt;&gt; agent._process_update_request(update_payload)
+            &gt;&gt;&gt; # If the update fails, an SDKException will be raised
 
         &#34;&#34;&#34;
         flag, response = self._cvpysdk_object.make_request(
@@ -717,26 +911,25 @@ class Agent(object):
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
-    def update_properties(self, properties_dict):
-        &#34;&#34;&#34;Updates the agent properties
+    def update_properties(self, properties_dict: Dict[str, Any]) -&gt; None:
+        &#34;&#34;&#34;Update the agent properties with the specified values.
 
-            Args:
-                properties_dict (dict)  --  agent property dict which is to be updated
+        This method updates the agent&#39;s configuration using the provided dictionary of properties.
+        To modify agent properties, obtain a deep copy using `self.properties`, update the desired fields,
+        and pass the modified dictionary to this method.
 
-            Returns:
-                None
+        Args:
+            properties_dict: Dictionary containing agent property values to update.
 
-            Raises:
-                SDKException:
-                    if failed to add
+        Raises:
+            SDKException: If the update fails, the response is empty, or the response code is not as expected.
 
-                    if response is empty
-
-                    if response code is not as expected
-
-        **Note** self.properties can be used to get a deep copy of all the properties, modify the properties which you
-        need to change and use the update_properties method to set the properties
-
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; props = agent.properties.copy()  # Get a deep copy of current properties
+            &gt;&gt;&gt; props[&#39;AgentProperties&#39;][&#39;someProperty&#39;] = &#39;newValue&#39;
+            &gt;&gt;&gt; agent.update_properties(props)
+            &gt;&gt;&gt; print(&#34;Agent properties updated successfully&#34;)
         &#34;&#34;&#34;
         request_json = {
             &#34;agentProperties&#34;:
@@ -755,26 +948,62 @@ class Agent(object):
         self._process_update_request(request_json)
 
     @property
-    def properties(self):
-        &#34;&#34;&#34;Returns the agent properties&#34;&#34;&#34;
+    def properties(self) -&gt; Dict[str, Any]:
+        &#34;&#34;&#34;Get a copy of the agent&#39;s properties.
+
+        Returns:
+            Dictionary containing the agent&#39;s properties and configuration details.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; agent_props = agent.properties  # Use dot notation for properties
+            &gt;&gt;&gt; print(agent_props)
+            &gt;&gt;&gt; # The returned dictionary contains agent-specific settings
+
+        &#34;&#34;&#34;
         return copy.deepcopy(self._agent_properties)
 
     @property
-    def name(self):
-        &#34;&#34;&#34;Returns the Agent display name &#34;&#34;&#34;
+    def name(self) -&gt; str:
+        &#34;&#34;&#34;Get the display name of the Agent.
+
+        Returns:
+            The Agent&#39;s display name as a string.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; display_name = agent.name  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Agent display name: {display_name}&#34;)
+
+        &#34;&#34;&#34;
         return self._agent_properties[&#39;idaEntity&#39;][&#39;appName&#39;]
 
     @property
-    def description(self):
-        &#34;&#34;&#34;Returns the description of the Agent&#34;&#34;&#34;
+    def description(self) -&gt; Optional[str]:
+        &#34;&#34;&#34;Get the user-defined description of the Agent.
+
+        Returns:
+            The description of the Agent as a string, or None if not set.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; desc = agent.description  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Agent description: {desc}&#34;)
+
+        &#34;&#34;&#34;
         return self._agent_properties.get(&#39;AgentProperties&#39;, {}).get(&#39;userDescription&#39;)
 
     @description.setter
-    def description(self, description):
-        &#34;&#34;&#34;Sets the description for the agent
+    def description(self, description: str) -&gt; None:
+        &#34;&#34;&#34;Set the description for the agent.
 
         Args:
-            description (str)   -- Description to be set for the agent
+            description: The description text to assign to the agent.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; agent.description = &#34;This agent handles database backups.&#34;  # Use assignment for property setters
+            &gt;&gt;&gt; # The agent&#39;s description is now updated
 
         &#34;&#34;&#34;
         update_properties = self.properties
@@ -782,18 +1011,49 @@ class Agent(object):
         self.update_properties(update_properties)
 
     @property
-    def agent_id(self):
-        &#34;&#34;&#34;Returns the id of the Agent.&#34;&#34;&#34;
+    def agent_id(self) -&gt; int:
+        &#34;&#34;&#34;Get the unique identifier of the Agent.
+
+        Returns:
+            The agent&#39;s ID as an integer.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; agent_id = agent.agent_id  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Agent ID: {agent_id}&#34;)
+        &#34;&#34;&#34;
         return self._agent_id
 
     @property
-    def agent_name(self):
-        &#34;&#34;&#34;Returns the name of the Agent.&#34;&#34;&#34;
+    def agent_name(self) -&gt; str:
+        &#34;&#34;&#34;Get the name of the Agent.
+
+        Returns:
+            The name of the Agent as a string.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; name = agent.agent_name  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Agent name: {name}&#34;)
+
+        &#34;&#34;&#34;
         return self._agent_name
 
     @property
-    def is_backup_enabled(self):
-        &#34;&#34;&#34;Returns boolean specifying whether backup is enabled for this agent or not.&#34;&#34;&#34;
+    def is_backup_enabled(self) -&gt; bool:
+        &#34;&#34;&#34;Check if backup is enabled for this agent.
+
+        Returns:
+            True if backup is enabled for the agent, False otherwise.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; if agent.is_backup_enabled:
+            ...     print(&#34;Backup is enabled for this agent.&#34;)
+            ... else:
+            ...     print(&#34;Backup is disabled for this agent.&#34;)
+
+        &#34;&#34;&#34;
         for activitytype in self._agent_properties[&#39;idaActivityControl&#39;][&#39;activityControlOptions&#39;]:
             if activitytype[&#39;activityType&#39;] == 1:
                 return activitytype[&#39;enableActivityType&#39;]
@@ -801,8 +1061,20 @@ class Agent(object):
         return False
 
     @property
-    def is_restore_enabled(self):
-        &#34;&#34;&#34;Returns boolean specifying whether restore is enabled for this agent or not.&#34;&#34;&#34;
+    def is_restore_enabled(self) -&gt; bool:
+        &#34;&#34;&#34;Indicate whether restore operations are enabled for this agent.
+
+        Returns:
+            True if restore is enabled for the agent, False otherwise.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; if agent.is_restore_enabled:
+            ...     print(&#34;Restore is enabled for this agent.&#34;)
+            ... else:
+            ...     print(&#34;Restore is disabled for this agent.&#34;)
+
+        &#34;&#34;&#34;
         for activitytype in self._agent_properties[&#39;idaActivityControl&#39;][&#39;activityControlOptions&#39;]:
             if activitytype[&#39;activityType&#39;] == 2:
                 return activitytype[&#39;enableActivityType&#39;]
@@ -810,9 +1082,19 @@ class Agent(object):
         return False
 
     @property
-    def instances(self):
-        &#34;&#34;&#34;Returns the instance of the Instances class representing the list of Instances
-        installed / configured on the Client for the selected Agent.
+    def instances(self) -&gt; &#39;Instances&#39;:
+        &#34;&#34;&#34;Get the Instances object representing all instances configured for this Agent.
+
+        Returns:
+            Instances: An object for managing and accessing the list of instances installed or configured
+            on the client for the selected Agent.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; instances = agent.instances  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Total instances: {len(instances)}&#34;)
+            &gt;&gt;&gt; # The returned Instances object can be used to manage individual instances
+
         &#34;&#34;&#34;
         if self._instances is None:
             self._instances = Instances(self)
@@ -820,9 +1102,21 @@ class Agent(object):
         return self._instances
 
     @property
-    def backupsets(self):
-        &#34;&#34;&#34;Returns the instance of the Backupsets class representing the list of Backupsets
-        installed / configured on the Client for the selected Agent.
+    def backupsets(self) -&gt; &#39;Backupsets&#39;:
+        &#34;&#34;&#34;Get the Backupsets instance for the current Agent.
+
+        This property provides access to the Backupsets object, which represents
+        all backup sets installed or configured on the client for the selected agent.
+
+        Returns:
+            Backupsets: An instance for managing and accessing backup sets.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; backupsets = agent.backupsets  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Number of backup sets: {len(backupsets)}&#34;)
+            &gt;&gt;&gt; # The returned Backupsets object can be used to manage backup sets
+
         &#34;&#34;&#34;
         if self._backupsets is None:
             self._backupsets = Backupsets(self)
@@ -830,25 +1124,42 @@ class Agent(object):
         return self._backupsets
 
     @property
-    def schedules(self):
-        &#34;&#34;&#34;Returns the instance of the Schedules class representing the list of Schedules
-        installed / configured on the Client for the selected Agent.
+    def schedules(self) -&gt; &#39;Schedules&#39;:
+        &#34;&#34;&#34;Get the Schedules instance for the current Agent.
+
+        This property provides access to the Schedules object, which represents all schedules
+        installed or configured on the client for the selected agent.
+
+        Returns:
+            Schedules: An instance for managing and retrieving schedule information related to this agent.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; schedules = agent.schedules  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Schedules object: {schedules}&#34;)
+            &gt;&gt;&gt; # The returned Schedules object can be used to view or manage schedules
+
         &#34;&#34;&#34;
         if self._schedules is None:
             self._schedules = Schedules(self)
 
         return self._schedules
 
-    def enable_backup(self):
-        &#34;&#34;&#34;Enable Backup for this Agent.
+    def enable_backup(self) -&gt; None:
+        &#34;&#34;&#34;Enable backup operations for this Agent.
 
-            Raises:
-                SDKException:
-                    if failed to enable backup
+        This method sends a request to enable backup for the current Agent instance.
+        If the operation fails, or if the response is empty or unsuccessful, an SDKException is raised.
 
-                    if response is empty
+        Raises:
+            SDKException: If enabling backup fails, the response is empty, or the response indicates an error.
 
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; agent.enable_backup()
+            &gt;&gt;&gt; print(&#34;Backup enabled successfully for the agent.&#34;)
+            # If an error occurs, SDKException will be raised.
+
         &#34;&#34;&#34;
         request_json = self._request_json_(&#39;Backup&#39;)
 
@@ -870,26 +1181,27 @@ class Agent(object):
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
-    def enable_backup_at_time(self, enable_time):
-        &#34;&#34;&#34;Disables Backup if not already disabled, and enables at the time specified.
+    def enable_backup_at_time(self, enable_time: str) -&gt; None:
+        &#34;&#34;&#34;Schedule backup enablement at a specified UTC time.
 
-            Args:
-                enable_time (str)  --  UTC time to enable the backup at, in 24 Hour format
-                    format: YYYY-MM-DD HH:mm:ss
+        This method disables backup if it is currently enabled, and then schedules backup to be enabled
+        at the provided UTC time. The time must be specified in 24-hour format as &#34;YYYY-MM-DD HH:mm:ss&#34;.
+        For Linux CommServer environments, provide the time in GMT timezone.
 
-                **Note** In case of linux CommServer provide time in GMT timezone
+        Args:
+            enable_time: UTC time to enable the backup, in &#34;YYYY-MM-DD HH:mm:ss&#34; format.
 
-            Raises:
-                SDKException:
-                    if time value entered is less than the current time
+        Raises:
+            SDKException: If the time value is less than the current time.
+            SDKException: If the time value is not in the correct format.
+            SDKException: If backup enablement fails.
+            SDKException: If the response is empty or not successful.
 
-                    if time value entered is not of correct format
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; agent.enable_backup_at_time(&#34;2024-07-01 23:30:00&#34;)
+            &gt;&gt;&gt; print(&#34;Backup will be enabled at the specified time.&#34;)
 
-                    if failed to enable backup
-
-                    if response is empty
-
-                    if response is not success
         &#34;&#34;&#34;
         try:
             time_tuple = time.strptime(enable_time, &#34;%Y-%m-%d %H:%M:%S&#34;)
@@ -918,16 +1230,21 @@ class Agent(object):
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
-    def disable_backup(self):
-        &#34;&#34;&#34;Disables Backup for this Agent.
+    def disable_backup(self) -&gt; None:
+        &#34;&#34;&#34;Disable backup operations for this Agent.
 
-            Raises:
-                SDKException:
-                    if failed to disable backup
+        This method sends a request to disable backup for the current Agent instance.
+        If the operation fails, or if the response is empty or unsuccessful, an SDKException is raised.
 
-                    if response is empty
+        Raises:
+            SDKException: If the backup could not be disabled, the response is empty, or the response indicates failure.
 
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; agent.disable_backup()
+            &gt;&gt;&gt; print(&#34;Backup disabled successfully for the agent.&#34;)
+            # If the operation fails, an SDKException will be raised.
+
         &#34;&#34;&#34;
         request_json = self._request_json_(&#39;Backup&#39;, False)
 
@@ -949,16 +1266,21 @@ class Agent(object):
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
-    def enable_restore(self):
-        &#34;&#34;&#34;Enable Restore for this Agent.
+    def enable_restore(self) -&gt; None:
+        &#34;&#34;&#34;Enable restore functionality for this Agent.
 
-            Raises:
-                SDKException:
-                    if failed to enable restore
+        This method sends a request to enable restore operations for the current Agent instance.
+        If the operation fails, an SDKException is raised with details about the failure.
 
-                    if response is empty
+        Raises:
+            SDKException: If enabling restore fails, the response is empty, or the response indicates an error.
 
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; agent.enable_restore()
+            &gt;&gt;&gt; print(&#34;Restore enabled successfully for the agent.&#34;)
+            # If an error occurs, SDKException will be raised with the error details.
+
         &#34;&#34;&#34;
         request_json = self._request_json_(&#39;Restore&#39;)
 
@@ -980,24 +1302,26 @@ class Agent(object):
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
-    def enable_restore_at_time(self, enable_time):
-        &#34;&#34;&#34;Disables Restore if not already disabled, and enables at the time specified.
+    def enable_restore_at_time(self, enable_time: str) -&gt; None:
+        &#34;&#34;&#34;Enable restore functionality at a specified UTC time.
 
-            Args:
-                enable_time (str)  --  UTC time to enable the restore at, in 24 Hour format
-                    format: YYYY-MM-DD HH:mm:ss
+        This method disables restore if it is not already disabled, and then schedules
+        restore to be enabled at the provided UTC time in 24-hour format.
 
-            Raises:
-                SDKException:
-                    if time value entered is less than the current time
+        Args:
+            enable_time: UTC time to enable restore, in the format &#34;YYYY-MM-DD HH:mm:ss&#34;.
 
-                    if time value entered is not of correct format
+        Raises:
+            SDKException: If the provided time is earlier than the current time.
+            SDKException: If the time format is incorrect.
+            SDKException: If restore could not be enabled due to an error response.
+            SDKException: If the response from the server is empty or unsuccessful.
 
-                    if failed to enable restore
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; agent.enable_restore_at_time(&#34;2024-07-01 15:30:00&#34;)
+            &gt;&gt;&gt; # Restore will be enabled at the specified UTC time
 
-                    if response is empty
-
-                    if response is not success
         &#34;&#34;&#34;
         try:
             time_tuple = time.strptime(enable_time, &#34;%Y-%m-%d %H:%M:%S&#34;)
@@ -1026,16 +1350,19 @@ class Agent(object):
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
-    def disable_restore(self):
-        &#34;&#34;&#34;Disables Restore for this Agent.
+    def disable_restore(self) -&gt; None:
+        &#34;&#34;&#34;Disable restore operations for this Agent.
 
-            Raises:
-                SDKException:
-                    if failed to disable restore
+        This method sends a request to the Commcell to disable restore functionality for the current Agent.
+        If the operation fails, an SDKException is raised with details about the error.
 
-                    if response is empty
+        Raises:
+            SDKException: If the request to disable restore fails, the response is empty, or the response indicates an error.
 
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; agent.disable_restore()
+            &gt;&gt;&gt; print(&#34;Restore operations have been disabled for the agent.&#34;)
         &#34;&#34;&#34;
         request_json = self._request_json_(&#39;Restore&#39;, False)
 
@@ -1056,11 +1383,20 @@ class Agent(object):
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
-    def enable_ews_support_for_exchange_on_prem(self, ews_service_url : str):
-        &#34;&#34;&#34;
-            Method to enable EWS backup support for an Exchange on-prem client.
-            Args:
-                ews_service_url (string) -- EWS Connection URL for your exchange server
+    def enable_ews_support_for_exchange_on_prem(self, ews_service_url: str) -&gt; None:
+        &#34;&#34;&#34;Enable EWS backup support for an Exchange on-premises client.
+
+        This method configures the agent to use Exchange Web Services (EWS) for backup operations
+        by setting the EWS connection URL and enabling EWS support. Only applicable for Exchange on-prem agents.
+
+        Args:
+            ews_service_url: The EWS connection URL for your Exchange server.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; agent.enable_ews_support_for_exchange_on_prem(&#34;https://exchange.example.com/EWS/Exchange.asmx&#34;)
+            &gt;&gt;&gt; print(&#34;EWS support enabled for Exchange on-prem client.&#34;)
+
         &#34;&#34;&#34;
         if int(self.agent_id) != 137:
             raise SDKException(&#39;Agent&#39;, &#39;102&#39;, f&#39;Invalid operation for {self.agent_name}&#39;)
@@ -1070,8 +1406,18 @@ class Agent(object):
         _agent_properties[&#34;onePassProperties&#34;][&#34;onePassProp&#34;][&#34;ewsDetails&#34;][&#34;ewsConnectionUrl&#34;] = ews_service_url
         self.update_properties(_agent_properties)
 
-    def refresh(self):
-        &#34;&#34;&#34;Refresh the properties of the Agent.&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Reload the properties and cached data for the Agent object.
+
+        This method refreshes the agent&#39;s properties and clears cached instances, backupsets,
+        and schedules. Use this to ensure the Agent reflects the latest state from the Commcell.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(commcell_object, client_name, agent_name)
+            &gt;&gt;&gt; agent.refresh()  # Updates agent properties and clears cached data
+            &gt;&gt;&gt; # Subsequent accesses will retrieve updated information
+
+        &#34;&#34;&#34;
         self._get_agent_properties()
 
         self._instances = None
@@ -1090,40 +1436,93 @@ class Agent(object):
 <dl>
 <dt id="cvpysdk.agent.Agent"><code class="flex name class">
 <span>class <span class="ident">Agent</span></span>
-<span>(</span><span>client_object, agent_name, agent_id=None)</span>
+<span>(</span><span>client_object: Client, agent_name: str, agent_id: Optional[str] = None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for performing agent operations of an agent for a specific client.</p>
-<p>Initialize the instance of the Agent class.</p>
-<h2 id="args">Args</h2>
-<p>client_object
-(object)
-&ndash;
-instance of the Client class</p>
-<p>agent_name
-(str)
-&ndash;
-name of the agent</p>
-<pre><code>(File System, Virtual Server, etc.)
-</code></pre>
-<p>agent_id
-(str)
-&ndash;
-id of the agent</p>
-<pre><code>default: None
-</code></pre>
-<h2 id="returns">Returns</h2>
-<p>object
--
-instance of the Agent class</p></div>
+<div class="desc"><p>Agent class for managing operations related to a specific client agent.</p>
+<p>This class provides a comprehensive interface for interacting with and managing
+agent entities associated with a client. It supports initialization, property
+management, backup and restore operations, and integration with Exchange On-Prem
+environments. The Agent class exposes various properties and methods to facilitate
+agent configuration, status monitoring, and operational control.</p>
+<p>Key Features:
+- Agent instantiation and representation
+- Retrieval of agent ID and properties
+- JSON-based request handling for agent operations
+- Processing and updating agent properties
+- Access to agent metadata (name, description, ID)
+- Backup and restore enable/disable operations (immediate or scheduled)
+- Support for Exchange On-Prem EWS integration
+- Access to related entities: instances, backupsets, schedules
+- Refreshing agent state and properties</p>
+<p>Initialize an Agent instance for the specified client and agent name.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>client_object</code></strong></dt>
+<dd>Instance of the Client class representing the target client.</dd>
+<dt><strong><code>agent_name</code></strong></dt>
+<dd>Name of the agent (e.g., "File System", "Virtual Server").</dd>
+<dt><strong><code>agent_id</code></strong></dt>
+<dd>Optional string specifying the agent ID. If not provided, the agent ID will be determined automatically.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; client = Client(...)
+&gt;&gt;&gt; agent = Agent(client, &quot;File System&quot;)
+&gt;&gt;&gt; # Optionally specify agent_id
+&gt;&gt;&gt; agent_with_id = Agent(client, &quot;Virtual Server&quot;, agent_id=&quot;12345&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/agent.py#L405-L957" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/agent.py#L533-L1342" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Agent(object):
-    &#34;&#34;&#34;Class for performing agent operations of an agent for a specific client.&#34;&#34;&#34;
-    def __new__(cls, client_object, agent_name, agent_id=None):
+    &#34;&#34;&#34;
+    Agent class for managing operations related to a specific client agent.
+
+    This class provides a comprehensive interface for interacting with and managing
+    agent entities associated with a client. It supports initialization, property
+    management, backup and restore operations, and integration with Exchange On-Prem
+    environments. The Agent class exposes various properties and methods to facilitate
+    agent configuration, status monitoring, and operational control.
+
+    Key Features:
+        - Agent instantiation and representation
+        - Retrieval of agent ID and properties
+        - JSON-based request handling for agent operations
+        - Processing and updating agent properties
+        - Access to agent metadata (name, description, ID)
+        - Backup and restore enable/disable operations (immediate or scheduled)
+        - Support for Exchange On-Prem EWS integration
+        - Access to related entities: instances, backupsets, schedules
+        - Refreshing agent state and properties
+
+    &#34;&#34;&#34;
+    def __new__(cls, client_object: Any, agent_name: str, agent_id: Optional[int] = None):
+        &#34;&#34;&#34;Create a new instance of the Agent class or its specialized subclass.
+
+        This method dynamically selects the appropriate agent subclass based on the provided
+        agent_name. If a specialized agent class exists for the given agent_name, an instance
+        of that class is created; otherwise, a generic Agent instance is returned.
+
+        Args:
+            client_object: The client object associated with the agent. Type may vary depending on context.
+            agent_name: Name of the agent as a string (e.g., &#39;exchange database&#39;).
+            agent_id: Optional identifier for the agent.
+
+        Example:
+            &gt;&gt;&gt; client = Client(...)
+            &gt;&gt;&gt; agent = Agent(client, &#39;exchange database&#39;, agent_id=101)
+            &gt;&gt;&gt; print(type(agent))
+            &lt;class &#39;cvpysdk.agents.exchange_database_agent.ExchangeDatabaseAgent&#39;&gt;
+            &gt;&gt;&gt; # For unknown agent names, a generic Agent instance is returned
+            &gt;&gt;&gt; generic_agent = Agent(client, &#39;unknown_agent&#39;)
+            &gt;&gt;&gt; print(type(generic_agent))
+            &lt;class &#39;Agent&#39;&gt;
+
+        &#34;&#34;&#34;
         from cvpysdk.agents.exchange_database_agent import ExchangeDatabaseAgent
         # add the agent name to this dict, and its class as the value
         # the appropriate class object will be initialized based on the agent
@@ -1139,22 +1538,19 @@ instance of the Agent class</p></div>
         else:
             return object.__new__(cls)
 
-    def __init__(self, client_object, agent_name, agent_id=None):
-        &#34;&#34;&#34;Initialize the instance of the Agent class.
+    def __init__(self, client_object: &#39;Client&#39;, agent_name: str, agent_id: Optional[str] = None) -&gt; None:
+        &#34;&#34;&#34;Initialize an Agent instance for the specified client and agent name.
 
-            Args:
-                client_object   (object)    --  instance of the Client class
+        Args:
+            client_object: Instance of the Client class representing the target client.
+            agent_name: Name of the agent (e.g., &#34;File System&#34;, &#34;Virtual Server&#34;).
+            agent_id: Optional string specifying the agent ID. If not provided, the agent ID will be determined automatically.
 
-                agent_name      (str)       --  name of the agent
-
-                    (File System, Virtual Server, etc.)
-
-                agent_id        (str)       --  id of the agent
-
-                    default: None
-
-            Returns:
-                object  -   instance of the Agent class
+        Example:
+            &gt;&gt;&gt; client = Client(...)
+            &gt;&gt;&gt; agent = Agent(client, &#34;File System&#34;)
+            &gt;&gt;&gt; # Optionally specify agent_id
+            &gt;&gt;&gt; agent_with_id = Agent(client, &#34;Virtual Server&#34;, agent_id=&#34;12345&#34;)
 
         &#34;&#34;&#34;
         self._client_object = client_object
@@ -1185,31 +1581,54 @@ instance of the Agent class</p></div>
 
         self.refresh()
 
-    def __repr__(self):
-        &#34;&#34;&#34;String representation of the instance of this class.&#34;&#34;&#34;
+    def __repr__(self) -&gt; str:
+        &#34;&#34;&#34;Return a string representation of the Agent instance.
+
+        The returned string includes the agent name (capitalized) and the associated client name.
+
+        Returns:
+            A formatted string describing the Agent instance and its client.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; print(repr(agent))
+            &#34;File System&#34; Agent instance for Client: &#34;Server01&#34;
+
+        &#34;&#34;&#34;
         representation_string = &#39;&#34;{0}&#34; Agent instance for Client: &#34;{1}&#34;&#39;
 
         return representation_string.format(
             string.capwords(self.agent_name), self._client_object.client_name
         )
 
-    def _get_agent_id(self):
-        &#34;&#34;&#34;Gets the agent id associated with this agent.
+    def _get_agent_id(self) -&gt; str:
+        &#34;&#34;&#34;Retrieve the agent ID associated with this Agent instance.
 
-            Returns:
-                str - id associated with this agent
+        Returns:
+            The unique agent ID as a string.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(client_object, agent_name)
+            &gt;&gt;&gt; agent_id = agent._get_agent_id()
+            &gt;&gt;&gt; print(f&#34;Agent ID: {agent_id}&#34;)
+
         &#34;&#34;&#34;
         agents = Agents(self._client_object)
         return agents.get(self.agent_name).agent_id
 
-    def _get_agent_properties(self):
-        &#34;&#34;&#34;Gets the agent properties of this agent.
+    def _get_agent_properties(self) -&gt; None:
+        &#34;&#34;&#34;Retrieve and update the agent properties for this Agent instance.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        This method sends a GET request to fetch the agent properties from the Commcell server.
+        The retrieved properties are stored in the internal `_agent_properties` attribute.
 
-                    if response is not success
+        Raises:
+            SDKException: If the response is empty or unsuccessful.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(commcell_object, agent_name)
+            &gt;&gt;&gt; agent._get_agent_properties()
+            &gt;&gt;&gt; # The agent&#39;s properties are now updated and accessible via agent._agent_properties
 
         &#34;&#34;&#34;
         flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self.GET_AGENT)
@@ -1222,16 +1641,25 @@ instance of the Agent class</p></div>
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
-    def _request_json_(self, option, enable=True, enable_time=None):
-        &#34;&#34;&#34;Returns the JSON request to pass to the API as per the options selected by the user.
+    def _request_json_(self, option: str, enable: bool = True, enable_time: Optional[int] = None) -&gt; Dict[str, Any]:
+        &#34;&#34;&#34;Generate the JSON request payload for the API based on the selected option.
 
-            Args:
-                option  (str)   --  string option for which to run the API for
+        Args:
+            option: The operation type for which to generate the API request (e.g., &#34;Backup&#34; or &#34;Restore&#34;).
+            enable: Whether to enable the activity type immediately. Defaults to True.
+            enable_time: Optional epoch time (as an integer) to enable the activity type after a delay. If provided, the request will include delayed activation.
 
-                    e.g.; Backup / Restore
+        Returns:
+            Dictionary representing the JSON request to be sent to the API.
 
-            Returns:
-                dict    -   JSON request to pass to the API
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; # Immediate backup activity
+            &gt;&gt;&gt; backup_request = agent._request_json_(&#34;Backup&#34;, enable=True)
+            &gt;&gt;&gt; print(backup_request)
+            &gt;&gt;&gt; # Delayed restore activity
+            &gt;&gt;&gt; restore_request = agent._request_json_(&#34;Restore&#34;, enable=False, enable_time=1680307200)
+            &gt;&gt;&gt; print(restore_request)
 
         &#34;&#34;&#34;
         options_dict = {
@@ -1284,17 +1712,23 @@ instance of the Agent class</p></div>
         else:
             return request_json1
 
-    def _process_update_request(self, request_json):
-        &#34;&#34;&#34;Runs the Agent update API
+    def _process_update_request(self, request_json: Dict[str, Any]) -&gt; None:
+        &#34;&#34;&#34;Run the Agent update API with the provided request payload.
 
-            Args:
-                request_json    (dict)  -- request json sent as payload
+        This method sends an update request for the Agent using the specified JSON payload.
+        It validates the response and raises an SDKException if the update fails or if the response is empty.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Args:
+            request_json: Dictionary containing the request payload for the Agent update.
 
-                    if response is not success
+        Raises:
+            SDKException: If the response is empty or the update operation is unsuccessful.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; update_payload = {&#34;property&#34;: &#34;value&#34;}
+            &gt;&gt;&gt; agent._process_update_request(update_payload)
+            &gt;&gt;&gt; # If the update fails, an SDKException will be raised
 
         &#34;&#34;&#34;
         flag, response = self._cvpysdk_object.make_request(
@@ -1314,26 +1748,25 @@ instance of the Agent class</p></div>
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
-    def update_properties(self, properties_dict):
-        &#34;&#34;&#34;Updates the agent properties
+    def update_properties(self, properties_dict: Dict[str, Any]) -&gt; None:
+        &#34;&#34;&#34;Update the agent properties with the specified values.
 
-            Args:
-                properties_dict (dict)  --  agent property dict which is to be updated
+        This method updates the agent&#39;s configuration using the provided dictionary of properties.
+        To modify agent properties, obtain a deep copy using `self.properties`, update the desired fields,
+        and pass the modified dictionary to this method.
 
-            Returns:
-                None
+        Args:
+            properties_dict: Dictionary containing agent property values to update.
 
-            Raises:
-                SDKException:
-                    if failed to add
+        Raises:
+            SDKException: If the update fails, the response is empty, or the response code is not as expected.
 
-                    if response is empty
-
-                    if response code is not as expected
-
-        **Note** self.properties can be used to get a deep copy of all the properties, modify the properties which you
-        need to change and use the update_properties method to set the properties
-
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; props = agent.properties.copy()  # Get a deep copy of current properties
+            &gt;&gt;&gt; props[&#39;AgentProperties&#39;][&#39;someProperty&#39;] = &#39;newValue&#39;
+            &gt;&gt;&gt; agent.update_properties(props)
+            &gt;&gt;&gt; print(&#34;Agent properties updated successfully&#34;)
         &#34;&#34;&#34;
         request_json = {
             &#34;agentProperties&#34;:
@@ -1352,26 +1785,62 @@ instance of the Agent class</p></div>
         self._process_update_request(request_json)
 
     @property
-    def properties(self):
-        &#34;&#34;&#34;Returns the agent properties&#34;&#34;&#34;
+    def properties(self) -&gt; Dict[str, Any]:
+        &#34;&#34;&#34;Get a copy of the agent&#39;s properties.
+
+        Returns:
+            Dictionary containing the agent&#39;s properties and configuration details.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; agent_props = agent.properties  # Use dot notation for properties
+            &gt;&gt;&gt; print(agent_props)
+            &gt;&gt;&gt; # The returned dictionary contains agent-specific settings
+
+        &#34;&#34;&#34;
         return copy.deepcopy(self._agent_properties)
 
     @property
-    def name(self):
-        &#34;&#34;&#34;Returns the Agent display name &#34;&#34;&#34;
+    def name(self) -&gt; str:
+        &#34;&#34;&#34;Get the display name of the Agent.
+
+        Returns:
+            The Agent&#39;s display name as a string.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; display_name = agent.name  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Agent display name: {display_name}&#34;)
+
+        &#34;&#34;&#34;
         return self._agent_properties[&#39;idaEntity&#39;][&#39;appName&#39;]
 
     @property
-    def description(self):
-        &#34;&#34;&#34;Returns the description of the Agent&#34;&#34;&#34;
+    def description(self) -&gt; Optional[str]:
+        &#34;&#34;&#34;Get the user-defined description of the Agent.
+
+        Returns:
+            The description of the Agent as a string, or None if not set.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; desc = agent.description  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Agent description: {desc}&#34;)
+
+        &#34;&#34;&#34;
         return self._agent_properties.get(&#39;AgentProperties&#39;, {}).get(&#39;userDescription&#39;)
 
     @description.setter
-    def description(self, description):
-        &#34;&#34;&#34;Sets the description for the agent
+    def description(self, description: str) -&gt; None:
+        &#34;&#34;&#34;Set the description for the agent.
 
         Args:
-            description (str)   -- Description to be set for the agent
+            description: The description text to assign to the agent.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; agent.description = &#34;This agent handles database backups.&#34;  # Use assignment for property setters
+            &gt;&gt;&gt; # The agent&#39;s description is now updated
 
         &#34;&#34;&#34;
         update_properties = self.properties
@@ -1379,18 +1848,49 @@ instance of the Agent class</p></div>
         self.update_properties(update_properties)
 
     @property
-    def agent_id(self):
-        &#34;&#34;&#34;Returns the id of the Agent.&#34;&#34;&#34;
+    def agent_id(self) -&gt; int:
+        &#34;&#34;&#34;Get the unique identifier of the Agent.
+
+        Returns:
+            The agent&#39;s ID as an integer.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; agent_id = agent.agent_id  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Agent ID: {agent_id}&#34;)
+        &#34;&#34;&#34;
         return self._agent_id
 
     @property
-    def agent_name(self):
-        &#34;&#34;&#34;Returns the name of the Agent.&#34;&#34;&#34;
+    def agent_name(self) -&gt; str:
+        &#34;&#34;&#34;Get the name of the Agent.
+
+        Returns:
+            The name of the Agent as a string.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; name = agent.agent_name  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Agent name: {name}&#34;)
+
+        &#34;&#34;&#34;
         return self._agent_name
 
     @property
-    def is_backup_enabled(self):
-        &#34;&#34;&#34;Returns boolean specifying whether backup is enabled for this agent or not.&#34;&#34;&#34;
+    def is_backup_enabled(self) -&gt; bool:
+        &#34;&#34;&#34;Check if backup is enabled for this agent.
+
+        Returns:
+            True if backup is enabled for the agent, False otherwise.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; if agent.is_backup_enabled:
+            ...     print(&#34;Backup is enabled for this agent.&#34;)
+            ... else:
+            ...     print(&#34;Backup is disabled for this agent.&#34;)
+
+        &#34;&#34;&#34;
         for activitytype in self._agent_properties[&#39;idaActivityControl&#39;][&#39;activityControlOptions&#39;]:
             if activitytype[&#39;activityType&#39;] == 1:
                 return activitytype[&#39;enableActivityType&#39;]
@@ -1398,8 +1898,20 @@ instance of the Agent class</p></div>
         return False
 
     @property
-    def is_restore_enabled(self):
-        &#34;&#34;&#34;Returns boolean specifying whether restore is enabled for this agent or not.&#34;&#34;&#34;
+    def is_restore_enabled(self) -&gt; bool:
+        &#34;&#34;&#34;Indicate whether restore operations are enabled for this agent.
+
+        Returns:
+            True if restore is enabled for the agent, False otherwise.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; if agent.is_restore_enabled:
+            ...     print(&#34;Restore is enabled for this agent.&#34;)
+            ... else:
+            ...     print(&#34;Restore is disabled for this agent.&#34;)
+
+        &#34;&#34;&#34;
         for activitytype in self._agent_properties[&#39;idaActivityControl&#39;][&#39;activityControlOptions&#39;]:
             if activitytype[&#39;activityType&#39;] == 2:
                 return activitytype[&#39;enableActivityType&#39;]
@@ -1407,9 +1919,19 @@ instance of the Agent class</p></div>
         return False
 
     @property
-    def instances(self):
-        &#34;&#34;&#34;Returns the instance of the Instances class representing the list of Instances
-        installed / configured on the Client for the selected Agent.
+    def instances(self) -&gt; &#39;Instances&#39;:
+        &#34;&#34;&#34;Get the Instances object representing all instances configured for this Agent.
+
+        Returns:
+            Instances: An object for managing and accessing the list of instances installed or configured
+            on the client for the selected Agent.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; instances = agent.instances  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Total instances: {len(instances)}&#34;)
+            &gt;&gt;&gt; # The returned Instances object can be used to manage individual instances
+
         &#34;&#34;&#34;
         if self._instances is None:
             self._instances = Instances(self)
@@ -1417,9 +1939,21 @@ instance of the Agent class</p></div>
         return self._instances
 
     @property
-    def backupsets(self):
-        &#34;&#34;&#34;Returns the instance of the Backupsets class representing the list of Backupsets
-        installed / configured on the Client for the selected Agent.
+    def backupsets(self) -&gt; &#39;Backupsets&#39;:
+        &#34;&#34;&#34;Get the Backupsets instance for the current Agent.
+
+        This property provides access to the Backupsets object, which represents
+        all backup sets installed or configured on the client for the selected agent.
+
+        Returns:
+            Backupsets: An instance for managing and accessing backup sets.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; backupsets = agent.backupsets  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Number of backup sets: {len(backupsets)}&#34;)
+            &gt;&gt;&gt; # The returned Backupsets object can be used to manage backup sets
+
         &#34;&#34;&#34;
         if self._backupsets is None:
             self._backupsets = Backupsets(self)
@@ -1427,25 +1961,42 @@ instance of the Agent class</p></div>
         return self._backupsets
 
     @property
-    def schedules(self):
-        &#34;&#34;&#34;Returns the instance of the Schedules class representing the list of Schedules
-        installed / configured on the Client for the selected Agent.
+    def schedules(self) -&gt; &#39;Schedules&#39;:
+        &#34;&#34;&#34;Get the Schedules instance for the current Agent.
+
+        This property provides access to the Schedules object, which represents all schedules
+        installed or configured on the client for the selected agent.
+
+        Returns:
+            Schedules: An instance for managing and retrieving schedule information related to this agent.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; schedules = agent.schedules  # Use dot notation for property access
+            &gt;&gt;&gt; print(f&#34;Schedules object: {schedules}&#34;)
+            &gt;&gt;&gt; # The returned Schedules object can be used to view or manage schedules
+
         &#34;&#34;&#34;
         if self._schedules is None:
             self._schedules = Schedules(self)
 
         return self._schedules
 
-    def enable_backup(self):
-        &#34;&#34;&#34;Enable Backup for this Agent.
+    def enable_backup(self) -&gt; None:
+        &#34;&#34;&#34;Enable backup operations for this Agent.
 
-            Raises:
-                SDKException:
-                    if failed to enable backup
+        This method sends a request to enable backup for the current Agent instance.
+        If the operation fails, or if the response is empty or unsuccessful, an SDKException is raised.
 
-                    if response is empty
+        Raises:
+            SDKException: If enabling backup fails, the response is empty, or the response indicates an error.
 
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; agent.enable_backup()
+            &gt;&gt;&gt; print(&#34;Backup enabled successfully for the agent.&#34;)
+            # If an error occurs, SDKException will be raised.
+
         &#34;&#34;&#34;
         request_json = self._request_json_(&#39;Backup&#39;)
 
@@ -1467,26 +2018,27 @@ instance of the Agent class</p></div>
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
-    def enable_backup_at_time(self, enable_time):
-        &#34;&#34;&#34;Disables Backup if not already disabled, and enables at the time specified.
+    def enable_backup_at_time(self, enable_time: str) -&gt; None:
+        &#34;&#34;&#34;Schedule backup enablement at a specified UTC time.
 
-            Args:
-                enable_time (str)  --  UTC time to enable the backup at, in 24 Hour format
-                    format: YYYY-MM-DD HH:mm:ss
+        This method disables backup if it is currently enabled, and then schedules backup to be enabled
+        at the provided UTC time. The time must be specified in 24-hour format as &#34;YYYY-MM-DD HH:mm:ss&#34;.
+        For Linux CommServer environments, provide the time in GMT timezone.
 
-                **Note** In case of linux CommServer provide time in GMT timezone
+        Args:
+            enable_time: UTC time to enable the backup, in &#34;YYYY-MM-DD HH:mm:ss&#34; format.
 
-            Raises:
-                SDKException:
-                    if time value entered is less than the current time
+        Raises:
+            SDKException: If the time value is less than the current time.
+            SDKException: If the time value is not in the correct format.
+            SDKException: If backup enablement fails.
+            SDKException: If the response is empty or not successful.
 
-                    if time value entered is not of correct format
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; agent.enable_backup_at_time(&#34;2024-07-01 23:30:00&#34;)
+            &gt;&gt;&gt; print(&#34;Backup will be enabled at the specified time.&#34;)
 
-                    if failed to enable backup
-
-                    if response is empty
-
-                    if response is not success
         &#34;&#34;&#34;
         try:
             time_tuple = time.strptime(enable_time, &#34;%Y-%m-%d %H:%M:%S&#34;)
@@ -1515,16 +2067,21 @@ instance of the Agent class</p></div>
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
-    def disable_backup(self):
-        &#34;&#34;&#34;Disables Backup for this Agent.
+    def disable_backup(self) -&gt; None:
+        &#34;&#34;&#34;Disable backup operations for this Agent.
 
-            Raises:
-                SDKException:
-                    if failed to disable backup
+        This method sends a request to disable backup for the current Agent instance.
+        If the operation fails, or if the response is empty or unsuccessful, an SDKException is raised.
 
-                    if response is empty
+        Raises:
+            SDKException: If the backup could not be disabled, the response is empty, or the response indicates failure.
 
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; agent.disable_backup()
+            &gt;&gt;&gt; print(&#34;Backup disabled successfully for the agent.&#34;)
+            # If the operation fails, an SDKException will be raised.
+
         &#34;&#34;&#34;
         request_json = self._request_json_(&#39;Backup&#39;, False)
 
@@ -1546,16 +2103,21 @@ instance of the Agent class</p></div>
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
-    def enable_restore(self):
-        &#34;&#34;&#34;Enable Restore for this Agent.
+    def enable_restore(self) -&gt; None:
+        &#34;&#34;&#34;Enable restore functionality for this Agent.
 
-            Raises:
-                SDKException:
-                    if failed to enable restore
+        This method sends a request to enable restore operations for the current Agent instance.
+        If the operation fails, an SDKException is raised with details about the failure.
 
-                    if response is empty
+        Raises:
+            SDKException: If enabling restore fails, the response is empty, or the response indicates an error.
 
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; agent.enable_restore()
+            &gt;&gt;&gt; print(&#34;Restore enabled successfully for the agent.&#34;)
+            # If an error occurs, SDKException will be raised with the error details.
+
         &#34;&#34;&#34;
         request_json = self._request_json_(&#39;Restore&#39;)
 
@@ -1577,24 +2139,26 @@ instance of the Agent class</p></div>
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
-    def enable_restore_at_time(self, enable_time):
-        &#34;&#34;&#34;Disables Restore if not already disabled, and enables at the time specified.
+    def enable_restore_at_time(self, enable_time: str) -&gt; None:
+        &#34;&#34;&#34;Enable restore functionality at a specified UTC time.
 
-            Args:
-                enable_time (str)  --  UTC time to enable the restore at, in 24 Hour format
-                    format: YYYY-MM-DD HH:mm:ss
+        This method disables restore if it is not already disabled, and then schedules
+        restore to be enabled at the provided UTC time in 24-hour format.
 
-            Raises:
-                SDKException:
-                    if time value entered is less than the current time
+        Args:
+            enable_time: UTC time to enable restore, in the format &#34;YYYY-MM-DD HH:mm:ss&#34;.
 
-                    if time value entered is not of correct format
+        Raises:
+            SDKException: If the provided time is earlier than the current time.
+            SDKException: If the time format is incorrect.
+            SDKException: If restore could not be enabled due to an error response.
+            SDKException: If the response from the server is empty or unsuccessful.
 
-                    if failed to enable restore
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; agent.enable_restore_at_time(&#34;2024-07-01 15:30:00&#34;)
+            &gt;&gt;&gt; # Restore will be enabled at the specified UTC time
 
-                    if response is empty
-
-                    if response is not success
         &#34;&#34;&#34;
         try:
             time_tuple = time.strptime(enable_time, &#34;%Y-%m-%d %H:%M:%S&#34;)
@@ -1623,16 +2187,19 @@ instance of the Agent class</p></div>
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
-    def disable_restore(self):
-        &#34;&#34;&#34;Disables Restore for this Agent.
+    def disable_restore(self) -&gt; None:
+        &#34;&#34;&#34;Disable restore operations for this Agent.
 
-            Raises:
-                SDKException:
-                    if failed to disable restore
+        This method sends a request to the Commcell to disable restore functionality for the current Agent.
+        If the operation fails, an SDKException is raised with details about the error.
 
-                    if response is empty
+        Raises:
+            SDKException: If the request to disable restore fails, the response is empty, or the response indicates an error.
 
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; agent.disable_restore()
+            &gt;&gt;&gt; print(&#34;Restore operations have been disabled for the agent.&#34;)
         &#34;&#34;&#34;
         request_json = self._request_json_(&#39;Restore&#39;, False)
 
@@ -1653,11 +2220,20 @@ instance of the Agent class</p></div>
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
-    def enable_ews_support_for_exchange_on_prem(self, ews_service_url : str):
-        &#34;&#34;&#34;
-            Method to enable EWS backup support for an Exchange on-prem client.
-            Args:
-                ews_service_url (string) -- EWS Connection URL for your exchange server
+    def enable_ews_support_for_exchange_on_prem(self, ews_service_url: str) -&gt; None:
+        &#34;&#34;&#34;Enable EWS backup support for an Exchange on-premises client.
+
+        This method configures the agent to use Exchange Web Services (EWS) for backup operations
+        by setting the EWS connection URL and enabling EWS support. Only applicable for Exchange on-prem agents.
+
+        Args:
+            ews_service_url: The EWS connection URL for your Exchange server.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(...)
+            &gt;&gt;&gt; agent.enable_ews_support_for_exchange_on_prem(&#34;https://exchange.example.com/EWS/Exchange.asmx&#34;)
+            &gt;&gt;&gt; print(&#34;EWS support enabled for Exchange on-prem client.&#34;)
+
         &#34;&#34;&#34;
         if int(self.agent_id) != 137:
             raise SDKException(&#39;Agent&#39;, &#39;102&#39;, f&#39;Invalid operation for {self.agent_name}&#39;)
@@ -1667,8 +2243,18 @@ instance of the Agent class</p></div>
         _agent_properties[&#34;onePassProperties&#34;][&#34;onePassProp&#34;][&#34;ewsDetails&#34;][&#34;ewsConnectionUrl&#34;] = ews_service_url
         self.update_properties(_agent_properties)
 
-    def refresh(self):
-        &#34;&#34;&#34;Refresh the properties of the Agent.&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Reload the properties and cached data for the Agent object.
+
+        This method refreshes the agent&#39;s properties and clears cached instances, backupsets,
+        and schedules. Use this to ensure the Agent reflects the latest state from the Commcell.
+
+        Example:
+            &gt;&gt;&gt; agent = Agent(commcell_object, client_name, agent_name)
+            &gt;&gt;&gt; agent.refresh()  # Updates agent properties and clears cached data
+            &gt;&gt;&gt; # Subsequent accesses will retrieve updated information
+
+        &#34;&#34;&#34;
         self._get_agent_properties()
 
         self._instances = None
@@ -1681,47 +2267,110 @@ instance of the Agent class</p></div>
 </ul>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.agent.Agent.agent_id"><code class="name">var <span class="ident">agent_id</span></code></dt>
+<dt id="cvpysdk.agent.Agent.agent_id"><code class="name">var <span class="ident">agent_id</span> : int</code></dt>
 <dd>
-<div class="desc"><p>Returns the id of the Agent.</p></div>
+<div class="desc"><p>Get the unique identifier of the Agent.</p>
+<p>Returns
+-----=
+The agent's ID as an integer.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; agent = Agent(...)
+&gt;&gt;&gt; agent_id = agent.agent_id  # Use dot notation for property access
+&gt;&gt;&gt; print(f&quot;Agent ID: {agent_id}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/agent.py#L662-L665" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/agent.py#L915-L928" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def agent_id(self):
-    &#34;&#34;&#34;Returns the id of the Agent.&#34;&#34;&#34;
+def agent_id(self) -&gt; int:
+    &#34;&#34;&#34;Get the unique identifier of the Agent.
+
+    Returns:
+        The agent&#39;s ID as an integer.
+
+    Example:
+        &gt;&gt;&gt; agent = Agent(...)
+        &gt;&gt;&gt; agent_id = agent.agent_id  # Use dot notation for property access
+        &gt;&gt;&gt; print(f&#34;Agent ID: {agent_id}&#34;)
+    &#34;&#34;&#34;
     return self._agent_id</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.agent.Agent.agent_name"><code class="name">var <span class="ident">agent_name</span></code></dt>
+<dt id="cvpysdk.agent.Agent.agent_name"><code class="name">var <span class="ident">agent_name</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the name of the Agent.</p></div>
+<div class="desc"><p>Get the name of the Agent.</p>
+<p>Returns
+-----=
+The name of the Agent as a string.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; agent = Agent(...)
+&gt;&gt;&gt; name = agent.agent_name  # Use dot notation for property access
+&gt;&gt;&gt; print(f&quot;Agent name: {name}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/agent.py#L667-L670" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/agent.py#L930-L944" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def agent_name(self):
-    &#34;&#34;&#34;Returns the name of the Agent.&#34;&#34;&#34;
+def agent_name(self) -&gt; str:
+    &#34;&#34;&#34;Get the name of the Agent.
+
+    Returns:
+        The name of the Agent as a string.
+
+    Example:
+        &gt;&gt;&gt; agent = Agent(...)
+        &gt;&gt;&gt; name = agent.agent_name  # Use dot notation for property access
+        &gt;&gt;&gt; print(f&#34;Agent name: {name}&#34;)
+
+    &#34;&#34;&#34;
     return self._agent_name</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.agent.Agent.backupsets"><code class="name">var <span class="ident">backupsets</span></code></dt>
+<dt id="cvpysdk.agent.Agent.backupsets"><code class="name">var <span class="ident">backupsets</span> : <a title="cvpysdk.backupset.Backupsets" href="backupset.html#cvpysdk.backupset.Backupsets">Backupsets</a></code></dt>
 <dd>
-<div class="desc"><p>Returns the instance of the Backupsets class representing the list of Backupsets
-installed / configured on the Client for the selected Agent.</p></div>
+<div class="desc"><p>Get the Backupsets instance for the current Agent.</p>
+<p>This property provides access to the Backupsets object, which represents
+all backup sets installed or configured on the client for the selected agent.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Backupsets</code></dt>
+<dd>An instance for managing and accessing backup sets.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; agent = Agent(...)
+&gt;&gt;&gt; backupsets = agent.backupsets  # Use dot notation for property access
+&gt;&gt;&gt; print(f&quot;Number of backup sets: {len(backupsets)}&quot;)
+&gt;&gt;&gt; # The returned Backupsets object can be used to manage backup sets
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/agent.py#L700-L708" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/agent.py#L1011-L1032" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def backupsets(self):
-    &#34;&#34;&#34;Returns the instance of the Backupsets class representing the list of Backupsets
-    installed / configured on the Client for the selected Agent.
+def backupsets(self) -&gt; &#39;Backupsets&#39;:
+    &#34;&#34;&#34;Get the Backupsets instance for the current Agent.
+
+    This property provides access to the Backupsets object, which represents
+    all backup sets installed or configured on the client for the selected agent.
+
+    Returns:
+        Backupsets: An instance for managing and accessing backup sets.
+
+    Example:
+        &gt;&gt;&gt; agent = Agent(...)
+        &gt;&gt;&gt; backupsets = agent.backupsets  # Use dot notation for property access
+        &gt;&gt;&gt; print(f&#34;Number of backup sets: {len(backupsets)}&#34;)
+        &gt;&gt;&gt; # The returned Backupsets object can be used to manage backup sets
+
     &#34;&#34;&#34;
     if self._backupsets is None:
         self._backupsets = Backupsets(self)
@@ -1729,33 +2378,75 @@ def backupsets(self):
     return self._backupsets</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.agent.Agent.description"><code class="name">var <span class="ident">description</span></code></dt>
+<dt id="cvpysdk.agent.Agent.description"><code class="name">var <span class="ident">description</span> : Optional[str]</code></dt>
 <dd>
-<div class="desc"><p>Returns the description of the Agent</p></div>
+<div class="desc"><p>Get the user-defined description of the Agent.</p>
+<p>Returns
+-----=
+The description of the Agent as a string, or None if not set.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; agent = Agent(...)
+&gt;&gt;&gt; desc = agent.description  # Use dot notation for property access
+&gt;&gt;&gt; print(f&quot;Agent description: {desc}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/agent.py#L645-L648" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/agent.py#L881-L895" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def description(self):
-    &#34;&#34;&#34;Returns the description of the Agent&#34;&#34;&#34;
+def description(self) -&gt; Optional[str]:
+    &#34;&#34;&#34;Get the user-defined description of the Agent.
+
+    Returns:
+        The description of the Agent as a string, or None if not set.
+
+    Example:
+        &gt;&gt;&gt; agent = Agent(...)
+        &gt;&gt;&gt; desc = agent.description  # Use dot notation for property access
+        &gt;&gt;&gt; print(f&#34;Agent description: {desc}&#34;)
+
+    &#34;&#34;&#34;
     return self._agent_properties.get(&#39;AgentProperties&#39;, {}).get(&#39;userDescription&#39;)</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.agent.Agent.instances"><code class="name">var <span class="ident">instances</span></code></dt>
+<dt id="cvpysdk.agent.Agent.instances"><code class="name">var <span class="ident">instances</span> : <a title="cvpysdk.instance.Instances" href="instance.html#cvpysdk.instance.Instances">Instances</a></code></dt>
 <dd>
-<div class="desc"><p>Returns the instance of the Instances class representing the list of Instances
-installed / configured on the Client for the selected Agent.</p></div>
+<div class="desc"><p>Get the Instances object representing all instances configured for this Agent.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Instances</code></dt>
+<dd>An object for managing and accessing the list of instances installed or configured</dd>
+</dl>
+<p>on the client for the selected Agent.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; agent = Agent(...)
+&gt;&gt;&gt; instances = agent.instances  # Use dot notation for property access
+&gt;&gt;&gt; print(f&quot;Total instances: {len(instances)}&quot;)
+&gt;&gt;&gt; # The returned Instances object can be used to manage individual instances
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/agent.py#L690-L698" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/agent.py#L990-L1009" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def instances(self):
-    &#34;&#34;&#34;Returns the instance of the Instances class representing the list of Instances
-    installed / configured on the Client for the selected Agent.
+def instances(self) -&gt; &#39;Instances&#39;:
+    &#34;&#34;&#34;Get the Instances object representing all instances configured for this Agent.
+
+    Returns:
+        Instances: An object for managing and accessing the list of instances installed or configured
+        on the client for the selected Agent.
+
+    Example:
+        &gt;&gt;&gt; agent = Agent(...)
+        &gt;&gt;&gt; instances = agent.instances  # Use dot notation for property access
+        &gt;&gt;&gt; print(f&#34;Total instances: {len(instances)}&#34;)
+        &gt;&gt;&gt; # The returned Instances object can be used to manage individual instances
+
     &#34;&#34;&#34;
     if self._instances is None:
         self._instances = Instances(self)
@@ -1763,17 +2454,40 @@ def instances(self):
     return self._instances</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.agent.Agent.is_backup_enabled"><code class="name">var <span class="ident">is_backup_enabled</span></code></dt>
+<dt id="cvpysdk.agent.Agent.is_backup_enabled"><code class="name">var <span class="ident">is_backup_enabled</span> : bool</code></dt>
 <dd>
-<div class="desc"><p>Returns boolean specifying whether backup is enabled for this agent or not.</p></div>
+<div class="desc"><p>Check if backup is enabled for this agent.</p>
+<p>Returns
+-----=
+True if backup is enabled for the agent, False otherwise.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; agent = Agent(...)
+&gt;&gt;&gt; if agent.is_backup_enabled:
+...     print(&quot;Backup is enabled for this agent.&quot;)
+... else:
+...     print(&quot;Backup is disabled for this agent.&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/agent.py#L672-L679" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/agent.py#L946-L966" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def is_backup_enabled(self):
-    &#34;&#34;&#34;Returns boolean specifying whether backup is enabled for this agent or not.&#34;&#34;&#34;
+def is_backup_enabled(self) -&gt; bool:
+    &#34;&#34;&#34;Check if backup is enabled for this agent.
+
+    Returns:
+        True if backup is enabled for the agent, False otherwise.
+
+    Example:
+        &gt;&gt;&gt; agent = Agent(...)
+        &gt;&gt;&gt; if agent.is_backup_enabled:
+        ...     print(&#34;Backup is enabled for this agent.&#34;)
+        ... else:
+        ...     print(&#34;Backup is disabled for this agent.&#34;)
+
+    &#34;&#34;&#34;
     for activitytype in self._agent_properties[&#39;idaActivityControl&#39;][&#39;activityControlOptions&#39;]:
         if activitytype[&#39;activityType&#39;] == 1:
             return activitytype[&#39;enableActivityType&#39;]
@@ -1781,17 +2495,40 @@ def is_backup_enabled(self):
     return False</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.agent.Agent.is_restore_enabled"><code class="name">var <span class="ident">is_restore_enabled</span></code></dt>
+<dt id="cvpysdk.agent.Agent.is_restore_enabled"><code class="name">var <span class="ident">is_restore_enabled</span> : bool</code></dt>
 <dd>
-<div class="desc"><p>Returns boolean specifying whether restore is enabled for this agent or not.</p></div>
+<div class="desc"><p>Indicate whether restore operations are enabled for this agent.</p>
+<p>Returns
+-----=
+True if restore is enabled for the agent, False otherwise.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; agent = Agent(...)
+&gt;&gt;&gt; if agent.is_restore_enabled:
+...     print(&quot;Restore is enabled for this agent.&quot;)
+... else:
+...     print(&quot;Restore is disabled for this agent.&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/agent.py#L681-L688" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/agent.py#L968-L988" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def is_restore_enabled(self):
-    &#34;&#34;&#34;Returns boolean specifying whether restore is enabled for this agent or not.&#34;&#34;&#34;
+def is_restore_enabled(self) -&gt; bool:
+    &#34;&#34;&#34;Indicate whether restore operations are enabled for this agent.
+
+    Returns:
+        True if restore is enabled for the agent, False otherwise.
+
+    Example:
+        &gt;&gt;&gt; agent = Agent(...)
+        &gt;&gt;&gt; if agent.is_restore_enabled:
+        ...     print(&#34;Restore is enabled for this agent.&#34;)
+        ... else:
+        ...     print(&#34;Restore is disabled for this agent.&#34;)
+
+    &#34;&#34;&#34;
     for activitytype in self._agent_properties[&#39;idaActivityControl&#39;][&#39;activityControlOptions&#39;]:
         if activitytype[&#39;activityType&#39;] == 2:
             return activitytype[&#39;enableActivityType&#39;]
@@ -1799,47 +2536,113 @@ def is_restore_enabled(self):
     return False</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.agent.Agent.name"><code class="name">var <span class="ident">name</span></code></dt>
+<dt id="cvpysdk.agent.Agent.name"><code class="name">var <span class="ident">name</span> : str</code></dt>
 <dd>
-<div class="desc"><p>Returns the Agent display name</p></div>
+<div class="desc"><p>Get the display name of the Agent.</p>
+<p>Returns
+-----=
+The Agent's display name as a string.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; agent = Agent(...)
+&gt;&gt;&gt; display_name = agent.name  # Use dot notation for property access
+&gt;&gt;&gt; print(f&quot;Agent display name: {display_name}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/agent.py#L640-L643" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/agent.py#L865-L879" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def name(self):
-    &#34;&#34;&#34;Returns the Agent display name &#34;&#34;&#34;
+def name(self) -&gt; str:
+    &#34;&#34;&#34;Get the display name of the Agent.
+
+    Returns:
+        The Agent&#39;s display name as a string.
+
+    Example:
+        &gt;&gt;&gt; agent = Agent(...)
+        &gt;&gt;&gt; display_name = agent.name  # Use dot notation for property access
+        &gt;&gt;&gt; print(f&#34;Agent display name: {display_name}&#34;)
+
+    &#34;&#34;&#34;
     return self._agent_properties[&#39;idaEntity&#39;][&#39;appName&#39;]</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.agent.Agent.properties"><code class="name">var <span class="ident">properties</span></code></dt>
+<dt id="cvpysdk.agent.Agent.properties"><code class="name">var <span class="ident">properties</span> : Dict[str, Any]</code></dt>
 <dd>
-<div class="desc"><p>Returns the agent properties</p></div>
+<div class="desc"><p>Get a copy of the agent's properties.</p>
+<p>Returns
+-----=
+Dictionary containing the agent's properties and configuration details.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; agent = Agent(...)
+&gt;&gt;&gt; agent_props = agent.properties  # Use dot notation for properties
+&gt;&gt;&gt; print(agent_props)
+&gt;&gt;&gt; # The returned dictionary contains agent-specific settings
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/agent.py#L635-L638" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/agent.py#L848-L863" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def properties(self):
-    &#34;&#34;&#34;Returns the agent properties&#34;&#34;&#34;
+def properties(self) -&gt; Dict[str, Any]:
+    &#34;&#34;&#34;Get a copy of the agent&#39;s properties.
+
+    Returns:
+        Dictionary containing the agent&#39;s properties and configuration details.
+
+    Example:
+        &gt;&gt;&gt; agent = Agent(...)
+        &gt;&gt;&gt; agent_props = agent.properties  # Use dot notation for properties
+        &gt;&gt;&gt; print(agent_props)
+        &gt;&gt;&gt; # The returned dictionary contains agent-specific settings
+
+    &#34;&#34;&#34;
     return copy.deepcopy(self._agent_properties)</code></pre>
 </details>
 </dd>
-<dt id="cvpysdk.agent.Agent.schedules"><code class="name">var <span class="ident">schedules</span></code></dt>
+<dt id="cvpysdk.agent.Agent.schedules"><code class="name">var <span class="ident">schedules</span> : <a title="cvpysdk.schedules.Schedules" href="schedules.html#cvpysdk.schedules.Schedules">Schedules</a></code></dt>
 <dd>
-<div class="desc"><p>Returns the instance of the Schedules class representing the list of Schedules
-installed / configured on the Client for the selected Agent.</p></div>
+<div class="desc"><p>Get the Schedules instance for the current Agent.</p>
+<p>This property provides access to the Schedules object, which represents all schedules
+installed or configured on the client for the selected agent.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Schedules</code></dt>
+<dd>An instance for managing and retrieving schedule information related to this agent.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; agent = Agent(...)
+&gt;&gt;&gt; schedules = agent.schedules  # Use dot notation for property access
+&gt;&gt;&gt; print(f&quot;Schedules object: {schedules}&quot;)
+&gt;&gt;&gt; # The returned Schedules object can be used to view or manage schedules
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/agent.py#L710-L718" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/agent.py#L1034-L1055" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def schedules(self):
-    &#34;&#34;&#34;Returns the instance of the Schedules class representing the list of Schedules
-    installed / configured on the Client for the selected Agent.
+def schedules(self) -&gt; &#39;Schedules&#39;:
+    &#34;&#34;&#34;Get the Schedules instance for the current Agent.
+
+    This property provides access to the Schedules object, which represents all schedules
+    installed or configured on the client for the selected agent.
+
+    Returns:
+        Schedules: An instance for managing and retrieving schedule information related to this agent.
+
+    Example:
+        &gt;&gt;&gt; agent = Agent(...)
+        &gt;&gt;&gt; schedules = agent.schedules  # Use dot notation for property access
+        &gt;&gt;&gt; print(f&#34;Schedules object: {schedules}&#34;)
+        &gt;&gt;&gt; # The returned Schedules object can be used to view or manage schedules
+
     &#34;&#34;&#34;
     if self._schedules is None:
         self._schedules = Schedules(self)
@@ -1851,32 +2654,45 @@ def schedules(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.agent.Agent.disable_backup"><code class="name flex">
-<span>def <span class="ident">disable_backup</span></span>(<span>self)</span>
+<span>def <span class="ident">disable_backup</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Disables Backup for this Agent.</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if failed to disable backup</p>
-<pre><code>if response is empty
-
-if response is not success
+<div class="desc"><p>Disable backup operations for this Agent.</p>
+<p>This method sends a request to disable backup for the current Agent instance.
+If the operation fails, or if the response is empty or unsuccessful, an SDKException is raised.</p>
+<dl>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the backup could not be disabled, the response is empty, or the response indicates failure.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; agent = Agent(...)
+&gt;&gt;&gt; agent.disable_backup()
+&gt;&gt;&gt; print(&quot;Backup disabled successfully for the agent.&quot;)
+# If the operation fails, an SDKException will be raised.
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/agent.py#L799-L828" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/agent.py#L1144-L1179" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def disable_backup(self):
-    &#34;&#34;&#34;Disables Backup for this Agent.
+<pre><code class="python">def disable_backup(self) -&gt; None:
+    &#34;&#34;&#34;Disable backup operations for this Agent.
 
-        Raises:
-            SDKException:
-                if failed to disable backup
+    This method sends a request to disable backup for the current Agent instance.
+    If the operation fails, or if the response is empty or unsuccessful, an SDKException is raised.
 
-                if response is empty
+    Raises:
+        SDKException: If the backup could not be disabled, the response is empty, or the response indicates failure.
 
-                if response is not success
+    Example:
+        &gt;&gt;&gt; agent = Agent(...)
+        &gt;&gt;&gt; agent.disable_backup()
+        &gt;&gt;&gt; print(&#34;Backup disabled successfully for the agent.&#34;)
+        # If the operation fails, an SDKException will be raised.
+
     &#34;&#34;&#34;
     request_json = self._request_json_(&#39;Backup&#39;, False)
 
@@ -1900,32 +2716,42 @@ if response is not success
 </details>
 </dd>
 <dt id="cvpysdk.agent.Agent.disable_restore"><code class="name flex">
-<span>def <span class="ident">disable_restore</span></span>(<span>self)</span>
+<span>def <span class="ident">disable_restore</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Disables Restore for this Agent.</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if failed to disable restore</p>
-<pre><code>if response is empty
-
-if response is not success
+<div class="desc"><p>Disable restore operations for this Agent.</p>
+<p>This method sends a request to the Commcell to disable restore functionality for the current Agent.
+If the operation fails, an SDKException is raised with details about the error.</p>
+<dl>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the request to disable restore fails, the response is empty, or the response indicates an error.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; agent = Agent(...)
+&gt;&gt;&gt; agent.disable_restore()
+&gt;&gt;&gt; print(&quot;Restore operations have been disabled for the agent.&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/agent.py#L907-L935" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/agent.py#L1267-L1299" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def disable_restore(self):
-    &#34;&#34;&#34;Disables Restore for this Agent.
+<pre><code class="python">def disable_restore(self) -&gt; None:
+    &#34;&#34;&#34;Disable restore operations for this Agent.
 
-        Raises:
-            SDKException:
-                if failed to disable restore
+    This method sends a request to the Commcell to disable restore functionality for the current Agent.
+    If the operation fails, an SDKException is raised with details about the error.
 
-                if response is empty
+    Raises:
+        SDKException: If the request to disable restore fails, the response is empty, or the response indicates an error.
 
-                if response is not success
+    Example:
+        &gt;&gt;&gt; agent = Agent(...)
+        &gt;&gt;&gt; agent.disable_restore()
+        &gt;&gt;&gt; print(&#34;Restore operations have been disabled for the agent.&#34;)
     &#34;&#34;&#34;
     request_json = self._request_json_(&#39;Restore&#39;, False)
 
@@ -1948,32 +2774,45 @@ if response is not success
 </details>
 </dd>
 <dt id="cvpysdk.agent.Agent.enable_backup"><code class="name flex">
-<span>def <span class="ident">enable_backup</span></span>(<span>self)</span>
+<span>def <span class="ident">enable_backup</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Enable Backup for this Agent.</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if failed to enable backup</p>
-<pre><code>if response is empty
-
-if response is not success
+<div class="desc"><p>Enable backup operations for this Agent.</p>
+<p>This method sends a request to enable backup for the current Agent instance.
+If the operation fails, or if the response is empty or unsuccessful, an SDKException is raised.</p>
+<dl>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If enabling backup fails, the response is empty, or the response indicates an error.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; agent = Agent(...)
+&gt;&gt;&gt; agent.enable_backup()
+&gt;&gt;&gt; print(&quot;Backup enabled successfully for the agent.&quot;)
+# If an error occurs, SDKException will be raised.
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/agent.py#L720-L749" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/agent.py#L1057-L1092" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def enable_backup(self):
-    &#34;&#34;&#34;Enable Backup for this Agent.
+<pre><code class="python">def enable_backup(self) -&gt; None:
+    &#34;&#34;&#34;Enable backup operations for this Agent.
 
-        Raises:
-            SDKException:
-                if failed to enable backup
+    This method sends a request to enable backup for the current Agent instance.
+    If the operation fails, or if the response is empty or unsuccessful, an SDKException is raised.
 
-                if response is empty
+    Raises:
+        SDKException: If enabling backup fails, the response is empty, or the response indicates an error.
 
-                if response is not success
+    Example:
+        &gt;&gt;&gt; agent = Agent(...)
+        &gt;&gt;&gt; agent.enable_backup()
+        &gt;&gt;&gt; print(&#34;Backup enabled successfully for the agent.&#34;)
+        # If an error occurs, SDKException will be raised.
+
     &#34;&#34;&#34;
     request_json = self._request_json_(&#39;Backup&#39;)
 
@@ -1997,52 +2836,61 @@ if response is not success
 </details>
 </dd>
 <dt id="cvpysdk.agent.Agent.enable_backup_at_time"><code class="name flex">
-<span>def <span class="ident">enable_backup_at_time</span></span>(<span>self, enable_time)</span>
+<span>def <span class="ident">enable_backup_at_time</span></span>(<span>self, enable_time: str) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Disables Backup if not already disabled, and enables at the time specified.</p>
-<h2 id="args">Args</h2>
-<p>enable_time (str)
-&ndash;
-UTC time to enable the backup at, in 24 Hour format
-format: YYYY-MM-DD HH:mm:ss</p>
-<p><strong>Note</strong> In case of linux CommServer provide time in GMT timezone</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if time value entered is less than the current time</p>
-<pre><code>if time value entered is not of correct format
-
-if failed to enable backup
-
-if response is empty
-
-if response is not success
+<div class="desc"><p>Schedule backup enablement at a specified UTC time.</p>
+<p>This method disables backup if it is currently enabled, and then schedules backup to be enabled
+at the provided UTC time. The time must be specified in 24-hour format as "YYYY-MM-DD HH:mm:ss".
+For Linux CommServer environments, provide the time in GMT timezone.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>enable_time</code></strong></dt>
+<dd>UTC time to enable the backup, in "YYYY-MM-DD HH:mm:ss" format.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the time value is less than the current time.</dd>
+<dt><code>SDKException</code></dt>
+<dd>If the time value is not in the correct format.</dd>
+<dt><code>SDKException</code></dt>
+<dd>If backup enablement fails.</dd>
+<dt><code>SDKException</code></dt>
+<dd>If the response is empty or not successful.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; agent = Agent(...)
+&gt;&gt;&gt; agent.enable_backup_at_time(&quot;2024-07-01 23:30:00&quot;)
+&gt;&gt;&gt; print(&quot;Backup will be enabled at the specified time.&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/agent.py#L751-L797" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/agent.py#L1094-L1142" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def enable_backup_at_time(self, enable_time):
-    &#34;&#34;&#34;Disables Backup if not already disabled, and enables at the time specified.
+<pre><code class="python">def enable_backup_at_time(self, enable_time: str) -&gt; None:
+    &#34;&#34;&#34;Schedule backup enablement at a specified UTC time.
 
-        Args:
-            enable_time (str)  --  UTC time to enable the backup at, in 24 Hour format
-                format: YYYY-MM-DD HH:mm:ss
+    This method disables backup if it is currently enabled, and then schedules backup to be enabled
+    at the provided UTC time. The time must be specified in 24-hour format as &#34;YYYY-MM-DD HH:mm:ss&#34;.
+    For Linux CommServer environments, provide the time in GMT timezone.
 
-            **Note** In case of linux CommServer provide time in GMT timezone
+    Args:
+        enable_time: UTC time to enable the backup, in &#34;YYYY-MM-DD HH:mm:ss&#34; format.
 
-        Raises:
-            SDKException:
-                if time value entered is less than the current time
+    Raises:
+        SDKException: If the time value is less than the current time.
+        SDKException: If the time value is not in the correct format.
+        SDKException: If backup enablement fails.
+        SDKException: If the response is empty or not successful.
 
-                if time value entered is not of correct format
+    Example:
+        &gt;&gt;&gt; agent = Agent(...)
+        &gt;&gt;&gt; agent.enable_backup_at_time(&#34;2024-07-01 23:30:00&#34;)
+        &gt;&gt;&gt; print(&#34;Backup will be enabled at the specified time.&#34;)
 
-                if failed to enable backup
-
-                if response is empty
-
-                if response is not success
     &#34;&#34;&#34;
     try:
         time_tuple = time.strptime(enable_time, &#34;%Y-%m-%d %H:%M:%S&#34;)
@@ -2073,22 +2921,43 @@ if response is not success
 </details>
 </dd>
 <dt id="cvpysdk.agent.Agent.enable_ews_support_for_exchange_on_prem"><code class="name flex">
-<span>def <span class="ident">enable_ews_support_for_exchange_on_prem</span></span>(<span>self, ews_service_url: str)</span>
+<span>def <span class="ident">enable_ews_support_for_exchange_on_prem</span></span>(<span>self, ews_service_url: str) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Method to enable EWS backup support for an Exchange on-prem client.</p>
-<h2 id="args">Args</h2>
-<p>ews_service_url (string) &ndash; EWS Connection URL for your exchange server</p></div>
+<div class="desc"><p>Enable EWS backup support for an Exchange on-premises client.</p>
+<p>This method configures the agent to use Exchange Web Services (EWS) for backup operations
+by setting the EWS connection URL and enabling EWS support. Only applicable for Exchange on-prem agents.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>ews_service_url</code></strong></dt>
+<dd>The EWS connection URL for your Exchange server.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; agent = Agent(...)
+&gt;&gt;&gt; agent.enable_ews_support_for_exchange_on_prem(&quot;https://exchange.example.com/EWS/Exchange.asmx&quot;)
+&gt;&gt;&gt; print(&quot;EWS support enabled for Exchange on-prem client.&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/agent.py#L937-L949" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/agent.py#L1301-L1323" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def enable_ews_support_for_exchange_on_prem(self, ews_service_url : str):
-    &#34;&#34;&#34;
-        Method to enable EWS backup support for an Exchange on-prem client.
-        Args:
-            ews_service_url (string) -- EWS Connection URL for your exchange server
+<pre><code class="python">def enable_ews_support_for_exchange_on_prem(self, ews_service_url: str) -&gt; None:
+    &#34;&#34;&#34;Enable EWS backup support for an Exchange on-premises client.
+
+    This method configures the agent to use Exchange Web Services (EWS) for backup operations
+    by setting the EWS connection URL and enabling EWS support. Only applicable for Exchange on-prem agents.
+
+    Args:
+        ews_service_url: The EWS connection URL for your Exchange server.
+
+    Example:
+        &gt;&gt;&gt; agent = Agent(...)
+        &gt;&gt;&gt; agent.enable_ews_support_for_exchange_on_prem(&#34;https://exchange.example.com/EWS/Exchange.asmx&#34;)
+        &gt;&gt;&gt; print(&#34;EWS support enabled for Exchange on-prem client.&#34;)
+
     &#34;&#34;&#34;
     if int(self.agent_id) != 137:
         raise SDKException(&#39;Agent&#39;, &#39;102&#39;, f&#39;Invalid operation for {self.agent_name}&#39;)
@@ -2100,32 +2969,45 @@ if response is not success
 </details>
 </dd>
 <dt id="cvpysdk.agent.Agent.enable_restore"><code class="name flex">
-<span>def <span class="ident">enable_restore</span></span>(<span>self)</span>
+<span>def <span class="ident">enable_restore</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Enable Restore for this Agent.</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if failed to enable restore</p>
-<pre><code>if response is empty
-
-if response is not success
+<div class="desc"><p>Enable restore functionality for this Agent.</p>
+<p>This method sends a request to enable restore operations for the current Agent instance.
+If the operation fails, an SDKException is raised with details about the failure.</p>
+<dl>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If enabling restore fails, the response is empty, or the response indicates an error.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; agent = Agent(...)
+&gt;&gt;&gt; agent.enable_restore()
+&gt;&gt;&gt; print(&quot;Restore enabled successfully for the agent.&quot;)
+# If an error occurs, SDKException will be raised with the error details.
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/agent.py#L830-L859" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/agent.py#L1181-L1216" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def enable_restore(self):
-    &#34;&#34;&#34;Enable Restore for this Agent.
+<pre><code class="python">def enable_restore(self) -&gt; None:
+    &#34;&#34;&#34;Enable restore functionality for this Agent.
 
-        Raises:
-            SDKException:
-                if failed to enable restore
+    This method sends a request to enable restore operations for the current Agent instance.
+    If the operation fails, an SDKException is raised with details about the failure.
 
-                if response is empty
+    Raises:
+        SDKException: If enabling restore fails, the response is empty, or the response indicates an error.
 
-                if response is not success
+    Example:
+        &gt;&gt;&gt; agent = Agent(...)
+        &gt;&gt;&gt; agent.enable_restore()
+        &gt;&gt;&gt; print(&#34;Restore enabled successfully for the agent.&#34;)
+        # If an error occurs, SDKException will be raised with the error details.
+
     &#34;&#34;&#34;
     request_json = self._request_json_(&#39;Restore&#39;)
 
@@ -2149,49 +3031,59 @@ if response is not success
 </details>
 </dd>
 <dt id="cvpysdk.agent.Agent.enable_restore_at_time"><code class="name flex">
-<span>def <span class="ident">enable_restore_at_time</span></span>(<span>self, enable_time)</span>
+<span>def <span class="ident">enable_restore_at_time</span></span>(<span>self, enable_time: str) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Disables Restore if not already disabled, and enables at the time specified.</p>
-<h2 id="args">Args</h2>
-<p>enable_time (str)
-&ndash;
-UTC time to enable the restore at, in 24 Hour format
-format: YYYY-MM-DD HH:mm:ss</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if time value entered is less than the current time</p>
-<pre><code>if time value entered is not of correct format
-
-if failed to enable restore
-
-if response is empty
-
-if response is not success
+<div class="desc"><p>Enable restore functionality at a specified UTC time.</p>
+<p>This method disables restore if it is not already disabled, and then schedules
+restore to be enabled at the provided UTC time in 24-hour format.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>enable_time</code></strong></dt>
+<dd>UTC time to enable restore, in the format "YYYY-MM-DD HH:mm:ss".</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the provided time is earlier than the current time.</dd>
+<dt><code>SDKException</code></dt>
+<dd>If the time format is incorrect.</dd>
+<dt><code>SDKException</code></dt>
+<dd>If restore could not be enabled due to an error response.</dd>
+<dt><code>SDKException</code></dt>
+<dd>If the response from the server is empty or unsuccessful.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; agent = Agent(...)
+&gt;&gt;&gt; agent.enable_restore_at_time(&quot;2024-07-01 15:30:00&quot;)
+&gt;&gt;&gt; # Restore will be enabled at the specified UTC time
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/agent.py#L861-L905" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/agent.py#L1218-L1265" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def enable_restore_at_time(self, enable_time):
-    &#34;&#34;&#34;Disables Restore if not already disabled, and enables at the time specified.
+<pre><code class="python">def enable_restore_at_time(self, enable_time: str) -&gt; None:
+    &#34;&#34;&#34;Enable restore functionality at a specified UTC time.
 
-        Args:
-            enable_time (str)  --  UTC time to enable the restore at, in 24 Hour format
-                format: YYYY-MM-DD HH:mm:ss
+    This method disables restore if it is not already disabled, and then schedules
+    restore to be enabled at the provided UTC time in 24-hour format.
 
-        Raises:
-            SDKException:
-                if time value entered is less than the current time
+    Args:
+        enable_time: UTC time to enable restore, in the format &#34;YYYY-MM-DD HH:mm:ss&#34;.
 
-                if time value entered is not of correct format
+    Raises:
+        SDKException: If the provided time is earlier than the current time.
+        SDKException: If the time format is incorrect.
+        SDKException: If restore could not be enabled due to an error response.
+        SDKException: If the response from the server is empty or unsuccessful.
 
-                if failed to enable restore
+    Example:
+        &gt;&gt;&gt; agent = Agent(...)
+        &gt;&gt;&gt; agent.enable_restore_at_time(&#34;2024-07-01 15:30:00&#34;)
+        &gt;&gt;&gt; # Restore will be enabled at the specified UTC time
 
-                if response is empty
-
-                if response is not success
     &#34;&#34;&#34;
     try:
         time_tuple = time.strptime(enable_time, &#34;%Y-%m-%d %H:%M:%S&#34;)
@@ -2222,17 +3114,35 @@ if response is not success
 </details>
 </dd>
 <dt id="cvpysdk.agent.Agent.refresh"><code class="name flex">
-<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+<span>def <span class="ident">refresh</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Refresh the properties of the Agent.</p></div>
+<div class="desc"><p>Reload the properties and cached data for the Agent object.</p>
+<p>This method refreshes the agent's properties and clears cached instances, backupsets,
+and schedules. Use this to ensure the Agent reflects the latest state from the Commcell.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; agent = Agent(commcell_object, client_name, agent_name)
+&gt;&gt;&gt; agent.refresh()  # Updates agent properties and clears cached data
+&gt;&gt;&gt; # Subsequent accesses will retrieve updated information
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/agent.py#L951-L957" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/agent.py#L1325-L1342" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def refresh(self):
-    &#34;&#34;&#34;Refresh the properties of the Agent.&#34;&#34;&#34;
+<pre><code class="python">def refresh(self) -&gt; None:
+    &#34;&#34;&#34;Reload the properties and cached data for the Agent object.
+
+    This method refreshes the agent&#39;s properties and clears cached instances, backupsets,
+    and schedules. Use this to ensure the Agent reflects the latest state from the Commcell.
+
+    Example:
+        &gt;&gt;&gt; agent = Agent(commcell_object, client_name, agent_name)
+        &gt;&gt;&gt; agent.refresh()  # Updates agent properties and clears cached data
+        &gt;&gt;&gt; # Subsequent accesses will retrieve updated information
+
+    &#34;&#34;&#34;
     self._get_agent_properties()
 
     self._instances = None
@@ -2241,51 +3151,55 @@ if response is not success
 </details>
 </dd>
 <dt id="cvpysdk.agent.Agent.update_properties"><code class="name flex">
-<span>def <span class="ident">update_properties</span></span>(<span>self, properties_dict)</span>
+<span>def <span class="ident">update_properties</span></span>(<span>self, properties_dict: Dict[str, Any]) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Updates the agent properties</p>
-<pre><code>Args:
-    properties_dict (dict)  --  agent property dict which is to be updated
-
-Returns:
-    None
-
-Raises:
-    SDKException:
-        if failed to add
-
-        if response is empty
-
-        if response code is not as expected
-</code></pre>
-<p><strong>Note</strong> self.properties can be used to get a deep copy of all the properties, modify the properties which you
-need to change and use the update_properties method to set the properties</p></div>
+<div class="desc"><p>Update the agent properties with the specified values.</p>
+<p>This method updates the agent's configuration using the provided dictionary of properties.
+To modify agent properties, obtain a deep copy using <code>self.properties</code>, update the desired fields,
+and pass the modified dictionary to this method.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>properties_dict</code></strong></dt>
+<dd>Dictionary containing agent property values to update.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the update fails, the response is empty, or the response code is not as expected.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; agent = Agent(...)
+&gt;&gt;&gt; props = agent.properties.copy()  # Get a deep copy of current properties
+&gt;&gt;&gt; props['AgentProperties']['someProperty'] = 'newValue'
+&gt;&gt;&gt; agent.update_properties(props)
+&gt;&gt;&gt; print(&quot;Agent properties updated successfully&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/agent.py#L598-L633" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/agent.py#L811-L846" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def update_properties(self, properties_dict):
-    &#34;&#34;&#34;Updates the agent properties
+<pre><code class="python">def update_properties(self, properties_dict: Dict[str, Any]) -&gt; None:
+    &#34;&#34;&#34;Update the agent properties with the specified values.
 
-        Args:
-            properties_dict (dict)  --  agent property dict which is to be updated
+    This method updates the agent&#39;s configuration using the provided dictionary of properties.
+    To modify agent properties, obtain a deep copy using `self.properties`, update the desired fields,
+    and pass the modified dictionary to this method.
 
-        Returns:
-            None
+    Args:
+        properties_dict: Dictionary containing agent property values to update.
 
-        Raises:
-            SDKException:
-                if failed to add
+    Raises:
+        SDKException: If the update fails, the response is empty, or the response code is not as expected.
 
-                if response is empty
-
-                if response code is not as expected
-
-    **Note** self.properties can be used to get a deep copy of all the properties, modify the properties which you
-    need to change and use the update_properties method to set the properties
-
+    Example:
+        &gt;&gt;&gt; agent = Agent(...)
+        &gt;&gt;&gt; props = agent.properties.copy()  # Get a deep copy of current properties
+        &gt;&gt;&gt; props[&#39;AgentProperties&#39;][&#39;someProperty&#39;] = &#39;newValue&#39;
+        &gt;&gt;&gt; agent.update_properties(props)
+        &gt;&gt;&gt; print(&#34;Agent properties updated successfully&#34;)
     &#34;&#34;&#34;
     request_json = {
         &#34;agentProperties&#34;:
@@ -2308,33 +3222,75 @@ need to change and use the update_properties method to set the properties</p></d
 </dd>
 <dt id="cvpysdk.agent.Agents"><code class="flex name class">
 <span>class <span class="ident">Agents</span></span>
-<span>(</span><span>client_object)</span>
+<span>(</span><span>client_object: Client)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for getting all the agents associated with a client.</p>
-<p>Initialize object of the Agents class.</p>
-<h2 id="args">Args</h2>
-<p>client_object (object)
-&ndash;
-instance of the Client class</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Agents class</p></div>
+<div class="desc"><p>Manages and interacts with agents associated with a client.</p>
+<p>The Agents class provides a comprehensive interface for retrieving, managing,
+and interacting with agents linked to a specific client object. It supports
+agent enumeration, access, addition, and refresh operations, making it easy
+to handle agent-related tasks programmatically.</p>
+<p>Key Features:
+- Initialization with a client object for context
+- String and representation methods for readable output
+- Length and item access for agent collection-like behavior
+- Retrieval of all agents via the <code>all_agents</code> property
+- Check for existence of an agent by name
+- Get a specific agent by name
+- Refresh the agent list from the source
+- Add a new database agent with specified access node
+- Internal processing of agent addition responses</p>
+<p>Initialize an Agents object for managing agents on a specific client.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>client_object</code></strong></dt>
+<dd>Instance of the Client class representing the target client.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; client = Client(...)
+&gt;&gt;&gt; agents = Agents(client)
+&gt;&gt;&gt; # The Agents object can now be used to manage agents for the specified client
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/agent.py#L106-L402" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/agent.py#L108-L530" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Agents(object):
-    &#34;&#34;&#34;Class for getting all the agents associated with a client.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Manages and interacts with agents associated with a client.
 
-    def __init__(self, client_object):
-        &#34;&#34;&#34;Initialize object of the Agents class.
+    The Agents class provides a comprehensive interface for retrieving, managing,
+    and interacting with agents linked to a specific client object. It supports
+    agent enumeration, access, addition, and refresh operations, making it easy
+    to handle agent-related tasks programmatically.
 
-            Args:
-                client_object (object)  --  instance of the Client class
+    Key Features:
+        - Initialization with a client object for context
+        - String and representation methods for readable output
+        - Length and item access for agent collection-like behavior
+        - Retrieval of all agents via the `all_agents` property
+        - Check for existence of an agent by name
+        - Get a specific agent by name
+        - Refresh the agent list from the source
+        - Add a new database agent with specified access node
+        - Internal processing of agent addition responses
 
-            Returns:
-                object - instance of the Agents class
+    &#34;&#34;&#34;
+
+    def __init__(self, client_object: &#39;Client&#39;) -&gt; None:
+        &#34;&#34;&#34;Initialize an Agents object for managing agents on a specific client.
+
+        Args:
+            client_object: Instance of the Client class representing the target client.
+
+        Example:
+            &gt;&gt;&gt; client = Client(...)
+            &gt;&gt;&gt; agents = Agents(client)
+            &gt;&gt;&gt; # The Agents object can now be used to manage agents for the specified client
+
         &#34;&#34;&#34;
         self._client_object = client_object
         self._commcell_object = self._client_object._commcell_object
@@ -2348,11 +3304,22 @@ instance of the Client class</p>
         self._agents = None
         self.refresh()
 
-    def __str__(self):
-        &#34;&#34;&#34;Representation string consisting of all agents of the client.
+    def __str__(self) -&gt; str:
+        &#34;&#34;&#34;Return a formatted string representation of all agents associated with the client.
 
-            Returns:
-                str     -   string of all the agents of a client
+        The output includes a table listing the serial number, agent name, and client name for each agent.
+
+        Returns:
+            Formatted string listing all agents of the client.
+
+        Example:
+            &gt;&gt;&gt; agents = Agents(client_object)
+            &gt;&gt;&gt; print(str(agents))
+            &gt;&gt;&gt; # Output:
+            &gt;&gt;&gt; # S. No.   Agent                Client
+            &gt;&gt;&gt; #
+            &gt;&gt;&gt; #   1      FileSystem           ClientA
+            &gt;&gt;&gt; #   2      SQLServer            ClientA
 
         &#34;&#34;&#34;
         representation_string = &#39;{:^5}\t{:^20}\t{:^20}\n\n&#39;.format(&#39;S. No.&#39;, &#39;Agent&#39;, &#39;Client&#39;)
@@ -2367,29 +3334,61 @@ instance of the Client class</p>
 
         return representation_string.strip()
 
-    def __repr__(self):
-        &#34;&#34;&#34;Representation string for the instance of the Agents class.&#34;&#34;&#34;
+    def __repr__(self) -&gt; str:
+        &#34;&#34;&#34;Return a string representation of the Agents class instance.
+
+        This method provides a human-readable description of the Agents object,
+        including the associated client name.
+
+        Returns:
+            String representation of the Agents instance.
+
+        Example:
+            &gt;&gt;&gt; agents = Agents(client_object)
+            &gt;&gt;&gt; print(repr(agents))
+            Agents class instance for Client: &#39;Client01&#39;
+
+        &#34;&#34;&#34;
         return &#34;Agents class instance for Client: &#39;{0}&#39;&#34;.format(self._client_object.client_name)
 
-    def __len__(self):
-        &#34;&#34;&#34;Returns the number of the Agents licensed for the selected Client.&#34;&#34;&#34;
+    def __len__(self) -&gt; int:
+        &#34;&#34;&#34;Get the number of agents licensed for the selected client.
+
+        Returns:
+            The total count of licensed agents as an integer.
+
+        Example:
+            &gt;&gt;&gt; agents = Agents(client_object)
+            &gt;&gt;&gt; num_agents = len(agents)
+            &gt;&gt;&gt; print(f&#34;Licensed agents: {num_agents}&#34;)
+
+        &#34;&#34;&#34;
         return len(self.all_agents)
 
-    def __getitem__(self, value):
-        &#34;&#34;&#34;Returns the name of the agent for the given agent ID or
-            the details of the agent for given agent Name.
+    def __getitem__(self, value: Union[str, int]) -&gt; Union[str, Dict[str, Any]]:
+        &#34;&#34;&#34;Retrieve agent information by agent ID or agent name.
 
-            Args:
-                value   (str / int)     --  Name or ID of the agent
+        If an agent ID (as int or str) is provided, returns the name of the agent.
+        If an agent name (as str) is provided, returns the details dictionary for that agent.
 
-            Returns:
-                str     -   name of the agent, if the agent id was given
+        Args:
+            value: The agent&#39;s name (str) or ID (int or str).
 
-                dict    -   dict of details of the agent, if agent name was given
+        Returns:
+            str: Name of the agent if the agent ID was provided.
+            dict: Details of the agent if the agent name was provided.
 
-            Raises:
-                IndexError:
-                    no agent exists with the given Name / Id
+        Raises:
+            IndexError: If no agent exists with the given name or ID.
+
+        Example:
+            &gt;&gt;&gt; agents = Agents()
+            &gt;&gt;&gt; # Get agent details by name
+            &gt;&gt;&gt; details = agents[&#39;FileSystem&#39;]
+            &gt;&gt;&gt; print(details)
+            &gt;&gt;&gt; # Get agent name by ID
+            &gt;&gt;&gt; name = agents[101]
+            &gt;&gt;&gt; print(f&#34;Agent name for ID 101: {name}&#34;)
 
         &#34;&#34;&#34;
         value = str(value)
@@ -2402,21 +3401,26 @@ instance of the Client class</p>
             except IndexError:
                 raise IndexError(&#39;No agent exists with the given Name / Id&#39;)
 
-    def _get_agents(self):
-        &#34;&#34;&#34;Gets all the agents associated to the client specified with this client object.
+    def _get_agents(self) -&gt; Dict[str, str]:
+        &#34;&#34;&#34;Retrieve all agents associated with the current client object.
 
-            Returns:
-                dict - consists of all agents in the client
-                    {
-                         &#34;agent1_name&#34;: agent1_id,
-                         &#34;agent2_name&#34;: agent2_id
-                    }
+        Returns:
+            Dictionary mapping agent names (as lowercase strings) to their corresponding agent IDs.
+            Example:
+                {
+                    &#34;agent1_name&#34;: &#34;agent1_id&#34;,
+                    &#34;agent2_name&#34;: &#34;agent2_id&#34;
+                }
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException: If the response is empty or unsuccessful.
 
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; agents = client_obj._get_agents()
+            &gt;&gt;&gt; print(agents)
+            &gt;&gt;&gt; # Output: {&#39;file_system&#39;: &#39;1&#39;, &#39;sql_server&#39;: &#39;2&#39;}
+            &gt;&gt;&gt; # Each key is the agent name, and each value is the agent ID as a string.
+
         &#34;&#34;&#34;
         flag, response = self._cvpysdk_object.make_request(&#39;GET&#39;, self._AGENTS)
 
@@ -2440,52 +3444,66 @@ instance of the Client class</p>
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
     @property
-    def all_agents(self):
-        &#34;&#34;&#34;Returns dict of all the agents installed on client.
+    def all_agents(self) -&gt; Dict[str, int]:
+        &#34;&#34;&#34;Get a dictionary of all agents installed on the client.
 
-            dict    -   consists of all agents in the client
+        Returns:
+            Dictionary mapping agent names (str) to their corresponding agent IDs (int).
 
-                {
-                    &#34;agent1_name&#34;: agent1_id,
-
-                    &#34;agent2_name&#34;: agent2_id
-                }
+        Example:
+            &gt;&gt;&gt; agents = Agents(client_object)
+            &gt;&gt;&gt; agent_dict = agents.all_agents  # Use dot notation for property access
+            &gt;&gt;&gt; print(agent_dict)
+            &gt;&gt;&gt; # Output: {&#39;FileSystem&#39;: 1, &#39;SQLServer&#39;: 2}
+            &gt;&gt;&gt; # You can access agent IDs by name:
+            &gt;&gt;&gt; fs_agent_id = agent_dict.get(&#39;FileSystem&#39;)
+            &gt;&gt;&gt; print(f&#34;FileSystem agent ID: {fs_agent_id}&#34;)
 
         &#34;&#34;&#34;
         return self._agents
 
-    def has_agent(self, agent_name):
-        &#34;&#34;&#34;Checks if an agent is installed for the client with the input agent name.
+    def has_agent(self, agent_name: str) -&gt; bool:
+        &#34;&#34;&#34;Check if a specific agent is installed for the client.
 
-            Args:
-                agent_name (str)  --  name of the agent
+        Args:
+            agent_name: Name of the agent to check, as a string.
 
-            Returns:
-                bool - boolean output whether the agent is installed for the client or not
+        Returns:
+            True if the agent is installed for the client, False otherwise.
 
-            Raises:
-                SDKException:
-                    if type of the agent name argument is not string
+        Raises:
+            SDKException: If the agent_name argument is not a string.
+
+        Example:
+            &gt;&gt;&gt; agents = Agents(client_object)
+            &gt;&gt;&gt; is_installed = agents.has_agent(&#34;File System&#34;)
+            &gt;&gt;&gt; print(f&#34;File System agent installed: {is_installed}&#34;)
+            &gt;&gt;&gt; # Returns True if the agent is present, False otherwise
+
         &#34;&#34;&#34;
         if not isinstance(agent_name, str):
             raise SDKException(&#39;Agent&#39;, &#39;101&#39;)
 
         return self._agents and agent_name.lower() in self._agents
 
-    def get(self, agent_name):
-        &#34;&#34;&#34;Returns a agent object of the specified client.
+    def get(self, agent_name: str) -&gt; &#39;Agent&#39;:
+        &#34;&#34;&#34;Retrieve an Agent object for the specified agent name.
 
-            Args:
-                agent_name (str)  --  name of the agent
+        Args:
+            agent_name: Name of the agent as a string.
 
-            Returns:
-                object - instance of the Agent class for the given agent name
+        Returns:
+            Agent instance corresponding to the given agent name.
 
-            Raises:
-                SDKException:
-                    if type of the agent name argument is not string
+        Raises:
+            SDKException: If the agent_name is not a string or if no agent exists with the given name.
 
-                    if no agent exists with the given name
+        Example:
+            &gt;&gt;&gt; agents = Agents(client_object)
+            &gt;&gt;&gt; file_system_agent = agents.get(&#39;File System&#39;)
+            &gt;&gt;&gt; print(f&#34;Retrieved agent: {file_system_agent}&#34;)
+            &gt;&gt;&gt; # The returned Agent object can be used for further agent operations
+
         &#34;&#34;&#34;
         if not isinstance(agent_name, str):
             raise SDKException(&#39;Agent&#39;, &#39;101&#39;)
@@ -2497,30 +3515,47 @@ instance of the Client class</p>
 
             raise SDKException(&#39;Agent&#39;, &#39;102&#39;, &#39;No agent exists with name: {0}&#39;.format(agent_name))
 
-    def refresh(self):
-        &#34;&#34;&#34;Refresh the agents installed on the Client.&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Reload the list of agents installed on the client.
+
+        This method updates the internal agent cache to reflect the current state
+        of agents installed on the client. Use this method to ensure you are working
+        with the latest agent information.
+
+        Example:
+            &gt;&gt;&gt; agents = Agents(client_object)
+            &gt;&gt;&gt; agents.refresh()  # Refresh the agent list after installation or removal
+            &gt;&gt;&gt; print(&#34;Agent list refreshed successfully&#34;)
+
+        &#34;&#34;&#34;
         self._agents = self._get_agents()
 
-    def _process_add_response(self, request_json):
-        &#34;&#34;&#34;Runs the Agent Add API with the request JSON provided,
-            and returns the contents after parsing the response.
+    def _process_add_response(self, request_json: Dict[str, Any]) -&gt; Any:
+        &#34;&#34;&#34;Process the response from the Agent Add API using the provided request JSON.
 
-            Args:
-                request_json    (dict)  --  JSON request to run for the API
+        This method sends a POST request to the Agent Add API with the given JSON payload,
+        parses the response, and returns the created agent object if successful. If the API
+        response indicates an error or is empty, an SDKException is raised.
 
-            Returns:
-                (bool, str, str):
-                    bool -  flag specifies whether success / failure
+        Args:
+            request_json: Dictionary containing the JSON request payload for the Agent Add API.
 
-                    str  -  error code received in the response
+        Returns:
+            The agent object corresponding to the newly created agent if the operation is successful.
 
-                    str  -  error message received
+        Raises:
+            SDKException: If the API response is empty, indicates failure, or contains an error message.
 
-            Raises:
-                SDKException:
-                    if response is empty
-
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; agents = Agents(commcell_object)
+            &gt;&gt;&gt; request_json = {
+            ...     &#34;association&#34;: {
+            ...         &#34;entity&#34;: [{&#34;appName&#34;: &#34;File System&#34;}]
+            ...     },
+            ...     &#34;properties&#34;: {...}
+            ... }
+            &gt;&gt;&gt; new_agent = agents._process_add_response(request_json)
+            &gt;&gt;&gt; print(f&#34;Agent created: {new_agent}&#34;)
         &#34;&#34;&#34;
         flag, response = self._cvpysdk_object.make_request(&#39;POST&#39;, self._services[&#39;AGENT&#39;], request_json)
         if flag:
@@ -2549,26 +3584,38 @@ instance of the Client class</p>
         else:
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, self._update_response_(response.text))
 
-    def add_database_agent(self, agent_name, access_node, **kwargs):
-        &#34;&#34;&#34;Adds database agent to cloud client
-            Args:
-                agent_name      (str)   --  agent name
-                access_node     (str)   --  access node name
-                **kwargs        (dict)  --  dict of keyword arguments as follows
-                                            install_dir     (str)   --  database client install directory
-                                            version         (str)   --  database version
-            Returns:
-                object - instance of the Agent class
+    def add_database_agent(self, agent_name: str, access_node: str, **kwargs: Any):
+        &#34;&#34;&#34;Add a database agent to the cloud client.
 
-            Raises:
-                SDKException:
-                  if agent with given name already exists
+        This method creates and associates a new database agent with the specified cloud client,
+        using the provided agent name and access node. Additional configuration options such as
+        installation directory and database version can be specified via keyword arguments.
 
-                    if failed to add the agent
+        Args:
+            agent_name: Name of the database agent to add.
+            access_node: Name of the access node client for the database agent.
+            **kwargs: Optional keyword arguments for agent configuration:
+                install_dir (str): Directory where the database client should be installed.
+                version (str): Version of the database software (default is &#34;10.0&#34;).
 
-                    if response is empty
+        Returns:
+            Instance of the Agent class representing the newly added database agent.
 
-                    if response is not success
+        Raises:
+            SDKException: If an agent with the given name already exists, if the agent addition fails,
+                if the response is empty, or if the response indicates failure.
+
+        Example:
+            &gt;&gt;&gt; agents = Agents(client_object)
+            &gt;&gt;&gt; # Add a database agent with custom install directory and version
+            &gt;&gt;&gt; agent = agents.add_database_agent(
+            ...     agent_name=&#34;SQLServer&#34;,
+            ...     access_node=&#34;AccessNode01&#34;,
+            ...     install_dir=&#34;/opt/dbclient&#34;,
+            ...     version=&#34;12.0&#34;
+            ... )
+            &gt;&gt;&gt; print(f&#34;Added agent: {agent}&#34;)
+
         &#34;&#34;&#34;
 
         if self.has_agent(agent_name):
@@ -2624,34 +3671,42 @@ instance of the Client class</p>
 </details>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.agent.Agents.all_agents"><code class="name">var <span class="ident">all_agents</span></code></dt>
+<dt id="cvpysdk.agent.Agents.all_agents"><code class="name">var <span class="ident">all_agents</span> : Dict[str, int]</code></dt>
 <dd>
-<div class="desc"><p>Returns dict of all the agents installed on client.</p>
-<p>dict
--
-consists of all agents in the client</p>
-<pre><code>{
-    "agent1_name": agent1_id,
-
-    "agent2_name": agent2_id
-}
+<div class="desc"><p>Get a dictionary of all agents installed on the client.</p>
+<p>Returns
+-----=
+Dictionary mapping agent names (str) to their corresponding agent IDs (int).</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; agents = Agents(client_object)
+&gt;&gt;&gt; agent_dict = agents.all_agents  # Use dot notation for property access
+&gt;&gt;&gt; print(agent_dict)
+&gt;&gt;&gt; # Output: {'FileSystem': 1, 'SQLServer': 2}
+&gt;&gt;&gt; # You can access agent IDs by name:
+&gt;&gt;&gt; fs_agent_id = agent_dict.get('FileSystem')
+&gt;&gt;&gt; print(f&quot;FileSystem agent ID: {fs_agent_id}&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/agent.py#L221-L234" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/agent.py#L300-L318" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def all_agents(self):
-    &#34;&#34;&#34;Returns dict of all the agents installed on client.
+def all_agents(self) -&gt; Dict[str, int]:
+    &#34;&#34;&#34;Get a dictionary of all agents installed on the client.
 
-        dict    -   consists of all agents in the client
+    Returns:
+        Dictionary mapping agent names (str) to their corresponding agent IDs (int).
 
-            {
-                &#34;agent1_name&#34;: agent1_id,
-
-                &#34;agent2_name&#34;: agent2_id
-            }
+    Example:
+        &gt;&gt;&gt; agents = Agents(client_object)
+        &gt;&gt;&gt; agent_dict = agents.all_agents  # Use dot notation for property access
+        &gt;&gt;&gt; print(agent_dict)
+        &gt;&gt;&gt; # Output: {&#39;FileSystem&#39;: 1, &#39;SQLServer&#39;: 2}
+        &gt;&gt;&gt; # You can access agent IDs by name:
+        &gt;&gt;&gt; fs_agent_id = agent_dict.get(&#39;FileSystem&#39;)
+        &gt;&gt;&gt; print(f&#34;FileSystem agent ID: {fs_agent_id}&#34;)
 
     &#34;&#34;&#34;
     return self._agents</code></pre>
@@ -2661,67 +3716,84 @@ def all_agents(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.agent.Agents.add_database_agent"><code class="name flex">
-<span>def <span class="ident">add_database_agent</span></span>(<span>self, agent_name, access_node, **kwargs)</span>
+<span>def <span class="ident">add_database_agent</span></span>(<span>self, agent_name: str, access_node: str, **kwargs: Any)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Adds database agent to cloud client</p>
-<h2 id="args">Args</h2>
-<p>agent_name
-(str)
-&ndash;
-agent name
-access_node
-(str)
-&ndash;
-access node name
-**kwargs
-(dict)
-&ndash;
-dict of keyword arguments as follows
-install_dir
-(str)
-&ndash;
-database client install directory
-version
-(str)
-&ndash;
-database version</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Agent class</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if agent with given name already exists</p>
-<pre><code>if failed to add the agent
-
-if response is empty
-
-if response is not success
+<div class="desc"><p>Add a database agent to the cloud client.</p>
+<p>This method creates and associates a new database agent with the specified cloud client,
+using the provided agent name and access node. Additional configuration options such as
+installation directory and database version can be specified via keyword arguments.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>agent_name</code></strong></dt>
+<dd>Name of the database agent to add.</dd>
+<dt><strong><code>access_node</code></strong></dt>
+<dd>Name of the access node client for the database agent.</dd>
+<dt><strong><code>**kwargs</code></strong></dt>
+<dd>Optional keyword arguments for agent configuration:
+install_dir (str): Directory where the database client should be installed.
+version (str): Version of the database software (default is "10.0").</dd>
+</dl>
+<p>Returns
+-----=
+Instance of the Agent class representing the newly added database agent.</p>
+<dl>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If an agent with the given name already exists, if the agent addition fails,
+if the response is empty, or if the response indicates failure.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; agents = Agents(client_object)
+&gt;&gt;&gt; # Add a database agent with custom install directory and version
+&gt;&gt;&gt; agent = agents.add_database_agent(
+...     agent_name=&quot;SQLServer&quot;,
+...     access_node=&quot;AccessNode01&quot;,
+...     install_dir=&quot;/opt/dbclient&quot;,
+...     version=&quot;12.0&quot;
+... )
+&gt;&gt;&gt; print(f&quot;Added agent: {agent}&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/agent.py#L331-L402" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/agent.py#L446-L530" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def add_database_agent(self, agent_name, access_node, **kwargs):
-    &#34;&#34;&#34;Adds database agent to cloud client
-        Args:
-            agent_name      (str)   --  agent name
-            access_node     (str)   --  access node name
-            **kwargs        (dict)  --  dict of keyword arguments as follows
-                                        install_dir     (str)   --  database client install directory
-                                        version         (str)   --  database version
-        Returns:
-            object - instance of the Agent class
+<pre><code class="python">def add_database_agent(self, agent_name: str, access_node: str, **kwargs: Any):
+    &#34;&#34;&#34;Add a database agent to the cloud client.
 
-        Raises:
-            SDKException:
-              if agent with given name already exists
+    This method creates and associates a new database agent with the specified cloud client,
+    using the provided agent name and access node. Additional configuration options such as
+    installation directory and database version can be specified via keyword arguments.
 
-                if failed to add the agent
+    Args:
+        agent_name: Name of the database agent to add.
+        access_node: Name of the access node client for the database agent.
+        **kwargs: Optional keyword arguments for agent configuration:
+            install_dir (str): Directory where the database client should be installed.
+            version (str): Version of the database software (default is &#34;10.0&#34;).
 
-                if response is empty
+    Returns:
+        Instance of the Agent class representing the newly added database agent.
 
-                if response is not success
+    Raises:
+        SDKException: If an agent with the given name already exists, if the agent addition fails,
+            if the response is empty, or if the response indicates failure.
+
+    Example:
+        &gt;&gt;&gt; agents = Agents(client_object)
+        &gt;&gt;&gt; # Add a database agent with custom install directory and version
+        &gt;&gt;&gt; agent = agents.add_database_agent(
+        ...     agent_name=&#34;SQLServer&#34;,
+        ...     access_node=&#34;AccessNode01&#34;,
+        ...     install_dir=&#34;/opt/dbclient&#34;,
+        ...     version=&#34;12.0&#34;
+        ... )
+        &gt;&gt;&gt; print(f&#34;Added agent: {agent}&#34;)
+
     &#34;&#34;&#34;
 
     if self.has_agent(agent_name):
@@ -2777,40 +3849,55 @@ if response is not success
 </details>
 </dd>
 <dt id="cvpysdk.agent.Agents.get"><code class="name flex">
-<span>def <span class="ident">get</span></span>(<span>self, agent_name)</span>
+<span>def <span class="ident">get</span></span>(<span>self, agent_name: str) ‑> <a title="cvpysdk.agent.Agent" href="#cvpysdk.agent.Agent">Agent</a></span>
 </code></dt>
 <dd>
-<div class="desc"><p>Returns a agent object of the specified client.</p>
-<h2 id="args">Args</h2>
-<p>agent_name (str)
-&ndash;
-name of the agent</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Agent class for the given agent name</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if type of the agent name argument is not string</p>
-<pre><code>if no agent exists with the given name
+<div class="desc"><p>Retrieve an Agent object for the specified agent name.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>agent_name</code></strong></dt>
+<dd>Name of the agent as a string.</dd>
+</dl>
+<p>Returns
+-----=
+Agent instance corresponding to the given agent name.</p>
+<dl>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the agent_name is not a string or if no agent exists with the given name.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; agents = Agents(client_object)
+&gt;&gt;&gt; file_system_agent = agents.get('File System')
+&gt;&gt;&gt; print(f&quot;Retrieved agent: {file_system_agent}&quot;)
+&gt;&gt;&gt; # The returned Agent object can be used for further agent operations
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/agent.py#L254-L277" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/agent.py#L345-L373" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def get(self, agent_name):
-    &#34;&#34;&#34;Returns a agent object of the specified client.
+<pre><code class="python">def get(self, agent_name: str) -&gt; &#39;Agent&#39;:
+    &#34;&#34;&#34;Retrieve an Agent object for the specified agent name.
 
-        Args:
-            agent_name (str)  --  name of the agent
+    Args:
+        agent_name: Name of the agent as a string.
 
-        Returns:
-            object - instance of the Agent class for the given agent name
+    Returns:
+        Agent instance corresponding to the given agent name.
 
-        Raises:
-            SDKException:
-                if type of the agent name argument is not string
+    Raises:
+        SDKException: If the agent_name is not a string or if no agent exists with the given name.
 
-                if no agent exists with the given name
+    Example:
+        &gt;&gt;&gt; agents = Agents(client_object)
+        &gt;&gt;&gt; file_system_agent = agents.get(&#39;File System&#39;)
+        &gt;&gt;&gt; print(f&#34;Retrieved agent: {file_system_agent}&#34;)
+        &gt;&gt;&gt; # The returned Agent object can be used for further agent operations
+
     &#34;&#34;&#34;
     if not isinstance(agent_name, str):
         raise SDKException(&#39;Agent&#39;, &#39;101&#39;)
@@ -2824,36 +3911,55 @@ if type of the agent name argument is not string</p>
 </details>
 </dd>
 <dt id="cvpysdk.agent.Agents.has_agent"><code class="name flex">
-<span>def <span class="ident">has_agent</span></span>(<span>self, agent_name)</span>
+<span>def <span class="ident">has_agent</span></span>(<span>self, agent_name: str) ‑> bool</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Checks if an agent is installed for the client with the input agent name.</p>
-<h2 id="args">Args</h2>
-<p>agent_name (str)
-&ndash;
-name of the agent</p>
-<h2 id="returns">Returns</h2>
-<p>bool - boolean output whether the agent is installed for the client or not</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if type of the agent name argument is not string</p></div>
+<div class="desc"><p>Check if a specific agent is installed for the client.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>agent_name</code></strong></dt>
+<dd>Name of the agent to check, as a string.</dd>
+</dl>
+<p>Returns
+-----=
+True if the agent is installed for the client, False otherwise.</p>
+<dl>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the agent_name argument is not a string.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; agents = Agents(client_object)
+&gt;&gt;&gt; is_installed = agents.has_agent(&quot;File System&quot;)
+&gt;&gt;&gt; print(f&quot;File System agent installed: {is_installed}&quot;)
+&gt;&gt;&gt; # Returns True if the agent is present, False otherwise
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/agent.py#L236-L252" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/agent.py#L320-L343" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def has_agent(self, agent_name):
-    &#34;&#34;&#34;Checks if an agent is installed for the client with the input agent name.
+<pre><code class="python">def has_agent(self, agent_name: str) -&gt; bool:
+    &#34;&#34;&#34;Check if a specific agent is installed for the client.
 
-        Args:
-            agent_name (str)  --  name of the agent
+    Args:
+        agent_name: Name of the agent to check, as a string.
 
-        Returns:
-            bool - boolean output whether the agent is installed for the client or not
+    Returns:
+        True if the agent is installed for the client, False otherwise.
 
-        Raises:
-            SDKException:
-                if type of the agent name argument is not string
+    Raises:
+        SDKException: If the agent_name argument is not a string.
+
+    Example:
+        &gt;&gt;&gt; agents = Agents(client_object)
+        &gt;&gt;&gt; is_installed = agents.has_agent(&#34;File System&#34;)
+        &gt;&gt;&gt; print(f&#34;File System agent installed: {is_installed}&#34;)
+        &gt;&gt;&gt; # Returns True if the agent is present, False otherwise
+
     &#34;&#34;&#34;
     if not isinstance(agent_name, str):
         raise SDKException(&#39;Agent&#39;, &#39;101&#39;)
@@ -2862,17 +3968,37 @@ if type of the agent name argument is not string</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.agent.Agents.refresh"><code class="name flex">
-<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+<span>def <span class="ident">refresh</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Refresh the agents installed on the Client.</p></div>
+<div class="desc"><p>Reload the list of agents installed on the client.</p>
+<p>This method updates the internal agent cache to reflect the current state
+of agents installed on the client. Use this method to ensure you are working
+with the latest agent information.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; agents = Agents(client_object)
+&gt;&gt;&gt; agents.refresh()  # Refresh the agent list after installation or removal
+&gt;&gt;&gt; print(&quot;Agent list refreshed successfully&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/agent.py#L279-L281" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/agent.py#L375-L389" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def refresh(self):
-    &#34;&#34;&#34;Refresh the agents installed on the Client.&#34;&#34;&#34;
+<pre><code class="python">def refresh(self) -&gt; None:
+    &#34;&#34;&#34;Reload the list of agents installed on the client.
+
+    This method updates the internal agent cache to reflect the current state
+    of agents installed on the client. Use this method to ensure you are working
+    with the latest agent information.
+
+    Example:
+        &gt;&gt;&gt; agents = Agents(client_object)
+        &gt;&gt;&gt; agents.refresh()  # Refresh the agent list after installation or removal
+        &gt;&gt;&gt; print(&#34;Agent list refreshed successfully&#34;)
+
+    &#34;&#34;&#34;
     self._agents = self._get_agents()</code></pre>
 </details>
 </dd>

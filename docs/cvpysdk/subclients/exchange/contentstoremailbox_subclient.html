@@ -29,7 +29,8 @@
 Derived class from ExchangeMailboxSubclient Base class,
 representing a ContentStoreMailbox subclient, and to
 perform operations on that subclient</p>
-<h2 id="journalmailboxsubclient">Journalmailboxsubclient</h2>
+<p>Journalmailboxsubclient
+-----=</p>
 <p>_get_subclient_properties()
 &ndash;
 gets the properties of UserMailbox Subclient</p>
@@ -52,7 +53,7 @@ runs in-place restore for the subclient</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/contentstoremailbox_subclient.py#L1-L362" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/exchange/contentstoremailbox_subclient.py#L1-L441" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -105,22 +106,37 @@ from ...client import Client
 
 
 class ContentStoreMailboxSubclient(ExchangeSubclient):
-    &#34;&#34;&#34;Derived class from ExchangeSubclient Base class.
+    &#34;&#34;&#34;
+    Specialized subclient class for managing Content Store Mailbox operations within Exchange environments.
 
-        This represents a contentstoremailbox subclient,
-        and can perform discover and restore operations on only that subclient.
+    This class extends the ExchangeSubclient base class to provide targeted functionality for
+    content store mailbox subclients. It enables discovery, association management, and restoration
+    operations specific to content store mailboxes. The class is designed to interact with backup sets,
+    manage mailbox associations, and refresh subclient data as needed.
+
+    Key Features:
+        - Initialization with backup set, subclient name, and subclient ID
+        - Retrieval of content store associations
+        - Generation of client dictionaries for mailbox management
+        - Identification and management of content store servers from client lists
+        - Property access to content store mailboxes
+        - Setting content store associations with support for policy usage
+        - Refreshing subclient data to ensure up-to-date information
 
     &#34;&#34;&#34;
 
-    def __init__(self, backupset_object, subclient_name, subclient_id=None):
-        &#34;&#34;&#34;Initialize the Instance object for the given ContentStoreMailbox Subclient.
+    def __init__(self, backupset_object: object, subclient_name: str, subclient_id: int = None) -&gt; None:
+        &#34;&#34;&#34;Initialize a ContentStoreMailboxSubclient instance.
 
-            Args:
-                backupset_object    (object)    --  instance of the backupset class
+        Args:
+            backupset_object: Instance of the backupset class associated with this subclient.
+            subclient_name: The name of the ContentStoreMailbox subclient.
+            subclient_id: Optional; the unique identifier for the subclient. If not provided, it will be determined automatically.
 
-                subclient_name      (str)       --  subclient name
-
-                subclient_id        (int)       --  subclient id
+        Example:
+            &gt;&gt;&gt; backupset = Backupset(commcell_object, &#39;ExchangeBackupset&#39;)
+            &gt;&gt;&gt; subclient = ContentStoreMailboxSubclient(backupset, &#39;MailboxSubclient1&#39;)
+            &gt;&gt;&gt; print(f&#34;Subclient created: {subclient}&#34;)
 
         &#34;&#34;&#34;
         super(
@@ -134,11 +150,16 @@ class ContentStoreMailboxSubclient(ExchangeSubclient):
 
         self.refresh()
 
-    def _get_content_store_assocaitions(self):
-        &#34;&#34;&#34;Gets the appropriate content store associations from the Subclient.
+    def _get_content_store_assocaitions(self) -&gt; list:
+        &#34;&#34;&#34;Retrieve the list of content store mailboxes associated with the subclient.
 
-            Returns:
-                list    -   list of content store mailbox associated with the subclient
+        Returns:
+            list: A list containing the content store mailboxes associated with this subclient.
+
+        Example:
+            &gt;&gt;&gt; subclient = ContentStoreMailboxSubclient()
+            &gt;&gt;&gt; associations = subclient._get_content_store_assocaitions()
+            &gt;&gt;&gt; print(f&#34;Associated mailboxes: {associations}&#34;)
 
         &#34;&#34;&#34;
         users = []
@@ -184,14 +205,24 @@ class ContentStoreMailboxSubclient(ExchangeSubclient):
         return users
 
     @staticmethod
-    def _get_client_dict(client_object):
-        &#34;&#34;&#34;Returns the client dict for the client object to be appended to member server.
+    def _get_client_dict(client_object: object) -&gt; dict:
+        &#34;&#34;&#34;Generate a dictionary representation for a given client object.
 
-            Args:
-                client_object   (object)    --  instance of the Client class
+        This static method creates a dictionary for the provided client object,
+        which can be used to associate the client with a member server.
 
-            Returns:
-                dict    -   dictionary for a single client to be associated
+        Args:
+            client_object: An instance of the Client class to be converted into a dictionary.
+
+        Returns:
+            dict: A dictionary containing information about the specified client.
+
+        Example:
+            &gt;&gt;&gt; client = Client(&#39;client_name&#39;)
+            &gt;&gt;&gt; client_dict = ContentStoreMailboxSubclient._get_client_dict(client)
+            &gt;&gt;&gt; print(client_dict)
+            {&#39;clientName&#39;: &#39;client_name&#39;, ...}
+
         &#34;&#34;&#34;
         client_dict = {
             &#34;clientName&#34;: client_object.client_name,
@@ -200,18 +231,24 @@ class ContentStoreMailboxSubclient(ExchangeSubclient):
 
         return client_dict
 
-    def _content_store_servers(self, clients_list):
-        &#34;&#34;&#34;Returns the proxy clients to be associated .
+    def _content_store_servers(self, clients_list: list) -&gt; list:
+        &#34;&#34;&#34;Return the list of proxy clients (member servers) to be associated.
 
-            Args:
-                clients_list (list)    --  list of the clients to associated
+        Args:
+            clients_list: List of client names or client objects to be associated as proxy clients.
 
-            Returns:
-                list - list consisting of all member servers to be associated
+        Returns:
+            List containing all member servers to be associated as proxy clients.
 
-            Raises:
-                SDKException:
-                    if type of clients list argument is not list
+        Raises:
+            SDKException: If the provided clients_list argument is not of type list.
+
+        Example:
+            &gt;&gt;&gt; subclient = ContentStoreMailboxSubclient()
+            &gt;&gt;&gt; servers = subclient._content_store_servers([&#39;ClientA&#39;, &#39;ClientB&#39;])
+            &gt;&gt;&gt; print(servers)
+            [&#39;ClientA&#39;, &#39;ClientB&#39;]
+
         &#34;&#34;&#34;
         if not isinstance(clients_list, list):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
@@ -246,35 +283,60 @@ class ContentStoreMailboxSubclient(ExchangeSubclient):
         return content_store_servers
 
     @property
-    def content_store_mailboxes(self):
-        &#34;&#34;&#34;&#34;Returns the list of discovered users for the UserMailbox subclient.&#34;&#34;&#34;
+    def content_store_mailboxes(self) -&gt; list:
+        &#34;&#34;&#34;Get the list of discovered users for the UserMailbox subclient.
+
+        Returns:
+            list: A list containing the discovered user mailboxes associated with this subclient.
+
+        Example:
+            &gt;&gt;&gt; subclient = ContentStoreMailboxSubclient()
+            &gt;&gt;&gt; users = subclient.content_store_mailboxes
+            &gt;&gt;&gt; print(f&#34;Discovered users: {users}&#34;)
+
+        &#34;&#34;&#34;
         return self._content_store_mailboxes
 
-    def set_contentstore_assocaition(self, subclient_content, use_policies=True):
-        &#34;&#34;&#34;Create User assocaition for UserMailboxSubclient.
+    def set_contentstore_assocaition(self, subclient_content: dict, use_policies: bool = True) -&gt; None:
+        &#34;&#34;&#34;Associate users with a UserMailboxSubclient using either policies or a plan.
 
-            Args:
-                subclient_content   (dict)  --  dict of the Users to add to the subclient
+        This method creates associations for user mailboxes in a ContentStoreMailboxSubclient.
+        The association can be configured using either archiving, cleanup, and retention policies,
+        or by specifying a plan, depending on the value of `use_policies`.
 
-                    subclient_content = {
+        Args:
+            subclient_content: Dictionary containing user and association details. The structure should be:
+                {
+                    &#39;mailboxNames&#39;: List of mailbox aliases (list of str),
+                    &#39;contentStoreClients&#39;: List of Content Store client names (list of str),
+                    # If use_policies is True:
+                    &#39;archive_policy&#39;: Name of the archiving policy (str),
+                    &#39;cleanup_policy&#39;: Name of the cleanup policy (str),
+                    &#39;retention_policy&#39;: Name of the retention policy (str),
+                    # If use_policies is False:
+                    &#39;plan_name&#39;: Name of the plan (str),
+                    &#39;plan_id&#39;: Optional plan ID (int or None)
+                }
+            use_policies: If True, uses the specified policies for association. If False, uses the specified plan.
 
-                        &#39;mailboxNames&#39; : [&#34;List of mailbox alias&#34;],,
-
-                        &#39;contentStoreClients&#39; : [List of Content Store clients],
-
-                        -- if use_policies is True --
-                        &#39;archive_policy&#39; : &#34;CIPLAN Archiving policy&#34;,
-
-                        &#39;cleanup_policy&#39; : &#39;CIPLAN Clean-up policy&#39;,
-
-                        &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;
-
-                        -- if use_policies is False --
-                        &#39;plan_name&#39;: Plan Name,
-                        &#39;plan_id&#39;: int or None (Optional)
-                    }
-
-                use_policies (bool) -- If True uses policies else uses Plan
+        Example:
+            &gt;&gt;&gt; subclient_content = {
+            ...     &#39;mailboxNames&#39;: [&#39;user1@domain.com&#39;, &#39;user2@domain.com&#39;],
+            ...     &#39;contentStoreClients&#39;: [&#39;CSClient1&#39;],
+            ...     &#39;archive_policy&#39;: &#39;ArchivePolicy1&#39;,
+            ...     &#39;cleanup_policy&#39;: &#39;CleanupPolicy1&#39;,
+            ...     &#39;retention_policy&#39;: &#39;RetentionPolicy1&#39;
+            ... }
+            &gt;&gt;&gt; subclient.set_contentstore_assocaition(subclient_content, use_policies=True)
+            &gt;&gt;&gt;
+            &gt;&gt;&gt; # Using a plan instead of policies
+            &gt;&gt;&gt; subclient_content = {
+            ...     &#39;mailboxNames&#39;: [&#39;user3@domain.com&#39;],
+            ...     &#39;contentStoreClients&#39;: [&#39;CSClient2&#39;],
+            ...     &#39;plan_name&#39;: &#39;MailboxPlanA&#39;,
+            ...     &#39;plan_id&#39;: 123
+            ... }
+            &gt;&gt;&gt; subclient.set_contentstore_assocaition(subclient_content, use_policies=False)
 
         &#34;&#34;&#34;
         users = []
@@ -412,8 +474,18 @@ class ContentStoreMailboxSubclient(ExchangeSubclient):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def refresh(self):
-        &#34;&#34;&#34;Refresh the User Mailbox Subclient.&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Reload the state of the User Mailbox Subclient.
+
+        This method refreshes the internal data and state of the User Mailbox Subclient,
+        ensuring that any changes made externally are reflected in the current instance.
+
+        Example:
+            &gt;&gt;&gt; subclient = ContentStoreMailboxSubclient()
+            &gt;&gt;&gt; subclient.refresh()
+            &gt;&gt;&gt; print(&#34;Subclient state refreshed successfully&#34;)
+
+        &#34;&#34;&#34;
         self._get_subclient_properties()
         self._content_store_mailboxes = self._get_content_store_assocaitions()</code></pre>
 </details>
@@ -429,48 +501,76 @@ class ContentStoreMailboxSubclient(ExchangeSubclient):
 <dl>
 <dt id="cvpysdk.subclients.exchange.contentstoremailbox_subclient.ContentStoreMailboxSubclient"><code class="flex name class">
 <span>class <span class="ident">ContentStoreMailboxSubclient</span></span>
-<span>(</span><span>backupset_object, subclient_name, subclient_id=None)</span>
+<span>(</span><span>backupset_object: object, subclient_name: str, subclient_id: int = None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Derived class from ExchangeSubclient Base class.</p>
-<p>This represents a contentstoremailbox subclient,
-and can perform discover and restore operations on only that subclient.</p>
-<p>Initialize the Instance object for the given ContentStoreMailbox Subclient.</p>
-<h2 id="args">Args</h2>
-<p>backupset_object
-(object)
-&ndash;
-instance of the backupset class</p>
-<p>subclient_name
-(str)
-&ndash;
-subclient name</p>
-<p>subclient_id
-(int)
-&ndash;
-subclient id</p></div>
+<div class="desc"><p>Specialized subclient class for managing Content Store Mailbox operations within Exchange environments.</p>
+<p>This class extends the ExchangeSubclient base class to provide targeted functionality for
+content store mailbox subclients. It enables discovery, association management, and restoration
+operations specific to content store mailboxes. The class is designed to interact with backup sets,
+manage mailbox associations, and refresh subclient data as needed.</p>
+<p>Key Features:
+- Initialization with backup set, subclient name, and subclient ID
+- Retrieval of content store associations
+- Generation of client dictionaries for mailbox management
+- Identification and management of content store servers from client lists
+- Property access to content store mailboxes
+- Setting content store associations with support for policy usage
+- Refreshing subclient data to ensure up-to-date information</p>
+<p>Initialize a ContentStoreMailboxSubclient instance.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>backupset_object</code></strong></dt>
+<dd>Instance of the backupset class associated with this subclient.</dd>
+<dt><strong><code>subclient_name</code></strong></dt>
+<dd>The name of the ContentStoreMailbox subclient.</dd>
+<dt><strong><code>subclient_id</code></strong></dt>
+<dd>Optional; the unique identifier for the subclient. If not provided, it will be determined automatically.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; backupset = Backupset(commcell_object, 'ExchangeBackupset')
+&gt;&gt;&gt; subclient = ContentStoreMailboxSubclient(backupset, 'MailboxSubclient1')
+&gt;&gt;&gt; print(f&quot;Subclient created: {subclient}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/contentstoremailbox_subclient.py#L51-L362" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/exchange/contentstoremailbox_subclient.py#L51-L441" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class ContentStoreMailboxSubclient(ExchangeSubclient):
-    &#34;&#34;&#34;Derived class from ExchangeSubclient Base class.
+    &#34;&#34;&#34;
+    Specialized subclient class for managing Content Store Mailbox operations within Exchange environments.
 
-        This represents a contentstoremailbox subclient,
-        and can perform discover and restore operations on only that subclient.
+    This class extends the ExchangeSubclient base class to provide targeted functionality for
+    content store mailbox subclients. It enables discovery, association management, and restoration
+    operations specific to content store mailboxes. The class is designed to interact with backup sets,
+    manage mailbox associations, and refresh subclient data as needed.
+
+    Key Features:
+        - Initialization with backup set, subclient name, and subclient ID
+        - Retrieval of content store associations
+        - Generation of client dictionaries for mailbox management
+        - Identification and management of content store servers from client lists
+        - Property access to content store mailboxes
+        - Setting content store associations with support for policy usage
+        - Refreshing subclient data to ensure up-to-date information
 
     &#34;&#34;&#34;
 
-    def __init__(self, backupset_object, subclient_name, subclient_id=None):
-        &#34;&#34;&#34;Initialize the Instance object for the given ContentStoreMailbox Subclient.
+    def __init__(self, backupset_object: object, subclient_name: str, subclient_id: int = None) -&gt; None:
+        &#34;&#34;&#34;Initialize a ContentStoreMailboxSubclient instance.
 
-            Args:
-                backupset_object    (object)    --  instance of the backupset class
+        Args:
+            backupset_object: Instance of the backupset class associated with this subclient.
+            subclient_name: The name of the ContentStoreMailbox subclient.
+            subclient_id: Optional; the unique identifier for the subclient. If not provided, it will be determined automatically.
 
-                subclient_name      (str)       --  subclient name
-
-                subclient_id        (int)       --  subclient id
+        Example:
+            &gt;&gt;&gt; backupset = Backupset(commcell_object, &#39;ExchangeBackupset&#39;)
+            &gt;&gt;&gt; subclient = ContentStoreMailboxSubclient(backupset, &#39;MailboxSubclient1&#39;)
+            &gt;&gt;&gt; print(f&#34;Subclient created: {subclient}&#34;)
 
         &#34;&#34;&#34;
         super(
@@ -484,11 +584,16 @@ subclient id</p></div>
 
         self.refresh()
 
-    def _get_content_store_assocaitions(self):
-        &#34;&#34;&#34;Gets the appropriate content store associations from the Subclient.
+    def _get_content_store_assocaitions(self) -&gt; list:
+        &#34;&#34;&#34;Retrieve the list of content store mailboxes associated with the subclient.
 
-            Returns:
-                list    -   list of content store mailbox associated with the subclient
+        Returns:
+            list: A list containing the content store mailboxes associated with this subclient.
+
+        Example:
+            &gt;&gt;&gt; subclient = ContentStoreMailboxSubclient()
+            &gt;&gt;&gt; associations = subclient._get_content_store_assocaitions()
+            &gt;&gt;&gt; print(f&#34;Associated mailboxes: {associations}&#34;)
 
         &#34;&#34;&#34;
         users = []
@@ -534,14 +639,24 @@ subclient id</p></div>
         return users
 
     @staticmethod
-    def _get_client_dict(client_object):
-        &#34;&#34;&#34;Returns the client dict for the client object to be appended to member server.
+    def _get_client_dict(client_object: object) -&gt; dict:
+        &#34;&#34;&#34;Generate a dictionary representation for a given client object.
 
-            Args:
-                client_object   (object)    --  instance of the Client class
+        This static method creates a dictionary for the provided client object,
+        which can be used to associate the client with a member server.
 
-            Returns:
-                dict    -   dictionary for a single client to be associated
+        Args:
+            client_object: An instance of the Client class to be converted into a dictionary.
+
+        Returns:
+            dict: A dictionary containing information about the specified client.
+
+        Example:
+            &gt;&gt;&gt; client = Client(&#39;client_name&#39;)
+            &gt;&gt;&gt; client_dict = ContentStoreMailboxSubclient._get_client_dict(client)
+            &gt;&gt;&gt; print(client_dict)
+            {&#39;clientName&#39;: &#39;client_name&#39;, ...}
+
         &#34;&#34;&#34;
         client_dict = {
             &#34;clientName&#34;: client_object.client_name,
@@ -550,18 +665,24 @@ subclient id</p></div>
 
         return client_dict
 
-    def _content_store_servers(self, clients_list):
-        &#34;&#34;&#34;Returns the proxy clients to be associated .
+    def _content_store_servers(self, clients_list: list) -&gt; list:
+        &#34;&#34;&#34;Return the list of proxy clients (member servers) to be associated.
 
-            Args:
-                clients_list (list)    --  list of the clients to associated
+        Args:
+            clients_list: List of client names or client objects to be associated as proxy clients.
 
-            Returns:
-                list - list consisting of all member servers to be associated
+        Returns:
+            List containing all member servers to be associated as proxy clients.
 
-            Raises:
-                SDKException:
-                    if type of clients list argument is not list
+        Raises:
+            SDKException: If the provided clients_list argument is not of type list.
+
+        Example:
+            &gt;&gt;&gt; subclient = ContentStoreMailboxSubclient()
+            &gt;&gt;&gt; servers = subclient._content_store_servers([&#39;ClientA&#39;, &#39;ClientB&#39;])
+            &gt;&gt;&gt; print(servers)
+            [&#39;ClientA&#39;, &#39;ClientB&#39;]
+
         &#34;&#34;&#34;
         if not isinstance(clients_list, list):
             raise SDKException(&#39;Subclient&#39;, &#39;101&#39;)
@@ -596,35 +717,60 @@ subclient id</p></div>
         return content_store_servers
 
     @property
-    def content_store_mailboxes(self):
-        &#34;&#34;&#34;&#34;Returns the list of discovered users for the UserMailbox subclient.&#34;&#34;&#34;
+    def content_store_mailboxes(self) -&gt; list:
+        &#34;&#34;&#34;Get the list of discovered users for the UserMailbox subclient.
+
+        Returns:
+            list: A list containing the discovered user mailboxes associated with this subclient.
+
+        Example:
+            &gt;&gt;&gt; subclient = ContentStoreMailboxSubclient()
+            &gt;&gt;&gt; users = subclient.content_store_mailboxes
+            &gt;&gt;&gt; print(f&#34;Discovered users: {users}&#34;)
+
+        &#34;&#34;&#34;
         return self._content_store_mailboxes
 
-    def set_contentstore_assocaition(self, subclient_content, use_policies=True):
-        &#34;&#34;&#34;Create User assocaition for UserMailboxSubclient.
+    def set_contentstore_assocaition(self, subclient_content: dict, use_policies: bool = True) -&gt; None:
+        &#34;&#34;&#34;Associate users with a UserMailboxSubclient using either policies or a plan.
 
-            Args:
-                subclient_content   (dict)  --  dict of the Users to add to the subclient
+        This method creates associations for user mailboxes in a ContentStoreMailboxSubclient.
+        The association can be configured using either archiving, cleanup, and retention policies,
+        or by specifying a plan, depending on the value of `use_policies`.
 
-                    subclient_content = {
+        Args:
+            subclient_content: Dictionary containing user and association details. The structure should be:
+                {
+                    &#39;mailboxNames&#39;: List of mailbox aliases (list of str),
+                    &#39;contentStoreClients&#39;: List of Content Store client names (list of str),
+                    # If use_policies is True:
+                    &#39;archive_policy&#39;: Name of the archiving policy (str),
+                    &#39;cleanup_policy&#39;: Name of the cleanup policy (str),
+                    &#39;retention_policy&#39;: Name of the retention policy (str),
+                    # If use_policies is False:
+                    &#39;plan_name&#39;: Name of the plan (str),
+                    &#39;plan_id&#39;: Optional plan ID (int or None)
+                }
+            use_policies: If True, uses the specified policies for association. If False, uses the specified plan.
 
-                        &#39;mailboxNames&#39; : [&#34;List of mailbox alias&#34;],,
-
-                        &#39;contentStoreClients&#39; : [List of Content Store clients],
-
-                        -- if use_policies is True --
-                        &#39;archive_policy&#39; : &#34;CIPLAN Archiving policy&#34;,
-
-                        &#39;cleanup_policy&#39; : &#39;CIPLAN Clean-up policy&#39;,
-
-                        &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;
-
-                        -- if use_policies is False --
-                        &#39;plan_name&#39;: Plan Name,
-                        &#39;plan_id&#39;: int or None (Optional)
-                    }
-
-                use_policies (bool) -- If True uses policies else uses Plan
+        Example:
+            &gt;&gt;&gt; subclient_content = {
+            ...     &#39;mailboxNames&#39;: [&#39;user1@domain.com&#39;, &#39;user2@domain.com&#39;],
+            ...     &#39;contentStoreClients&#39;: [&#39;CSClient1&#39;],
+            ...     &#39;archive_policy&#39;: &#39;ArchivePolicy1&#39;,
+            ...     &#39;cleanup_policy&#39;: &#39;CleanupPolicy1&#39;,
+            ...     &#39;retention_policy&#39;: &#39;RetentionPolicy1&#39;
+            ... }
+            &gt;&gt;&gt; subclient.set_contentstore_assocaition(subclient_content, use_policies=True)
+            &gt;&gt;&gt;
+            &gt;&gt;&gt; # Using a plan instead of policies
+            &gt;&gt;&gt; subclient_content = {
+            ...     &#39;mailboxNames&#39;: [&#39;user3@domain.com&#39;],
+            ...     &#39;contentStoreClients&#39;: [&#39;CSClient2&#39;],
+            ...     &#39;plan_name&#39;: &#39;MailboxPlanA&#39;,
+            ...     &#39;plan_id&#39;: 123
+            ... }
+            &gt;&gt;&gt; subclient.set_contentstore_assocaition(subclient_content, use_policies=False)
 
         &#34;&#34;&#34;
         users = []
@@ -762,8 +908,18 @@ subclient id</p></div>
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException(&#39;Response&#39;, &#39;101&#39;, response_string)
 
-    def refresh(self):
-        &#34;&#34;&#34;Refresh the User Mailbox Subclient.&#34;&#34;&#34;
+    def refresh(self) -&gt; None:
+        &#34;&#34;&#34;Reload the state of the User Mailbox Subclient.
+
+        This method refreshes the internal data and state of the User Mailbox Subclient,
+        ensuring that any changes made externally are reflected in the current instance.
+
+        Example:
+            &gt;&gt;&gt; subclient = ContentStoreMailboxSubclient()
+            &gt;&gt;&gt; subclient.refresh()
+            &gt;&gt;&gt; print(&#34;Subclient state refreshed successfully&#34;)
+
+        &#34;&#34;&#34;
         self._get_subclient_properties()
         self._content_store_mailboxes = self._get_content_store_assocaitions()</code></pre>
 </details>
@@ -774,17 +930,39 @@ subclient id</p></div>
 </ul>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.subclients.exchange.contentstoremailbox_subclient.ContentStoreMailboxSubclient.content_store_mailboxes"><code class="name">var <span class="ident">content_store_mailboxes</span></code></dt>
+<dt id="cvpysdk.subclients.exchange.contentstoremailbox_subclient.ContentStoreMailboxSubclient.content_store_mailboxes"><code class="name">var <span class="ident">content_store_mailboxes</span> : list</code></dt>
 <dd>
-<div class="desc"><p>"Returns the list of discovered users for the UserMailbox subclient.</p></div>
+<div class="desc"><p>Get the list of discovered users for the UserMailbox subclient.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>list</code></dt>
+<dd>A list containing the discovered user mailboxes associated with this subclient.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; subclient = ContentStoreMailboxSubclient()
+&gt;&gt;&gt; users = subclient.content_store_mailboxes
+&gt;&gt;&gt; print(f&quot;Discovered users: {users}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/contentstoremailbox_subclient.py#L192-L195" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/exchange/contentstoremailbox_subclient.py#L233-L247" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def content_store_mailboxes(self):
-    &#34;&#34;&#34;&#34;Returns the list of discovered users for the UserMailbox subclient.&#34;&#34;&#34;
+def content_store_mailboxes(self) -&gt; list:
+    &#34;&#34;&#34;Get the list of discovered users for the UserMailbox subclient.
+
+    Returns:
+        list: A list containing the discovered user mailboxes associated with this subclient.
+
+    Example:
+        &gt;&gt;&gt; subclient = ContentStoreMailboxSubclient()
+        &gt;&gt;&gt; users = subclient.content_store_mailboxes
+        &gt;&gt;&gt; print(f&#34;Discovered users: {users}&#34;)
+
+    &#34;&#34;&#34;
     return self._content_store_mailboxes</code></pre>
 </details>
 </dd>
@@ -792,80 +970,131 @@ def content_store_mailboxes(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.subclients.exchange.contentstoremailbox_subclient.ContentStoreMailboxSubclient.refresh"><code class="name flex">
-<span>def <span class="ident">refresh</span></span>(<span>self)</span>
+<span>def <span class="ident">refresh</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Refresh the User Mailbox Subclient.</p></div>
+<div class="desc"><p>Reload the state of the User Mailbox Subclient.</p>
+<p>This method refreshes the internal data and state of the User Mailbox Subclient,
+ensuring that any changes made externally are reflected in the current instance.</p>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; subclient = ContentStoreMailboxSubclient()
+&gt;&gt;&gt; subclient.refresh()
+&gt;&gt;&gt; print(&quot;Subclient state refreshed successfully&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/contentstoremailbox_subclient.py#L359-L362" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/exchange/contentstoremailbox_subclient.py#L427-L441" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def refresh(self):
-    &#34;&#34;&#34;Refresh the User Mailbox Subclient.&#34;&#34;&#34;
+<pre><code class="python">def refresh(self) -&gt; None:
+    &#34;&#34;&#34;Reload the state of the User Mailbox Subclient.
+
+    This method refreshes the internal data and state of the User Mailbox Subclient,
+    ensuring that any changes made externally are reflected in the current instance.
+
+    Example:
+        &gt;&gt;&gt; subclient = ContentStoreMailboxSubclient()
+        &gt;&gt;&gt; subclient.refresh()
+        &gt;&gt;&gt; print(&#34;Subclient state refreshed successfully&#34;)
+
+    &#34;&#34;&#34;
     self._get_subclient_properties()
     self._content_store_mailboxes = self._get_content_store_assocaitions()</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.subclients.exchange.contentstoremailbox_subclient.ContentStoreMailboxSubclient.set_contentstore_assocaition"><code class="name flex">
-<span>def <span class="ident">set_contentstore_assocaition</span></span>(<span>self, subclient_content, use_policies=True)</span>
+<span>def <span class="ident">set_contentstore_assocaition</span></span>(<span>self, subclient_content: dict, use_policies: bool = True) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Create User assocaition for UserMailboxSubclient.</p>
-<h2 id="args">Args</h2>
-<p>subclient_content
-(dict)
-&ndash;
-dict of the Users to add to the subclient</p>
-<pre><code>subclient_content = {
-
-    'mailboxNames' : ["List of mailbox alias"],,
-
-    'contentStoreClients' : [List of Content Store clients],
-
-    -- if use_policies is True --
-    'archive_policy' : "CIPLAN Archiving policy",
-
-    'cleanup_policy' : 'CIPLAN Clean-up policy',
-
-    'retention_policy': 'CIPLAN Retention policy'
-
-    -- if use_policies is False --
-    'plan_name': Plan Name,
-    'plan_id': int or None (Optional)
-}
-</code></pre>
-<p>use_policies (bool) &ndash; If True uses policies else uses Plan</p></div>
+<div class="desc"><p>Associate users with a UserMailboxSubclient using either policies or a plan.</p>
+<p>This method creates associations for user mailboxes in a ContentStoreMailboxSubclient.
+The association can be configured using either archiving, cleanup, and retention policies,
+or by specifying a plan, depending on the value of <code>use_policies</code>.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>subclient_content</code></strong></dt>
+<dd>Dictionary containing user and association details. The structure should be:
+{
+'mailboxNames': List of mailbox aliases (list of str),
+'contentStoreClients': List of Content Store client names (list of str),
+# If use_policies is True:
+'archive_policy': Name of the archiving policy (str),
+'cleanup_policy': Name of the cleanup policy (str),
+'retention_policy': Name of the retention policy (str),
+# If use_policies is False:
+'plan_name': Name of the plan (str),
+'plan_id': Optional plan ID (int or None)
+}</dd>
+<dt><strong><code>use_policies</code></strong></dt>
+<dd>If True, uses the specified policies for association. If False, uses the specified plan.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; subclient_content = {
+...     'mailboxNames': ['user1@domain.com', 'user2@domain.com'],
+...     'contentStoreClients': ['CSClient1'],
+...     'archive_policy': 'ArchivePolicy1',
+...     'cleanup_policy': 'CleanupPolicy1',
+...     'retention_policy': 'RetentionPolicy1'
+... }
+&gt;&gt;&gt; subclient.set_contentstore_assocaition(subclient_content, use_policies=True)
+&gt;&gt;&gt;
+&gt;&gt;&gt; # Using a plan instead of policies
+&gt;&gt;&gt; subclient_content = {
+...     'mailboxNames': ['user3@domain.com'],
+...     'contentStoreClients': ['CSClient2'],
+...     'plan_name': 'MailboxPlanA',
+...     'plan_id': 123
+... }
+&gt;&gt;&gt; subclient.set_contentstore_assocaition(subclient_content, use_policies=False)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/subclients/exchange/contentstoremailbox_subclient.py#L197-L357" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/subclients/exchange/contentstoremailbox_subclient.py#L249-L425" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def set_contentstore_assocaition(self, subclient_content, use_policies=True):
-    &#34;&#34;&#34;Create User assocaition for UserMailboxSubclient.
+<pre><code class="python">def set_contentstore_assocaition(self, subclient_content: dict, use_policies: bool = True) -&gt; None:
+    &#34;&#34;&#34;Associate users with a UserMailboxSubclient using either policies or a plan.
 
-        Args:
-            subclient_content   (dict)  --  dict of the Users to add to the subclient
+    This method creates associations for user mailboxes in a ContentStoreMailboxSubclient.
+    The association can be configured using either archiving, cleanup, and retention policies,
+    or by specifying a plan, depending on the value of `use_policies`.
 
-                subclient_content = {
+    Args:
+        subclient_content: Dictionary containing user and association details. The structure should be:
+            {
+                &#39;mailboxNames&#39;: List of mailbox aliases (list of str),
+                &#39;contentStoreClients&#39;: List of Content Store client names (list of str),
+                # If use_policies is True:
+                &#39;archive_policy&#39;: Name of the archiving policy (str),
+                &#39;cleanup_policy&#39;: Name of the cleanup policy (str),
+                &#39;retention_policy&#39;: Name of the retention policy (str),
+                # If use_policies is False:
+                &#39;plan_name&#39;: Name of the plan (str),
+                &#39;plan_id&#39;: Optional plan ID (int or None)
+            }
+        use_policies: If True, uses the specified policies for association. If False, uses the specified plan.
 
-                    &#39;mailboxNames&#39; : [&#34;List of mailbox alias&#34;],,
-
-                    &#39;contentStoreClients&#39; : [List of Content Store clients],
-
-                    -- if use_policies is True --
-                    &#39;archive_policy&#39; : &#34;CIPLAN Archiving policy&#34;,
-
-                    &#39;cleanup_policy&#39; : &#39;CIPLAN Clean-up policy&#39;,
-
-                    &#39;retention_policy&#39;: &#39;CIPLAN Retention policy&#39;
-
-                    -- if use_policies is False --
-                    &#39;plan_name&#39;: Plan Name,
-                    &#39;plan_id&#39;: int or None (Optional)
-                }
-
-            use_policies (bool) -- If True uses policies else uses Plan
+    Example:
+        &gt;&gt;&gt; subclient_content = {
+        ...     &#39;mailboxNames&#39;: [&#39;user1@domain.com&#39;, &#39;user2@domain.com&#39;],
+        ...     &#39;contentStoreClients&#39;: [&#39;CSClient1&#39;],
+        ...     &#39;archive_policy&#39;: &#39;ArchivePolicy1&#39;,
+        ...     &#39;cleanup_policy&#39;: &#39;CleanupPolicy1&#39;,
+        ...     &#39;retention_policy&#39;: &#39;RetentionPolicy1&#39;
+        ... }
+        &gt;&gt;&gt; subclient.set_contentstore_assocaition(subclient_content, use_policies=True)
+        &gt;&gt;&gt;
+        &gt;&gt;&gt; # Using a plan instead of policies
+        &gt;&gt;&gt; subclient_content = {
+        ...     &#39;mailboxNames&#39;: [&#39;user3@domain.com&#39;],
+        ...     &#39;contentStoreClients&#39;: [&#39;CSClient2&#39;],
+        ...     &#39;plan_name&#39;: &#39;MailboxPlanA&#39;,
+        ...     &#39;plan_id&#39;: 123
+        ... }
+        &gt;&gt;&gt; subclient.set_contentstore_assocaition(subclient_content, use_policies=False)
 
     &#34;&#34;&#34;
     users = []
@@ -1010,9 +1239,11 @@ dict of the Users to add to the subclient</p>
 <li><code><b><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient" href="../exchsubclient.html#cvpysdk.subclients.exchsubclient.ExchangeSubclient">ExchangeSubclient</a></b></code>:
 <ul class="hlist">
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.ad_group_backup" href="../exchsubclient.html#cvpysdk.subclients.exchsubclient.ExchangeSubclient.ad_group_backup">ad_group_backup</a></code></li>
+<li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.additional_settings" href="../../subclient.html#cvpysdk.subclient.Subclient.additional_settings">additional_settings</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.allow_multiple_readers" href="../../subclient.html#cvpysdk.subclient.Subclient.allow_multiple_readers">allow_multiple_readers</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.backup" href="../../subclient.html#cvpysdk.subclient.Subclient.backup">backup</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.browse" href="../../subclient.html#cvpysdk.subclient.Subclient.browse">browse</a></code></li>
+<li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.browse_Cosmos_Content" href="../../subclient.html#cvpysdk.subclient.Subclient.browse_Cosmos_Content">browse_Cosmos_Content</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.cleanup" href="../exchsubclient.html#cvpysdk.subclients.exchsubclient.ExchangeSubclient.cleanup">cleanup</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.data_readers" href="../../subclient.html#cvpysdk.subclient.Subclient.data_readers">data_readers</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.deduplication_options" href="../../subclient.html#cvpysdk.subclient.Subclient.deduplication_options">deduplication_options</a></code></li>
@@ -1042,6 +1273,8 @@ dict of the Users to add to the subclient</p>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.is_trueup_enabled" href="../../subclient.html#cvpysdk.subclient.Subclient.is_trueup_enabled">is_trueup_enabled</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.last_backup_time" href="../../subclient.html#cvpysdk.subclient.Subclient.last_backup_time">last_backup_time</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.list_media" href="../../subclient.html#cvpysdk.subclient.Subclient.list_media">list_media</a></code></li>
+<li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.live_update_job" href="../exchsubclient.html#cvpysdk.subclients.exchsubclient.ExchangeSubclient.live_update_job">live_update_job</a></code></li>
+<li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.msg_restore" href="../exchsubclient.html#cvpysdk.subclients.exchsubclient.ExchangeSubclient.msg_restore">msg_restore</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.name" href="../../subclient.html#cvpysdk.subclient.Subclient.name">name</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.network_agent" href="../../subclient.html#cvpysdk.subclient.Subclient.network_agent">network_agent</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.next_backup_time" href="../../subclient.html#cvpysdk.subclient.Subclient.next_backup_time">next_backup_time</a></code></li>
@@ -1056,6 +1289,7 @@ dict of the Users to add to the subclient</p>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.restore_out_of_place" href="../../subclient.html#cvpysdk.subclient.Subclient.restore_out_of_place">restore_out_of_place</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.run_content_indexing" href="../../subclient.html#cvpysdk.subclient.Subclient.run_content_indexing">run_content_indexing</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.set_backup_nodes" href="../../subclient.html#cvpysdk.subclient.Subclient.set_backup_nodes">set_backup_nodes</a></code></li>
+<li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.set_proxy_for_backup_copy" href="../../subclient.html#cvpysdk.subclient.Subclient.set_proxy_for_backup_copy">set_proxy_for_backup_copy</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.set_proxy_for_snap" href="../../subclient.html#cvpysdk.subclient.Subclient.set_proxy_for_snap">set_proxy_for_snap</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.snapshot_engine_name" href="../../subclient.html#cvpysdk.subclient.Subclient.snapshot_engine_name">snapshot_engine_name</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.software_compression" href="../../subclient.html#cvpysdk.subclient.Subclient.software_compression">software_compression</a></code></li>
@@ -1066,7 +1300,9 @@ dict of the Users to add to the subclient</p>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.subclient_guid" href="../../subclient.html#cvpysdk.subclient.Subclient.subclient_guid">subclient_guid</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.subclient_id" href="../../subclient.html#cvpysdk.subclient.Subclient.subclient_id">subclient_id</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.subclient_name" href="../../subclient.html#cvpysdk.subclient.Subclient.subclient_name">subclient_name</a></code></li>
+<li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.unset_proxy_for_backup_copy" href="../../subclient.html#cvpysdk.subclient.Subclient.unset_proxy_for_backup_copy">unset_proxy_for_backup_copy</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.unset_proxy_for_snap" href="../../subclient.html#cvpysdk.subclient.Subclient.unset_proxy_for_snap">unset_proxy_for_snap</a></code></li>
+<li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.update_atlas_instance" href="../../subclient.html#cvpysdk.subclient.Subclient.update_atlas_instance">update_atlas_instance</a></code></li>
 <li><code><a title="cvpysdk.subclients.exchsubclient.ExchangeSubclient.update_properties" href="../../subclient.html#cvpysdk.subclient.Subclient.update_properties">update_properties</a></code></li>
 </ul>
 </li>

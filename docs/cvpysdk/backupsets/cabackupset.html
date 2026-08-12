@@ -28,7 +28,8 @@
 <p>CloudAppsBackupset:
 Derived class from Backuset Base class, representing a
 cloud apps backupset, and to perform operations on that backupset</p>
-<h2 id="cloudappsbackupset">Cloudappsbackupset</h2>
+<p>Cloudappsbackupset
+-----=</p>
 <p><strong>new</strong>()
 &ndash;
 Method to create object based on specific cloud apps instance type</p>
@@ -52,7 +53,7 @@ Method to create object based on specific cloud apps instance type</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/backupsets/cabackupset.py#L1-L76" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/backupsets/cabackupset.py#L1-L113" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -109,12 +110,47 @@ To add a new Backupset for Cloud Apps agent, please follow these steps:
 from __future__ import unicode_literals
 
 from ..backupset import Backupset
-
+from typing import Any, Optional
 
 class CloudAppsBackupset(Backupset):
-    &#34;&#34;&#34;Class for representing a Backupset of the Cloud Apps agent.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents a backup set for the Cloud Apps agent.
 
-    def __new__(cls, instance_object, backupset_name, backupset_id=None):
+    This class is designed to encapsulate the properties and behaviors associated
+    with a backup set specific to cloud applications. It provides mechanisms for
+    instantiating backup set objects with relevant details such as the associated
+    instance, backup set name, and backup set ID.
+
+    Key Features:
+        - Creation of Cloud Apps backup set instances
+        - Association with a specific instance object
+        - Identification via backup set name and ID
+
+    &#34;&#34;&#34;
+
+    def __new__(cls, instance_object: Any, backupset_name: str, backupset_id: Optional[str] = None) -&gt; Any:
+        &#34;&#34;&#34;Create a new CloudAppsBackupset or its specialized subclass based on the instance type.
+
+        This method dynamically selects the appropriate backupset class (such as SalesforceBackupset)
+        depending on the cloud application instance type found in the provided instance_object.
+
+        Args:
+            instance_object: The object representing the cloud application instance, containing properties
+                used to determine the backupset type.
+            backupset_name: The name of the backupset as a string.
+            backupset_id: Optional identifier for the backupset.
+
+        Returns:
+            An instance of the appropriate backupset class, such as SalesforceBackupset, or CloudAppsBackupset
+            if no specialized type matches.
+
+        Example:
+            &gt;&gt;&gt; # Assuming instance_object is initialized and contains the required properties
+            &gt;&gt;&gt; backupset = CloudAppsBackupset(instance_object, &#34;Salesforce_Backupset&#34;)
+            &gt;&gt;&gt; print(type(backupset))
+            &gt;&gt;&gt; # The returned object will be of the correct backupset subclass based on instance type
+
+        &#34;&#34;&#34;
 
         from .cloudapps.salesforce_backupset import SalesforceBackupset
 
@@ -143,36 +179,79 @@ class CloudAppsBackupset(Backupset):
 <dl>
 <dt id="cvpysdk.backupsets.cabackupset.CloudAppsBackupset"><code class="flex name class">
 <span>class <span class="ident">CloudAppsBackupset</span></span>
-<span>(</span><span>instance_object, backupset_name, backupset_id=None)</span>
+<span>(</span><span>instance_object: object, backupset_name: str, backupset_id: str = None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class for representing a Backupset of the Cloud Apps agent.</p>
-<p>Initialise the backupset object.</p>
-<h2 id="args">Args</h2>
-<p>instance_object
-(object)
-&ndash;
-instance of the Instance class</p>
-<p>backupset_name
-(str)
-&ndash;
-name of the backupset</p>
-<p>backupset_id
-(str)
-&ndash;
-id of the backupset
-default: None</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Backupset class</p></div>
+<div class="desc"><p>Represents a backup set for the Cloud Apps agent.</p>
+<p>This class is designed to encapsulate the properties and behaviors associated
+with a backup set specific to cloud applications. It provides mechanisms for
+instantiating backup set objects with relevant details such as the associated
+instance, backup set name, and backup set ID.</p>
+<p>Key Features:
+- Creation of Cloud Apps backup set instances
+- Association with a specific instance object
+- Identification via backup set name and ID</p>
+<p>Initialize a Backupset object.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>instance_object</code></strong></dt>
+<dd>An instance of the Instance class to which this backupset belongs.</dd>
+<dt><strong><code>backupset_name</code></strong></dt>
+<dd>The name of the backupset.</dd>
+<dt><strong><code>backupset_id</code></strong></dt>
+<dd>The unique identifier for the backupset. If not provided, it will be determined automatically.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; instance = Instance(commcell_object, &quot;FileSystem&quot;)
+&gt;&gt;&gt; backupset = Backupset(instance, &quot;defaultBackupSet&quot;)
+&gt;&gt;&gt; print(f&quot;Backupset created: {backupset}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/backupsets/cabackupset.py#L58-L76" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/backupsets/cabackupset.py#L58-L113" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class CloudAppsBackupset(Backupset):
-    &#34;&#34;&#34;Class for representing a Backupset of the Cloud Apps agent.&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    Represents a backup set for the Cloud Apps agent.
 
-    def __new__(cls, instance_object, backupset_name, backupset_id=None):
+    This class is designed to encapsulate the properties and behaviors associated
+    with a backup set specific to cloud applications. It provides mechanisms for
+    instantiating backup set objects with relevant details such as the associated
+    instance, backup set name, and backup set ID.
+
+    Key Features:
+        - Creation of Cloud Apps backup set instances
+        - Association with a specific instance object
+        - Identification via backup set name and ID
+
+    &#34;&#34;&#34;
+
+    def __new__(cls, instance_object: Any, backupset_name: str, backupset_id: Optional[str] = None) -&gt; Any:
+        &#34;&#34;&#34;Create a new CloudAppsBackupset or its specialized subclass based on the instance type.
+
+        This method dynamically selects the appropriate backupset class (such as SalesforceBackupset)
+        depending on the cloud application instance type found in the provided instance_object.
+
+        Args:
+            instance_object: The object representing the cloud application instance, containing properties
+                used to determine the backupset type.
+            backupset_name: The name of the backupset as a string.
+            backupset_id: Optional identifier for the backupset.
+
+        Returns:
+            An instance of the appropriate backupset class, such as SalesforceBackupset, or CloudAppsBackupset
+            if no specialized type matches.
+
+        Example:
+            &gt;&gt;&gt; # Assuming instance_object is initialized and contains the required properties
+            &gt;&gt;&gt; backupset = CloudAppsBackupset(instance_object, &#34;Salesforce_Backupset&#34;)
+            &gt;&gt;&gt; print(type(backupset))
+            &gt;&gt;&gt; # The returned object will be of the correct backupset subclass based on instance type
+
+        &#34;&#34;&#34;
 
         from .cloudapps.salesforce_backupset import SalesforceBackupset
 

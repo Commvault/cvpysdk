@@ -28,14 +28,15 @@
 <p>HANABackupset:
 Derived class from Backupset Base class, representing a SAP HANA backupset,
 and to perform operations on that subclient</p>
-<h2 id="hanabackupset">Hanabackupset</h2>
+<p>Hanabackupset
+-----=</p>
 <p>restore()
 &ndash;
 runs the restore job for specified backupset</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/backupsets/hanabackupset.py#L1-L123" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/backupsets/hanabackupset.py#L1-L131" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># -*- coding: utf-8 -*-
 
@@ -73,71 +74,77 @@ from __future__ import unicode_literals
 
 from ..backupset import Backupset
 from ..exception import SDKException
-
+from typing import Union, Optional
 
 class HANABackupset(Backupset):
-    &#34;&#34;&#34;Derived class from Backupset Base class, representing a SAP HANA backupset,
-        and to perform operations on that backupset.
+    &#34;&#34;&#34;
+    Represents a SAP HANA backupset, extending the Backupset base class.
+
+    This class provides specialized functionality for managing SAP HANA backupsets,
+    including performing restore operations with various configuration options.
+    It is designed to facilitate backupset management and restoration tasks
+    specific to SAP HANA environments.
+
+    Key Features:
+        - Restore SAP HANA backupsets to specified instances and directories
+        - Support for point-in-time restores
+        - Options to initialize log area and use hardware revert
+        - Ability to clone environments and check access during restore
+        - Configurable destination instance directory and delta backup handling
+
     &#34;&#34;&#34;
 
     def restore(
             self,
-            pseudo_client,
-            instance,
-            backup_prefix=None,
-            point_in_time=None,
-            initialize_log_area=False,
-            use_hardware_revert=False,
-            clone_env=False,
-            check_access=True,
-            destination_instance_dir=None,
-            ignore_delta_backups=True):
-        &#34;&#34;&#34;Restores the databases specified in the input paths list.
+            pseudo_client: str,
+            instance: Union[str, &#39;Instance&#39;],
+            backup_prefix: Optional[str] = None,
+            point_in_time: Optional[str] = None,
+            initialize_log_area: bool = False,
+            use_hardware_revert: bool = False,
+            clone_env: bool = False,
+            check_access: bool = True,
+            destination_instance_dir: Optional[str] = None,
+            ignore_delta_backups: bool = True
+        ) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;Restore HANA databases to a specified client and instance.
 
-            Args:
-                pseudo_client               (str)   --  HANA client to restore the database at
+        This method initiates a restore operation for HANA databases, allowing customization of restore options such as point-in-time recovery, hardware revert, cloning, and log area initialization.
 
-                instance                    (str)   --  destination instance to restore the db at
+        Args:
+            pseudo_client: Name of the HANA client where the database will be restored.
+            instance: Destination instance for the restore operation. Can be a string or an Instance object.
+            backup_prefix: Optional prefix of the backup job to restore from.
+            point_in_time: Optional timestamp to restore the database to a specific point in time.
+            initialize_log_area: Whether to initialize the new log area after restore. Default is False.
+            use_hardware_revert: Whether to perform a hardware revert during restore. Default is False.
+            clone_env: Whether to clone the database environment during restore. Default is False.
+            check_access: Whether to check access permissions during restore. Default is True.
+            destination_instance_dir: Optional HANA data directory for cross-instance or cross-machine restores.
+            ignore_delta_backups: Whether to ignore delta backups during restore. Default is True.
 
-                backup_prefix               (str)   --  prefix of the backup job
-                    default: None
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                point_in_time               (str)   --  time to which db should be restored to
-                    default: None
+        Raises:
+            SDKException: If the instance parameter is not a string or Instance object, or if the restore response is empty or unsuccessful.
 
-                initialize_log_area         (bool)  --  boolean to specify whether to initialize
-                                                            the new log area after restore
-                    default: False
-
-                use_hardware_revert         (bool)  --  boolean to specify whether to do a
-                                                            hardware revert in restore
-                    default: False
-
-                clone_env                   (bool)  --  boolean to specify whether the database
-                                                            should be cloned or not
-                    default: False
-
-                check_access                (bool)  --  check access during restore or not
-                    default: True
-
-                destination_instance_dir    (str)   --  HANA data directory for snap cross instance
-                                                            restore or cross machine restores
-                    default: None
-
-                ignore_delta_backups        (bool)  --  whether to ignore delta backups during
-                                                            restore or not
-                    default: True
-
-            Returns:
-                object  -   instance of the Job class for this restore job
-
-            Raises:
-                SDKException:
-                    if instance is not a string or object
-
-                    if response is empty
-
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; # Restore a HANA database to a specific client and instance
+            &gt;&gt;&gt; backupset = HANABackupset(...)
+            &gt;&gt;&gt; job = backupset.restore(
+            ...     pseudo_client=&#34;hana_client1&#34;,
+            ...     instance=&#34;hana_instance1&#34;,
+            ...     backup_prefix=&#34;daily_backup&#34;,
+            ...     point_in_time=&#34;2024-06-01 12:00:00&#34;,
+            ...     initialize_log_area=True,
+            ...     use_hardware_revert=False,
+            ...     clone_env=False,
+            ...     check_access=True,
+            ...     destination_instance_dir=&#34;/hana/data&#34;,
+            ...     ignore_delta_backups=True
+            ... )
+            &gt;&gt;&gt; print(f&#34;Restore job started: {job}&#34;)
 
         &#34;&#34;&#34;
         from ..instance import Instance
@@ -173,96 +180,111 @@ class HANABackupset(Backupset):
 <dl>
 <dt id="cvpysdk.backupsets.hanabackupset.HANABackupset"><code class="flex name class">
 <span>class <span class="ident">HANABackupset</span></span>
-<span>(</span><span>instance_object, backupset_name, backupset_id=None)</span>
+<span>(</span><span>instance_object: object, backupset_name: str, backupset_id: str = None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Derived class from Backupset Base class, representing a SAP HANA backupset,
-and to perform operations on that backupset.</p>
-<p>Initialise the backupset object.</p>
-<h2 id="args">Args</h2>
-<p>instance_object
-(object)
-&ndash;
-instance of the Instance class</p>
-<p>backupset_name
-(str)
-&ndash;
-name of the backupset</p>
-<p>backupset_id
-(str)
-&ndash;
-id of the backupset
-default: None</p>
-<h2 id="returns">Returns</h2>
-<p>object - instance of the Backupset class</p></div>
+<div class="desc"><p>Represents a SAP HANA backupset, extending the Backupset base class.</p>
+<p>This class provides specialized functionality for managing SAP HANA backupsets,
+including performing restore operations with various configuration options.
+It is designed to facilitate backupset management and restoration tasks
+specific to SAP HANA environments.</p>
+<p>Key Features:
+- Restore SAP HANA backupsets to specified instances and directories
+- Support for point-in-time restores
+- Options to initialize log area and use hardware revert
+- Ability to clone environments and check access during restore
+- Configurable destination instance directory and delta backup handling</p>
+<p>Initialize a Backupset object.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>instance_object</code></strong></dt>
+<dd>An instance of the Instance class to which this backupset belongs.</dd>
+<dt><strong><code>backupset_name</code></strong></dt>
+<dd>The name of the backupset.</dd>
+<dt><strong><code>backupset_id</code></strong></dt>
+<dd>The unique identifier for the backupset. If not provided, it will be determined automatically.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; instance = Instance(commcell_object, &quot;FileSystem&quot;)
+&gt;&gt;&gt; backupset = Backupset(instance, &quot;defaultBackupSet&quot;)
+&gt;&gt;&gt; print(f&quot;Backupset created: {backupset}&quot;)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/backupsets/hanabackupset.py#L39-L123" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/backupsets/hanabackupset.py#L39-L131" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class HANABackupset(Backupset):
-    &#34;&#34;&#34;Derived class from Backupset Base class, representing a SAP HANA backupset,
-        and to perform operations on that backupset.
+    &#34;&#34;&#34;
+    Represents a SAP HANA backupset, extending the Backupset base class.
+
+    This class provides specialized functionality for managing SAP HANA backupsets,
+    including performing restore operations with various configuration options.
+    It is designed to facilitate backupset management and restoration tasks
+    specific to SAP HANA environments.
+
+    Key Features:
+        - Restore SAP HANA backupsets to specified instances and directories
+        - Support for point-in-time restores
+        - Options to initialize log area and use hardware revert
+        - Ability to clone environments and check access during restore
+        - Configurable destination instance directory and delta backup handling
+
     &#34;&#34;&#34;
 
     def restore(
             self,
-            pseudo_client,
-            instance,
-            backup_prefix=None,
-            point_in_time=None,
-            initialize_log_area=False,
-            use_hardware_revert=False,
-            clone_env=False,
-            check_access=True,
-            destination_instance_dir=None,
-            ignore_delta_backups=True):
-        &#34;&#34;&#34;Restores the databases specified in the input paths list.
+            pseudo_client: str,
+            instance: Union[str, &#39;Instance&#39;],
+            backup_prefix: Optional[str] = None,
+            point_in_time: Optional[str] = None,
+            initialize_log_area: bool = False,
+            use_hardware_revert: bool = False,
+            clone_env: bool = False,
+            check_access: bool = True,
+            destination_instance_dir: Optional[str] = None,
+            ignore_delta_backups: bool = True
+        ) -&gt; &#39;Job&#39;:
+        &#34;&#34;&#34;Restore HANA databases to a specified client and instance.
 
-            Args:
-                pseudo_client               (str)   --  HANA client to restore the database at
+        This method initiates a restore operation for HANA databases, allowing customization of restore options such as point-in-time recovery, hardware revert, cloning, and log area initialization.
 
-                instance                    (str)   --  destination instance to restore the db at
+        Args:
+            pseudo_client: Name of the HANA client where the database will be restored.
+            instance: Destination instance for the restore operation. Can be a string or an Instance object.
+            backup_prefix: Optional prefix of the backup job to restore from.
+            point_in_time: Optional timestamp to restore the database to a specific point in time.
+            initialize_log_area: Whether to initialize the new log area after restore. Default is False.
+            use_hardware_revert: Whether to perform a hardware revert during restore. Default is False.
+            clone_env: Whether to clone the database environment during restore. Default is False.
+            check_access: Whether to check access permissions during restore. Default is True.
+            destination_instance_dir: Optional HANA data directory for cross-instance or cross-machine restores.
+            ignore_delta_backups: Whether to ignore delta backups during restore. Default is True.
 
-                backup_prefix               (str)   --  prefix of the backup job
-                    default: None
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                point_in_time               (str)   --  time to which db should be restored to
-                    default: None
+        Raises:
+            SDKException: If the instance parameter is not a string or Instance object, or if the restore response is empty or unsuccessful.
 
-                initialize_log_area         (bool)  --  boolean to specify whether to initialize
-                                                            the new log area after restore
-                    default: False
-
-                use_hardware_revert         (bool)  --  boolean to specify whether to do a
-                                                            hardware revert in restore
-                    default: False
-
-                clone_env                   (bool)  --  boolean to specify whether the database
-                                                            should be cloned or not
-                    default: False
-
-                check_access                (bool)  --  check access during restore or not
-                    default: True
-
-                destination_instance_dir    (str)   --  HANA data directory for snap cross instance
-                                                            restore or cross machine restores
-                    default: None
-
-                ignore_delta_backups        (bool)  --  whether to ignore delta backups during
-                                                            restore or not
-                    default: True
-
-            Returns:
-                object  -   instance of the Job class for this restore job
-
-            Raises:
-                SDKException:
-                    if instance is not a string or object
-
-                    if response is empty
-
-                    if response is not success
+        Example:
+            &gt;&gt;&gt; # Restore a HANA database to a specific client and instance
+            &gt;&gt;&gt; backupset = HANABackupset(...)
+            &gt;&gt;&gt; job = backupset.restore(
+            ...     pseudo_client=&#34;hana_client1&#34;,
+            ...     instance=&#34;hana_instance1&#34;,
+            ...     backup_prefix=&#34;daily_backup&#34;,
+            ...     point_in_time=&#34;2024-06-01 12:00:00&#34;,
+            ...     initialize_log_area=True,
+            ...     use_hardware_revert=False,
+            ...     clone_env=False,
+            ...     check_access=True,
+            ...     destination_instance_dir=&#34;/hana/data&#34;,
+            ...     ignore_delta_backups=True
+            ... )
+            &gt;&gt;&gt; print(f&#34;Restore job started: {job}&#34;)
 
         &#34;&#34;&#34;
         from ..instance import Instance
@@ -293,138 +315,117 @@ default: None</p>
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.backupsets.hanabackupset.HANABackupset.restore"><code class="name flex">
-<span>def <span class="ident">restore</span></span>(<span>self, pseudo_client, instance, backup_prefix=None, point_in_time=None, initialize_log_area=False, use_hardware_revert=False, clone_env=False, check_access=True, destination_instance_dir=None, ignore_delta_backups=True)</span>
+<span>def <span class="ident">restore</span></span>(<span>self, pseudo_client: str, instance: Union[str, ForwardRef('Instance')], backup_prefix: Optional[str] = None, point_in_time: Optional[str] = None, initialize_log_area: bool = False, use_hardware_revert: bool = False, clone_env: bool = False, check_access: bool = True, destination_instance_dir: Optional[str] = None, ignore_delta_backups: bool = True) ‑> Job</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Restores the databases specified in the input paths list.</p>
-<h2 id="args">Args</h2>
-<p>pseudo_client
-(str)
-&ndash;
-HANA client to restore the database at</p>
-<p>instance
-(str)
-&ndash;
-destination instance to restore the db at</p>
-<p>backup_prefix
-(str)
-&ndash;
-prefix of the backup job
-default: None</p>
-<p>point_in_time
-(str)
-&ndash;
-time to which db should be restored to
-default: None</p>
-<p>initialize_log_area
-(bool)
-&ndash;
-boolean to specify whether to initialize
-the new log area after restore
-default: False</p>
-<p>use_hardware_revert
-(bool)
-&ndash;
-boolean to specify whether to do a
-hardware revert in restore
-default: False</p>
-<p>clone_env
-(bool)
-&ndash;
-boolean to specify whether the database
-should be cloned or not
-default: False</p>
-<p>check_access
-(bool)
-&ndash;
-check access during restore or not
-default: True</p>
-<p>destination_instance_dir
-(str)
-&ndash;
-HANA data directory for snap cross instance
-restore or cross machine restores
-default: None</p>
-<p>ignore_delta_backups
-(bool)
-&ndash;
-whether to ignore delta backups during
-restore or not
-default: True</p>
-<h2 id="returns">Returns</h2>
-<p>object
--
-instance of the Job class for this restore job</p>
-<h2 id="raises">Raises</h2>
-<p>SDKException:
-if instance is not a string or object</p>
-<pre><code>if response is empty
-
-if response is not success
+<div class="desc"><p>Restore HANA databases to a specified client and instance.</p>
+<p>This method initiates a restore operation for HANA databases, allowing customization of restore options such as point-in-time recovery, hardware revert, cloning, and log area initialization.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>pseudo_client</code></strong></dt>
+<dd>Name of the HANA client where the database will be restored.</dd>
+<dt><strong><code>instance</code></strong></dt>
+<dd>Destination instance for the restore operation. Can be a string or an Instance object.</dd>
+<dt><strong><code>backup_prefix</code></strong></dt>
+<dd>Optional prefix of the backup job to restore from.</dd>
+<dt><strong><code>point_in_time</code></strong></dt>
+<dd>Optional timestamp to restore the database to a specific point in time.</dd>
+<dt><strong><code>initialize_log_area</code></strong></dt>
+<dd>Whether to initialize the new log area after restore. Default is False.</dd>
+<dt><strong><code>use_hardware_revert</code></strong></dt>
+<dd>Whether to perform a hardware revert during restore. Default is False.</dd>
+<dt><strong><code>clone_env</code></strong></dt>
+<dd>Whether to clone the database environment during restore. Default is False.</dd>
+<dt><strong><code>check_access</code></strong></dt>
+<dd>Whether to check access permissions during restore. Default is True.</dd>
+<dt><strong><code>destination_instance_dir</code></strong></dt>
+<dd>Optional HANA data directory for cross-instance or cross-machine restores.</dd>
+<dt><strong><code>ignore_delta_backups</code></strong></dt>
+<dd>Whether to ignore delta backups during restore. Default is True.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Job</code></dt>
+<dd>An instance of the Job class representing the restore job.</dd>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>If the instance parameter is not a string or Instance object, or if the restore response is empty or unsuccessful.</dd>
+</dl>
+<p>Example
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; # Restore a HANA database to a specific client and instance
+&gt;&gt;&gt; backupset = HANABackupset(...)
+&gt;&gt;&gt; job = backupset.restore(
+...     pseudo_client=&quot;hana_client1&quot;,
+...     instance=&quot;hana_instance1&quot;,
+...     backup_prefix=&quot;daily_backup&quot;,
+...     point_in_time=&quot;2024-06-01 12:00:00&quot;,
+...     initialize_log_area=True,
+...     use_hardware_revert=False,
+...     clone_env=False,
+...     check_access=True,
+...     destination_instance_dir=&quot;/hana/data&quot;,
+...     ignore_delta_backups=True
+... )
+&gt;&gt;&gt; print(f&quot;Restore job started: {job}&quot;)
 </code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/backupsets/hanabackupset.py#L44-L123" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/backupsets/hanabackupset.py#L58-L131" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">def restore(
         self,
-        pseudo_client,
-        instance,
-        backup_prefix=None,
-        point_in_time=None,
-        initialize_log_area=False,
-        use_hardware_revert=False,
-        clone_env=False,
-        check_access=True,
-        destination_instance_dir=None,
-        ignore_delta_backups=True):
-    &#34;&#34;&#34;Restores the databases specified in the input paths list.
+        pseudo_client: str,
+        instance: Union[str, &#39;Instance&#39;],
+        backup_prefix: Optional[str] = None,
+        point_in_time: Optional[str] = None,
+        initialize_log_area: bool = False,
+        use_hardware_revert: bool = False,
+        clone_env: bool = False,
+        check_access: bool = True,
+        destination_instance_dir: Optional[str] = None,
+        ignore_delta_backups: bool = True
+    ) -&gt; &#39;Job&#39;:
+    &#34;&#34;&#34;Restore HANA databases to a specified client and instance.
 
-        Args:
-            pseudo_client               (str)   --  HANA client to restore the database at
+    This method initiates a restore operation for HANA databases, allowing customization of restore options such as point-in-time recovery, hardware revert, cloning, and log area initialization.
 
-            instance                    (str)   --  destination instance to restore the db at
+    Args:
+        pseudo_client: Name of the HANA client where the database will be restored.
+        instance: Destination instance for the restore operation. Can be a string or an Instance object.
+        backup_prefix: Optional prefix of the backup job to restore from.
+        point_in_time: Optional timestamp to restore the database to a specific point in time.
+        initialize_log_area: Whether to initialize the new log area after restore. Default is False.
+        use_hardware_revert: Whether to perform a hardware revert during restore. Default is False.
+        clone_env: Whether to clone the database environment during restore. Default is False.
+        check_access: Whether to check access permissions during restore. Default is True.
+        destination_instance_dir: Optional HANA data directory for cross-instance or cross-machine restores.
+        ignore_delta_backups: Whether to ignore delta backups during restore. Default is True.
 
-            backup_prefix               (str)   --  prefix of the backup job
-                default: None
+    Returns:
+        Job: An instance of the Job class representing the restore job.
 
-            point_in_time               (str)   --  time to which db should be restored to
-                default: None
+    Raises:
+        SDKException: If the instance parameter is not a string or Instance object, or if the restore response is empty or unsuccessful.
 
-            initialize_log_area         (bool)  --  boolean to specify whether to initialize
-                                                        the new log area after restore
-                default: False
-
-            use_hardware_revert         (bool)  --  boolean to specify whether to do a
-                                                        hardware revert in restore
-                default: False
-
-            clone_env                   (bool)  --  boolean to specify whether the database
-                                                        should be cloned or not
-                default: False
-
-            check_access                (bool)  --  check access during restore or not
-                default: True
-
-            destination_instance_dir    (str)   --  HANA data directory for snap cross instance
-                                                        restore or cross machine restores
-                default: None
-
-            ignore_delta_backups        (bool)  --  whether to ignore delta backups during
-                                                        restore or not
-                default: True
-
-        Returns:
-            object  -   instance of the Job class for this restore job
-
-        Raises:
-            SDKException:
-                if instance is not a string or object
-
-                if response is empty
-
-                if response is not success
+    Example:
+        &gt;&gt;&gt; # Restore a HANA database to a specific client and instance
+        &gt;&gt;&gt; backupset = HANABackupset(...)
+        &gt;&gt;&gt; job = backupset.restore(
+        ...     pseudo_client=&#34;hana_client1&#34;,
+        ...     instance=&#34;hana_instance1&#34;,
+        ...     backup_prefix=&#34;daily_backup&#34;,
+        ...     point_in_time=&#34;2024-06-01 12:00:00&#34;,
+        ...     initialize_log_area=True,
+        ...     use_hardware_revert=False,
+        ...     clone_env=False,
+        ...     check_access=True,
+        ...     destination_instance_dir=&#34;/hana/data&#34;,
+        ...     ignore_delta_backups=True
+        ... )
+        &gt;&gt;&gt; print(f&#34;Restore job started: {job}&#34;)
 
     &#34;&#34;&#34;
     from ..instance import Instance

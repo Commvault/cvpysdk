@@ -33,7 +33,8 @@ Generate backup job summary report.
 FormatType
 :
 Use this Enum class to provide different file extension.</p>
-<h2 id="report">Report</h2>
+<p>Report
+-----=</p>
 <p><strong>init</strong>(commcell_object)
 &ndash;
 Initialize the Report instance for the
@@ -57,7 +58,8 @@ sets custom report name</p>
 <p>run_report()
 &ndash;
 Generates the report</p>
-<h2 id="backupjobsummary">Backupjobsummary</h2>
+<p>Backupjobsummary
+-----=</p>
 <p><strong>init</strong>(commcell_object)
 &ndash;
 Initialize the backup job summary report object</p>
@@ -76,7 +78,7 @@ select specific clients and clientgroups</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/reports/report.py#L1-L408" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/reports/report.py#L1-L491" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python"># --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
@@ -138,10 +140,18 @@ BackupJobSummary:
 
 from enum import Enum
 from cvpysdk.exception import SDKException
+from typing import Optional, List
 
 
 class FormatType(Enum):
-    &#34;&#34;&#34;Types of output format&#34;&#34;&#34;
+    &#34;&#34;&#34;Types of output format
+
+    Attributes:
+        HTML (int): Represents HTML format with value 1.
+        PDF (int): Represents PDF format with value 6.
+        TEXT (int): Represents TEXT format with value 2.
+        XML (int): Represents XML format with value 12.
+    &#34;&#34;&#34;
     HTML = 1
     PDF = 6
     TEXT = 2
@@ -149,10 +159,23 @@ class FormatType(Enum):
 
 
 class Report:
-    &#34;&#34;&#34;Operations on classic report&#34;&#34;&#34;
+    &#34;&#34;&#34;Operations on classic report
+
+    Attributes:
+        _commcell (Commcell): Commcell object associated with the report.
+        _request_json (dict): JSON request to be sent to the CommServe.
+        _cvpysdk_commcell_object (CVPySDK): CVPySDK commcell object.
+        _services (dict): Dictionary of Commvault services.
+        _report_extension (str): Report file extension. Defaults to HTML.
+        _backup_job_summary_report (BackupJobSummary): Instance of BackupJobSummary report.
+    &#34;&#34;&#34;
 
     def __init__(self, commcell):
-        &#34;&#34;&#34; Initialize the report object &#34;&#34;&#34;
+        &#34;&#34;&#34; Initialize the report object
+
+        Args:
+            commcell (Commcell): the commcell object
+        &#34;&#34;&#34;
         self._commcell = commcell
         self._request_json = {}
         self._cvpysdk_commcell_object = commcell._cvpysdk_object
@@ -161,16 +184,32 @@ class Report:
         self._backup_job_summary_report = None
 
     @property
-    def backup_job_summary(self):
-        &#34;&#34;&#34;Returns object of backup job summary report&#34;&#34;&#34;
+    def backup_job_summary(self) -&gt; &#34;BackupJobSummary&#34;:
+        &#34;&#34;&#34;Returns object of backup job summary report
+
+        Returns:
+            BackupJobSummary: Instance of the BackupJobSummary class.
+
+        Usage:
+            &gt;&gt;&gt; report = Report(commcell_object)
+            &gt;&gt;&gt; backup_job_summary = report.backup_job_summary
+        &#34;&#34;&#34;
         if self._backup_job_summary_report is None:
             self._backup_job_summary_report = BackupJobSummary(self._commcell)
         return self._backup_job_summary_report
 
-    def set_format(self, format_type):
+    def set_format(self, format_type: FormatType) -&gt; None:
         &#34;&#34;&#34;Sets the output format of a report
+
         Args:
             format_type (FormatType): set file extension using Enum class FormatType
+
+        Raises:
+            Exception: if format_type is not a valid FormatType
+
+        Usage:
+            &gt;&gt;&gt; report = Report(commcell_object)
+            &gt;&gt;&gt; report.set_format(FormatType.PDF)
         &#34;&#34;&#34;
         for each_format_type in FormatType:
             if each_format_type.name == format_type.name:
@@ -181,11 +220,20 @@ class Report:
                 return
         raise Exception(&#34;Invalid format type,format should be one among the type in FormatType&#34;)
 
-    def select_local_drive(self, report_copy_location, client_name=None):
+    def select_local_drive(self, report_copy_location: str, client_name: Optional[str] = None) -&gt; None:
         &#34;&#34;&#34;Select local drive
+
         Args:
-            client_name          (String)        --       Name of the client
-            report_copy_location (String)        --       location where report need to be saved
+            report_copy_location (str): location where report need to be saved
+            client_name          (str): Name of the client, defaults to CommServe name if None
+
+        Raises:
+            Exception: if client_name does not exist
+
+        Usage:
+            &gt;&gt;&gt; report = Report(commcell_object)
+            &gt;&gt;&gt; report.select_local_drive(report_copy_location=&#39;C:\\reports&#39;, client_name=&#39;client1&#39;)
+            &gt;&gt;&gt; report.select_local_drive(report_copy_location=&#39;C:\\reports&#39;)
         &#34;&#34;&#34;
         if not client_name:
             client_name = self._commcell.commserv_name
@@ -198,23 +246,41 @@ class Report:
         self._request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][&#39;reportOption&#39;] \
             [&#39;commonOpt&#39;][&#39;savedTo&#39;][&#39;locationURL&#39;] = report_copy_location
 
-    def select_network_share(self):
-        &#34;&#34;&#34;Select network share&#34;&#34;&#34;
+    def select_network_share(self) -&gt; None:
+        &#34;&#34;&#34;Select network share
+
+        Usage:
+            &gt;&gt;&gt; report = Report(commcell_object)
+            &gt;&gt;&gt; report.select_network_share()
+        &#34;&#34;&#34;
         self._request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][&#39;reportOption&#39;]\
             [&#39;commonOpt&#39;][&#39;savedTo&#39;][&#39;isNetworkDrive&#39;] = 1
 
-    def set_report_custom_name(self, name):
+    def set_report_custom_name(self, name: str) -&gt; None:
         &#34;&#34;&#34; Sets report custom name
+
         Args:
-            name(String)               --       Custom name of the report
+            name (str): Custom name of the report
+
+        Usage:
+            &gt;&gt;&gt; report = Report(commcell_object)
+            &gt;&gt;&gt; report.set_report_custom_name(name=&#39;MyReport&#39;)
         &#34;&#34;&#34;
         self._request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][&#39;reportOption&#39;]\
         [&#39;commonOpt&#39;][&#39;reportCustomName&#39;] = (name + &#34;.&#34; + self._report_extension)
 
-    def run_report(self):
+    def run_report(self) -&gt; str:
         &#34;&#34;&#34; Executes the report
+
         Returns:
             str: Job ID
+
+        Raises:
+            SDKException: if the report execution fails
+
+        Usage:
+            &gt;&gt;&gt; report = Report(commcell_object)
+            &gt;&gt;&gt; job_id = report.run_report()
         &#34;&#34;&#34;
         flag, response = self._cvpysdk_commcell_object.make_request(&#39;POST&#39;,
                                                                     self._services[&#39;CREATE_TASK&#39;],
@@ -226,9 +292,17 @@ class Report:
 
 
 class BackupJobSummary(Report):
-    &#34;&#34;&#34;Operations on backup job summary report&#34;&#34;&#34;
+    &#34;&#34;&#34;Operations on backup job summary report
+
+    Attributes:
+        _request_json (dict): JSON request for the backup job summary report.
+    &#34;&#34;&#34;
     def __init__(self, commcell_object):
-        &#34;&#34;&#34; Initialize the backup job summary report object &#34;&#34;&#34;
+        &#34;&#34;&#34; Initialize the backup job summary report object
+
+        Args:
+            commcell_object (Commcell): Commcell object.
+        &#34;&#34;&#34;
         super().__init__(commcell_object)
         self._request_json = {
             &#34;taskInfo&#34;: {
@@ -358,52 +432,52 @@ class BackupJobSummary(Report):
                                             &#34;failureReason&#34;: True,
                                             &#34;IncludeMediaDeletedJobs&#34;: False,
                                             &#34;drive&#34;: False
-                                },
-                                &#34;jobOptions&#34;: {
-                                    &#34;numberOfMostFreqErrors&#34;: 0,
-                                    &#34;sizeUnit&#34;: 0,
-                                    &#34;isThroughputInMB&#34;: False,
-                                    &#34;isCommserveTimeZone&#34;: True,
-                                    &#34;retentionType&#34;: {
-                                        &#34;basicRetention&#34;: False,
-                                        &#34;manualRetention&#34;: False,
-                                        &#34;extendedRetention&#34;: False,
-                                        &#34;retentionAll&#34;: False
-                                    },
-                                    &#34;backupTypes&#34;: {
-                                        &#34;all&#34;: True,
-                                        &#34;syntheticFull&#34;: True,
-                                        &#34;automatedSystemRecovery&#34;: False,
-                                        &#34;incremental&#34;: True,
-                                        &#34;full&#34;: True,
-                                        &#34;differential&#34;: True
-                                    },
-                                    &#34;jobStatus&#34;: {
-                                        &#34;all&#34;: True
-                                    },
-                                    &#34;increaseInDataSize&#34;: {
-                                        &#34;value&#34;: 10,
-                                        &#34;selected&#34;: False
-                                    },
-                                    &#34;decreaseInDataSize&#34;: {
-                                        &#34;value&#34;: 10,
-                                        &#34;selected&#34;: False
+                                        },
+                                        &#34;jobOptions&#34;: {
+                                            &#34;numberOfMostFreqErrors&#34;: 0,
+                                            &#34;sizeUnit&#34;: 0,
+                                            &#34;isThroughputInMB&#34;: False,
+                                            &#34;isCommserveTimeZone&#34;: True,
+                                            &#34;retentionType&#34;: {
+                                                &#34;basicRetention&#34;: False,
+                                                &#34;manualRetention&#34;: False,
+                                                &#34;extendedRetention&#34;: False,
+                                                &#34;retentionAll&#34;: False
+                                            },
+                                            &#34;backupTypes&#34;: {
+                                                &#34;all&#34;: True,
+                                                &#34;syntheticFull&#34;: True,
+                                                &#34;automatedSystemRecovery&#34;: False,
+                                                &#34;incremental&#34;: True,
+                                                &#34;full&#34;: True,
+                                                &#34;differential&#34;: True
+                                            },
+                                            &#34;jobStatus&#34;: {
+                                                &#34;all&#34;: True
+                                            },
+                                            &#34;increaseInDataSize&#34;: {
+                                                &#34;value&#34;: 10,
+                                                &#34;selected&#34;: False
+                                            },
+                                            &#34;decreaseInDataSize&#34;: {
+                                                &#34;value&#34;: 10,
+                                                &#34;selected&#34;: False
+                                            }
                                         }
-                                }
                                     },
-                            &#34;agentList&#34;: [
-                                {
-                                    &#34;_type_&#34;: 4,
-                                    &#34;flags&#34;: {
-                                        &#34;include&#34;: True
-                                    }
-                                }
-                            ],
-                            &#34;timeRangeOption&#34;: {
-                                &#34;type&#34;: 13,
-                                &#34;_type_&#34;: 54,
-                                &#34;TimeZoneID&#34;: 42,
-                                &#34;toTime&#34;: 86400
+                                    &#34;agentList&#34;: [
+                                        {
+                                            &#34;_type_&#34;: 4,
+                                            &#34;flags&#34;: {
+                                                &#34;include&#34;: True
+                                            }
+                                        }
+                                    ],
+                                    &#34;timeRangeOption&#34;: {
+                                        &#34;type&#34;: 13,
+                                        &#34;_type_&#34;: 54,
+                                        &#34;TimeZoneID&#34;: 42,
+                                        &#34;toTime&#34;: 86400
                                     }
                                 }
                             }
@@ -413,12 +487,17 @@ class BackupJobSummary(Report):
             }
         }
 
-    def select_protected_objects(self):
-        &#34;&#34;&#34;select protected objects&#34;&#34;&#34;
+    def select_protected_objects(self) -&gt; None:
+        &#34;&#34;&#34;select protected objects
+
+        Usage:
+            &gt;&gt;&gt; backup_job_summary = BackupJobSummary(commcell_object)
+            &gt;&gt;&gt; backup_job_summary.select_protected_objects()
+        &#34;&#34;&#34;
         self._request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][&#39;reportOption&#39;] \
             [&#39;jobSummaryReport&#39;][&#39;rptSelections&#39;][&#39;protectedObjects&#39;] = True
 
-    def __set_include_all(self, status=True):
+    def __set_include_all(self, status: bool = True) -&gt; None:
         &#34;&#34;&#34;
         Set include all computers true/false if any client/client group are getting selected
         Args:
@@ -428,7 +507,7 @@ class BackupJobSummary(Report):
         self._request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][&#39;reportOption&#39;] \
             [&#39;computerSelectionList&#39;][&#39;includeAll&#39;] = status
 
-    def __select_client_groups(self, client_groups):
+    def __select_client_groups(self, client_groups: list) -&gt; None:
         &#34;&#34;&#34;
         Select client groups
         Args:
@@ -440,7 +519,7 @@ class BackupJobSummary(Report):
         self._request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][&#39;reportOption&#39;] \
             [&#39;computerSelectionList&#39;][&#39;clientGroupList&#39;] = client_group_list_dict
 
-    def __select_clients(self, client_list):
+    def __select_clients(self, client_list: list) -&gt; None:
         &#34;&#34;&#34;
         Select client clients
          Args:
@@ -452,7 +531,7 @@ class BackupJobSummary(Report):
         self._request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][&#39;reportOption&#39;] \
             [&#39;computerSelectionList&#39;][&#39;clientList&#39;] = client_list_dict
 
-    def set_last_hours(self, number_of_hours=24):
+    def set_last_hours(self, number_of_hours: int = 24) -&gt; None:
         &#34;&#34;&#34;
         Set time range to generate report since n number of hours
         Args:
@@ -463,7 +542,7 @@ class BackupJobSummary(Report):
         self._request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][&#39;reportOption&#39;] \
             [&#39;timeRangeOption&#39;][&#39;toTimeValue&#39;] = str(number_of_hours)
 
-    def set_last_days(self, number_of_days=24):
+    def set_last_days(self, number_of_days: int = 24) -&gt; None:
         &#34;&#34;&#34;
         Set time range to generate report since n number of days
         Args:
@@ -474,12 +553,18 @@ class BackupJobSummary(Report):
         self._request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][&#39;reportOption&#39;] \
             [&#39;timeRangeOption&#39;][&#39;toTimeValue&#39;] = str(number_of_days)
 
-    def select_computers(self, clients=None, client_groups=None):
+    def select_computers(self, clients: Optional[List[str]] = None, client_groups: Optional[List[str]] = None) -&gt; None:
         &#34;&#34;&#34;
         Select clients and client groups for generating the report
         Args:
-                clients           (List)    --  List of clients
-                client_groups     (List)    --  List of client groups
+                clients       (List): List of clients
+                client_groups (List): List of client groups
+
+        Usage:
+            &gt;&gt;&gt; backup_job_summary = BackupJobSummary(commcell_object)
+            &gt;&gt;&gt; backup_job_summary.select_computers(clients=[&#39;client1&#39;, &#39;client2&#39;], client_groups=[&#39;group1&#39;, &#39;group2&#39;])
+            &gt;&gt;&gt; backup_job_summary.select_computers(clients=[&#39;client1&#39;])
+            &gt;&gt;&gt; backup_job_summary.select_computers(client_groups=[&#39;group1&#39;])
         &#34;&#34;&#34;
         self.__set_include_all(status=False)
         if clients:
@@ -503,16 +588,36 @@ class BackupJobSummary(Report):
 </code></dt>
 <dd>
 <div class="desc"><p>Operations on backup job summary report</p>
-<p>Initialize the backup job summary report object</p></div>
+<dl>
+<dt>Attributes</dt>
+<dt>-----=</dt>
+<dt><strong><code>_request_json</code></strong> :&ensp;<code>dict</code></dt>
+<dd>JSON request for the backup job summary report.</dd>
+</dl>
+<p>Initialize the backup job summary report object</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>commcell_object</code></strong> :&ensp;<code>Commcell</code></dt>
+<dd>Commcell object.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/reports/report.py#L148-L408" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/reports/report.py#L212-L491" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class BackupJobSummary(Report):
-    &#34;&#34;&#34;Operations on backup job summary report&#34;&#34;&#34;
+    &#34;&#34;&#34;Operations on backup job summary report
+
+    Attributes:
+        _request_json (dict): JSON request for the backup job summary report.
+    &#34;&#34;&#34;
     def __init__(self, commcell_object):
-        &#34;&#34;&#34; Initialize the backup job summary report object &#34;&#34;&#34;
+        &#34;&#34;&#34; Initialize the backup job summary report object
+
+        Args:
+            commcell_object (Commcell): Commcell object.
+        &#34;&#34;&#34;
         super().__init__(commcell_object)
         self._request_json = {
             &#34;taskInfo&#34;: {
@@ -642,52 +747,52 @@ class BackupJobSummary(Report):
                                             &#34;failureReason&#34;: True,
                                             &#34;IncludeMediaDeletedJobs&#34;: False,
                                             &#34;drive&#34;: False
-                                },
-                                &#34;jobOptions&#34;: {
-                                    &#34;numberOfMostFreqErrors&#34;: 0,
-                                    &#34;sizeUnit&#34;: 0,
-                                    &#34;isThroughputInMB&#34;: False,
-                                    &#34;isCommserveTimeZone&#34;: True,
-                                    &#34;retentionType&#34;: {
-                                        &#34;basicRetention&#34;: False,
-                                        &#34;manualRetention&#34;: False,
-                                        &#34;extendedRetention&#34;: False,
-                                        &#34;retentionAll&#34;: False
-                                    },
-                                    &#34;backupTypes&#34;: {
-                                        &#34;all&#34;: True,
-                                        &#34;syntheticFull&#34;: True,
-                                        &#34;automatedSystemRecovery&#34;: False,
-                                        &#34;incremental&#34;: True,
-                                        &#34;full&#34;: True,
-                                        &#34;differential&#34;: True
-                                    },
-                                    &#34;jobStatus&#34;: {
-                                        &#34;all&#34;: True
-                                    },
-                                    &#34;increaseInDataSize&#34;: {
-                                        &#34;value&#34;: 10,
-                                        &#34;selected&#34;: False
-                                    },
-                                    &#34;decreaseInDataSize&#34;: {
-                                        &#34;value&#34;: 10,
-                                        &#34;selected&#34;: False
+                                        },
+                                        &#34;jobOptions&#34;: {
+                                            &#34;numberOfMostFreqErrors&#34;: 0,
+                                            &#34;sizeUnit&#34;: 0,
+                                            &#34;isThroughputInMB&#34;: False,
+                                            &#34;isCommserveTimeZone&#34;: True,
+                                            &#34;retentionType&#34;: {
+                                                &#34;basicRetention&#34;: False,
+                                                &#34;manualRetention&#34;: False,
+                                                &#34;extendedRetention&#34;: False,
+                                                &#34;retentionAll&#34;: False
+                                            },
+                                            &#34;backupTypes&#34;: {
+                                                &#34;all&#34;: True,
+                                                &#34;syntheticFull&#34;: True,
+                                                &#34;automatedSystemRecovery&#34;: False,
+                                                &#34;incremental&#34;: True,
+                                                &#34;full&#34;: True,
+                                                &#34;differential&#34;: True
+                                            },
+                                            &#34;jobStatus&#34;: {
+                                                &#34;all&#34;: True
+                                            },
+                                            &#34;increaseInDataSize&#34;: {
+                                                &#34;value&#34;: 10,
+                                                &#34;selected&#34;: False
+                                            },
+                                            &#34;decreaseInDataSize&#34;: {
+                                                &#34;value&#34;: 10,
+                                                &#34;selected&#34;: False
+                                            }
                                         }
-                                }
                                     },
-                            &#34;agentList&#34;: [
-                                {
-                                    &#34;_type_&#34;: 4,
-                                    &#34;flags&#34;: {
-                                        &#34;include&#34;: True
-                                    }
-                                }
-                            ],
-                            &#34;timeRangeOption&#34;: {
-                                &#34;type&#34;: 13,
-                                &#34;_type_&#34;: 54,
-                                &#34;TimeZoneID&#34;: 42,
-                                &#34;toTime&#34;: 86400
+                                    &#34;agentList&#34;: [
+                                        {
+                                            &#34;_type_&#34;: 4,
+                                            &#34;flags&#34;: {
+                                                &#34;include&#34;: True
+                                            }
+                                        }
+                                    ],
+                                    &#34;timeRangeOption&#34;: {
+                                        &#34;type&#34;: 13,
+                                        &#34;_type_&#34;: 54,
+                                        &#34;TimeZoneID&#34;: 42,
+                                        &#34;toTime&#34;: 86400
                                     }
                                 }
                             }
@@ -697,12 +802,17 @@ class BackupJobSummary(Report):
             }
         }
 
-    def select_protected_objects(self):
-        &#34;&#34;&#34;select protected objects&#34;&#34;&#34;
+    def select_protected_objects(self) -&gt; None:
+        &#34;&#34;&#34;select protected objects
+
+        Usage:
+            &gt;&gt;&gt; backup_job_summary = BackupJobSummary(commcell_object)
+            &gt;&gt;&gt; backup_job_summary.select_protected_objects()
+        &#34;&#34;&#34;
         self._request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][&#39;reportOption&#39;] \
             [&#39;jobSummaryReport&#39;][&#39;rptSelections&#39;][&#39;protectedObjects&#39;] = True
 
-    def __set_include_all(self, status=True):
+    def __set_include_all(self, status: bool = True) -&gt; None:
         &#34;&#34;&#34;
         Set include all computers true/false if any client/client group are getting selected
         Args:
@@ -712,7 +822,7 @@ class BackupJobSummary(Report):
         self._request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][&#39;reportOption&#39;] \
             [&#39;computerSelectionList&#39;][&#39;includeAll&#39;] = status
 
-    def __select_client_groups(self, client_groups):
+    def __select_client_groups(self, client_groups: list) -&gt; None:
         &#34;&#34;&#34;
         Select client groups
         Args:
@@ -724,7 +834,7 @@ class BackupJobSummary(Report):
         self._request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][&#39;reportOption&#39;] \
             [&#39;computerSelectionList&#39;][&#39;clientGroupList&#39;] = client_group_list_dict
 
-    def __select_clients(self, client_list):
+    def __select_clients(self, client_list: list) -&gt; None:
         &#34;&#34;&#34;
         Select client clients
          Args:
@@ -736,7 +846,7 @@ class BackupJobSummary(Report):
         self._request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][&#39;reportOption&#39;] \
             [&#39;computerSelectionList&#39;][&#39;clientList&#39;] = client_list_dict
 
-    def set_last_hours(self, number_of_hours=24):
+    def set_last_hours(self, number_of_hours: int = 24) -&gt; None:
         &#34;&#34;&#34;
         Set time range to generate report since n number of hours
         Args:
@@ -747,7 +857,7 @@ class BackupJobSummary(Report):
         self._request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][&#39;reportOption&#39;] \
             [&#39;timeRangeOption&#39;][&#39;toTimeValue&#39;] = str(number_of_hours)
 
-    def set_last_days(self, number_of_days=24):
+    def set_last_days(self, number_of_days: int = 24) -&gt; None:
         &#34;&#34;&#34;
         Set time range to generate report since n number of days
         Args:
@@ -758,12 +868,18 @@ class BackupJobSummary(Report):
         self._request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][&#39;reportOption&#39;] \
             [&#39;timeRangeOption&#39;][&#39;toTimeValue&#39;] = str(number_of_days)
 
-    def select_computers(self, clients=None, client_groups=None):
+    def select_computers(self, clients: Optional[List[str]] = None, client_groups: Optional[List[str]] = None) -&gt; None:
         &#34;&#34;&#34;
         Select clients and client groups for generating the report
         Args:
-                clients           (List)    --  List of clients
-                client_groups     (List)    --  List of client groups
+                clients       (List): List of clients
+                client_groups (List): List of client groups
+
+        Usage:
+            &gt;&gt;&gt; backup_job_summary = BackupJobSummary(commcell_object)
+            &gt;&gt;&gt; backup_job_summary.select_computers(clients=[&#39;client1&#39;, &#39;client2&#39;], client_groups=[&#39;group1&#39;, &#39;group2&#39;])
+            &gt;&gt;&gt; backup_job_summary.select_computers(clients=[&#39;client1&#39;])
+            &gt;&gt;&gt; backup_job_summary.select_computers(client_groups=[&#39;group1&#39;])
         &#34;&#34;&#34;
         self.__set_include_all(status=False)
         if clients:
@@ -778,30 +894,42 @@ class BackupJobSummary(Report):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.reports.report.BackupJobSummary.select_computers"><code class="name flex">
-<span>def <span class="ident">select_computers</span></span>(<span>self, clients=None, client_groups=None)</span>
+<span>def <span class="ident">select_computers</span></span>(<span>self, clients: Optional[List[str]] = None, client_groups: Optional[List[str]] = None) ‑> None</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Select clients and client groups for generating the report</p>
-<h2 id="args">Args</h2>
-<p>clients
-(List)
-&ndash;
-List of clients
-client_groups
-(List)
-&ndash;
-List of client groups</p></div>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt>clients
+(List): List of clients</dt>
+<dt><strong><code>client_groups</code></strong> :&ensp;<code>List</code></dt>
+<dd>List of client groups</dd>
+</dl>
+<p>Usage
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; backup_job_summary = BackupJobSummary(commcell_object)
+&gt;&gt;&gt; backup_job_summary.select_computers(clients=['client1', 'client2'], client_groups=['group1', 'group2'])
+&gt;&gt;&gt; backup_job_summary.select_computers(clients=['client1'])
+&gt;&gt;&gt; backup_job_summary.select_computers(client_groups=['group1'])
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/reports/report.py#L397-L408" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/reports/report.py#L474-L491" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def select_computers(self, clients=None, client_groups=None):
+<pre><code class="python">def select_computers(self, clients: Optional[List[str]] = None, client_groups: Optional[List[str]] = None) -&gt; None:
     &#34;&#34;&#34;
     Select clients and client groups for generating the report
     Args:
-            clients           (List)    --  List of clients
-            client_groups     (List)    --  List of client groups
+            clients       (List): List of clients
+            client_groups (List): List of client groups
+
+    Usage:
+        &gt;&gt;&gt; backup_job_summary = BackupJobSummary(commcell_object)
+        &gt;&gt;&gt; backup_job_summary.select_computers(clients=[&#39;client1&#39;, &#39;client2&#39;], client_groups=[&#39;group1&#39;, &#39;group2&#39;])
+        &gt;&gt;&gt; backup_job_summary.select_computers(clients=[&#39;client1&#39;])
+        &gt;&gt;&gt; backup_job_summary.select_computers(client_groups=[&#39;group1&#39;])
     &#34;&#34;&#34;
     self.__set_include_all(status=False)
     if clients:
@@ -811,37 +939,48 @@ List of client groups</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.reports.report.BackupJobSummary.select_protected_objects"><code class="name flex">
-<span>def <span class="ident">select_protected_objects</span></span>(<span>self)</span>
+<span>def <span class="ident">select_protected_objects</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>select protected objects</p></div>
+<div class="desc"><p>select protected objects</p>
+<p>Usage
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; backup_job_summary = BackupJobSummary(commcell_object)
+&gt;&gt;&gt; backup_job_summary.select_protected_objects()
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/reports/report.py#L336-L339" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/reports/report.py#L408-L416" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def select_protected_objects(self):
-    &#34;&#34;&#34;select protected objects&#34;&#34;&#34;
+<pre><code class="python">def select_protected_objects(self) -&gt; None:
+    &#34;&#34;&#34;select protected objects
+
+    Usage:
+        &gt;&gt;&gt; backup_job_summary = BackupJobSummary(commcell_object)
+        &gt;&gt;&gt; backup_job_summary.select_protected_objects()
+    &#34;&#34;&#34;
     self._request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][&#39;reportOption&#39;] \
         [&#39;jobSummaryReport&#39;][&#39;rptSelections&#39;][&#39;protectedObjects&#39;] = True</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.reports.report.BackupJobSummary.set_last_days"><code class="name flex">
-<span>def <span class="ident">set_last_days</span></span>(<span>self, number_of_days=24)</span>
+<span>def <span class="ident">set_last_days</span></span>(<span>self, number_of_days: int = 24) ‑> None</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Set time range to generate report since n number of days</p>
-<h2 id="args">Args</h2>
-<p>number_of_hours
+<p>Args
+-----=
+number_of_hours
 (Int)
 &ndash;
 number of hours</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/reports/report.py#L386-L395" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/reports/report.py#L463-L472" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def set_last_days(self, number_of_days=24):
+<pre><code class="python">def set_last_days(self, number_of_days: int = 24) -&gt; None:
     &#34;&#34;&#34;
     Set time range to generate report since n number of days
     Args:
@@ -854,21 +993,22 @@ number of hours</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.reports.report.BackupJobSummary.set_last_hours"><code class="name flex">
-<span>def <span class="ident">set_last_hours</span></span>(<span>self, number_of_hours=24)</span>
+<span>def <span class="ident">set_last_hours</span></span>(<span>self, number_of_hours: int = 24) ‑> None</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Set time range to generate report since n number of hours</p>
-<h2 id="args">Args</h2>
-<p>number_of_hours
+<p>Args
+-----=
+number_of_hours
 (Int)
 &ndash;
 number of hours</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/reports/report.py#L375-L384" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/reports/report.py#L452-L461" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def set_last_hours(self, number_of_hours=24):
+<pre><code class="python">def set_last_hours(self, number_of_hours: int = 24) -&gt; None:
     &#34;&#34;&#34;
     Set time range to generate report since n number of hours
     Args:
@@ -897,17 +1037,36 @@ number of hours</p></div>
 </dd>
 <dt id="cvpysdk.reports.report.FormatType"><code class="flex name class">
 <span>class <span class="ident">FormatType</span></span>
-<span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
+<span>(</span><span>*args, **kwds)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Types of output format</p></div>
+<div class="desc"><p>Types of output format</p>
+<dl>
+<dt>Attributes</dt>
+<dt>-----=</dt>
+<dt><strong><code>HTML</code></strong> :&ensp;<code>int</code></dt>
+<dd>Represents HTML format with value 1.</dd>
+<dt><strong><code>PDF</code></strong> :&ensp;<code>int</code></dt>
+<dd>Represents PDF format with value 6.</dd>
+<dt><strong><code>TEXT</code></strong> :&ensp;<code>int</code></dt>
+<dd>Represents TEXT format with value 2.</dd>
+<dt><strong><code>XML</code></strong> :&ensp;<code>int</code></dt>
+<dd>Represents XML format with value 12.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/reports/report.py#L63-L68" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/reports/report.py#L64-L76" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class FormatType(Enum):
-    &#34;&#34;&#34;Types of output format&#34;&#34;&#34;
+    &#34;&#34;&#34;Types of output format
+
+    Attributes:
+        HTML (int): Represents HTML format with value 1.
+        PDF (int): Represents PDF format with value 6.
+        TEXT (int): Represents TEXT format with value 2.
+        XML (int): Represents XML format with value 12.
+    &#34;&#34;&#34;
     HTML = 1
     PDF = 6
     TEXT = 2
@@ -921,19 +1080,19 @@ number of hours</p></div>
 <dl>
 <dt id="cvpysdk.reports.report.FormatType.HTML"><code class="name">var <span class="ident">HTML</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.reports.report.FormatType.PDF"><code class="name">var <span class="ident">PDF</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.reports.report.FormatType.TEXT"><code class="name">var <span class="ident">TEXT</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 <dt id="cvpysdk.reports.report.FormatType.XML"><code class="name">var <span class="ident">XML</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The type of the None singleton.</p></div>
 </dd>
 </dl>
 </dd>
@@ -943,17 +1102,52 @@ number of hours</p></div>
 </code></dt>
 <dd>
 <div class="desc"><p>Operations on classic report</p>
-<p>Initialize the report object</p></div>
+<dl>
+<dt>Attributes</dt>
+<dt>-----=</dt>
+<dt><strong><code>_commcell</code></strong> :&ensp;<code>Commcell</code></dt>
+<dd>Commcell object associated with the report.</dd>
+<dt><strong><code>_request_json</code></strong> :&ensp;<code>dict</code></dt>
+<dd>JSON request to be sent to the CommServe.</dd>
+<dt><strong><code>_cvpysdk_commcell_object</code></strong> :&ensp;<code>CVPySDK</code></dt>
+<dd>CVPySDK commcell object.</dd>
+<dt><strong><code>_services</code></strong> :&ensp;<code>dict</code></dt>
+<dd>Dictionary of Commvault services.</dd>
+<dt><strong><code>_report_extension</code></strong> :&ensp;<code>str</code></dt>
+<dd>Report file extension. Defaults to HTML.</dd>
+<dt><strong><code>_backup_job_summary_report</code></strong> :&ensp;<code><a title="cvpysdk.reports.report.BackupJobSummary" href="#cvpysdk.reports.report.BackupJobSummary">BackupJobSummary</a></code></dt>
+<dd>Instance of BackupJobSummary report.</dd>
+</dl>
+<p>Initialize the report object</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>commcell</code></strong> :&ensp;<code>Commcell</code></dt>
+<dd>the commcell object</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/reports/report.py#L71-L145" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/reports/report.py#L79-L209" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">class Report:
-    &#34;&#34;&#34;Operations on classic report&#34;&#34;&#34;
+    &#34;&#34;&#34;Operations on classic report
+
+    Attributes:
+        _commcell (Commcell): Commcell object associated with the report.
+        _request_json (dict): JSON request to be sent to the CommServe.
+        _cvpysdk_commcell_object (CVPySDK): CVPySDK commcell object.
+        _services (dict): Dictionary of Commvault services.
+        _report_extension (str): Report file extension. Defaults to HTML.
+        _backup_job_summary_report (BackupJobSummary): Instance of BackupJobSummary report.
+    &#34;&#34;&#34;
 
     def __init__(self, commcell):
-        &#34;&#34;&#34; Initialize the report object &#34;&#34;&#34;
+        &#34;&#34;&#34; Initialize the report object
+
+        Args:
+            commcell (Commcell): the commcell object
+        &#34;&#34;&#34;
         self._commcell = commcell
         self._request_json = {}
         self._cvpysdk_commcell_object = commcell._cvpysdk_object
@@ -962,16 +1156,32 @@ number of hours</p></div>
         self._backup_job_summary_report = None
 
     @property
-    def backup_job_summary(self):
-        &#34;&#34;&#34;Returns object of backup job summary report&#34;&#34;&#34;
+    def backup_job_summary(self) -&gt; &#34;BackupJobSummary&#34;:
+        &#34;&#34;&#34;Returns object of backup job summary report
+
+        Returns:
+            BackupJobSummary: Instance of the BackupJobSummary class.
+
+        Usage:
+            &gt;&gt;&gt; report = Report(commcell_object)
+            &gt;&gt;&gt; backup_job_summary = report.backup_job_summary
+        &#34;&#34;&#34;
         if self._backup_job_summary_report is None:
             self._backup_job_summary_report = BackupJobSummary(self._commcell)
         return self._backup_job_summary_report
 
-    def set_format(self, format_type):
+    def set_format(self, format_type: FormatType) -&gt; None:
         &#34;&#34;&#34;Sets the output format of a report
+
         Args:
             format_type (FormatType): set file extension using Enum class FormatType
+
+        Raises:
+            Exception: if format_type is not a valid FormatType
+
+        Usage:
+            &gt;&gt;&gt; report = Report(commcell_object)
+            &gt;&gt;&gt; report.set_format(FormatType.PDF)
         &#34;&#34;&#34;
         for each_format_type in FormatType:
             if each_format_type.name == format_type.name:
@@ -982,11 +1192,20 @@ number of hours</p></div>
                 return
         raise Exception(&#34;Invalid format type,format should be one among the type in FormatType&#34;)
 
-    def select_local_drive(self, report_copy_location, client_name=None):
+    def select_local_drive(self, report_copy_location: str, client_name: Optional[str] = None) -&gt; None:
         &#34;&#34;&#34;Select local drive
+
         Args:
-            client_name          (String)        --       Name of the client
-            report_copy_location (String)        --       location where report need to be saved
+            report_copy_location (str): location where report need to be saved
+            client_name          (str): Name of the client, defaults to CommServe name if None
+
+        Raises:
+            Exception: if client_name does not exist
+
+        Usage:
+            &gt;&gt;&gt; report = Report(commcell_object)
+            &gt;&gt;&gt; report.select_local_drive(report_copy_location=&#39;C:\\reports&#39;, client_name=&#39;client1&#39;)
+            &gt;&gt;&gt; report.select_local_drive(report_copy_location=&#39;C:\\reports&#39;)
         &#34;&#34;&#34;
         if not client_name:
             client_name = self._commcell.commserv_name
@@ -999,23 +1218,41 @@ number of hours</p></div>
         self._request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][&#39;reportOption&#39;] \
             [&#39;commonOpt&#39;][&#39;savedTo&#39;][&#39;locationURL&#39;] = report_copy_location
 
-    def select_network_share(self):
-        &#34;&#34;&#34;Select network share&#34;&#34;&#34;
+    def select_network_share(self) -&gt; None:
+        &#34;&#34;&#34;Select network share
+
+        Usage:
+            &gt;&gt;&gt; report = Report(commcell_object)
+            &gt;&gt;&gt; report.select_network_share()
+        &#34;&#34;&#34;
         self._request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][&#39;reportOption&#39;]\
             [&#39;commonOpt&#39;][&#39;savedTo&#39;][&#39;isNetworkDrive&#39;] = 1
 
-    def set_report_custom_name(self, name):
+    def set_report_custom_name(self, name: str) -&gt; None:
         &#34;&#34;&#34; Sets report custom name
+
         Args:
-            name(String)               --       Custom name of the report
+            name (str): Custom name of the report
+
+        Usage:
+            &gt;&gt;&gt; report = Report(commcell_object)
+            &gt;&gt;&gt; report.set_report_custom_name(name=&#39;MyReport&#39;)
         &#34;&#34;&#34;
         self._request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][&#39;reportOption&#39;]\
         [&#39;commonOpt&#39;][&#39;reportCustomName&#39;] = (name + &#34;.&#34; + self._report_extension)
 
-    def run_report(self):
+    def run_report(self) -&gt; str:
         &#34;&#34;&#34; Executes the report
+
         Returns:
             str: Job ID
+
+        Raises:
+            SDKException: if the report execution fails
+
+        Usage:
+            &gt;&gt;&gt; report = Report(commcell_object)
+            &gt;&gt;&gt; job_id = report.run_report()
         &#34;&#34;&#34;
         flag, response = self._cvpysdk_commcell_object.make_request(&#39;POST&#39;,
                                                                     self._services[&#39;CREATE_TASK&#39;],
@@ -1031,17 +1268,36 @@ number of hours</p></div>
 </ul>
 <h3>Instance variables</h3>
 <dl>
-<dt id="cvpysdk.reports.report.Report.backup_job_summary"><code class="name">var <span class="ident">backup_job_summary</span></code></dt>
+<dt id="cvpysdk.reports.report.Report.backup_job_summary"><code class="name">var <span class="ident">backup_job_summary</span> : <a title="cvpysdk.reports.report.BackupJobSummary" href="#cvpysdk.reports.report.BackupJobSummary">BackupJobSummary</a></code></dt>
 <dd>
-<div class="desc"><p>Returns object of backup job summary report</p></div>
+<div class="desc"><p>Returns object of backup job summary report</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code><a title="cvpysdk.reports.report.BackupJobSummary" href="#cvpysdk.reports.report.BackupJobSummary">BackupJobSummary</a></code></dt>
+<dd>Instance of the BackupJobSummary class.</dd>
+</dl>
+<p>Usage
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; report = Report(commcell_object)
+&gt;&gt;&gt; backup_job_summary = report.backup_job_summary
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/reports/report.py#L83-L88" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/reports/report.py#L104-L117" class="git-link">Browse git</a>
 </summary>
 <pre><code class="python">@property
-def backup_job_summary(self):
-    &#34;&#34;&#34;Returns object of backup job summary report&#34;&#34;&#34;
+def backup_job_summary(self) -&gt; &#34;BackupJobSummary&#34;:
+    &#34;&#34;&#34;Returns object of backup job summary report
+
+    Returns:
+        BackupJobSummary: Instance of the BackupJobSummary class.
+
+    Usage:
+        &gt;&gt;&gt; report = Report(commcell_object)
+        &gt;&gt;&gt; backup_job_summary = report.backup_job_summary
+    &#34;&#34;&#34;
     if self._backup_job_summary_report is None:
         self._backup_job_summary_report = BackupJobSummary(self._commcell)
     return self._backup_job_summary_report</code></pre>
@@ -1051,24 +1307,42 @@ def backup_job_summary(self):
 <h3>Methods</h3>
 <dl>
 <dt id="cvpysdk.reports.report.Report.run_report"><code class="name flex">
-<span>def <span class="ident">run_report</span></span>(<span>self)</span>
+<span>def <span class="ident">run_report</span></span>(<span>self) ‑> str</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Executes the report</p>
-<h2 id="returns">Returns</h2>
 <dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
 <dt><code>str</code></dt>
 <dd>Job ID</dd>
-</dl></div>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>SDKException</code></dt>
+<dd>if the report execution fails</dd>
+</dl>
+<p>Usage
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; report = Report(commcell_object)
+&gt;&gt;&gt; job_id = report.run_report()
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/reports/report.py#L134-L145" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/reports/report.py#L190-L209" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def run_report(self):
+<pre><code class="python">def run_report(self) -&gt; str:
     &#34;&#34;&#34; Executes the report
+
     Returns:
         str: Job ID
+
+    Raises:
+        SDKException: if the report execution fails
+
+    Usage:
+        &gt;&gt;&gt; report = Report(commcell_object)
+        &gt;&gt;&gt; job_id = report.run_report()
     &#34;&#34;&#34;
     flag, response = self._cvpysdk_commcell_object.make_request(&#39;POST&#39;,
                                                                 self._services[&#39;CREATE_TASK&#39;],
@@ -1080,28 +1354,49 @@ def backup_job_summary(self):
 </details>
 </dd>
 <dt id="cvpysdk.reports.report.Report.select_local_drive"><code class="name flex">
-<span>def <span class="ident">select_local_drive</span></span>(<span>self, report_copy_location, client_name=None)</span>
+<span>def <span class="ident">select_local_drive</span></span>(<span>self, report_copy_location: str, client_name: Optional[str] = None) ‑> None</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Select local drive</p>
-<h2 id="args">Args</h2>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>report_copy_location</code></strong> :&ensp;<code>str</code></dt>
+<dd>location where report need to be saved</dd>
+</dl>
 <p>client_name
-(String)
-&ndash;
-Name of the client
-report_copy_location (String)
-&ndash;
-location where report need to be saved</p></div>
+(str): Name of the client, defaults to CommServe name if None</p>
+<dl>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>Exception</code></dt>
+<dd>if client_name does not exist</dd>
+</dl>
+<p>Usage
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; report = Report(commcell_object)
+&gt;&gt;&gt; report.select_local_drive(report_copy_location='C:\reports', client_name='client1')
+&gt;&gt;&gt; report.select_local_drive(report_copy_location='C:\reports')
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/reports/report.py#L104-L119" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/reports/report.py#L141-L165" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def select_local_drive(self, report_copy_location, client_name=None):
+<pre><code class="python">def select_local_drive(self, report_copy_location: str, client_name: Optional[str] = None) -&gt; None:
     &#34;&#34;&#34;Select local drive
+
     Args:
-        client_name          (String)        --       Name of the client
-        report_copy_location (String)        --       location where report need to be saved
+        report_copy_location (str): location where report need to be saved
+        client_name          (str): Name of the client, defaults to CommServe name if None
+
+    Raises:
+        Exception: if client_name does not exist
+
+    Usage:
+        &gt;&gt;&gt; report = Report(commcell_object)
+        &gt;&gt;&gt; report.select_local_drive(report_copy_location=&#39;C:\\reports&#39;, client_name=&#39;client1&#39;)
+        &gt;&gt;&gt; report.select_local_drive(report_copy_location=&#39;C:\\reports&#39;)
     &#34;&#34;&#34;
     if not client_name:
         client_name = self._commcell.commserv_name
@@ -1116,40 +1411,68 @@ location where report need to be saved</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.reports.report.Report.select_network_share"><code class="name flex">
-<span>def <span class="ident">select_network_share</span></span>(<span>self)</span>
+<span>def <span class="ident">select_network_share</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Select network share</p></div>
+<div class="desc"><p>Select network share</p>
+<p>Usage
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; report = Report(commcell_object)
+&gt;&gt;&gt; report.select_network_share()
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/reports/report.py#L121-L124" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/reports/report.py#L167-L175" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def select_network_share(self):
-    &#34;&#34;&#34;Select network share&#34;&#34;&#34;
+<pre><code class="python">def select_network_share(self) -&gt; None:
+    &#34;&#34;&#34;Select network share
+
+    Usage:
+        &gt;&gt;&gt; report = Report(commcell_object)
+        &gt;&gt;&gt; report.select_network_share()
+    &#34;&#34;&#34;
     self._request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][&#39;reportOption&#39;]\
         [&#39;commonOpt&#39;][&#39;savedTo&#39;][&#39;isNetworkDrive&#39;] = 1</code></pre>
 </details>
 </dd>
 <dt id="cvpysdk.reports.report.Report.set_format"><code class="name flex">
-<span>def <span class="ident">set_format</span></span>(<span>self, format_type)</span>
+<span>def <span class="ident">set_format</span></span>(<span>self, format_type: <a title="cvpysdk.reports.report.FormatType" href="#cvpysdk.reports.report.FormatType">FormatType</a>) ‑> None</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Sets the output format of a report</p>
-<h2 id="args">Args</h2>
 <dl>
+<dt>Args</dt>
+<dt>-----=</dt>
 <dt><strong><code>format_type</code></strong> :&ensp;<code><a title="cvpysdk.reports.report.FormatType" href="#cvpysdk.reports.report.FormatType">FormatType</a></code></dt>
 <dd>set file extension using Enum class FormatType</dd>
-</dl></div>
+<dt>Raises</dt>
+<dt>-----=</dt>
+<dt><code>Exception</code></dt>
+<dd>if format_type is not a valid FormatType</dd>
+</dl>
+<p>Usage
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; report = Report(commcell_object)
+&gt;&gt;&gt; report.set_format(FormatType.PDF)
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/reports/report.py#L90-L102" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/reports/report.py#L119-L139" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def set_format(self, format_type):
+<pre><code class="python">def set_format(self, format_type: FormatType) -&gt; None:
     &#34;&#34;&#34;Sets the output format of a report
+
     Args:
         format_type (FormatType): set file extension using Enum class FormatType
+
+    Raises:
+        Exception: if format_type is not a valid FormatType
+
+    Usage:
+        &gt;&gt;&gt; report = Report(commcell_object)
+        &gt;&gt;&gt; report.set_format(FormatType.PDF)
     &#34;&#34;&#34;
     for each_format_type in FormatType:
         if each_format_type.name == format_type.name:
@@ -1162,23 +1485,35 @@ location where report need to be saved</p></div>
 </details>
 </dd>
 <dt id="cvpysdk.reports.report.Report.set_report_custom_name"><code class="name flex">
-<span>def <span class="ident">set_report_custom_name</span></span>(<span>self, name)</span>
+<span>def <span class="ident">set_report_custom_name</span></span>(<span>self, name: str) ‑> None</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Sets report custom name</p>
-<h2 id="args">Args</h2>
-<p>name(String)
-&ndash;
-Custom name of the report</p></div>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>name</code></strong> :&ensp;<code>str</code></dt>
+<dd>Custom name of the report</dd>
+</dl>
+<p>Usage
+-----=</p>
+<pre><code class="language-python-repl">&gt;&gt;&gt; report = Report(commcell_object)
+&gt;&gt;&gt; report.set_report_custom_name(name='MyReport')
+</code></pre></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
-<a href="https://github.com/Commvault/cvpysdk/blob/8dccc75ff7e6a20e27c0e0820ae8e40a8208806b/cvpysdk/reports/report.py#L126-L132" class="git-link">Browse git</a>
+<a href="https://github.com/Commvault/cvpysdk/blob/96eff8fe6ae740723124f16405ef2ebafc568c74/cvpysdk/reports/report.py#L177-L188" class="git-link">Browse git</a>
 </summary>
-<pre><code class="python">def set_report_custom_name(self, name):
+<pre><code class="python">def set_report_custom_name(self, name: str) -&gt; None:
     &#34;&#34;&#34; Sets report custom name
+
     Args:
-        name(String)               --       Custom name of the report
+        name (str): Custom name of the report
+
+    Usage:
+        &gt;&gt;&gt; report = Report(commcell_object)
+        &gt;&gt;&gt; report.set_report_custom_name(name=&#39;MyReport&#39;)
     &#34;&#34;&#34;
     self._request_json[&#39;taskInfo&#39;][&#39;subTasks&#39;][0][&#39;options&#39;][&#39;adminOpts&#39;][&#39;reportOption&#39;]\
     [&#39;commonOpt&#39;][&#39;reportCustomName&#39;] = (name + &#34;.&#34; + self._report_extension)</code></pre>
