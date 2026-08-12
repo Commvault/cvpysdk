@@ -33,25 +33,51 @@ System:
 
 
 class System:
-    """Class for performing system related operations in the commcell"""
+    """
+    Class for performing system-related operations within the Commcell environment.
 
-    def __init__(self, commcell_object):
-        """Initialize the System class
+    This class provides an interface to manage and configure system-level settings
+    for a Commcell instance. It is initialized with a Commcell object and offers
+    methods to adjust system parameters such as GUI timeout values.
 
-            Args:
-                commcell_object    (object)    --  instance of the Commcell class
+    Key Features:
+        - Initialization with a Commcell object for context-specific operations
+        - Ability to set the GUI timeout value for system interactions
 
+    #ai-gen-doc
+    """
+
+    def __init__(self, commcell_object: object) -> None:
+        """Initialize the System class with a Commcell connection.
+
+        Args:
+            commcell_object: An instance of the Commcell class representing the active Commcell connection.
+
+        Example:
+            >>> from cvpysdk.commcell import Commcell
+            >>> commcell = Commcell('commcell_host', 'username', 'password')
+            >>> system = System(commcell)
+            >>> print("System object initialized successfully")
+
+        #ai-gen-doc
         """
         self._commcell_object = commcell_object
 
-    def set_gui_timeout(self, value):
-        """Sets GUI timeout value in minutes
+    def set_gui_timeout(self, value: int) -> None:
+        """Set the GUI timeout value in minutes.
+
+        Setting the timeout value determines how long a GUI session remains active before timing out due to inactivity.
+        If the value is set to 0, GUI connections will not time out.
 
         Args:
-            value   (str)   -- GUI timeout value in minutes
+            value: The GUI timeout value in minutes. Use 0 to disable GUI session timeouts.
 
-        **Note** setting value to 0 will disable GUI connections to timeout
+        Example:
+            >>> system = System()
+            >>> system.set_gui_timeout(30)  # Set GUI timeout to 30 minutes
+            >>> system.set_gui_timeout(0)   # Disable GUI timeout
 
+        #ai-gen-doc
         """
         self._commcell_object._set_gxglobalparam_value(
             {

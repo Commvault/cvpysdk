@@ -23,23 +23,45 @@ CouchbaseInstance:
     restore()                       -- Submits a restore request based on restore options
 """
 from __future__ import unicode_literals
+
+from typing import TYPE_CHECKING
+
 from ..bigdataappsinstance import BigDataAppsInstance
 from ...exception import SDKException
 
+if TYPE_CHECKING:
+    from ...job import Job
 
 class CouchbaseInstance(BigDataAppsInstance):
     """
-    Class for representing an Instance of the couchbase instance
+    Represents a Couchbase database instance within a big data application environment.
+
+    This class encapsulates the details and operations related to a Couchbase instance,
+    including initialization with agent and instance metadata, and providing functionality
+    to restore the instance using specified restore options.
+
+    Key Features:
+        - Initialization with agent object, instance name, and instance ID
+        - Restore operation with customizable restore options
+        - Inherits capabilities from BigDataAppsInstance for integration with big data workflows
+
+    #ai-gen-doc
     """
-    def __init__(self, agent_object, instance_name, instance_id=None):
-        """Initializes the object of the CouchbaseInstance class
-            Args:
-                agent_object    (object)  --  instance of the Agent class
-                instance_name   (str)     --  name of the instance
-                instance_id     (str)     --  id of the instance
-                    default: None
-            Returns:
-                object - instance of the Instance class
+    def __init__(self, agent_object: object, instance_name: str, instance_id: str = None) -> None:
+        """Initialize a new CouchbaseInstance object.
+
+        Args:
+            agent_object: Instance of the Agent class associated with this Couchbase instance.
+            instance_name: The name of the Couchbase instance.
+            instance_id: Optional; the unique identifier for the instance. If not provided, a new instance will be created.
+
+        Example:
+            >>> agent = Agent(commcell_object, "Couchbase")
+            >>> couchbase_instance = CouchbaseInstance(agent, "Couchbase_Instance1")
+            >>> # With instance ID
+            >>> couchbase_instance = CouchbaseInstance(agent, "Couchbase_Instance1", "12345")
+
+        #ai-gen-doc
         """
         self._agent_object = agent_object
         self._browse_request = {}
@@ -51,30 +73,47 @@ class CouchbaseInstance(BigDataAppsInstance):
                 instance_name,
                 instance_id)
 
-    def restore(self, restore_options):
-        """
-            Restores the content of this instance content
-            Args:
-                restore_options : dict of keyword arguments needed to submit a couchbase restore:
-                    Example:
-                       restore_options = {
-                            'no_of_streams': no_of_stream,
-                            'multinode_restore': multinode_restore,
-                            'overwrite': 'overwrite',
-                            'destination_instance': 'destination_instance_name',
-                            'destination_instance_id': destination_instance_id,
-                            'paths': ['paths_to_be_restored'],
-                            'destination_client_id': 'destination_client_id,
-                            'destination_client_name': 'destination_client_name',
-                            'client_type': client_type,
-                            'destination_appTypeId': destination_appTypeId,
-                            'backupset_name': 'backupset_name',
-                            'subclient_id': 'subclient_id',
-                            'restore_items': ['restore_items'],
-                            'accessnodes': ['accessnodes']
-                        }
-            Returns:
-                object - instance of the Job class for this restore job
+    def restore(self, restore_options: dict) -> 'Job':
+        """Restore the content of this Couchbase instance using the specified options.
+
+        Args:
+            restore_options: A dictionary containing keyword arguments required to submit a Couchbase restore job.
+                Example:
+                    restore_options = {
+                        'no_of_streams': 4,
+                        'multinode_restore': True,
+                        'overwrite': True,
+                        'destination_instance': 'destination_instance_name',
+                        'destination_instance_id': 123,
+                        'paths': ['/data/bucket1', '/data/bucket2'],
+                        'destination_client_id': 456,
+                        'destination_client_name': 'destination_client_name',
+                        'client_type': 'Couchbase',
+                        'destination_appTypeId': 789,
+                        'backupset_name': 'backupset1',
+                        'subclient_id': 1011,
+                        'restore_items': ['bucket1', 'bucket2'],
+                        'accessnodes': ['node1', 'node2']
+                    }
+
+        Returns:
+            Job: An instance of the Job class representing the restore job.
+
+        Example:
+            >>> restore_options = {
+            ...     'no_of_streams': 2,
+            ...     'overwrite': True,
+            ...     'destination_instance': 'CouchbaseInstance2',
+            ...     'paths': ['/data/bucket1'],
+            ...     'destination_client_name': 'Client2',
+            ...     'backupset_name': 'Backupset1',
+            ...     'restore_items': ['bucket1'],
+            ...     'accessnodes': ['node1']
+            ... }
+            >>> job = couchbase_instance.restore(restore_options)
+            >>> print(f"Restore job started with ID: {job.job_id}")
+
+        #ai-gen-doc
         """
         if not (isinstance(restore_options, dict)):
             raise SDKException('Instance', '101')
@@ -109,4 +148,3 @@ class CouchbaseInstance(BigDataAppsInstance):
         request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
             "distributedAppsRestoreOptions"] = distributed_restore_json
         return self._process_restore_response(request_json)
-

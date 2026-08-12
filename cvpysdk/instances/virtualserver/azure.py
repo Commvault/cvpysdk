@@ -36,33 +36,56 @@ AzureInstance:
 """
 
 from ..vsinstance import VirtualServerInstance
-from ...exception import SDKException
-from ...instance import Instance
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ...agent import Agent
+
 
 class AzureInstance(VirtualServerInstance):
+    """
+    Represents an Azure virtual server instance within the virtualization management framework.
 
-    def __init__(self, agent, name, iid):
-        """Initialize the Instance object for the given Virtual Server instance.
+    This class provides mechanisms to interact with and manage Azure-based virtual server instances.
+    It allows for initialization with agent and instance details, retrieval of instance properties,
+    and access to server-specific information such as server name and host name.
 
-            Args:
-                class_object (agent_object,instance_name,instance_id)  --  instance of the
-                                                                                Agent class,
-                                                                                instance name,
-                                                                                instance id
+    Key Features:
+        - Initialization with agent, name, and instance ID
+        - Retrieval of instance properties in both standard and JSON formats
+        - Access to server name and server host name via properties
 
+    #ai-gen-doc
+    """
+
+    def __init__(self, agent: 'Agent', name: str, iid: str) -> None:
+        """Initialize an AzureInstance object for the specified Virtual Server instance.
+
+        Args:
+            agent: An instance of the Agent class representing the associated agent.
+            name: The name of the virtual server instance.
+            iid: The unique identifier (ID) of the virtual server instance.
+
+        Example:
+            >>> agent = Agent(client_object, "Virtual Server")
+            >>> azure_instance = AzureInstance(agent, "AzureVMInstance", '101')
+
+        #ai-gen-doc
         """
 
         super(AzureInstance, self).__init__(agent, name, iid)
         self._vendor_id = 5
 
-    def  _get_instance_properties(self):
-        """
-        Get the properties of this instance
+    def _get_instance_properties(self) -> None:
+        """Retrieve and update the properties of this Azure instance.
 
-        Raise:
-            SDK Exception:
-                if response is not empty
-                if response is not success
+        This method fetches the latest properties for the Azure instance and updates the instance's internal state.
+        It raises an SDK Exception if the response is not empty or if the response indicates a failure.
+
+        Raises:
+            SDK Exception: If the response is not empty or if the response is not successful.
+
+        #ai-gen-doc
         """
 
         super(AzureInstance, self)._get_instance_properties()
@@ -76,17 +99,16 @@ class AzureInstance(VirtualServerInstance):
                 if 'clientName' in client.keys():
                     self._server_name.append(str(client['clientName']))
 
-        # waiting for praveen form
+    def _get_instance_properties_json(self) -> dict:
+        """Retrieve all instance-related properties for this Azure subclient.
 
-    def _get_instance_properties_json(self):
-        """get the all instance related properties of this subclient.
+        Returns:
+            dict: A dictionary containing all properties associated with this instance.
 
-          Returns:
-               dict - all instance properties put inside a dict
-
+        #ai-gen-doc
         """
         instance_json = {
-            "instanceProperties":{
+            "instanceProperties": {
                 "isDeleted": False,
                 "instance": self._instance,
                 "instanceActivityControl": self._instanceActivityControl,
@@ -100,13 +122,33 @@ class AzureInstance(VirtualServerInstance):
         return instance_json
 
     @property
-    def server_name(self):
-        """getter for the domain name in the Hyper-V json"""
+    def server_name(self) -> list:
+        """Get the server (domain) name from the Hyper-V JSON configuration.
+
+        Returns:
+            The domain name as a string extracted from the Hyper-V JSON.
+
+        Example:
+            >>> azure_instance = AzureInstance()
+            >>> domain = azure_instance.server_name
+            >>> print(f"Domain name: {domain}")
+
+        #ai-gen-doc
+        """
         return self._server_name
 
     @property
-    def server_host_name(self):
-        """getter for the domain name in the vmware vendor json"""
+    def server_host_name(self) -> list:
+        """Get the domain name (server host name) from the VMware vendor JSON.
+
+        Returns:
+            The server host name as a string.
+
+        Example:
+            >>> azure_instance = AzureInstance()
+            >>> host_name = azure_instance.server_host_name
+            >>> print(f"Server host name: {host_name}")
+
+        #ai-gen-doc
+        """
         return self._server_name
-    #return self._server_name
-    # TODO will change with Praveen Form(jmalik)

@@ -55,85 +55,115 @@ DB2Instance instance Attributes:
     **log_backup_storage_policy**       -- returns log backup storage policy
 
 """
+
 from __future__ import unicode_literals
-from ..instance import Instance
-from ..exception import SDKException
 from base64 import b64encode
+
+from ..exception import SDKException
+from ..instance import Instance
+from ..job import Job
 
 
 class DB2Instance(Instance):
-    """ Derived class from Instance Base class, representing a DB2 instance,
-        and to perform operations on that Instance."""
+    """
+    Represents a DB2 database instance, extending the base Instance class to provide
+    specialized operations and properties for DB2 environments.
+
+    This class offers access to key DB2 instance attributes such as version, home directory,
+    username, and various storage policies. It also provides methods for performing
+    comprehensive restore operations, including entire database restores, out-of-place restores,
+    and table-level restores with advanced configuration options.
+
+    Key Features:
+        - Access DB2 instance properties: version, home directory, user name
+        - Manage storage policies for data backup, command line, and log backup
+        - Generate and handle restore destination and DB2 restore options in JSON format
+        - Restore entire DB2 databases to specified destinations
+        - Perform out-of-place restores to alternate locations or backup sets
+        - Execute table-level restores with support for staging and table paths, and authentication
+
+    #ai-gen-doc
+    """
 
     @property
-    def version(self):
-        """returns db2 version
+    def version(self) -> str:
+        """Get the DB2 version associated with this instance.
 
         Returns:
-            (str) -- db2 version value in string
+            The DB2 version as a string.
 
+        #ai-gen-doc
         """
-        return self._properties.get('version', "")
+        return self._properties.get('version', '')
 
     @property
-    def home_directory(self):
-        """
-        returns db2 home directory
+    def home_directory(self) -> str:
+        """Get the DB2 home directory path for this instance.
 
         Returns:
-            (str) - string of db2_home
+            The path to the DB2 home directory as a string.
 
+        #ai-gen-doc
         """
-        return self._properties.get('db2Instance', {}).get('homeDirectory', "")
+        return self._properties.get('db2Instance', {}).get('homeDirectory', '')
 
     @property
-    def user_name(self):
-        """
-                returns db2 user name
+    def user_name(self) -> str:
+        """Get the DB2 username associated with this instance.
 
-                Returns:
-                    (str)  - String containing db2 user
+        Returns:
+            The DB2 username as a string.
 
+        #ai-gen-doc
         """
-        return self._properties.get(
-            'db2Instance', {}).get('userAccount', {}).get('userName', "")
+        return self._properties.get('db2Instance', {}).get('userAccount', {}).get('userName', '')
 
     @property
-    def data_backup_storage_policy(self):
-        """ returns data backup storage policy
+    def data_backup_storage_policy(self) -> str:
+        """Get the data backup storage policy name configured at the DB2 instance level.
 
-            Returns:
-                (str) -- Storage policy name from db2 instance level
+        Returns:
+            The name of the storage policy assigned to the DB2 instance for data backups.
 
+        #ai-gen-doc
         """
         return self._properties.get('db2Instance', {}).get(
-            'DB2StorageDevice', {}).get('dataBackupStoragePolicy', {}).get('storagePolicyName', "")
+            'DB2StorageDevice', {}).get('dataBackupStoragePolicy', {}).get('storagePolicyName', '')
 
     @property
-    def command_line_storage_policy(self):
-        """returns commandline storage policy
+    def command_line_storage_policy(self) -> str:
+        """Get the command line storage policy name configured at the DB2 instance level.
 
-            Returns:
-                (str)  --  Command line sp name from db2 instance level
+        Returns:
+            The name of the command line storage policy as a string.
 
+        #ai-gen-doc
         """
         return self._properties.get('db2Instance', {}).get(
             'DB2StorageDevice', {}).get('commandLineStoragePolicy', {}).get('storagePolicyName', "")
 
     @property
-    def log_backup_storage_policy(self):
-        """
-        returns log backup storage policy
+    def log_backup_storage_policy(self) -> str:
+        """Get the name of the log backup storage policy at the instance level.
 
-            Returns:
-                (str)  -- Log backup SP name from instance level
+        Returns:
+            The name of the log backup storage policy as a string.
 
+        #ai-gen-doc
         """
         return self._properties.get('db2Instance', {}).get(
             'DB2StorageDevice', {}).get('logBackupStoragePolicy', {}).get('storagePolicyName', "")
 
-    def _restore_destination_json(self, value):
-        """setter for the Db2 Destination options in restore JSON"""
+    def _restore_destination_json(self, value: dict) -> None:
+        """Set the DB2 destination options in the restore JSON configuration.
+
+        This method updates the restore JSON with the specified DB2 destination options.
+
+        Args:
+            value: A dictionary containing the DB2 destination options to be set in the restore JSON.
+
+        #ai-gen-doc
+        """
 
         if not isinstance(value, dict):
             raise SDKException('Instance', '101')
@@ -150,12 +180,18 @@ class DB2Instance(Instance):
             }
         }
 
-    def _db2_restore_options_json(self, value):
-        """setter for  the db2 options of in restore JSON
-            Args:
-                value (dict) -- Dictionary of options need to be set for restore
+    def _db2_restore_options_json(self, value: dict) -> dict:
+        """Set the DB2 options in the restore JSON configuration.
 
+        Args:
+            value: A dictionary containing the DB2 restore options to be set.
+
+        Returns:
+            dict: The DB2 restore options dictionary
+
+        #ai-gen-doc
         """
+
         if not isinstance(value, dict):
             raise SDKException('Instance', '101')
 
@@ -205,16 +241,21 @@ class DB2Instance(Instance):
 
         return self.db2_options_restore_json
 
-    def _restore_json(self, **kwargs):
-        """Returns the JSON request to pass to the API as per the options selected by the user.
+    def _restore_json(self, **kwargs) -> dict:
+        """Generate the JSON request payload for a restore operation based on user-selected options.
 
-            Args:
-                kwargs   (dict)  --  list of options need to be set for restore
+        This method constructs and returns a dictionary representing the JSON request body
+        required by the API for performing a restore, using the options provided as keyword arguments.
 
-            Returns:
-                dict - JSON request to pass to the API
+        Args:
+            **kwargs: Arbitrary keyword arguments representing restore options and their values.
 
+        Returns:
+            dict: The JSON request dictionary to be sent to the API for the restore operation.
+
+        #ai-gen-doc
         """
+
         rest_json = super(DB2Instance, self)._restore_json(**kwargs)
         restore_option = {}
         if kwargs.get("restore_option"):
@@ -231,59 +272,50 @@ class DB2Instance(Instance):
         return rest_json
 
     def restore_entire_database(
-            self,
-            dest_client_name,
-            dest_instance_name,
-            dest_database_name,
-            **kwargs
-    ):
-        """Restores the db2 database
+        self,
+        dest_client_name: str,
+        dest_instance_name: str,
+        dest_database_name: str,
+        **kwargs
+    ) -> 'Job':
+        """Restore the entire DB2 database to a specified destination.
 
-            Args:
+        This method initiates a restore operation for a DB2 database, allowing you to specify
+        the destination client, instance, and database name. Additional restore options can be
+        provided as keyword arguments.
 
-                dest_client_name        (str)   --  destination client name
+        Args:
+            dest_client_name: The name of the destination client where the database will be restored.
+            dest_instance_name: The name of the destination DB2 instance on the destination client.
+            dest_database_name: The name of the destination database to restore to.
+            **kwargs: Optional keyword arguments to customize the restore operation, such as:
+                - restore_type (str): Type of DB2 restore. Default is "ENTIREDB".
+                - recover_db (bool): Whether to recover the database after restore. Default is True.
+                - restore_incremental (bool): Whether to restore incremental backups. Default is True.
+                - restore_data (bool): Whether to restore data. Default is True.
+                - copy_precedence (int): Copy precedence to use for restore. Default is None.
+                - roll_forward (bool): Whether to roll forward the database after restore. Default is True.
+                - restore_logs (bool): Whether to restore logs. Default is True.
 
-                dest_instance_name      (str)   --  destination db2 instance name of
-                destination on destination client
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                dest_database_name      (str)   -- destination database name
+        Raises:
+            SDKException: If the job initialization fails, the response is empty, or the response is not successful.
 
-                restore_type            (str)   -- db2 restore type
+        Example:
+            >>> db2_instance = DB2Instance()
+            >>> job = db2_instance.restore_entire_database(
+            ...     dest_client_name="db2_client",
+            ...     dest_instance_name="db2_instance",
+            ...     dest_database_name="restored_db",
+            ...     restore_type="ENTIREDB",
+            ...     recover_db=True,
+            ...     restore_incremental=True
+            ... )
+            >>> print(f"Restore job started with ID: {job.job_id}")
 
-                    default: "ENTIREDB"
-
-                recover_db              (bool)  -- recover database flag
-
-                    default: True
-
-                restore_incremental     (bool)  -- Restore incremental flag
-
-                    default: True
-
-                restore_data            (bool)  -- Restore data or not
-                    default: True
-
-                copy_precedence         (int)   -- Copy precedence to perform restore from
-                    default : None
-
-                roll_forward            (bool)  -- Rollforward database or not
-                    default: True
-
-                restore_logs (bool)  -   Restore the logs or not
-                default: True
-
-            Returns:
-                object - instance of the Job class for this restore job
-
-            Raises:
-                SDKException:
-
-                    if failed to initialize job
-
-                    if response is empty
-
-                    if response is not success
-
+        #ai-gen-doc
         """
 
         recover_db = kwargs.get("recover_db", True)
@@ -303,7 +335,6 @@ class DB2Instance(Instance):
         logtime_end = kwargs.get("logTimeEnd", False)
         from_time_value = kwargs.get("fromTimeValue", 0)
         to_time_value = kwargs.get("toTimeValue", 0)
-
 
         if "entiredb" in restore_type.lower():
             restore_type = 0
@@ -336,73 +367,57 @@ class DB2Instance(Instance):
         return self._process_restore_response(request_json)
 
     def restore_out_of_place(
-            self,
-            dest_client_name,
-            dest_instance_name,
-            dest_backupset_name,
-            target_path,
-            **kwargs):
-        """Restores the DB2 data/log files specified in the input paths
-        list to the same location.
+        self,
+        dest_client_name: str,
+        dest_instance_name: str,
+        dest_backupset_name: str,
+        target_path: str,
+        **kwargs: object
+    ) -> 'Job':
+        """Restore DB2 data or log files to a different client, instance, or backupset (out-of-place restore).
 
-            Args:
-                dest_client_name        (str)   --  destination client name where files are to be
-                restored
+        This method initiates an out-of-place restore operation for DB2 data or log files, allowing you to restore
+        to a different client, instance, or backupset than the original source. Additional restore options can be
+        specified using keyword arguments.
 
-                dest_instance_name      (str)   --  destination db2 instance name of
-                destination client
+        Args:
+            dest_client_name: The name of the destination client where the files will be restored.
+            dest_instance_name: The DB2 instance name on the destination client.
+            dest_backupset_name: The DB2 backupset name on the destination client.
+            target_path: The destination path for the DB restore.
+            **kwargs: Additional optional restore parameters, such as:
+                - copy_precedence (int): Storage policy copy precedence. Default is None.
+                - from_time (str): Restore contents after this time (format: 'YYYY-MM-DD HH:MM:SS'). Default is None.
+                - to_time (str): Restore contents before this time (format: 'YYYY-MM-DD HH:MM:SS'). Default is None.
+                - redirect_enabled (bool): Whether redirect restore is enabled. Default is False.
+                - redirect_storage_group_path (dict): Mapping of storage group names to redirect paths.
+                - redirect_tablespace_path (dict): Mapping of tablespace names to redirect paths.
+                - destination_path (str): Destination path for restore. Default is None.
+                - restore_data (bool): Whether to restore data.
 
-                dest_backupset_name     (str)   --  destination db2 backupset name of
-                destination client
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                target_path             (str)   --  Destination DB restore path
+        Raises:
+            SDKException: If the job initialization fails, the response is empty, or the response is not successful.
 
-                copy_precedence         (int)   --  copy precedence value of storage policy copy
-                    default: None
+        Example:
+            >>> db2_instance = DB2Instance(commcell)
+            >>> job = db2_instance.restore_out_of_place(
+            ...     dest_client_name='db2_dest_client',
+            ...     dest_instance_name='db2_dest_instance',
+            ...     dest_backupset_name='db2_dest_backupset',
+            ...     target_path='/db2/restore/path',
+            ...     copy_precedence=1,
+            ...     from_time='2023-01-01 00:00:00',
+            ...     to_time='2023-01-31 23:59:59',
+            ...     redirect_enabled=True,
+            ...     redirect_storage_group_path={'SG1': '/new/sg1/path'},
+            ...     restore_data=True
+            ... )
+            >>> print(f"Restore job started with ID: {job.job_id}")
 
-                from_time               (str)   --  time to retore the contents after
-                    format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                to_time                 (str)   --  time to retore the contents before
-                    format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                redirect_enabled         (bool)  --  boolean to specify if redirect restore is
-                enabled
-
-                    default: False
-
-                redirect_storage_group_path           (dict)   --  Path specified for each storage group
-                in advanced restore options in order to perform redirect restore
-                    format: {'Storage Group Name': 'Redirect Path'}
-
-                    default: None
-
-                 redirect_tablespace_path           (dict)   --  Path specified for each tablespace in advanced
-                 restore options in order to perform redirect restore
-                    format: {'Tablespace name': 'Redirect Path'}
-
-                    default: None
-
-                destination_path        (str)   --  destinath path for restore
-                    default: None
-
-                restore_data            (bool)  -- Restore data or not
-
-            Returns:
-                object - instance of the Job class for this restore job
-
-            Raises:
-                SDKException:
-                    if failed to initialize job
-
-                    if response is empty
-
-                    if response is not success
-
+        #ai-gen-doc
         """
 
         copy_precedence = kwargs.get('copy_precedence', None)
@@ -478,92 +493,81 @@ class DB2Instance(Instance):
         return self._process_restore_response(request_json)
 
     def restore_table_level(
-            self,
-            aux_client_name,
-            aux_instance_name,
-            aux_backupset_name,
-            dest_client_name,
-            dest_instance_name,
-            dest_backupset_name,
-            target_path,
-            staging_path,
-            tables_path,
-            user_name,
-            password,
-            **kwargs
-        ):
+        self,
+        aux_client_name: str,
+        aux_instance_name: str,
+        aux_backupset_name: str,
+        dest_client_name: str,
+        dest_instance_name: str,
+        dest_backupset_name: str,
+        target_path: str,
+        staging_path: str,
+        tables_path: list,
+        user_name: str,
+        password: str,
+        **kwargs
+    ) -> 'Job':
+
+        """Perform a DB2 table-level restore operation.
+
+        This method initiates a table-level restore for a DB2 database, allowing you to restore specific tables 
+        from an auxiliary backupset to a destination client and instance. Additional restore options can be 
+        specified using keyword arguments.
+
+        Args:
+            aux_client_name: Name of the auxiliary client where files are to be restored.
+            aux_instance_name: Name of the auxiliary DB2 instance for the restore.
+            aux_backupset_name: Name of the auxiliary backupset for the restore.
+            dest_client_name: Name of the destination client where tables will be restored.
+            dest_instance_name: Name of the destination DB2 instance.
+            dest_backupset_name: Name of the destination DB2 backupset.
+            target_path: Path where the database will be restored.
+            staging_path: Path to use for staging during the restore process.
+            tables_path: List of table paths to restore. 
+                Example (Unix): ['/+tblview+/instance_name/database_name/schema_name/table_name/**']
+                Example (Windows): ["\\+tblview+\\instance_name\\database_name\\schema_name\\table_name\\**"]
+            user_name: Username for the destination DB2 instance.
+            password: Password for the destination DB2 instance.
+            **kwargs: Additional optional parameters for advanced restore options, such as:
+                - src_backupset_name (str): Source backupset name.
+                - copy_precedence (int): Storage policy copy precedence.
+                - from_time (str): Restore contents after this time (format: 'YYYY-MM-DD HH:MM:SS').
+                - to_time (str): Restore contents before this time (format: 'YYYY-MM-DD HH:MM:SS').
+                - rollForward (bool): Whether to perform rollforward recovery (default: True).
+                - destination_path (str): Destination path for restore.
+                - server_port (int): Server port for the destination instance (default: 50000).
+                - generateAuthorizationDDL (bool): Generate authorization DDL (default: False).
+                - extractDDLStatements (bool): Extract DDL statements (default: True).
+                - clearAuxiliary (bool): Cleanup auxiliary after restore (default: True).
+                - dropTable (bool): Drop table for import (default: False).
+
+        Returns:
+            Job: An instance of the Job class representing the restore job.
+
+        Raises:
+            SDKException: If the restore job fails to initialize, if the response is empty, or if the response is not successful.
+
+        Example:
+            >>> db2_instance = DB2Instance()
+            >>> job = db2_instance.restore_table_level(
+            ...     aux_client_name="aux_client",
+            ...     aux_instance_name="AUXINST",
+            ...     aux_backupset_name="AUX_BKSET",
+            ...     dest_client_name="dest_client",
+            ...     dest_instance_name="DESTINST",
+            ...     dest_backupset_name="DEST_BKSET",
+            ...     target_path="/db2/restore",
+            ...     staging_path="/db2/staging",
+            ...     tables_path=['/+tblview+/INST/DB/SCHEMA/TABLE/**'],
+            ...     user_name="db2user",
+            ...     password="db2pass",
+            ...     rollForward=True
+            ... )
+            >>> print(f"Restore job started with ID: {job.job_id}")
+
+        #ai-gen-doc
         """
-        Performs DB2 table level restore
-            Args:
-                aux_client_name         (str)   --  auxiliary client name where files are to be restored
-                aux_instance_name       (str)   --  auxiliary instance name where files are to be restored
-                aux_backupset_name      (str)   --  auxiliary backupset name where files are to be restored
-                dest_client_name        (str)   --  destination client name where files are to be restored
-                dest_instance_name      (str)   --  destination db2 instance name of destination client
-                dest_backupset_name     (str)   --  destination db2 backupset name of destination client
 
-                target_path             (str)   --  Destination DB restore path
-
-                src_backupset_name       (str)   --  Source Backupset Name
-
-                staging_path             (str)   -- Staging Path
-
-                user_name                (str)   -- Destination User name
-
-                password                 (str)  --  Destination User Password
-
-                tables_path             (list)   -- List of tables path
-                    Example:
-                        Unix:  ['/+tblview+/instance_name/database_name/schema_name/table_name/**']
-                        Windows: ["\\+tblview+\\instance_name\\database_name\\schema_name\\table_name\\**"]
-
-                copy_precedence         (int)   --  copy precedence value of storage policy copy
-                    default: None
-
-                from_time               (str)   --  time to retore the contents after
-                    format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                to_time                 (str)   --  time to retore the contents before
-                    format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                rollForward             (bool)   --   Rollforward or not
-                    default: True
-
-                destination_path        (str)   --  destinath path for restore
-                    default: None
-
-                server_port              (int)   -- Server Port Destination instance
-                    default: 50000
-
-                generateAuthorizationDDL    (bool)  -- Generate Authorization DDL
-                    default: False
-
-                extractDDLStatements        (bool)  --  Extracts DDL statement or not
-                    default: True
-
-                clearAuxiliary              (bool)  -- Cleanup auxilliary or not
-                    default: True
-
-                dropTable                   (bool)  -- Drop table for import
-                    default: False
-
-
-            Returns:
-                object - instance of the Job class for this restore job
-
-            Raises:
-                SDKException:
-                    if failed to initialize job
-
-                    if response is empty
-
-                    if response is not success
-
-        """
         copy_precedence = kwargs.get('copy_precedence', None)
         from_time = kwargs.get('from_time', None)
         to_time = kwargs.get('to_time', None)
@@ -627,4 +631,3 @@ class DB2Instance(Instance):
         request_json['taskInfo']["subTasks"][0]["options"]["restoreOptions"][
             "fileOption"]["sourceItem"] = tables_path
         return self._process_restore_response(request_json)
-

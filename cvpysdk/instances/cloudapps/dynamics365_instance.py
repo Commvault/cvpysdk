@@ -49,17 +49,38 @@ from ..cainstance import CloudAppsInstance
 
 
 class MSDynamics365Instance(CloudAppsInstance):
-    """Class for representing an Instance of the MSDynamics365 instance type."""
+    """
+    Represents an instance of the MSDynamics365 application within a cloud environment.
 
-    def _get_instance_properties(self):
-        """Gets the properties of this instance.
+    This class provides mechanisms for managing and interacting with MSDynamics365 instances,
+    including retrieving instance properties, accessing configuration details, and discovering
+    content within specific environments. It is designed to be used as part of a cloud application
+    management framework, inheriting core functionality from CloudAppsInstance.
 
-            Raises:
-                SDKException:
-                    if response is empty
+    Key Features:
+        - Retrieve instance properties in both object and JSON formats
+        - Access node and application type information via properties
+        - Discover content within specified environments for MSDynamics365
+        - Seamless integration with cloud application management workflows
 
-                    if response is not success
+    #ai-gen-doc
+    """
 
+    def _get_instance_properties(self) -> None:
+        """Retrieve and update the properties of the current MSDynamics365 instance.
+
+        This method fetches the latest properties for the instance and updates the internal state.
+        It should be called to ensure the instance properties are current.
+
+        Raises:
+            SDKException: If the response is empty or the response status is not successful.
+
+        Example:
+            >>> instance = MSDynamics365Instance()
+            >>> instance._get_instance_properties()
+            >>> # The instance properties are now updated
+
+        #ai-gen-doc
         """
         super(MSDynamics365Instance, self)._get_instance_properties()
         # Common properties for Cloud Apps
@@ -102,33 +123,78 @@ class MSDynamics365Instance(CloudAppsInstance):
                     "clientName", None)
                 self._index_server = general_cloud_properties.get("indexServer", {}).get("clientName", None)
 
-    def _get_instance_properties_json(self):
-        """Returns the instance properties json."""
+    def _get_instance_properties_json(self) -> dict:
+        """Retrieve the instance properties as a JSON dictionary.
+
+        Returns:
+            dict: A dictionary containing the properties of the MSDynamics365 instance.
+
+        Example:
+            >>> instance = MSDynamics365Instance()
+            >>> properties = instance._get_instance_properties_json()
+            >>> print(properties)
+            {'property1': 'value1', 'property2': 'value2', ...}
+
+        #ai-gen-doc
+        """
 
         return {'instanceProperties': self._properties}
 
     @property
-    def access_node(self):
-        """Returns the name of the access node for this MS Dynamics 365 instance"""
+    def access_node(self) -> str:
+        """Get the name of the access node for this MS Dynamics 365 instance.
+
+        Returns:
+            The name of the access node as a string.
+
+        Example:
+            >>> instance = MSDynamics365Instance()
+            >>> node_name = instance.access_node
+            >>> print(f"Access node: {node_name}")
+
+        #ai-gen-doc
+        """
         return self._access_node
 
     @property
     def idx_app_type(self) -> int:
-        """Returns the App type of the MS Dynamics 365 instance"""
+        """Get the application type identifier for the MS Dynamics 365 instance.
+
+        Returns:
+            int: The integer value representing the application type of this MS Dynamics 365 instance.
+
+        Example:
+            >>> msd_instance = MSDynamics365Instance()
+            >>> app_type = msd_instance.idx_app_type
+            >>> print(f"MS Dynamics 365 App Type: {app_type}")
+
+        #ai-gen-doc
+        """
         return 200127
 
-    def discover_content(self, environment_discovery: bool = False):
-        """
-            Run Discovery for a MS Dynamics 365 Instance
-            Arguments:
-                environment_discovery            (bool)--     Whether to run discovery for Dynamics 365 environments
-                    If True
-                        Discovery will run for Dynamics 365 environments
-                    If False
-                        Table level discovered content would be run
-            Returns:
-                discovered_content              (dict)--        Dictionary of the discovered content
+    def discover_content(self, environment_discovery: bool = False) -> dict:
+        """Run discovery for a Microsoft Dynamics 365 Instance.
 
+        This method performs content discovery on the MS Dynamics 365 instance. 
+        If `environment_discovery` is set to True, the discovery process will target Dynamics 365 environments.
+        If set to False (default), the discovery will be performed at the table level.
+
+        Args:
+            environment_discovery: Whether to run discovery for Dynamics 365 environments (True) 
+                or at the table level (False).
+
+        Returns:
+            dict: A dictionary containing the discovered content.
+
+        Example:
+            >>> msd_instance = MSDynamics365Instance()
+            >>> content = msd_instance.discover_content()
+            >>> print(content)
+            >>> # To discover environments instead of tables:
+            >>> env_content = msd_instance.discover_content(environment_discovery=True)
+            >>> print(env_content)
+
+        #ai-gen-doc
         """
         discovery_type: int
         if environment_discovery is False:

@@ -31,16 +31,49 @@ LNDOCInstance:
 
 from __future__ import unicode_literals
 
+from typing import Optional, Union
+
 from .lninstance import LNInstance
 from ...exception import SDKException
-
+from ...job import Job
+from ...client import Client
 
 class LNDOCInstance(LNInstance):
-    """Derived class from Instance Base class, representing an LNDOC instance,
-        and to perform operations on that instance."""
+    """
+    Represents an LNDOC instance, extending the LNInstance base class to provide
+    specialized operations for data restoration and configuration management.
 
-    def _restore_common_options_json(self, value):
-        """setter for  the Common options of in restore JSON"""
+    This class offers methods to restore data either in place or out of place,
+    with support for advanced options such as overwriting, restoring data and ACLs,
+    specifying copy precedence, and defining time ranges for restoration. It also
+    includes functionality to restore common options from a JSON value, enabling
+    flexible and customizable restore operations.
+
+    Key Features:
+        - Restore common options from JSON configuration
+        - In-place data and ACL restoration with overwrite and time range support
+        - Out-of-place restoration to different clients or destinations
+        - Fine-grained control over restore parameters and options
+
+    #ai-gen-doc
+    """
+
+    def _restore_common_options_json(self, value: dict) -> None:
+        """Set the common options section in the restore JSON configuration.
+
+        Args:
+            value: A dictionary containing the common options to be set in the restore JSON.
+
+        Example:
+            >>> options = {
+            ...     "overwrite": True,
+            ...     "preserve_permissions": False
+            ... }
+            >>> instance._restore_common_options_json(options)
+            >>> # The common options in the restore JSON are now updated with the provided values.
+
+        #ai-gen-doc
+        """
 
         if not isinstance(value, dict):
             raise SDKException('Subclient', '101')
@@ -83,70 +116,55 @@ class LNDOCInstance(LNInstance):
 
     def restore_in_place(
             self,
-            paths,
-            overwrite=True,
-            restore_data_and_acl=True,
-            copy_precedence=None,
-            from_time=None,
-            to_time=None,
-            **kwargs):
-        """Restores the files/folders specified in the input paths list to the same location.
+            paths: list,
+            overwrite: bool = True,
+            restore_data_and_acl: bool = True,
+            copy_precedence: int = None,
+            from_time: str = None,
+            to_time: str = None,
+            **kwargs
+        ) -> 'Job':
+        """Restore specified files or folders to their original location within the LNDOC instance.
 
-            Args:
-                paths                   (list)  --  list of full paths of files/folders to restore
+        This method initiates an in-place restore operation for the provided list of file or folder paths.
+        Additional options such as unconditional overwrite, restoring data and ACLs, copy precedence, and
+        time filters can be specified. Advanced restore options can be passed via keyword arguments.
 
-                overwrite               (bool)  --  unconditional overwrite files during restore
-                    default: True
+        Args:
+            paths: List of full file or folder paths to restore.
+            overwrite: If True, existing files will be overwritten during restore. Defaults to True.
+            restore_data_and_acl: If True, both data and ACL files are restored. Defaults to True.
+            copy_precedence: Optional storage policy copy precedence value. Defaults to None.
+            from_time: Optional lower time boundary for restore (format: 'YYYY-MM-DD HH:MM:SS'). Defaults to None.
+            to_time: Optional upper time boundary for restore (format: 'YYYY-MM-DD HH:MM:SS'). Defaults to None.
+            **kwargs: Additional advanced restore options, such as:
+                - unconditionalOverwrite (bool): Overwrite files even if they exist.
+                - recoverWait (bool): Wait for resources if a database recovery is in progress.
+                - recoverZap (bool): Change the DBIID of the restored database.
+                - recoverZapReplica (bool): Change the replica ID of the restored database.
+                - recoverZapIfNecessary (bool): Change DBIID if necessary.
+                - doNotReplayTransactLogs (bool): Skip restoring or replaying logs.
 
-                restore_data_and_acl    (bool)  --  restore data and ACL files
-                    default: True
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                copy_precedence         (int)   --  copy precedence value of storage policy copy
-                    default: None
+        Raises:
+            SDKException: If 'paths' is not a list, if the job fails to initialize, or if the restore response is empty or unsuccessful.
 
-                from_time           (str)       --  time to retore the contents after
-                        format: YYYY-MM-DD HH:MM:SS
+        Example:
+            >>> instance = LNDOCInstance()
+            >>> restore_job = instance.restore_in_place(
+            ...     paths=['/data/notes/file1.nsf', '/data/notes/file2.nsf'],
+            ...     overwrite=True,
+            ...     restore_data_and_acl=True,
+            ...     copy_precedence=2,
+            ...     from_time='2023-01-01 00:00:00',
+            ...     to_time='2023-12-31 23:59:59',
+            ...     unconditionalOverwrite=True
+            ... )
+            >>> print(f"Restore job started with ID: {restore_job.job_id}")
 
-                    default: None
-
-                to_time           (str)         --  time to retore the contents before
-                        format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                common_options_dict (dict)          -- dictionary for all the common options
-                    options:
-                        unconditionalOverwrite              :   overwrite the files during restore
-                        even if they exist
-
-                        recoverWait                         :   Specifies whether this restore
-                        operation must wait until resources become available if a database recovery
-                        is already taking place
-
-                        recoverZap                          :   Specifies whether the IBM Domino
-                        must change the DBIID associated with the restored database
-
-                        recoverZapReplica                   :   Specifies whether the restore
-                        operation changes the replica id of the restored database
-
-                        recoverZapIfNecessary               :   Specifies whether the IBM Domino
-                        can change the DBIID associated with the restored database if necessary
-
-                        doNotReplayTransactLogs             :   option to skip restoring or
-                        replaying logs
-
-            Returns:
-                object - instance of the Job class for this restore job
-
-            Raises:
-                SDKException:
-                    if paths is not a list
-
-                    if failed to initialize job
-
-                    if response is empty
-
-                    if response is not success
+        #ai-gen-doc
         """
         return super(LNDOCInstance, self).restore_in_place(
             paths,
@@ -159,85 +177,59 @@ class LNDOCInstance(LNInstance):
 
     def restore_out_of_place(
             self,
-            client,
-            destination_path,
-            paths,
-            overwrite=True,
-            restore_data_and_acl=True,
-            copy_precedence=None,
-            from_time=None,
-            to_time=None,
-            common_options_dict=None):
-        """Restores the files/folders specified in the input paths list to the input client,
-            at the specified destionation location.
+            client: 'Union[str, Client]',
+            destination_path: str,
+            paths: list,
+            overwrite: bool = True,
+            restore_data_and_acl: bool = True,
+            copy_precedence: 'Optional[int]' = None,
+            from_time: 'Optional[str]' = None,
+            to_time: 'Optional[str]' = None,
+            common_options_dict: 'Optional[dict]' = None
+        ) -> 'Job':
+        """Restore specified files or folders to a different client and location.
 
-            Args:
-                client                (str/object) --  either the name of the client or
-                the instance of the Client
+        This method restores the files and folders listed in `paths` to the specified `destination_path`
+        on the given `client`. The restore can be customized with options such as overwriting existing files,
+        restoring data and ACLs, specifying copy precedence, and providing additional common options.
 
-                destination_path      (str)        --  full path of the restore location on client
+        Args:
+            client: The target client for restore. Can be either the client name (str) or a Client object.
+            destination_path: Full path on the client where the data should be restored.
+            paths: List of full file or folder paths to restore.
+            overwrite: If True, existing files at the destination will be overwritten. Default is True.
+            restore_data_and_acl: If True, both data and ACLs will be restored. Default is True.
+            copy_precedence: Optional; storage policy copy precedence value to use for restore.
+            from_time: Optional; restore data modified after this time (format: 'YYYY-MM-DD HH:MM:SS').
+            to_time: Optional; restore data modified before this time (format: 'YYYY-MM-DD HH:MM:SS').
+            common_options_dict: Optional; dictionary of additional restore options, such as:
+                - overwriteDBLinks (bool): Overwrite database links. Default is False.
+                - overwriteDesignDoc (bool): Overwrite design documents. Default is False.
+                - overwriteDataDoc (bool): Overwrite data documents. Default is False.
+                - dbLinksOnly (bool): Overwrite only database links. Default is False.
 
-                paths                 (list)       --  list of full paths of
-                files/folders to restore
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                overwrite             (bool)       --  unconditional overwrite files during restore
+        Raises:
+            SDKException: If input parameters are invalid or if the restore job fails to initialize or complete.
 
-                    default: True
+        Example:
+            >>> instance = LNDOCInstance()
+            >>> job = instance.restore_out_of_place(
+            ...     client='TargetClient',
+            ...     destination_path='/restore/location',
+            ...     paths=['/data/file1.txt', '/data/folder2'],
+            ...     overwrite=True,
+            ...     restore_data_and_acl=True,
+            ...     copy_precedence=2,
+            ...     from_time='2023-01-01 00:00:00',
+            ...     to_time='2023-12-31 23:59:59',
+            ...     common_options_dict={'overwriteDBLinks': True}
+            ... )
+            >>> print(f"Restore job started with ID: {job.job_id}")
 
-                restore_data_and_acl  (bool)       --  restore data and ACL files
-
-                    default: True
-
-                copy_precedence         (int)      --  copy precedence value of storage policy copy
-
-                    default: None
-
-                from_time           (str)          --  time to retore the contents after
-
-                        format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                to_time           (str)            --  time to retore the contents before
-
-                        format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                 common_options_dict (dict)          -- dictionary for all the common options
-                    options:
-                        overwriteDBLinks              :   overwrite the db links
-
-                            default: False
-
-                        overwriteDesignDoc            :   overwrite design documents
-
-                            default: False
-
-                        overwriteDataDoc              :   overwrite the data documents
-
-                            default: False
-
-                        dbLinksOnly                   :   overwrite the db links only
-
-                            default: False
-
-            Returns:
-                object - instance of the Job class for this restore job
-
-            Raises:
-                SDKException:
-                    if client is not a string or Client instance
-
-                    if destination_path is not a string
-
-                    if paths is not a list
-
-                    if failed to initialize job
-
-                    if response is empty
-
-                    if response is not success
+        #ai-gen-doc
         """
         return super(LNDOCInstance, self).restore_out_of_place(
             client,

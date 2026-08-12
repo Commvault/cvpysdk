@@ -34,37 +34,65 @@ full_vm_restore_out_of_place()          --  Performs out of place full vm restor
 """
 
 import copy
+from typing import Any, Dict, Optional
+from cvpysdk.commcell import Commcell
 from ..job import Job
 from ..exception import SDKException
 from ..client import Client
 
-
 class VMClient(Client):
-    """ Class for representing client of a vm client."""
+    """
+    Represents a client for managing virtual machine (VM) operations within a CommCell environment.
 
-    def __init__(self, commcell_object, client_name, client_id=None):
-        """Initialise the VM Client class instance.
+    This class provides an interface for interacting with VM clients, enabling operations such as
+    retrieving subclient details, handling parent-child job relationships, and performing full VM
+    restore operations both in-place and out-of-place.
 
-            Args:
-                commcell_object (object)     --  instance of the Commcell class
+    Key Features:
+        - Initialization with CommCell object, client name, and client ID
+        - Retrieval of parent subclient information
+        - Access to child job subclient details based on parent job ID
+        - Full VM restore operations in-place
+        - Full VM restore operations out-of-place
 
-                client_name     (str)        --  name of the client
+    #ai-gen-doc
+    """
 
-                client_id       (str)        --  id of the client
-                                                default: None
+    def __init__(self, commcell_object: 'Commcell', client_name: str, client_id: Optional[str] = None) -> None:
+        """Initialize a VMClient instance with Commcell connection and client details.
 
-            Returns:
-                object - instance of the VM Client class
+        Args:
+            commcell_object: Instance of the Commcell class for SDK operations.
+            client_name: Name of the VM client as a string.
+            client_id: Optional client ID as a string. If not provided, defaults to None.
+
+        Example:
+            >>> commcell = Commcell(command_center_hostname, username, password)
+            >>> vm_client = VMClient(commcell, "VMClient01", client_id="12345")
+            >>> # The VMClient object is now initialized and ready for use
+
+        #ai-gen-doc
         """
         super(VMClient, self).__init__(commcell_object, client_name, client_id)
 
-    def _return_parent_subclient(self):
-        """
-        Returns the parent subclient if the client is VSA client and is backed up else returns None
+    def _return_parent_subclient(self) -> Optional[Any]:
+        """Retrieve the parent subclient for a VSA client if it is backed up.
+
+        This method checks if the current VM client is a VSA client and has backup information.
+        If so, it returns the corresponding parent Subclient object; otherwise, it returns None.
 
         Returns:
-            _parent_subclient           (object)   :        Subclient object
+            The parent Subclient object if available, or None if the client is not backed up.
 
+        Example:
+            >>> vm_client = VMClient(...)
+            >>> parent_subclient = vm_client._return_parent_subclient()
+            >>> if parent_subclient:
+            ...     print("Parent subclient found:", parent_subclient)
+            ... else:
+            ...     print("No parent subclient available for this VM client.")
+
+        #ai-gen-doc
         """
         _subclient_entity = copy.deepcopy(self.properties.get('vmStatusInfo', {}).get('vsaSubClientEntity'))
         if _subclient_entity:
@@ -77,30 +105,38 @@ class VMClient(Client):
         else:
             return None
 
-    def _child_job_subclient_details(self, parent_job_id):
-        """
-        Returns the  child subclient details
+    def _child_job_subclient_details(self, parent_job_id: str) -> Optional[Dict[str, Any]]:
+        """Retrieve the subclient details for a child job associated with the given parent job ID.
 
         Args:
-            parent_job_id           (string):       job id of the parent
+            parent_job_id: The job ID of the parent job as a string.
 
         Returns:
-            _child_job_obj          (dict):         Child subclient details:
-                                    eg: {
-                                            'clientName': 'vm_client1',
-                                            'instanceName': 'VMInstance',
-                                            'displayName': 'vm_client1',
-                                            'backupsetId': 12,
-                                            'instanceId': 2,
-                                            'subclientId': 123,
-                                            'clientId': 1234,
-                                            'appName': 'Virtual Server',
-                                            'backupsetName': 'defaultBackupSet',
-                                            'applicationId': 106,
-                                            'subclientName': 'default'
-                                        }
+            Dictionary containing child subclient details if found, otherwise None.
+            Example structure:
+                {
+                    'clientName': 'vm_client1',
+                    'instanceName': 'VMInstance',
+                    'displayName': 'vm_client1',
+                    'backupsetId': 12,
+                    'instanceId': 2,
+                    'subclientId': 123,
+                    'clientId': 1234,
+                    'appName': 'Virtual Server',
+                    'backupsetName': 'defaultBackupSet',
+                    'applicationId': 106,
+                    'subclientName': 'default'
+                }
 
+        Example:
+            >>> vm_client = VMClient(...)
+            >>> subclient_details = vm_client._child_job_subclient_details('123456')
+            >>> if subclient_details:
+            ...     print(f"Subclient Name: {subclient_details['subclientName']}")
+            ... else:
+            ...     print("No child subclient details found for the given parent job ID.")
 
+        #ai-gen-doc
         """
         _parent_job_obj = Job(self._commcell_object, parent_job_id)
         _child_jobs = _parent_job_obj.get_child_jobs()
@@ -117,32 +153,34 @@ class VMClient(Client):
         else:
             return None
 
-    def full_vm_restore_in_place(self, **kwargs):
-        """Restores in place  FULL Virtual machine for the client
+    def full_vm_restore_in_place(self, **kwargs: Any):
+        """Perform an in-place full restore of the virtual machine for this client.
+
+        This method initiates a full VM restore in place, using the provided keyword arguments to customize the restore operation.
+        Common options include overwriting the existing VM, powering on the restored VM, and specifying copy precedence.
 
         Args:
-            **kwargs                         : Arbitrary keyword arguments Properties as of
-                                                full_vm_restore_in_place
-            eg:
-                            overwrite             (bool)        --  overwrite the existing VM
+            **kwargs: Arbitrary keyword arguments to control restore behavior.
+                Supported options include:
+                    overwrite (bool): Whether to overwrite the existing VM.
+                    power_on (bool): Whether to power on the restored VM after completion.
+                    copy_precedence (int): Copy precedence value for the restore.
 
-                            power_on              (bool)        --  power on the  restored VM
+        Returns:
+            Job: Instance of the Job class representing the restore job, or None if the VM GUID is not available.
 
-                            copy_precedence       (int)         --  copy precedence value
+        Raises:
+            SDKException: If input types are incorrect, job initialization fails, response is empty, or restore is unsuccessful.
 
-            Returns:
-                object - instance of the Job class for this restore job
+        Example:
+            >>> client = VMClient(...)
+            >>> job = client.full_vm_restore_in_place(overwrite=True, power_on=True, copy_precedence=2)
+            >>> if job:
+            ...     print(f"Restore job started: {job}")
+            ... else:
+            ...     print("Restore could not be initiated for this VM client.")
 
-            Raises:
-                SDKException:
-                    if inputs are not of correct type as per definition
-
-                    if failed to initialize job
-
-                    if response is empty
-
-                    if response is not success
-
+        #ai-gen-doc
         """
         if self.vm_guid:
             _sub_client_obj = self._return_parent_subclient()
@@ -159,35 +197,37 @@ class VMClient(Client):
         else:
             return None
 
-    def full_vm_restore_out_of_place(self, **kwargs):
-        """Restores out of place FULL Virtual machine for the client
+    def full_vm_restore_out_of_place(self, **kwargs: Any):
+        """Perform an out-of-place full restore of the virtual machine for this client.
 
-        Args:
-            **kwargs                         : Arbitrary keyword arguments Properties as of
-                                                full_vm_restore_out_of_place
-            ex:
-                        restored_vm_name         (str)    --  new name of vm. If nothing is passed,
-                                                                'del' is appended to the original vm name
+        This method initiates a full VM restore to a different location or configuration, allowing you to specify
+        properties such as the restored VM name, target vCenter client, and destination ESX host.
 
-                        vcenter_client    (str)    --  name of the vcenter client where the VM
-                                                              should be restored.
+        Keyword Args:
+            restored_vm_name (str): New name for the restored VM. If not provided, 'del' is appended to the original VM name.
+            vcenter_client (str): Name of the vCenter client where the VM should be restored.
+            esx_host (str): Destination ESX host. If not specified, restores to the source VM's ESX host.
+            Additional keyword arguments may be supported depending on restore requirements.
 
-                        esx_host          (str)    --  destination esx host. Restores to the source
-                                                              VM esx if this value is not specified
+        Returns:
+            Job: Instance of the Job class representing the restore job, or None if the VM GUID is not available.
 
-            Returns:
-                object - instance of the Job class for this restore job
+        Raises:
+            SDKException: If input types are incorrect, job initialization fails, response is empty, or response is not successful.
 
-            Raises:
-                SDKException:
-                    if inputs are not of correct type as per definition
+        Example:
+            >>> vm_client = VMClient(...)
+            >>> job = vm_client.full_vm_restore_out_of_place(
+            ...     restored_vm_name="RestoredVM01",
+            ...     vcenter_client="vCenterProd",
+            ...     esx_host="esxhost01"
+            ... )
+            >>> if job:
+            ...     print(f"Restore job started: {job}")
+            >>> else:
+            ...     print("Restore could not be initiated for this VM client.")
 
-                    if failed to initialize job
-
-                    if response is empty
-
-                    if response is not success
-
+        #ai-gen-doc
         """
         if self.vm_guid:
             _sub_client_obj = self._return_parent_subclient()

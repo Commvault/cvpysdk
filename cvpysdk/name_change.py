@@ -62,10 +62,27 @@ NameChange:
 import re
 from enum import Enum
 from .exception import SDKException
-
+from typing import Any, Dict, List, Optional, Union, TYPE_CHECKING
+if TYPE_CHECKING:
+    from .commcell import Commcell
+    from .client import Client
 
 class OperationType(Enum):
-    """ Operation Types supported to get schedules of particular optype"""
+    """
+    Enumeration of operation types supported for retrieving schedules.
+
+    This Enum class defines the various operation types that can be used
+    to obtain schedules for specific operation types within the system.
+    It serves as a standardized way to reference and manage different
+    operation types when interacting with scheduling functionalities.
+
+    Key Features:
+        - Enumerates supported operation types for schedule retrieval
+        - Provides a clear and type-safe way to specify operation types
+        - Facilitates consistent usage across scheduling components
+
+    #ai-gen-doc
+    """
     COMMSERVER_HOSTNAME_REMOTE_CLIENTS = 147
     COMMSERVER_HOSTNAME_AFTER_DR = 139
     CLIENT_HOSTNAME = "CLIENT_HOSTNAME"
@@ -73,18 +90,42 @@ class OperationType(Enum):
 
 
 class NameChange(object):
-    """Class for doing Name Change operations on clients and commcell"""
+    """
+    Class for performing name change operations on clients and the commcell.
 
-    def __init__(self, class_object):
-        """Initializes an instance of the NameChange class to perform Name Change operations.
+    This class provides a set of methods and properties to facilitate the management
+    and execution of name change operations for clients and commcell entities. It
+    allows retrieval and modification of various name-related attributes such as
+    hostname, domain name, display name, and client name. The class also supports
+    operations specific to client and commcell name changes, as well as post-CCM
+    (CommCell Migration) name change processes.
 
-            Args:
-                class_object (object)  --  instance of the client/commcell class
+    Key Features:
+        - Retrieve and manage hostname, domain name, display name, and client name via properties
+        - Perform client name change operations
+        - Perform commcell name change operations with parameter dictionaries
+        - Retrieve clients eligible for name change after CommCell Migration (CCM)
+        - Execute name change operations post-CCM
 
+    #ai-gen-doc
+    """
+
+    def __init__(self, class_object: Union['Commcell', 'Client']) -> None:
+        """Initialize a NameChange instance for performing name change operations.
+
+        Args:
+            class_object: An instance of the client or commcell class to associate with this NameChange object.
+
+        Example:
+            >>> from cvpysdk.commcell import Commcell
+            >>> cc = Commcell('commcell_host', 'username', 'password')
+            >>> name_change = NameChange(cc)
+            >>> # The NameChange object can now be used to perform name change operations
+
+        #ai-gen-doc
         """
         from .commcell import Commcell
         from .client import Client
-
         if isinstance(class_object, Commcell):
             self._commcell_object = class_object
             self._display_name = self._commcell_object.clients.get(self._commcell_object.
@@ -108,12 +149,18 @@ class NameChange(object):
         self._update_response_ = self._commcell_object._update_response_
 
     @property
-    def hostname(self):
-        """
-        Gets the client hostname or commserver hostname
+    def hostname(self) -> str:
+        """Get the hostname of the client or CommServe.
 
-         Returns:
-                str - client hostname or commserver hostname
+        Returns:
+            The hostname as a string, which may represent either a client or the CommServe.
+
+        Example:
+            >>> name_change = NameChange()
+            >>> host = name_change.hostname
+            >>> print(f"Hostname: {host}")
+
+        #ai-gen-doc
         """
         if self._is_client:
             return self._client_hostname
@@ -121,20 +168,32 @@ class NameChange(object):
             return self._commcell_name
 
     @hostname.setter
-    def hostname(self, parameters_dict):
-        """
-        Sets the client hostname or commserver hostname with the parameters provided
-        Args:
-            parameters_dict (str)      -- dictionary of parameters for namechange
-                                    {
-                                    "operation": Operation type to be performed on the client or
-                                                commserver (OperationType)
-                                    "ClientHostname":   Client hostname to be updated (str)
-                                    "CommserverHostname":   Commserver hostname to be updated (str)
-                                    "oldName":  old commserver hostname
-                                    "newName":  new commserver hostname
-                                    }
+    def hostname(self, parameters_dict: dict) -> None:
+        """Set the client or CommServe hostname using the provided parameters.
 
+        This setter updates the hostname for a client or CommServe based on the specified parameters.
+        The parameters_dict should include the operation type and relevant hostname details.
+
+        Args:
+            parameters_dict: Dictionary containing parameters for the name change operation. Expected keys:
+                - "operation": The type of operation to perform (e.g., "COMMSERVER_HOSTNAME", "CLIENT_HOSTNAME").
+                - "ClientHostname": The new client hostname to be set (str).
+                - "CommserverHostname": The new CommServe hostname to be set (str).
+                - "oldName": The old CommServe hostname (str).
+                - "newName": The new CommServe hostname (str).
+
+        Example:
+            >>> name_change = NameChange()
+            >>> params = {
+            ...     "operation": "COMMSERVER_HOSTNAME/CLIENT_HOSTNAME",
+            ...     "ClientHostname": "new-client.example.com",
+            ...     "CommserverHostname": "new-commserve.example.com",
+            ...     "oldName": "old-commserve.example.com",
+            ...     "newName": "new-commserve.example.com"
+            ... }
+            >>> name_change.hostname = params  # Use assignment to trigger the setter
+
+        #ai-gen-doc
         """
         if self._is_client:
             if parameters_dict["operation"] == OperationType.CLIENT_HOSTNAME.value:
@@ -158,26 +217,42 @@ class NameChange(object):
                 self._commcell_name_change_op(parameters_dict)
 
     @property
-    def domain_name(self):
-        """
-        Gets the commserver hostname
+    def domain_name(self) -> str:
+        """Get the CommServe host name associated with this NameChange instance.
 
         Returns:
-                str - commserver hostname
+            The CommServe host name as a string.
+
+        Example:
+            >>> name_change = NameChange()
+            >>> hostname = name_change.domain_name  # Use dot notation for property access
+            >>> print(f"CommServe host name: {hostname}")
+        #ai-gen-doc
         """
         return self._commcell_name
 
     @domain_name.setter
-    def domain_name(self, domains_dict):
-        """
-        Sets the new domain name for the clients with the parameter provided
-        Args:
-            domains_dict (dict) -- new client domain name
-                                    {
-                                    "oldDomain": old client domain name (str)
-                                    "newDomain": new client domain name (str)
-                                    }
+    def domain_name(self, domains_dict: dict) -> None:
+        """Set the new domain name for clients using the provided domain mapping.
 
+        Args:
+            domains_dict: A dictionary specifying the old and new domain names for clients.
+                Example format:
+                    {
+                        "oldDomain": "old_domain_name",
+                        "newDomain": "new_domain_name"
+                    }
+                - "oldDomain": The current domain name of the clients (str).
+                - "newDomain": The new domain name to assign to the clients (str).
+
+        Example:
+            >>> name_change = NameChange()
+            >>> name_change.domain_name = {
+            ...     "oldDomain": "CORP",
+            ...     "newDomain": "ENTERPRISE"
+            ... }
+            >>> # The domain name for clients will be updated from 'CORP' to 'ENTERPRISE'
+        #ai-gen-doc
         """
         if domains_dict["oldDomain"] is None:
             raise SDKException('NameChange', '103')
@@ -191,12 +266,18 @@ class NameChange(object):
         self._commcell_name_change_op(dict_domains)
 
     @property
-    def display_name(self):
-        """
-        Gets the display name of the client or commserver
+    def display_name(self) -> str:
+        """Get the display name of the client or CommServe.
 
         Returns:
-                str - client or commserver display name
+            The display name as a string, representing either the client or CommServe.
+
+        Example:
+            >>> name_change = NameChange()
+            >>> print(name_change.display_name)  # Use dot notation for property access
+            >>> # Output: 'Client123' or 'CommServe01'
+
+        #ai-gen-doc
         """
         if self._is_client:
             return self._display_name
@@ -204,12 +285,18 @@ class NameChange(object):
             return self._display_name
 
     @display_name.setter
-    def display_name(self, display_name):
-        """
-        Sets the display name of the client or commserver with the parameter provided
-        Args:
-            display_name (str) -- new client or commserver display name
+    def display_name(self, display_name: str) -> None:
+        """Set the display name for the client or CommServe.
 
+        Args:
+            display_name: The new display name to assign to the client or CommServe.
+
+        Example:
+            >>> name_changer = NameChange()
+            >>> name_changer.display_name = "NewDisplayName"  # Use assignment for property setter
+            >>> # The display name is now updated to "NewDisplayName"
+
+        #ai-gen-doc
         """
         if self._is_client:
             self._display_name = display_name
@@ -223,12 +310,18 @@ class NameChange(object):
             self._commcell_name_change_op(dict_cs)
 
     @property
-    def client_name(self):
-        """
-        Gets the client name
+    def client_name(self) -> str:
+        """Get the name of the client associated with this NameChange instance.
 
         Returns:
-                str - client name
+            The client name as a string.
+
+        Example:
+            >>> name_change = NameChange()
+            >>> client = name_change.client_name  # Use dot notation for property access
+            >>> print(f"Client name: {client}")
+
+        #ai-gen-doc
         """
         if self._is_client:
             return self._client_name
@@ -236,25 +329,36 @@ class NameChange(object):
             False
 
     @client_name.setter
-    def client_name(self, client_name):
-        """
-        Sets the name of the client with the parameter provided
-        Args:
-            client_name (str) -- new client name
+    def client_name(self, client_name: str) -> None:
+        """Set the name of the client to the specified value.
 
+        Args:
+            client_name: The new name to assign to the client.
+
+        Example:
+            >>> name_change = NameChange()
+            >>> name_change.client_name = "NewClientName"  # Use assignment to set the client name
+            >>> # The client's name is now updated to "NewClientName"
+        #ai-gen-doc
         """
         self._new_name = client_name
         self._client_name_change_op()
 
-    def _client_name_change_op(self):
-        """
-        Performs the client namechange operations
+    def _client_name_change_op(self) -> None:
+        """Perform the client name change operation.
 
-            Raises:
-            SDKException::
-                if the client namechange failed
+        This method executes the necessary steps to change the name of a client.
+        It raises an SDKException if the name change fails or if the response is empty.
 
-                if the response is empty
+        Raises:
+            SDKException: If the client name change operation fails or if the response is empty.
+
+        Example:
+            >>> name_change = NameChange()
+            >>> name_change._client_name_change_op()
+            >>> print("Client name change operation completed successfully.")
+
+        #ai-gen-doc
         """
         request_json = {
             "App_SetClientPropertiesRequest":
@@ -317,26 +421,39 @@ class NameChange(object):
                 self._update_response_(
                     response.text))
 
-    def _commcell_name_change_op(self, parameters_dict):
-        """
-        Performs the commcell namechange operations
+    def _commcell_name_change_op(self, parameters_dict: dict) -> None:
+        """Perform Commcell name change operations using the provided parameters.
+
+        This method executes name change operations for the Commcell, such as updating the CommServe hostname,
+        domain name, or associated client IDs. The `parameters_dict` should contain the necessary keys:
+        - "newName": The new Commcell or domain name.
+        - "oldName": The current Commcell or domain name.
+        - "operation": The type of name change operation to perform.
+        - "clientIds": List of client IDs to update (can be an empty list).
 
         Args:
-            parameters_dict (dict)          --  dictionary with common namechange parameters like
-                                                old commserver hostname, new commserver hostname
-                                                or old domain name, new domain name, client IDs.
-                                                clientIds can be an empty list too.
-                                                  {"newName",
-                                                    "oldName",
-                                                    "operation",
-                                                    "clientIds"}
+            parameters_dict: Dictionary containing the name change parameters. Example:
+                {
+                    "newName": "new_commcell_name",
+                    "oldName": "old_commcell_name",
+                    "operation": 0,
+                    "clientIds": [101, 102, 103]
+                }
 
-            Raises:
-            SDKException::
-                if the client namechange failed
+        Raises:
+            SDKException: If the client name change operation fails or if the response is empty.
 
-                if the response is empty
+        Example:
+            >>> name_change = NameChange()
+            >>> params = {
+            ...     "newName": "new_commcell",
+            ...     "oldName": "old_commcell",
+            ...     "operation": 0,
+            ...     "clientIds": [1001, 1002]
+            ... }
+            >>> name_change._commcell_name_change_op(params)
 
+        #ai-gen-doc
         """
 
         request_json = {
@@ -396,13 +513,24 @@ class NameChange(object):
                 self._update_response_(
                     response. text))
 
-    def get_clients_for_name_change_post_ccm(self):
-        """
-            Gets clients available for name change after commcell migration.
-            Raises:
-            SDKException::
-                if the client namechange failed
-                if the response is empty
+    def get_clients_for_name_change_post_ccm(self) -> list:
+        """Retrieve the list of clients available for name change after Commcell migration.
+
+        This method fetches clients that are eligible for a name change operation following a Commcell migration.
+        It is typically used in post-migration scenarios to identify clients that require renaming.
+
+        Returns:
+            list: A list of client names or client objects available for name change.
+
+        Raises:
+            SDKException: If the client name change operation fails or if the response is empty.
+
+        Example:
+            >>> name_change = NameChange()
+            >>> clients = name_change.get_clients_for_name_change_post_ccm()
+            >>> print(f"Clients available for name change: {clients}")
+
+        #ai-gen-doc
         """
         xml = """
             <EVGui_GetClientForNameControlReq>
@@ -458,21 +586,39 @@ class NameChange(object):
                 self._update_response_(
                     response.text))
 
-    def name_change_post_ccm(self, parameters_dict):
-        """
-        Performs the commcell namechange for clients post commcell migration
+    def name_change_post_ccm(self, parameters_dict: dict) -> None:
+        """Perform a Commcell name change for clients after Commcell migration.
+
+        This method updates the Commcell association for specified clients, changing their
+        reference from the source Commcell hostname to the destination Commcell hostname.
+
         Args:
-            parameters_dict (dict)      --  contains old commcell hostname, new commcell hostname,
-                                            Ids of clients on which name change is to be performed
-                                            {
-                                            "sourceCommcellHostname": "source-1"
-                                            "destinationCommcellHostname": "dest-1"
-                                            "clientIds": ["id1", "id2"]
-                                            }
-            Raises:
-            SDKException::
-                if the client namechange failed
-                if the response is empty
+            parameters_dict: Dictionary containing the following keys:
+                - "sourceCommcellHostname" (str): The hostname of the source Commcell.
+                - "destinationCommcellHostname" (str): The hostname of the destination Commcell.
+                - "clientIds" (list of str): List of client IDs to update.
+
+                Example:
+                    {
+                        "sourceCommcellHostname": "source-1",
+                        "destinationCommcellHostname": "dest-1",
+                        "clientIds": ["id1", "id2"]
+                    }
+
+        Raises:
+            SDKException: If the client name change fails or if the response is empty.
+
+        Example:
+            >>> params = {
+            ...     "sourceCommcellHostname": "old-ccm",
+            ...     "destinationCommcellHostname": "new-ccm",
+            ...     "clientIds": ["234", "123"]
+            ... }
+            >>> name_change = NameChange()
+            >>> name_change.name_change_post_ccm(params)
+            >>> print("Name change completed successfully.")
+
+        #ai-gen-doc
         """
         name_change_xml = """
             <EVGui_ClientNameControlReq 

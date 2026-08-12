@@ -39,16 +39,48 @@ CloudDatabaseSubclient:
     restore()                           --  Restores a cloud database from the specified source and restore options
 
 """
+from typing import Any, Dict, Optional
+
 from ..casubclient import CloudAppsSubclient
 from ...exception import SDKException
-
+from ...job import Job
 
 class CloudDatabaseSubclient(CloudAppsSubclient):
-    """ Derived class from Subclient Base class, representing a Cloud Database subclient,
-            and to perform operations on that subclient. """
+    """
+    Represents a Cloud Database subclient for managing and operating on cloud database resources.
 
-    def _get_subclient_properties(self):
-        """ Gets the subclient related properties of Cloud Database subclient. """
+    This class extends the CloudAppsSubclient base class and provides specialized methods
+    for interacting with cloud database subclients. It enables users to retrieve and set
+    subclient properties, manage subclient content, browse available data, and perform
+    restore operations to specified destinations.
+
+    Key Features:
+        - Retrieve subclient properties and their JSON representations
+        - Set and manage subclient content
+        - Property-based access and modification of subclient content
+        - Browse data within the subclient
+        - Restore data to a specified destination with customizable options
+
+    #ai-gen-doc
+    """
+
+    def _get_subclient_properties(self) -> Dict[str, Any]:
+        """Retrieve the properties specific to the Cloud Database subclient.
+
+        This method fetches and returns a dictionary containing configuration details
+        and settings related to the Cloud Database subclient.
+
+        Returns:
+            Dictionary containing subclient properties and their values.
+
+        Example:
+            >>> subclient = CloudDatabaseSubclient()
+            >>> properties = subclient._get_subclient_properties()
+            >>> print(properties)
+            >>> # Output: {'property1': 'value1', 'property2': 'value2', ...}
+
+        #ai-gen-doc
+        """
 
         super(CloudDatabaseSubclient, self)._get_subclient_properties()
 
@@ -57,12 +89,19 @@ class CloudDatabaseSubclient(CloudAppsSubclient):
         else:
             self._cloud_db_content = {}
 
-    def _get_subclient_properties_json(self):
-        """ Gets the properties JSON of Cloud Database Subclient.
+    def _get_subclient_properties_json(self) -> dict:
+        """Retrieve the properties JSON for the Cloud Database Subclient.
 
-           Returns:
-                dict - all subclient properties put inside a dict
+        Returns:
+            dict: A dictionary containing all properties of the Cloud Database Subclient.
 
+        Example:
+            >>> subclient = CloudDatabaseSubclient()
+            >>> properties = subclient._get_subclient_properties_json()
+            >>> print(properties)
+            >>> # Output will be a dictionary with subclient property details
+
+        #ai-gen-doc
         """
         subclient_json = {
             "subClientProperties":
@@ -81,12 +120,18 @@ class CloudDatabaseSubclient(CloudAppsSubclient):
         }
         return subclient_json
 
-    def _set_content(self, content=None):
-        """ Sets the subclient content dictionary
+    def _set_content(self, content: Optional[list] = None) -> None:
+        """Set the subclient content dictionary for the CloudDatabaseSubclient.
 
-            Args:
-                content         (list)      --  list of subclient content
+        Args:
+            content: Optional list containing the subclient content items. If not provided, the content will be set to an empty or default state.
 
+        Example:
+            >>> subclient = CloudDatabaseSubclient()
+            >>> subclient._set_content(['database1', 'database2'])
+            >>> # The subclient content is now set to the specified databases
+
+        #ai-gen-doc
         """
         if content is not None:
             self._cloud_db_content = {
@@ -96,29 +141,43 @@ class CloudDatabaseSubclient(CloudAppsSubclient):
         self._set_subclient_properties("_cloud_db_content", self._cloud_db_content)
 
     @property
-    def content(self):
-        """ Gets the appropriate content from the Subclient relevant to the user.
+    def content(self) -> dict:
+        """Get the cloud database content associated with this subclient.
 
-           Returns:
-               dict - dict of cloud database content associated with the subclient
+        Returns:
+            dict: A dictionary containing the content details relevant to the cloud database subclient.
 
-       """
+        Example:
+            >>> subclient = CloudDatabaseSubclient()
+            >>> content_info = subclient.content
+            >>> print(content_info)
+            {'databaseName': 'mydb', 'instanceType': 'cloud', ...}
+
+        #ai-gen-doc
+        """
         return self._cloud_db_content
 
     @content.setter
-    def content(self, subclient_content):
-        """ Creates the dict of content JSON to pass to the API to add/update content of a
-            Cloud Database Subclient.
+    def content(self, subclient_content: list) -> None:
+        """Set the content for the Cloud Database Subclient.
 
-            Args:
-                subclient_content (list)  --  list of the content to add to the subclient
+        This method constructs and sets the content JSON required to add or update the content
+        of a Cloud Database Subclient. The provided content list is validated and used to
+        generate the appropriate JSON structure for the API.
 
-            Returns:
-                dict - dict of the appropriate JSON for an agent to send to the POST Subclient API
+        Args:
+            subclient_content: A list containing the content items to add to the subclient.
 
-            Raises :
-                SDKException : if the subclient content is not a list value and if it is empty
+        Raises:
+            SDKException: If the subclient_content is not a list or if it is empty.
 
+        Example:
+            >>> subclient = CloudDatabaseSubclient()
+            >>> new_content = [{"database": "db1"}, {"database": "db2"}]
+            >>> subclient.content = new_content  # Use assignment for property setter
+            >>> # The subclient content is now updated with the provided databases
+
+        #ai-gen-doc
         """
         if isinstance(subclient_content, list) and subclient_content != []:
             self._set_content(content=subclient_content)
@@ -127,73 +186,106 @@ class CloudDatabaseSubclient(CloudAppsSubclient):
                 'Subclient', '102', 'Subclient content should be a list value and not empty'
             )
 
-    def browse(self, *args, **kwargs):
-        """
-            Browses the content of this cloud database subclient's instance
+    def browse(self, *args: Any, **kwargs: Any) -> dict:
+        """Browse the content of this cloud database subclient's instance.
 
-            args: Dictionary of browse options
+        This method allows you to retrieve snapshot information and other details
+        by specifying browse options either as positional arguments (typically a dictionary)
+        or as keyword arguments.
 
+        Args:
+            *args: Optional positional arguments, typically a dictionary of browse options.
                 Example:
-
-                        {
-                            'start_time': 0,
-                            'end_time': 1570808875,
-                            'include_aged_data': 0,
-                            'copy_precedence': 0,
-                        }
-
-            kwargs: keyword argument of browse options
-
+                    {
+                        'start_time': 0,
+                        'end_time': 1570808875,
+                        'include_aged_data': 0,
+                        'copy_precedence': 0,
+                    }
+            **kwargs: Optional keyword arguments for browse options.
                 Example:
+                    start_time=0,
+                    end_time=1570808875,
+                    include_aged_data=0,
+                    copy_precedence=0
 
-                        {
-                            start_time: 0,
-                            end_time: 1570808875,
-                            include_aged_data: 0,
-                            copy_precedence: 0,
-                        }
+        Returns:
+            dict: The browse response JSON containing a list of snapshot information.
 
-            Returns:
-                dict - Browse response json that contains list of snapshot information
+        Example:
+            >>> # Using a dictionary as a positional argument
+            >>> options = {
+            ...     'start_time': 0,
+            ...     'end_time': 1570808875,
+            ...     'include_aged_data': 0,
+            ...     'copy_precedence': 0,
+            ... }
+            >>> response = subclient.browse(options)
+            >>> print(response)
+            >>>
+            >>> # Using keyword arguments
+            >>> response = subclient.browse(
+            ...     start_time=0,
+            ...     end_time=1570808875,
+            ...     include_aged_data=0,
+            ...     copy_precedence=0
+            ... )
+            >>> print(response)
 
+        #ai-gen-doc
         """
         return self._instance_object.browse(*args, **kwargs)
 
     def restore(
             self,
-            destination,
-            source,
-            restore_options):
-        """
-            Restores the content of this subclient's instance content
+            destination: str,
+            source: str,
+            restore_options: dict
+        ) -> 'Job':
+        """Restore the content of this subclient's instance from a specified snapshot.
 
-            Args:
-                destination : Destination cluster name we want to restore to.
+        This method initiates a restore operation for the subclient, restoring data from the given source snapshot
+        to the specified destination cluster using the provided restore options.
 
-                source   : Source snapshot we want to restore from.
+        Args:
+            destination: The name of the destination cluster to which the data will be restored.
+            source: The name of the source snapshot from which to restore.
+            restore_options: A dictionary containing restore options required to submit the restore request.
+                Example options include:
+                    - allowVersionUpgrade (bool)
+                    - publicallyAccessible (bool)
+                    - restoreTags (bool)
+                    - enableDeletionProtection (bool)
+                    - availabilityZone (str)
+                    - targetParameterGroup (str)
+                    - targetSubnetGroup (str)
+                    - nodeType (str)
+                    - targetPort (int)
+                    - numberOfNodes (int)
 
-                restore_options  : Restore options needed to submit a restore request.
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                Example:    Restore of amazon redshift instance cluster from snapshot
-                        {
-                            destination : 'cluster',
-                            source : 'snapshot',
-                            options :   {
-                                            'allowVersionUpgrade' : true,
-                                            'publicallyAccessible' : true,
-                                            'restoreTags' : false,
-                                            'enableDeletionProtection': false,
-                                            'availabilityZone': 'us-east-2a',
-                                            'targetParameterGroup': 'param',
-                                            'targetSubnetGroup': 'subnet',
-                                            'nodeType': 'dc-large-8',
-                                            'targetPort': 2990,
-                                            'numberOfNodes': 1
-                                        }
-                        }
+        Example:
+            >>> restore_options = {
+            ...     'allowVersionUpgrade': True,
+            ...     'publicallyAccessible': True,
+            ...     'restoreTags': False,
+            ...     'enableDeletionProtection': False,
+            ...     'availabilityZone': 'us-east-2a',
+            ...     'targetParameterGroup': 'param',
+            ...     'targetSubnetGroup': 'subnet',
+            ...     'nodeType': 'dc-large-8',
+            ...     'targetPort': 2990,
+            ...     'numberOfNodes': 1
+            ... }
+            >>> job = subclient.restore(
+            ...     destination='cluster',
+            ...     source='snapshot',
+            ...     restore_options=restore_options
+            ... )
+            >>> print(f"Restore job started with ID: {job.job_id}")
 
-            Returns:
-
-                object - instance of the Job class for this restore job
+        #ai-gen-doc
         """
         return self._instance_object.restore(destination, source, restore_options)

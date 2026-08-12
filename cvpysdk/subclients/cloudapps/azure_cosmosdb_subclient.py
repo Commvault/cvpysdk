@@ -33,12 +33,34 @@ from ...exception import SDKException
 
 
 class AzureCosmosDBSubclient(CloudAppsSubclient):
-    """ Derived class from Subclient Base class, representing a Azure Cosmos DB subclient,
-            and to perform operations on that subclient. """
+    """
+    Represents an Azure Cosmos DB subclient for cloud application management.
 
-    def _get_subclient_properties(self):
-        """ Gets the subclient related properties of Cloud Database subclient. """
+    This class is derived from the Subclient Base class and is specifically designed
+    to handle operations related to Azure Cosmos DB subclients. It provides mechanisms
+    to retrieve and manage subclient properties, facilitating integration and management
+    within cloud environments.
+
+    Key Features:
+        - Specialized for Azure Cosmos DB subclient operations
+        - Inherits core functionality from CloudAppsSubclient
+        - Provides method to retrieve subclient properties
+
+    #ai-gen-doc
+    """
+
+    def _get_subclient_properties(self) -> dict:
+        """Retrieve the properties related to the Cloud Database subclient.
+
+        Returns:
+            dict: A dictionary containing the subclient properties for the Azure Cosmos DB subclient.
+
+        Example:
+            >>> subclient = AzureCosmosDBSubclient()
+            >>> properties = subclient._get_subclient_properties()
+            >>> print(properties)
+            {'property1': 'value1', 'property2': 'value2'}
+        #ai-gen-doc
+        """
 
         super(AzureCosmosDBSubclient, self)._get_subclient_properties()
-
-

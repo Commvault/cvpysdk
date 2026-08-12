@@ -29,80 +29,88 @@ LNInstance:
 
 from __future__ import unicode_literals
 
+from typing import TYPE_CHECKING
+
 from ...instance import Instance
 from ...exception import SDKException
 
+if TYPE_CHECKING:
+    from ...job import Job
 
 class LNInstance(Instance):
-    """Derived class from Instance Base class, representing an LNDOC instance,
-        and to perform operations on that instance."""
+    """
+    Represents an LNDOC instance, extending the Instance base class to provide specialized
+    operations for data restoration.
+
+    This class offers methods to perform both in-place and out-of-place restore operations
+    on LNDOC instances. It allows users to restore data and access control lists (ACLs)
+    from specified paths, with options to overwrite existing data, set copy precedence,
+    and define restore time ranges. Out-of-place restores enable restoration to different
+    clients and destination paths.
+
+    Key Features:
+        - In-place restore of data and ACLs from specified paths
+        - Out-of-place restore to alternate clients and destinations
+        - Overwrite control for existing data during restore
+        - Support for copy precedence and time range selection
+
+    #ai-gen-doc
+    """
 
     def restore_in_place(
             self,
-            paths,
-            overwrite=True,
-            restore_data_and_acl=True,
-            copy_precedence=None,
-            from_time=None,
-            to_time=None,
-            **kwargs):
-        """Restores the files/folders specified in the input paths list to the same location.
+            paths: list,
+            overwrite: bool = True,
+            restore_data_and_acl: bool = True,
+            copy_precedence: int = None,
+            from_time: str = None,
+            to_time: str = None,
+            **kwargs
+        ) -> 'Job':
+        """Restore files or folders to their original location within the LNInstance.
 
-            Args:
-                paths                   (list)  --  list of full paths of files/folders to restore
+        This method restores the specified files or folders, as provided in the `paths` list, 
+        to their original location on the source client. Various options allow you to control 
+        overwrite behavior, data and ACL restoration, copy precedence, and time-based filtering. 
+        Additional restore options can be provided via keyword arguments.
 
-                overwrite               (bool)  --  unconditional overwrite files during restore
-                    default: True
+        Args:
+            paths: List of full file or folder paths to restore.
+            overwrite: If True, existing files at the destination will be overwritten. Default is True.
+            restore_data_and_acl: If True, both data and ACLs are restored. Default is True.
+            copy_precedence: Optional storage policy copy precedence value. Default is None.
+            from_time: Optional string in 'YYYY-MM-DD HH:MM:SS' format to restore items modified after this time.
+            to_time: Optional string in 'YYYY-MM-DD HH:MM:SS' format to restore items modified before this time.
+            **kwargs: Additional restore options, such as:
+                - common_options_dict (dict): Dictionary of advanced restore options, e.g.:
+                    - unconditionalOverwrite (bool)
+                    - recoverWait (bool)
+                    - recoverZap (bool)
+                    - recoverZapReplica (bool)
+                    - recoverZapIfNecessary (bool)
+                    - doNotReplayTransactLogs (bool)
 
-                restore_data_and_acl    (bool)  --  restore data and ACL files
-                    default: True
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                copy_precedence         (int)   --  copy precedence value of storage policy copy
-                    default: None
+        Raises:
+            SDKException: If `paths` is not a list, if the job fails to initialize, 
+                or if the restore response is empty or unsuccessful.
 
-                from_time           (str)       --  time to retore the contents after
-                        format: YYYY-MM-DD HH:MM:SS
+        Example:
+            >>> ln_instance = LNInstance()
+            >>> restore_job = ln_instance.restore_in_place(
+            ...     paths=['/data/mail1.nsf', '/data/mail2.nsf'],
+            ...     overwrite=True,
+            ...     restore_data_and_acl=True,
+            ...     copy_precedence=2,
+            ...     from_time='2023-01-01 00:00:00',
+            ...     to_time='2023-12-31 23:59:59',
+            ...     common_options_dict={'unconditionalOverwrite': True}
+            ... )
+            >>> print(f"Restore job started with ID: {restore_job.job_id}")
 
-                    default: None
-
-                to_time           (str)         --  time to retore the contents before
-                        format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                common_options_dict (dict)          -- dictionary for all the common options
-                    options:
-                        unconditionalOverwrite              :   overwrite the files during restore
-                        even if they exist
-
-                        recoverWait                         :   Specifies whether this restore
-                        operation must wait until resources become available if a database recovery
-                        is already taking place
-
-                        recoverZap                          :   Specifies whether the IBM Domino
-                        must change the DBIID associated with the restored database
-
-                        recoverZapReplica                   :   Specifies whether the restore
-                        operation changes the replica id of the restored database
-
-                        recoverZapIfNecessary               :   Specifies whether the IBM Domino
-                        can change the DBIID associated with the restored database if necessary
-
-                        doNotReplayTransactLogs             :   option to skip restoring or
-                        replaying logs
-
-            Returns:
-                object - instance of the Job class for this restore job
-
-            Raises:
-                SDKException:
-                    if paths is not a list
-
-                    if failed to initialize job
-
-                    if response is empty
-
-                    if response is not success
+        #ai-gen-doc
         """
         self._restore_association = self.backupsets.get(
             list(self.backupsets.all_backupsets)[0]
@@ -122,85 +130,59 @@ class LNInstance(Instance):
 
     def restore_out_of_place(
             self,
-            client,
-            destination_path,
-            paths,
-            overwrite=True,
-            restore_data_and_acl=True,
-            copy_precedence=None,
-            from_time=None,
-            to_time=None,
-            **kwargs):
-        """Restores the files/folders specified in the input paths list to the input client,
-            at the specified destionation location.
+            client: object,
+            destination_path: str,
+            paths: list,
+            overwrite: bool = True,
+            restore_data_and_acl: bool = True,
+            copy_precedence: int = None,
+            from_time: str = None,
+            to_time: str = None,
+            **kwargs
+        ) -> 'Job':
+        """Restore files or folders to a different client and destination path.
 
-            Args:
-                client                (str/object) --  either the name of the client or
-                the instance of the Client
+        This method restores the specified files or folders from backup to a given client at the provided
+        destination path. You can control overwrite behavior, restore data and ACLs, specify copy precedence,
+        and filter restore content by time range. Additional restore options can be provided via keyword arguments.
 
-                destination_path      (str)        --  full path of the restore location on client
+        Args:
+            client: The target client for restore. Can be a client name (str) or a Client object instance.
+            destination_path: Full path on the target client where data will be restored.
+            paths: List of full file or folder paths to restore.
+            overwrite: If True, existing files at the destination will be overwritten. Default is True.
+            restore_data_and_acl: If True, both data and ACLs are restored. Default is True.
+            copy_precedence: Optional storage policy copy precedence value. Default is None.
+            from_time: Optional lower bound for restore time range (format: 'YYYY-MM-DD HH:MM:SS'). Default is None.
+            to_time: Optional upper bound for restore time range (format: 'YYYY-MM-DD HH:MM:SS'). Default is None.
+            **kwargs: Additional restore options as keyword arguments. Common options include:
+                - overwriteDBLinks (bool): Overwrite database links. Default is False.
+                - overwriteDesignDoc (bool): Overwrite design documents. Default is False.
+                - overwriteDataDoc (bool): Overwrite data documents. Default is False.
+                - dbLinksOnly (bool): Overwrite only database links. Default is False.
 
-                paths                 (list)       --  list of full paths of
-                files/folders to restore
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                overwrite             (bool)       --  unconditional overwrite files during restore
+        Raises:
+            SDKException: If input parameters are invalid or if the restore job fails to initialize or complete.
 
-                    default: True
+        Example:
+            >>> # Restore files to a different client and path
+            >>> job = ln_instance.restore_out_of_place(
+            ...     client='TargetClient',
+            ...     destination_path='/restore/location',
+            ...     paths=['/data/file1.txt', '/data/folder2'],
+            ...     overwrite=True,
+            ...     restore_data_and_acl=True,
+            ...     copy_precedence=2,
+            ...     from_time='2023-01-01 00:00:00',
+            ...     to_time='2023-12-31 23:59:59',
+            ...     overwriteDBLinks=True
+            ... )
+            >>> print(f"Restore job started with ID: {job.job_id}")
 
-                restore_data_and_acl  (bool)       --  restore data and ACL files
-
-                    default: True
-
-                copy_precedence         (int)      --  copy precedence value of storage policy copy
-
-                    default: None
-
-                from_time           (str)          --  time to retore the contents after
-
-                        format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                to_time           (str)            --  time to retore the contents before
-
-                        format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                 common_options_dict (dict)          -- dictionary for all the common options
-                    options:
-                        overwriteDBLinks              :   overwrite the db links
-
-                            default: False
-
-                        overwriteDesignDoc            :   overwrite design documents
-
-                            default: False
-
-                        overwriteDataDoc              :   overwrite the data documents
-
-                            default: False
-
-                        dbLinksOnly                   :   overwrite the db links only
-
-                            default: False
-
-            Returns:
-                object - instance of the Job class for this restore job
-
-            Raises:
-                SDKException:
-                    if client is not a string or Client instance
-
-                    if destination_path is not a string
-
-                    if paths is not a list
-
-                    if failed to initialize job
-
-                    if response is empty
-
-                    if response is not success
+        #ai-gen-doc
         """
         self._restore_association = self.backupsets.get(
             list(self.backupsets.all_backupsets)[0]
@@ -219,4 +201,3 @@ class LNInstance(Instance):
         )
 
         return self._process_restore_response(request_json)
-

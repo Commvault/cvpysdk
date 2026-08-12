@@ -45,10 +45,11 @@ Datacube:
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
+from typing import Any
+
 from .datasource import Datasources
 
 from ..exception import SDKException
-
 
 USER_LOGGED_OUT_MESSAGE = 'User Logged Out. Please initialize the Commcell object again.'
 """str:     Message to be returned to the user, when trying the get the value of an attribute
@@ -58,18 +59,38 @@ of the Commcell class, after the user was logged out.
 
 
 class Datacube(object):
+    """
+    Represents a datacube instance running on the Commcell platform.
 
-    """ Represents a datacube running on the commcell """
+    This class provides an interface for interacting with datacube resources,
+    including analytics engines and data sources. It allows users to retrieve
+    information about available analytics engines, access data sources, manage
+    JDBC drivers for analytics engines, and refresh datacube metadata and engine
+    information.
 
-    def __init__(self, commcell_object):
-        """Initialize an instance of the Datacube class.
+    Key Features:
+        - Initialization with a Commcell object for context
+        - Access to analytics engines and data sources via properties
+        - Retrieval of JDBC drivers for specific analytics engines
+        - Refreshing datacube metadata and engine information
+        - Internal handling of unsuccessful responses
 
-            Args:
-                commcell_object     (object)    --  instance of the Commcell class
+    #ai-gen-doc
+    """
 
-            Returns:
-                object  -   instance of the Datacube class
+    def __init__(self, commcell_object: object) -> None:
+        """Initialize a Datacube instance with the specified Commcell connection.
 
+        Args:
+            commcell_object: An instance of the Commcell class representing the active Commcell connection.
+
+        Example:
+            >>> from cvpysdk.commcell import Commcell
+            >>> commcell = Commcell('commcell_host', 'username', 'password')
+            >>> datacube = Datacube(commcell)
+            >>> print("Datacube instance created successfully")
+
+        #ai-gen-doc
         """
         self._commcell_object = commcell_object
 
@@ -84,12 +105,21 @@ class Datacube(object):
         self._analytics_engines = self._get_analytics_engines()
         self._datasources = None
 
-    def __repr__(self):
-        """String representation of the instance of this class.
+    def __repr__(self) -> str:
+        """Return a string representation of the Datacube instance.
 
-            Returns:
-                str     -   string consisting of the details of the instance of this class
+        This method provides a human-readable string that describes the current Datacube object,
+        which is useful for debugging and logging purposes.
 
+        Returns:
+            A string containing details about the Datacube instance.
+
+        Example:
+            >>> datacube = Datacube()
+            >>> print(repr(datacube))
+            <Datacube object at 0x7f8b2c1d2e80>
+
+        #ai-gen-doc
         """
         o_str = "Datacube class instance for CommServ '{0}'".format(
             self._commcell_object.commserv_name
@@ -97,29 +127,41 @@ class Datacube(object):
 
         return o_str
 
-    def _response_not_success(self, response):
-        """Helper function to raise an exception when reponse status is not 200 (OK).
+    def _response_not_success(self, response: object) -> None:
+        """Raise an exception if the API response status is not 200 (OK).
 
-            Args:
-                response    (object)    --  response class object,
+        This helper function checks the status of the provided response object,
+        typically obtained from the `requests` Python package, and raises an
+        exception if the response indicates a failure (i.e., status code is not 200).
 
-                received upon running an API request, using the `requests` python package
+        Args:
+            response: The response object returned from an API request.
 
+        Example:
+            >>> response = requests.get('https://api.example.com/data')
+            >>> datacube = Datacube()
+            >>> datacube._response_not_success(response)
+            # Raises an exception if response.status_code is not 200
+
+        #ai-gen-doc
         """
         raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def _get_analytics_engines(self):
-        """Gets the list all the analytics engines associated with the datacube.
+    def _get_analytics_engines(self) -> list:
+        """Retrieve the list of all analytics engines associated with the datacube.
 
-            Returns:
-                list    -   array consisting details of all analytics engines
+        Returns:
+            list: A list containing details of all analytics engines linked to this datacube.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException: If the response is empty or if the response indicates a failure.
 
-                    if response is not success
+        Example:
+            >>> engines = datacube._get_analytics_engines()
+            >>> print(f"Number of analytics engines: {len(engines)}")
+            >>> # Each item in the list contains details about an analytics engine
 
+        #ai-gen-doc
         """
         flag, response = self._cvpysdk_object.make_request('GET', self._ANALYTICS_ENGINES)
 
@@ -130,13 +172,36 @@ class Datacube(object):
         self._response_not_success(response)
 
     @property
-    def analytics_engines(self):
-        """Returns the value of the analytics engines attributes."""
+    def analytics_engines(self) -> list:
+        """Get the value of the analytics engines attributes for this Datacube instance.
+
+        Returns:
+            The analytics engines attributes associated with the Datacube. The exact type depends on the implementation.
+
+        Example:
+            >>> datacube = Datacube()
+            >>> engines = datacube.analytics_engines  # Access the analytics engines property
+            >>> print(f"Analytics engines: {engines}")
+
+        #ai-gen-doc
+        """
         return self._analytics_engines
 
     @property
-    def datasources(self):
-        """Returns the instance of the Datasources class."""
+    def datasources(self) -> 'Datasources':
+        """Get the Datasources instance associated with this Datacube object.
+
+        Returns:
+            Datasources: An instance for managing data sources within the Datacube.
+
+        Example:
+            >>> datacube = Datacube(commcell_object)
+            >>> ds = datacube.datasources  # Access the datasources property
+            >>> print(f"Datasources object: {ds}")
+            >>> # The returned Datasources object can be used to manage data sources
+
+        #ai-gen-doc
+        """
         try:
             if self._datasources is None:
                 self._datasources = Datasources(self)
@@ -145,21 +210,24 @@ class Datacube(object):
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
 
-    def get_jdbc_drivers(self, analytics_engine):
-        """Gets the list all jdbc_drivers associated with the datacube.
+    def get_jdbc_drivers(self, analytics_engine: str) -> list:
+        """Retrieve the list of all JDBC drivers associated with the specified analytics engine in the datacube.
 
-            Args:
-                analytics_engine (str) -- client name of analytics_engine
+        Args:
+            analytics_engine: The client name of the analytics engine for which to fetch JDBC drivers.
 
-            Returns:
-                list    -   consists of all jdbc_drivers in the datacube
+        Returns:
+            A list containing the names or details of all JDBC drivers available in the datacube for the given analytics engine.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException: If the response from the server is empty or indicates a failure.
 
-                    if response is not success
+        Example:
+            >>> datacube = Datacube()
+            >>> drivers = datacube.get_jdbc_drivers('analytics_engine_01')
+            >>> print(f"Available JDBC drivers: {drivers}")
 
+        #ai-gen-doc
         """
         if not isinstance(analytics_engine, str):
             raise SDKException('Datacube', '101')
@@ -184,10 +252,32 @@ class Datacube(object):
         else:
             self._response_not_success(response)
 
-    def refresh(self):
-        """Refresh the datasources associated to the Datacube Engine."""
+    def refresh(self) -> None:
+        """Reload the datasources associated with the Datacube Engine.
+
+        This method refreshes the internal state of the Datacube object, ensuring that
+        any changes to the underlying datasources are reflected in the Datacube Engine.
+
+        Example:
+            >>> datacube = Datacube()
+            >>> datacube.refresh()
+            >>> print("Datasources refreshed successfully")
+
+        #ai-gen-doc
+        """
         self._datasources = None
 
-    def refresh_engine(self):
-        """Refresh the Index server associated to the Datacube."""
+    def refresh_engine(self) -> None:
+        """Refresh the Index server associated with the Datacube.
+
+        This method reloads or updates the Index server connection or configuration
+        for the current Datacube instance, ensuring that the latest state is reflected.
+
+        Example:
+            >>> datacube = Datacube()
+            >>> datacube.refresh_engine()
+            >>> print("Index server refreshed successfully")
+
+        #ai-gen-doc
+        """
         self._analytics_engines = self._get_analytics_engines()

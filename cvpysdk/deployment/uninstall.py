@@ -30,19 +30,32 @@ Download
 
 from ..job import Job
 from ..exception import SDKException
+from typing import List, Dict, Union, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..commcell import Commcell
 
 UNINSTALL_SELECTED_PACKAGES = 6
 class Uninstall(object):
-    """"class for Uninstalling software packages"""
+    """class for Uninstalling software packages
 
-    def __init__(self, commcell_object):
+    Attributes:
+        _commcell_object (Commcell): Instance of the Commcell class.
+        _services (dict): Available Commcell services.
+        _cvpysdk_object (CVPySDK): Instance of the CVPySDK class.
+    Usage:
+        # Initialize the Uninstall class
+        uninstall_obj = Uninstall(commcell_object)
+    """
+
+    def __init__(self, commcell_object: 'Commcell') -> None:
         """Initialize object of the Uninstall class.
 
-            Args:
-                commcell_object (object)  --  instance of the Commcell class
+        Args:
+            commcell_object (object): instance of the Commcell class
 
-            Returns:
-                object - instance of the Uninstall class
+        Returns:
+            Uninstall: instance of the Uninstall class
 
         """
 
@@ -50,45 +63,50 @@ class Uninstall(object):
         self._services = commcell_object._services
         self._cvpysdk_object = commcell_object._cvpysdk_object
 
-    def uninstall_software(self, client_name, force_uninstall=True,client_composition=[]):
+    def uninstall_software(self, client_name: str, force_uninstall: bool=True, client_composition: List[Dict]=None) -> Job:
         """
         Performs readiness check on the client
 
-            Args:
-                force_uninstall (bool): Uninstalls packages forcibly. Defaults to True.
+        Args:
+            client_name     (str): The client_name whose packages are to be uninstalled.
+            force_uninstall (bool): Uninstalls packages forcibly. Defaults to True.
+            client_composition (list): The client_coposition will contain the list of components need to be uninstalled.
 
-                client_name     (str): The client_name whose packages are to be uninstalled.
+        Returns:
+            Job: An instance of the Job class representing the uninstall job.
 
-                client_composition (list): The client_coposition will contain the list of components need to be uninstalled. 
+        Raises:
+            SDKException:
+                if response is empty
 
-            Usage:
-                uninstall.uninstall_software(client_name="freezaclient",force_uninstall=False,client_composition=[{
-                                         "activateClient": True,
-                                         "packageDeliveryOption": 0,
-                                         "components": {
-                                             "componentInfo": [
-                                                 {
-                                                     "osType": "Windows",
-                                                     "ComponentName": "High Availability Computing"
-                                                 },
-                                                 {
-                                                     "osType": "Windows",
-                                                     "ComponentName": "Index Store"
-                                                 },
-                                                 {
-                                                     "osType": "Windows",
-                                                     "ComponentName": "Index Gateway"
-                                                 }
-                                             ]
-                                         }
+                if response is not success
+
+        Usage:
+            uninstall.uninstall_software(client_name="freezaclient")
+
+            uninstall.uninstall_software(client_name="freezaclient", force_uninstall=False)
+
+            uninstall.uninstall_software(client_name="freezaclient", force_uninstall=False, client_composition=[{
+                                     "activateClient": True,
+                                     "packageDeliveryOption": 0,
+                                     "components": {
+                                         "componentInfo": [
+                                             {
+                                                 "osType": "Windows",
+                                                 "ComponentName": "High Availability Computing"
+                                             },
+                                             {
+                                                 "osType": "Windows",
+                                                 "ComponentName": "Index Store"
+                                             },
+                                             {
+                                                 "osType": "Windows",
+                                                 "ComponentName": "Index Gateway"
+                                             }
+                                         ]
                                      }
-                                 ])
-
-            Raises:
-                SDKException:
-                    if response is empty
-
-                    if response is not success
+                                 }
+                             ])
         """
         if not isinstance(client_name, str):
             raise SDKException('Uninstall', '101')

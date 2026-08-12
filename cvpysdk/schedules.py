@@ -154,21 +154,39 @@ Schedule:
 
 from __future__ import absolute_import
 from __future__ import unicode_literals
+from typing import Optional, Dict, Union, List, Tuple, Any, TYPE_CHECKING
 from datetime import datetime
 import calendar
 from .exception import SDKException
 
+if TYPE_CHECKING:
+    from .commcell import Commcell
+    from .client import Client
+    from .agent import Agent
+    from .backupset import Backupset
+    from .subclient import Subclient
+    from .instance import Instance
+    from .activateapps.inventory_manager import Inventory
+    from .activateapps.file_storage_optimization import FsoServer
+    from .activateapps.sensitive_data_governance import Project
 
 class OperationType:
     """ Operation Types supported to get schedules of particular optype"""
     REPORTS = 'Reports'
     DATA_AGING = 'DATA_AGING'
 
-
 class SchedulePattern:
-    """Class for getting the schedule pattern"""
+    """Class for getting the schedule pattern
 
-    _days_to_run = {
+    Attributes:
+        _days_to_run (dict): Mapping of integer values to day names for weekly schedules.
+        _relative_weekday (dict): Mapping of integer values to relative weekday names for monthly relative schedules.
+        _relative_day (dict): Mapping of integer values to relative day names for monthly relative schedules.
+    Usage:
+        pattern = SchedulePattern()
+    """
+
+    _days_to_run: Dict[int, str] = {
         2: 'monday',
         4: 'tuesday',
         8: 'wednesday',
@@ -178,7 +196,7 @@ class SchedulePattern:
         1: 'sunday',
     }
 
-    _relative_weekday = {
+    _relative_weekday: Dict[int, str] = {
         1: 'sunday',
         2: 'monday',
         3: 'tuesday',
@@ -191,7 +209,7 @@ class SchedulePattern:
         10: 'weekend_day'
     }
 
-    _relative_day = {
+    _relative_day: Dict[int, str] = {
         1: 'first',
         2: 'second',
         3: 'third',
@@ -199,25 +217,36 @@ class SchedulePattern:
         5: 'last'
     }
 
-    def __init__(self, schedule_pattern=None):
-        """initialise object of the SchedulePattern class"""
+    def __init__(self, schedule_pattern: Dict[str, Union[str, int, dict, list, None]] = None) -> None:
+        """initialise object of the SchedulePattern class
+
+        Args:
+            schedule_pattern (dict, optional): Initial schedule pattern. Defaults to None.
+        Usage:
+            pattern = SchedulePattern({'freq_type': 'Daily'})
+        """
         if not schedule_pattern:
-            self._pattern = {'freq_type': 'Init'}
+            self._pattern: Dict[str, Union[str, int, dict, list, None]] = {'freq_type': 'Init'}
         else:
-            self._pattern = schedule_pattern
+            self._pattern: Dict[str, Union[str, int, dict, list, None]] = schedule_pattern
 
     @staticmethod
-    def _time_converter(_time, time_format, utc_to_epoch=True):
+    def _time_converter(_time: Union[str, int], time_format: str, utc_to_epoch: bool = True) -> int:
         """
         converts a time string to epoch time based on the time format provided
         Args:
-
-            _time  (str/int) -- UTC time or EPOCH time
-            time_format (str) -- format of the time you need process
+            _time (str/int): UTC time or EPOCH time
+            time_format (str): format of the time you need process
 
         Raises:
-            SDKException if time format is wrong
+            SDKException: if time format is wrong
 
+        Returns:
+            int: Epoch time if utc_to_epoch is True, otherwise a formatted time string.
+
+        Usage:
+            epoch_time = SchedulePattern._time_converter("10/10/2024 10:00", "%m/%d/%Y %H:%M")
+            formatted_time = SchedulePattern._time_converter(1665427200, "%m/%d/%Y %H:%M", utc_to_epoch=False)
         """
         try:
 
@@ -235,17 +264,20 @@ class SchedulePattern:
                 '102',
                 "Incorrect data format, should be {0}".format(time_format))
 
-    def _pattern_json(self, pattern_option_dict):
+    def _pattern_json(self, pattern_option_dict: Dict[str, Union[str, int, dict, list, None]]) -> None:
         """
         forms a pattern json and set the class variable
         Args:
-             pattern_option_dict (dict) -- dictionary with the parameters needed for
+             pattern_option_dict (dict): dictionary with the parameters needed for
                                                             forming the corresponding pattern
                                             {'freq_type',
                                             'active_start_date',
                                             'active_start_time',
                                             'freq_recurrence_factor',
                                             'freq_interval'}
+        Usage:
+            pattern = SchedulePattern()
+            pattern._pattern_json({'freq_type': 'Daily', 'active_start_date': '10/26/2023', 'active_start_time': '09:00'})
         """
 
         if ('freq_type' not in pattern_option_dict) or (
@@ -312,17 +344,19 @@ class SchedulePattern:
             self._pattern.update(self._repeat_pattern(pattern_option_dict))
 
     @staticmethod
-    def _repeat_pattern(pattern_dict):
+    def _repeat_pattern(pattern_dict: Dict[str, str]) -> Dict[str, Union[int, None]]:
         """
         Forms repeat pattern json based on the pattern dict provided
         Args:
-            pattern_dict (dict) -- Dictionary containing repeat_every and repeat_end parameters
+            pattern_dict (dict): Dictionary containing repeat_every and repeat_end parameters
                                     {
                                     "repeat_every": "08:00",
                                     "repeat_end": "23:00"
                                     }
         Returns:
                 Dict with subdayinterval and endtime information to plug into the pattern json
+        Usage:
+            repeat_info = SchedulePattern._repeat_pattern({"repeat_every": "08:00", "repeat_end": "23:00"})
         """
         _repeat_time = datetime.strptime(
             pattern_dict.get(
@@ -333,30 +367,36 @@ class SchedulePattern:
                     '1/1/1970 ' + pattern_dict["repeat_end"], '%m/%d/%Y %H:%M')
                 }
 
-    def _one_time(self, pattern_dict):
+    def _one_time(self, pattern_dict: Dict[str, str]) -> None:
         """
         sets the pattern type as one time with the parameters provided,
         send only required keys to change only those values
         Args:
-             pattern_dict (dict) -- Dictonary with the schedule pattern
+             pattern_dict (dict): Dictonary with the schedule pattern
                 {
                                  "active_start_date": date_in_%m/%d/%y (str),
                                  "active_start_time": time_in_%h:%m (str)
                 }
+        Usage:
+            pattern = SchedulePattern()
+            pattern._one_time({"active_start_date": "10/27/2023", "active_start_time": "10:00"})
         """
         pattern_dict['freq_type'] = 1
         self._pattern_json(pattern_dict)
 
-    def _daily(self, pattern_dict):
+    def _daily(self, pattern_dict: Dict[str, Union[str, int]]) -> None:
         """
                 sets the pattern type as daily with the parameters provided
                 send only required keys to change only those values
                 Args:
-                     pattern_dict (dict) -- Dictionary with the schedule pattern
+                     pattern_dict (dict): Dictionary with the schedule pattern
                   {
                          "active_start_time": time_in_%H/%S (str),
                          "repeat_days": days_to_repeat (int)
                   }
+        Usage:
+            pattern = SchedulePattern()
+            pattern._daily({"active_start_time": "09:00", "repeat_days": 2})
         """
         _repeat_days = 1
         if self._pattern['freq_type'] == 4:
@@ -369,17 +409,22 @@ class SchedulePattern:
             _freq_recurrence_factor, int) else _freq_recurrence_factor
         self._pattern_json(pattern_dict)
 
-    def _weekly(self, pattern_dict):
+    def _weekly(self, pattern_dict: Dict[str, Union[str, int, List[str]]]) -> None:
         """
         sets the pattern type as weekly with the parameters provided
         send only required keys to change only those values
         Args:
-            pattern_dict (dict) -- Dictionary with the schedule pattern
+            pattern_dict (dict): Dictionary with the schedule pattern
                         {
                          "active_start_time": time_in_%H/%S (str),
                          "repeat_weeks": weeks_to_repeat (int)
                          "weekdays": list of weekdays ['Monday','Tuesday']
                         }
+        Raises:
+            SDKException: If incorrect weekday is specified or weekdays are not specified.
+        Usage:
+            pattern = SchedulePattern()
+            pattern._weekly({"active_start_time": "10:00", "repeat_weeks": 1, "weekdays": ["Monday", "Tuesday"]})
         """
         try:
             _repeat_weeks = 1
@@ -416,17 +461,20 @@ class SchedulePattern:
             raise SDKException('Schedules', '102',
                                "Incorrect weekday specified")
 
-    def _monthly(self, pattern_dict):
+    def _monthly(self, pattern_dict: Dict[str, Union[str, int]]) -> None:
         """
         sets the pattern type as monthly with the parameters provided
         send only required keys to change only those values
         Args:
-            pattern_dict (dict) -- Dictionary with the schedule pattern
+            pattern_dict (dict): Dictionary with the schedule pattern
                         {
                                  "active_start_time": time_in_%H/%S (str),
                                  "repeat_months": months_to_repeat (int)
                                  "on_day": Day to run schedule (int)
                         }
+        Usage:
+            pattern = SchedulePattern()
+            pattern._monthly({"active_start_time": "10:00", "repeat_months": 1, "on_day": 15})
         """
         _repeat_months = 1
         _on_day = 10
@@ -445,12 +493,12 @@ class SchedulePattern:
         pattern_dict['freq_type'] = 16
         self._pattern_json(pattern_dict)
 
-    def _monthly_relative(self, pattern_dict):
+    def _monthly_relative(self, pattern_dict: Dict[str, str]) -> None:
         """
         sets the pattern type as monthly_relative with the parameters provided
         send only required keys to change only those values
         Args:
-            pattern_dict (dict) -- Dictionary with the schedule pattern
+            pattern_dict (dict): Dictionary with the schedule pattern
                         {
                                  "active_start_time": time_in_%H/%S (str),
                                  "relative_time": relative day of the schedule (str) 'first',
@@ -458,6 +506,11 @@ class SchedulePattern:
                                  "relative_weekday": Day to run schedule (str) 'sunday','monday'...
                                  "repeat_months": months_to_repeat
                         }
+        Raises:
+            SDKException: If there is a ValueError.
+        Usage:
+            pattern = SchedulePattern()
+            pattern._monthly_relative({"active_start_time": "10:00", "relative_time": "first", "relative_weekday": "monday", "repeat_months": 1})
         """
         _freq_recurrence_factor = 1
         _freq_interval = 1
@@ -502,17 +555,22 @@ class SchedulePattern:
             raise SDKException('Schedules', '102',
                                str(v_error))
 
-    def _yearly(self, pattern_dict):
+    def _yearly(self, pattern_dict: Dict[str, Union[str, int]]) -> None:
         """
         sets the pattern type as monthly with the parameters provided
         send only required keys to change only those values
         Args:
-            pattern_dict (dict) -- Dictionary with the schedule pattern
+            pattern_dict (dict): Dictionary with the schedule pattern
                         {
                                  "active_start_time": time_in_%H/%S (str),
                                  "on_month": month to run schedule (str) January, Febuary...
                                  "on_day": Day to run schedule (int)
                         }
+        Raises:
+            SDKException: If there is a ValueError.
+        Usage:
+            pattern = SchedulePattern()
+            pattern._yearly({"active_start_time": "10:00", "on_month": "January", "on_day": 1})
         """
         try:
 
@@ -539,12 +597,12 @@ class SchedulePattern:
             raise SDKException('Schedules', '102',
                                str(ve))
 
-    def _yearly_relative(self, pattern_dict):
+    def _yearly_relative(self, pattern_dict: Dict[str, str]) -> None:
         """
         sets the pattern type as monthly_relative with the parameters provided
         send only required keys to change only those values
         Args:
-            pattern_dict (dict) -- Dictionary with the schedule pattern
+            pattern_dict (dict): Dictionary with the schedule pattern
                         {
                                  "active_start_time": time_in_%H/%S (str),
                                  "relative_time": relative day of the schedule (str) 'first',
@@ -552,6 +610,11 @@ class SchedulePattern:
                                  "relative_weekday": Day to run schedule (str) 'sunday','monday'...
                                  "on_month": month to run the schedule(str) January, February...
                         }
+        Raises:
+            SDKException: If there is a ValueError.
+        Usage:
+            pattern = SchedulePattern()
+            pattern._yearly_relative({"active_start_time": "10:00", "relative_time": "first", "relative_weekday": "monday", "on_month": "January"})
         """
         _freq_recurrence_factor = 1
         _freq_interval = 1
@@ -595,15 +658,18 @@ class SchedulePattern:
             raise SDKException('Schedules', '102',
                                str(ve))
 
-    def _continuous(self, pattern_dict):
+    def _continuous(self, pattern_dict: Dict[str, Union[str, int]]) -> None:
         """
         sets the pattern type as one time with the parameters provided,
         send only required keys to change only those values
         Args:
-            pattern_dict (dict) -- Dictionary with the schedule pattern
+            pattern_dict (dict): Dictionary with the schedule pattern
                 {
                                  job_interval: interval between jobs in mins(int)
                 }
+        Usage:
+            pattern = SchedulePattern()
+            pattern._continuous({"job_interval": 60})
         """
 
         _freq_recurrence_factor = pattern_dict.get('job_interval', 30)
@@ -612,34 +678,59 @@ class SchedulePattern:
         pattern_dict['freq_type'] = 4096
         self._pattern_json(pattern_dict)
 
-    def _automatic(self, pattern_dict):
-        """
-                sets the pattern type as one time with the parameters provided,
-                send only required keys to change only those values
-                Args:
-                     pattern_dict (dict) -- Dictionary with the schedule pattern
-                        {
-                                         min_interval_hours: minimum hours between jobs(int)
-                                         min_interval_minutes: minimum minutes between jobs(int)
-                                         max_interval_hours: maximum hours between jobs(int)
-                                         max_interval_minutes: maximum minutes between jobs(int)
-                                         min_sync_interval_hours: minimum sync hours
-                                                                                between jobs(int)
-                                         min_sync_interval_minutes: minimum sync minutes
-                                                                                between jobs(int)
-                                         ignore_opwindow_past_maxinterval: (bool)
-                                         wired_network_connection: (bool)
-                                         min_network_bandwidth: (int) kbps
-                                         specific_network: (dict){ip_address:(str),subnet:(int)}
-                                         dont_use_metered_network: (bool)
-                                         ac_power: (bool)
-                                         stop_if_on_battery: (bool)
-                                         stop_sleep_if_runningjob: (bool)
-                                         cpu_utilization_below : (int)%
-                                         cpu_utilization_above : (int)%
-                                         disk_use_threshold: (int)%
-                                         number_of_log_files: (int)
-                        }
+    def _automatic(self, pattern_dict: dict) -> None:
+        """sets the pattern type as one time with the parameters provided,
+        send only required keys to change only those values
+
+        Args:
+            pattern_dict (dict): Dictionary with the schedule pattern
+                                {
+                                    min_interval_hours: minimum hours between jobs(int)
+                                    min_interval_minutes: minimum minutes between jobs(int)
+                                    max_interval_hours: maximum hours between jobs(int)
+                                    max_interval_minutes: maximum minutes between jobs(int)
+                                    min_sync_interval_hours: minimum sync hours
+                                                                                   between jobs(int)
+                                    min_sync_interval_minutes: minimum sync minutes
+                                                                                   between jobs(int)
+                                    ignore_opwindow_past_maxinterval: (bool)
+                                    wired_network_connection: (bool)
+                                    min_network_bandwidth: (int) kbps
+                                    specific_network: (dict){ip_address:(str),subnet:(int)}
+                                    dont_use_metered_network: (bool)
+                                    ac_power: (bool)
+                                    stop_if_on_battery: (bool)
+                                    stop_sleep_if_runningjob: (bool)
+                                    cpu_utilization_below : (int)%
+                                    cpu_utilization_above : (int)%
+                                    disk_use_threshold: (int)%
+                                    number_of_log_files: (int)
+                                }
+
+        Usage:
+            pattern_dict = {
+                "max_interval_hours": 72,
+                "ignore_opwindow_past_maxinterval": False,
+                "min_interval_minutes": 15,
+                "max_interval_minutes": 0,
+                "min_sync_interval_hours": 0,
+                "min_interval_hours": 0,
+                "min_sync_interval_minutes": 2,
+                "stop_if_on_battery": False,
+                "ac_power": False,
+                "specific_network": {"ip_address": "0.0.0.0", "subnet": 24},
+                "stop_sleep_if_runningjob": False,
+                "cpu_utilization_below": 10,
+                "dont_use_metered_network": False,
+                "cpu_utilization_above": 10,
+                "wired_network_connection": False,
+                "min_network_bandwidth": 128,
+                "sweep_start_time": 3600,
+                "use_storage_space_ma": False,
+                "disk_use_threshold": 80,
+                "number_of_log_files": 50
+            }
+            SchedulePattern()._automatic(pattern_dict)
         """
         automatic_pattern = {
             "maxBackupInterval": pattern_dict.get("max_interval_hours",
@@ -756,19 +847,26 @@ class SchedulePattern:
 
         self._pattern = automatic_pattern
 
-    def _after_job_completes(self, pattern_dict):
-        """
-        sets the pattern type as after job completes with the parameters provided,
+
+    def _after_job_completes(self, pattern_dict: dict) -> None:
+        """sets the pattern type as after job completes with the parameters provided,
         send only required keys to change only those values
 
         Args:
-            pattern_dict        (dict) -- Dictionary with the schedule pattern
+            pattern_dict (dict): Dictionary with the schedule pattern
                 {
-                        "active_start_date": date_in_%m/%d/%y (str),
-                        "active_start_time": time_in_%H/%S (str),
-                        "repeat_days": days_to_repeat (int)
+                    "active_start_date": date_in_%m/%d/%y (str),
+                    "active_start_time": time_in_%H/%S (str),
+                    "repeat_days": days_to_repeat (int)
                 }
 
+        Usage:
+            pattern_dict = {
+                "active_start_date": "12/31/2024",
+                "active_start_time": "23/59",
+                "repeat_days": 7
+            }
+            SchedulePattern()._after_job_completes(pattern_dict)
         """
         pattern_dict['freq_type'] = 'After_Job_Completes'
 
@@ -776,35 +874,45 @@ class SchedulePattern:
 
         self._pattern_json(pattern_dict)
 
+
     @staticmethod
-    def exception_dates(day_list):
-        """
-        Provided a Scheduler version of exception as an on day number
+    def exception_dates(day_list: list) -> int:
+        """Provided a Scheduler version of exception as an on day number
+
         Args:
-            day_list (list) -- List of exception dates [1,2,3]
+            day_list (list): List of exception dates [1,2,3]
 
-        Returns (int) -- on_day number for the pattern json
+        Returns:
+            int: on_day number for the pattern json
 
+        Usage:
+            day_list = [1, 2, 3]
+            on_day = SchedulePattern.exception_dates(day_list)
         """
         on_day = 0
         for value in day_list:
             on_day |= (1 << (value - 1))
         return on_day
 
-    def create_schedule_pattern(self, pattern_dict):
-        """
-        calls the required type of schedule module and forms the pattern json
+
+    def create_schedule_pattern(self, pattern_dict: dict) -> dict:
+        """calls the required type of schedule module and forms the pattern json
+
         Args:
-        pattern_dict (Dict) --
-
-        freq_type is mandatory, all other fields specified below can be skipped and system
-                                                                            defaults will be set
-
-        for reference on pattern_dict check create_schedule
+            pattern_dict (dict): Dictionary containing schedule pattern details.
+                freq_type is mandatory, all other fields specified below can be skipped and system
+                defaults will be set. For reference on pattern_dict check create_schedule.
 
         Returns:
-             pattern which can be plugged into the create or modify task request to
-                                                                        create or modify schedules
+            dict: pattern which can be plugged into the create or modify task request to
+            create or modify schedules
+
+        Raises:
+            SDKException: If 'freq_type' is not in pattern_dict or if freq_type specified is wrong.
+
+        Usage:
+            pattern_dict = {"freq_type": "one_time", "active_start_date": "12/31/2024", "active_start_time": "23:59"}
+            pattern = SchedulePattern().create_schedule_pattern(pattern_dict)
         """
 
         if 'freq_type' not in pattern_dict:
@@ -822,111 +930,117 @@ class SchedulePattern:
             raise SDKException('Schedules', '102',
                                "freq_type specified is wrong")
 
-    def create_schedule(self, task_req, pattern_dict, schedule_id=None):
-        """
-        returns a schedule task_req after including pattern
+
+    def create_schedule(self, task_req: dict, pattern_dict: dict, schedule_id: str = None) -> dict:
+        """returns a schedule task_req after including pattern
+
         Args:
-        task_req: task_req for immediate job operation to be converted to a schedule
+            task_req (dict): task_req for immediate job operation to be converted to a schedule
+            pattern_dict (dict): schedule pattern to be merged with the task request
+                freq_type is mandatory, all other fields specified below can be skipped and system
+                defaults will be set.
 
-        freq_type is mandatory, all other fields specified below can be skipped and system
-                                                                            defaults will be set
+                with the same dict, pass
+                time_zone: Time Zone Name(default is taken as COmmServe Time Zone)
+                    Common Time Zones examples -- 'CommServe Time Zone', 'Client Time Zone', 'UTC'
 
-        with the same dict, pass
-        time_zone: Time Zone Name(default is taken as COmmServe Time Zone)
-            Common Time Zones examples -- 'CommServe Time Zone', 'Client Time Zone', 'UTC'
+                for one_time: {
+                                     "freq_type": 'one_time',
+                                     "active_start_date": date_in_%m/%d/%y (str),
+                                     "active_start_time": time_in_%h:%m (str)
+                            }
 
-        for one_time: {
-                                 "freq_type": 'one_time',
-                                 "active_start_date": date_in_%m/%d/%y (str),
-                                 "active_start_time": time_in_%h:%m (str)
-                        }
-
-        for daily: {
-                         "freq_type": 'daily',
-                         "active_start_time": time_in_%H/%S (str),
-                         "repeat_days": days_to_repeat (int)
-                  }
-
-        for weekly: {
-                         "freq_type": 'weekly',
-                         "active_start_time": time_in_%H/%S (str),
-                         "repeat_weeks": weeks_to_repeat (int)
-                         "weekdays": list of weekdays ['Monday','Tuesday']
-                        }
-
-        for monthly: {
-                                 "freq_type": 'monthly',
+                for daily: {
+                                 "freq_type": 'daily',
                                  "active_start_time": time_in_%H/%S (str),
-                                 "repeat_months": weeks_to_repeat (int)
-                                 "on_day": Day to run schedule (int)
-                        }
+                                 "repeat_days": days_to_repeat (int)
+                          }
 
-        for monthly_relative:    {
+                for weekly: {
+                                 "freq_type": 'weekly',
                                  "active_start_time": time_in_%H/%S (str),
-                                 "relative_time": relative day of the schedule (str) 'first',
-                                                                                        'second',..
-                                 "relative_weekday": Day to run schedule (str) 'sunday','monday'...
-                                 "repeat_months": months_to_repeat
+                                 "repeat_weeks": weeks_to_repeat (int)
+                                 "weekdays": list of weekdays ['Monday','Tuesday']
                                 }
 
-        for yearly: {
-                                 "active_start_time": time_in_%H/%S (str),
-                                 "on_month": month to run schedule (str) January, Febuary...
-                                 "on_day": Day to run schedule (int)
+                for monthly: {
+                                         "freq_type": 'monthly',
+                                         "active_start_time": time_in_%H/%S (str),
+                                         "repeat_months": weeks_to_repeat (int)
+                                         "on_day": Day to run schedule (int)
+                                }
+
+                for monthly_relative:    {
+                                         "active_start_time": time_in_%H/%S (str),
+                                         "relative_time": relative day of the schedule (str) 'first',
+                                                                                                'second',..
+                                         "relative_weekday": Day to run schedule (str) 'sunday','monday'...
+                                         "repeat_months": months_to_repeat
+                                        }
+
+                for yearly: {
+                                         "active_start_time": time_in_%H/%S (str),
+                                         "on_month": month to run schedule (str) January, Febuary...
+                                         "on_day": Day to run schedule (int)
+                                }
+
+                for yearly_relative: {
+                                         "active_start_time": time_in_%H/%S (str),
+                                         "relative_time": relative day of the schedule (str) 'first',
+                                                                                                'second',..
+                                         "relative_weekday": Day to run schedule (str) 'sunday','monday'...
+                                         "on_month": month to run the schedule(str) January, Febuary...
+                                }
+
+                for continuous: {
+                                         job_interval: interval between jobs in mins(int)
                         }
 
-        for yearly_relative: {
-                                 "active_start_time": time_in_%H/%S (str),
-                                 "relative_time": relative day of the schedule (str) 'first',
-                                                                                        'second',..
-                                 "relative_weekday": Day to run schedule (str) 'sunday','monday'...
-                                 "on_month": month to run the schedule(str) January, Febuary...
-                        }
+                for automatic: {
+                                             min_interval_hours: minimum hours between jobs(int)
+                                             min_interval_minutes: minimum minutes between jobs(int)
+                                             max_interval_hours: maximum hours between jobs(int)
+                                             max_interval_minutes: maximum minutes between jobs(int)
+                                             min_sync_interval_hours: minimum sync hours
+                                                                                            between jobs(int)
+                                             min_sync_interval_minutes: minimum sync minutes
+                                                                                            between jobs(int)
+                                             ignore_opwindow_past_maxinterval: (bool)
+                                             wired_network_connection: (bool)
+                                             min_network_bandwidth: (int) kbps
+                                             specific_network: (dict){ip_address:(str),subnet:(int)}
+                                             dont_use_metered_network: (bool)
+                                             ac_power: (bool)
+                                             stop_if_on_battery: (bool)
+                                             stop_sleep_if_runningjob: (bool)
+                                             cpu_utilization_below : (int)%
+                                             cpu_utilization_above : (int)%
+                                             disk_use_threshold: (int)%
+                                             number_of_log_files: (int)
+                                }
 
-        for continuous: {
-                                 job_interval: interval between jobs in mins(int)
-                }
+                for after_job_completes :   {
+                                                "freq_type": 'after_job_completes',
+                                                "active_start_date": date_in_%m/%d/%y (str),
+                                                "active_start_time": time_in_%H/%S (str),
+                                                "repeat_days": days_to_repeat (int)
+                                            }
 
-        for automatic: {
-                                         min_interval_hours: minimum hours between jobs(int)
-                                         min_interval_minutes: minimum minutes between jobs(int)
-                                         max_interval_hours: maximum hours between jobs(int)
-                                         max_interval_minutes: maximum minutes between jobs(int)
-                                         min_sync_interval_hours: minimum sync hours
-                                                                                between jobs(int)
-                                         min_sync_interval_minutes: minimum sync minutes
-                                                                                between jobs(int)
-                                         ignore_opwindow_past_maxinterval: (bool)
-                                         wired_network_connection: (bool)
-                                         min_network_bandwidth: (int) kbps
-                                         specific_network: (dict){ip_address:(str),subnet:(int)}
-                                         dont_use_metered_network: (bool)
-                                         ac_power: (bool)
-                                         stop_if_on_battery: (bool)
-                                         stop_sleep_if_runningjob: (bool)
-                                         cpu_utilization_below : (int)%
-                                         cpu_utilization_above : (int)%
-                                         disk_use_threshold: (int)%
-                                         number_of_log_files: (int)
-                        }
+                Sample Usage inside the individual operation function:
+                Add a schedule_pattern parameter to the function and include the below line before making
+                the sdk make_request call
 
-        for after_job_completes :   {
-                                        "freq_type": 'after_job_completes',
-                                        "active_start_date": date_in_%m/%d/%y (str),
-                                        "active_start_time": time_in_%H/%S (str),
-                                        "repeat_days": days_to_repeat (int)
-                                    }
+                if schedule_pattern:
+                    request_json = SchedulePattern().create_schedule(task_req,schedule_pattern)
 
-        Sample Usage inside the individual operation function:
-        Add a schedule_pattern parameter to the function and include the below line before making
-        the sdk make_request call
-
-        if schedule_pattern:
-            request_json = SchedulePattern().create_schedule(task_req,schedule_pattern)
-
-        pattern_dict (Dict) -- schedule pattern to be merged with the task request
         Returns:
-             Schedule task request
+             dict: Schedule task request
+
+        Usage:
+            task_req = {"taskInfo": {"task": {"taskType": 1}, "subTasks": [{"subTask": {"subTaskId": "123"}}]}}
+            pattern_dict = {"freq_type": "one_time", "active_start_date": "12/31/2024", "active_start_time": "23:59"}
+            schedule_id = "123"
+            updated_task_req = SchedulePattern().create_schedule(task_req, pattern_dict, schedule_id)
         """
 
         _automatic_pattern = {}
@@ -993,19 +1107,25 @@ class SchedulePattern:
         task_req["taskInfo"] = _task_info
         return task_req
 
-
 class Schedules:
-    """Class for getting the schedules of a commcell entity."""
+    """Class for getting the schedules of a commcell entity.
 
-    def __init__(self, class_object, operation_type=None):
+    Attributes:
+        class_object (object): Instance of client/agent/backupset/subclient/CommCell class.
+        schedules (dict): Dictionary of schedules associated with the commcell entity.
+
+    Usage:
+        # Initialize Schedules for a client
+        schedules = Schedules(client_object)
+    """
+
+    def __init__(self, class_object: Union['Commcell', 'Client', 'Agent', 'Instance', 'Backupset', 'Subclient', 'Inventory', 'FsoServer', 'Project'], operation_type: str = None) -> None:
         """Initialise the Schedules class instance.
 
             Args:
-                class_object(object) -- instance of client/agent/backupset/subclient/CommCell class
-                operation_type        -- required when commcell object is passed
-                                        refer OperationType class for supported op types
-            Returns:
-                object - instance of the Schedule class
+                class_object (object): instance of Commcell/Client/Agent/Backupset/Subclient/Inventory/FsoServer/Project class
+                operation_type (str, optional): required when commcell object is passed
+                                        refer OperationType class for supported op types. Defaults to None.
 
             Raises:
                 SDKException:
@@ -1041,8 +1161,7 @@ class Schedules:
                     class_object.commserv_name)
             elif not operation_type:
                 self._SCHEDULES = class_object._services['COMMCELL_SCHEDULES']
-                self._repr_str = "Schedules in Commcell: {0}".format(
-                    class_object.commserv_name)
+                self._repr_str = "Schedules in Commcell"
             else:
                 raise SDKException('Schedules', '103')
         elif isinstance(class_object, FsoServer):
@@ -1053,7 +1172,7 @@ class Schedules:
             self._single_scheduled_entity = True
             self._task_flags['isEdiscovery'] = True
 
-        elif isinstance(class_object,Project):
+        elif isinstance(class_object, Project):
             self._SCHEDULES = class_object._commcell_object._services['CLIENT_SCHEDULES'] % (
                 class_object.project_id)
             self._repr_str = "SDG Project: {0}".format(class_object.project_id)
@@ -1117,7 +1236,7 @@ class Schedules:
         self.schedules = None
         self.refresh()
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Representation string consisting of all schedules of the commcell entity.
 
             Returns:
@@ -1135,16 +1254,16 @@ class Schedules:
 
         return representation_string.strip()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Representation string for the instance of the Schedules class."""
         return "Schedules class instance for {0}".format(self._repr_str)
 
-    def _get_schedules(self):
+    def _get_schedules(self) -> dict:
         """Gets the schedules associated with the input commcell entity.
             Client / Agent / Backupset / Subclient
 
             Returns:
-                dict - consists of all schedules for the commcell entity
+                dict: consists of all schedules for the commcell entity
                     {
                          "schedule_id": {
                                 'task_id': task_id,
@@ -1172,7 +1291,7 @@ class Schedules:
                 for schedule in response.json()['taskDetail']:
                     task_id = schedule['task']['taskId']
                     description = ''
-                    task_flags = schedule['task'].get('taskFlags',0)
+                    task_flags = schedule['task'].get('taskFlags', 0)
                     if 'subTasks' in schedule:
                         for subtask in schedule['subTasks']:
                             schedule_id = subtask['subTask']['subTaskId']
@@ -1186,7 +1305,7 @@ class Schedules:
                                 subtask_name = description
                             else:
                                 subtask_name = str(schedule_id)
-#change schedule_id as key
+                            # change schedule_id as key
                             subtask_dict[schedule_id] = {
                                 'task_id': task_id,
                                 'schedule_name': subtask_name,
@@ -1202,15 +1321,18 @@ class Schedules:
                 response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _get_sch_id_from_task_id(self, task_id):
+    def _get_sch_id_from_task_id(self, task_id: int) -> int:
         """
         Gets the schedule id from the task id
 
         Args:
-        task_id (int): task id of the schedule
+            task_id (int): task id of the schedule
 
         Returns:
-            (int) schedule id of the schedule
+            int: schedule id of the schedule
+
+        Raises:
+            SDKException: if schedule id not found for the corresponding task id
         """
         task_ids = [k for k, v in self.schedules.items() if v['task_id'] == task_id]
         if task_ids:
@@ -1218,16 +1340,23 @@ class Schedules:
         else:
             raise SDKException('Schedules', '102', 'Schedule id not found for corresponding task id')
 
-    def _get_schedule_id(self, schedule_name=None, schedule_id=None, task_id=None):
+    def _get_schedule_id(self, schedule_name: str = None, schedule_id: int = None, task_id: int = None) -> int:
         """Gets the schedule id from the provided inputs.
 
             Args:
-                schedule_name (str)  --  name of the schedule
-                schedule_id (int) -- id of the schedule
-                task_id (int)   -- task id of the schedule
+                schedule_name (str, optional): name of the schedule. Defaults to None.
+                schedule_id (int, optional): id of the schedule. Defaults to None.
+                task_id (int, optional): task id of the schedule. Defaults to None.
 
             Returns:
-            (int) schedule id of the schedule
+                int: schedule id of the schedule
+
+            Raises:
+                SDKException:
+                    if neither schedule_name nor schedule_id is provided
+                    if schedule_name is not a string
+                    if schedule_id is not an integer
+                    if task_id is not an integer
         """
 
         if self._single_scheduled_entity:
@@ -1276,16 +1405,16 @@ class Schedules:
         if self.schedules and schedule_id in self.schedules:
             return schedule_id
 
-    def has_schedule(self, schedule_name=None, schedule_id=None, task_id=None):
+    def has_schedule(self, schedule_name: str = None, schedule_id: int = None, task_id: int = None) -> bool:
         """Checks if a schedule exists for the commcell entity with the input schedule name.
 
             Args:
-                schedule_name (str)  --  name of the schedule
-                schedule_id (int) -- id of the schedule
-                task_id (int)   -- task id of the schedule
+                schedule_name (str, optional): name of the schedule. Defaults to None.
+                schedule_id (int, optional): id of the schedule. Defaults to None.
+                task_id (int, optional): task id of the schedule. Defaults to None.
 
             Returns:
-                bool - boolean output whether the schedule exists for the commcell entity or not
+                bool: boolean output whether the schedule exists for the commcell entity or not
 
             Raises:
                 SDKException:
@@ -1295,42 +1424,61 @@ class Schedules:
             return True
         return False
 
-    def get(self, schedule_name=None, schedule_id=None, task_id=None):
+    def get(self, schedule_name: str = None, schedule_id: int = None, task_id: int = None) -> 'Schedule':
         """Returns a schedule object of the specified schedule name.
 
             Args:
-                schedule_name (str)  --  name of the Schedule
-                schedule_id (int) -- id of the schedule
-                task_id (int)   -- task id of the schedule
+                schedule_name (str, optional): name of the Schedule. Defaults to None.
+                schedule_id (int, optional): id of the schedule. Defaults to None.
+                task_id (int, optional): task id of the schedule. Defaults to None.
 
             Returns:
-                object - instance of the schedule class for the given schedule name
+                object: instance of the schedule class for the given schedule name
 
             Raises:
                 SDKException:
                     if type of the schedule name argument is not string
 
                     if no schedule exists with the given name
-        """
 
+            Usage:
+                # Get a schedule by name
+                schedule = schedules.get(schedule_name='My Schedule')
+
+                # Get a schedule by ID
+                schedule = schedules.get(schedule_id=123)
+
+                # Get a schedule by task ID
+                schedule = schedules.get(task_id=456)
+        """
         schedule_id = self._get_schedule_id(schedule_name, schedule_id, task_id)
         if schedule_id:
             return Schedule(self.class_object, schedule_id=schedule_id, task_id=self.schedules[schedule_id]['task_id'])
 
-        raise SDKException('Schedules','105')
+        raise SDKException('Schedules', '105')
 
-    def delete(self, schedule_name=None, schedule_id=None, task_id=None):
+    def delete(self, schedule_name: str = None, schedule_id: int = None, task_id: int = None) -> None:
         """deletes the specified schedule name.
 
                     Args:
-                        schedule_name (str)  --  name of the Schedule
-                        schedule_id (int) -- id of the schedule
-                        task_id (int)   -- task id of the schedule
+                        schedule_name (str, optional): name of the Schedule. Defaults to None.
+                        schedule_id (int, optional): id of the schedule. Defaults to None.
+                        task_id (int, optional): task id of the schedule. Defaults to None.
 
                     Raises:
                         SDKException:
                             if type of the schedule name argument is not string
                             if no schedule exists with the given name
+
+                    Usage:
+                        # Delete a schedule by name
+                        schedules.delete(schedule_name='My Schedule')
+
+                        # Delete a schedule by ID
+                        schedules.delete(schedule_id=123)
+
+                        # Delete a schedule by task ID
+                        schedules.delete(task_id=456)
         """
 
         schedule_id = self._get_schedule_id(schedule_name, schedule_id, task_id)
@@ -1372,34 +1520,71 @@ class Schedules:
 
                 raise SDKException('Schedules', '102', exception_message)
         else:
-            raise SDKException('Schedules','105')
+            raise SDKException('Schedules', '105')
 
-    def refresh(self):
-        """Refresh the Schedules associated with the Client / Agent / Backupset / Subclient."""
+    def refresh(self) -> None:
+        """Refresh the Schedules associated with the Client / Agent / Backupset / Subclient.
+
+        Usage:
+            schedules.refresh()
+        """
         self.schedules = self._get_schedules()
 
-
 class Schedule:
-    """Class for performing operations for a specific Schedule."""
+    """Class for performing operations for a specific Schedule.
 
-    def __init__(self, class_object, schedule_name=None, schedule_id=None, task_id=None):
+    Attributes:
+        class_object (object): Instance of Class Object.
+        _commcell_object (object): Instance of the Commcell class.
+        schedule_name (str): Name of the Schedule.
+        schedule_id (int): Task ID of the Schedule.
+        task_id (int): Task ID of the Schedule.
+        _SCHEDULE (str): API service endpoint for the schedule.
+        _MODIFYSCHEDULE (str): API service endpoint for modifying the schedule.
+        _freq_type (dict): Dictionary mapping frequency types to their string representations.
+        _week_of_month (dict): Dictionary mapping week numbers to their string representations.
+        task_operation_type (dict): Dictionary mapping task operation types to their string representations.
+        _criteria (dict): Criteria for the schedule.
+        _pattern (dict): Pattern for the schedule.
+        _task_options (dict): Task options for the schedule.
+        _associations_json (dict): Associations JSON for the schedule.
+        _description (str): Description of the schedule.
+        _alert_type (str): Alert type for the schedule.
+        _sub_task_option (dict): Subtask options for the schedule.
+        _automatic_pattern (dict): Automatic pattern for the schedule.
+        virtualServerRstOptions (dict): Virtual server restore options for the schedule.
+        _schedule_disabled (bool): Indicates if the schedule is disabled.
 
+    Usage:
+        >>> schedule = Schedule(commcell_object, schedule_name='MySchedule')
+    """
+
+    def __init__(
+        self,
+        class_object: Union['Commcell', 'Client', 'Agent', 'Instance', 'Backupset', 'Subclient', 'Inventory', 'FsoServer', 'Project'],
+        schedule_name: Optional[str] = None,
+        schedule_id: Optional[int] = None,
+        task_id: Optional[int] = None,
+    ) -> None:
         """Initialise the Schedule class instance.
 
-            Args:
-                class_object (object)     --  instance of Class Object
+        Args:
+            class_object (object): Instance of Class Object.
+            schedule_name (str, optional): Name of the Schedule. Defaults to None.
+            schedule_id (int, optional): Task ID of the Schedule. Defaults to None.
+            task_id (int, optional): Task ID of the Schedule. Defaults to None.
 
-                schedule_name      (str)     --  name of the Schedule
+        Raises:
+            SDKException:
+                If neither schedule_name nor schedule_id is provided.
 
-                schedule_id        (int)     --   task ids of the Schedule
-
-
-
-            Returns:
-                object - instance of the Schedule class
+        Usage:
+            >>> schedule = Schedule(commcell_object, schedule_name='MySchedule')
+            >>> schedule = Schedule(commcell_object, schedule_id=123)
         """
 
         from .commcell import Commcell
+
         self.class_object = class_object
 
         if isinstance(class_object, Commcell):
@@ -1479,40 +1664,43 @@ class Schedule:
         self.refresh()
 
     @property
-    def subtask_id(self):
-        """
-        Property which returns subtask id of the schedule
-        Returns (int) -- Subtask id
+    def subtask_id(self) -> int:
+        """Property which returns subtask id of the schedule
+
+        Returns:
+            int: Subtask id
         """
         return self.schedule_id
 
-    def _get_schedule_id(self):
-        """
-        Gets a schedule ID dict for the schedule
-        Returns (int) -- schedule ID
+    def _get_schedule_id(self) -> int:
+        """Gets a schedule ID dict for the schedule
+
+        Returns:
+            int: schedule ID
         """
         schedules_obj = Schedules(self.class_object)
         return schedules_obj.get(self.schedule_name).schedule_id
 
-    def _get_task_id(self):
-        """
-        Gets a schedule ID dict for the schedule
-        Returns (int) -- schedule ID
+    def _get_task_id(self) -> int:
+        """Gets a schedule ID dict for the schedule
+
+        Returns:
+            int: schedule ID
         """
         schedules_obj = Schedules(self.class_object)
         return schedules_obj.schedules.get(self.schedule_id).get('task_id')
 
-    def _get_schedule_properties(self):
+    def _get_schedule_properties(self) -> Dict:
         """Gets the properties of this Schedule.
 
-            Returns:
-                dict - dictionary consisting of the properties of this Schedule
+        Returns:
+            dict: dictionary consisting of the properties of this Schedule
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException:
+                if response is empty
 
-                    if response is not success
+                if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'GET', self._SCHEDULE)
@@ -1570,38 +1758,41 @@ class Schedule:
             raise SDKException('Response', '101', response_string)
 
     @property
-    def is_disabled(self):
-        """
-        Get the schedule status
+    def is_disabled(self) -> bool:
+        """Get the schedule status
+
         Returns:
-             (Bool):True if the schedule is disabled otherwise returns False
+            bool: True if the schedule is disabled otherwise returns False
         """
         return self._schedule_disabled
 
     @property
-    def schedule_freq_type(self):
-        """
-        get the schedule frequency type
+    def schedule_freq_type(self) -> str:
+        """get the schedule frequency type
+
         Returns:
-            (str) the schedule frequency type
+            str: the schedule frequency type
         """
         return self._freq_type[self._pattern['freq_type']]
 
     @property
-    def name(self):
-        """
-                gets the name of the schedule
-                Returns:
-                     (str) The schedule name
+    def name(self) -> str:
+        """gets the name of the schedule
+
+        Returns:
+            str: The schedule name
         """
         return self.schedule_name
 
     @name.setter
-    def name(self, new_name):
-        """
-                sets the name of the schedule
-                Args:
-                     new_name (str) -- New name for the schedule
+    def name(self, new_name: str) -> None:
+        """sets the name of the schedule
+
+        Args:
+            new_name (str): New name for the schedule
+
+        Usage:
+            >>> schedule.name = "New Schedule Name"
         """
         self.schedule_name = new_name
         self._sub_task_option['subTaskName'] = new_name
@@ -1609,17 +1800,17 @@ class Schedule:
         self._modify_task_properties()
 
     @property
-    def one_time(self):
-        """
-        gets the one time schedule pattern
+    def one_time(self) -> Dict:
+        """gets the one time schedule pattern
+
         Returns:
-             (dict) The schedule pattern
+            dict: The schedule pattern
                 {
                      "active_start_date": date_in_%m/%d/%y (str),
                      "active_start_time": time_in_%h:%m (str)
                 }
 
-                False: if schedule type is wrong
+            False: if schedule type is wrong
         """
         if self.schedule_freq_type == 'One_Time':
             return {
@@ -1634,16 +1825,19 @@ class Schedule:
         return False
 
     @one_time.setter
-    def one_time(self, pattern_dict):
-        """
-        sets the pattern type as one time with the parameters provided,
+    def one_time(self, pattern_dict: Dict) -> None:
+        """sets the pattern type as one time with the parameters provided,
         send only required keys to change only those values
+
         Args:
-             pattern_dict (dict) -- Dictonary with the schedule pattern
+            pattern_dict (dict): Dictonary with the schedule pattern
                 {
                                  "active_start_date": date_in_%m/%d/%y (str),
                                  "active_start_time": time_in_%h:%m (str)
                 }
+
+        Usage:
+            >>> schedule.one_time = {"active_start_date": "12/31/2024", "active_start_time": "23:59"}
         """
         if isinstance(pattern_dict, bool):
             pattern_dict = {}
@@ -1653,10 +1847,11 @@ class Schedule:
         self._modify_task_properties()
 
     @property
-    def daily(self):
-        """
-            gets the daily schedule
-            Returns: (dict) -- The schedule pattern
+    def daily(self) -> Dict:
+        """gets the daily schedule
+
+        Returns:
+            dict: The schedule pattern
                     {
                                      "active_start_time": time_in_%H/%S (str),
                                      "repeat_days": days_to_repeat (int)
@@ -1671,16 +1866,19 @@ class Schedule:
         return False
 
     @daily.setter
-    def daily(self, pattern_dict):
-        """
-                sets the pattern type as daily with the parameters provided
-                send only required keys to change only those values
-                Args:
-                     pattern_dict (dict) -- Dictionary with the schedule pattern
-                  {
-                         "active_start_time": time_in_%H/%S (str),
-                         "repeat_days": days_to_repeat (int)
-                  }
+    def daily(self, pattern_dict: Dict) -> None:
+        """sets the pattern type as daily with the parameters provided
+        send only required keys to change only those values
+
+        Args:
+            pattern_dict (dict): Dictionary with the schedule pattern
+                {
+                     "active_start_time": time_in_%H/%S (str),
+                     "repeat_days": days_to_repeat (int)
+                }
+
+        Usage:
+            >>> schedule.daily = {"active_start_time": "10:00", "repeat_days": 1}
         """
         if isinstance(pattern_dict, bool):
             pattern_dict = {}
@@ -1690,16 +1888,17 @@ class Schedule:
         self._modify_task_properties()
 
     @property
-    def weekly(self):
-        """
-        gets the weekly schedule
-        Returns (dict) -- The schedule pattern
+    def weekly(self) -> Dict:
+        """gets the weekly schedule
+
+        Returns:
+            dict: The schedule pattern
                 {
                          "active_start_time": time_in_%H/%S (str),
                          "repeat_weeks": weeks_to_repeat (int)
                          "weekdays": list of weekdays ['Monday','Tuesday']
                 }
-        False: if schedule type is wrong
+            False: if schedule type is wrong
         """
         if self.schedule_freq_type == 'Weekly':
             _freq = self._pattern['freq_interval']
@@ -1715,17 +1914,20 @@ class Schedule:
         return False
 
     @weekly.setter
-    def weekly(self, pattern_dict):
-        """
-        sets the pattern type as weekly with the parameters provided
+    def weekly(self, pattern_dict: Dict) -> None:
+        """sets the pattern type as weekly with the parameters provided
         send only required keys to change only those values
+
         Args:
-            pattern_dict (dict) -- Dictionary with the schedule pattern
-                        {
+            pattern_dict (dict): Dictionary with the schedule pattern
+                {
                          "active_start_time": time_in_%H/%S (str),
                          "repeat_weeks": weeks_to_repeat (int)
                          "weekdays": list of weekdays ['Monday','Tuesday']
-                        }
+                }
+
+        Usage:
+            >>> schedule.weekly = {"active_start_time": "09:00", "repeat_weeks": 2, "weekdays": ["Monday", "Wednesday"]}
         """
 
         if isinstance(pattern_dict, bool):
@@ -1736,16 +1938,17 @@ class Schedule:
         self._modify_task_properties()
 
     @property
-    def monthly(self):
-        """
-        gets the monthly schedule
-        Returns: (dict) -- the schedule pattern
-                        {
-                                 "active_start_time": time_in_%H/%S (str),
-                                 "repeat_months": months_to_repeat (int)
-                                 "on_day": Day to run schedule (int)
-                        }
-                False: if schedule type is wrong
+    def monthly(self) -> Dict:
+        """gets the monthly schedule
+
+        Returns:
+            dict: the schedule pattern
+                {
+                         "active_start_time": time_in_%H/%S (str),
+                         "repeat_months": months_to_repeat (int)
+                         "on_day": Day to run schedule (int)
+                }
+            False: if schedule type is wrong
         """
         if self.schedule_freq_type == 'Monthly':
             return {
@@ -1758,17 +1961,20 @@ class Schedule:
         return False
 
     @monthly.setter
-    def monthly(self, pattern_dict):
-        """
-        sets the pattern type as monthly with the parameters provided
+    def monthly(self, pattern_dict: Dict) -> None:
+        """sets the pattern type as monthly with the parameters provided
         send only required keys to change only those values
+
         Args:
-            pattern_dict (dict) -- Dictionary with the schedule pattern
-                        {
-                                 "active_start_time": time_in_%H/%S (str),
-                                 "repeat_months": months_to_repeat (int)
-                                 "on_day": Day to run schedule (int)
-                        }
+            pattern_dict (dict): Dictionary with the schedule pattern
+                {
+                         "active_start_time": time_in_%H/%S (str),
+                         "repeat_months": months_to_repeat (int)
+                         "on_day": Day to run schedule (int)
+                }
+
+        Usage:
+            >>> schedule.monthly = {"active_start_time": "11:00", "repeat_months": 1, "on_day": 15}
         """
         if isinstance(pattern_dict, bool):
             pattern_dict = {}
@@ -1778,17 +1984,18 @@ class Schedule:
         self._modify_task_properties()
 
     @property
-    def monthly_relative(self):
-        """
-        gets the monthly_relative schedule
-            Returns: (dict) -- The schedule pattern
-                        {
-                             "active_start_time": time_in_%H/%S (str),
-                             "relative_time": relative day of the schedule (str)'first','second',..
-                             "relative_weekday": Day to run schedule (str) 'sunday','monday'...
-                             "repeat_months": months_to_repeat
-                        }
-                False: if schedule type is wrong
+    def monthly_relative(self) -> Dict:
+        """gets the monthly_relative schedule
+
+        Returns:
+            dict: The schedule pattern
+                {
+                     "active_start_time": time_in_%H/%S (str),
+                     "relative_time": relative day of the schedule (str)'first','second',..
+                     "relative_weekday": Day to run schedule (str) 'sunday','monday'...
+                     "repeat_months": months_to_repeat
+                }
+            False: if schedule type is wrong
         """
         if self.schedule_freq_type == 'Monthly_Relative':
             return {
@@ -1804,19 +2011,22 @@ class Schedule:
         return False
 
     @monthly_relative.setter
-    def monthly_relative(self, pattern_dict):
-        """
-        sets the pattern type as monthly_relative with the parameters provided
+    def monthly_relative(self, pattern_dict: Dict) -> None:
+        """sets the pattern type as monthly_relative with the parameters provided
         send only required keys to change only those values
+
         Args:
-            pattern_dict (dict) -- Dictionary with the schedule pattern
-                        {
-                                 "active_start_time": time_in_%H/%S (str),
-                                 "relative_time": relative day of the schedule (str) 'first',
-                                                                                        'second',..
-                                 "relative_weekday": Day to run schedule (str) 'sunday','monday'...
-                                 "repeat_months": months_to_repeat
-                        }
+            pattern_dict (dict): Dictionary with the schedule pattern
+                {
+                     "active_start_time": time_in_%H/%S (str),
+                     "relative_time": relative day of the schedule (str) 'first',
+                                                                            'second',..
+                     "relative_weekday": Day to run schedule (str) 'sunday','monday'...
+                     "repeat_months": months_to_repeat
+                }
+
+        Usage:
+            >>> schedule.monthly_relative = {"active_start_time": "14:00", "relative_time": "first", "relative_weekday": "monday", "repeat_months": 3}
         """
         if isinstance(pattern_dict, bool):
             pattern_dict = {}
@@ -1826,16 +2036,17 @@ class Schedule:
         self._modify_task_properties()
 
     @property
-    def yearly(self):
-        """
-        gets the yearly schedule
-                Returns: (dict) -- The schedule pattern
-                        {
-                                 "active_start_time": time_in_%H/%S (str),
-                                 "on_month": month to run schedule (str) January, Febuary...
-                                 "on_day": Day to run schedule (int)
-                        }
-                False: if schedule type is wrong
+    def yearly(self) -> Dict:
+        """gets the yearly schedule
+
+        Returns:
+            dict: The schedule pattern
+                {
+                         "active_start_time": time_in_%H/%S (str),
+                         "on_month": month to run schedule (str) January, Febuary...
+                         "on_day": Day to run schedule (int)
+                }
+            False: if schedule type is wrong
         """
         if self.schedule_freq_type == 'Yearly':
             return {'active_start_time':
@@ -1847,17 +2058,20 @@ class Schedule:
         return False
 
     @yearly.setter
-    def yearly(self, pattern_dict):
-        """
-        sets the pattern type as monthly with the parameters provided
+    def yearly(self, pattern_dict: Dict) -> None:
+        """sets the pattern type as monthly with the parameters provided
         send only required keys to change only those values
+
         Args:
-            pattern_dict (dict) -- Dictionary with the schedule pattern
-                        {
-                                 "active_start_time": time_in_%H/%S (str),
-                                 "on_month": month to run schedule (str) January, Febuary...
-                                 "on_day": Day to run schedule (int)
-                        }
+            pattern_dict (dict): Dictionary with the schedule pattern
+                {
+                         "active_start_time": time_in_%H/%S (str),
+                         "on_month": month to run schedule (str) January, Febuary...
+                         "on_day": Day to run schedule (int)
+                }
+
+        Usage:
+            >>> schedule.yearly = {"active_start_time": "16:00", "on_month": "January", "on_day": 1}
         """
         if isinstance(pattern_dict, bool):
             pattern_dict = {}
@@ -1867,17 +2081,18 @@ class Schedule:
         self._modify_task_properties()
 
     @property
-    def yearly_relative(self):
-        """
-        gets the yearly_relative schedule
-                Returns: (dict) The schedule pattern
-                    {
-                             "active_start_time": time_in_%H/%S (str),
-                             "relative_time": relative day of the schedule (str)'first','second',..
-                             "relative_weekday": Day to run schedule (str) 'sunday','monday'...
-                             "on_month": month to run the schedule(str) January, Febuary...
-                    }
-                False: if schedule type is wrong
+    def yearly_relative(self) -> Dict:
+        """gets the yearly_relative schedule
+
+        Returns:
+            dict: The schedule pattern
+                {
+                     "active_start_time": time_in_%H/%S (str),
+                     "relative_time": relative day of the schedule (str)'first','second',..
+                     "relative_weekday": Day to run schedule (str) 'sunday','monday'...
+                     "on_month": month to run the schedule(str) January, Febuary...
+                }
+            False: if schedule type is wrong
         """
         if self.schedule_freq_type == 'Yearly_Relative':
             return {'active_start_time':
@@ -1892,12 +2107,12 @@ class Schedule:
         return False
 
     @yearly_relative.setter
-    def yearly_relative(self, pattern_dict):
+    def yearly_relative(self, pattern_dict: dict) -> None:
         """
         sets the pattern type as monthly_relative with the parameters provided
         send only required keys to change only those values
         Args:
-            pattern_dict (dict) -- Dictionary with the schedule pattern
+            pattern_dict (dict): Dictionary with the schedule pattern
                         {
                                  "active_start_time": time_in_%H/%S (str),
                                  "relative_time": relative day of the schedule (str) 'first',
@@ -1914,10 +2129,11 @@ class Schedule:
         self._modify_task_properties()
 
     @property
-    def continuous(self):
+    def continuous(self) -> dict:
         """
         gets the continuous schedule
-                Returns: (dict) -- The schedule pattern
+        Returns:
+            (dict): The schedule pattern
                         {
                                  job_interval: interval between jobs in mins(int)
                 }
@@ -1930,12 +2146,12 @@ class Schedule:
         return False
 
     @continuous.setter
-    def continuous(self, pattern_dict):
+    def continuous(self, pattern_dict: dict) -> None:
         """
         sets the pattern type as one time with the parameters provided,
         send only required keys to change only those values
         Args:
-            pattern_dict (dict) -- Dictionary with the schedule pattern
+            pattern_dict (dict): Dictionary with the schedule pattern
                 {
                                  job_interval: interval between jobs in mins(int)
                 }
@@ -1948,10 +2164,11 @@ class Schedule:
         self._modify_task_properties()
 
     @property
-    def automatic(self):
+    def automatic(self) -> dict:
         """
         gets the automatic schedule
-                Returns: (dict) -- The schedule pattern
+        Returns:
+            (dict): The schedule pattern
                         {
                                  min_interval_hours: minimum hours between jobs(int)
                                  min_interval_minutes: minimum minutes between jobs(int)
@@ -2024,12 +2241,12 @@ class Schedule:
         return False
 
     @automatic.setter
-    def automatic(self, pattern_dict):
+    def automatic(self, pattern_dict: dict) -> None:
         """
         sets the pattern type as one time with the parameters provided,
                 send only required keys to change only those values
                 Args:
-                     pattern_dict (dict) -- Dictionary with the schedule pattern
+                     pattern_dict (dict): Dictionary with the schedule pattern
                         {
                              min_interval_hours: minimum hours between jobs(int)
                              min_interval_minutes: minimum minutes between jobs(int)
@@ -2098,20 +2315,21 @@ class Schedule:
         self._modify_task_properties()
 
     @property
-    def active_start_date(self):
+    def active_start_date(self) -> str:
         """
         gets the start date of the schedule
-        Returns: (str) -- date in %m/%d/%Y
+        Returns:
+            (str): date in %m/%d/%Y
         """
         return SchedulePattern._time_converter(
             self._pattern['active_start_date'], '%m/%d/%Y', False)
 
     @active_start_date.setter
-    def active_start_date(self, active_start_date):
+    def active_start_date(self, active_start_date: str) -> None:
         """
         sets the start date of the schedule
         Args:
-            active_start_date (str) -- date in %m/%d/%Y
+            active_start_date (str): date in %m/%d/%Y
         """
         pattern_dict = dict()
         pattern_dict['freq_type'] = self.schedule_freq_type
@@ -2121,20 +2339,21 @@ class Schedule:
         self._modify_task_properties()
 
     @property
-    def active_start_time(self):
+    def active_start_time(self) -> str:
         """
-                gets the start time of the schedule
-                Returns: (str) -- time in %H/%S
+        gets the start time of the schedule
+        Returns:
+            (str): time in %H/%S
         """
         return SchedulePattern._time_converter(
             self._pattern['active_start_time'], '%H:%M', False)
 
     @active_start_time.setter
-    def active_start_time(self, active_start_time):
+    def active_start_time(self, active_start_time: str) -> None:
         """
         sets the start time of the schedule
         Args:
-            active_start_time (str) -- time in %H/%S
+            active_start_time (str): time in %H/%S
         """
         pattern_dict = dict()
         pattern_dict['freq_type'] = self.schedule_freq_type
@@ -2144,10 +2363,11 @@ class Schedule:
         self._modify_task_properties()
 
     @property
-    def active_end_date(self):
+    def active_end_date(self) -> str:
         """
         gets the end date of the schedule if present
-        Returns: (str) -- date in %m/%d/%Y
+        Returns:
+            (str): date in %m/%d/%Y
         """
         if "active_end_date" in self._pattern:
             if self._pattern["active_end_date"]:
@@ -2156,11 +2376,11 @@ class Schedule:
         return False
 
     @active_end_date.setter
-    def active_end_date(self, active_start_date):
+    def active_end_date(self, active_start_date: str) -> None:
         """
         sets the end date for the schedule
         Args:
-        active_start_date (str) -- date in %m/%d/%Y
+            active_start_date (str): date in %m/%d/%Y
         """
         pattern_dict = dict()
         pattern_dict['freq_type'] = self.schedule_freq_type
@@ -2170,13 +2390,12 @@ class Schedule:
         self._modify_task_properties()
 
     @property
-    def exception_dates(self):
+    def exception_dates(self) -> list:
         """
         returns a list of exception days if present
         Returns:
-            (list) -- exception days in a schedule
+            (list): exception days in a schedule
         """
-
         if "repeatPattern" in self._pattern:
             for repeat_pattern in self._pattern["repeatPattern"]:
                 if repeat_pattern.get("exception"):
@@ -2192,12 +2411,11 @@ class Schedule:
         return False
 
     @exception_dates.setter
-    def exception_dates(self, day_list):
+    def exception_dates(self, day_list: list) -> None:
         """
         sets exception days provided as input for the schedule
         Args:
-            day_list: (list) -- exception days to set for the schedule
-
+            day_list (list): exception days to set for the schedule
         """
         pattern_dict = dict()
         pattern_dict['freq_type'] = self.schedule_freq_type
@@ -2207,20 +2425,20 @@ class Schedule:
         self._modify_task_properties()
 
     @property
-    def end_after(self):
+    def end_after(self) -> int:
         """
         gets the maximum occurence of the schedule if present
-        Returns: (int) -- end occurence
+        Returns:
+            (int): end occurence
         """
         return self._pattern.get("active_end_occurence", False)
 
     @end_after.setter
-    def end_after(self, end_after):
+    def end_after(self, end_after: int) -> None:
         """
         sets the end date for the schedule
         Args:
-        end_after: (int) -- number of times the schedule should run
-
+            end_after (int): number of times the schedule should run
         """
         pattern_dict = dict()
         pattern_dict['freq_type'] = self.schedule_freq_type
@@ -2230,10 +2448,11 @@ class Schedule:
         self._modify_task_properties()
 
     @property
-    def repeat_pattern(self):
+    def repeat_pattern(self) -> dict:
         """
         gets the repeat pattern in a schedule if present
-        Returns: (dict) -- the repeat pattern
+        Returns:
+            (dict): the repeat pattern
                 {
                     "repeat_every": repeat_every,
                     "repeat_end": repeat_end
@@ -2253,30 +2472,35 @@ class Schedule:
         return False
 
     @repeat_pattern.setter
-    def repeat_pattern(self, pattern_json):
+    def repeat_pattern(self, pattern_json: dict) -> None:
         """
         sets a repeat pattern for the schedule
         Args:
-            pattern_json: (Dict) -- containing the repeat every and repeat end parameters
-
+            pattern_json (Dict): containing the repeat every and repeat end parameters
         """
         pattern_json['freq_type'] = self.schedule_freq_type
         schedule_pattern = SchedulePattern(self._pattern)
         self._pattern = schedule_pattern.create_schedule_pattern(pattern_json)
         self._modify_task_properties()
 
-    def run_now(self, return_multiple_jobs=False):
+    def run_now(self, return_multiple_jobs: bool = False) -> str:
         """
         Triggers the schedule to run immediately
 
-        Returns: job id/ Job IDs.
+        Args:
+            return_multiple_jobs (bool): if set to True, return multiple jobs, default: False.
 
-        Args: return_multiple_jobs (bool) -- if set to True, return multiple jobs, default: False.
+        Returns:
+            job id/ Job IDs.
 
         Raises:
             SDKException:
                 Response received is empty.
                 If no job id is found.
+
+        Usage:
+            schedule.run_now()
+            schedule.run_now(return_multiple_jobs=True)
         """
         request_json = {
             "TMMsg_TaskOperationReq":
@@ -2316,11 +2540,14 @@ class Schedule:
         else:
             raise SDKException('Response', '102')
 
-    def _modify_task_properties(self):
-        """
-        modifies the task properties of the schedule
-        Exception:
-            if modification of the schedule failed
+    def _modify_task_properties(self) -> None:
+        """Modifies the task properties of the schedule.
+
+        Raises:
+            SDKException: if modification of the schedule failed.
+
+        Usage:
+            schedule._modify_task_properties()
         """
         request_json = {
             'TMMsg_ModifyTaskReq':
@@ -2355,17 +2582,15 @@ class Schedule:
         o_str = 'Failed to update properties of Schedule\nError: "{0}"'
         raise SDKException('Schedules', '102', o_str.format(output[2]))
 
-    def enable(self):
+    def enable(self) -> None:
         """Enable a schedule.
 
-                    Raises:
-                        SDKException:
-                            if failed to enable schedule
+        Raises:
+            SDKException: if failed to enable schedule, if response is empty, or if response is not success.
 
-                            if response is empty
-
-                            if response is not success
-                """
+        Usage:
+            schedule.enable()
+        """
         enable_request = self._commcell_object._services['ENABLE_SCHEDULE']
         request_text = "taskId={0}".format(self.task_id)
 
@@ -2399,16 +2624,14 @@ class Schedule:
             response.text)
         raise SDKException('Response', '101', response_string)
 
-    def disable(self):
+    def disable(self) -> None:
         """Disable a Schedule.
 
-            Raises:
-                SDKException:
-                    if failed to disable Schedule
+        Raises:
+            SDKException: if failed to disable Schedule, if response is empty, or if response is not success.
 
-                    if response is empty
-
-                    if response is not success
+        Usage:
+            schedule.disable()
         """
         disable_request = self._commcell_object._services['DISABLE_SCHEDULE']
 
@@ -2444,16 +2667,24 @@ class Schedule:
             response.text)
         raise SDKException('Response', '101', response_string)
 
-    def _process_schedule_update_response(self, flag, response):
-        """
-        processes the response received post update request
+    def _process_schedule_update_response(self, flag: bool, response: Any) -> Tuple[bool, str, str]:
+        """Processes the response received post update request.
+
         Args:
-        flag: (bool) -- True or false based on response
-        response: (dict) response from modify request
+            flag (bool): True or false based on response.
+            response (Any): Response from modify request.
+
         Returns:
-            flag: (Bool) -- based on success and failure
-            error_code: (int) -- error_code from response
-            error_message: (str) -- error_message from the response if any
+            Tuple[bool, str, str]:
+                - bool: Based on success and failure.
+                - str: Error code from response.
+                - str: Error message from the response if any.
+
+        Raises:
+            SDKException: if the response is empty.
+
+        Usage:
+            flag, error_code, error_message = schedule._process_schedule_update_response(True, response)
         """
         task_id = None
         if flag:
@@ -2484,6 +2715,10 @@ class Schedule:
             response.text)
         raise SDKException('Response', '101', response_string)
 
-    def refresh(self):
-        """Refresh the properties of the Schedule."""
+    def refresh(self) -> None:
+        """Refresh the properties of the Schedule.
+
+        Usage:
+            schedule.refresh()
+        """
         self._get_schedule_properties()

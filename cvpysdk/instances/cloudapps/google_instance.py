@@ -41,24 +41,54 @@ GoogleInstance:
 """
 
 from __future__ import unicode_literals
+from base64 import b64encode
+from typing import Any, Dict, List
+
+from ...constants import AppIDAType
 from ...exception import SDKException
 from ..cainstance import CloudAppsInstance
-from ...constants import AppIDAType
-from base64 import b64encode
-
+from ...job import Job
 
 class GoogleInstance(CloudAppsInstance):
-    """Class for representing an Instance of the GMail/Gdrive instance type."""
+    """
+    Represents an instance of a GMail/GDrive cloud application.
 
-    def _get_instance_properties(self):
-        """Gets the properties of this instance.
+    This class provides comprehensive management and configuration capabilities
+    for Google cloud application instances, including GMail and GDrive. It
+    exposes properties for accessing instance-specific details such as email IDs,
+    admin credentials, client IDs, and key file paths. The class also supports
+    advanced operations such as auto-discovery management, content automation,
+    index server modification, access node configuration, and data restoration.
 
-            Raises:
-                SDKException:
-                    if response is empty
+    Key Features:
+        - Retrieve and manage instance properties and configuration as JSON
+        - Access instance details via properties (email ID, admin ID, client IDs, key file path, etc.)
+        - Manage auto-discovery status and modes
+        - Enable or modify automatic content management
+        - Prepare advanced search and find queries for data operations
+        - Prepare restore operations and JSON payloads
+        - Restore data out-of-place with flexible options (ACL, overwrite, time range, disk)
+        - Modify index server and access nodes for the instance
+        - Proxy client management for network operations
 
-                    if response is not success
+    #ai-gen-doc
+    """
 
+    def _get_instance_properties(self) -> None:
+        """Retrieve and update the properties of this GoogleInstance.
+
+        This method fetches the latest properties for the current instance from the backend
+        and updates the instance's internal state accordingly.
+
+        Raises:
+            SDKException: If the response from the backend is empty or indicates a failure.
+
+        Example:
+            >>> instance = GoogleInstance()
+            >>> instance._get_instance_properties()
+            >>> # The instance properties are now refreshed
+
+        #ai-gen-doc
         """
         super(GoogleInstance, self)._get_instance_properties()
         # Common properties for Google and OneDrive
@@ -128,8 +158,19 @@ class GoogleInstance(CloudAppsInstance):
                     raise SDKException('Instance', '102', 'Access Node has not been configured')
 
     @property
-    def ca_instance_type(self):
-        """Returns the CloudApps instance type"""
+    def ca_instance_type(self) -> str:
+        """Get the CloudApps instance type for this GoogleInstance.
+
+        Returns:
+            The instance type as a string, representing the CloudApps configuration.
+
+        Example:
+            >>> google_instance = GoogleInstance()
+            >>> instance_type = google_instance.ca_instance_type  # Use dot notation for property
+            >>> print(f"CloudApps instance type: {instance_type}")
+
+        #ai-gen-doc
+        """
         if self._ca_instance_type == 1:
             return 'GMAIL'
         elif self._ca_instance_type == 2:
@@ -139,66 +180,186 @@ class GoogleInstance(CloudAppsInstance):
         return self._ca_instance_type
 
     @property
-    def manage_content_automatically(self):
-        """Returns the CloudApps Manage Content Automatically property"""
+    def manage_content_automatically(self) -> bool:
+        """Get the status of the 'Manage Content Automatically' property for the CloudApps instance.
+
+        Returns:
+            bool: True if content is managed automatically, False otherwise.
+
+        Example:
+            >>> google_instance = GoogleInstance()
+            >>> is_auto = google_instance.manage_content_automatically
+            >>> print(f"Manage Content Automatically: {is_auto}")
+
+        #ai-gen-doc
+        """
         return self._manage_content_automatically
 
     @property
-    def auto_discovery_status(self):
-        """Treats the Auto discovery property as a read-only attribute."""
+    def auto_discovery_status(self) -> bool:
+        """Get the current status of the Auto Discovery property for the GoogleInstance.
+
+        Returns:
+            bool: True if Auto Discovery is enabled, False otherwise.
+
+        Example:
+            >>> google_instance = GoogleInstance()
+            >>> status = google_instance.auto_discovery_status
+            >>> print(f"Auto Discovery Enabled: {status}")
+
+        #ai-gen-doc
+        """
         return self._auto_discovery_enabled
 
     @property
-    def auto_discovery_mode(self):
-        """Returns the Auto discovery mode property"""
+    def auto_discovery_mode(self) -> bool:
+        """Get the auto discovery mode status for the GoogleInstance.
+
+        Returns:
+            bool: True if auto discovery mode is enabled, False otherwise.
+
+        Example:
+            >>> instance = GoogleInstance()
+            >>> is_enabled = instance.auto_discovery_mode
+            >>> print(f"Auto discovery mode enabled: {is_enabled}")
+
+        #ai-gen-doc
+        """
         return self._auto_discovery_mode
 
     @property
-    def app_email_id(self):
-        """Returns the service account mail id"""
+    def app_email_id(self) -> str:
+        """Get the service account email ID associated with this Google instance.
+
+        Returns:
+            The service account email address as a string.
+
+        Example:
+            >>> google_instance = GoogleInstance()
+            >>> email_id = google_instance.app_email_id
+            >>> print(f"Service account email: {email_id}")
+
+        #ai-gen-doc
+        """
         return self._app_email_id
 
     @property
-    def google_admin_id(self):
-        """Returns the Google admin mail id"""
+    def google_admin_id(self) -> str:
+        """Get the Google admin email ID associated with this GoogleInstance.
+
+        Returns:
+            The Google admin email ID as a string.
+
+        Example:
+            >>> instance = GoogleInstance()
+            >>> admin_email = instance.google_admin_id  # Use dot notation for property access
+            >>> print(f"Google admin email: {admin_email}")
+
+        #ai-gen-doc
+        """
         return self._google_admin_id
 
     @property
-    def key_file_path(self):
-        """Returns the service account key file path"""
+    def key_file_path(self) -> str:
+        """Get the file path to the Google service account key.
+
+        Returns:
+            The full path to the service account key file as a string.
+
+        Example:
+            >>> instance = GoogleInstance()
+            >>> key_path = instance.key_file_path  # Use dot notation for property access
+            >>> print(f"Service account key file is located at: {key_path}")
+
+        #ai-gen-doc
+        """
         return self._service_account_key_file
 
     @property
-    def google_client_id(self):
-        """Returns the service account client id"""
+    def google_client_id(self) -> str:
+        """Get the service account client ID associated with this Google instance.
+
+        Returns:
+            The client ID string for the service account.
+
+        Example:
+            >>> google_instance = GoogleInstance()
+            >>> client_id = google_instance.google_client_id  # Access the property
+            >>> print(f"Service account client ID: {client_id}")
+
+        #ai-gen-doc
+        """
         return self._app_client_id
 
     @property
-    def onedrive_client_id(self):
-        """Returns the OneDrive app client id"""
+    def onedrive_client_id(self) -> str:
+        """Get the OneDrive application client ID associated with this GoogleInstance.
+
+        Returns:
+            The client ID string used for OneDrive app authentication.
+
+        Example:
+            >>> google_instance = GoogleInstance()
+            >>> client_id = google_instance.onedrive_client_id
+            >>> print(f"OneDrive Client ID: {client_id}")
+
+        #ai-gen-doc
+        """
         return self._client_id
 
     @property
-    def onedrive_tenant(self):
-        """Returns the OneDrive tenant id"""
+    def onedrive_tenant(self) -> str:
+        """Get the OneDrive tenant ID associated with this GoogleInstance.
+
+        Returns:
+            The OneDrive tenant ID as a string.
+
+        Example:
+            >>> instance = GoogleInstance()
+            >>> tenant_id = instance.onedrive_tenant
+            >>> print(f"OneDrive Tenant ID: {tenant_id}")
+
+        #ai-gen-doc
+        """
         return self._tenant
 
     @property
-    def proxy_client(self):
-        """Returns the proxy client name to this instance"""
+    def proxy_client(self) -> str:
+        """Get the proxy client name associated with this GoogleInstance.
+
+        Returns:
+            The name of the proxy client as a string.
+
+        Example:
+            >>> instance = GoogleInstance()
+            >>> proxy_name = instance.proxy_client  # Use dot notation for property access
+            >>> print(f"Proxy client name: {proxy_name}")
+
+        #ai-gen-doc
+        """
         return self._proxy_client
 
-    def _prepare_advsearchgrp(self, source_item_list, subclient_id):
-        """
-                    Utility function to prepare advsearchgrp json for restore job for OneDrive for business clients
+    def _prepare_advsearchgrp(self, source_item_list: List[str], subclient_id: int) -> Dict[str, Any]:
+        """Prepare the advsearchgrp JSON structure for a restore job for OneDrive for Business clients.
 
-                    Args:
-                        source_item_list (list)         --  list of user GUID to process in restore
+        This utility function generates the required advsearchgrp dictionary for initiating a restore job,
+        using the provided list of user GUIDs and the subclient ID.
 
-                        subclient_id                    --  subclient id of the client
+        Args:
+            source_item_list: List of user GUIDs to process in the restore operation.
+            subclient_id: The subclient ID associated with the client.
 
-                    Returns:
-                        advsearchgrp (dict) - advsearchgrp json for restore job
+        Returns:
+            Dictionary representing the advsearchgrp JSON structure for the restore job.
+
+        Example:
+            >>> user_guids = ['guid1', 'guid2', 'guid3']
+            >>> subclient_id = 12345
+            >>> advsearchgrp_json = google_instance._prepare_advsearchgrp(user_guids, subclient_id)
+            >>> print(advsearchgrp_json)
+            >>> # Use the returned advsearchgrp_json in a restore job request
+
+        #ai-gen-doc
         """
         advsearchgrp = {
             "fileFilter": [
@@ -301,17 +462,26 @@ class GoogleInstance(CloudAppsInstance):
 
         return advsearchgrp
 
-    def _prepare_findquery(self, source_item_list, subclient_id):
-        """
-            Utility function to prepare findquery json for restore job for OneDrive for bussiness clients
+    def _prepare_findquery(self, source_item_list: list, subclient_id: int) -> dict:
+        """Prepare the findquery JSON payload for a restore job for OneDrive for Business clients.
 
-            Args:
-                source_item_list (list)         --  list of user GUID to process in restore
+        This utility function constructs the findquery JSON required to initiate a restore job,
+        using the provided list of user GUIDs and the subclient ID.
 
-                subclient_id                    --  subclient id of the client
+        Args:
+            source_item_list: List of user GUIDs to be processed in the restore operation.
+            subclient_id: The subclient ID associated with the client.
 
-            Returns:
-                findquery (dict) - findquery json for restore job
+        Returns:
+            A dictionary representing the findquery JSON for the restore job.
+
+        Example:
+            >>> user_guids = ['guid1', 'guid2']
+            >>> subclient_id = 123
+            >>> findquery = google_instance._prepare_findquery(user_guids, subclient_id)
+            >>> print(findquery)
+            {'subclientId': 123, 'userGuids': ['guid1', 'guid2']}
+        #ai-gen-doc
         """
 
         findquery = {
@@ -357,50 +527,57 @@ class GoogleInstance(CloudAppsInstance):
 
         return findquery
 
-    def _prepare_restore_json(self, source_item_list, **kwargs):
+    def _prepare_restore_json(self, source_item_list: list, **kwargs: dict) -> dict:
+        """Prepare the user-level restore JSON for OneDrive for Business clients.
 
-        """ Utility function to prepare user level restore json for OneDrive for bussiness clients
+        This utility function constructs the request JSON required to initiate a restore job for OneDrive for Business users.
+        It supports both in-place and out-of-place restores, as well as disk restores, and allows for various customization
+        options via keyword arguments.
 
-            Args:
-                source_item_list (list)         --  list of user GUID to process in restore
+        Args:
+            source_item_list: List of user GUIDs to process in the restore operation.
 
-            Kwargs:
+        Keyword Args:
+            out_of_place (bool): If True, performs an out-of-place restore.
+            accountInfo (dict): Required for out-of-place restore. Example:
+                {
+                    "userDisplayName": "",
+                    "userGUID": "",
+                    "userSMTP": ""
+                }
+            disk_restore (bool): If True, performs a restore to disk.
+            destination_client (str): Name of the destination client for disk restore.
+            overwrite (bool): If True, existing files at the destination will be overwritten.
+            restore_as_copy (bool): If True, files will be restored as a copy if they already exist.
+            skip_file_permissions (bool): If True, file permissions will be restored.
+            destination_type (str): Destination type for out-of-place restore.
+            destination_path (str): Destination account for out-of-place restore.
+            include_deleted_items (bool): If True, deleted items are included in the restore.
+            destination_label (str): Label specifying where the restore should be performed in the mailbox.
 
-                out_of_place (bool)             --  If True, out of place restore will be performed
+        Returns:
+            dict: The request JSON for the restore job.
 
-                accountInfo (dict)              --  If out_of_place restore, this has to be provided
-                                                    Ex: {
-                                                        "userDisplayName": "",
-                                                        "userGUID": "",
-                                                        "userSMTP": ""
-                                                    }
+        Raises:
+            SDKException: If the destination client with the given name does not exist, or if any parameter type is invalid.
 
+        Example:
+            >>> user_guids = ["guid1", "guid2"]
+            >>> restore_json = google_instance._prepare_restore_json(
+            ...     user_guids,
+            ...     out_of_place=True,
+            ...     accountInfo={
+            ...         "userDisplayName": "John Doe",
+            ...         "userGUID": "guid1",
+            ...         "userSMTP": "john.doe@example.com"
+            ...     },
+            ...     overwrite=True,
+            ...     include_deleted_items=True
+            ... )
+            >>> print(restore_json)
+            # The returned dictionary can be used to submit a restore job.
 
-                disk_restore (bool)             --  If True, restore to disk will be performed
-
-                destination_client              -- destination client for disk restore
-
-                overwrite (bool)                --  If True, files will be overwritten in destination if already exists
-
-                restore_as_copy (bool)          --  If True, files will be restored as copy if already exists
-
-                skip_file_permissions (bool)    --  If True, file permissions will be restored
-
-                destination_type (str)          --  Destination type for OOP Restore, value should be provided while doing OOP Restore
-
-                destination_path (str)          --  Destination account for OOP Restore, value should be provided while doing OOP Restore
-
-                include_deleted_items (bool)    --  If True, Deleted items are also included in restore
-
-            Returns:
-                request_json (dict) - request json for restore job
-
-            Raises:
-                SDKException:
-                    if destination client with given name does not exist
-
-                    if type of parameter is invalid
-
+        #ai-gen-doc
         """
 
         out_of_place = kwargs.get('out_of_place', False)
@@ -410,6 +587,7 @@ class GoogleInstance(CloudAppsInstance):
         restore_as_copy = kwargs.get('restore_as_copy', False)
         skip_file_permissions = kwargs.get('skip_file_permissions', False)
         include_deleted_items = kwargs.get('include_deleted_items', False)
+        destination_label = kwargs.get('destination_label', "")
 
         if destination_client:
             if self._commcell_object.clients.all_clients.get(destination_client):
@@ -478,8 +656,8 @@ class GoogleInstance(CloudAppsInstance):
                     "destinationType": 0 if kwargs.get("destination_type") == 'USER' else 1,
                     "userDisplayName": kwargs.get('accountInfo', {}).get('userDisplayName', ''),
                     "userGUID": kwargs.get('accountInfo', {}).get('userGUID', ''),
-                    "folderPath": "",
-                    "folderId": ""
+                    "folderPath": destination_label,
+                    "folderId": destination_label
                 }
             }
         }
@@ -517,13 +695,13 @@ class GoogleInstance(CloudAppsInstance):
                     "selectedItems": [
                         {
                             "itemName": source_item_list[0],
-                            "itemType": "Mailbox" if self.ca_instance_type == "Gmail" else "User"
+                            "itemType": "Mailbox" if self.ca_instance_type == "GMAIL" else "User"
                         }
                     ],
                     "jobOptionItems": [
                         {
                             "option": "Restore destination",
-                            "value": "Gmail" if self.ca_instance_type == "Gmail" else "Google Drive"
+                            "value": "Gmail" if self.ca_instance_type == "GMAIL" else "Google Drive"
                         },
                         {
                             "option": "Source",
@@ -551,7 +729,11 @@ class GoogleInstance(CloudAppsInstance):
         }
 
         joboptionitems = options['commonOpts']['jobMetadata'][0]['jobOptionItems']
-        
+
+        if self.ca_instance_type == "GMAIL":
+            joboptionitems.extend([{"option": "Restore mail","value": "Enabled"},{"option": "Restore contacts","value": "Enabled"},{"option": "Restore calendars","value": "Enabled"}])
+            cloudAppsRestoreOptions['googleRestoreOptions']['gmailOperations']={"isMailSelected": True,"isContactsSelected": True,"isCalendarSelected": True}
+
         if include_deleted_items:
             for filter in cloudAppsRestoreOptions['googleRestoreOptions']['findQuery']['advSearchGrp']['commonFilter'][0]['filter']['filters']:
                 if filter['field']=='CISTATE':
@@ -566,64 +748,51 @@ class GoogleInstance(CloudAppsInstance):
 
     def restore_out_of_place(
             self,
-            client,
-            destination_path,
-            paths,
-            overwrite=True,
-            restore_data_and_acl=True,
-            copy_precedence=None,
-            from_time=None,
-            to_time=None,
-            to_disk=False):
-        """Restores the files/folders specified in the input paths list to the input client,
-            at the specified destionation location.
+            client: object,
+            destination_path: str,
+            paths: list,
+            overwrite: bool = True,
+            restore_data_and_acl: bool = True,
+            copy_precedence: int = None,
+            from_time: str = None,
+            to_time: str = None,
+            to_disk: bool = False
+        ) -> 'Job':
+        """Restore specified files or folders to a different client and destination path.
 
-            Args:
-                client                (str/object) --  either the name of the client or
-                                                           the instance of the Client
+        This method restores the files and folders listed in `paths` to the specified `destination_path`
+        on the given `client`. The restore can be customized to overwrite existing files, restore data
+        and ACLs, specify copy precedence, filter by time range, and optionally restore to disk.
 
-                destination_path      (str)        --  full path of the restore location on client
+        Args:
+            client: The target client for restore. Can be a client name (str) or a Client object.
+            destination_path: The full path on the destination client where data will be restored.
+            paths: List of full file or folder paths to restore.
+            overwrite: If True, existing files at the destination will be overwritten. Default is True.
+            restore_data_and_acl: If True, both data and ACLs will be restored. Default is True.
+            copy_precedence: Optional copy precedence value for the storage policy copy. Default is None.
+            from_time: Optional lower bound for restore time range (format: 'YYYY-MM-DD HH:MM:SS'). Default is None.
+            to_time: Optional upper bound for restore time range (format: 'YYYY-MM-DD HH:MM:SS'). Default is None.
+            to_disk: If True, perform a restore to disk operation. Default is False.
 
-                paths                 (list)       --  list of full paths of
-                                                           files/folders to restore
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                overwrite             (bool)       --  unconditional overwrite files during restore
-                    default: True
+        Raises:
+            SDKException: If input parameters are invalid or if the restore job fails to initialize.
 
-                restore_data_and_acl  (bool)       --  restore data and ACL files
-                    default: True
+        Example:
+            >>> # Restore files to a different client and path
+            >>> job = google_instance.restore_out_of_place(
+            ...     client='TargetClient',
+            ...     destination_path='/restore/location',
+            ...     paths=['/data/file1.txt', '/data/folder2'],
+            ...     overwrite=True,
+            ...     restore_data_and_acl=True
+            ... )
+            >>> print(f"Restore job started with ID: {job.job_id}")
 
-                copy_precedence         (int)   --  copy precedence value of storage policy copy
-                    default: None
-
-                from_time           (str)       --  time to retore the contents after
-                        format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                to_time           (str)         --  time to retore the contents before
-                        format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                to_disk             (bool)       --  If True, restore to disk will be performed
-
-            Returns:
-                object - instance of the Job class for this restore job
-
-            Raises:
-                SDKException:
-                    if client is not a string or Client instance
-
-                    if destination_path is not a string
-
-                    if paths is not a list
-
-                    if failed to initialize job
-
-                    if response is empty
-
-                    if response is not success
+        #ai-gen-doc
         """
         from cvpysdk.client import Client
 
@@ -680,18 +849,23 @@ class GoogleInstance(CloudAppsInstance):
         }
         return self._process_restore_response(request_json)
 
-    def enable_auto_discovery(self, mode='REGEX'):
-        """Enables auto discovery on instance.
+    def enable_auto_discovery(self, mode: str = 'REGEX') -> None:
+        """Enable auto discovery on the GoogleInstance.
 
-           Args:
+        This method enables automatic discovery of resources for the instance using the specified mode.
 
-                mode    (str)   -- Auto Discovery mode
+        Args:
+            mode: The auto discovery mode to use. Valid values are:
+                - 'REGEX': Use regular expressions for discovery.
+                - 'GROUP': Use group-based discovery.
+                Default is 'REGEX'.
 
-                Valid Values:
+        Example:
+            >>> instance = GoogleInstance()
+            >>> instance.enable_auto_discovery()  # Enables with default 'REGEX' mode
+            >>> instance.enable_auto_discovery(mode='GROUP')  # Enables with 'GROUP' mode
 
-                    REGEX
-                    GROUP
-
+        #ai-gen-doc
         """
         auto_discovery_dict = {
             'REGEX': 0,
@@ -714,17 +888,35 @@ class GoogleInstance(CloudAppsInstance):
         self._set_instance_properties("_properties['cloudAppsInstance']", instance_prop)
         self.refresh()
 
-    def _get_instance_properties_json(self):
-        """Returns the instance properties json."""
+    def _get_instance_properties_json(self) -> dict:
+        """Retrieve the instance properties as a JSON dictionary.
+
+        Returns:
+            dict: A dictionary containing the properties of the GoogleInstance in JSON format.
+
+        Example:
+            >>> instance = GoogleInstance()
+            >>> properties_json = instance._get_instance_properties_json()
+            >>> print(properties_json)
+            >>> # Output will be a dictionary with instance configuration details
+
+        #ai-gen-doc
+        """
 
         return {'instanceProperties': self._properties}
 
-    def modify_index_server(self, modified_index_server):
-        """
-            Method to modify the index server
+    def modify_index_server(self, modified_index_server: str) -> None:
+        """Modify the index server associated with this GoogleInstance.
 
-            Arguments:
-                modified_index_server        (str)--     new index server name
+        Args:
+            modified_index_server: The name of the new index server to assign.
+
+        Example:
+            >>> google_instance = GoogleInstance()
+            >>> google_instance.modify_index_server("NewIndexServer01")
+            >>> print("Index server updated successfully.")
+
+        #ai-gen-doc
         """
         update_dict = {
             "instance": {
@@ -746,14 +938,25 @@ class GoogleInstance(CloudAppsInstance):
 
         self.update_properties(properties_dict=update_dict)
 
-    def modify_accessnodes(self, modified_accessnodes_list, modified_user_name, modified_user_password):
-        """
-                   Method to modify accessnodes
+    def modify_accessnodes(self, modified_accessnodes_list: list, modified_user_name: str, modified_user_password: str) -> None:
+        """Modify the access nodes for the GoogleInstance.
 
-                   Arguments:
-                       modified_accessnodes_list     (list)  --     list of new accessnodes
-                       modified_user_name            (str)   --     new user account name
-                       modified_user_password        (str)   --     new user account password
+        This method updates the list of access nodes and the associated user credentials
+        for the GoogleInstance. Use this to change which nodes have access and update
+        authentication details.
+
+        Args:
+            modified_accessnodes_list: List of new access nodes to be assigned.
+            modified_user_name: The new user account name for access nodes.
+            modified_user_password: The new user account password for access nodes.
+
+        Example:
+            >>> instance = GoogleInstance()
+            >>> new_nodes = ['accessnode1', 'accessnode2']
+            >>> instance.modify_accessnodes(new_nodes, 'new_user', 'new_password')
+            >>> print("Access nodes and credentials updated successfully.")
+
+        #ai-gen-doc
         """
         member_servers = []
         for client in modified_accessnodes_list:

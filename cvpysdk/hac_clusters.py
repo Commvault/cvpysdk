@@ -85,21 +85,51 @@ HACCluster Attributes
 """
 
 from copy import deepcopy
+
 from .exception import SDKException
 from .datacube.constants import IndexServerConstants
 
+from typing import List, Optional, Union, TYPE_CHECKING
+if TYPE_CHECKING:
+    import requests
+    from cvpysdk.commcell import Commcell
+
 
 class HACClusters(object):
-    """Class for representing all the HAC clusters associated with the commcell."""
+    """
+    Represents and manages all High Availability Cluster (HAC) entities associated with a CommCell.
 
-    def __init__(self, commcell_object):
-        """Initialize object of the HACClusters class
+    This class provides an interface to interact with HAC clusters, allowing users to retrieve,
+    add, delete, and refresh cluster information. It supports dictionary-like access to clusters,
+    and offers utility methods for checking cluster existence and obtaining detailed cluster data.
 
-            Args:
-                commcell_object (object)    --  instance of class Commcell
+    Key Features:
+        - Retrieve all HAC clusters associated with the CommCell
+        - Access clusters using dictionary-style indexing
+        - Check for the existence of a specific cluster by name
+        - Get detailed information about a specific cluster
+        - Add new HAC clusters with specified cloud and node names
+        - Delete existing HAC clusters by cloud name
+        - Refresh the internal list of clusters to reflect current state
+        - Access all HAC clusters via a property
+        - String and representation methods for easy inspection
 
-            Returns:
-                object  -   instance of class HACClusters
+    #ai-gen-doc
+    """
+
+    def __init__(self, commcell_object: 'Commcell') -> None:
+        """Initialize an instance of the HACClusters class.
+
+        Args:
+            commcell_object: An instance of the Commcell class representing the Commcell connection.
+
+        Example:
+            >>> from cvpysdk.commcell import Commcell
+            >>> commcell = Commcell('commcell_host', 'username', 'password')
+            >>> hac_clusters = HACClusters(commcell)
+            >>> print("HACClusters object created:", hac_clusters)
+
+        #ai-gen-doc
         """
         self._commcell_object = commcell_object
         self._cvpysdk_object = commcell_object._cvpysdk_object
@@ -109,11 +139,16 @@ class HACClusters(object):
         self._all_hac_clusters = None
         self.refresh()
 
-    def __str__(self):
-        """Representation string consisting of all HAC Clusters of the commcell.
+    def __str__(self) -> str:
+        """Return a string representation of all HAC Clusters associated with the Commcell.
 
-                Returns:
-                    str - string of all the HAC clusters associated with the commcell
+        This method provides a human-readable summary of all HAC Clusters managed by the Commcell,
+        typically listing their names or key details in a single string.
+
+        Returns:
+            A string containing information about all HAC Clusters associated with the Commcell.
+
+        #ai-gen-doc
         """
         representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'HAC Name')
         index = 1
@@ -123,45 +158,62 @@ class HACClusters(object):
             index += 1
         return representation_string
 
-    def __repr__(self):
-        """Representation string for the instance of the HACClusters class."""
+    def __repr__(self) -> str:
+        """Return a string representation of the HACClusters instance.
+
+        This method provides a developer-friendly string that identifies the HACClusters object,
+        which is useful for debugging and logging purposes.
+
+        Returns:
+            A string representing the HACClusters instance.
+
+        #ai-gen-doc
+        """
         return "HACClusters class instance for Commcell"
 
-    def __getitem__(self, value):
-        """Returns the details of HAC cluster for given HAC name
+    def __getitem__(self, value: str) -> dict:
+        """Retrieve the details of a HAC cluster by its name.
 
-            Args:
-                value   (str)       --  name of HAC cluster
+        Args:
+            value: The name of the HAC cluster to look up.
 
-            Returns:
-                dict    -   details of the HAC cluster
+        Returns:
+            A dictionary containing the details of the specified HAC cluster.
 
-            Raises:
-                HAC cluster not found
+        Raises:
+            KeyError: If the HAC cluster with the given name is not found.
+
+        #ai-gen-doc
         """
         value = value.lower()
         if value.lower() in self.all_hac_clusters:
             return {"name": value.lower, "id": self.all_hac_clusters[value]}
         raise SDKException('HACClusters', '102')
 
-    def _response_not_success(self, response):
-        """Helper method to raise exception when response is not 200 (ok)
+    def _response_not_success(self, response: 'requests.Response') -> None:
+        """Raise an exception if the response status is not successful (HTTP 200).
 
-            Args:
-                response    (object)    -   response object
+        Args:
+            response: The response object to check for a successful status.
 
-            Raises:
-                SDKException:
-                    Response was not success
+        Raises:
+            SDKException: If the response does not indicate a successful (200 OK) status.
+
+        #ai-gen-doc
         """
         raise SDKException(
             'Response',
             '101',
-            self._update_response_(
-                response.text))
+            self._update_response_(response.text))
 
-    def _get_all_clusters(self):
-        """Gets details of all HAC clusters associated to the commcell"""
+    def _get_all_clusters(self) -> None:
+        """Retrieve details of all HAC clusters associated with the Commcell.
+
+        Returns:
+            None
+
+        #ai-gen-doc
+        """
         if self._commcell_object.client_groups.has_clientgroup("HAC Cluster"):
             if self._hac_group is None:
                 self._hac_group = self._commcell_object.client_groups.get("HAC Cluster")
@@ -172,38 +224,45 @@ class HACClusters(object):
                 )
                 self._all_hac_clusters[client_name.lower()] = int(client_obj.cloud_id)
 
-    def has_cluster(self, hac_name):
-        """Returns whether the HAC cluster with given name is present or not
+    def has_cluster(self, hac_name: str) -> bool:
+        """Check if a HAC cluster with the specified name exists.
 
-            Args:
-                hac_name    (str)       --  hac cluster name
+        Args:
+            hac_name: The name of the HAC cluster to check.
 
-            Returns:
-                boolean     -   True if hac cluster is associated with the commcell
-                else returns False
+        Returns:
+            True if the HAC cluster with the given name is associated with the Commcell, otherwise False.
 
-            Raises:
-                SDKException:
-                    Data type of the input(s) is not valid
+        Raises:
+            SDKException: If the data type of the input is not valid.
+
+        #ai-gen-doc
         """
         if not isinstance(hac_name, str):
             raise SDKException('HACClusters', '101')
         return hac_name.lower() in self._all_hac_clusters
 
-    def get(self, hac_name):
-        """Returns instance of HACCluster class is cluster is found
+    def get(self, hac_name: Union[str, int]) -> 'HACCluster':
+        """Retrieve an instance of the HACCluster class for the specified cluster name or ID.
 
-            Args:
-                hac_name        (str/int)   --      hac cluster name or id
+        Args:
+            hac_name: The name (str) or ID (int) of the HAC cluster to retrieve.
 
-            Returns:
-                object          (HACCluster)   --  Instance of a single hac cluster
+        Returns:
+            HACCluster: An instance representing the specified HAC cluster.
 
-            Raises:
-                SDKException:
-                    Data type of the input(s) is not valid
+        Raises:
+            SDKException: If the input data type is invalid or the HAC cluster is not found.
 
-                    HAC Cluster not found
+        Example:
+            >>> clusters = HACClusters()
+            >>> hac_cluster = clusters.get('ClusterA')
+            >>> print(f"Retrieved HAC cluster: {hac_cluster}")
+            >>> # You can also use the cluster ID
+            >>> hac_cluster_by_id = clusters.get(101)
+            >>> print(f"Retrieved HAC cluster by ID: {hac_cluster_by_id}")
+
+        #ai-gen-doc
         """
         if isinstance(hac_name, str):
             if hac_name.lower() in self.all_hac_clusters:
@@ -216,31 +275,40 @@ class HACClusters(object):
             raise SDKException('HACClusters', '101')
         raise SDKException("HACClusters", "102")
 
-    def refresh(self):
-        """Refreshes properties for HACClusters class"""
+    def refresh(self) -> None:
+        """Reload the properties and state information for the HACClusters class.
+
+        This method refreshes the internal data of the HACClusters instance, ensuring that 
+        any changes in the underlying cluster configuration or status are reflected in the object.
+
+        #ai-gen-doc
+        """
         self._commcell_object.clients.refresh()
         self._commcell_object.client_groups.refresh()
         self._all_hac_clusters = {}
         self._hac_group = None
         self._get_all_clusters()
 
-    def add(self, cloud_name, cloud_node_names):
-        """Creates a new HAC cluster
+    def add(self, cloud_name: str, cloud_node_names: List[str]) -> 'HACCluster':
+        """Create a new HAC cluster with the specified cloud name and node names.
 
-            Args:
-                cloud_name      (str)       --  hac cluster cloud name
-                cloud_node_names    (list)  --  string array of node names to be added to cluster
+        Args:
+            cloud_name: The name to assign to the HAC cluster cloud.
+            cloud_node_names: List of node names (strings) to be added to the cluster.
 
-            Raises:
-                SDKException:
-                    Data type of the input(s) is not valid.
+        Returns:
+            HACCluster: An instance representing the newly created HAC cluster.
 
-                    Response was not success.
+        Raises:
+            SDKException: If the input data types are invalid, the response is unsuccessful, or the response is empty.
 
-                    Response was empty.
+        Example:
+            >>> hac_clusters = HACClusters()
+            >>> cluster = hac_clusters.add("MyCloudCluster", ["node1", "node2", "node3"])
+            >>> print(f"Created HAC cluster: {cluster}")
+            >>> # The returned HACCluster object can be used for further cluster management
 
-            Returns:
-                Object  -   Instance of class HACCluster
+        #ai-gen-doc
         """
         if not (isinstance(cloud_name, str) and isinstance(cloud_node_names, list)):
             raise SDKException('HACClusters', '101')
@@ -302,19 +370,21 @@ class HACClusters(object):
         else:
             self._response_not_success(response)
 
-    def delete(self, cloud_name):
-        """Deletes an existing HAC cluster
+    def delete(self, cloud_name: str) -> None:
+        """Delete an existing HAC cluster by its cloud name.
 
         Args:
-            cloud_name  (str)   --  HAC cluster cloud name to be deleted
+            cloud_name: The name of the HAC cluster cloud to be deleted.
 
         Raises:
-            SDKException:
-                Data type of the input(s) is not valid.
+            SDKException: If the input data type is invalid, the response is not successful, or the response is empty.
 
-                Response was not success.
+        Example:
+            >>> hac_clusters = HACClusters()
+            >>> hac_clusters.delete("MyHACCluster")
+            >>> print("HAC cluster deleted successfully.")
 
-                Response was empty.
+        #ai-gen-doc
         """
         if not isinstance(cloud_name, str):
             raise SDKException('HACCluster', '101')
@@ -338,25 +408,50 @@ class HACClusters(object):
         self._response_not_success(response)
 
     @property
-    def all_hac_clusters(self):
-        """Returns the details of all HAC clusters associated with commcell"""
+    def all_hac_clusters(self) -> dict:
+        """Get the details of all HAC clusters associated with the Commcell.
+
+        Returns:
+            dict: A dict containing details of each HAC cluster associated with the Commcell.
+
+        #ai-gen-doc
+        """
         return self._all_hac_clusters
 
 
 class HACCluster(object):
-    """Class to perform HAC cluster operations on a specific HAC cluster"""
+    """
+    Class for managing and performing operations on a specific HAC (High Availability Cluster).
 
-    def __init__(self, commcell_object, cluster_name, cluster_id=None):
-        """Initializes the HACCluster class object
+    This class provides an interface to interact with a HAC cluster, allowing users to retrieve
+    cluster and node information, modify node configurations, and refresh cluster state. It exposes
+    properties for accessing cluster identifiers and node names, and includes internal mechanisms
+    for handling response validation.
 
-            Args:
-                commcell_object     (object)        --  Instance of commcell class
-                cluster_name        (str)           --  HAC cluster cloud name
-                cluster_id          (int)           --  HAC cluster cloud id
-                    default: None
+    Key Features:
+        - Initialization with commcell object, cluster name, and cluster ID
+        - Retrieve and modify node information and configuration
+        - Refresh cluster state to reflect latest changes
+        - Access cluster and node properties (cloud_id, node_names, cluster_id, cluster_name)
+        - Internal response validation for cluster operations
 
-            Returns:
-                object  -   instance of the HACCluster class
+    #ai-gen-doc
+    """
+
+    def __init__(self, commcell_object: 'Commcell', cluster_name: str, cluster_id: int = None) -> None:
+        """Initialize a HACCluster object representing a specific HAC cluster.
+
+        Args:
+            commcell_object: An instance of the Commcell class used to interact with the Commcell environment.
+            cluster_name: The name of the HAC cluster cloud.
+            cluster_id: The unique identifier for the HAC cluster cloud. If not provided, it defaults to None.
+
+        Example:
+            >>> commcell = Commcell('hostname', 'username', 'password')
+            >>> hac_cluster = HACCluster(commcell, 'MyHACCluster', cluster_id=123)
+            >>> # The hac_cluster object can now be used to manage the specified HAC cluster
+
+        #ai-gen-doc
         """
         self.commcell = commcell_object
         self._cluster_name = cluster_name
@@ -366,25 +461,47 @@ class HACCluster(object):
         self.cluster_nodes = None
         self.refresh()
 
-    def __repr__(self):
-        """Representation string for the instance of the HACCluster class."""
+    def __repr__(self) -> str:
+        """Return a string representation of the HACCluster instance.
+
+        This method provides a developer-friendly string that identifies the HACCluster object,
+        typically including its class name and key attributes for debugging purposes.
+
+        Returns:
+            A string representing the HACCluster instance.
+
+        #ai-gen-doc
+        """
         return "HACCluster class instance for Commcell"
 
-    def _response_not_success(self, response):
-        """Helper method to raise exception when response is not 200 (ok)
+    def _response_not_success(self, response: 'requests.Response') -> None:
+        """Raise an exception if the HTTP response status is not 200 (OK).
 
-                Raises:
-                    SDKException:
-                        Response was not success
+        This helper method checks the provided response object and raises an SDKException
+        if the response indicates a failure (i.e., status code is not 200).
+
+        Args:
+            response: The HTTP response object to validate.
+
+        Raises:
+            SDKException: If the response status code is not 200 (OK).
+
+        #ai-gen-doc
         """
         raise SDKException(
             'Response',
             '101',
-            self.commcell._update_response_(
-                response.text))
+            self.commcell._update_response_(response.text)
+        )
 
-    def refresh(self):
-        """Refreshes properties of the HAC cluster"""
+    def refresh(self) -> None:
+        """Reload the properties of the HAC cluster to ensure the latest information is available.
+
+        This method updates the internal state of the HACCluster object by fetching the most recent
+        properties from the underlying data source or system.
+
+        #ai-gen-doc
+        """
         self.commcell.clients.refresh()
         if not self.commcell.clients.has_client(self._cluster_name):
             raise SDKException('HACClusters', '102')
@@ -394,30 +511,41 @@ class HACCluster(object):
             properties['pseudoClientInfo']['distributedClusterInstanceProperties']['clusterConfig']['cloudInfo']
         self.cluster_nodes = self._cluster_properties['cloudNodes']
 
-    def modify_node(self, node_name, listener_port=None, data_port=None,
-                    election_port=None, data_dir=None):
-        """Methods to modify the hac cluster node properties
+    def modify_node(
+        self,
+        node_name: str,
+        listener_port: Optional[Union[int, str]] = None,
+        data_port: Optional[Union[int, str]] = None,
+        election_port: Optional[Union[int, str]] = None,
+        data_dir: Optional[str] = None
+    ) -> None:
+        """Modify the properties of a node in the HAC cluster.
+
+        This method updates the specified properties for a given node in the HAC cluster,
+        such as listener port, data port, election port, and the ZooKeeper data directory.
 
         Args:
-            node_name       (str)       -   Client name for the node
-            listener_port   (int/str)   -   zkListenerPort address to be updated
-                default - None              Sample: '8090' or 8090
-            data_port       (int/str)   -   zkDataPort address to be updated
-                default - None              Sample: '8091' or 8091
-            election_port   (int/str)   -   zkElectionPort address to be updated
-                default - None              Sample: '8097' or 8097
-            data_dir        (str)       -   zoo keeper data directory
-                default - None
+            node_name: The client name of the node to modify.
+            listener_port: The new zkListenerPort address for the node (e.g., 8090 or '8090'). Optional.
+            data_port: The new zkDataPort address for the node (e.g., 8091 or '8091'). Optional.
+            election_port: The new zkElectionPort address for the node (e.g., 8097 or '8097'). Optional.
+            data_dir: The new ZooKeeper data directory for the node. Optional.
 
         Raises:
-            SDKException:
-                HAC zKeeper node not found
+            SDKException: If the HAC zKeeper node is not found or the response is not successful.
 
-                Response was not success
+        Example:
+            >>> hac_cluster = HACCluster()
+            >>> hac_cluster.modify_node(
+            ...     node_name='NodeA',
+            ...     listener_port=8090,
+            ...     data_port='8091',
+            ...     election_port=8097,
+            ...     data_dir='/var/lib/zookeeper'
+            ... )
+            >>> print("Node properties updated successfully.")
 
-        Returns:
-            None
-
+        #ai-gen-doc
         """
         node_info = self.node_info(node_name)
         port_infos = {}
@@ -472,19 +600,19 @@ class HACCluster(object):
                     return
         self._response_not_success(response)
 
-    def node_info(self, node_name):
-        """Returns the hac cluster node information
+    def node_info(self, node_name: str) -> dict:
+        """Retrieve information for a specific HAC cluster node.
 
         Args:
-            node_name       (str)   -   HAC cluster node name
+            node_name: The name of the HAC cluster node to query.
 
         Returns:
-            dict        -   dictionary containing details of the hac node
+            A dictionary containing details about the specified HAC cluster node.
 
         Raises:
-            SDKException:
-                HAC zKeeper node not found
+            SDKException: If the specified HAC zKeeper node is not found.
 
+        #ai-gen-doc
         """
         for node_info in self.cluster_nodes:
             if node_info['nodeClientEntity']['clientName'].lower() == node_name.lower():
@@ -492,24 +620,48 @@ class HACCluster(object):
         raise SDKException('HACCluster', '103')
 
     @property
-    def cloud_id(self):
-        """Returns HAC cluster cloud id"""
+    def cloud_id(self) -> str:
+        """Get the cloud ID associated with the HAC cluster.
+
+        Returns:
+            int: The unique cloud ID for this HAC cluster.
+
+        #ai-gen-doc
+        """
         return self._cluster_properties['cloudInfoEntity']['cloudId']
 
     @property
-    def node_names(self):
-        """Returns a list of HAC cluster node names"""
+    def node_names(self) -> list:
+        """Get the list of node names in the HAC cluster.
+
+        Returns:
+            list: A list containing the names of all nodes in the HAC cluster.
+
+        #ai-gen-doc
+        """
         result = []
         for node_info in self.cluster_nodes:
             result.append(node_info['nodeClientEntity']['clientName'])
         return result
 
     @property
-    def cluster_id(self):
-        """Returns the HAC cluster pseudo client id"""
+    def cluster_id(self) -> int:
+        """Get the HAC cluster pseudo client ID.
+
+        Returns:
+            The unique integer ID representing the HAC cluster pseudo client.
+
+        #ai-gen-doc
+        """
         return self._cluster_id
 
     @property
-    def cluster_name(self):
-        """Returns the HAC cluster cloud name"""
+    def cluster_name(self) -> str:
+        """Get the name of the HAC cluster cloud.
+
+        Returns:
+            The name of the HAC cluster as a string.
+
+        #ai-gen-doc
+        """
         return self._cluster_name

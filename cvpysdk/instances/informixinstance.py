@@ -56,6 +56,8 @@ InformixInstance instance Attributes
 
     **informix_user**               --  returns the informix username
 
+    **credentials**                 --  returns instance credentials
+
     **on_config_file**              --  returns the on config file name of informix server
 
     **sql_host_file**               --  returns the sql host file path of informix server
@@ -71,28 +73,47 @@ InformixInstance instance Attributes
 """
 
 from __future__ import unicode_literals
+
 from ..instance import Instance
 from ..exception import SDKException
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ..agent import Agent
+    from ..job import Job
 
 
 class InformixInstance(Instance):
     """
-    Class to represent a standalone Informix Instance
+    Represents a standalone Informix database instance within a managed environment.
+
+    This class provides comprehensive management and configuration capabilities for Informix instances,
+    including access to instance properties, configuration files, user credentials, and storage policies.
+    It supports both in-place and out-of-place restore operations, allowing flexible recovery options.
+    The class exposes several properties for accessing key Informix configuration details and storage policy information.
+
+    Key Features:
+        - Initialization with agent object, instance name, and instance ID
+        - Access to Informix directory, user, credentials, ONCONFIG file, and SQLHOSTS file via properties
+        - Retrieval and management of log storage policy and command line storage policy (name and ID)
+        - Internal methods for fetching instance properties and generating JSON representations
+        - Restore operations:
+            - In-place restore with customizable options (path, restore type, copy precedence, physical/logical restore, time-based restore)
+            - Out-of-place restore to different client or instance
+        - Generation of restore option JSON for Informix and destination settings
+
+    #ai-gen-doc
     """
 
-    def __init__(self, agent_object, instance_name, instance_id):
-        """Initialize object of the Instances class.
+    def __init__(self, agent_object: 'Agent', instance_name: str, instance_id: int) -> None:
+        """Initialize an InformixInstance object.
 
-            Args:
-                agent_object (object)  --  instance of the Agent class
+        Args:
+            agent_object: Instance of the Agent class associated with this Informix instance.
+            instance_name: The name of the Informix instance.
+            instance_id: The unique identifier for the Informix instance.
 
-                instance_name          --   Name of the instance
-
-                instance_id            --   ID of the instance
-
-            Returns:
-                object - instance of the Instances class
-
+        #ai-gen-doc
         """
         self._instance = None
         self._destination_restore_json = None
@@ -101,39 +122,86 @@ class InformixInstance(Instance):
         super(InformixInstance, self).__init__(agent_object, instance_name, instance_id)
 
     @property
-    def informix_directory(self):
-        """ Returns the informix directory path of informix server """
+    def informix_directory(self) -> str:
+        """Get the Informix directory path of the Informix server.
+
+        Returns:
+            The directory path as a string where the Informix server is installed.
+
+        #ai-gen-doc
+        """
         return self._properties['informixInstance'].get('informixDir', None)
 
     @property
-    def informix_user(self):
-        """ Returns the informix username """
+    def informix_user(self) -> str:
+        """Get the Informix database username associated with this instance.
+
+        Returns:
+            The Informix username as a string.
+
+        #ai-gen-doc
+        """
+
+        # windows instance will have credentials associated with it, linux will just have username in instance prop
+        if self.credentials:
+            return self._commcell_object.credentials.get(self.credentials)._credential_properties.get("userName")
+
         return self._properties['informixInstance']['informixUser'].get('userName', None)
 
     @property
-    def on_config_file(self):
-        """ Returns the on config file name of informix server. """
+    def credentials(self) -> str:
+        """Get the name of the credential associated with the Informix instance.
+
+        Returns:
+            The name of the credential as a string.
+
+        #ai-gen-doc
+        """
+        return self._properties[
+            'informixInstance']['informixUser'].get('savedCredential', {}).get('credentialName', None)
+
+    @property
+    def on_config_file(self) -> str:
+        """Get the ONCONFIG file name for the Informix server instance.
+
+        Returns:
+            The name of the ONCONFIG configuration file as a string.
+
+        #ai-gen-doc
+        """
         return self._properties['informixInstance'].get('onConfigFile', None)
 
     @property
-    def sql_host_file(self):
-        """ Returns the sql host file path of informix server. """
+    def sql_host_file(self) -> str:
+        """Get the SQL host file path of the Informix server.
+
+        Returns:
+            The file system path to the SQL host file used by the Informix server.
+
+        #ai-gen-doc
+        """
         return self._properties['informixInstance'].get('sqlHostfile', None)
 
     @property
-    def log_storage_policy_name(self):
-        """ Returns the log backup storage policy name """
+    def log_storage_policy_name(self) -> str:
+        """Get the name of the storage policy used for log backups.
+
+        Returns:
+            The name of the log backup storage policy as a string.
+
+        #ai-gen-doc
+        """
         return self._properties['informixInstance']['informixStorageDevice'][
             'logBackupStoragePolicy'].get('storagePolicyName', None)
 
     @log_storage_policy_name.setter
-    def log_storage_policy_name(self, storage_policy):
-        """ Setter for informix instance log_storage_policy name
+    def log_storage_policy_name(self, storage_policy: str) -> None:
+        """Set the log storage policy name for the Informix instance.
 
-            Args:
+        Args:
+            storage_policy: The name of the storage policy to be set for Informix instance logs.
 
-                storage_policy (str)  -- storage_policy_name
-
+        #ai-gen-doc
         """
         content = self._informix_instance['informixStorageDevice']
         content['logBackupStoragePolicy'] = {
@@ -145,25 +213,37 @@ class InformixInstance(Instance):
         self._set_instance_properties('_informix_instance', content)
 
     @property
-    def log_storage_policy_id(self):
-        """ Returns the log backup storage policy id """
+    def log_storage_policy_id(self) -> int:
+        """Get the storage policy ID used for Informix log backups.
+
+        Returns:
+            The integer ID of the storage policy assigned for log backups.
+
+        #ai-gen-doc
+        """
         return self._properties['informixInstance']['informixStorageDevice'][
             'logBackupStoragePolicy'].get('storagePolicyId', None)
 
     @property
-    def command_line_sp_name(self):
-        """ Returns command line storage policy name """
+    def command_line_sp_name(self) -> str:
+        """Get the name of the command line storage policy associated with this Informix instance.
+
+        Returns:
+            The storage policy name as a string.
+
+        #ai-gen-doc
+        """
         return self._properties['informixInstance']['informixStorageDevice'][
             'commandLineStoragePolicy'].get('storagePolicyName', None)
 
     @command_line_sp_name.setter
-    def command_line_sp_name(self, storage_policy):
-        """ Setter for informix instance command_line_sp name
+    def command_line_sp_name(self, storage_policy: str) -> None:
+        """Set the storage policy name for the Informix instance command line.
 
-            Args:
+        Args:
+            storage_policy: The name of the storage policy to assign to the Informix instance.
 
-                storage_policy (str)  -- storage_policy_name
-
+        #ai-gen-doc
         """
         content = self._informix_instance['informixStorageDevice']
         content['commandLineStoragePolicy'] = {
@@ -175,30 +255,38 @@ class InformixInstance(Instance):
         self._set_instance_properties('_informix_instance', content)
 
     @property
-    def command_line_sp_id(self):
-        """ Returns command line storage policy id """
+    def command_line_sp_id(self) -> int:
+        """Get the storage policy ID used for command line operations in the Informix instance.
+
+        Returns:
+            The storage policy ID as an integer.
+
+        #ai-gen-doc
+        """
         return self._properties['informixInstance']['informixStorageDevice'][
             'commandLineStoragePolicy'].get('storagePolicyId', None)
 
-    def _get_instance_properties(self):
-        """Gets the properties of this instance.
+    def _get_instance_properties(self) -> None:
+        """Retrieve and update the properties of the current Informix instance.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        This method fetches the latest properties for the Informix instance from the Commcell server.
+        It updates the instance's internal state with the retrieved properties.
 
-                    if response is not success
+        Raises:
+            SDKException: If the response from the server is empty or indicates a failure.
 
+        #ai-gen-doc
         """
         super(InformixInstance, self)._get_instance_properties()
         self._informix_instance = self._properties['informixInstance']
 
-    def _get_instance_properties_json(self):
-        """ Gets all the instance related properties of Informix instance.
+    def _get_instance_properties_json(self) -> dict:
+        """Retrieve all properties related to the Informix instance as a dictionary.
 
-           Returns:
-                dict - all instance properties put inside a dict
+        Returns:
+            dict: A dictionary containing all instance properties for the Informix instance.
 
+        #ai-gen-doc
         """
         instance_json = {
             "instanceProperties":
@@ -209,16 +297,19 @@ class InformixInstance(Instance):
         }
         return instance_json
 
-    def _restore_json(self, **kwargs):
-        """Returns the JSON request to pass to the API as per the
-        options selected by the user
+    def _restore_json(self, **kwargs) -> dict:
+        """Generate the JSON request payload for the restore API based on user-selected options.
 
-            Args:
-                kwargs   (list)  --  list of options need to be set for restore
+        This method constructs a dictionary representing the JSON request body required by the API,
+        using the provided keyword arguments to specify restore options.
 
-            Returns:
-                dict - JSON request to pass to the API
+        Args:
+            **kwargs: Arbitrary keyword arguments representing restore options and their values.
 
+        Returns:
+            dict: The JSON request dictionary to be sent to the API.
+
+        #ai-gen-doc
         """
         rest_json = super(InformixInstance, self)._restore_json(**kwargs)
         restore_option = {}
@@ -240,71 +331,53 @@ class InformixInstance(Instance):
         return rest_json
 
     def restore_in_place(
-            self,
-            path,
-            restore_type="ENTIRE INSTANCE",
-            copy_precedence=None,
-            physical_restore=True,
-            logical_restore=True,
-            restore_option_type="NORMAL",
-            to_time=None,
-            upto_log=None):
-        """Restores the informix data/log files specified in the input\
-                paths list to the same location.
+        self,
+        path: list,
+        restore_type: str = "ENTIRE INSTANCE",
+        copy_precedence: int = None,
+        physical_restore: bool = True,
+        logical_restore: bool = True,
+        restore_option_type: str = "NORMAL",
+        to_time: str = None,
+        upto_log: int = None
+    ) -> 'Job':
+        """Restore Informix data or log files in-place to their original locations.
 
-            Args:
+        This method initiates an in-place restore operation for the specified Informix dbspaces or log files.
+        You can perform a full instance restore, a point-in-time restore, or restore up to a specific logical log.
 
-                path                (list)  --  List of dbspaces to be restored
+        Args:
+            path: List of dbspaces (as strings) to be restored.
+            restore_type: Type of restore operation. Common values include "ENTIRE INSTANCE" or "WHOLE SYSTEM".
+            copy_precedence: Optional copy precedence associated with the storage policy.
+            physical_restore: If True, performs a physical restore.
+            logical_restore: If True, performs a logical restore.
+            restore_option_type: Restore option type. Accepted values are "NORMAL", "POINT_IN_TIME", or "UPTO_LOGICAL_LOG".
+            to_time: Optional point-in-time (format: "YYYY-MM-DD HH:MM:SS") for point-in-time restore.
+            upto_log: Optional logical log number to restore up to.
 
-                restore_type        (str)   --  Restore type for informix instance
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                copy_precedence     (int)   --  Copy precedence associted with storage
-                policy
+        Raises:
+            SDKException: If the path is not a list, if the job fails to initialize, if the response is empty, or if the response is not successful.
 
-                physical_restore    (bool)  --  Physical restore flag
+        Example:
+            >>> dbspaces = ['rootdbs', 'datadbs']
+            >>> job = informix_instance.restore_in_place(
+            ...     path=dbspaces,
+            ...     restore_type="ENTIRE INSTANCE",
+            ...     physical_restore=True,
+            ...     logical_restore=True
+            ... )
+            >>> print(f"Restore job started with ID: {job.job_id}")
 
-                logical_restore     (bool)  --  Logical restore flag
-
-                    Accepted Values:
-
-                        ENTIRE INSTANCE/WHOLE SYSTEM
-
-                restore_option_type (str)   -- Restore option type for Informix instance
-
-                    Accepted values:
-
-                        NORMAL/POINT_IN_TIME/UPTO_LOGICAL_LOG
-
-                to_time             (str)   -- time range to perform point in time restore
-
-                    Accepted Format:
-
-                        YYYY-MM-DD HH:MM:SS
-
-                upto_log            (int)   -- logical log number to perform restore
-                upto that log
-
-            Returns:
-
-                object - instance of the Job class for this restore job
-
-            Raises:
-
-                SDKException:
-
-                    if paths is not a list
-
-                    if failed to initialize job
-
-                    if response is empty
-
-                    if response is not success
-
+        #ai-gen-doc
         """
         if not isinstance(path, list):
             raise SDKException('Instance', '101')
 
-        if path == []:
+        if not path:
             raise SDKException('Instance', '104')
 
         restore_types_dict = {
@@ -330,64 +403,60 @@ class InformixInstance(Instance):
         return self._process_restore_response(request_json)
 
     def restore_out_of_place(
-            self,
-            path,
-            dest_client_name,
-            dest_instance_name,
-            restore_type="ENTIRE INSTANCE",
-            copy_precedence=None,
-            physical_restore=True,
-            logical_restore=True):
-        """Restores the informix data/log files specified in the input\
-                paths list to the different location.
+        self,
+        path: list,
+        dest_client_name: str,
+        dest_instance_name: str,
+        restore_type: str = "ENTIRE INSTANCE",
+        copy_precedence: int = None,
+        physical_restore: bool = True,
+        logical_restore: bool = True
+    ) -> 'Job':
+        """Restore Informix data or log files to a different client or instance (out-of-place restore).
 
-            Args:
+        This method initiates an out-of-place restore operation for the specified Informix dbspaces,
+        allowing you to restore data to a different client and/or instance. You can control the type
+        of restore (physical/logical), specify copy precedence, and select the restore type.
 
-                path                (list)  --  List of dbspaces to be restored
+        Args:
+            path: List of dbspaces to be restored.
+            dest_client_name: Name of the destination client where data will be restored.
+            dest_instance_name: Name of the destination Informix instance.
+            restore_type: Type of restore operation. Common values are "ENTIRE INSTANCE" or "WHOLE SYSTEM".
+            copy_precedence: Optional; copy precedence associated with the storage policy.
+            physical_restore: Whether to perform a physical restore (default is True).
+            logical_restore: Whether to perform a logical restore (default is True).
 
-                dest_client_name    (str)   --  Name of the destination client
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                dest_instance_name  (str)   --  name of destination instance
+        Raises:
+            SDKException: If `path` is not a list, if the job fails to initialize, or if the restore response is empty or unsuccessful.
 
-                restore_type        (str)   --  Restore type for informix instance
+        Example:
+            >>> dbspaces = ['dbspace1', 'dbspace2']
+            >>> job = informix_instance.restore_out_of_place(
+            ...     path=dbspaces,
+            ...     dest_client_name='DestinationClient',
+            ...     dest_instance_name='DestInstance',
+            ...     restore_type='ENTIRE INSTANCE',
+            ...     copy_precedence=1,
+            ...     physical_restore=True,
+            ...     logical_restore=False
+            ... )
+            >>> print(f"Restore job started with ID: {job.job_id}")
 
-                copy_precedence     (int)   --  Copy precedence associted with storage
-                policy
-
-                physical_restore    (bool)  --  Physical restore flag
-
-                logical_restore     (bool)  --  Logical restore flag
-
-                    Accepted Values:
-
-                        ENTIRE INSTANCE/WHOLE SYSTEM
-
-            Returns:
-
-                object - instance of the Job class for this restore job
-
-            Raises:
-
-                SDKException:
-
-                    if paths is not a list
-
-                    if failed to initialize job
-
-                    if response is empty
-
-                    if response is not success
-
+        #ai-gen-doc
         """
         if not isinstance(path, list):
             raise SDKException('Instance', '101')
 
-        if path == []:
+        if not path:
             raise SDKException('Instance', '104')
 
         restore_types_dict = {
-            "ENTIRE INSTANCE":1,
-            "WHOLE SYSTEM":2
+            "ENTIRE INSTANCE": 1,
+            "WHOLE SYSTEM": 2
         }
 
         request_json = self._restore_json(
@@ -401,8 +470,14 @@ class InformixInstance(Instance):
             out_of_place=True)
         return self._process_restore_response(request_json)
 
-    def _restore_informix_option_json(self, value):
-        """setter for the Informix option in restore JSON"""
+    def _restore_informix_option_json(self, value: dict) -> None:
+        """Set the Informix-specific options in the restore JSON configuration.
+
+        Args:
+            value: A dictionary containing Informix restore options to be set in the restore JSON.
+
+        #ai-gen-doc
+        """
 
         if not isinstance(value, dict):
             raise SDKException('Instance', '101')
@@ -427,8 +502,14 @@ class InformixInstance(Instance):
             }
         }
 
-    def _restore_destination_option_json(self, value):
-        """setter for  the destination restore option in restore JSON"""
+    def _restore_destination_option_json(self, value: dict) -> None:
+        """Set the destination restore option in the restore JSON configuration.
+
+        Args:
+            value: A dictionary containing the destination restore options to be set in the restore JSON.
+
+        #ai-gen-doc
+        """
         instance_id = ""
         if value.get("dest_client_name") and value.get("dest_instance_name"):
             instance_id = self._commcell_object.clients.get(

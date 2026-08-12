@@ -47,6 +47,12 @@ JobController
                                 --  executes a request on the server to suspend/resume/kill all
                                         the jobs on the commserver.
 
+    get_active_job_summary()    --  Returns a dict with summary of active jobs
+
+    all_active_jobs_prop        --  Returns the raw list of active job summaries from POST /Jobs
+
+    get_active_jobs_cache()     --  Returns active jobs from the CommcellEntityCache MongoDB
+
     all_jobs()                  --  returns all the jobs on this commcell
 
     active_jobs()               --  returns the dict of active jobs and their details
@@ -267,6 +273,10 @@ Job instance Attributes
 
 **job.state**                       -- returns the current state of the job.
 
+**job.job_end_time**                -- returns the job end time in unix time stamp.
+
+**job.num_of_objects**              -- returns the number of items backedup in a backup job.
+
 ErrorRule
 =========
 
@@ -290,33 +300,223 @@ import copy
 
 from .exception import SDKException
 from .constants import AdvancedJobDetailType, ApplicationGroup
-
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+if TYPE_CHECKING:
+    from cvpysdk.commcell import Commcell
 
 class JobController(object):
-    """Class for controlling all the jobs associated with the commcell."""
+    """
+    Controller class for managing jobs associated with a CommCell.
 
-    def __init__(self, commcell_object):
-        """Initialize instance of the JobController class to get the details of Commcell Jobs.
+    The JobController class provides a comprehensive interface for interacting with
+    and controlling jobs within a CommCell environment. It enables users to retrieve
+    job summaries, query job lists based on status and filters, and perform bulk
+    operations on jobs such as suspending, resuming, or killing all jobs. The class
+    also supports fetching details of individual jobs by job ID.
 
-            Args:
-                commcell_object     (object)    --  instance of Commcell class to get the jobs of
+    Key Features:
+        - Retrieve active job summaries
+        - List all jobs, active jobs, or finished jobs with filtering options
+        - Perform bulk operations: suspend, resume, or kill all jobs
+        - Modify jobs based on operation type
+        - Fetch details of a specific job by job ID
+        - Internal utilities for job request and job list management
 
-            Returns:
-                None
+    Args:
+        commcell_object: The CommCell object to associate with job operations.
 
+    #ai-gen-doc
+    """
+
+    def __init__(self, commcell_object: 'Commcell') -> None:
+        """Initialize the JobController with a Commcell connection.
+
+        Args:
+            commcell_object: Instance of the Commcell class used to access job details.
+
+        Example:
+            >>> from cvpysdk.commcell import Commcell
+            >>> commcell = Commcell(command_center_hostname, username, password)
+            >>> job_controller = JobController(commcell)
+            >>> # The JobController instance can now be used to manage and retrieve job details
+
+        #ai-gen-doc
         """
         self._commcell_object = commcell_object
-
         self._cvpysdk_object = commcell_object._cvpysdk_object
         self._services = commcell_object._services
         self._update_response_ = commcell_object._update_response_
+        self._ACTIVE_JOBS = self._services['ACTIVE_JOBS']
+        self.filter_query_count: int = 0
+        self._valid_columns: Optional[Dict[str, str]] = None
 
-    def __str__(self):
-        """Representation string consisting of all active jobs on this commcell.
+    def _init_valid_columns(self) -> Dict[str, str]:
+        """Build (once) the map of short column name → MongoDB field path for /Jobs/active."""
+        if self._valid_columns is None:
+            self._valid_columns = {
+                'jobId':                   'jobs.jobSummary.jobId',
+                'status':                  'jobs.jobSummary.status',
+                'localizedOperationName':  'jobs.jobSummary.localizedOperationName',
+                'percentComplete':         'jobs.jobSummary.percentComplete',
+                'localizedBackupLevelName': 'jobs.jobSummary.localizedBackupLevelName',
+                'appTypeName':             'jobs.jobSummary.appTypeName',
+                'jobType':                 'jobs.jobSummary.jobType',
+                'pendingReason':           'jobs.jobSummary.pendingReason',
+                'clientId':                'jobs.jobSummary.subclient.clientId',
+                'clientName':              'jobs.jobSummary.subclient.clientName',
+                'subclientId':             'jobs.jobSummary.subclient.subclientId',
+                'jobStartTime':            'jobs.jobSummary.jobStartTime',
+                'jobElapsedTime':          'jobs.jobSummary.jobElapsedTime',
+                'subclientName':           'jobs.jobSummary.subclientName',
+                'backupsetName':           'jobs.jobSummary.subclient.backupsetName',
+                'instanceName':            'jobs.jobSummary.subclient.instanceName',
+                'agentName':               'jobs.jobSummary.subclient.appName',
+                'currentPhaseName':        'jobs.jobSummary.currentPhaseName',
+            }
+        return self._valid_columns
 
-            Returns:
-                str     -   string of all the active jobs on this commcell
+    def _get_fl_parameters(self, fl: Optional[List[str]] = None) -> str:
+        """Build the ``fl`` query-string fragment for /Jobs/active."""
+        valid = self._init_valid_columns()
+        default = 'jobs.jobSummary'
+        if fl:
+            invalid = [c for c in fl if c not in valid]
+            if invalid:
+                raise SDKException('Job', '102', f'Invalid column name(s) passed: {invalid}')
+            return f'&fl={default},{",".join(valid[c] for c in fl)}'
+        return f'&fl={default}'
 
+    def _get_sort_parameters(self, sort: Optional[List] = None) -> str:
+        """Build the ``sort`` query-string fragment for /Jobs/active."""
+        valid = self._init_valid_columns()
+        col, sort_type = sort[0], str(sort[1])
+        if col not in valid or sort_type not in ('1', '-1'):
+            raise SDKException('Job', '102', f'Invalid sort column or sort type: {col}, {sort_type}')
+        return f'&sort={valid[col]}:{sort_type}'
+
+    def _get_fq_parameters(self, fq: Optional[List[List]] = None) -> str:
+        """Build the ``fq`` query-string fragment for /Jobs/active.
+
+        Supported conditions:
+            Text fields:    contains, notContain, eq, neq, isEmpty, isNotEmpty, startsWith
+            Numeric fields: eq, neq, gt, lt, gteq, lteq, between (value as 'start-end')
+        """
+        valid = self._init_valid_columns()
+        text_conditions = {'contains', 'notContain', 'eq', 'neq', 'startsWith'}
+        numeric_conditions = {'gt', 'lt', 'gteq', 'lteq'}
+        params: List[str] = []
+        for column, condition, *value in (fq or []):
+            if column not in valid:
+                raise SDKException('Job', '102', f'Invalid fq column: {column}')
+            mongo_field = valid[column]
+            if condition in text_conditions or condition in numeric_conditions:
+                params.append(f'&fq={mongo_field}:{condition}:{value[0]}')
+            elif condition == 'isEmpty':
+                params.append(f'&fq={mongo_field}:in:null,')
+            elif condition == 'isNotEmpty':
+                params.append(f'&fq={mongo_field}:nin:null,')
+            elif condition == 'between' and value and '-' in str(value[0]):
+                start, end = str(value[0]).split('-', 1)
+                params.append(f'&fq={mongo_field}:gteq:{start}')
+                params.append(f'&fq={mongo_field}:lteq:{end}')
+            else:
+                raise SDKException('Job', '102', f'Invalid fq condition: {condition}')
+        return ''.join(params)
+
+    def get_active_jobs_cache(self, hard: bool = False, **kwargs) -> Dict[str, Dict[str, Any]]:
+        """Return active jobs from the CommcellEntityCache MongoDB (GET /Jobs/active).
+
+        Supports the same fl / sort / limit / search / fq kwargs used by
+        ``get_clients_cache``, ``get_plans_cache``, etc., so the cache helper
+        infrastructure works without modification.
+
+        Args:
+            hard (bool): Perform a hard refresh of the cache. Defaults to False.
+            **kwargs:
+                fl (list):     Column names to include in the response.
+                sort (list):   [columnName, '1' | '-1']
+                limit (list):  [start, count]   e.g. ['0', '100']
+                search (str):  Free-text search string.
+                fq (list):     [[column, condition, value], ...]
+
+        Returns:
+            Dict[str, Dict[str, Any]]: Mapping of ``str(jobId)`` → flat job properties dict.
+
+        Raises:
+            SDKException: On HTTP failure or invalid filter parameters.
+        """
+        valid = self._init_valid_columns()
+
+        fl_param    = self._get_fl_parameters(kwargs.get('fl'))
+        fq_param    = self._get_fq_parameters(kwargs.get('fq'))
+        sort_param  = self._get_sort_parameters(kwargs.get('sort')) if kwargs.get('sort') else ''
+        limit       = kwargs.get('limit')
+        limit_param = f'start={limit[0]}&limit={limit[1]}' if limit else ''
+        hard_param  = '&hardRefresh=true' if hard else ''
+
+        searchable = ['localizedOperationName', 'appTypeName', 'clientName', 'subclientName']
+        search_param = (
+            f'&search={",".join(valid[c] for c in searchable)}:contains:{kwargs["search"]}'
+            if kwargs.get('search') else ''
+        )
+
+        url = self._ACTIVE_JOBS + '?' + ''.join(
+            [limit_param, sort_param, fl_param, hard_param, search_param, fq_param]
+        )
+
+        flag, response = self._cvpysdk_object.make_request('GET', url)
+        if not flag:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+        jobs_cache: Dict[str, Dict[str, Any]] = {}
+        data = response.json() or {}
+        self.filter_query_count = data.get('filterQueryCount', 0)
+
+        for job in data.get('jobs', []):
+            summary = job.get('jobSummary', {})
+            if not summary.get('isVisible', True):
+                continue
+            job_id = str(summary.get('jobId', ''))
+            subclient = summary.get('subclient', {})
+            jobs_cache[job_id] = {
+                'jobId':                  summary.get('jobId'),
+                'status':                 summary.get('status'),
+                'localizedOperationName': summary.get('localizedOperationName', ''),
+                'percentComplete':        summary.get('percentComplete'),
+                'localizedBackupLevelName': summary.get('localizedBackupLevelName', ''),
+                'appTypeName':            summary.get('appTypeName', ''),
+                'jobType':                summary.get('jobType', ''),
+                'pendingReason':          summary.get('pendingReason', ''),
+                'clientId':               subclient.get('clientId'),
+                'clientName':             subclient.get('clientName', ''),
+                'subclientId':            subclient.get('subclientId', 0),
+                'jobStartTime':           summary.get('jobStartTime'),
+                'jobElapsedTime':         summary.get('jobElapsedTime'),
+                'subclientName':          summary.get('subclientName', ''),
+                'backupsetName':          subclient.get('backupsetName', ''),
+                'instanceName':           subclient.get('instanceName', ''),
+                'agentName':              subclient.get('appName', ''),
+                'currentPhaseName':       summary.get('currentPhaseName', ''),
+            }
+
+        return jobs_cache
+
+    def __str__(self) -> str:
+        """Return a formatted string representation of all active jobs on this Commcell.
+
+        The string includes a table with columns for Job ID, Operation, Status, Agent type, 
+        Job type, Progress, and Pending Reason, providing a clear overview of all currently 
+        active jobs managed by this JobController.
+
+        Returns:
+            str: A formatted string listing all active jobs and their details.
+
+        Example:
+            >>> job_controller = JobController(commcell_object)
+            >>> print(str(job_controller))
+            >>> # Output will display a table of active jobs with their status and details
+
+        #ai-gen-doc
         """
         jobs_dict = self.active_jobs()
 
@@ -338,74 +538,61 @@ class JobController(object):
 
         return representation_string.strip()
 
-    def __repr__(self):
-        """Representation string for the instance of the JobController class."""
+    def __repr__(self) -> str:
+        """Return a string representation of the JobController instance.
+
+        This method provides a human-readable description of the JobController object,
+        typically used for debugging and logging purposes.
+
+        Returns:
+            A string indicating that this is a JobController class instance for Commcell.
+
+        Example:
+            >>> job_controller = JobController(commcell_object)
+            >>> print(repr(job_controller))
+            JobController class instance for Commcell
+
+        #ai-gen-doc
+        """
         return "JobController class instance for Commcell"
 
-    def _get_jobs_request_json(self, **options):
-        """Returns the request json for the jobs request
+    def _get_jobs_request_json(self, **options: Any) -> Dict[str, Any]:
+        """Construct the request JSON for retrieving job information.
 
-            Args:
-                options     (dict)  --  dict of key-word arguments
+        This method builds a request payload for querying jobs from the server, 
+        allowing customization via keyword arguments. The options dictionary can 
+        include filters such as job category, paging configuration, client lists, 
+        job types, and entity details.
 
-                Available Options:
+        Args:
+            **options: Arbitrary keyword arguments to customize the job request.
+                Available options:
+                    category (str): Category of jobs to retrieve. Valid values: 'ALL', 'ACTIVE', 'FINISHED'. Default is 'ALL'.
+                    limit (int): Number of jobs to return. Default is 20.
+                    offset (int): Starting index for jobs to return. Default is 0.
+                    lookup_time (int): Retrieve jobs older than this number of hours. Default is 5.
+                    show_aged_jobs (bool): Whether to include aged jobs. Default is False.
+                    hide_admin_jobs (bool): Whether to exclude admin jobs. Default is False.
+                    clients_list (List[str]): List of client names to filter jobs. Default is [].
+                    job_type_list (List[str]): List of job operation types. Default is [].
+                    entity (Dict[str, Any]): Entity details to filter jobs (e.g., {"dataSourceId": 2575}).
 
-                    category        (str)   --  category name for which the list of jobs
-                    are to be retrieved
+        Returns:
+            Dict[str, Any]: The constructed request JSON to be sent to the server.
 
-                        Valid Values:
+        Example:
+            >>> job_controller = JobController(commcell_object)
+            >>> request_json = job_controller._get_jobs_request_json(
+            ...     category='ACTIVE',
+            ...     limit=10,
+            ...     clients_list=['ClientA', 'ClientB'],
+            ...     job_type_list=['Backup', 'Restore'],
+            ...     entity={'dataSourceId': 2575}
+            ... )
+            >>> print(request_json)
+            # The returned dictionary can be used to make a jobs API request.
 
-                            - ALL
-
-                            - ACTIVE
-
-                            - FINISHED
-
-                        default: ALL
-
-                    limit           (int)   --  total number of jobs list that are to be returned
-
-                            default: 20
-
-                    offset           (int)  --  value from which starting job to be returned is counted
-
-                            default: 0
-
-                    lookup_time     (int)   --  list of jobs to be retrieved which are specified
-                    hours older
-
-                            default: 5 hours
-
-                    show_aged_job   (bool)  --  boolean specifying whether to include aged jobs in
-                    the result or not
-
-                            default: False
-                    
-                    hide_admin_jobs (bool)  --  boolean specifying whether to exclude admin jobs from
-                    the result or not
-
-                            default: False
-
-                    clients_list    (list)  --  list of clients to return the jobs for
-
-                            default: []
-
-                    job_type_list   (list)  --  list of job operation types
-
-                            default: []
-
-                    entity          (dict)  --  dict containing entity details to which associated jobs has to be fetched
-
-                            Example : To fetch job details of particular data source id
-
-                                "entity": {
-                                            "dataSourceId": 2575
-                                            }
-
-
-            Returns:
-                dict    -   request json that is to be sent to server
-
+        #ai-gen-doc
         """
         job_list_category = {
             'ALL': 0,
@@ -450,21 +637,63 @@ class JobController(object):
 
         return request_json
 
-    def _get_jobs_list(self, **options):
-        """Executes a request on the server to get the list of jobs.
+    def get_active_job_summary(self) -> Dict[str, int]:
+        """Retrieve a summary of all active jobs in the Commcell.
 
-            Args:
-                request_json    (dict)  --  request that is to be sent to server
+        Returns:
+            Dictionary containing counts of various active job states, such as suspended, running, queued, and anomalous jobs.
 
-            Returns:
-                dict    -   dict containing details about all the retrieved jobs
+        Example:
+            >>> job_controller = JobController(commcell_object)
+            >>> summary = job_controller.get_active_job_summary()
+            >>> print(summary)
+            {
+                "interruptPendingJobs": 0,
+                "anomalousJobs": 1,
+                "suspendedJobs": 368,
+                "killPendingJobs": 0,
+                "waitingJobs": 3,
+                "killedJobs": 0,
+                "suspendPendingJobs": 0,
+                "runningJobs": 0,
+                "queuedJobs": 0,
+            }
+            >>> print(f"Suspended jobs: {summary['suspendedJobs']}")
+        #ai-gen-doc
+        """
+        return self._commcell_object.wrap_request(
+            'POST', 'ACTIVE_JOBS_SUMMARY',
+            req_kwargs={"payload": {"jobSummaryAggregationType":1}},
+            error_check=False
+        )
 
-            Raises:
-                SDKException:
-                    if response is empty
+    def _get_jobs_list(self, **options: Any) -> Dict[str, Dict[str, Any]]:
+        """Retrieve the list of jobs from the server with optional filtering.
 
-                    if response is not success
+        This method sends a request to the server to obtain job details. The returned dictionary contains 
+        job information keyed by job ID. The level of detail in each job entry can be controlled using 
+        the 'job_summary' option.
 
+        Args:
+            **options: Optional keyword arguments to customize the job query.
+                - job_summary (str, optional): If set to 'full', returns the complete job summary for each job.
+                  Otherwise, returns a filtered set of job attributes.
+
+        Returns:
+            Dictionary mapping job IDs to job details. Each value is either the full job summary or a 
+            filtered dictionary of job attributes, depending on the 'job_summary' option.
+
+        Raises:
+            SDKException: If the server response is empty or unsuccessful.
+
+        Example:
+            >>> job_controller = JobController(...)
+            >>> jobs = job_controller._get_jobs_list()
+            >>> print(f"Retrieved {len(jobs)} jobs")
+            >>> # To get full job summaries:
+            >>> jobs_full = job_controller._get_jobs_list(job_summary='full')
+            >>> print(jobs_full)
+        #ai-gen-doc
         """
         request_json = self._get_jobs_request_json(**options)
 
@@ -554,25 +783,24 @@ class JobController(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _modify_all_jobs(self, operation_type=None):
-        """ Executes a request on the server to suspend/resume/kill all the jobs on the commserver
+    def _modify_all_jobs(self, operation_type: Optional[str] = None) -> None:
+        """Execute a request to suspend, resume, or kill all jobs on the CommServe.
 
-            Args:
-                operation_type     (str)   --  All jobs on commcell will be changed to this
-                                                    state.
-                                                    Options:
-                                                        suspend/resume/kill
+        Args:
+            operation_type: The operation to perform on all jobs. 
+                Valid options are 'suspend', 'resume', or 'kill'.
 
-            Returns:
-                None
+        Raises:
+            SDKException: If an invalid operation type is provided, if the API request fails,
+                or if the server response is incorrect.
 
-            Raises:
-                SDKException:
-                    - Invalid input is passed to the module
+        Example:
+            >>> job_controller = JobController(commcell_object)
+            >>> job_controller._modify_all_jobs('suspend')  # Suspends all jobs
+            >>> job_controller._modify_all_jobs('resume')   # Resumes all jobs
+            >>> job_controller._modify_all_jobs('kill')     # Kills all jobs
 
-                    - Failed to execute the api to modify jobs
-
-                    - Response is incorrect
+        #ai-gen-doc
         """
 
         job_map = {
@@ -616,85 +844,39 @@ class JobController(object):
         else:
             raise SDKException('Response', '102')
 
-    def all_jobs(self, client_name=None, lookup_time=5, job_filter=None, **options):
-        """Returns the dict consisting of all the jobs executed on the Commcell within the number
-            of hours specified in lookup time value.
+    def all_jobs(self, client_name: Optional[str] = None, lookup_time: int = 5, job_filter: Optional[str] = None, **options: Any) -> Dict[str, Any]:
+        """Retrieve all jobs executed on the Commcell within the specified lookup time.
 
-            Args:
-                client_name     (str)   --  name of the client to filter out the jobs for
+        This method returns a dictionary of job IDs and their details, filtered by client name, job type, and other optional criteria.
+        You can further refine the results using keyword arguments such as limit, offset, show_aged_job, hide_admin_jobs, clients_list, job_type_list, and job_summary.
 
-                    default: None, get all the jobs
+        Args:
+            client_name: Optional; name of the client to filter jobs for. If None, returns jobs for all clients.
+            lookup_time: Number of hours to look back for executed jobs. Default is 5 hours.
+            job_filter: Optional; comma-separated string of job types to filter (e.g., "Backup,Restore").
+            **options: Additional keyword arguments to customize job retrieval.
+                - limit (int): Maximum number of jobs to return. Default is 20.
+                - offset (int): Starting index for job retrieval. Default is 0.
+                - show_aged_job (bool): Whether to include aged jobs. Default is False.
+                - hide_admin_jobs (bool): Whether to exclude admin jobs. Default is False.
+                - clients_list (List[str]): List of client names to filter jobs.
+                - job_type_list (List[str]): List of job operation types.
+                - job_summary (str): 'basic' or 'full' summary. Default is 'basic'.
 
+        Returns:
+            Dictionary mapping job IDs to their details, matching the specified criteria.
 
-                lookup_time     (int)   --  get all the jobs executed within the number of hours
+        Raises:
+            SDKException: If a client name is provided and no client exists with that name.
 
-                    default: 5 Hours
-
-
-                job_filter      (str)   --  type of jobs to filter
-
-                        for multiple filters, give the values **comma(,)** separated
-
-                        List of Possible Values:
-
-                            Backup
-
-                            Restore
-
-                            AUXCOPY
-
-                            WORKFLOW
-
-                            etc..
-
-                    http://documentation.commvault.com/commvault/v11/article?p=features/rest_api/operations/get_job.htm
-                        to get the complete list of filters available
-
-                    default: None
-
-                options         (dict)  --  dict of key-word arguments
-
-                Available Options:
-
-                    limit           (int)   --  total number of jobs list that are to be returned
-                        default: 20
-
-                    offset           (int)  --  value from which starting job to be returned is counted
-
-                        default: 0
-
-                    show_aged_job   (bool)  --  boolean specifying whether to include aged jobs in
-                    the result or not
-
-                        default: False
-
-                    hide_admin_jobs (bool)  --  boolean specifying whether to exclude admin jobs from
-                    the result or not
-
-                        default: False
-
-                    clients_list    (list)  --  list of clients to return the jobs for
-
-                        default: []
-
-                    job_type_list   (list)  --  list of job operation types
-
-                        default: []
-
-                    job_summary     (str)   --  To return the basic job summary or full job summary
-
-                        default: basic
-
-                        accepted values: ['basic', 'full']
-
-            Returns:
-                dict    -   dictionary consisting of the job IDs matching the given criteria
-                as the key, and their details as its value
-
-            Raises:
-                SDKException:
-                    if client name is given, and no client exists with the given name
-
+        Example:
+            >>> job_controller = JobController()
+            >>> jobs = job_controller.all_jobs(client_name="Server01", lookup_time=8, job_filter="Backup,Restore", limit=10)
+            >>> print(f"Found {len(jobs)} jobs for Server01 in the last 8 hours")
+            >>> # Access job details by job ID
+            >>> for job_id, job_details in jobs.items():
+            >>>     print(f"Job ID: {job_id}, Type: {job_details.get('type')}, Status: {job_details.get('status')}")
+        #ai-gen-doc
         """
         options['category'] = 'ALL'
         options['lookup_time'] = lookup_time
@@ -707,94 +889,42 @@ class JobController(object):
 
         return self._get_jobs_list(**options)
 
-    def active_jobs(self, client_name=None, lookup_time=1, job_filter=None, **options):
-        """Returns the dict consisting of all the active jobs currently being executed on the
-            Commcell within the number of hours specified in lookup time value.
+    def active_jobs(self, client_name: Optional[str] = None, lookup_time: int = 1, job_filter: Optional[str] = None, **options: Any) -> Dict[str, Any]:
+        """Retrieve all active jobs currently being executed on the Commcell within the specified lookup time.
 
-            Args:
-                client_name     (str)   --  name of the client to filter out the jobs for
+        This method returns a dictionary of active job IDs and their details, filtered by client name, job type, 
+        and additional options. The lookup_time parameter specifies the number of hours to look back for active jobs.
 
-                    default: None, get all the jobs
+        Args:
+            client_name: Optional; name of the client to filter jobs for. If None, returns jobs for all clients.
+            lookup_time: Number of hours to look back for active jobs. Default is 1.
+            job_filter: Optional; comma-separated string of job types to filter (e.g., "Backup,Restore").
+            **options: Additional keyword arguments to refine the job search. Supported options include:
+                - limit (int): Maximum number of jobs to return. Default is 20.
+                - offset (int): Starting index for job results. Default is 0.
+                - show_aged_job (bool): Whether to include aged jobs. Default is False.
+                - hide_admin_jobs (bool): Whether to exclude admin jobs. Default is False.
+                - clients_list (List[str]): List of client names to filter jobs.
+                - job_type_list (List[str]): List of job operation types.
+                - job_summary (str): 'basic' or 'full' summary of jobs. Default is 'basic'.
+                - entity (Dict[str, Any]): Entity details for associated jobs (e.g., {"dataSourceId": 2575}).
 
+        Returns:
+            Dictionary mapping job IDs to their details, matching the specified criteria.
 
-                lookup_time     (int)   --  get all the jobs executed within the number of hours
+        Raises:
+            SDKException: If a client name is provided and no client exists with that name.
 
-                    default: 1 Hour(s)
+        Example:
+            >>> job_controller = JobController()
+            >>> # Get all active backup jobs for 'ClientA' in the last 2 hours
+            >>> jobs = job_controller.active_jobs(client_name='ClientA', lookup_time=2, job_filter='Backup')
+            >>> print(f"Active jobs: {jobs}")
+            >>> # Get up to 10 active jobs with full summary
+            >>> jobs = job_controller.active_jobs(limit=10, job_summary='full')
+            >>> print(f"Job details: {jobs}")
 
-
-                job_filter      (str)   --  type of jobs to filter
-
-                        for multiple filters, give the values **comma(,)** separated
-
-                        List of Possible Values:
-
-                            Backup
-
-                            Restore
-
-                            AUXCOPY
-
-                            WORKFLOW
-
-                            etc..
-
-                    http://documentation.commvault.com/commvault/v11/article?p=features/rest_api/operations/get_job.htm
-                        to get the complete list of filters available
-
-                    default: None
-
-                options         (dict)  --  dict of key-word arguments
-
-                Available Options:
-
-                    limit           (int)   --  total number of jobs list that are to be returned
-
-                        default: 20
-
-                    offset          (int)   --  value from which starting job to be returned is counted
-
-                        default: 0
-
-                    show_aged_job   (bool)  --  boolean specifying whether to include aged jobs in
-                    the result or not
-
-                        default: False
-
-                    hide_admin_jobs (bool)  --  boolean specifying whether to exclude admin jobs from
-                    the result or not
-
-                        default: False
-
-                    clients_list    (list)  --  list of clients to return the jobs for
-
-                        default: []
-
-                    job_type_list   (list)  --  list of job operation types
-
-                        default: []
-
-                    job_summary     (str)   --  To return the basic job summary or full job summary
-
-                        default: basic
-
-                        accepted values: ['basic', 'full']
-
-                    entity          (dict)  --  dict containing entity details to which associated jobs has to be fetched
-
-                        Example : To fetch job details of particular data source id
-
-                                "entity": {
-                                            "dataSourceId": 2575
-                                            }
-
-            Returns:
-                dict    -   dictionary consisting of the job IDs matching the given criteria
-                as the key, and their details as its value
-
-            Raises:
-                SDKException:
-                    if client name is given, and no client exists with the given name
-
+        #ai-gen-doc
         """
         options['category'] = 'ACTIVE'
         options['lookup_time'] = lookup_time
@@ -807,95 +937,39 @@ class JobController(object):
 
         return self._get_jobs_list(**options)
 
-    def finished_jobs(self, client_name=None, lookup_time=24, job_filter=None, **options):
-        """Returns the dict consisting of all the finished jobs on the Commcell within the number
-            of hours specified in lookup time value.
+    def finished_jobs(self, client_name: Optional[str] = None, lookup_time: int = 24, job_filter: Optional[str] = None, **options: Any) -> Dict[str, Any]:
+        """Retrieve all finished jobs from the Commcell within the specified lookup time.
 
-            Args:
-                client_name     (str)   --  name of the client to filter out the jobs for
+        This method returns a dictionary of finished jobs, filtered by client name, job type, and other optional criteria.
+        The lookup_time parameter specifies the number of hours to look back for finished jobs.
+        Additional filtering options can be provided via keyword arguments.
 
-                    default: None, get all the jobs ir-respective of client
+        Args:
+            client_name: Optional; name of the client to filter jobs for. If None, jobs for all clients are returned.
+            lookup_time: Number of hours to look back for finished jobs. Default is 24.
+            job_filter: Optional; comma-separated string of job types to filter (e.g., "Backup,Restore,AUXCOPY").
+            **options: Additional keyword arguments for advanced filtering, such as:
+                - limit (int): Maximum number of jobs to return (default: 20).
+                - offset (int): Starting index for job results (default: 0).
+                - show_aged_job (bool): Whether to include aged jobs (default: False).
+                - hide_admin_jobs (bool): Whether to exclude admin jobs (default: False).
+                - clients_list (List[str]): List of client names to filter jobs.
+                - job_type_list (List[str]): List of job operation types.
+                - job_summary (str): 'basic' or 'full' job summary (default: 'basic').
+                - entity (Dict[str, Any]): Entity details for associated jobs (e.g., {"dataSourceId": 2575}).
 
+        Returns:
+            Dictionary mapping job IDs to their details, matching the specified criteria.
 
-                lookup_time     (int)   --  get all the jobs executed within the number of hours
+        Raises:
+            SDKException: If a client name is provided and no client exists with that name.
 
-                    default: 24 Hours
-
-
-                job_filter      (str)   --  type of jobs to filter
-
-                        for multiple filters, give the values **comma(,)** separated
-
-                        List of Possible Values:
-
-                            Backup
-
-                            Restore
-
-                            AUXCOPY
-
-                            WORKFLOW
-
-                            etc..
-
-                    http://documentation.commvault.com/commvault/v11/article?p=features/rest_api/operations/get_job.htm
-                        to get the complete list of filters available
-
-                    default: None
-
-
-                options         (dict)  --  dict of key-word arguments
-
-                Available Options:
-
-                    limit           (int)   --  total number of jobs list that are to be returned
-
-                        default: 20
-
-                    offset          (int)   --  value from which starting job to be returned is counted
-
-                            default: 0
-
-                    show_aged_job   (bool)  --  boolean specifying whether to include aged jobs in
-                    the result or not
-
-                        default: False
-
-                    hide_admin_jobs (bool)  --  boolean specifying whether to exclude admin jobs from
-                    the result or not
-
-                        default: False
-
-                    clients_list    (list)  --  list of clients to return the jobs for
-
-                        default: []
-
-                    job_type_list   (list)  --  list of job operation types
-
-                        default: []
-
-                    job_summary     (str)   --  To return the basic job summary or full job summary
-
-                        default: basic
-
-                        accepted values: ['basic', 'full']
-
-                    entity          (dict)  --  dict containing entity details to which associated jobs has to be fetched
-
-                        Example : To fetch job details of particular data source id
-
-                                "entity": {
-                                            "dataSourceId": 2575
-                                            }
-
-            Returns:
-                dict    -   dictionary consisting of the job IDs matching the given criteria
-                as the key, and their details as its value
-
-            Raises:
-                SDKException:
-                    if client name is given, and no client exists with the given name
-
+        Example:
+            >>> job_controller = JobController()
+            >>> finished = job_controller.finished_jobs(client_name="ClientA", lookup_time=12, job_filter="Backup,Restore", limit=10)
+            >>> for job_id, job_details in finished.items():
+            ...     print(f"Job ID: {job_id}, Type: {job_details.get('type')}, Status: {job_details.get('status')}")
+        #ai-gen-doc
         """
         options['category'] = 'FINISHED'
         options['lookup_time'] = lookup_time
@@ -908,48 +982,110 @@ class JobController(object):
 
         return self._get_jobs_list(**options)
 
-    def suspend_all_jobs(self):
-        """ Suspends all the jobs on the commserver """
+    def suspend_all_jobs(self) -> None:
+        """Suspend all active jobs on the CommServe server.
+
+        This method initiates a suspend operation for every running job on the CommServe,
+        pausing their execution until resumed or cancelled.
+
+        Example:
+            >>> job_controller = JobController()
+            >>> job_controller.suspend_all_jobs()
+            >>> print("All jobs have been suspended on the CommServe.")
+        #ai-gen-doc
+        """
         self._modify_all_jobs('suspend')
 
-    def resume_all_jobs(self):
-        """ Resumes all the jobs on the commserver """
+    def resume_all_jobs(self) -> None:
+        """Resume all jobs on the CommServe server.
+
+        This method resumes all paused or suspended jobs managed by the CommServe.
+
+        Example:
+            >>> job_controller = JobController()
+            >>> job_controller.resume_all_jobs()
+            >>> print("All jobs have been resumed.")
+
+        #ai-gen-doc
+        """
         self._modify_all_jobs('resume')
 
-    def kill_all_jobs(self):
-        """ Kills all the jobs on the commserver """
+    def kill_all_jobs(self) -> None:
+        """Terminate all active jobs on the CommServe server.
+
+        This method sends a command to kill all currently running jobs on the CommServe.
+        Use with caution, as this will stop all ongoing operations.
+
+        Example:
+            >>> job_controller = JobController()
+            >>> job_controller.kill_all_jobs()
+            >>> print("All jobs have been terminated.")
+
+        #ai-gen-doc
+        """
         self._modify_all_jobs('kill')
 
-    def get(self, job_id):
-        """Returns the job object for the given job id.
+    def get(self, job_id: int) -> 'Job':
+        """Retrieve the Job object for the specified job ID.
 
-            Args:
-                job_id  (int)   --  id of the job to create Job class instance for
+        Args:
+            job_id: The unique identifier of the job to retrieve.
 
-            Returns:
-                object  -   Job class object for the given job id
+        Returns:
+            Job: An instance of the Job class corresponding to the given job ID.
 
-            Raises:
-                SDKException:
-                    if no job with specified job id exists
+        Raises:
+            SDKException: If no job with the specified job ID exists.
 
+        Example:
+            >>> job_controller = JobController(commcell_object)
+            >>> job = job_controller.get(12345)
+            >>> print(f"Job ID: {job.job_id}")
+            >>> # The returned Job object can be used for further job operations
+
+        #ai-gen-doc
         """
         return Job(self._commcell_object, job_id)
 
 
 class JobManagement(object):
-    """Class for performing job management operations. """
+    """
+    Comprehensive class for managing and configuring job operations within a CommCell environment.
 
-    def __init__(self, commcell_object):
-        """
-        Initialize instance of JobManagement class for performing operations on jon management settings.
+    The JobManagement class provides a robust interface for controlling various aspects of job execution,
+    prioritization, error handling, and operational settings. It enables administrators to fine-tune job
+    management parameters, set and retrieve general, priority, restart, and update settings, and manage
+    job behaviors through a variety of property-based configurations.
 
-            Args:
-                commcell_object         (object)        --  instance of Commcell class.
+    Key Features:
+        - Initialization with a CommCell object for context-aware job management
+        - Refreshing job management settings to ensure up-to-date configurations
+        - Setting and retrieving general, priority, restart, and update settings for jobs
+        - Fine-grained control over job priority precedence and operational intervals
+        - Configurable error rules and job error thresholds
+        - Management of job queuing, throttling, and multiplexing for various agents and job types
+        - Control over job behaviors such as preemption, activity windows, and backup/restore operations
+        - Property-based access to all major job management settings for easy integration and automation
 
-            Returns:
-                None
+    This class is intended for use in environments where job execution and management require detailed
+    configuration and monitoring to ensure optimal performance and reliability.
 
+    #ai-gen-doc
+    """
+
+    def __init__(self, commcell_object: 'Commcell') -> None:
+        """Initialize the JobManagement instance for managing job management settings.
+
+        Args:
+            commcell_object: Instance of the Commcell class used to interact with the Commcell environment.
+
+        Example:
+            >>> from cvpysdk.commcell import Commcell
+            >>> commcell = Commcell(command_center_hostname, username, password)
+            >>> job_mgmt = JobManagement(commcell)
+            >>> # The JobManagement object can now be used to manage job settings
+
+        #ai-gen-doc
         """
         self._comcell = commcell_object
         self._service = commcell_object._services.get('JOB_MANAGEMENT_SETTINGS')
@@ -958,22 +1094,41 @@ class JobManagement(object):
         self.refresh()
 
     @property
-    def error_rules(self):
+    def error_rules(self) -> '_ErrorRule':
+        """Get the _ErrorRule instance associated with this JobManagement object.
+
+        Returns:
+            _ErrorRule: An instance for managing error rules related to job management.
+
+        Example:
+            >>> job_mgmt = JobManagement(commcell_object)
+            >>> error_rules = job_mgmt.error_rules  # Use dot notation for property access
+            >>> print(f"Error rules object: {error_rules}")
+            >>> # The returned _ErrorRule object can be used to manage job error rules
+
+        #ai-gen-doc
+        """
         if not self._error_rules:
             self._error_rules = _ErrorRule(self._comcell)
         return self._error_rules
 
-    def _set_jobmanagement_settings(self):
-        """
-        Executes a request on the server, to set the job management settings.
+    def _set_jobmanagement_settings(self) -> None:
+        """Set job management settings on the server.
 
-         Returns:
-               None
+        This method sends a POST request to the server to update job management settings 
+        using the current configuration. If the server returns an error, an SDKException 
+        is raised with the relevant error message.
 
-         Raises:
-              SDKException:
-                    if given inputs are invalid
+        Raises:
+            SDKException: If the server response indicates an error or if the inputs are invalid.
 
+        Example:
+            >>> job_mgmt = JobManagement(...)
+            >>> job_mgmt._set_jobmanagement_settings()
+            >>> print("Job management settings updated successfully")
+            # If an error occurs, SDKException will be raised with details.
+
+        #ai-gen-doc
         """
 
         flag, response = self._cvpysdk_object.make_request(method='POST', url=self._service,
@@ -987,18 +1142,24 @@ class JobManagement(object):
         else:
             raise SDKException('Response', '101', response.json()["errorMessage"])
 
-    def _get_jobmanagement_settings(self):
-        """
-         Executes a request on the server to get the settings of job management.
+    def _get_jobmanagement_settings(self) -> None:
+        """Retrieve job management settings from the server and update internal state.
 
-            Returns:
-                None
+        This method sends a GET request to the server to fetch job management settings. 
+        The settings are parsed and stored in internal attributes for restart, priority, 
+        general, and update settings. If the response is empty or indicates an error, 
+        an SDKException is raised.
 
-            Raises:
-                SDKException
-                    if response is empty
+        Raises:
+            SDKException: If the server response is empty, unsuccessful, or contains an error code.
 
-                    if response is not success
+        Example:
+            >>> job_mgmt = JobManagement(...)
+            >>> job_mgmt._get_jobmanagement_settings()
+            >>> # After execution, job management settings are available in internal attributes
+            >>> # e.g., job_mgmt._restart_settings, job_mgmt._priority_settings
+
+        #ai-gen-doc
         """
         flag, response = self._cvpysdk_object.make_request(method='GET', url=self._service)
         if flag:
@@ -1024,9 +1185,19 @@ class JobManagement(object):
             response_string = self._comcell._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def refresh(self):
-        """
-        calls the private method _get_jobmanagement_settings()
+    def refresh(self) -> None:
+        """Reload all job management settings from the Commcell.
+
+        This method clears cached job management settings and retrieves the latest configuration 
+        by calling the internal method. Use this to ensure you are working with up-to-date 
+        job management parameters.
+
+        Example:
+            >>> job_mgmt = JobManagement(commcell_object)
+            >>> job_mgmt.refresh()  # Refreshes job management settings
+            >>> print("Job management settings reloaded successfully")
+
+        #ai-gen-doc
         """
         self._restart_settings = None
         self._general_settings = None
@@ -1034,35 +1205,44 @@ class JobManagement(object):
         self._priority_settings = None
         self._get_jobmanagement_settings()
 
-    def set_general_settings(self, settings):
-        """
-        sets general settings of job management.
+    def set_general_settings(self, settings: Dict[str, Any]) -> None:
+        """Set general job management settings using the provided configuration dictionary.
 
-        Note : dedicated setters and getters are provided for general settings.
-            Args:
-                settings (dict)  --       Following key/value pairs can be set.
-                                            {
-                                                "allowRunningJobsToCompletePastOperationWindow": False,
-                                                "jobAliveCheckIntervalInMinutes": 5,
-                                                "queueScheduledJobs": False,
-                                                "enableJobThrottleAtClientLevel": False,
-                                                "enableMultiplexingForDBAgents": False,
-                                                "queueJobsIfConflictingJobsActive": False,
-                                                "queueJobsIfActivityDisabled": False,
-                                                "backupsPreemptsAuxilaryCopy": False,
-                                                "restorePreemptsOtherJobs": False,
-                                                "enableMultiplexingForOracle": False,
-                                                "jobStreamHighWaterMarkLevel": 500,
-                                                "backupsPreemptsOtherBackups": False,
-                                                "doNotStartBackupsOnDisabledClient": False
+        This method updates the general job management settings with the specified key-value pairs.
+        Dedicated setters and getters are available for individual settings, but this method allows
+        batch updating of multiple settings at once.
 
-                                            }
-            Returns:
-                None
+        Args:
+            settings: Dictionary containing general job management settings to update. 
+                Supported keys include:
+                    - "allowRunningJobsToCompletePastOperationWindow": bool
+                    - "jobAliveCheckIntervalInMinutes": int
+                    - "queueScheduledJobs": bool
+                    - "enableJobThrottleAtClientLevel": bool
+                    - "enableMultiplexingForDBAgents": bool
+                    - "queueJobsIfConflictingJobsActive": bool
+                    - "queueJobsIfActivityDisabled": bool
+                    - "backupsPreemptsAuxilaryCopy": bool
+                    - "restorePreemptsOtherJobs": bool
+                    - "enableMultiplexingForOracle": bool
+                    - "jobStreamHighWaterMarkLevel": int
+                    - "backupsPreemptsOtherBackups": bool
+                    - "doNotStartBackupsOnDisabledClient": bool
 
-            Raises:
-                SDKException:
-                    if input is not valid type
+        Raises:
+            SDKException: If the input is not a valid dictionary.
+
+        Example:
+            >>> job_mgmt = JobManagement()
+            >>> settings = {
+            ...     "allowRunningJobsToCompletePastOperationWindow": False,
+            ...     "jobAliveCheckIntervalInMinutes": 10,
+            ...     "queueScheduledJobs": True
+            ... }
+            >>> job_mgmt.set_general_settings(settings)
+            >>> # The general job management settings are now updated
+
+        #ai-gen-doc
         """
         if isinstance(settings, dict):
             self._general_settings.get('generalSettings').update(settings)
@@ -1070,49 +1250,47 @@ class JobManagement(object):
         else:
             raise SDKException('Job', '108')
 
-    def set_priority_settings(self, settings):
-        """
-        sets priority settings for jobs and agents type.
+    def set_priority_settings(self, settings: List[Dict[str, Any]]) -> None:
+        """Set priority settings for jobs and agent types.
 
-            Args:
-                settings  (list)    --  list of dictionaries with following format.
-                                         [
-                                            {
-                                                "type_of_operation": 1,
-                                                "combinedPriority": 10,
-                                                "jobTypeName": "Information Management"
-                                            },
-                                            {
-                                                "type_of_operation": 2,
-                                                "combinedPriority": 10,
-                                                "appTypeName": "Windows File System"
-                                            },
-                                            {
-                                            "type_of_operation": 1,
-                                            "combinedPriority": 10,
-                                            "jobTypeName": "Auxiliary Copy"
-                                             }
-                                        ]
+        This method updates the priority configuration for job types and agent types based on the provided settings.
+        Each setting should be a dictionary specifying the type of operation, combined priority, and either the job type name or agent type name.
 
-            We have priority settings fro jobtype and agenttype
+        Args:
+            settings: A list of dictionaries, each containing priority settings. The format should be:
+                [
+                    {
+                        "type_of_operation": 1,
+                        "combinedPriority": 10,
+                        "jobTypeName": "Information Management"
+                    },
+                    {
+                        "type_of_operation": 2,
+                        "combinedPriority": 10,
+                        "appTypeName": "Windows File System"
+                    },
+                    {
+                        "type_of_operation": 1,
+                        "combinedPriority": 10,
+                        "jobTypeName": "Auxiliary Copy"
+                    }
+                ]
+                - For job type priority, set "type_of_operation" to 1 and specify "jobTypeName".
+                - For agent type priority, set "type_of_operation" to 2 and specify "appTypeName".
 
-            NOTE : for setting, priority for jobtype the 'type_of_operation' must be set to 1 and name of the job type
-                   must be specified as below format.
+        Raises:
+            SDKException: If the input is not a valid list of dictionaries.
 
-                       ex :-  "jobTypeName": "Information Management"
+        Example:
+            >>> job_mgmt = JobManagement()
+            >>> settings = [
+            ...     {"type_of_operation": 1, "combinedPriority": 10, "jobTypeName": "Information Management"},
+            ...     {"type_of_operation": 2, "combinedPriority": 10, "appTypeName": "Windows File System"}
+            ... ]
+            >>> job_mgmt.set_priority_settings(settings)
+            >>> print("Priority settings updated successfully")
 
-            NOTE : for setting, priority for agenttype the 'type_of_operation' must be set to 2 and name of the job
-             type must be specified as below format
-
-                        ex :- "appTypeName": "Windows File System"
-
-            Returns:
-                None
-
-            Raises:
-                SDKException:
-                    if input is not valid type
-
+        #ai-gen-doc
         """
         if isinstance(settings, list):
             for job in settings:
@@ -1134,44 +1312,55 @@ class JobManagement(object):
         else:
             raise SDKException('Job', '108')
 
-    def set_restart_settings(self, settings):
-        """
-        sets restart settings for jobs.
+    def set_restart_settings(self, settings: List[Dict[str, Any]]) -> None:
+        """Set restart settings for jobs based on the provided configuration.
 
-            Args:
-                settings    (list)      --  list of dictionaries with following format
-                                            [
-                                                {
-                                                    "killRunningJobWhenTotalRunningTimeExpires": False,
-                                                    "maxRestarts": 10,
-                                                    "enableTotalRunningTime": False,
-                                                    "restartable": False,
-                                                    "jobTypeName": "File System and Indexing Based (Data Protection)",
-                                                    "restartIntervalInMinutes": 20,
-                                                    "preemptable": True,
-                                                    "totalRunningTime": 21600,
-                                                    "jobType": 6
-                                                },
-                                                {
-                                                    "killRunningJobWhenTotalRunningTimeExpires": False,
-                                                    "maxRestarts": 144,
-                                                    "enableTotalRunningTime": False,
-                                                    "restartable": False,
-                                                    "jobTypeName": "File System and Indexing Based (Data Recovery)",
-                                                    "restartIntervalInMinutes": 20,
-                                                    "preemptable": False,
-                                                    "totalRunningTime": 21600,
-                                                    "jobType": 7
-                                                }
-                                            ]
+        Args:
+            settings: A list of dictionaries, each containing restart settings for a specific job type.
+                Each dictionary should include keys such as:
+                    - "killRunningJobWhenTotalRunningTimeExpires": bool
+                    - "maxRestarts": int
+                    - "enableTotalRunningTime": bool
+                    - "restartable": bool
+                    - "jobTypeName": str
+                    - "restartIntervalInMinutes": int
+                    - "preemptable": bool
+                    - "totalRunningTime": int
+                    - "jobType": int
 
-            Returns:
-                None
+        Raises:
+            SDKException: If the input is not a valid list of dictionaries.
 
-            Raises:
-                SDKException:
-                    if input is not valid type
+        Example:
+            >>> job_settings = [
+            ...     {
+            ...         "killRunningJobWhenTotalRunningTimeExpires": False,
+            ...         "maxRestarts": 10,
+            ...         "enableTotalRunningTime": False,
+            ...         "restartable": False,
+            ...         "jobTypeName": "File System and Indexing Based (Data Protection)",
+            ...         "restartIntervalInMinutes": 20,
+            ...         "preemptable": True,
+            ...         "totalRunningTime": 21600,
+            ...         "jobType": 6
+            ...     },
+            ...     {
+            ...         "killRunningJobWhenTotalRunningTimeExpires": False,
+            ...         "maxRestarts": 144,
+            ...         "enableTotalRunningTime": False,
+            ...         "restartable": False,
+            ...         "jobTypeName": "File System and Indexing Based (Data Recovery)",
+            ...         "restartIntervalInMinutes": 20,
+            ...         "preemptable": False,
+            ...         "totalRunningTime": 21600,
+            ...         "jobType": 7
+            ...     }
+            ... ]
+            >>> job_mgmt = JobManagement()
+            >>> job_mgmt.set_restart_settings(job_settings)
+            >>> print("Restart settings updated successfully.")
 
+        #ai-gen-doc
         """
 
         if isinstance(settings, list):
@@ -1184,31 +1373,38 @@ class JobManagement(object):
         else:
             raise SDKException('Job', '108')
 
-    def set_update_settings(self, settings):
-        """
-        sets update settings for jobs
+    def set_update_settings(self, settings: List[Dict[str, Any]]) -> None:
+        """Set update settings for jobs using a list of configuration dictionaries.
 
-            Args:
-                settings    (list)      --      list of dictionaries with following format
-                                                [
-                                                    {
-                                                        "appTypeName": "Windows File System",
-                                                        "recoveryTimeInMinutes": 20,
-                                                        "protectionTimeInMinutes": 20
-                                                    },
-                                                    {
-                                                        "appTypeName": "Windows XP 64-bit File System",
-                                                        "recoveryTimeInMinutes": 20,
-                                                        "protectionTimeInMinutes": 20,
-                                                    }
-                                                ]
-            Returns:
-                None
+        Args:
+            settings: A list of dictionaries, each specifying update settings for a job type.
+                Each dictionary should have the following format:
+                    {
+                        "appTypeName": str,                # Name of the application type (e.g., "Windows File System")
+                        "recoveryTimeInMinutes": int,      # Recovery time in minutes
+                        "protectionTimeInMinutes": int     # Protection time in minutes
+                    }
 
-            Raises:
-                SDKException:
-                    if input is not valid type
+        Raises:
+            SDKException: If the input is not a list of dictionaries.
 
+        Example:
+            >>> job_settings = [
+            ...     {
+            ...         "appTypeName": "Windows File System",
+            ...         "recoveryTimeInMinutes": 20,
+            ...         "protectionTimeInMinutes": 20
+            ...     },
+            ...     {
+            ...         "appTypeName": "Windows XP 64-bit File System",
+            ...         "recoveryTimeInMinutes": 20,
+            ...         "protectionTimeInMinutes": 20
+            ...     }
+            ... ]
+            >>> job_mgmt = JobManagement()
+            >>> job_mgmt.set_update_settings(job_settings)
+            >>> print("Job update settings applied successfully")
+        #ai-gen-doc
         """
 
         if isinstance(settings, list):
@@ -1223,11 +1419,19 @@ class JobManagement(object):
             raise SDKException('Job', '108')
 
     @property
-    def job_priority_precedence(self):
-        """
-        gets the job priority precedence
-            Returns:
-                 (str)  --   type of job priority precedence is set.
+    def job_priority_precedence(self) -> str:
+        """Get the job priority precedence type set for job management.
+
+        Returns:
+            The type of job priority precedence as a string, such as "client" or "agentType".
+
+        Example:
+            >>> job_mgmt = JobManagement(...)
+            >>> precedence = job_mgmt.job_priority_precedence  # Use dot notation for properties
+            >>> print(f"Job priority precedence: {precedence}")
+            >>> # Output could be "client" or "agentType" depending on configuration
+
+        #ai-gen-doc
         """
 
         available_priorities = {
@@ -1237,17 +1441,20 @@ class JobManagement(object):
         return available_priorities.get(self._priority_settings["jobPrioritySettings"]["priorityPrecedence"])
 
     @job_priority_precedence.setter
-    def job_priority_precedence(self, priority_type):
-        """
-        sets job priority precedence
+    def job_priority_precedence(self, priority_type: str) -> None:
+        """Set the job priority precedence for job management.
 
-                Args:
-                    priority_type   (str)   --      type of priority to be set
+        Args:
+            priority_type: The type of priority to be set. Must be one of:
+                - "client": Prioritize jobs based on client.
+                - "agentType": Prioritize jobs based on agent type.
 
-                    Values:
-                        "client"
-                        "agentType"
+        Example:
+            >>> job_mgmt = JobManagement()
+            >>> job_mgmt.job_priority_precedence = "client"      # Set precedence to client
+            >>> job_mgmt.job_priority_precedence = "agentType"   # Set precedence to agent type
 
+        #ai-gen-doc
         """
         if isinstance(priority_type, str):
             available_priorities = {
@@ -1260,25 +1467,36 @@ class JobManagement(object):
             raise SDKException('Job', '108')
 
     @property
-    def start_phase_retry_interval(self):
-        """
-        gets the start phase retry interval in (minutes)
-            Returns:
-                 (int)      --      interval in minutes.
+    def start_phase_retry_interval(self) -> int:
+        """Get the start phase retry interval in minutes for job restarts.
+
+        Returns:
+            The interval in minutes as an integer.
+
+        Example:
+            >>> job_mgmt = JobManagement(...)
+            >>> interval = job_mgmt.start_phase_retry_interval  # Use dot notation for property
+            >>> print(f"Start phase retry interval: {interval} minutes")
+        #ai-gen-doc
         """
         return self._restart_settings["jobRestartSettings"]["startPhaseRetryIntervalInMinutes"]
 
     @start_phase_retry_interval.setter
-    def start_phase_retry_interval(self, minutes):
-        """
-        sets start phase retry interval for jobs
+    def start_phase_retry_interval(self, minutes: int) -> None:
+        """Set the start phase retry interval for jobs in minutes.
 
-            Args:
-                minutes     (int)       --      minutes to be set.
+        Args:
+            minutes: The number of minutes to set for the start phase retry interval.
 
-            Raises:
-                SDKException:
-                    if input is not valid type.
+        Raises:
+            SDKException: If the input is not of type int.
+
+        Example:
+            >>> job_mgmt = JobManagement()
+            >>> job_mgmt.start_phase_retry_interval = 15  # Sets retry interval to 15 minutes
+            >>> # If a non-integer value is provided, SDKException will be raised
+
+        #ai-gen-doc
         """
 
         if isinstance(minutes, int):
@@ -1288,25 +1506,36 @@ class JobManagement(object):
             raise SDKException('Job', '108')
 
     @property
-    def state_update_interval_for_continuous_data_replicator(self):
-        """
-        gets the state update interval for continuous data replicator in (minutes)
-            Returns:
-                 (int)      --      interval in minutes
+    def state_update_interval_for_continuous_data_replicator(self) -> int:
+        """Get the state update interval for continuous data replicator jobs in minutes.
+
+        Returns:
+            The interval, in minutes, at which state updates are performed for continuous data replicator jobs.
+
+        Example:
+            >>> job_mgmt = JobManagement(...)
+            >>> interval = job_mgmt.state_update_interval_for_continuous_data_replicator
+            >>> print(f"State update interval: {interval} minutes")
+        #ai-gen-doc
         """
         return self._update_settings["jobUpdatesSettings"]["stateUpdateIntervalForContinuousDataReplicator"]
 
     @state_update_interval_for_continuous_data_replicator.setter
-    def state_update_interval_for_continuous_data_replicator(self, minutes):
-        """
-        sets state update interval for continuous data replicator
+    def state_update_interval_for_continuous_data_replicator(self, minutes: int) -> None:
+        """Set the state update interval for continuous data replicator jobs.
 
-            Args:
-                 minutes       (int)        --      minutes to be set.
+        Args:
+            minutes: The interval in minutes to set for state updates.
 
-            Raises:
-                SDKException:
-                    if input is not valid type
+        Raises:
+            SDKException: If the provided value for minutes is not an integer.
+
+        Example:
+            >>> job_mgmt = JobManagement()
+            >>> job_mgmt.state_update_interval_for_continuous_data_replicator = 15
+            >>> # The state update interval for continuous data replicator jobs is now set to 15 minutes.
+
+        #ai-gen-doc
         """
         if isinstance(minutes, int):
             self._update_settings["jobUpdatesSettings"]["stateUpdateIntervalForContinuousDataReplicator"] = minutes
@@ -1315,23 +1544,39 @@ class JobManagement(object):
             raise SDKException('Job', '108')
 
     @property
-    def allow_running_jobs_to_complete_past_operation_window(self):
-        """
-        Returns True if option is enabled
-        else returns false
+    def allow_running_jobs_to_complete_past_operation_window(self) -> bool:
+        """Indicate whether running jobs are allowed to complete past the operation window.
+
+        Returns:
+            True if the option to allow running jobs to complete past the operation window is enabled; False otherwise.
+
+        Example:
+            >>> job_mgmt = JobManagement(...)
+            >>> if job_mgmt.allow_running_jobs_to_complete_past_operation_window:
+            ...     print("Jobs can continue past the operation window.")
+            ... else:
+            ...     print("Jobs will be stopped at the end of the operation window.")
+
+        #ai-gen-doc
         """
         return self._general_settings.get('generalSettings').get("allowRunningJobsToCompletePastOperationWindow")
 
     @allow_running_jobs_to_complete_past_operation_window.setter
-    def allow_running_jobs_to_complete_past_operation_window(self, flag):
-        """
-        enable/disable, allow running jobs to complete past operation window.
-            Args:
-                flag    (bool)    --        (True/False) to be set.
+    def allow_running_jobs_to_complete_past_operation_window(self, flag: bool) -> None:
+        """Enable or disable the option to allow running jobs to complete past the operation window.
 
-            Raises:
-                SDKException:
-                    if input is not valid type
+        Args:
+            flag: Set to True to allow running jobs to complete past the operation window, or False to prevent it.
+
+        Raises:
+            SDKException: If the provided flag is not a boolean value.
+
+        Example:
+            >>> job_mgmt = JobManagement()
+            >>> job_mgmt.allow_running_jobs_to_complete_past_operation_window = True  # Enable completion past window
+            >>> job_mgmt.allow_running_jobs_to_complete_past_operation_window = False # Disable completion past window
+
+        #ai-gen-doc
         """
         if isinstance(flag, bool):
             settings = {
@@ -1342,24 +1587,36 @@ class JobManagement(object):
             raise SDKException('Job', '108')
 
     @property
-    def job_alive_check_interval_in_minutes(self):
-        """
-        gets the job alive check interval in (minutes)
-            Returns:
-                (int)       --      interval in minutes
+    def job_alive_check_interval_in_minutes(self) -> int:
+        """Get the job alive check interval in minutes.
+
+        Returns:
+            The interval, in minutes, used to check if a job is still alive.
+
+        Example:
+            >>> job_mgmt = JobManagement(...)
+            >>> interval = job_mgmt.job_alive_check_interval_in_minutes
+            >>> print(f"Job alive check interval: {interval} minutes")
+        #ai-gen-doc
         """
         return self._general_settings.get('generalSettings').get("jobAliveCheckIntervalInMinutes")
 
     @job_alive_check_interval_in_minutes.setter
-    def job_alive_check_interval_in_minutes(self, minutes):
-        """
-        sets the job alive check interval in (minutes)
-            Args:
-                  minutes       --      minutes to be set.
+    def job_alive_check_interval_in_minutes(self, minutes: int) -> None:
+        """Set the job alive check interval in minutes.
 
-            Raises:
-                  SDKException:
-                        if input is not valid type
+        Args:
+            minutes: The interval in minutes to be set for job alive checks.
+
+        Raises:
+            SDKException: If the input is not of type int.
+
+        Example:
+            >>> job_mgmt = JobManagement()
+            >>> job_mgmt.job_alive_check_interval_in_minutes = 15  # Set interval to 15 minutes
+            >>> # The job alive check interval is now updated
+
+        #ai-gen-doc
         """
         if isinstance(minutes, int):
             settings = {
@@ -1370,24 +1627,37 @@ class JobManagement(object):
             raise SDKException('Job', '108')
 
     @property
-    def queue_scheduled_jobs(self):
-        """
-        Returns True if option is enabled
-        else returns false
+    def queue_scheduled_jobs(self) -> bool:
+        """Indicate whether the option to queue scheduled jobs is enabled.
+
+        Returns:
+            True if the queue scheduled jobs option is enabled; False otherwise.
+
+        Example:
+            >>> job_mgmt = JobManagement(...)
+            >>> is_queued = job_mgmt.queue_scheduled_jobs  # Use dot notation for property
+            >>> print(f"Queue scheduled jobs enabled: {is_queued}")
+
+        #ai-gen-doc
         """
         return self._general_settings.get('generalSettings').get("queueScheduledJobs")
 
     @queue_scheduled_jobs.setter
-    def queue_scheduled_jobs(self, flag):
-        """
-        enable/disable, queue scheduled jobs
+    def queue_scheduled_jobs(self, flag: bool) -> None:
+        """Enable or disable queuing of scheduled jobs.
 
-            Args:
-                flag   (bool)      --       (True/False to be set)
+        Args:
+            flag: Boolean value indicating whether to enable (True) or disable (False) queuing of scheduled jobs.
 
-            Raises:
-                SDKException:
-                    if input is not valid type
+        Raises:
+            SDKException: If the provided flag is not a boolean value.
+
+        Example:
+            >>> job_mgmt = JobManagement(...)
+            >>> job_mgmt.queue_scheduled_jobs = True  # Enable queuing of scheduled jobs
+            >>> job_mgmt.queue_scheduled_jobs = False # Disable queuing of scheduled jobs
+
+        #ai-gen-doc
         """
         if isinstance(flag, bool):
             settings = {
@@ -1398,23 +1668,37 @@ class JobManagement(object):
             raise SDKException('Job', '108')
 
     @property
-    def enable_job_throttle_at_client_level(self):
-        """
-        Returns True if option is enabled
-        else returns false
+    def enable_job_throttle_at_client_level(self) -> bool:
+        """Indicate whether job throttling is enabled at the client level.
+
+        Returns:
+            True if job throttling is enabled for clients, False otherwise.
+
+        Example:
+            >>> job_mgmt = JobManagement(...)
+            >>> is_throttle_enabled = job_mgmt.enable_job_throttle_at_client_level
+            >>> print(f"Job throttle at client level enabled: {is_throttle_enabled}")
+
+        #ai-gen-doc
         """
         return self._general_settings.get('generalSettings').get("enableJobThrottleAtClientLevel")
 
     @enable_job_throttle_at_client_level.setter
-    def enable_job_throttle_at_client_level(self, flag):
-        """
-        enable/disable, job throttle at client level
-            Args:
-                flag    (bool)      --      (True/False) to be set
+    def enable_job_throttle_at_client_level(self, flag: bool) -> None:
+        """Enable or disable job throttling at the client level.
 
-            Raises:
-                SDKException:
-                    if input is not valid type
+        Args:
+            flag: Set to True to enable job throttle at the client level, or False to disable it.
+
+        Raises:
+            SDKException: If the provided flag is not a boolean value.
+
+        Example:
+            >>> job_mgmt = JobManagement(...)
+            >>> job_mgmt.enable_job_throttle_at_client_level = True  # Enable job throttle
+            >>> job_mgmt.enable_job_throttle_at_client_level = False # Disable job throttle
+
+        #ai-gen-doc
         """
         if isinstance(flag, bool):
             settings = {
@@ -1425,23 +1709,37 @@ class JobManagement(object):
             raise SDKException('Job', '108')
 
     @property
-    def enable_multiplexing_for_db_agents(self):
-        """
-        Returns True if option is enabled
-        else returns False
+    def enable_multiplexing_for_db_agents(self) -> bool:
+        """Indicate whether multiplexing is enabled for database agents.
+
+        Returns:
+            True if multiplexing is enabled for database agents, False otherwise.
+
+        Example:
+            >>> job_mgmt = JobManagement(...)
+            >>> is_enabled = job_mgmt.enable_multiplexing_for_db_agents  # Use dot notation for property
+            >>> print(f"Multiplexing enabled: {is_enabled}")
+
+        #ai-gen-doc
         """
         return self._general_settings.get('generalSettings').get("enableMultiplexingForDBAgents")
 
     @enable_multiplexing_for_db_agents.setter
-    def enable_multiplexing_for_db_agents(self, flag):
-        """
-        enable/disable, multiplexing for db agents
-            Args:
-                flag    (bool)      --      (True/False) to be set
+    def enable_multiplexing_for_db_agents(self, flag: bool) -> None:
+        """Enable or disable multiplexing for database agents.
 
-            Raises:
-                SDKException:
-                    if input is not valid type
+        Args:
+            flag: Boolean value indicating whether to enable (True) or disable (False) multiplexing for DB agents.
+
+        Raises:
+            SDKException: If the provided flag is not a boolean value.
+
+        Example:
+            >>> job_mgmt = JobManagement()
+            >>> job_mgmt.enable_multiplexing_for_db_agents = True  # Enable multiplexing
+            >>> job_mgmt.enable_multiplexing_for_db_agents = False # Disable multiplexing
+
+        #ai-gen-doc
         """
         if isinstance(flag, bool):
             settings = {
@@ -1452,23 +1750,41 @@ class JobManagement(object):
             raise SDKException('Job', '108')
 
     @property
-    def queue_jobs_if_conflicting_jobs_active(self):
-        """
-        Returns True if option is enabled
-        else returns false
+    def queue_jobs_if_conflicting_jobs_active(self) -> bool:
+        """Indicate whether jobs are queued if conflicting jobs are active.
+
+        Returns:
+            True if the option to queue jobs when conflicting jobs are active is enabled; False otherwise.
+
+        Example:
+            >>> job_mgmt = JobManagement(...)
+            >>> if job_mgmt.queue_jobs_if_conflicting_jobs_active:
+            ...     print("Jobs will be queued when conflicts are detected.")
+            ... else:
+            ...     print("Jobs will not be queued during conflicts.")
+
+        #ai-gen-doc
         """
         return self._general_settings.get('generalSettings').get("queueJobsIfConflictingJobsActive")
 
     @queue_jobs_if_conflicting_jobs_active.setter
-    def queue_jobs_if_conflicting_jobs_active(self, flag):
-        """
-        enable/disable, queue jobs if conflicting jobs active
-            Args;
-                flag    (bool)      --      (True/False) to be set
+    def queue_jobs_if_conflicting_jobs_active(self, flag: bool) -> None:
+        """Enable or disable queuing of jobs when conflicting jobs are active.
 
-            Raises:
-                SDKException:
-                    if input is not valid type
+        Args:
+            flag: Boolean value indicating whether to queue jobs if conflicting jobs are active.
+                - True: Enable queuing of jobs.
+                - False: Disable queuing of jobs.
+
+        Raises:
+            SDKException: If the input flag is not a boolean value.
+
+        Example:
+            >>> job_mgmt = JobManagement()
+            >>> job_mgmt.queue_jobs_if_conflicting_jobs_active = True  # Enable queuing
+            >>> job_mgmt.queue_jobs_if_conflicting_jobs_active = False # Disable queuing
+
+        #ai-gen-doc
         """
         if isinstance(flag, bool):
             settings = {
@@ -1479,23 +1795,41 @@ class JobManagement(object):
             raise SDKException('Job', '108')
 
     @property
-    def queue_jobs_if_activity_disabled(self):
-        """
-        Returns True if option is enabled
-        else returns False
+    def queue_jobs_if_activity_disabled(self) -> bool:
+        """Indicate whether jobs are queued when activity is disabled.
+
+        Returns:
+            True if the option to queue jobs when activity is disabled is enabled; False otherwise.
+
+        Example:
+            >>> job_mgmt = JobManagement(...)
+            >>> if job_mgmt.queue_jobs_if_activity_disabled:
+            ...     print("Jobs will be queued when activity is disabled.")
+            ... else:
+            ...     print("Jobs will not be queued when activity is disabled.")
+
+        #ai-gen-doc
         """
         return self._general_settings.get('generalSettings').get("queueJobsIfActivityDisabled")
 
     @queue_jobs_if_activity_disabled.setter
-    def queue_jobs_if_activity_disabled(self, flag):
-        """
-        enable/disable, queue jobs if activity disabled
-            Args;
-                flag    (bool)      --      (True/False) to be set
+    def queue_jobs_if_activity_disabled(self, flag: bool) -> None:
+        """Enable or disable queuing of jobs when activity is disabled.
 
-            Raises:
-                SDKException:
-                    if input is not valid type
+        Args:
+            flag: Boolean value indicating whether to queue jobs if activity is disabled.
+                - True: Jobs will be queued when activity is disabled.
+                - False: Jobs will not be queued.
+
+        Raises:
+            SDKException: If the provided flag is not a boolean value.
+
+        Example:
+            >>> job_mgmt = JobManagement()
+            >>> job_mgmt.queue_jobs_if_activity_disabled = True  # Enable queuing
+            >>> job_mgmt.queue_jobs_if_activity_disabled = False # Disable queuing
+
+        #ai-gen-doc
         """
         if isinstance(flag, bool):
             settings = {
@@ -1506,23 +1840,41 @@ class JobManagement(object):
             raise SDKException('Job', '108')
 
     @property
-    def backups_preempts_auxilary_copy(self):
-        """
-        Returns True if option is enabled
-        else returns False
+    def backups_preempts_auxilary_copy(self) -> bool:
+        """Indicate whether backup jobs can preempt auxiliary copy operations.
+
+        Returns:
+            True if the "Backups Preempts Auxiliary Copy" option is enabled; False otherwise.
+
+        Example:
+            >>> job_mgmt = JobManagement(...)
+            >>> if job_mgmt.backups_preempts_auxilary_copy:
+            ...     print("Backup jobs will preempt auxiliary copy operations.")
+            ... else:
+            ...     print("Backup jobs will not preempt auxiliary copy operations.")
+
+        #ai-gen-doc
         """
         return self._general_settings.get('generalSettings').get("backupsPreemptsAuxilaryCopy")
 
     @backups_preempts_auxilary_copy.setter
-    def backups_preempts_auxilary_copy(self, flag):
-        """
-        enable/disable, backups preempts auxiliary copy
-            Args:
-                flag    (bool)      --      (True/False) to be set
+    def backups_preempts_auxilary_copy(self, flag: bool) -> None:
+        """Enable or disable the 'backups preempts auxiliary copy' setting.
 
-            Raises:
-                SDKException:
-                    if input is not valid type
+        Args:
+            flag: Boolean value to set the option. 
+                - True enables backups to preempt auxiliary copy operations.
+                - False disables this behavior.
+
+        Raises:
+            SDKException: If the provided flag is not a boolean value.
+
+        Example:
+            >>> job_mgmt = JobManagement(...)
+            >>> job_mgmt.backups_preempts_auxilary_copy = True  # Enable preemption
+            >>> job_mgmt.backups_preempts_auxilary_copy = False # Disable preemption
+
+        #ai-gen-doc
         """
         if isinstance(flag, bool):
             settings = {
@@ -1533,23 +1885,41 @@ class JobManagement(object):
             raise SDKException('Job', '108')
 
     @property
-    def restore_preempts_other_jobs(self):
-        """
-        Returns True if option is enabled
-        else returns False
+    def restore_preempts_other_jobs(self) -> bool:
+        """Indicate whether the 'Restore Preempts Other Jobs' option is enabled.
+
+        Returns:
+            True if the restore operation is configured to preempt other jobs; False otherwise.
+
+        Example:
+            >>> job_mgmt = JobManagement(...)
+            >>> if job_mgmt.restore_preempts_other_jobs:
+            ...     print("Restore jobs will preempt other running jobs.")
+            ... else:
+            ...     print("Restore jobs will not preempt other jobs.")
+
+        #ai-gen-doc
         """
         return self._general_settings.get('generalSettings').get("restorePreemptsOtherJobs")
 
     @restore_preempts_other_jobs.setter
-    def restore_preempts_other_jobs(self, flag):
-        """
-        enable/disable, restore preempts other jobs
-            Args:
-                flag    (bool)      --      (True/False) to be set
+    def restore_preempts_other_jobs(self, flag: bool) -> None:
+        """Enable or disable the 'restore preempts other jobs' setting.
 
-            Raises:
-                SDKException:
-                    if input is not valid type
+        Args:
+            flag: Boolean value indicating whether restore operations should preempt other jobs.
+                - True: Restore jobs will preempt other running jobs.
+                - False: Restore jobs will not preempt other jobs.
+
+        Raises:
+            SDKException: If the provided flag is not a boolean value.
+
+        Example:
+            >>> job_mgmt = JobManagement(...)
+            >>> job_mgmt.restore_preempts_other_jobs = True  # Enable preemption
+            >>> job_mgmt.restore_preempts_other_jobs = False # Disable preemption
+
+        #ai-gen-doc
         """
         if isinstance(flag, bool):
             settings = {
@@ -1560,23 +1930,39 @@ class JobManagement(object):
             raise SDKException('Job', '108')
 
     @property
-    def enable_multiplexing_for_oracle(self):
-        """
-        Returns True if option is enabled
-        else returns False
+    def enable_multiplexing_for_oracle(self) -> bool:
+        """Indicate whether multiplexing is enabled for Oracle jobs.
+
+        Returns:
+            True if multiplexing is enabled for Oracle jobs, False otherwise.
+
+        Example:
+            >>> job_mgmt = JobManagement(...)
+            >>> is_enabled = job_mgmt.enable_multiplexing_for_oracle  # Use dot notation for property
+            >>> print(f"Multiplexing enabled for Oracle: {is_enabled}")
+
+        #ai-gen-doc
         """
         return self._general_settings.get('generalSettings').get("enableMultiplexingForOracle")
 
     @enable_multiplexing_for_oracle.setter
-    def enable_multiplexing_for_oracle(self, flag):
-        """
-        enable/disable, enable multiplexing for oracle
-            Args:
-                 flag   (bool)  --      (True/False) to be set
+    def enable_multiplexing_for_oracle(self, flag: bool) -> None:
+        """Enable or disable multiplexing for Oracle jobs.
 
-            Raises:
-                SDKException:
-                    if input is not valid type
+        Args:
+            flag: Boolean value to set multiplexing. 
+                - True to enable multiplexing for Oracle jobs.
+                - False to disable multiplexing.
+
+        Raises:
+            SDKException: If the provided flag is not a boolean value.
+
+        Example:
+            >>> job_mgmt = JobManagement()
+            >>> job_mgmt.enable_multiplexing_for_oracle = True  # Enable multiplexing
+            >>> job_mgmt.enable_multiplexing_for_oracle = False # Disable multiplexing
+
+        #ai-gen-doc
         """
         if isinstance(flag, bool):
             settings = {
@@ -1587,22 +1973,42 @@ class JobManagement(object):
             raise SDKException('Job', '108')
 
     @property
-    def job_stream_high_water_mark_level(self):
-        """
-        gets the job stream high water mark level
+    def job_stream_high_water_mark_level(self) -> int:
+        """Get the job stream high water mark level for job management.
+
+        This property retrieves the configured high water mark level, which determines 
+        the maximum number of concurrent job streams allowed.
+
+        Returns:
+            The job stream high water mark level as an integer.
+
+        Example:
+            >>> job_mgmt = JobManagement(...)
+            >>> high_water_mark = job_mgmt.job_stream_high_water_mark_level
+            >>> print(f"High water mark level: {high_water_mark}")
+        #ai-gen-doc
         """
         return self._general_settings.get('generalSettings').get("jobStreamHighWaterMarkLevel")
 
     @job_stream_high_water_mark_level.setter
-    def job_stream_high_water_mark_level(self, level):
-        """
-        sets, job stream high water mak level
-            Args:
-                level   (int)       --      number of jobs to be performed at a time
+    def job_stream_high_water_mark_level(self, level: int) -> None:
+        """Set the job stream high water mark level.
 
-            Raises:
-                SDKException:
-                    if input is not valid type
+        This property setter configures the maximum number of jobs that can be performed concurrently 
+        in a job stream. The value must be an integer.
+
+        Args:
+            level: The number of jobs to be performed at a time (as an integer).
+
+        Raises:
+            SDKException: If the provided level is not an integer.
+
+        Example:
+            >>> job_mgmt = JobManagement()
+            >>> job_mgmt.job_stream_high_water_mark_level = 5  # Set to allow 5 concurrent jobs
+            >>> # The job stream high water mark level is now set to 5
+
+        #ai-gen-doc
         """
         if isinstance(level, int):
             settings = {
@@ -1613,23 +2019,39 @@ class JobManagement(object):
             raise SDKException('Job', '108')
 
     @property
-    def backups_preempts_other_backups(self):
-        """
-        Returns True if option is enabled
-        else returns False
+    def backups_preempts_other_backups(self) -> bool:
+        """Indicate whether backup jobs can preempt other backup jobs.
+
+        Returns:
+            True if the "Backups Preempts Other Backups" option is enabled; False otherwise.
+
+        Example:
+            >>> job_mgmt = JobManagement(...)
+            >>> can_preempt = job_mgmt.backups_preempts_other_backups
+            >>> print(f"Backups can preempt other backups: {can_preempt}")
+
+        #ai-gen-doc
         """
         return self._general_settings.get('generalSettings').get("backupsPreemptsOtherBackups")
 
     @backups_preempts_other_backups.setter
-    def backups_preempts_other_backups(self, flag):
-        """
-        enable/disable, backups preempts other backups
-            Args:
-                 flag   (bool)      --      (True/False) to be set
+    def backups_preempts_other_backups(self, flag: bool) -> None:
+        """Enable or disable the setting for backups to preempt other backups.
 
-            Raises:
-                SDKException:
-                    if input is not a valid type
+        Args:
+            flag: Boolean value indicating whether backups should preempt other backups.
+                - True: Enable preemption of backups.
+                - False: Disable preemption of backups.
+
+        Raises:
+            SDKException: If the input flag is not a boolean value.
+
+        Example:
+            >>> job_mgmt = JobManagement(...)
+            >>> job_mgmt.backups_preempts_other_backups = True  # Enable preemption
+            >>> job_mgmt.backups_preempts_other_backups = False # Disable preemption
+
+        #ai-gen-doc
         """
         if isinstance(flag, bool):
             settings = {
@@ -1640,23 +2062,41 @@ class JobManagement(object):
             raise SDKException('Job', '108')
 
     @property
-    def do_not_start_backups_on_disabled_client(self):
-        """
-        Returns True if option is enabled
-        else returns False
+    def do_not_start_backups_on_disabled_client(self) -> bool:
+        """Indicate whether backups are prevented from starting on disabled clients.
+
+        Returns:
+            True if the option to not start backups on disabled clients is enabled; False otherwise.
+
+        Example:
+            >>> job_mgmt = JobManagement(...)
+            >>> if job_mgmt.do_not_start_backups_on_disabled_client:
+            ...     print("Backups will not start on disabled clients.")
+            ... else:
+            ...     print("Backups may start on disabled clients.")
+
+        #ai-gen-doc
         """
         return self._general_settings.get('generalSettings').get("doNotStartBackupsOnDisabledClient")
 
     @do_not_start_backups_on_disabled_client.setter
-    def do_not_start_backups_on_disabled_client(self, flag):
-        """
-         enable/disable, do not start backups on disabled client
-            Args:
-                 flag   (bool)      --      (True/False) to be set
+    def do_not_start_backups_on_disabled_client(self, flag: bool) -> None:
+        """Enable or disable the option to prevent backups on disabled clients.
 
-            Raises:
-                SDKException:
-                    if input is not a valid type
+        Args:
+            flag: Boolean value indicating whether to prevent backups on disabled clients.
+                - True: Backups will not start on disabled clients.
+                - False: Backups may start on disabled clients.
+
+        Raises:
+            SDKException: If the provided flag is not a boolean value.
+
+        Example:
+            >>> job_mgmt = JobManagement()
+            >>> job_mgmt.do_not_start_backups_on_disabled_client = True  # Prevent backups on disabled clients
+            >>> job_mgmt.do_not_start_backups_on_disabled_client = False # Allow backups on disabled clients
+
+        #ai-gen-doc
         """
         if isinstance(flag, bool):
             settings = {
@@ -1666,84 +2106,85 @@ class JobManagement(object):
         else:
             raise SDKException('Job', '108')
 
-    def get_restart_setting(self, jobtype):
-        """
-        restart settings associated to particular jobtype can be obtained
-            Args:
-                jobtype     (str)       --      settings of the jobtype to get
+    def get_restart_setting(self, jobtype: str) -> Dict[str, Any]:
+        """Retrieve restart settings for a specific job type.
 
-                Available jobtypes:
+        Args:
+            jobtype: The name of the job type for which to obtain restart settings.
+                Available job types include (but are not limited to):
+                    - "Disaster Recovery backup"
+                    - "Auxiliary Copy"
+                    - "Data Aging"
+                    - "Download/Copy Updates"
+                    - "Offline Content Indexing"
+                    - "Information Management"
+                    - "File System and Indexing Based (Data Protection)"
+                    - "File System and Indexing Based (Data Recovery)"
+                    - "Exchange DB (Data Protection)"
+                    - "Exchange DB (Data Recovery)"
+                    - "Informix DB (Data Protection)"
+                    - "Informix DB (Data Recovery)"
+                    - "Lotus Notes DB (Data Protection)"
+                    - "Lotus Notes DB (Data Recovery)"
+                    - "Oracle DB (Data Protection)"
+                    - "Oracle DB (Data Recovery)"
+                    - "SQL DB (Data Protection)"
+                    - "SQL DB (Data Recovery)"
+                    - "MYSQL (Data Protection)"
+                    - "MYSQL (Data Recovery)"
+                    - "Sybase DB (Data Protection)"
+                    - "Sybase DB (Data Recovery)"
+                    - "DB2 (Data Protection)"
+                    - "DB2 (Data Recovery)"
+                    - "CDR (Data Management)"
+                    - "Media Refresh"
+                    - "Documentum (Data Protection)"
+                    - "Documentum (Data Recovery)"
+                    - "SAP for Oracle (Data Protection)"
+                    - "SAP for Oracle (Data Recovery)"
+                    - "PostgreSQL (Data Protection)"
+                    - "PostgreSQL (Data Recovery)"
+                    - "Other (Data Protection)"
+                    - "Other (Data Recovery)"
+                    - "Workflow"
+                    - "DeDup DB Reconstruction"
+                    - "CommCell Migration Export"
+                    - "CommCell Migration Import"
+                    - "Install Software"
+                    - "Uninstall Software"
+                    - "Data Verification"
+                    - "Big Data Apps (Data Protection)"
+                    - "Big Data Apps (Data Recovery)"
+                    - "Cloud Apps (Data Protection)"
+                    - "Cloud Apps (Data Recovery)"
+                    - "Virtual Server (Data Protection)"
+                    - "Virtual Server (Data Recovery)"
+                    - "SAP for Hana (Data Protection)"
+                    - "SAP for Hana (Data Recovery)"
 
-                        "Disaster Recovery backup"
-                        "Auxiliary Copy"
-                        "Data Aging"
-                        "Download/Copy Updates"
-                        "Offline Content Indexing"
-                        "Information Management"
-                        "File System and Indexing Based (Data Protection)"
-                        "File System and Indexing Based (Data Recovery)"
-                        "Exchange DB (Data Protection)"
-                        "Exchange DB (Data Recovery)"
-                        "Informix DB (Data Protection)"
-                        "Informix DB (Data Recovery)"
-                        "Lotus Notes DB (Data Protection)"
-                        "Lotus Notes DB (Data Recovery)"
-                        "Oracle DB (Data Protection)"
-                        "Oracle DB (Data Recovery)"
-                        "SQL DB (Data Protection)"
-                        "SQL DB (Data Recovery)"
-                        "MYSQL (Data Protection)"
-        `               "MYSQL (Data Recovery)"
-                        "Sybase DB (Data Protection)"
-                        "Sybase DB (Data Recovery)"
-                        "DB2 (Data Protection)"
-                        "DB2 (Data Recovery)"
-                        "CDR (Data Management)"
-                        "Media Refresh"
-                        "Documentum (Data Protection)"
-                        "Documentum (Data Recovery)"
-                        "SAP for Oracle (Data Protection)"
-                        "SAP for Oracle (Data Recovery)"
-                        "PostgreSQL (Data Protection)"
-                        "PostgreSQL (Data Recovery)"
-                        "Other (Data Protection)"
-                        "Other (Data Recovery)"
-                        "Workflow"
-                        "DeDup DB Reconstruction"
-                        "CommCell Migration Export"
-                        "CommCell Migration Import"
-                        "Install Software"
-                        "Uninstall Software"
-                        "Data Verification"
-                        "Big Data Apps (Data Protection)"
-                        "Big Data Apps (Data Recovery)"
-                        "Cloud Apps (Data Protection)"
-                        "Cloud Apps (Data Recovery)"
-                        "Virtual Server (Data Protection)"
-                        "Virtual Server (Data Recovery)"
-                        "SAP for Hana (Data Protection)"
-                        "SAP for Hana (Data Recovery)"
+        Returns:
+            Dictionary containing the restart settings for the specified job type, for example:
+                {
+                    "jobTypeName": "File System and Indexing Based (Data Protection)",
+                    "restartable": True,
+                    "maxRestarts": 10,
+                    "restartIntervalInMinutes": 20,
+                    "enableTotalRunningTime": False,
+                    "totalRunningTime": 25200,
+                    "killRunningJobWhenTotalRunningTimeExpires": False,
+                    "preemptable": True,
+                }
 
+        Raises:
+            SDKException: If the input jobtype is not a valid string.
 
+        Example:
+            >>> job_mgr = JobManagement()
+            >>> settings = job_mgr.get_restart_setting("File System and Indexing Based (Data Protection)")
+            >>> print(settings["restartable"])
+            True
 
-            Returns:
-                dict          --        settings of the specific job type as follows
-                                        {
-                                            "jobTypeName": "File System and Indexing Based (Data Protection)",
-                                            "restartable": true,
-                                            "maxRestarts": 10,
-                                            "restartIntervalInMinutes": 20,
-                                            "enableTotalRunningTime": false,
-                                            "totalRunningTime": 25200,
-                                            "killRunningJobWhenTotalRunningTimeExpires": false,
-                                            "preemptable": true,
-
-                                        }
-
-            Raises:
-                SDKException:
-                    if input is not valid type
-
+        #ai-gen-doc
         """
         if isinstance(jobtype, str):
             for job_type in self._restart_settings['jobRestartSettings']['jobTypeRestartSettingList']:
@@ -1753,115 +2194,47 @@ class JobManagement(object):
         else:
             raise SDKException('Job', '108')
 
-    def get_priority_setting(self, jobtype):
-        """
-        priority settings associated to particular jobtype can be obtained
-            Args:
-                jobtype     (str)       --      settings of jobtype to get
+    def get_priority_setting(self, jobtype: str) -> Dict[str, Any]:
+        """Retrieve the priority settings associated with a specific job type or application type.
 
-                Available values:
+        Args:
+            jobtype: The name of the job type or application type for which to obtain priority settings.
+                Available job type names include:
+                    "Information Management", "Auxiliary Copy", "Media Refresh", "Data Verification",
+                    "Persistent Recovery", "Synth Full"
+                Available application type names include:
+                    "Windows File System", "Active Directory", "Exchange Mailbox", "Oracle Database",
+                    "SQL Server", "Linux File System", "SAP HANA", "Cloud Apps", and many others.
 
-                    jobtypename:
-                        "Information Management"
-                        "Auxiliary Copy"
-                        "Media Refresh"
-                        "Data Verification"
-                        "Persistent Recovery"
-                        "Synth Full"
+        Returns:
+            Dictionary containing the priority settings for the specified job type or application type.
+            Example for job type:
+                {
+                    "jobTypeName": "Information Management",
+                    "combinedPriority": 0,
+                    "type_of_operation": 1
+                }
+            Example for application type:
+                {
+                    "appTypeName": "Windows File System",
+                    "combinedPriority": 6,
+                    "type_of_operation": 2
+                }
 
-                    apptypename:
-                        "Windows File System"
-                        "Windows XP 64-bit File System"
-                        "Windows 2003 32-bit File System"
-                        "Windows 2003 64-bit File System"
-                        "Active Directory"
-                        "Windows File Archiver"
-                        "File Share Archiver"
-                        "Image Level"
-                        "Exchange Mailbox (Classic)"
-                        "Exchange Mailbox Archiver"
-                        "Exchange Compliance Archiver"
-                        "Exchange Public Folder"
-                        "Exchange Database"
-                        "SharePoint Database"
-                        "SharePoint Server Database"
-                        "SharePoint Document"
-                        "SharePoint Server"
-                        "Novell Directory Services"
-                        "GroupWise DB"
-                        "NDMP"
-                        "Notes Document"
-                        "Unix Notes Database"
-                        "MAC FileSystem"
-                        "Big Data Apps"
-                        "Solaris File System"
-                        "Solaris 64bit File System"
-                        "FreeBSD"
-                        "HP-UX File System"
-                        "HP-UX 64bit File System"
-                        "AIX File System"
-                        "Unix Tru64 64-bit File System"
-                        "Linux File System"
-                        "Sybase Database"
-                        "Oracle Database"
-                        "Oracle RAC"
-                        "Informix Database"
-                        "DB2"
-                        "DB2 on Unix"
-                        "SAP for Oracle"
-                        "SAP for MAX DB"
-                        "ProxyHost on Unix"
-                        "ProxyHost"
-                        "Image Level On Unix"
-                        "OSSV Plug-in on Windows"
-                        "OSSV Plug-in on Unix"
-                        "Unix File Archiver"
-                        "SQL Server"
-                        "Data Classification"
-                        "OES File System on Linux"
-                        "Centera"
-                        "Exchange PF Archiver"
-                        "Domino Mailbox Archiver"
-                        "MS SharePoint Archiver"
-                        "Content Indexing Agent"
-                        "SRM Agent For Windows File Systems"
-                        "SRM Agent For UNIX File Systems"
-                        "DB2 MultiNode"
-                        "MySQL"
-                        "Virtual Server"
-                        "SharePoint Search Connector"
-                        "Object Link"
-                        "PostgreSQL"
-                        "Sybase IQ"
-                        "External Data Connector"
-                        "Documentum"
-                        "Object Store"
-                        "SAP HANA"
-                        "Cloud Apps"
-                        "Exchange Mailbox"
+        Raises:
+            SDKException: If the input jobtype is not a valid string or does not match any known type.
 
-            Returns:
-                dict        --          settings of a specific jobtype
-                                        ex:
-                                        {
-                                            "jobTypeName": "Information Management",
-                                            "combinedPriority": 0,
-                                            "type_of_operation": 1
-                                        }
+        Example:
+            >>> job_mgr = JobManagement()
+            >>> info_mgmt_settings = job_mgr.get_priority_setting("Information Management")
+            >>> print(info_mgmt_settings)
+            {'jobTypeName': 'Information Management', 'combinedPriority': 0, 'type_of_operation': 1}
 
-                                        or
+            >>> windows_fs_settings = job_mgr.get_priority_setting("Windows File System")
+            >>> print(windows_fs_settings)
+            {'appTypeName': 'Windows File System', 'combinedPriority': 6, 'type_of_operation': 2}
 
-                                        settings of a specific apptype
-                                        ex:
-                                        {
-                                            "appTypeName": "Windows File System",
-                                            "combinedPriority": 6,
-                                            "type_of_operation": 2
-                                        }
-            Raises:
-                SDKException:
-                    if input is not valid type
-
+        #ai-gen-doc
         """
         if isinstance(jobtype, str):
             for job_type in self._priority_settings['jobPrioritySettings']['jobTypePriorityList']:
@@ -1883,27 +2256,30 @@ class JobManagement(object):
         else:
             raise SDKException('Job', '108')
 
-    def get_update_setting(self, jobtype):
-        """
-        update settings associated to particular jobtype can be obtained
-            Args:
-                jobtype     (str)       --      settings of jobtype to get
+    def get_update_setting(self, jobtype: str) -> Dict[str, Any]:
+        """Retrieve update settings associated with a specific job type.
 
-                Available jobtype
+        Args:
+            jobtype: The name of the job type for which to obtain update settings (e.g., "Windows File System").
+                For available job types, refer to the documentation of the `get_priority_setting(jobtype)` method.
 
-                    Check get_priority_setting(self, jobtype) method documentation.
+        Returns:
+            Dictionary containing the update settings for the specified job type, such as:
+                {
+                    "appTypeName": "Windows File System",
+                    "recoveryTimeInMinutes": 20,
+                    "protectionTimeInMinutes": 20
+                }
 
-            Returns:
-                dict        -           settings of a jobtype
-                                        {
-                                            "appTypeName": "Windows File System",
-                                            "recoveryTimeInMinutes": 20,
-                                            "protectionTimeInMinutes": 20
-                                        }
-            Raises:
-                SDKException:
-                    if input is not valid type
+        Raises:
+            SDKException: If the input jobtype is not a valid string.
 
+        Example:
+            >>> job_mgr = JobManagement()
+            >>> settings = job_mgr.get_update_setting("Windows File System")
+            >>> print(settings)
+            {'appTypeName': 'Windows File System', 'recoveryTimeInMinutes': 20, 'protectionTimeInMinutes': 20}
+        #ai-gen-doc
         """
         if isinstance(jobtype, str):
             for job_type in self._update_settings['jobUpdatesSettings']['agentTypeJobUpdateIntervalList']:
@@ -1918,73 +2294,142 @@ class JobManagement(object):
             raise SDKException('Job', '108')
 
     @property
-    def general_settings(self):
-        """
-        gets the general settings.
-             Returns:   (dict)      --  The general settings
+    def general_settings(self) -> Dict[str, Any]:
+        """Get the general settings for job management.
+
+        Returns:
+            Dictionary containing the general settings configuration.
+
+        Example:
+            >>> job_mgmt = JobManagement(...)
+            >>> settings = job_mgmt.general_settings  # Use dot notation for property access
+            >>> print("General settings:", settings)
+            >>> # The returned dictionary contains key-value pairs for job management settings
+
+        #ai-gen-doc
         """
         return self._general_settings
 
     @property
-    def restart_settings(self):
-        """
-        gets the restart settings.
-                Returns:    (dict)    --  The restart settings.
+    def restart_settings(self) -> Dict[str, Any]:
+        """Get the restart settings for the job management.
+
+        Returns:
+            Dictionary containing the restart settings for jobs.
+
+        Example:
+            >>> job_mgmt = JobManagement(...)
+            >>> settings = job_mgmt.restart_settings  # Use dot notation for property access
+            >>> print(f"Restart settings: {settings}")
+            >>> # The returned dictionary contains configuration for job restarts
+
+        #ai-gen-doc
         """
 
         return self._restart_settings
 
     @property
-    def priority_settings(self):
-        """
-        gets the priority settings.
-                Returns:    (dict)    --  The priority settings.
+    def priority_settings(self) -> Dict[str, Any]:
+        """Get the priority settings for job management.
+
+        Returns:
+            Dictionary containing the current priority settings.
+
+        Example:
+            >>> job_mgmt = JobManagement(...)
+            >>> settings = job_mgmt.priority_settings  # Use dot notation for property access
+            >>> print(f"Priority settings: {settings}")
+            >>> # The returned dictionary contains priority configuration details
+
+        #ai-gen-doc
         """
 
         return self._priority_settings
 
     @property
-    def update_settings(self):
-        """
-        gets the update settings.
-                Returns:    (dict)    --  The update settings.
+    def update_settings(self) -> Dict[str, Any]:
+        """Get the update settings for the job management system.
+
+        Returns:
+            Dictionary containing the current update settings.
+
+        Example:
+            >>> job_mgmt = JobManagement()
+            >>> settings = job_mgmt.update_settings  # Use dot notation for property access
+            >>> print(f"Update settings: {settings}")
+            >>> # The returned dictionary contains configuration details for updates
+
+        #ai-gen-doc
         """
 
         return self._update_settings
 
-    def set_job_error_threshold(self, error_threshold_dict):
-        """
+    def set_job_error_threshold(self, error_threshold_dict: Dict[str, Any]) -> None:
+        """Set the error threshold parameters for job management.
 
         Args:
-            error_threshold_dict  (dict)  :   A dictionary of following  key/value pairs can be set.
+            error_threshold_dict: Dictionary containing key/value pairs for error threshold settings.
+                Example keys may include 'max_errors', 'error_percentage', or other job-specific thresholds.
 
-        Returns:
-            None
+        Example:
+            >>> job_mgr = JobManagement()
+            >>> error_thresholds = {
+            ...     'max_errors': 5,
+            ...     'error_percentage': 10
+            ... }
+            >>> job_mgr.set_job_error_threshold(error_thresholds)
+            >>> # The error thresholds for job management are now set
 
+        #ai-gen-doc
         """
         raise NotImplementedError("Yet To Be Implemented")
 
 
 class Job(object):
-    """Class for performing client operations for a specific client."""
+    """
+    Represents a job for performing client operations within a CommCell environment.
 
-    def __init__(self, commcell_object, job_id):
-        """Initialise the Job class instance.
+    This class provides comprehensive management and monitoring capabilities for jobs
+    associated with a specific client. It allows users to access detailed job properties,
+    control job execution (pause, resume, kill, resubmit), retrieve job summaries and details,
+    and interact with job-related logs and events.
 
-            Args:
-                commcell_object     (object)        --  instance of the Commcell class
+    Key Features:
+        - Initialization and validation of job instances
+        - Access to extensive job properties (status, type, timing, client/agent info, etc.)
+        - Job control operations: pause, resume, kill, resubmit
+        - Wait for job status changes and completion with timeout support
+        - Retrieval of job summaries, details, and advanced information
+        - Access to job events, logs, VM lists, and child jobs
+        - Ability to send job logs via email
+        - Refresh and update job information
+        - Task-level details and statistics (objects, files transferred, media size, etc.)
 
-                job_id              (str / int)     --  id of the job
+    This class is intended for use in environments where detailed job management and
+    monitoring are required for client operations, providing a rich interface for
+    interacting with job lifecycle and metadata.
 
-            Returns:
-                object  -   instance of the Job class
+    #ai-gen-doc
+    """
 
-            Raises:
-                SDKException:
-                    if job id is not an integer
+    def __init__(self, commcell_object: 'Commcell', job_id: Union[str, int]) -> None:
+        """Initialize a Job instance for managing backup or restore jobs.
 
-                    if job is not a valid job, i.e., does not exist in the Commcell
+        Args:
+            commcell_object: Instance of the Commcell class representing the Commcell connection.
+            job_id: The job ID as a string or integer.
 
+        Raises:
+            SDKException: If the job ID is not an integer or if the job does not exist in the Commcell.
+
+        Example:
+            >>> from cvpysdk.commcell import Commcell
+            >>> commcell = Commcell(command_center_hostname, username, password)
+            >>> job = Job(commcell, 12345)
+            >>> print(f"Job initialized with ID: {job.job_id}")
+            >>> # The Job object can now be used to query job details and perform job operations
+
+        #ai-gen-doc
         """
         try:
             int(job_id)
@@ -2032,22 +2477,39 @@ class Job(object):
 
         self.refresh()
 
-    def __repr__(self):
-        """String representation of the instance of this class.
+    def __repr__(self) -> str:
+        """Return a string representation of the Job instance.
 
-            Returns:
-                str     -   string for instance of this class
+        This method provides a human-readable description of the Job object, 
+        including its job ID. Useful for debugging and logging purposes.
 
+        Returns:
+            str: String representation of the Job instance.
+
+        Example:
+            >>> job = Job(...)
+            >>> print(repr(job))
+            Job class instance for job id: "12345"
+        #ai-gen-doc
         """
         representation_string = 'Job class instance for job id: "{0}"'
         return representation_string.format(self.job_id)
 
-    def _is_valid_job(self):
-        """Checks if the job submitted with the job id is a valid job or not.
+    def _is_valid_job(self) -> bool:
+        """Check if the job associated with the current job ID is valid.
 
-            Returns:
-                bool    -   boolean that represents whether the job is valid or not
+        This method attempts to retrieve the job summary up to 10 times, handling transient errors
+        specific to job validation. If the job summary is successfully retrieved, the job is considered valid.
 
+        Returns:
+            True if the job is valid, False otherwise.
+
+        Example:
+            >>> job = Job(...)
+            >>> is_valid = job._is_valid_job()
+            >>> print(f"Is job valid? {is_valid}")
+
+        #ai-gen-doc
         """
         for _ in range(10):
             try:
@@ -2062,20 +2524,26 @@ class Job(object):
 
         return False
 
-    def _get_job_summary(self):
-        """Gets the properties of this job.
+    def _get_job_summary(self) -> Dict[str, Any]:
+        """Retrieve the summary properties of this job.
 
-            Returns:
-                dict    -   dict that contains the summary of this job
+        This method attempts to fetch the job summary details from the Commcell server,
+        retrying up to five times to handle transient cases where job records may not be immediately available.
 
-            Raises:
-                SDKException:
-                    if no record found for this job
+        Returns:
+            Dictionary containing the summary information for the job.
 
-                    if response is empty
+        Raises:
+            SDKException: If no record is found for this job, if the response is empty,
+                or if the response indicates a failure.
 
-                    if response is not success
+        Example:
+            >>> job = Job(...)
+            >>> summary = job._get_job_summary()
+            >>> print(f"Job Summary: {summary}")
+            >>> # The returned dictionary contains key details about the job
 
+        #ai-gen-doc
         """
         attempts = 0
         while attempts < 5:  # Retrying to ignore the transient case when no jobs are found
@@ -2104,20 +2572,27 @@ class Job(object):
 
         raise SDKException('Job', '104')
 
-    def _get_job_details(self):
-        """Gets the detailed properties of this job.
+    def _get_job_details(self) -> Dict[str, Any]:
+        """Retrieve the detailed properties of this job.
 
-            Returns:
-                dict    -   dict consisting of the detailed properties of the job
+        This method fetches comprehensive information about the job, including its status,
+        attempts, and any associated error details. It performs multiple retries to handle
+        transient cases where job details may not be immediately available.
 
-            Raises:
-                SDKException:
-                    if failed to get the job details
+        Returns:
+            Dictionary containing the detailed properties of the job.
 
-                    if response is empty
+        Raises:
+            SDKException: If the job details cannot be retrieved, the response is empty,
+                or the response indicates a failure.
 
-                    if response is not success
+        Example:
+            >>> job = Job(...)
+            >>> details = job._get_job_details()
+            >>> print(details)
+            >>> # The returned dictionary contains job properties such as status, attempts, etc.
 
+        #ai-gen-doc
         """
         payload = {
             "jobId": int(self.job_id),
@@ -2157,20 +2632,28 @@ class Job(object):
 
         raise SDKException('Response', '102')
 
-    def _get_job_task_details(self):
-        """Gets the task details of this job.
+    def _get_job_task_details(self) -> Dict[str, Any]:
+        """Retrieve the task details associated with this job.
 
-            Returns:
-                dict    -   dict consisting of the task details of the job
+        This method attempts to fetch the job's task information from the Commcell server,
+        retrying up to five times to handle transient issues. If successful, it returns a
+        dictionary containing the task details. If the request fails, the response is empty,
+        or the response indicates an error, an SDKException is raised.
 
-            Raises:
-                SDKException:
-                    if failed to get the job task details
+        Returns:
+            Dictionary containing the task details for the job.
 
-                    if response is empty
+        Raises:
+            SDKException: If the job task details cannot be retrieved, the response is empty,
+                or the response indicates an error.
 
-                    if response is not success
+        Example:
+            >>> job = Job(...)
+            >>> task_details = job._get_job_task_details()
+            >>> print(f"Task details: {task_details}")
+            >>> # The returned dictionary contains information about the job's associated task
 
+        #ai-gen-doc
         """
         retry_count = 0
 
@@ -2205,10 +2688,21 @@ class Job(object):
 
         raise SDKException('Response', '102')
 
-    def _initialize_job_properties(self):
-        """Initializes the common properties for the job.
-            Adds the client, agent, backupset, subclient name to the job object.
+    def _initialize_job_properties(self) -> None:
+        """Initialize common properties for the job object.
 
+        This method sets up essential job attributes such as client, agent, backupset, 
+        and subclient names, along with job status and start time. It retrieves job 
+        summary and details, and formats the job start time for easy access.
+
+        Example:
+            >>> job = Job(...)
+            >>> job._initialize_job_properties()
+            >>> print(f"Job status: {job._status}")
+            >>> print(f"Job started at: {job._start_time}")
+            >>> # The job object now contains updated summary and details information
+
+        #ai-gen-doc
         """
         self._summary = self._get_job_summary()
         self._details = self._get_job_details()
@@ -2219,18 +2713,22 @@ class Job(object):
             '%Y-%m-%d %H:%M:%S', time.gmtime(self._summary['jobStartTime'])
         )
 
-    def _wait_for_status(self, status, timeout=6):
-        """Waits for 6 minutes or till the job status is changed to given status,
-            whichever is earlier.
+    def _wait_for_status(self, status: str, timeout: int = 6) -> None:
+        """Wait for the job status to change to the specified value or until the timeout is reached.
 
-            Args:
-                status  (str)   --  Job Status
+        This method monitors the job status and waits until it matches the provided status string,
+        or until the specified timeout interval (in minutes) has elapsed, whichever occurs first.
 
-                timeout (int)   --  timeout interval in mins
+        Args:
+            status: The target job status to wait for (case-insensitive).
+            timeout: Maximum time to wait in minutes before giving up. Defaults to 6 minutes.
 
-            Returns:
-                None
+        Example:
+            >>> job = Job(...)
+            >>> job._wait_for_status('Completed', timeout=10)
+            >>> # The method will return when the job status is 'Completed' or after 10 minutes
 
+        #ai-gen-doc
         """
         start_time = time.time()
         current_job_status = self.status
@@ -2242,36 +2740,42 @@ class Job(object):
             time.sleep(3)
             current_job_status = self.status
 
-    def wait_for_completion(self, timeout=30, **kwargs):
-        """Waits till the job is not finished; i.e.; till the value of job.is_finished is not True.
-            Kills the job and exits, if the job has been in Pending / Waiting state for more than
-            the timeout value.
+    def wait_for_completion(self, timeout: int = 30, **kwargs: Any) -> bool:
+        """Wait until the job completes or exceeds the specified timeout.
 
-            In case of job failure job status and failure reason can be obtained
-                using status and delay_reason property
+        This method monitors the job's status and waits until it is finished. If the job remains in 
+        'Pending' or 'Waiting' state for longer than the specified timeout (in minutes), the job is 
+        killed and logs are sent to configured email addresses. Optionally, you can specify 
+        'return_timeout' in kwargs to force the method to return False after a given number of minutes.
 
-            Args:
-                timeout     (int)   --  minutes after which the job should be killed and exited,
-                        if the job has been in Pending / Waiting state
-                    default: 30
+        In case of job failure, you can obtain the job status and failure reason using the 
+        `status` and `delay_reason` properties.
 
-                **kwargs    (str)   --  accepted optional arguments
+        Args:
+            timeout: Number of minutes to wait before killing the job if it remains in 'Pending' or 
+                'Waiting' state. Default is 30.
+            **kwargs: Optional arguments.
+                return_timeout (int): Number of minutes after which the method will return False 
+                    regardless of job status.
 
-                    return_timeout  (int)   -- minutes after which the method will return False.
+        Returns:
+            True if the job finished successfully.
+            False if the job was killed, failed, or timed out.
 
-            Returns:
-                bool    -   boolean specifying whether the job had finished or not
-                    True    -   if the job had finished successfully
+        Example:
+            >>> job = Job(...)
+            >>> success = job.wait_for_completion(timeout=45, return_timeout=60)
+            >>> print(f"Job completed: {success}")
+            >>> # If False, check job.status and job.delay_reason for details
 
-                    False   -   if the job was killed/failed
-
+        #ai-gen-doc
         """
         start_time = actual_start_time = time.time()
         pending_time = 0
         waiting_time = 0
         previous_status = None
         return_timeout = kwargs.get('return_timeout')
-
+        email_ids = self._commcell_object.job_logs_emails
         status_list = ['pending', 'waiting']
 
         while not self.is_finished:
@@ -2303,31 +2807,61 @@ class Job(object):
 
             if pending_time > timeout or waiting_time > timeout:
                 self.kill()
+                if len(email_ids) and not self._is_send_logs_job():
+                    self.send_logs(email_ids=email_ids)
                 break
 
             # set the value of previous status as the value of current status
             previous_status = status
         else:
-            return self._status.lower() not in ["failed", "killed", "failed to start"]
-
+            if self._status.lower() not in ["failed", "killed", "failed to start"]:
+               return True
+            else:
+                if len(email_ids) and not self._is_send_logs_job():
+                    self.send_logs(email_ids=email_ids)
+                return False
         return False
 
+    def _is_send_logs_job(self) -> bool:
+        """Return True if the current job is a Send Log Files job."""
+        job_type = (self.job_type or '').strip().lower()
+        if job_type in ('send log files', 'send logs'):
+            return True
+        op_type = self._summary.get('opType')
+        try:
+            return int(op_type) == 92
+        except (TypeError, ValueError):
+            return False
+
     @property
-    def is_finished(self):
-        """Checks whether the job has finished or not.
+    def is_finished(self) -> bool:
+        """Check whether the job has finished.
 
-            Returns:
-                bool    -   boolean that represents whether the job has finished or not
+        This property evaluates the job's status to determine if it has reached a terminal state,
+        such as completed, killed, committed, or failed.
 
+        Returns:
+            True if the job has finished (completed, killed, committed, or failed), False otherwise.
+
+        Example:
+            >>> job = Job(...)
+            >>> if job.is_finished:
+            ...     print("Job has finished.")
+            ... else:
+            ...     print("Job is still running.")
+
+        #ai-gen-doc
         """
         self._summary = self._get_job_summary()
         self._details = self._get_job_details()
 
         self._status = self._summary['status']
 
-        if self._summary['lastUpdateTime'] != 0:
+        end_time_key = 'lastUpdateTime' if 'lastUpdateTime' in self._summary else 'jobEndTime'
+
+        if self._summary[end_time_key] != 0:
             self._end_time = time.strftime(
-                '%Y-%m-%d %H:%M:%S', time.gmtime(self._summary['lastUpdateTime'])
+                '%Y-%m-%d %H:%M:%S', time.gmtime(self._summary[end_time_key])
             )
 
         return ('completed' in self._status.lower() or
@@ -2336,179 +2870,521 @@ class Job(object):
                 'failed' in self._status.lower())
 
     @property
-    def client_name(self):
-        """Treats the client name as a read-only attribute."""
+    def client_name(self) -> str:
+        """Get the name of the client associated with this job as a read-only property.
+
+        Returns:
+            The client name as a string.
+
+        Example:
+            >>> job = Job(...)
+            >>> client = job.client_name  # Use dot notation for property access
+            >>> print(f"Client name: {client}")
+            >>> # The returned value is the name of the client for this job
+
+        #ai-gen-doc
+        """
         if 'clientName' in self._summary['subclient']:
             return self._summary['subclient']['clientName']
 
     @property
-    def agent_name(self):
-        """Treats the agent name as a read-only attribute."""
+    def agent_name(self) -> Optional[str]:
+        """Get the agent name associated with this job as a read-only property.
+
+        Returns:
+            The agent name as a string if available, otherwise None.
+
+        Example:
+            >>> job = Job(...)
+            >>> agent = job.agent_name  # Use dot notation for property access
+            >>> print(f"Agent name: {agent}")
+            >>> # The agent name is read-only and cannot be modified directly
+
+        #ai-gen-doc
+        """
         if 'appName' in self._summary['subclient']:
             return self._summary['subclient']['appName']
 
     @property
-    def instance_name(self):
-        """Treats the instance name as a read-only attribute."""
+    def instance_name(self) -> str:
+        """Get the instance name associated with this job as a read-only property.
+
+        Returns:
+            The instance name as a string.
+
+        Example:
+            >>> job = Job(...)
+            >>> name = job.instance_name  # Use dot notation for property access
+            >>> print(f"Instance name: {name}")
+
+        #ai-gen-doc
+        """
         if 'instanceName' in self._summary['subclient']:
             return self._summary['subclient']['instanceName']
 
     @property
-    def backupset_name(self):
-        """Treats the backupset name as a read-only attribute."""
+    def backupset_name(self) -> str:
+        """Get the name of the backupset associated with this job as a read-only property.
+
+        Returns:
+            The backupset name as a string.
+
+        Example:
+            >>> job = Job(...)
+            >>> name = job.backupset_name  # Use dot notation for property access
+            >>> print(f"Backupset name: {name}")
+            >>> # The returned string represents the backupset name for this job
+
+        #ai-gen-doc
+        """
         if 'backupsetName' in self._summary['subclient']:
             return self._summary['subclient']['backupsetName']
 
     @property
-    def subclient_name(self):
-        """Treats the subclient name as a read-only attribute."""
+    def subclient_name(self) -> str:
+        """Get the name of the subclient associated with this job as a read-only property.
+
+        Returns:
+            The subclient name as a string.
+
+        Example:
+            >>> job = Job(...)
+            >>> name = job.subclient_name  # Use dot notation for property access
+            >>> print(f"Subclient name: {name}")
+        #ai-gen-doc
+        """
         if 'subclientName' in self._summary['subclient']:
             return self._summary['subclient']['subclientName']
 
     @property
-    def status(self):
-        """Treats the job status as a read-only attribute.
-           http://documentation.commvault.com/commvault/v11/article?p=features/rest_api/operations/get_job.htm
-           please refer status section in above doc link for complete list of status available"""
+    def status(self) -> str:
+        """Get the current status of the job as a read-only property.
+
+        The job status indicates the current state of the job, such as 'Running', 'Completed', 'Failed', etc.
+        For a complete list of possible status values, refer to the official documentation:
+        http://documentation.commvault.com/commvault/v11/article?p=features/rest_api/operations/get_job.htm
+
+        Returns:
+            The status of the job as a string.
+
+        Example:
+            >>> job = Job(...)
+            >>> current_status = job.status  # Use dot notation to access the property
+            >>> print(f"Job status: {current_status}")
+            >>> # Possible status values include 'Running', 'Completed', 'Failed', etc.
+
+        #ai-gen-doc
+        """
         self.is_finished
         return self._status
 
     @property
-    def job_id(self):
-        """Treats the job id as a read-only attribute."""
+    def job_id(self) -> int:
+        """Get the unique identifier for this job as a read-only property.
+
+        Returns:
+            The job ID as an integer.
+
+        Example:
+            >>> job = Job(...)
+            >>> print(f"Job ID: {job.job_id}")  # Access job_id using dot notation
+            >>> # The job_id property provides the unique identifier for the job
+
+        #ai-gen-doc
+        """
         return self._job_id
 
     @property
-    def job_type(self):
-        """Treats the job type as a read-only attribute."""
+    def job_type(self) -> str:
+        """Get the type of the job as a read-only property.
+
+        Returns:
+            The job type as a string (e.g., 'Backup', 'Restore', etc.).
+
+        Example:
+            >>> job = Job(...)
+            >>> print(job.job_type)  # Use dot notation for property access
+            >>> # Output might be: 'Backup'
+        #ai-gen-doc
+        """
         return self._summary['jobType']
 
     @property
-    def backup_level(self):
-        """Treats the backup level as a read-only attribute."""
+    def backup_level(self) -> str:
+        """Get the backup level name for this job as a read-only property.
+
+        Returns:
+            The backup level name as a string (e.g., 'Full', 'Incremental', 'Differential').
+
+        Example:
+            >>> job = Job(...)
+            >>> level = job.backup_level  # Use dot notation for property access
+            >>> print(f"Backup level: {level}")
+            >>> # The returned value indicates the type of backup performed for the job
+
+        #ai-gen-doc
+        """
         if 'backupLevelName' in self._summary:
             return self._summary['backupLevelName']
 
     @property
-    def start_time(self):
-        """Treats the start time as a read-only attribute."""
+    def start_time(self) -> str:
+        """Get the start time of the job as a read-only property.
+
+        Returns:
+            The start time of the job as a string, typically in ISO 8601 format.
+
+        Example:
+            >>> job = Job(...)
+            >>> print(f"Job started at: {job.start_time}")
+            >>> # The start_time property provides the timestamp when the job began
+
+        #ai-gen-doc
+        """
         return self._start_time
     
     @property
-    def start_timestamp(self):
-        """Treats the unix start time as a read-only attribute."""
+    def start_timestamp(self) -> int:
+        """Get the Unix start time of the job as a read-only property.
+
+        Returns:
+            The job's start time as a Unix timestamp (integer).
+
+        Example:
+            >>> job = Job(...)
+            >>> start_time = job.start_timestamp  # Use dot notation for property access
+            >>> print(f"Job started at Unix time: {start_time}")
+        #ai-gen-doc
+        """
         return self._summary['jobStartTime']
 
     @property
-    def end_timestamp(self):
-        """Treats the unix end time as a read-only attribute"""
+    def end_timestamp(self) -> int:
+        """Get the Unix end timestamp of the job as a read-only property.
+
+        Returns:
+            The job's end time as a Unix timestamp (integer).
+
+        Example:
+            >>> job = Job(...)
+            >>> end_time = job.end_timestamp  # Use dot notation for property access
+            >>> print(f"Job ended at Unix time: {end_time}")
+
+        #ai-gen-doc
+        """
         return self._summary['jobEndTime']
 
     @property
-    def end_time(self):
-        """Treats the end time as a read-only attribute."""
+    def end_time(self) -> str:
+        """Get the end time of the job as a read-only property.
+
+        Returns:
+            The end time of the job as a string, typically in a standard datetime format.
+
+        Example:
+            >>> job = Job(...)
+            >>> print(f"Job ended at: {job.end_time}")
+            >>> # The end_time property provides the completion time of the job
+
+        #ai-gen-doc
+        """
         return self._end_time
 
     @property
-    def delay_reason(self):
-        """Treats the job delay reason as a read-only attribute."""
+    def delay_reason(self) -> Optional[str]:
+        """Get the reason for the job delay as a read-only property.
+
+        Returns:
+            The delay reason as a string if available, otherwise None.
+
+        Example:
+            >>> job = Job(...)
+            >>> reason = job.delay_reason  # Use dot notation for property access
+            >>> if reason:
+            >>>     print(f"Job delay reason: {reason}")
+            >>> else:
+            >>>     print("No delay reason found for this job.")
+
+        #ai-gen-doc
+        """
         self.is_finished
         progress_info = self._details['jobDetail']['progressInfo']
         if 'reasonForJobDelay' in progress_info and progress_info['reasonForJobDelay']:
             return progress_info['reasonForJobDelay']
 
     @property
-    def pending_reason(self):
-        """Treats the job pending reason as a read-only attribute."""
+    def pending_reason(self) -> Optional[str]:
+        """Get the pending reason for the job as a read-only property.
+
+        Returns:
+            The pending reason for the job as a string, or None if not available.
+
+        Example:
+            >>> job = Job(...)
+            >>> reason = job.pending_reason  # Use dot notation for property access
+            >>> if reason:
+            >>>     print(f"Job is pending due to: {reason}")
+            >>> else:
+            >>>     print("No pending reason for this job.")
+        #ai-gen-doc
+        """
         self.is_finished
         if 'pendingReason' in self._summary and self._summary['pendingReason']:
             return self._summary['pendingReason']
 
     @property
-    def phase(self):
-        """Treats the job current phase as a read-only attribute."""
+    def phase(self) -> str:
+        """Get the current phase name of the job as a read-only property.
+
+        Returns:
+            The name of the current phase of the job as a string.
+
+        Example:
+            >>> job = Job(...)
+            >>> current_phase = job.phase  # Use dot notation for property access
+            >>> print(f"Job is currently in phase: {current_phase}")
+
+        #ai-gen-doc
+        """
         self.is_finished
         if 'currentPhaseName' in self._summary:
             return self._summary['currentPhaseName']
 
     @property
-    def attempts(self):
-        """Returns job attempts data as read-only attribute"""
+    def attempts(self) -> Dict[str, Any]:
+        """Get the job attempts data as a read-only property.
+
+        Returns:
+            Dictionary containing information about each attempt made for the job.
+            The structure typically includes details such as attempt number, status, and timestamps.
+
+        Example:
+            >>> job = Job(...)
+            >>> attempts_info = job.attempts  # Use dot notation for property access
+            >>> print(f"Job attempts: {attempts_info}")
+            >>> # You can inspect individual attempt details from the returned dictionary
+
+        #ai-gen-doc
+        """
         self.is_finished
         return self._details.get('jobDetail', {}).get('attemptsInfo', {})
 
     @property
-    def summary(self):
-        """Treats the job full summary as a read-only attribute."""
+    def summary(self) -> Dict[str, Any]:
+        """Get the full summary of the job as a read-only property.
+
+        Returns:
+            Dictionary containing detailed information about the job summary.
+
+        Example:
+            >>> job = Job(...)
+            >>> job_summary = job.summary  # Access summary using dot notation
+            >>> print(job_summary)
+            >>> # The summary dictionary includes job status, details, and other metadata
+
+        #ai-gen-doc
+        """
         self.is_finished
         return self._summary
 
     @property
-    def username(self):
-        """Treats the username as a read-only attribute."""
+    def username(self) -> str:
+        """Get the username associated with this job as a read-only property.
+
+        Returns:
+            The username as a string.
+
+        Example:
+            >>> job = Job(...)
+            >>> user = job.username  # Access the username property
+            >>> print(f"Job executed by user: {user}")
+        #ai-gen-doc
+        """
         return self._summary['userName']['userName']
 
     @property
-    def userid(self):
-        """Treats the userid as a read-only attribute."""
+    def userid(self) -> str:
+        """Get the user ID associated with this job as a read-only property.
+
+        Returns:
+            The user ID as a string.
+
+        Example:
+            >>> job = Job(...)
+            >>> user_id = job.userid  # Access the user ID property
+            >>> print(f"Job submitted by user ID: {user_id}")
+        #ai-gen-doc
+        """
         return self._summary['userName']['userId']
 
     @property
-    def details(self):
-        """Treats the job full details as a read-only attribute."""
+    def details(self) -> Dict[str, Any]:
+        """Get the full details of the job as a read-only property.
+
+        Returns:
+            Dictionary containing all available information about the job.
+
+        Example:
+            >>> job = Job(...)
+            >>> job_info = job.details  # Use dot notation for properties
+            >>> print(f"Job details: {job_info}")
+            >>> # Access specific job attributes from the returned dictionary
+
+        #ai-gen-doc
+        """
         self.is_finished
         return self._details
 
     @property
-    def size_of_application(self):
-        """Treats the size of application as a read-only attribute."""
+    def size_of_application(self) -> int:
+        """Get the size of the application associated with this job.
+
+        This property provides the total size of the application processed by the job,
+        typically measured in bytes. It is a read-only attribute and reflects the value
+        stored in the job summary.
+
+        Returns:
+            The size of the application as an integer (in bytes).
+
+        Example:
+            >>> job = Job(...)
+            >>> app_size = job.size_of_application  # Use dot notation for properties
+            >>> print(f"Application size: {app_size} bytes")
+        #ai-gen-doc
+        """
         if 'sizeOfApplication' in self._summary:
             return self._summary['sizeOfApplication']
 
     @property
-    def media_size(self):
-        """
-        Treats the size of media as a read-only attribute
+    def media_size(self) -> int:
+        """Get the size of media or data written for this job.
+
+        This property provides the total size of media on disk associated with the job,
+        as reported in the job summary.
+
         Returns:
-            integer - size of media or data written
+            The size of media on disk in bytes as an integer.
+
+        Example:
+            >>> job = Job(...)
+            >>> size = job.media_size  # Use dot notation for property access
+            >>> print(f"Media size: {size} bytes")
+        #ai-gen-doc
         """
         return self._summary.get('sizeOfMediaOnDisk', 0)
 
     @property
-    def num_of_files_transferred(self):
-        """Treats the number of files transferred as a read-only attribute."""
+    def job_end_time(self) -> int:
+        """Get the end time of the backup job as a read-only property.
+
+        Returns:
+            The job's end time as a Unix timestamp (integer). If the end time is unavailable, returns -1.
+
+        Example:
+            >>> job = Job(...)
+            >>> end_time = job.job_end_time  # Use dot notation for property access
+            >>> print(f"Job ended at Unix timestamp: {end_time}")
+            >>> # You can convert the Unix timestamp to a human-readable format if needed
+
+        #ai-gen-doc
+        """
+        return self._details.get('jobDetail', {}).get('detailInfo',{}).get('endTime',-1)
+
+    @property
+    def num_of_objects(self) -> int:
+        """Get the number of objects backed up by this job as a read-only property.
+
+        Returns:
+            The number of objects backed up in the job as an integer. If the information is unavailable, returns -1.
+
+        Example:
+            >>> job = Job(...)
+            >>> num_objects = job.num_of_objects  # Use dot notation for property access
+            >>> print(f"Number of objects backed up: {num_objects}")
+
+        #ai-gen-doc
+        """
+        return self._details.get('jobDetail', {}).get('detailInfo', {}).get('numOfObjects', -1)
+
+    @property
+    def num_of_files_transferred(self) -> int:
+        """Get the number of files transferred for this job.
+
+        This property provides the count of files that have been successfully transferred 
+        during the execution of the job. It is read-only and automatically updated as the job progresses.
+
+        Returns:
+            The number of files transferred as an integer.
+
+        Example:
+            >>> job = Job(...)
+            >>> files_transferred = job.num_of_files_transferred  # Use dot notation for properties
+            >>> print(f"Files transferred: {files_transferred}")
+
+        #ai-gen-doc
+        """
         self.is_finished
         return self._details['jobDetail']['progressInfo']['numOfFilesTransferred']
 
     @property
-    def state(self):
-        """Treats the job state as a read-only attribute."""
+    def state(self) -> str:
+        """Get the current state of the job as a read-only property.
+
+        Returns:
+            The job state as a string, indicating the current progress or status.
+
+        Example:
+            >>> job = Job(...)
+            >>> current_state = job.state  # Use dot notation for property access
+            >>> print(f"Job state: {current_state}")
+            >>> # Possible states include 'Running', 'Completed', 'Failed', etc.
+
+        #ai-gen-doc
+        """
         self.is_finished
         return self._details['jobDetail']['progressInfo']['state']
 
     @property
-    def task_details(self):
-        """Returns: (dict) A dictionary of job task details"""
+    def task_details(self) -> Dict[str, Any]:
+        """Get the dictionary containing detailed information about the job's tasks.
+
+        Returns:
+            Dictionary with job task details, such as task IDs, status, and related metadata.
+
+        Example:
+            >>> job = Job(...)
+            >>> details = job.task_details  # Use dot notation for property access
+            >>> print(details)
+            >>> # Access specific task information
+            >>> if 'task_id' in details:
+            >>>     print(f"Task ID: {details['task_id']}")
+
+        #ai-gen-doc
+        """
         if not self._task_details:
             self._task_details = self._get_job_task_details()
         return self._task_details
 
-    def pause(self, wait_for_job_to_pause=False, timeout=6):
-        """Suspends the job.
+    def pause(self, wait_for_job_to_pause: bool = False, timeout: int = 6) -> None:
+        """Suspend the current job and optionally wait until it is paused.
 
-            Args:
-                wait_for_job_to_pause   (bool)  --  wait till job status is changed to Suspended
+        This method sends a request to suspend the job. If `wait_for_job_to_pause` is True,
+        it will wait until the job status changes to "SUSPENDED" or until the specified timeout elapses.
 
-                    default: False
+        Args:
+            wait_for_job_to_pause: Whether to wait until the job status is changed to "SUSPENDED".
+                Defaults to False.
+            timeout: Maximum time in seconds to wait for the job to move to the suspended state.
+                Defaults to 6.
 
-                timeout (int)                   --  timeout interval to wait for job to move to suspend state
+        Raises:
+            SDKException: If the job fails to suspend or if the response is not successful.
 
-            Raises:
-                SDKException:
-                    if failed to suspend job
-
-                    if response is not success
-
+        Example:
+            >>> job = Job(...)
+            >>> job.pause(wait_for_job_to_pause=True, timeout=10)
+            >>> print("Job has been suspended.")
+        #ai-gen-doc
         """
         flag, response = self._cvpysdk_object.make_request('POST', self._SUSPEND)
 
@@ -2535,20 +3411,24 @@ class Job(object):
         if wait_for_job_to_pause is True:
             self._wait_for_status("SUSPENDED", timeout=timeout)
 
-    def resume(self, wait_for_job_to_resume=False):
-        """Resumes the job.
+    def resume(self, wait_for_job_to_resume: bool = False) -> None:
+        """Resume the job, optionally waiting until the job status changes to 'Running'.
 
-            Args:
-                wait_for_job_to_resume  (bool)  --  wait till job status is changed to Running
+        Args:
+            wait_for_job_to_resume: If True, the method waits until the job status is updated to 'Running'.
+                Defaults to False.
 
-                    default: False
+        Raises:
+            SDKException: If the job fails to resume or if the response from the server is not successful.
 
-            Raises:
-                SDKException:
-                    if failed to resume job
+        Example:
+            >>> job = Job(...)
+            >>> job.resume()  # Resume the job without waiting for status change
+            >>> 
+            >>> # Resume the job and wait until it is running
+            >>> job.resume(wait_for_job_to_resume=True)
 
-                    if response is not success
-
+        #ai-gen-doc
         """
         flag, response = self._cvpysdk_object.make_request('POST', self._RESUME)
 
@@ -2575,22 +3455,28 @@ class Job(object):
         if wait_for_job_to_resume is True:
             self._wait_for_status("RUNNING")
 
-    def resubmit(self, start_suspended=None):
-        """Resubmits the job
+    def resubmit(self, start_suspended: Optional[bool] = None) -> 'Job':
+        """Resubmit the current job, optionally starting the new job in a suspended state.
 
         Args:
-            start_suspended (bool)  -   whether to start the new job in suspended state or not
-                                        default: None, the new job starts same as this job started
+            start_suspended: Whether to start the resubmitted job in a suspended state.
+                - True: Start the new job suspended.
+                - False: Start the new job active.
+                - None (default): Start the new job in the same state as the original job.
 
         Returns:
-            object  -   Job class object for the given job id
+            Job: A new Job object representing the resubmitted job.
 
         Raises:
-                SDKException:
-                    if job is already running
+            SDKException: If the job is still running or if the resubmission fails.
 
-                    if response is not success
+        Example:
+            >>> job = Job(commcell_object, job_id)
+            >>> new_job = job.resubmit(start_suspended=True)
+            >>> print(f"Resubmitted job ID: {new_job.job_id}")
+            >>> # The returned Job object can be used to monitor or manage the new job
 
+        #ai-gen-doc
         """
         if start_suspended not in [True, False, None]:
             raise SDKException('Job', '108')
@@ -2622,20 +3508,24 @@ class Job(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def kill(self, wait_for_job_to_kill=False):
-        """Kills the job.
+    def kill(self, wait_for_job_to_kill: bool = False) -> None:
+        """Terminate the current job and optionally wait until its status is 'Killed'.
 
-            Args:
-                wait_for_job_to_kill    (bool)  --  wait till job status is changed to Killed
+        Args:
+            wait_for_job_to_kill: If True, waits until the job status changes to 'Killed'.
+                Defaults to False.
 
-                    default: False
+        Raises:
+            SDKException: If the job fails to terminate or the response indicates an error.
 
-            Raises:
-                SDKException:
-                    if failed to kill job
+        Example:
+            >>> job = Job(...)
+            >>> job.kill()  # Terminates the job without waiting for status change
+            >>> 
+            >>> # To wait until the job status is 'Killed'
+            >>> job.kill(wait_for_job_to_kill=True)
 
-                    if response is not success
-
+        #ai-gen-doc
         """
         flag, response = self._cvpysdk_object.make_request('POST', self._KILL)
 
@@ -2662,27 +3552,166 @@ class Job(object):
         if wait_for_job_to_kill is True:
             self._wait_for_status("KILLED")
 
-    def refresh(self):
-        """Refresh the properties of the Job."""
+    def send_logs(self, email_ids: Optional[List[str]] = None) -> bool:
+        """Send the logs of the current job to specified email addresses.
+
+        This method sends the job logs to the provided list of email addresses. If no email addresses are specified,
+        the logs will not be sent to any recipients. The method waits for the log sending task to complete and
+        returns True if successful. If the operation fails, an SDKException is raised.
+
+        Args:
+            email_ids: Optional list of email addresses to which the job logs should be sent. If None, no emails are sent.
+
+        Returns:
+            True if the logs were sent successfully.
+
+        Raises:
+            SDKException: If the log sending operation fails or the response contains an error.
+
+        Example:
+            >>> job = Job(commcell_object, job_id)
+            >>> success = job.send_logs(['admin@example.com', 'support@example.com'])
+            >>> print(f"Logs sent successfully: {success}")
+            >>> # If no email addresses are provided, logs will not be sent to any recipients
+            >>> job.send_logs()
+        #ai-gen-doc
+        """
+        if email_ids is None:
+            email_ids = []
+        details = self._get_job_details()
+        failure_reason = details.get('jobDetail', {}).get('clientStatusInfo', {}).get('vmStatus', [{}])[0].get(
+            'FailureReason', '')
+        request_json = {
+            "taskInfo": {
+                "task": {
+                    "taskType": 1,
+                    "initiatedFrom": 1,
+                    "policyType": 0,
+                    "taskFlags": {
+                        "disabled": False
+                    }
+                },
+                "subTasks": [
+                    {
+                        "subTask": {
+                            "subTaskType": 1,
+                            "operationType": 5010
+                        },
+                        "options": {
+                            "adminOpts": {
+                                "sendLogFilesOption": {
+                                    "actionLogsEndJobId": 0,
+                                    "emailSelected": True,
+                                    "jobid": int(self._job_id),
+                                    "tsDatabase": False,
+                                    "galaxyLogs": True,
+                                    "getLatestUpdates": False,
+                                    "actionLogsStartJobId": 0,
+                                    "computersSelected": False,
+                                    "csDatabase": False,
+                                    "otherDatabases": False,
+                                    "crashDump": False,
+                                    "isNetworkPath": False,
+                                    "saveToFolderSelected": False,
+                                    "notifyMe": True,
+                                    "includeJobResults": False,
+                                    "doNotIncludeLogs": True,
+                                    "machineInformation": False,
+                                    "scrubLogFiles": False,
+                                    "emailSubject": f"{self._commcell_object.commserv_name} : Logs for Job ID # {self._job_id} [Error]: {failure_reason}",
+                                    "osLogs": False,
+                                    "allUsersProfile": False,
+                                    "splitFileSizeMB": 512,
+                                    "actionLogs": False,
+                                    "includeIndex": False,
+                                    "databaseLogs": True,
+                                    "includeDCDB": False,
+                                    "collectHyperScale": False,
+                                    "logFragments": False,
+                                    "uploadLogsSelected": True,
+                                    "useDefaultUploadOption": True,
+                                    "enableChunking": True,
+                                    "collectRFC": False,
+                                    "collectUserAppLogs": False,
+                                    "impersonateUser": {
+                                        "useImpersonation": False
+                                    },
+                                    "clients": [
+                                        {
+                                            "clientId": 0,
+                                            "clientName": None
+                                        }
+                                    ],
+                                    "recipientTo": {
+                                        "emailids": email_ids,
+                                        "users": [],
+                                        "userGroups": []
+                                    },
+                                    "sendLogsOnJobCompletion": False,
+                                    "emailDescription": f"<h4>Error summary</h4> {failure_reason}"
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['CREATE_TASK'], request_json
+        )
+        if flag:
+            if response.json():
+                if 'errorCode' in response.json() and response.json()['errorCode'] != 0:
+                    error_message = response.json().get('errorMessage', 'nil')
+                    raise SDKException(
+                        'Job', '102', 'Sending logs failed\nError: "{0}"'.format(error_message)
+                    )
+                else:
+                    send_logs_job = Job(self._commcell_object, response.json()['jobIds'][0])
+                    try:
+                        send_logs_job.wait_for_completion()
+                    except Exception as exp:
+                        pass
+                return True
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', response.text)
+
+    def refresh(self) -> None:
+        """Reload the properties of the Job instance to reflect the latest state.
+
+        This method updates the job's internal properties, ensuring that any changes 
+        in the job's status or attributes are reflected in the object.
+
+        Example:
+            >>> job = Job(...)
+            >>> job.refresh()  # Refresh job properties to get the latest status
+            >>> print(f"Job finished: {job.is_finished}")
+        #ai-gen-doc
+        """
         self._initialize_job_properties()
         self.is_finished
 
-    def advanced_job_details(self, info_type):
-        """Returns advanced properties for the job
+    def advanced_job_details(self, info_type: 'AdvancedJobDetailType') -> Dict[str, Any]:
+        """Retrieve advanced properties for the job based on the specified detail type.
 
-            Args:
-                infoType    (object)  --  job detail type to be passed from AdvancedJobDetailType
-                enum from the constants
+        Args:
+            info_type: An instance of AdvancedJobDetailType enum specifying the type of job details to retrieve.
 
-            Returns:
-                dict -  dictionary with advanced details of the job info type given
+        Returns:
+            Dictionary containing advanced details for the specified job info type.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException: If the response is empty or unsuccessful.
 
-                    if response is not success
+        Example:
+            >>> # Assuming job is an instance of Job and AdvancedJobDetailType is imported
+            >>> details = job.advanced_job_details(AdvancedJobDetailType.SUMMARY)
+            >>> print(details)
+            >>> # The returned dictionary contains advanced job details for the requested type
 
+        #ai-gen-doc
         """
         if not isinstance(info_type, AdvancedJobDetailType):
             raise SDKException('Response', '107')
@@ -2704,54 +3733,23 @@ class Job(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def get_events(self):
-        """ gets the commserv events associated with this job
+    def get_events(self) -> List[Dict[str, Any]]:
+        """Retrieve the CommServe events associated with this job.
 
-            Args:
+        Returns:
+            List of dictionaries, each representing a job event with details such as severity, event code, job ID, subsystem, description, and client entity information.
 
-                None
+        Example:
+            >>> job = Job(...)
+            >>> events = job.get_events()
+            >>> print(f"Total events: {len(events)}")
+            >>> if events:
+            >>>     first_event = events[0]
+            >>>     print(f"First event description: {first_event['description']}")
+            >>>     print(f"Event severity: {first_event['severity']}")
+            >>>     print(f"Client name: {first_event['clientEntity']['clientName']}")
 
-            Returns:
-
-                list - list of job events
-
-                    Example : [
-                        {
-                            "severity": 3,
-                            "eventCode": "318769020",
-                            "jobId": 4547,
-                            "acknowledge": 0,
-                            "eventCodeString": "19:1916",
-                            "subsystem": "JobManager",
-                            "description": "Data Analytics operation has completed with one or more errors.",
-                            "id": 25245,
-                            "timeSource": 1600919001,
-                            "type": 0,
-                            "clientEntity": {
-                                "clientId": 2,
-                                "clientName": "xyz",
-                                "displayName": "xyz"
-                            }
-                        },
-                        {
-                            "severity": 6,
-                            "eventCode": "318767961",
-                            "jobId": 4547,
-                            "acknowledge": 0,
-                            "eventCodeString": "19:857",
-                            "subsystem": "clBackup",
-                            "description": "Failed to send some items to Index Engine",
-                            "id": 25244,
-                            "timeSource": 1600918999,
-                            "type": 0,
-                            "clientEntity": {
-                                "clientId": 33,
-                                "clientName": "xyz",
-                                "displayName": "xyz"
-                            }
-                        }
-                    ]
-
+        #ai-gen-doc
         """
         flag, response = self._cvpysdk_object.make_request('GET', self._JOB_EVENTS)
         if flag:
@@ -2760,54 +3758,76 @@ class Job(object):
             raise SDKException('Job', '104')
         raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def get_vm_list(self):
-        """
-        Gets the list of all VMs associated to the job
-        Returns: list of VM dictionaries
-            VM: {
-               "Size":0,
-               "AverageThroughput":0,
-               "UsedSpace":0,
-               "ArchivedByCurrentJob":false,
-               "jobID":0,
-               "CBTStatus":"",
-               "BackupType":0,
-               "totalFiles":0,
-               "Status":2,
-               "CurrentThroughput":0,
-               "Agent":"proxy",
-               "lastSyncedBkpJob":0,
-               "GUID":"live sync pair guid",
-               "HardwareVersion":"vm h/w",
-               "restoredSize":1361912,
-               "FailureReason":"",
-               "BackupStartTime":0,
-               "TransportMode":"nbd",
-               "projectId":"",
-               "syncStatus":3,
-               "PoweredOffSince":0,
-               "OperatingSystem":"Microsoft Windows Server 2012 (64-bit)",
-               "backupLevel":0,
-               "destinationVMName":"drvm1",
-               "successfulCIedFiles":0,
-               "GuestSize":0,
-               "failedCIedFiles":0,
-               "vmName":"vm1",
-               "ToolsVersion":"Not running",
-               "clientId":3280,
-               "Host":"1.1.1.1",
-               "StubStatus":0,
-               "BackupEndTime":0,
-               "PoweredOffByCurrentJob":false
-            }
+    def get_vm_list(self) -> List[Dict[str, Any]]:
+        """Retrieve the list of all virtual machines (VMs) associated with this job.
+
+        Returns:
+            List of dictionaries, each containing details about a VM associated with the job.
+            Example VM dictionary fields include:
+                - Size: int
+                - AverageThroughput: int
+                - UsedSpace: int
+                - ArchivedByCurrentJob: bool
+                - jobID: int
+                - CBTStatus: str
+                - BackupType: int
+                - totalFiles: int
+                - Status: int
+                - CurrentThroughput: int
+                - Agent: str
+                - lastSyncedBkpJob: int
+                - GUID: str
+                - HardwareVersion: str
+                - restoredSize: int
+                - FailureReason: str
+                - BackupStartTime: int
+                - TransportMode: str
+                - projectId: str
+                - syncStatus: int
+                - PoweredOffSince: int
+                - OperatingSystem: str
+                - backupLevel: int
+                - destinationVMName: str
+                - successfulCIedFiles: int
+                - GuestSize: int
+                - failedCIedFiles: int
+                - vmName: str
+                - ToolsVersion: str
+                - clientId: int
+                - Host: str
+                - StubStatus: int
+                - BackupEndTime: int
+                - PoweredOffByCurrentJob: bool
+
+        Example:
+            >>> job = Job(...)
+            >>> vm_list = job.get_vm_list()
+            >>> print(f"Total VMs in job: {len(vm_list)}")
+            >>> if vm_list:
+            >>>     first_vm = vm_list[0]
+            >>>     print(f"First VM name: {first_vm.get('vmName')}")
+        #ai-gen-doc
         """
         return self.details.get('jobDetail', {}).get('clientStatusInfo', {}).get('vmStatus', [])
 
-    def get_child_jobs(self):
-        """ Get the child jobs details for the current job
-        Returns:
-                _jobs_list          (list):     List of child jobs
+    def get_child_jobs(self) -> Optional[List[Dict[str, Any]]]:
+        """Retrieve the child job details for the current job.
 
+        Returns:
+            Optional[List[Dict[str, Any]]]: A list of dictionaries containing child job details if available,
+            otherwise None.
+
+        Example:
+            >>> job = Job(...)
+            >>> child_jobs = job.get_child_jobs()
+            >>> if child_jobs:
+            >>>     print(f"Found {len(child_jobs)} child jobs")
+            >>>     for child in child_jobs:
+            >>>         print(child)
+            >>> else:
+            >>>     print("No child jobs found for this job.")
+
+        #ai-gen-doc
         """
         _jobs_list = []
         if self.details.get('jobDetail', {}).get('clientStatusInfo', {}).get('vmStatus'):
@@ -2817,11 +3837,69 @@ class Job(object):
         else:
             return None
 
+    def get_logs(self) -> List[str]:
+        """Retrieve the logs associated with the current job ID.
+
+        Returns:
+            List of log entries as strings, where each entry represents a line from the job logs.
+
+        Raises:
+            SDKException: If the logs cannot be retrieved or the response is invalid.
+
+        Example:
+            >>> job = Job(...)
+            >>> logs = job.get_logs()
+            >>> for line in logs:
+            ...     print(line)
+            >>> # Each line corresponds to a log entry for the job
+
+        #ai-gen-doc
+        """
+        service = self._services['GET_LOGS'] % (self.job_id)
+        flag, response = self._cvpysdk_object.make_request(method='GET', url=service)
+
+        if flag:
+            if response.text:
+                return response.text.split('\n')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '102')
+
 
 class _ErrorRule:
-    """Class for enabling, disabling, adding, getting and deleting error rules."""
+    """
+    Manages error rules for application groups within a Commcell environment.
 
-    def __init__(self, commcell):
+    This class provides functionality to add, enable, disable, retrieve, and delete error rules
+    associated with specific application groups. It interacts with the underlying Commcell system
+    to modify job statuses based on error conditions and supports XML-based rule definitions.
+
+    Key Features:
+        - Initialization with a Commcell instance
+        - Add new error rules using structured arguments
+        - Enable or disable error rules for specified application groups
+        - Retrieve current error rules for an application group
+        - Delete error rules as needed
+        - Internal support for XML generation and job status modification
+
+    #ai-gen-doc
+    """
+
+    def __init__(self, commcell: 'Commcell') -> None:
+        """Initialize an _ErrorRule instance for managing job error decision rules.
+
+        Args:
+            commcell: Instance of the Commcell class representing the Commcell connection.
+
+        Example:
+            >>> from cvpysdk.commcell import Commcell
+            >>> commcell = Commcell(command_center_hostname, username, password)
+            >>> error_rule = _ErrorRule(commcell)
+            >>> # The error_rule object can now be used to manage job error rules
+
+        #ai-gen-doc
+        """
         self.commcell = commcell
         self.rule_dict = {}
         self.xml_body = """
@@ -2843,20 +3921,40 @@ class _ErrorRule:
         </ruleList>
         """
 
-    def _get_xml_for_rule(self, rule_dict):
-        """
-        Returns the XML for a given rule's dictionary of key value pairs. The XML output is used internally when
-        when adding new or updating existing rules.
+    def _get_xml_for_rule(self, rule_dict: Dict[str, Any]) -> str:
+        """Generate the XML string for a rule based on its key-value dictionary.
+
+        This method formats the rule information into an XML string, which is used internally
+        when adding new rules or updating existing ones.
 
         Args:
-            rule_dict   (dict)  -   Dictionary of a rule's key value pairs.
+            rule_dict: Dictionary containing the rule's key-value pairs. Expected keys include:
+                - 'pattern': The error pattern to match.
+                - 'all_error_codes': Indicates if all error codes are included.
+                - 'from_error_code': Starting error code for the rule.
+                - 'to_error_code': Ending error code for the rule.
+                - 'job_decision': Decision to be taken for the job.
+                - 'is_enabled': Whether the rule is enabled.
+                - 'skip_reporting_error': Whether to skip reporting the error.
 
         Returns:
-            str -   The XML output formatted as a string.
+            The XML output formatted as a string.
 
-        Raises:
-            None
+        Example:
+            >>> rule_dict = {
+            ...     'pattern': 'ERROR_*',
+            ...     'all_error_codes': True,
+            ...     'from_error_code': 100,
+            ...     'to_error_code': 200,
+            ...     'job_decision': 'Fail',
+            ...     'is_enabled': True,
+            ...     'skip_reporting_error': False
+            ... }
+            >>> xml_str = error_rule._get_xml_for_rule(rule_dict)
+            >>> print(xml_str)
+            # The output will be an XML string representing the rule
 
+        #ai-gen-doc
         """
 
         return self.error_rule_str.format(
@@ -2868,53 +3966,51 @@ class _ErrorRule:
             is_enabled=rule_dict['is_enabled'],
             skip_reporting_error=rule_dict['skip_reporting_error'])
 
-    def add_error_rule(self, rules_arg):
-        """
-        Add new error rules as well as update existing rules, each rule is identified by its rule name denoted by key
-        rule_name.
+    def add_error_rule(self, rules_arg: Dict[Any, Dict[str, Dict[str, Any]]]) -> None:
+        """Add new error rules or update existing ones for specified application groups.
 
-            Args:
-                rules_arg   (dict)  --  A dictionary whose key is the application group name and value is a rules list.
+        This method allows you to add new error rules or update existing rules for each application group.
+        Each rule is identified by its rule name and must include specific key-value pairs describing the rule's behavior.
 
-                    Supported value(s) for key is all constants under ApplicationGroup(Enum)
+        Args:
+            rules_arg: A dictionary where each key is an application group (typically an ApplicationGroup enum constant),
+                and the value is another dictionary mapping rule names to rule definitions.
+                Each rule definition is itself a dictionary containing the following keys:
+                    - appGroupName (Any): The application group name (usually an ApplicationGroup enum constant).
+                    - pattern (str): File pattern for the error rule.
+                    - all_error_codes (bool): Whether all error codes should be enabled.
+                    - from_error_code (int): Lower bound of the error code range (non-negative integer).
+                    - to_error_code (int): Upper bound of the error code range (non-negative integer, greater than from_error_code).
+                    - job_decision (int): Decision code for the job (typically 0, 1, or 2).
+                    - is_enabled (bool): Whether the rule is enabled.
+                    - skip_reporting_error (bool): Whether error codes should be skipped from reporting.
 
-                    The value for above key is a list
-                    where each item of the list is a dictionary of the following key value pairs.
+        Raises:
+            Exception: If invalid key/value pairs are provided in the rule definitions.
 
-                        is_enabled              (str)   --  Specifies whether the rule should be enabled or not.
+        Example:
+            >>> rules = {
+            ...     WINDOWS: {
+            ...         'rule_1': {
+            ...             'appGroupName': WINDOWS,
+            ...             'pattern': "*",
+            ...             'all_error_codes': False,
+            ...             'from_error_code': 1,
+            ...             'to_error_code': 2,
+            ...             'job_decision': 0,
+            ...             'is_enabled': True,
+            ...             'skip_reporting_error': False
+            ...         },
+            ...         'rule_2': {
+            ...             # Additional rule definition
+            ...         }
+            ...     }
+            ... }
+            >>> error_rule_mgr = _ErrorRule(...)
+            >>> error_rule_mgr.add_error_rule(rules)
+            >>> # This will add or update the specified error rules for the WINDOWS application group.
 
-                        pattern                 (str)   --  Specifies the file pattern for the error rule.
-
-                        all_error_codes         (bool)  --  Specifies whether all error codes should be enabled.
-
-                        from_error_code         (int)   --  Error code range's lower value.
-                        Valid values are all non negative integers.
-
-                        to_error_code           (int)   --  Error code range's upper value.
-                        Valid values are all non negative integers higher larger the from_ec value.
-
-                        skip_reporting_error    (bool)  --  Specifies if error codes need to be skipped from being reported.
-
-                    Example:
-                            {
-                             WINDOWS : { 'rule_1': { 'appGroupName': WINDOWS,
-                                                     'pattern': "*",
-                                                     'all_error_codes': False,
-                                                     'from_error_code': 1,
-                                                     'to_error_code': 2,
-                                                     'job_decision': 0,
-                                                     'is_enabled': True,
-                                                     'skip_reporting_error': False
-                                                   },
-                                         'rule_2' : { ......}
-                                       }
-                            }
-
-            Returns:
-                None
-
-            Raises:
-                Exception in case of invalid key/value pair(s).
+        #ai-gen-doc
         """
 
         final_str = ""
@@ -2987,47 +4083,57 @@ class _ErrorRule:
         xml_body = ''.join(i.lstrip().rstrip() for i in xml_body.split("\n"))
         self.commcell.qoperation_execute(xml_body)
 
-    def enable(self, app_group):
-        """Enables the job error control rules for the specified Application Group Type.
-            Args:
-                app_group   (str)   --  The iDA for which the enable flag needs to be set.
-                Currently supported values are APPGRP_WindowsFileSystemIDA.
+    def enable(self, app_group: str) -> None:
+        """Enable job error control rules for the specified Application Group Type.
 
-            Returns:
-                None
+        This method sets the enable flag for job error control rules associated with the given application group.
 
-            Raises:
-                None
+        Args:
+            app_group: The application group identifier (iDA) for which the enable flag should be set.
+                Example supported value: "APPGRP_WindowsFileSystemIDA".
 
+        Example:
+            >>> error_rule = _ErrorRule()
+            >>> error_rule.enable("APPGRP_WindowsFileSystemIDA")
+            >>> print("Error control rules enabled for Windows File System iDA")
+
+        #ai-gen-doc
         """
         return self._modify_job_status_on_errors(app_group, enable_flag=True)
 
-    def disable(self, app_group):
-        """Disables the job error control rules for the specified Application Group Type.
-            Args:
-                app_group   (str)   --  The iDA for which the enable flag needs to be set.
-                Currently supported values are APPGRP_WindowsFileSystemIDA.
+    def disable(self, app_group: str) -> None:
+        """Disable job error control rules for the specified Application Group Type.
 
-            Returns:
-                None
+        Args:
+            app_group: The iDA (Intelligent Data Agent) name for which the error control rules should be disabled.
+                Supported values include "APPGRP_WindowsFileSystemIDA".
 
-            Raises:
-                None
+        Example:
+            >>> error_rule = _ErrorRule()
+            >>> error_rule.disable("APPGRP_WindowsFileSystemIDA")
+            >>> print("Error control rules disabled for Windows File System iDA")
+
+        #ai-gen-doc
         """
         return self._modify_job_status_on_errors(app_group, enable_flag=False)
 
-    def _modify_job_status_on_errors(self, app_group, enable_flag):
-        """To enable or disable job status on errors.
-            Args:
-                app_group   (str)   --  The iDA for which the enable flag needs to be set.
-                Currently supported values are APPGRP_WindowsFileSystemIDA.
+    def _modify_job_status_on_errors(self, app_group: str, enable_flag: bool):
+        """Enable or disable job status updates based on error rules for a specific iDA.
 
-                enable_flag (bool)  --  Enables and disables job status on errors.
-            Returns:
-                None
+        This method updates the job status behavior for the specified application group (iDA)
+        by enabling or disabling job status on errors according to the current error rules.
 
-            Raises:
-                None
+        Args:
+            app_group: The iDA (application group) for which the enable flag should be set.
+                Example value: "APPGRP_WindowsFileSystemIDA".
+            enable_flag: If True, enables job status updates on errors; if False, disables them.
+
+        Example:
+            >>> error_rule = _ErrorRule(commcell)
+            >>> error_rule._modify_job_status_on_errors("APPGRP_WindowsFileSystemIDA", True)
+            >>> # Job status on errors is now enabled for Windows File System iDA
+
+        #ai-gen-doc
         """
 
         # FETCHING ALL EXISTING RULES
@@ -3053,20 +4159,25 @@ class _ErrorRule:
         xml_body = ''.join(i.lstrip().rstrip() for i in xml_body.split("\n"))
         return self.commcell.qoperation_execute(xml_body)
 
-    def _get_error_rules(self, app_group):
-        """
-        Returns the error rules set on the CS in the form of a dictionary.
+    def _get_error_rules(self, app_group: str) -> List[Dict[str, Any]]:
+        """Retrieve error rules configured on the CommServe for a specific application group.
 
         Args:
-            app_group   (str)   --  The iDA for which the enable flag needs to be set.
-                Currently supported values are APPGRP_WindowsFileSystemIDA.
+            app_group: The application group (iDA) name for which error rules are to be fetched.
+                Example: "APPGRP_WindowsFileSystemIDA"
 
         Returns:
-            list    -   A list of error rules. Each rule will be a dictionary of key value pairs for pattern,
-            error code from value, error code to value etc.
+            A list of error rule dictionaries. Each dictionary contains key-value pairs such as pattern,
+            error code range, and other rule attributes.
 
-        Raises:
-            None
+        Example:
+            >>> error_rule_obj = _ErrorRule()
+            >>> rules = error_rule_obj._get_error_rules("APPGRP_WindowsFileSystemIDA")
+            >>> for rule in rules:
+            ...     print(rule)
+            >>> # Each rule is a dictionary with error pattern and code details
+
+        #ai-gen-doc
         """
 
         rule_list = []

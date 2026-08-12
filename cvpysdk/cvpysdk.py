@@ -83,29 +83,38 @@ class CVPySDK(object):
         Also contains common method for running all HTTP requests.
     """
 
-    def __init__(self, commcell_object, certificate_path=None, verify_ssl=True):
+    def __init__(self, commcell_object, certificate_path=None, verify_ssl=True, trace_parent=None):
         """Initialize the CVPySDK object for running various operations.
 
             Args:
                 commcell_object     (object)    --  instance of the Commcell class
 
 
-                certificate_path     (str)   --  path of the CA_BUNDLE or directory with
+                certificate_path    (str)       --  path of the CA_BUNDLE or directory with
                 certificates of trusted CAs (including trusted self-signed certificates)
 
                     default: None
 
-                verify_ssl           (str)   --  verify ssl while making requests
+                verify_ssl          (str)       --  verify ssl while making requests
                     default: True
 
-            Returns:
-                object  -   instance of the CVPySDK class
+                trace_parent        (str)       --  W3C Trace Context header string in the format:
+                    '00-<trace-id>-<span-id>-<trace-flags>'.
+                    - trace-id: 32-character lowercase hex identifier for the trace.
+                    - span-id: 16-character lowercase hex identifier for the span.
+                    - trace-flags: 2-character hex flags (e.g., '01' for sampled).
+                    Used to propagate distributed tracing context across services.
+                    default: None
 
-        """
+        Returns:
+            object  -   instance of the CVPySDK class
+
+    """
         self._commcell_object = commcell_object
         self._certificate_path = certificate_path
         self._verify_ssl = verify_ssl
         self._response_headers = {}
+        self.trace_parent = trace_parent
 
         if not self._verify_ssl:
             urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -130,7 +139,8 @@ class CVPySDK(object):
             response = self._request(
                 method='GET',
                 url=self._commcell_object._web_service,
-                timeout=10
+                timeout=10,
+                headers=self._commcell_object._headers
             )
 
             # Valid service if the status code is 200 and response is True
@@ -177,7 +187,7 @@ class CVPySDK(object):
                     "username": self._commcell_object._user,
                     "password": self._commcell_object._password,
                     "deviceId": self._commcell_object.device_id,
-                    "clientType": 30,
+                    "clientType": 30
                 }
 
             flag, response = self.make_request(
@@ -236,8 +246,11 @@ class CVPySDK(object):
 
         """
         try:
-            if self._commcell_object._is_saml_login and not self._commcell_object.is_service_commcell:
-                raise SDKException('CVPySDK', '106')
+            if self._commcell_object._is_saml_login:
+                if not self._commcell_object.master_commcell:
+                    raise SDKException('CVPySDK', '106')
+                else:
+                    return self._commcell_object.master_commcell.get_saml_token()
 
             token_renew_request = {
                 "sessionId": self._commcell_object._headers['Authtoken'],
@@ -254,13 +267,13 @@ class CVPySDK(object):
                         return response.json()['token']
                     else:
                         error_message = response.json()['error']['errLogMessage']
-                        err_msg = 'Error: "{0}"'.format(error_message)
+                        err_msg = f'Error: "{error_message}"'
                         raise SDKException('CVPySDK', '101', err_msg)
                 else:
                     raise SDKException('Response', '102')
             else:
                 response_string = self._commcell_object._update_response_(response.text)
-                raise SDKException('Response', '101', response_string)
+                raise SDKException('CVPySDK', '108', response_string)
         except requests.exceptions.ConnectionError as con_err:
             raise con_err
 
@@ -428,6 +441,9 @@ class CVPySDK(object):
             if headers is None:
                 headers = self._commcell_object._headers.copy()
 
+            if self.trace_parent:
+                headers['traceParent'] = self.trace_parent
+
             if method == 'POST':
                 if isinstance(payload, (dict, list)):
                     if files is not None:
@@ -485,7 +501,8 @@ class CVPySDK(object):
                     # Raise max attempts exception, if attempts exceeds 3
                     raise SDKException('CVPySDK', '103')
 
-            if (response.status_code == httplib.OK or response.status_code == httplib.CREATED) and response.ok:
+            if (response.status_code == httplib.OK or response.status_code == httplib.CREATED or
+                response.status_code == httplib.ACCEPTED) and response.ok:
                 return (True, response)
             else:
                 return (False, response)

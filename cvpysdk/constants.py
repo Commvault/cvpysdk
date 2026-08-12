@@ -508,6 +508,14 @@ ENTITY_TYPE_MAP = {
     52: "o365 sharepoint sites app",
 }
 
+class UserRole(Enum):
+    MSP_ADMIN = 0
+    TENANT_ADMIN = 1
+    TENANT_USER = 2
+    MSP_USER = 3
+    RESTRICTED_USER = 4
+    NIL = 5
+
 
 class HypervisorType(Enum):
     """Class to maintain all the hypervisor related constants."""
@@ -529,6 +537,8 @@ class HypervisorType(Enum):
     ORACLE_CLOUD_INFRASTRUCTURE = "Oracle Cloud Infrastructure"
     OPENSHIFT = "Red Hat OpenShift"
     PROXMOX = "Proxmox ve"
+    NUTANIX_PRISM_CENTRAL = "nutanix prism central"
+    MORPHEUS = "HPE Morpheus VM Essentials"
 
 
 class AppIDAType(Enum):
@@ -680,24 +690,92 @@ class StoragePoolConstants:
 
     AIR_GAP_PROTECT_STORAGE_TYPES = {
         "MICROSOFT AZURE STORAGE": {
-            "HOT": {
+            "FREQUENT ACCESS (MULTI REGION)": {
                 "vendorId": 3,
                 "displayVendorId": 401,
+                "licenseType": 100042,
             },
-
-            "COOL": {
+            "INFREQUENT ACCESS": {
                 "vendorId": 3,
                 "displayVendorId": 402,
+                "licenseType": 100041,
             },
+            "ARCHIVE": {
+                "vendorId": 3,
+                "displayVendorId": 414,
+                "licenseType": 100088,
+            },
+            "FREQUENT ACCESS": {
+                "vendorId": 3,
+                "displayVendorId": 415,
+                "licenseType": 100081,
+            }
         },
-
         "ORACLE CLOUD INFRASTRUCTURE OBJECT STORAGE": {
+            "FREQUENT ACCESS": {
+                "vendorId": 26,
+                "displayVendorId": 403,
+                "licenseType": 100064,
+            },
             "INFREQUENT ACCESS": {
                 "vendorId": 26,
                 "displayVendorId": 404,
+                "licenseType": 100050,
+            },
+            "ARCHIVE": {
+                "vendorId": 26,
+                "displayVendorId": 444,
+                "licenseType": 100100,
+            }
+        },
+        "GOOGLE CLOUD STORAGE": {
+            "FREQUENT ACCESS": {
+                "vendorId": 19,
+                "displayVendorId": 482,
+                "licenseType": 100062,
+            },
+            "INFREQUENT ACCESS": {
+                "vendorId": 19,
+                "displayVendorId": 483,
+                "licenseType": 100063,
+            },
+            "ARCHIVE": {
+                "vendorId": 19,
+                "displayVendorId": 484,
+                "licenseType": 100102,
+            }
+        },
+        "AMAZON S3": {
+            "FREQUENT ACCESS": {
+                "vendorId": 2,
+                "displayVendorId": 451,
+                "licenseType": 100043,
+            },
+            "INFREQUENT ACCESS": {
+                "vendorId": 2,
+                "displayVendorId": 452,
+                "licenseType": 100048,
+            },
+            "ARCHIVE": {
+                "vendorId": 2,
+                "displayVendorId": 456,
+                "licenseType": 100094,
+            }
+        },
+        "STACKIT": {
+            "FREQUENT ACCESS": {
+                "vendorId": 216,
+                "displayVendorId": 496,
+                "licenseType": 100085,
+            },
+            "INFREQUENT ACCESS": {
+                "vendorId": 216,
+                "displayVendorId": 497,
+                "licenseType": 100091,
             },
         }
     }
+
 
 
 class CommcellEntity(Enum):
@@ -797,6 +875,8 @@ class VsInstanceType:
 
     VSINSTANCE_TYPE = {
         101: "vmware",
+        103: "vcloud_director",
+        105: "vmware_cloud_foundation_automation",
         201: "xen",
         102: "hyperv",
         301: "amazon_web_services",
@@ -805,6 +885,7 @@ class VsInstanceType:
         403: "azure_stack",
         501: "red_hat_virtualization",
         601: "nutanix_ahv",
+        602: "nutanix_prism_central",
         701: "oraclevm",
         801: "fusioncompute",
         901: "openstack",
@@ -814,5 +895,85 @@ class VsInstanceType:
         1401: "alibaba_cloud",
         1503: "vcloud_director",
         1501: "kubernetes",
-        1600: "proxmox_ve"
+        1600: "proxmox_ve",
+        1700: "morpheus_data"
     }
+
+
+def convert_bytes_to_tb(size_in_bytes):
+    """
+            Convert bytes to TB
+            Args:
+                size_in_bytes(int)  -- Size in Bytes
+            Returns:
+                (int)               -- Size in TB
+            """
+    return float(size_in_bytes) / (1024 ** 4) if size_in_bytes else 0
+
+
+cost_assessment_config = {
+            "standardRetention":  30,
+            "annualGrowthRate": 10,
+            "dailyChangeRateVM": 1.6,
+            "utilizationFactorVM": 50,
+            "dailyChangeRateDB": 2.8,
+            "dailyChangeRateFO": 1.6,
+            "storageReplicationTarget": 50
+        }
+
+workload_mapping = {
+            "VM": "Virtual machine",
+            "FILE_STORAGE": "File & Object",
+            "DB": "Database"
+        }
+
+threat_detection_plan_json = {
+            "application": "",
+            "contentIndexing": {
+                "fileFilters": {
+                    "excludePaths": [],
+                    "includeDocTypes": "*",
+                    "maxDocSize": 50,
+                    "minDocSize": 0
+                }
+            },
+            "name": "",
+            "schedule": {
+                "name": "Run scan every 1 day at 9:00 PM",
+                "pattern": {
+                    "frequency": 1,
+                    "scheduleFrequencyType": "DAILY",
+                    "startTime": 75600
+                }
+            },
+            "threatIndicator": {
+                "accessNodesInfo": {},
+                "threatDetection": {
+                    "backupSize": False,
+                    "canaryFile": False,
+                    "fileActivity": False,
+                    "fileExtension": False,
+                    "fileType": False
+                },
+                "threatNexus": {
+                    "cspm_dspm": {
+                        "acante": False,
+                        "dasera": False
+                    },
+                    "networkAndDataSecurity": {
+                        "crowdstrike": False,
+                        "darktrace": False,
+                        "netskope": False
+                    },
+                    "soar": {
+                        "msSentinel": False,
+                        "paloAlto_XSOAR": False,
+                        "splunk": False
+                    }
+                },
+                "threatScan": {
+                    "fileDataAnalysis": False,
+                    "threatAnalysis": False
+                }
+            }
+        }

@@ -130,21 +130,37 @@ Alert Attributes
 
 from __future__ import absolute_import
 from __future__ import unicode_literals
+from typing import TYPE_CHECKING, Optional, Dict, Any, List, Tuple
 import xml.etree.ElementTree as ET
 from .exception import SDKException
 
+if TYPE_CHECKING:
+    from .commcell import Commcell
 
 class Alerts(object):
-    """Class for getting all the Alerts associated with the commcell."""
+    """Class for getting all the Alerts associated with the commcell.
 
-    def __init__(self, commcell_object):
+    Attributes:
+        _commcell_object (object): Instance of the Commcell class.
+        _ALERTS (str): API service for getting all alerts.
+        _cvpysdk_object (object): Instance of the CVPYSDK class.
+        _services (dict): Dictionary of all services.
+        _update_response_ (method): Method to update the response.
+        _alerts (dict): Dictionary of alerts.
+        _notification_types (dict): Dictionary of notification types.
+
+    Usage:
+        alerts = Alerts(commcell_object)
+    """
+
+    def __init__(self, commcell_object: 'Commcell') -> None:
         """Initialize object of the Alerts class.
 
-            Args:
-                commcell_object (object)  --  instance of the Commcell class
+        Args:
+            commcell_object (object): Instance of the Commcell class.
 
-            Returns:
-                object - instance of the Alerts class
+        Returns:
+            object: Instance of the Alerts class.
         """
         self._commcell_object = commcell_object
         self._ALERTS = commcell_object._services['GET_ALL_ALERTS']
@@ -166,11 +182,11 @@ class Alerts(object):
         }
         self.refresh()
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Representation string consisting of all alerts of the Commcell.
 
-            Returns:
-                str - string of all the alerts for a commcell
+        Returns:
+            str: String of all the alerts for a commcell.
         """
         representation_string = "{:^5}\t{:^50}\t{:^80}\t{:^30}\n\n".format(
             'S. No.', 'Alert', 'Description', 'Category'
@@ -189,30 +205,31 @@ class Alerts(object):
 
         return representation_string.strip()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Representation string for the instance of the Alerts class."""
         return "Alerts class instance for Commcell"
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Returns the number of the alerts configured on the Commcell."""
         return len(self.all_alerts)
 
-    def __getitem__(self, value):
+    def __getitem__(self, value: str) -> str:
         """Returns the name of the alert for the given alert ID or
             the details of the alert for given alert Name.
 
-            Args:
-                value   (str / int)     --  Name or ID of the alert
+        Args:
+            value (str): Name or ID of the alert.
 
-            Returns:
-                str     -   name of the alert, if the alert id was given
+        Returns:
+            str: Name of the alert, if the alert id was given.
+            dict: Dict of details of the alert, if alert name was given.
 
-                dict    -   dict of details of the alert, if alert name was given
+        Raises:
+            IndexError: No alert exists with the given Name / Id.
 
-            Raises:
-                IndexError:
-                    no alert exists with the given Name / Id
-
+        Usage:
+            alert_name = alerts["alert_id"]
+            alert_details = alerts["alert_name"]
         """
         value = str(value)
 
@@ -224,27 +241,27 @@ class Alerts(object):
             except IndexError:
                 raise IndexError('No alert exists with the given Name / Id')
 
-    def _get_alerts(self):
-        """Gets all the alerts associated with the commcell
+    def _get_alerts(self) -> dict:
+        """Gets all the alerts associated with the commcell.
 
-            Returns:
-                dict - consists of all alerts of the commcell
-                    {
-                         "alert1_name": {
-                             "id": alert1_id,
-                             "category": alert1_category
-                         },
-                         "alert2_name": {
-                             "id": alert2_id,
-                             "category": alert2_category
-                         }
-                    }
+        Returns:
+            dict: Consists of all alerts of the commcell
+                {
+                     "alert1_name": {
+                         "id": alert1_id,
+                         "category": alert1_category
+                     },
+                     "alert2_name": {
+                         "id": alert2_id,
+                         "category": alert2_category
+                     }
+                }
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException:
+                if response is empty
 
-                    if response is not success
+                if response is not success
         """
         flag, response = self._cvpysdk_object.make_request('GET', self._ALERTS)
 
@@ -275,20 +292,18 @@ class Alerts(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-
-    def _get_entities(self, entities):
-        """Returns the list of entities associations for an alert
+    def _get_entities(self, entities: dict) -> list:
+        """Returns the list of entities associations for an alert.
 
         Args:
-            entities    (dict)  --  dictionary of entities for an alert
+            entities (dict): Dictionary of entities for an alert.
 
-        Raise:
+        Raises:
             SDKException:
                 if entities is not an instance of dictionary
 
         Returns:
-            list  -  a list of associations for an alert
-
+            list: A list of associations for an alert.
         """
         if not isinstance(entities, dict):
             raise SDKException('Alert', '101')
@@ -357,7 +372,7 @@ class Alerts(object):
                     temp_dict = entity_dict[entity].copy()
                     for name, entity_attr in temp_dict.items():
                         if name != "_type_":
-                            try: # to convert the string values to int types
+                            try:  # to convert the string values to int types
                                 temp_dict[name] = int(getattr(entity_obj.get(value), entity_attr))
                             except ValueError:
                                 temp_dict[name] = getattr(entity_obj.get(value), entity_attr)
@@ -365,15 +380,14 @@ class Alerts(object):
 
         return associations
 
-
-    def _get_alert_json(self, alert_json):
-        """To form the json required to create an alert
+    def _get_alert_json(self, alert_json: dict) -> dict:
+        """To form the json required to create an alert.
 
         Args:
-            alert_json    (dict)  --  a dictionary to create an alert
+            alert_json (dict): A dictionary to create an alert.
 
         Returns:
-            dict  -  a constructed dictionary needed to create an alert
+            dict: A constructed dictionary needed to create an alert.
         """
         alert_detail = {
             "alertDetail": {
@@ -381,30 +395,30 @@ class Alerts(object):
                 "notifType": [n_type for n_type in alert_json.get("notif_type", [8192])],
                 "notifTypeListOperationType": alert_json.get("notifTypeListOperationType", 0),
                 "alertSeverity": alert_json.get("alertSeverity", 0),
-                "EscnonGalaxyUserList":{
+                "EscnonGalaxyUserList": {
                     "nonGalaxyUserOperationType": alert_json.get("nonGalaxyUserOperationType", 0)
                 },
-                "locale":{
-                    "localeID":alert_json.get("localeID", 0)
+                "locale": {
+                    "localeID": alert_json.get("localeID", 0)
                 },
-                "EscUserList":{
-                    "userListOperationType":alert_json.get("userListOperationType", 0)
+                "EscUserList": {
+                    "userListOperationType": alert_json.get("userListOperationType", 0)
                 },
-                "EscUserGroupList":{
+                "EscUserGroupList": {
                     "userGroupListOperationType": alert_json.get("userGroupListOperationType", 0)
                 },
-                "alertrule":{
+                "alertrule": {
                     "alertName": alert_json.get("alert_name")
                 },
-                "criteria":{
+                "criteria": {
                     "criteria": alert_json.get("criteria")
                 },
-                "userList":{
-                    "userListOperationType":alert_json.get("userListOperationType", 0),
-                    "userList":[{"userName":user} for user in alert_json.get("users", ["admin"])]
+                "userList": {
+                    "userListOperationType": alert_json.get("userListOperationType", 0),
+                    "userList": [{"userName": user} for user in alert_json.get("users", ["admin"])]
                 },
-                "EntityList":{
-                    "associationsOperationType":alert_json.get("associationsOperationType", 0),
+                "EntityList": {
+                    "associationsOperationType": alert_json.get("associationsOperationType", 0),
                     "associations": self._get_entities(alert_json.get("entities", dict()))
                 }
             }
@@ -420,20 +434,18 @@ class Alerts(object):
 
         if alert_json.get("user_groups"):
             alert_detail["alertDetail"]["userGroupList"] = {
-                "userGroupListOperationType":alert_json.get("userGroupListOperationType", 0),
-                "userGroupList":[
+                "userGroupListOperationType": alert_json.get("userGroupListOperationType", 0),
+                "userGroupList": [
                     {
-                        "userGroupName":user_grp
+                        "userGroupName": user_grp
                     } for user_grp in alert_json.get("user_groups")
                 ]
             }
 
         return alert_detail
 
-    def get_alert_sender(self):
-        """
-            Returns the Alert Sender name
-        """
+    def get_alert_sender(self) -> str:
+        """Returns the Alert Sender name."""
         get_alert = self._services['EMAIL_SERVER']
         flag, response = self._cvpysdk_object.make_request('GET', get_alert)
         if flag:
@@ -448,15 +460,14 @@ class Alerts(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-
-    def create_alert(self, alert_dict):
-        """Creates a new Alert for CommCell
+    def create_alert(self, alert_dict: dict) -> 'Alert':
+        """Creates a new Alert for CommCell.
 
         Args:
-            alert_dict    (dict)  --  dictionary required to create an alert
+            alert_dict (dict): Dictionary required to create an alert.
 
         Returns:
-            object  -  instance of the Alert class for this new alert
+            Alert: Instance of the Alert class for this new alert.
 
         Raises:
             SDKException:
@@ -469,6 +480,9 @@ class Alerts(object):
                 if response is not success
 
                 if response is empty
+
+        Usage:
+            alert = alerts.create_alert(alert_dict)
         """
         if not isinstance(alert_dict, dict):
             raise SDKException('Alert', '101')
@@ -513,57 +527,63 @@ class Alerts(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-
     @property
-    def all_alerts(self):
-        """Returns the dict of all the alerts configured on this commcell
+    def all_alerts(self) -> dict:
+        """Returns the dict of all the alerts configured on this commcell.
 
-            dict - consists of all alerts of the commcell
-                    {
-                         "alert1_name": {
-                             "id": alert1_id,
-                             "category": alert1_category
-                         },
-                         "alert2_name": {
-                             "id": alert2_id,
-                             "category": alert2_category
-                         }
-                    }
+        Returns:
+            dict: Consists of all alerts of the commcell
+                {
+                     "alert1_name": {
+                         "id": alert1_id,
+                         "category": alert1_category
+                     },
+                     "alert2_name": {
+                         "id": alert2_id,
+                         "category": alert2_category
+                     }
+                }
         """
         return self._alerts
 
-    def has_alert(self, alert_name):
+    def has_alert(self, alert_name: str) -> bool:
         """Checks if a alert exists for the commcell with the input alert name.
 
-            Args:
-                alert_name (str)  --  name of the alert
+        Args:
+            alert_name (str): Name of the alert.
 
-            Returns:
-                bool - boolean output whether the alert exists for the commcell or not
+        Returns:
+            bool: Boolean output whether the alert exists for the commcell or not.
 
-            Raises:
-                SDKException:
-                    if type of the alert name argument is not string
+        Raises:
+            SDKException:
+                if type of the alert name argument is not string
+
+        Usage:
+            has_alert = alerts.has_alert("my_alert")
         """
         if not isinstance(alert_name, str):
             raise SDKException('Alert', '101')
 
         return self._alerts and alert_name.lower() in self._alerts
 
-    def get(self, alert_name):
+    def get(self, alert_name: str) -> 'Alert':
         """Returns a alert object of the specified alert name.
 
-            Args:
-                alert_name (str)  --  name of the alert
+        Args:
+            alert_name (str): Name of the alert.
 
-            Returns:
-                object - instance of the Alert class for the given alert name
+        Returns:
+            Alert: Instance of the Alert class for the given alert name.
 
-            Raises:
-                SDKException:
-                    if type of the alert name argument is not string
+        Raises:
+            SDKException:
+                if type of the alert name argument is not string
 
-                    if no alert exists with the given name
+                if no alert exists with the given name
+
+        Usage:
+            alert = alerts.get("my_alert")
         """
         if not isinstance(alert_name, str):
             raise SDKException('Alert', '101')
@@ -579,25 +599,28 @@ class Alerts(object):
 
             raise SDKException('Alert', '102', 'No Alert exists with name: {0}'.format(alert_name))
 
-    def console_alerts(self, page_number=1, page_count=1):
-        """Returns the console alerts from page_number to the number of pages asked for page_count
+    def console_alerts(self, page_number: int = 1, page_count: int = 1) -> object:
+        """Returns the console alerts from page_number to the number of pages asked for page_count.
 
-            Args:
-                page_number (int)  --  page number to get the alerts from
+        Args:
+            page_number (int): Page number to get the alerts from.
+            page_count  (int): Number of pages to get the alerts of.
 
-                page_count  (int)  --  number of pages to get the alerts of
+        Raises:
+            SDKException:
+                if type of the page number and page count argument is not int
 
-            Raises:
-                SDKException:
-                    if type of the page number and page count argument is not int
+                if response is empty
 
-                    if response is empty
+                if response is not success
 
-                    if response is not success
+        Returns:
+            str: String representation of console alerts if version is less than SP23
+            object: Json response object for console alerts if version greater than or equal to SP23
 
-            Returns:
-                str - String representation of console alerts if version is less than SP23
-                object - json response object for console alerts if version greater than or equal to SP23
+        Usage:
+            console_alerts = alerts.console_alerts()
+            console_alerts = alerts.console_alerts(page_number=2, page_count=3)
         """
         if not (isinstance(page_number, int) and isinstance(page_count, int)):
             raise SDKException('Alert', '101')
@@ -635,22 +658,25 @@ class Alerts(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def console_alert(self, live_feed_id):
-        """Returns the console console alert with given live_feed_id
+    def console_alert(self, live_feed_id: int) -> object:
+        """Returns the console console alert with given live_feed_id.
 
-            Args:
-                live_feed_id (int)  --  Live feed ID of console alert to fetch
+        Args:
+            live_feed_id (int): Live feed ID of console alert to fetch.
 
-            Raises:
-                SDKException:
-                    if type of the live_feed_id argument is not int
+        Raises:
+            SDKException:
+                if type of the live_feed_id argument is not int
 
-                    if response is empty
+                if response is empty
 
-                    if response is not success
+                if response is not success
 
-            Returns:
-                object - Console alert json object for given live_feed_id
+        Returns:
+            object: Console alert json object for given live_feed_id.
+
+        Usage:
+            console_alert = alerts.console_alert(live_feed_id=123)
         """
         if not (isinstance(live_feed_id, int)):
             raise SDKException('Alert', '101')
@@ -669,19 +695,20 @@ class Alerts(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def delete(self, alert_name):
+    def delete(self, alert_name: str) -> None:
         """Deletes the alert from the commcell.
 
-            Args:
-                alert_name (str)  --  name of the alert
+        Args:
+            alert_name (str): Name of the alert to delete.
 
-            Raises:
-                SDKException:
-                    if type of the alert name argument is not string
+        Raises:
+            SDKException:
+                - If the alert name is not a string.
+                - If failed to delete the alert.
+                - If no alert exists with the given name.
 
-                    if failed to delete the alert
-
-                    if no alert exists with the given name
+        Usage:
+            alerts.delete(alert_name='MyAlert')
         """
         if not isinstance(alert_name, str):
             raise SDKException('Alert', '101')
@@ -718,32 +745,70 @@ class Alerts(object):
                 'Alert', '102', 'No alert exists with name: {0}'.format(alert_name)
             )
 
-    def refresh(self):
-        """Refresh the alerts associated with the Commcell."""
+
+    def refresh(self) -> None:
+        """Refresh the alerts associated with the Commcell.
+
+        Usage:
+            alerts.refresh()
+        """
         self._alerts = self._get_alerts()
 
-
 class Alert(object):
-    """Class for performing operations for a specific alert."""
+    """Class for performing operations for a specific alert.
 
-    def __init__(self, commcell_object, alert_name, alert_id=None, alert_category=None):
+    Description:
+        This class is used to perform operations on a specific alert, such as enabling, disabling,
+        modifying properties, and refreshing the alert's information.
+
+    Attributes:
+        _commcell_object (object): Instance of the Commcell class.
+        _cvpysdk_object (object): Instance of the CVPySDK class.
+        _services (dict): Dictionary of service URLs.
+        _update_response_ (callable): Method to update the response.
+        _alerts_obj (Alerts): Instance of the Alerts class.
+        _alert_name (str): Name of the alert (lowercase).
+        _alert_detail (Optional[dict]): Details of the alert.
+        _alert_id (str): ID of the alert.
+        _alert_category (str): Category of the alert.
+        _ALERT (str): URL for the specific alert.
+        _all_notification_types (dict): Dictionary of all notification types and their IDs.
+        _alert_severity (Optional[int]): Severity of the alert.
+        _alert_type (Optional[str]): Type of the alert.
+        _alert_type_id (Optional[int]): ID of the alert type.
+        _description (Optional[str]): Description of the alert.
+        _criteria (list): List of criteria for the alert.
+        _entities_list (list): List of entities associated with the alert.
+        _users_list (list): List of users associated with the alert.
+        _user_group_list (list): List of user groups associated with the alert.
+        _notification_types (list): List of notification types for the alert.
+        _email_recipients (list): List of email recipients for the alert.
+
+    Usage:
+        >>> alert = Alert(commcell_object, 'My Alert')
+        >>> alert = Alert(commcell_object, 'My Alert', alert_id='123')
+    Raises:
+        SDKException: if initialization fails.
+    """
+
+    def __init__(
+        self,
+        commcell_object: 'Commcell',
+        alert_name: str,
+        alert_id: Optional[str] = None,
+        alert_category: Optional[str] = None,
+    ) -> None:
         """Initialise the Alert class instance.
 
-            Args:
-                commcell_object (object)  --  instance of the Commcell class
+        Args:
+            commcell_object (object): Instance of the Commcell class.
+            alert_name (str): Name of the alert.
+            alert_id (str, optional): ID of the alert. Defaults to None.
+            alert_category (str, optional): Name of the alert category. Defaults to None.
 
-                alert_name      (str)     --  name of the alert
-
-                alert_id        (str)     --  id of the alert
-                    default: None
-
-                alert_category  (str)     --  name of the alert category
-                    default: None
-
-            Returns:
-                object - instance of the ALert class
+        Raises:
+            SDKException: if initialization fails.
         """
-
         self._commcell_object = commcell_object
         self._cvpysdk_object = commcell_object._cvpysdk_object
         self._services = commcell_object._services
@@ -763,7 +828,7 @@ class Alert(object):
             self._alert_category = self._get_alert_category()
 
         self._ALERT = self._services['ALERT'] % (self.alert_id)
-        self._all_notification_types = {
+        self._all_notification_types: Dict[str, int] = {
             'email': 1,
             'snmp': 4,
             'event viewer': 8,
@@ -775,50 +840,51 @@ class Alert(object):
             'content indexing': 131072
         }
 
-        self._alert_severity = None
-        self._alert_type = None
-        self._alert_type_id = None
-        self._description = None
-        self._criteria = []
-        self._entities_list = []
-        self._users_list = []
-        self._user_group_list = []
-        self._notification_types = []
+        self._alert_severity: Optional[int] = None
+        self._alert_type: Optional[str] = None
+        self._alert_type_id: Optional[int] = None
+        self._description: Optional[str] = None
+        self._criteria: List[Dict[str, Optional[str]]] = []
+        self._entities_list: List[Dict[str, Any]] = []
+        self._users_list: List[str] = []
+        self._user_group_list: List[str] = []
+        self._notification_types: List[int] = []
+        self._email_recipients: List[str] = []
 
         self.refresh()
 
-    def __repr__(self):
-        """String representation of the instance of this class."""
+    def __repr__(self) -> str:
+        """String representation of the instance of this class.
+
+        Returns:
+            str: String representation of the Alert instance.
+        """
         representation_string = 'Alert class instance for Alert: "{0}", Alert Type: "{1}"'
         return representation_string.format(self.alert_name, self._alert_type)
 
-    def _get_alert_id(self):
+    def _get_alert_id(self) -> str:
         """Gets the alert id associated with this alert.
 
-            Returns:
-                str - id associated with this alert
+        Returns:
+            str: ID associated with this alert.
         """
         return self._alerts_obj.get(self.alert_name).alert_id
 
-    def _get_alert_category(self):
+    def _get_alert_category(self) -> str:
         """Gets the alert category associated with this alert.
 
-            Returns:
-                str - alert category name associated with this alert
+        Returns:
+            str: Alert category name associated with this alert.
         """
         return self._alerts_obj.get(self.alert_name).alert_category
 
-    def _get_alert_properties(self):
+    def _get_alert_properties(self) -> None:
         """Gets the alert properties of this alert.
 
-            Returns:
-                dict - dictionary consisting of the properties of this alert
-
-            Raises:
-                SDKException:
-                    if response is empty
-
-                    if response is not success
+        Raises:
+            SDKException:
+                - if response is empty
+                - if response is not success
         """
         flag, response = self._cvpysdk_object.make_request('GET', self._ALERT)
 
@@ -863,7 +929,7 @@ class Alert(object):
                 for entity in self._entities_list:
                     for key, value in entity.items():
                         try:
-                            entity[key] = int(value) # to change the ids to type int
+                            entity[key] = int(value)  # to change the ids to type int
                         except ValueError:
                             pass
 
@@ -890,17 +956,16 @@ class Alert(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _modify_alert_properties(self):
-        """
-        modifies the properties of an alert
-        Exception:
-            if modification of the alert failed
-        """
+    def _modify_alert_properties(self) -> None:
+        """Modifies the properties of an alert.
 
+        Raises:
+            SDKException: if modification of the alert failed.
+        """
         request_json = {
-            "alertDetail":{
+            "alertDetail": {
                 "alertDetail": {
-                    "alertType": self._alert_type_id, # this should not be changed
+                    "alertType": self._alert_type_id,  # this should not be changed
                     "notifType": self._notification_types,
                     "alertSeverity": self._alert_severity,
                     "alertrule": {
@@ -948,21 +1013,34 @@ class Alert(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-
-
     @property
-    def name(self):
-        """Returns the Alert display name """
+    def name(self) -> str:
+        """Returns the Alert display name.
+
+        Returns:
+            str: The display name of the alert.
+        """
         return self._alert_detail['alert']['alert']['name']
 
     @property
-    def alert_name(self):
-        """Treats the alert name as a read-only attribute."""
+    def alert_name(self) -> str:
+        """Treats the alert name as a read-only attribute.
+
+        Returns:
+            str: The name of the alert.
+        """
         return self._alert_name
 
     @alert_name.setter
-    def alert_name(self, name):
-        """Modifies the Alert name"""
+    def alert_name(self, name: str) -> None:
+        """Modifies the Alert name.
+
+        Args:
+            name (str): The new name for the alert.
+
+        Raises:
+            SDKException: if the provided name is not a string.
+        """
         if not isinstance(name, str):
             raise SDKException('Alert', '101')
 
@@ -970,28 +1048,51 @@ class Alert(object):
         self._modify_alert_properties()
 
     @property
-    def alert_id(self):
-        """Treats the alert id as a read-only attribute."""
+    def alert_id(self) -> str:
+        """Treats the alert id as a read-only attribute.
+
+        Returns:
+            str: The ID of the alert.
+        """
         return self._alert_id
 
     @property
-    def alert_type(self):
-        """Treats the alert type as a read-only attribute."""
+    def alert_type(self) -> Optional[str]:
+        """Treats the alert type as a read-only attribute.
+
+        Returns:
+            str: The type of the alert.
+        """
         return self._alert_type
 
     @property
-    def alert_category(self):
-        """Treats the alert category type id as a read-only attribute. """
+    def alert_category(self) -> str:
+        """Treats the alert category type id as a read-only attribute.
+
+        Returns:
+            str: The category of the alert.
+        """
         return self._alert_category.title()
 
     @property
-    def alert_severity(self):
-        """Treats the alert severity type id as a read-only attribute. """
+    def alert_severity(self) -> Optional[int]:
+        """Treats the alert severity type id as a read-only attribute.
+
+        Returns:
+            int: The severity of the alert.
+        """
         return self._alert_severity
 
     @alert_severity.setter
-    def alert_severity(self, severity):
-        """Modifies the Alert severity"""
+    def alert_severity(self, severity: int) -> None:
+        """Modifies the Alert severity.
+
+        Args:
+            severity (int): The new severity for the alert.
+
+        Raises:
+            SDKException: if the provided severity is not an integer.
+        """
         if not isinstance(severity, int):
             raise SDKException('Alert', '101')
 
@@ -999,22 +1100,39 @@ class Alert(object):
         self._modify_alert_properties()
 
     @property
-    def alert_criteria(self):
-        """Treats the alert criteria as a read-only attribute."""
+    def alert_criteria(self) -> str:
+        """Treats the alert criteria as a read-only attribute.
+
+        Returns:
+            str: The criteria for the alert.
+        """
         return "\n".join([criteria["criteria_value"] for criteria in self._criteria])
 
     @property
-    def notification_types(self):
-        """Treats the alert notif types as a read-only attribute."""
-        notif_types = []
+    def notification_types(self) -> List[Tuple[int, str]]:
+        """Treats the alert notif types as a read-only attribute.
+
+        Returns:
+            list: A list of tuples containing the notification ID and title.
+        """
+        notif_types: List[Tuple[int, str]] = []
         for notif, notif_id in self._all_notification_types.items():
             if notif_id in self._notification_types:
                 notif_types.append((notif_id, notif.title()))
         return notif_types
 
     @notification_types.setter
-    def notification_types(self, notif_types):
-        """Treats the alert notif types as a read-only attribute."""
+    def notification_types(self, notif_types: List[str]) -> None:
+        """Treats the alert notif types as a read-only attribute.
+
+        Args:
+            notif_types (list): A list of notification types to set.
+
+        Raises:
+            SDKException:
+                - if the provided notification types is not a list.
+                - if no notification type exists with the name provided.
+        """
         if not isinstance(notif_types, list):
             raise SDKException('Alert', '102')
         try:
@@ -1029,13 +1147,24 @@ class Alert(object):
         self._modify_alert_properties()
 
     @property
-    def entities(self):
-        """Treats the alert associations as a read-only attribute. """
+    def entities(self) -> List[Dict[str, Any]]:
+        """Treats the alert associations as a read-only attribute.
+
+        Returns:
+            list: A list of entities associated with the alert.
+        """
         return self._entities_list
 
     @entities.setter
-    def entities(self, entity_json):
-        """Modifies the Alert entities"""
+    def entities(self, entity_json: Dict[str, Any]) -> None:
+        """Modifies the Alert entities.
+
+        Args:
+            entity_json (dict): A dictionary containing the entities to set.
+
+        Raises:
+            SDKException: if the provided entity JSON is not a dictionary.
+        """
         if not isinstance(entity_json, dict):
             raise SDKException('Alert', '101')
 
@@ -1043,66 +1172,97 @@ class Alert(object):
         self._modify_alert_properties()
 
     @property
-    def email_recipients(self):
-        """returns the email recipients associated to the alert"""
+    def email_recipients(self) -> List[str]:
+        """Returns the email recipients associated to the alert.
+
+        Returns:
+            list: A list of email recipients.
+        """
         return self._email_recipients
 
     @email_recipients.setter
-    def email_recipients(self, email_recipients):
-        """Modifies the email_recipients for the alert"""
+    def email_recipients(self, email_recipients: List[str]) -> None:
+        """Modifies the email_recipients for the alert.
+
+        Args:
+            email_recipients (list): A list of email recipients to add.
+        """
         self._email_recipients.extend(email_recipients)
         self._modify_alert_properties()
 
     @property
-    def description(self):
-        """Treats the alert description as a read-only attribute."""
+    def description(self) -> Optional[str]:
+        """Treats the alert description as a read-only attribute.
+
+        Returns:
+            str: The description of the alert.
+        """
         return self._description
 
     @description.setter
-    def description(self, description):
-        """Modifies the Alert description"""
+    def description(self, description: str) -> None:
+        """Modifies the Alert description.
+
+        Args:
+            description (str): The new description for the alert.
+        """
         self._description = description
         self._modify_alert_properties()
-    
+
     @property
-    def users_list(self):
-        """Treats the users list as a read-only attribute."""
+    def users_list(self) -> List[str]:
+        """Treats the users list as a read-only attribute.
+
+        Returns:
+            list: A list of users associated with the alert.
+        """
         return self._users_list
 
     @users_list.setter
-    def users_list(self, users_list):
-        """Modifies the users list"""
+    def users_list(self, users_list: List[str]) -> None:
+        """Modifies the users list.
+
+        Args:
+            users_list (list): A list of users to set.
+        """
         self._users_list = users_list
         self._modify_alert_properties()
-    
+
     @property
-    def user_group_list(self):
-        """Treats the user group list as a read-only attribute."""
+    def user_group_list(self) -> List[str]:
+        """Treats the user group list as a read-only attribute.
+
+        Returns:
+            list: A list of user groups associated with the alert.
+        """
         return self._user_group_list
 
     @user_group_list.setter
-    def user_group_list(self, user_group_list):
-        """Modifies the user group list"""
+    def user_group_list(self, user_group_list: List[str]) -> None:
+        """Modifies the user group list.
+
+        Args:
+            user_group_list (list): A list of user groups to set.
+        """
         self._user_group_list = user_group_list
         self._modify_alert_properties()
 
-    def enable_notification_type(self, alert_notification_type):
+    def enable_notification_type(self, alert_notification_type: str) -> None:
         """Enable the notification type.
 
-            Args:
-                alert_notification_type (str)  --  alert notification to enable
+        Args:
+            alert_notification_type (str): Alert notification to enable.
 
-            Raises:
-                SDKException:
-                    if type of alert notification argument is not string
+        Raises:
+            SDKException:
+                - if type of alert notification argument is not string.
+                - if failed to enable notification type.
+                - if response is empty.
+                - if response is not success.
+                - if no notification type exists with the name provided.
 
-                    if failed to enable notification type
-
-                    if response is empty
-
-                    if response is not success
-
-                    if no notification type exists with the name provided
+        Usage:
+            >>> alert.enable_notification_type('email')
         """
         if not isinstance(alert_notification_type, str):
             raise SDKException('Alert', '101')
@@ -1138,23 +1298,22 @@ class Alert(object):
                 'No notification type with name {0} exists'.format(alert_notification_type)
             )
 
-    def disable_notification_type(self, alert_notification_type):
+    def disable_notification_type(self, alert_notification_type: str) -> None:
         """Disable the notification type.
 
-            Args:
-                alert_notification_type (str)  --  alert notification to disable
+        Args:
+            alert_notification_type (str): Alert notification to disable.
 
-            Raises:
-                SDKException:
-                    if type of alert notification argument is not string
+        Raises:
+            SDKException:
+                - if type of alert notification argument is not string.
+                - if failed to disable notification type.
+                - if response is empty.
+                - if response is not success.
+                - if no notification type exists with the name provided.
 
-                    if failed to disable notification type
-
-                    if response is empty
-
-                    if response is not success
-
-                    if no notification type exists with the name provided
+        Usage:
+            >>> alert.disable_notification_type('email')
         """
         if not isinstance(alert_notification_type, str):
             raise SDKException('Alert', '101')
@@ -1190,16 +1349,17 @@ class Alert(object):
                 'No notification type with name {0} exists'.format(alert_notification_type)
             )
 
-    def enable(self):
+    def enable(self) -> None:
         """Enable an alert.
 
-            Raises:
-                SDKException:
-                    if failed to enable alert
+        Raises:
+            SDKException:
+                - if failed to enable alert.
+                - if response is empty.
+                - if response is not success.
 
-                    if response is empty
-
-                    if response is not success
+        Usage:
+            >>> alert.enable()
         """
         enable_request = self._services['ENABLE_ALERT'] % (self.alert_id)
 
@@ -1231,16 +1391,17 @@ class Alert(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def disable(self):
+    def disable(self) -> None:
         """Disable an alert.
 
-            Raises:
-                SDKException:
-                    if failed to disable alert
+        Raises:
+            SDKException:
+                - if failed to disable alert.
+                - if response is empty.
+                - if response is not success.
 
-                    if response is empty
-
-                    if response is not success
+        Usage:
+            >>> alert.disable()
         """
         disable_request = self._services['DISABLE_ALERT'] % (self.alert_id)
 
@@ -1274,11 +1435,15 @@ class Alert(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def refresh(self):
-        """Refresh the properties of the Alert."""
+    def refresh(self) -> None:
+        """Refresh the properties of the Alert.
+
+        Usage:
+            >>> alert.refresh()
+        """
         self._get_alert_properties()
 
-    def trigger_test_alert(self):
+    def trigger_test_alert(self) -> None:
         """
         Method to trigger the test alert
 

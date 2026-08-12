@@ -32,9 +32,11 @@ CloudAppsSubclient:
 """
 
 from __future__ import unicode_literals
+from typing import Any, List, Optional
 
 from ..subclient import Subclient
 from ..exception import SDKException
+from ..job import Job
 
 
 class CloudAppsSubclient(Subclient):
@@ -50,6 +52,9 @@ class CloudAppsSubclient(Subclient):
         from .cloudapps.spanner_subclient import GoogleSpannerSubclient
         from .cloudapps.onedrive_subclient import OneDriveSubclient
         from .cloudapps.azure_cosmosdb_subclient import AzureCosmosDBSubclient
+        from .cloudapps.powerbi_subclient import PowerBISubclient
+        from .cloudapps.pinecone_subclient import PineConeSubclient
+        from .cloudapps.snowflake_subclient import SnowflakeSubclient
 
         instance_types = {
             1: GoogleSubclient,
@@ -71,7 +76,13 @@ class CloudAppsSubclient(Subclient):
             35: MSDynamics365Subclient,  # Office 365 Apps -> MS Dynamics 365 Subclient
             36: TeamsSubclient,  # Office 365 Apps -> MS Teams
             37: GoogleSpannerSubclient,  # Google Cloud Spanner Subclient
-            44: AzureCosmosDBSubclient # Azure Cosmos DB Cloud Apps Instance
+            44: AzureCosmosDBSubclient, # Azure Cosmos DB Cloud Apps Instance
+            40: CloudDatabaseSubclient,  # MongoDB Atlas
+            51: AzureCosmosDBSubclient,  # Azure Cosmos DB MongoDBAPI Instance
+            56: CloudStorageSubclient,  # S3 Compatible Subclient
+            58: PineConeSubclient,  # PineCone Subclient
+            60: PowerBISubclient,    # Power Platform PowerBi Subclient
+            61: SnowflakeSubclient   # Snowflake Subclient
         }
 
         cloud_apps_instance_type = backupset_object._instance_object._properties[
@@ -83,3 +94,45 @@ class CloudAppsSubclient(Subclient):
             raise SDKException('Subclient', '112')
 
         return object.__new__(instance_type)
+
+    def browse(self, *args: Any, **kwargs: Any) -> dict:
+        """Browse the content of this subclient's instance backups.
+
+        Delegates to the parent instance's browse method.
+
+        Args:
+            *args: Optional positional arguments passed to the instance browse method.
+            **kwargs: Optional keyword arguments passed to the instance browse method.
+
+        Returns:
+            dict: Browse results from the instance.
+        """
+        return self._backupset_object._instance_object.browse(*args, **kwargs)
+
+    def restore(
+            self,
+            paths: List[str],
+            overwrite: bool = True,
+            copy_precedence: int = 0,
+            **kwargs: Any
+    ) -> Job:
+        """Restore data from backup via in-place restore.
+
+        Args:
+            paths: List of paths or items to restore.
+            overwrite: Whether to overwrite existing data during restore. Defaults to True.
+            copy_precedence: The copy precedence to use. Defaults to 0 (latest backup).
+            **kwargs: Additional keyword arguments forwarded to restore_in_place.
+
+        Returns:
+            Job: A Job object representing the submitted restore job.
+
+        Raises:
+            SDKException: If the restore operation fails or parameters are invalid.
+        """
+        return self._backupset_object._instance_object.restore_in_place(
+            paths=paths,
+            overwrite=overwrite,
+            copy_precedence=copy_precedence,
+            **kwargs
+        )

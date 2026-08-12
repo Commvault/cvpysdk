@@ -101,76 +101,143 @@ SQLServerInstance Attributes:
 
 """
 
-import re
-import time
 import datetime
+import re
 import threading
-from base64 import b64encode
+import time
 
-from ..instance import Instance
-from ..exception import SDKException
-from ..job import Job
+from typing import Any, Dict, List, Optional, Union
+
 from ..constants import SQLDefines
+from ..exception import SDKException
+from ..instance import Instance
+from ..job import Job
 from ..schedules import Schedules
+from ..schedules import Schedule
 from ..schedules import SchedulePattern
 
 
 class SQLServerInstance(Instance):
-    """Derived class from Instance Base class, representing a SQL Server instance,
-        and to perform operations on that Instance."""
+    """
+    Represents a SQL Server instance, extending the base Instance class to provide
+    comprehensive management and operational capabilities for SQL Server environments.
+
+    This class offers a wide range of methods and properties to interact with SQL Server
+    instances, including management of Always On Availability Groups (AG), backup and restore
+    operations, database browsing, recovery point management, and table-level restores.
+    It also provides access to instance and database properties, and supports advanced
+    configuration options such as VSS, VDI timeouts, and impersonation.
+
+    Key Features:
+        - Access to AG group names, primary replicas, replicas list, and listener list
+        - Retrieval and management of database lists and instance properties
+        - Backup operations for SQL Server databases and subclients
+        - Flexible restore operations, including point-in-time, overwrite, and destination server restores
+        - Table-level restore capabilities with options for child and parent tables
+        - Recovery point creation and management
+        - Browsing of databases and data within specific time ranges
+        - Configuration of VSS options, VDI timeouts, and impersonation credentials
+        - Creation and management of SQL Always On Availability Groups
+        - Detailed retrieval of database information
+
+    #ai-gen-doc
+    """
 
     @property
-    def ag_group_name(self):
-        """Returns the Availability Group Name"""
+    def ag_group_name(self) -> str:
+        """Get the name of the Availability Group associated with this SQL Server instance.
+
+        Returns:
+            The Availability Group name as a string.
+
+        #ai-gen-doc
+        """
         return self._ag_group_name
 
     @property
-    def ag_primary_replica(self):
-        """Returns the Availability Group Primary Replica"""
+    def ag_primary_replica(self) -> str:
+        """Get the name of the Availability Group Primary Replica for this SQL Server instance.
+
+        Returns:
+            The name of the primary replica server as a string.
+
+        #ai-gen-doc
+        """
         return self._ag_primary_replica
 
     @property
-    def ag_replicas_list(self):
-        """Returns the Availability Group Replicas List"""
+    def ag_replicas_list(self) -> list:
+        """Get the list of Availability Group Replicas for the SQL Server instance.
+
+        Returns:
+            list: A list containing information about each Availability Group Replica associated with this SQL Server instance.
+
+        #ai-gen-doc
+        """
         return self._ag_replicas_list
 
     @property
-    def ag_listener_list(self):
-        """Returns the Availability Group Listener List"""
+    def ag_listener_list(self) -> list:
+        """Get the list of Availability Group Listeners for the SQL Server instance.
+
+        Returns:
+            list: A list containing the names or details of Availability Group Listeners associated with this SQL Server instance.
+
+        #ai-gen-doc
+        """
         return self._ag_listener_list
 
     @property
-    def database_list(self):
-        """Returns the list of protected databases"""
+    def database_list(self) -> List[Dict]:
+        """Get the list of protected databases for this SQL Server instance.
+
+        Returns:
+            List of dictionary of database names (as strings) that are currently protected.
+
+        #ai-gen-doc
+        """
         return self._get_database_list()
 
     @property
-    def mssql_instance_prop(self):
-        """ getter for sql server instance properties """
+    def mssql_instance_prop(self) -> dict:
+        """Get the properties of the SQL Server instance.
+
+        Returns:
+            dict: A dictionary containing the properties of the SQL Server instance.
+
+        #ai-gen-doc
+        """
         return self._mssql_instance_prop
 
     @mssql_instance_prop.setter
-    def mssql_instance_prop(self, value):
-        """Setter for SQL server instance properties
+    def mssql_instance_prop(self, value: list) -> None:
+        """Set the SQL Server instance properties.
 
-            Args:
-                value (list)  --  list of the category and properties to update on the instance
+        This setter updates the SQL Server instance properties with the provided list of categories and properties.
+        The input should be a list specifying the categories and their corresponding properties to update on the instance.
 
-            Returns:
-                list - list of the appropriate JSON for an agent to send to the POST Instance API
+        Args:
+            value: A list containing the categories and properties to update for the SQL Server instance.
+
+        #ai-gen-doc
         """
         category, prop = value
 
         self._set_instance_properties(category, prop)
 
-    def _get_instance_properties(self):
-        """Gets the properties of this instance.
+    def _get_instance_properties(self) -> None:
+        """Retrieve the properties of the current SQL Server instance.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        This method fetches and returns a dictionary containing the configuration
+        and status properties for the SQL Server instance associated with this object.
 
-                    if response is not success
+        Returns:
+            None
+
+        Raises:
+            SDKException: If the response is empty or if the response indicates a failure.
+
+        #ai-gen-doc
         """
 
         super(SQLServerInstance, self)._get_instance_properties()
@@ -183,7 +250,7 @@ class SQLServerInstance(Instance):
         self._mssql_instance_prop = self._properties.get('mssqlInstance', {})
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._commcell_object._services['INSTANCE'] %self._instance_id + "?propertyLevel=20"
+            'GET', self._commcell_object._services['INSTANCE'] % self._instance_id + "?propertyLevel=20"
         )
 
         if flag:
@@ -204,46 +271,46 @@ class SQLServerInstance(Instance):
             self._ag_listener_list = listener_list_tmp
 
             replica_list_tmp = []
-            replica_list = self.mssql_instance_prop.get(
-                'agProperties', {}).get('SQLAvailabilityReplicasList', {})
+            replica_list = self.mssql_instance_prop.get('agProperties', {}).get('SQLAvailabilityReplicasList', {})
             if replica_list:
                 for replica in replica_list['SQLAvailabilityReplicasList']:
                     replica_dict = {
-                        "serverName" : replica['name'],
-                        "clientId" : replica['replicaClient']['clientId'],
+                        "serverName": replica['name'],
+                        "clientId": replica['replicaClient']['clientId'],
                         "clientName": replica['replicaClient']['clientName']
                     }
                     replica_list_tmp.append(replica_dict)
                 self._ag_replicas_list = replica_list_tmp
 
-    def _get_instance_properties_json(self):
-        """get the all instance related properties of this instance.
+    def _get_instance_properties_json(self) -> dict:
+        """Retrieve all instance-related properties for this SQL Server instance.
 
-           Returns:
-                dict - all subclient properties put inside a dict
+        Returns:
+            dict: A dictionary containing all subclient properties associated with this instance.
 
+        #ai-gen-doc
         """
         instance_json = {
-            "instanceProperties":
-                {
-                    "instance": self._instance,
-                    "instanceActivityControl": self._instanceActivityControl,
-                    "mssqlInstance": self._mssql_instance_prop,
-                    "contentOperationType": 1
-                }
+            "instanceProperties": {
+                "instance": self._instance,
+                "instanceActivityControl": self._instanceActivityControl,
+                "mssqlInstance": self._mssql_instance_prop,
+                "contentOperationType": 1
+            }
         }
         return instance_json
 
-    def _get_database_list(self):
-        """Gets list of databases with corresponding database ids and last backup times
+    def _get_database_list(self) -> Optional[List[Dict]]:
+        """Retrieve a list of SQL Server databases with their IDs and last backup times.
 
-            Returns:
-                dict - database names with details (database id and last backup time)
+        Returns:
+            List of dictionary where each key is a database name, and the value is another
+            dictionary containing the database ID and the last backup time.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException: If the response from the server is empty.
 
+        #ai-gen-doc
         """
         databases_details = []
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -270,69 +337,78 @@ class SQLServerInstance(Instance):
         raise SDKException('Response', '101', response_string)
 
     def _restore_request_json(
-            self,
-            content_to_restore,
-            restore_path=None,
-            drop_connections_to_databse=False,
-            overwrite=True,
-            destination_instance=None,
-            to_time=None,
-            sql_restore_type=SQLDefines.DATABASE_RESTORE,
-            sql_recover_type=SQLDefines.STATE_RECOVER,
-            undo_path=None,
-            restricted_user=None,
-            **kwargs
-    ):
-        """Returns the JSON request to pass to the API as per the options selected by the user.
+        self,
+        content_to_restore: list,
+        restore_path: Optional[list] = None,
+        drop_connections_to_databse: bool = False,
+        overwrite: bool = True,
+        destination_instance: Optional[str] = None,
+        to_time: Optional[Union[int, str]] = None,
+        sql_restore_type: str = None,
+        sql_recover_type: str = None,
+        undo_path: Optional[str] = None,
+        restricted_user: Optional[bool] = None,
+        **kwargs: Any
+    ) -> dict:
+        """Construct the JSON request payload for a SQL Server restore operation.
 
-            Args:
-                content_to_restore (list): databases list to restore
+        This method generates the appropriate JSON structure required by the API to perform
+        a SQL Server database restore, based on the provided options and parameters.
 
-                restore_path (list, optional): list of dicts for restore paths of database files
+        Args:
+            content_to_restore: List of database names to restore.
+            restore_path: Optional list of dictionaries specifying restore paths for database files.
+            drop_connections_to_databse: If True, drops connections to the database during restore.
+            overwrite: If True, overwrites the database during restore.
+            destination_instance: Optional SQL instance name to restore databases to.
+            to_time: Optional restore time as an integer (timestamp) or string ('yyyy-MM-dd HH:mm:ss').
+            sql_restore_type: Type of SQL restore operation (e.g., 'DATABASE_RESTORE', 'STEP_RESTORE', 'RECOVER_ONLY').
+            sql_recover_type: Type of SQL recovery state (e.g., 'STATE_RECOVER', 'STATE_NORECOVER', 'STATE_STANDBY').
+            undo_path: Optional file path for undo during standby restore.
+            restricted_user: If True, restores the database in restricted user mode.
+            **kwargs: Additional keyword arguments:
+                - point_in_time: Optional integer time value for point-in-time restore.
+                - schedule_pattern: Optional dictionary specifying a schedule pattern for the restore.
+                - hardware_revert: Optional bool indicating hardware revert restore.
+                - log_shipping: Optional bool to restore log backups in standby or no recovery state.
 
-                drop_connections_to_databse (bool, optional): drop connections to database during restore
+        Returns:
+            dict: JSON request payload to be sent to the API for the restore operation.
 
-                overwrite (bool, optional): overwrite database on restore
+        Example:
+            >>> restore_json = sql_instance._restore_request_json(
+            ...     content_to_restore=['SalesDB', 'HRDB'],
+            ...     restore_path=[{'db': 'SalesDB', 'path': '/data/sales.mdf'}],
+            ...     drop_connections_to_databse=True,
+            ...     overwrite=True,
+            ...     destination_instance='SQLPROD01',
+            ...     to_time='2023-06-01 12:00:00',
+            ...     sql_restore_type='DATABASE_RESTORE',
+            ...     sql_recover_type='STATE_RECOVER',
+            ...     undo_path=None,
+            ...     restricted_user=False,
+            ...     point_in_time=1685611200,
+            ...     schedule_pattern={'type': 'daily', 'time': '02:00'},
+            ...     hardware_revert=False,
+            ...     log_shipping=True
+            ... )
+            >>> print(restore_json)
+            >>> # The returned dictionary can be sent to the API for restore
 
-                destination_instance (str): restore databases to this sql instance
-
-                to_time (int/str, optional): Restore to time. Can be integer value or string as 'yyyy-MM-dd HH:mm:ss'.
-                Defaults to None.
-
-                sql_restore_type (str, optional): type of sql restore state
-                (DATABASE_RESTORE, STEP_RESTORE, RECOVER_ONLY)
-
-                sql_recover_type (str, optional): type of sql restore state
-                (STATE_RECOVER, STATE_NORECOVER, STATE_STANDBY)
-
-                undo_path (str, optional): file path for undo path for sql server standby restore
-
-                restricted_user (bool, optional): Restore database in restricted user mode
-
-            Keyword Args:
-                point_in_time (int, optional): Time value to use as point in time restore
-
-                schedule_pattern (dict): Schedule pattern to associate to the restore request
-
-                hardware_revert (bool): Does hardware revert restore
-
-                log_shipping (bool): Restores log backups on database in standby or no recovery state.
-
-            Returns:
-                dict - JSON request to pass to the API
+        #ai-gen-doc
         """
 
         self._get_sql_restore_options(content_to_restore)
 
         if destination_instance is None:
-            destination_instance = (self.instance_name).lower()
+            destination_instance = self.instance_name.lower()
 
         if destination_instance not in self.destination_instances_dict:
             raise SDKException(
                 'Instance',
                 '102',
-                'SQL Instance [{0}] not suitable for restore destination or does not exist.'
-                    .format(destination_instance)
+                'SQL Instance [{0}] not suitable for restore destination or does not exist.'.format(
+                    destination_instance)
             )
 
         destination_client_id = int(
@@ -448,7 +524,7 @@ class SQLServerInstance(Instance):
                 to_time_type = "toTime"
             to_time_dict = {
                 "timeRange": {
-                    "toTimeValue": to_time
+                    to_time_type: to_time
                 }
             }
             request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['browseOption'].update(to_time_dict)
@@ -458,23 +534,22 @@ class SQLServerInstance(Instance):
 
         return request_json
 
-    def _process_restore_response(self, request_json):
-        """Runs the CreateTask API with the request JSON provided for Restore,
-            and returns the contents after parsing the response.
+    def _process_restore_response(self, request_json: dict) -> Union['Job', 'Schedule']:
+        """Execute the CreateTask API for a restore operation and process the response.
 
-            Args:
-                request_json (dict):  JSON request to run for the API
+        This method sends the provided JSON request to the CreateTask API to initiate a restore job.
+        It parses the API response and returns an instance of the Job class representing the restore job.
 
-            Returns:
-                object - instance of the Job class for this restore job
+        Args:
+            request_json: Dictionary containing the JSON request payload for the restore API.
 
-            Raises:
-                SDKException:
-                    if restore job failed
+        Returns:
+            Job: An instance of the Job class representing the initiated restore job.
 
-                    if response is empty
+        Raises:
+            SDKException: If the restore job fails, the response is empty, or the response indicates failure.
 
-                    if response is not success
+        #ai-gen-doc
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', self._commcell_object._services['RESTORE'], request_json
@@ -499,25 +574,24 @@ class SQLServerInstance(Instance):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _get_sql_restore_options(self, content_to_restore):
-        """Runs the SQL/Restoreoptions API with the request JSON provided,
-            and returns the contents after parsing the response.
+    def _get_sql_restore_options(self, content_to_restore: list) -> dict:
+        """Retrieve SQL Server restore options using the provided database list.
 
-            Args:
-                content_to_restore (list):  Databases list to restore
+        This method sends a request to the SQL/Restoreoptions API with the specified
+        databases to restore, parses the response, and returns the SQL destination
+        server options as a dictionary.
 
-            Returns:
-                dict - dictionary consisting of the sql destination server options
+        Args:
+            content_to_restore: List of databases to restore.
 
-            Raises:
-                SDKException:
-                    if failed to get SQL instances
+        Returns:
+            Dictionary containing the SQL destination server options.
 
-                    if no instance exits on commcell
+        Raises:
+            SDKException: If the API call fails, no SQL instance exists on the Commcell,
+                the response is empty, or the response indicates failure.
 
-                    if response is empty
-
-                    if response is not success
+        #ai-gen-doc
         """
         contents_dict = []
 
@@ -565,15 +639,17 @@ class SQLServerInstance(Instance):
             raise SDKException('Response', '101', response_string)
         return response.json()
 
-    def _run_backup(self, subclient_name, return_list):
-        """Triggers full backup job for the given subclient, and appends its Job object to list
-            The SDKExcpetion class instance is appended to the list,
-            if any exception is raised while running the backup job for the Subclient.
+    def _run_backup(self, subclient_name: str, return_list: list) -> None:
+        """Trigger a full backup job for the specified subclient and append the resulting Job object to a list.
 
-            Args:
-                subclient_name (str):  Name of the subclient to trigger the backup for
+        If an exception occurs while running the backup job for the subclient, an instance of the SDKException class
+        is appended to the provided list instead.
 
-                return_list (list):  List to append the job object to
+        Args:
+            subclient_name: The name of the subclient for which to trigger the backup.
+            return_list: The list to which the resulting Job object or SDKException instance will be appended.
+
+        #ai-gen-doc
         """
         try:
             job = self.subclients.get(subclient_name).backup('Full')
@@ -582,24 +658,28 @@ class SQLServerInstance(Instance):
         except SDKException as excp:
             return_list.append(excp)
 
-    def _process_browse_request(self, browse_request, get_full_details=False):
-        """Runs the SQL Instance Browse API with the request JSON provided for the operation
-            specified, and returns the contents after parsing the response.
+    def _process_browse_request(self, browse_request: dict, get_full_details: bool = False) -> (list, list):
+        """Execute the SQL Instance Browse API with the provided request and parse the response.
 
-            Args:
-                browse_request (dict):  JSON request to be sent to Server
+        This method sends a JSON request to the server to browse SQL instance contents and returns
+        the parsed results. Depending on the operation and the `get_full_details` flag, the response
+        may include a list of database names or a dictionary with detailed information such as
+        backup creation time and database version.
 
-            Returns:
-                list - list of all databases
+        Args:
+            browse_request: The JSON request dictionary to be sent to the server for browsing.
+            get_full_details: If True, returns detailed information for each database; otherwise,
+                returns a simple list of database names. Defaults to False.
 
-                dict - database names along with details like backup created time
-                           and database version
+        Returns:
+            list: A list of all database names if `get_full_details` is False.
+            dict: A dictionary mapping database names to their details (e.g., backup created time,
+                database version) if `get_full_details` is True.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException: If the server response is empty or indicates a failure.
 
-                    if response is not success
+        #ai-gen-doc
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request("GET", browse_request)
 
@@ -637,36 +717,32 @@ class SQLServerInstance(Instance):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _recoverypoint_request_json(self,
-                                    dbname,
-                                    expire_days=1,
-                                    recovery_point_name=None,
-                                    point_in_time=0,
-                                    destination_instance=None,
-                                    snap=False
-                                    ):
-        """
-            creates and returns a request json for the recovery point creation
+    def _recoverypoint_request_json(
+        self,
+        dbname: str,
+        expire_days: int = 1,
+        recovery_point_name: Optional[str] = None,
+        point_in_time: int = 0,
+        destination_instance: Optional[str] = None,
+        snap: bool = False
+    ) -> Dict[str, Any]:
+        """Create and return a request JSON for SQL Server recovery point creation.
 
-            Args:
-                dbname (str) -- database to be restored
+        This method constructs the request payload required to create a recovery point for a specified SQL Server database.
+        The recovery point can be customized with an expiration period, a custom name, a specific point-in-time, a destination instance, and an option for snapshot setup.
 
-                expire_days (int)   -- days for which the database will be restored
-                        default 1,. 1 day
-                recovery_point_name (str)  -- name of the recovery point to be created
-                        default None. creates a db with db_name + <timestamp>
+        Args:
+            dbname: Name of the database for which the recovery point is to be created.
+            expire_days: Number of days the recovery point will be retained. Defaults to 1 day.
+            recovery_point_name: Optional custom name for the recovery point. If not provided, a name is generated using the database name and a timestamp.
+            point_in_time: Unix timestamp for point-in-time recovery. Defaults to 0, which restores to the last backup.
+            destination_instance: Optional name of the destination SQL Server instance where the recovery point will be created. If None, uses the current instance.
+            snap: Whether the recovery point is for a snapshot setup. Defaults to False.
 
-                point_in_time   (timestamp) -- unix time for the point in time recovery point creation
-                        default 0.  performs restore to last backup
+        Returns:
+            Dictionary representing the request JSON for creating the recovery point.
 
-                destination_instance (str)  -- name of the destination instance in which recovery point is to be
-                                                created.
-                                default None. creates in the same instance
-
-                snap    (bool)      -- If the recovery point to be created is for snap setup
-                            default False
-            returns:
-                request_json (Dict) --   request json for create recovery points
+        #ai-gen-doc
         """
 
         if recovery_point_name is None:
@@ -689,7 +765,7 @@ class SQLServerInstance(Instance):
 
         # fetching full database details
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', self._commcell_object._services["SQL_DATABASE_DETAILS"] %(self.instance_id, db_id), None
+            'GET', self._commcell_object._services["SQL_DATABASE_DETAILS"] % (self.instance_id, db_id), None
         )
         if flag:
             response = response.json()
@@ -714,12 +790,10 @@ class SQLServerInstance(Instance):
         request_json = {
             "opType": 0,
             "session": {},
-            "queries": [
-                {
-                    "type": 0,
-                    "queryId": "0"
-                }
-            ],
+            "queries": [{
+                "type": 0,
+                "queryId": "0"
+            }],
             "mode": {
                 "mode": 3
             },
@@ -781,27 +855,25 @@ class SQLServerInstance(Instance):
 
         return request_json
 
-    def _process_recovery_point_request(self, request_json):
-        """
-            process the create recovery job browse request
-            Args:
-                request_json (dict):  JSON request to run for the API
+    def _process_recovery_point_request(self, request_json: dict) -> tuple:
+        """Process the create recovery job browse request for SQL Server.
 
-            Returns:
-                object (Job) - instance of the Job class for this restore job
+        This method sends a recovery point creation request using the provided JSON payload,
+        and returns the resulting Job object, the unique recovery point ID, and the name of the created database.
 
-                recovery point Id (int) : id to uniquely access the recovery point
+        Args:
+            request_json: Dictionary containing the JSON request to be sent to the API for recovery point creation.
 
-                dbname (str) - name of the db that is created.
+        Returns:
+            tuple: A tuple containing:
+                - Job: An instance of the Job class representing the restore job.
+                - int: The unique recovery point ID.
+                - str: The name of the database that is created.
 
-            Raises:
-                SDKException:
-                    if restore job failed
+        Raises:
+            SDKException: If the restore job fails, the response is empty, or the response indicates failure.
 
-                    if response is empty
-
-                    if response is not success
-
+        #ai-gen-doc
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', self._commcell_object._services['BROWSE'], request_json
@@ -814,7 +886,6 @@ class SQLServerInstance(Instance):
                     d = response_json['browseResponses'][0]["browseResult"]["advConfig"]["applicationMining"]["browseInitResp"]
                     try:
                         return Job(self._commcell_object, d["recoveryPointJobID"]), d["recoveryPointID"], d["edbPath"]
-
                     except Exception as msg:
                         # server code 102 response is empty or doesn't contain required parameters
                         raise SDKException('Instance', 102, msg)
@@ -831,31 +902,42 @@ class SQLServerInstance(Instance):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _table_level_restore_request_json(self,
-                                          src_db,
-                                          tables_to_restore,
-                                          destination_db,
-                                          rp_name,
-                                          include_child_tables,
-                                          include_parent_tables):
-        """Creates and returns a request json for table level restore
+    def _table_level_restore_request_json(
+        self,
+        src_db: str,
+        tables_to_restore: list,
+        destination_db: str,
+        rp_name: str,
+        include_child_tables: bool,
+        include_parent_tables: bool
+    ) -> dict:
+        """Create and return a request JSON for performing a table-level restore in SQL Server.
 
         Args:
-            src_db(str) : Name of the source database
-
-            tables_to_restore(list) : List of tables to restore
-
-            destination_db(str) : Destination database name
-
-            rp_name(str) : Name of the corresponding recovery point
-
-            include_child_tables(bool) : Includes all child tables in restore.
-
-            include_parent_tables(bool) : Includes all parent tables in restore.
+            src_db: Name of the source database from which tables will be restored.
+            tables_to_restore: List of table names to restore from the source database.
+            destination_db: Name of the destination database where tables will be restored.
+            rp_name: Name of the recovery point to use for the restore operation.
+            include_child_tables: If True, include all child tables related to the selected tables in the restore.
+            include_parent_tables: If True, include all parent tables related to the selected tables in the restore.
 
         Returns:
+            A dictionary representing the request JSON for the table-level restore operation.
 
-            request_json(dict) : Request json for table level restore"""
+        Example:
+            >>> request_json = instance._table_level_restore_request_json(
+            ...     src_db="SalesDB",
+            ...     tables_to_restore=["Orders", "Customers"],
+            ...     destination_db="SalesDB_Restore",
+            ...     rp_name="RP_2023_10_01",
+            ...     include_child_tables=True,
+            ...     include_parent_tables=False
+            ... )
+            >>> print(request_json)
+            # The returned dictionary can be used to initiate a table-level restore request.
+
+        #ai-gen-doc
+        """
 
         client_name = self._agent_object._client_object.client_name
         client_id = int(self._agent_object._client_object.client_id)
@@ -868,20 +950,18 @@ class SQLServerInstance(Instance):
 
         request_json = {
             "taskInfo": {
-                "associations": [
-                    {
-                        "subclientId": -1,
-                        "copyId": 0,
-                        "applicationId": 81,
-                        "clientName": client_name,
-                        "backupsetId": -1,
-                        "instanceId": instance_id,
-                        "clientId": client_id,
-                        "instanceName": instance_name,
-                        "_type_": 5,
-                        "appName": self._agent_object.agent_name
-                    }
-                ],
+                "associations": [{
+                    "subclientId": -1,
+                    "copyId": 0,
+                    "applicationId": 81,
+                    "clientName": client_name,
+                    "backupsetId": -1,
+                    "instanceId": instance_id,
+                    "clientId": client_id,
+                    "instanceName": instance_name,
+                    "_type_": 5,
+                    "appName": self._agent_object.agent_name
+                }],
                 "task": {
                     "ownerId": 1,
                     "taskType": 1,
@@ -1013,15 +1093,16 @@ class SQLServerInstance(Instance):
         }
         return request_json
 
-    def _get_ag_groups(self):
-        """Gets available Availability Groups from the primary replica and returns it.
+    def _get_ag_groups(self) -> dict:
+        """Retrieve available Availability Groups from the primary replica.
 
-            Returns:
-                dict - dictionary consisting of the sql destination server options
+        Returns:
+            dict: A dictionary containing SQL destination server options for the available Availability Groups.
 
-            Raises:
-                SDKException: if given AG group name does not exist for instance
+        Raises:
+            SDKException: If a specified Availability Group name does not exist for this SQL Server instance.
 
+        #ai-gen-doc
         """
 
         instance_id = int(self.instance_id)
@@ -1030,7 +1111,7 @@ class SQLServerInstance(Instance):
         webservice = self._commcell_object._services['SQL_AG_GROUPS']
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            "GET", webservice %(client_id, instance_id)
+            "GET", webservice % (client_id, instance_id)
         )
 
         if flag:
@@ -1043,18 +1124,19 @@ class SQLServerInstance(Instance):
                 raise SDKException('Instance', '102', 'No Availability Groups exist for given primary replica '
                                                       'or SQL services are down on target server.')
 
-    def _get_ag_group_replicas(self, ag_group_name):
-        """Gets replicas list from the Availability Group and returns it.
+    def _get_ag_group_replicas(self, ag_group_name: str) -> dict:
+        """Retrieve the list of replicas for a specified SQL Server Availability Group.
 
-            Args:
-                ag_group_name (str)  --  name of the Availability Group
+        Args:
+            ag_group_name: The name of the Availability Group for which to fetch replica information.
 
-            Returns:
-                dict - dictionary consisting of the replicas of the SQL AG group
+        Returns:
+            A dictionary containing details of the replicas associated with the specified SQL AG group.
 
-            Raises:
-                SDKException: if no replicas exist for given AG group
+        Raises:
+            SDKException: If no replicas exist for the given Availability Group.
 
+        #ai-gen-doc
         """
 
         instance_id = int(self.instance_id)
@@ -1076,12 +1158,17 @@ class SQLServerInstance(Instance):
             else:
                 raise SDKException('Response', '102')
 
-    def backup(self):
-        """Run full backup job for all subclients in this instance.
+    def backup(self) -> List['Job']:
+        """Run a full backup job for all subclients in this SQL Server instance.
 
-            Returns:
-                list - list containing the job objects for the full backup jobs started for
-                           the subclients in the backupset
+        This method initiates full backup jobs for each subclient within the backupset 
+        associated with this SQL Server instance. It returns a list of job objects 
+        representing the backup jobs that were started.
+
+        Returns:
+            List[Job]: A list containing Job objects for each subclient's full backup job.
+
+        #ai-gen-doc
         """
         return_list = []
         thread_list = []
@@ -1101,22 +1188,36 @@ class SQLServerInstance(Instance):
 
         return return_list
 
-    def browse(self, get_full_details=False):
-        """Gets the list of the backed up databases for this instance.
-            Args:
-                get_full_details (bool) - if True returns dict with all databases
-                            with last full backupjob details, default false
-            Returns:
-                list - list of all databases
+    def browse(self, get_full_details: bool = False) -> Union[list, dict]:
+        """Retrieve the list of backed up databases for this SQL Server instance.
 
-                dict - database names along with details like backup created time
-                           and database version
+        Args:
+            get_full_details: If True, returns a dictionary with all databases and their last full backup job details.
+                If False (default), returns a simple list of all database names.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Returns:
+            list: A list of all backed up database names if get_full_details is False.
+            dict: A dictionary mapping database names to details such as backup creation time and database version if get_full_details is True.
 
-                    if response is not success
+        Raises:
+            SDKException: If the response is empty or the response indicates failure.
+
+        Example:
+            >>> instance = SQLServerInstance()
+            >>> # Get a simple list of backed up databases
+            >>> db_list = instance.browse()
+            >>> print(db_list)
+            ['Database1', 'Database2', 'Database3']
+
+            >>> # Get detailed information about each backed up database
+            >>> db_details = instance.browse(get_full_details=True)
+            >>> print(db_details)
+            {
+                'Database1': {'last_backup_time': '2023-12-01 10:00:00', 'version': '15.0'},
+                'Database2': {'last_backup_time': '2023-12-02 12:30:00', 'version': '14.0'}
+            }
+
+        #ai-gen-doc
         """
         browse_request = self._commcell_object._services['INSTANCE_BROWSE'] % (
             self._agent_object._client_object.client_id, "SQL", self.instance_id
@@ -1124,31 +1225,44 @@ class SQLServerInstance(Instance):
 
         return self._process_browse_request(browse_request, get_full_details=get_full_details)
 
-    def browse_in_time(self, from_date=None, to_date=None, full_details=None):
-        """Gets the list of the backed up databases for this instance in the given time frame.
+    def browse_in_time(
+        self,
+        from_date: Optional[Union[str, int]] = None,
+        to_date: Optional[Union[str, int]] = None,
+        full_details: Optional[bool] = None
+    ) -> Union[List[str], Dict[str, Any]]:
+        """Retrieve a list of backed up databases for this SQL Server instance within a specified time frame.
 
-            Args:
-                from_date (str/int): start date to browse for backups. Get backups from this date/time.
-                Format: dd/MM/YYYY, dd/MM/YYYY HH:MM:SS or integer timestamp
-                Gets contents from 01/01/1970 if not specified.  Defaults to None.
+        Args:
+            from_date: The start date/time for browsing backups. Accepts a string in the format 'dd/MM/YYYY', 
+                'dd/MM/YYYY HH:MM:SS', or an integer timestamp. If not specified, defaults to 01/01/1970.
+            to_date: The end date/time for browsing backups. Accepts a string in the format 'dd/MM/YYYY', 
+                'dd/MM/YYYY HH:MM:SS', or an integer timestamp. If not specified, defaults to the current date.
+            full_details: If True, returns detailed information for each database, including backup creation time 
+                and database version. If False or None, returns only the list of database names.
 
-                to_date (str): end date to browse for backups. Get backups until this date/time.
-                Format: dd/MM/YYYY, dd/MM/YYYY HH:MM:SS or integer timestamp
-                Gets contents till current day if not specified.  Defaults to None.
+        Returns:
+            If full_details is False or None:
+                List of database names (str) that have backups in the specified time frame.
+            If full_details is True:
+                Dictionary mapping database names (str) to their details (such as backup creation time and version).
 
-                full_details (bool): flag whether to get full details on the databases in the browse
+        Raises:
+            SDKException: If the response is empty or not successful.
 
-            Returns:
-                list - list of all databases
+        Example:
+            >>> # Get all backed up databases from 01/01/2023 to 31/01/2023
+            >>> db_list = sql_instance.browse_in_time(from_date='01/01/2023', to_date='31/01/2023')
+            >>> print(db_list)
+            >>> 
+            >>> # Get detailed backup information for all databases in the last week
+            >>> import time
+            >>> one_week_ago = int(time.time()) - 7*24*60*60
+            >>> db_details = sql_instance.browse_in_time(from_date=one_week_ago, full_details=True)
+            >>> for db, details in db_details.items():
+            >>>     print(f"{db}: {details}")
 
-                dict - database names along with details like backup created timen
-                           and database version
-
-            Raises:
-                SDKException:
-                    if response is empty
-
-                    if response is not success
+        #ai-gen-doc
         """
         regex_date = r"\d{1,2}/\d{1,2}/\d{4}"
         regex_datetime = regex_date + r"\s+\d{2}:\d{2}:\d{2}"
@@ -1176,66 +1290,71 @@ class SQLServerInstance(Instance):
         return self._process_browse_request(browse_request, full_details)
 
     def restore(
-            self,
-            content_to_restore,
-            drop_connections_to_databse=False,
-            overwrite=True,
-            restore_path=None,
-            to_time=None,
-            sql_restore_type=SQLDefines.DATABASE_RESTORE,
-            sql_recover_type=SQLDefines.STATE_RECOVER,
-            undo_path=None,
-            restricted_user=None,
-            destination_instance=None,
-            **kwargs
-    ):
-        """Restores the databases specified in the input paths list.
+        self,
+        content_to_restore: list,
+        drop_connections_to_databse: bool = False,
+        overwrite: bool = True,
+        restore_path: str = None,
+        to_time: 'Union[int, str, None]' = None,
+        sql_restore_type: str = SQLDefines.DATABASE_RESTORE,
+        sql_recover_type: str = SQLDefines.STATE_RECOVER,
+        undo_path: str = None,
+        restricted_user: bool = None,
+        destination_instance: str = None,
+        **kwargs
+    ) -> 'Union[Job, Schedule]':
+        """Restore the specified SQL Server databases from backup.
 
-            Args:
-                content_to_restore (list):  List of databases to restore.
+        This method initiates a restore operation for the provided list of databases, with options to control
+        overwrite behavior, restore paths, recovery state, and advanced SQL Server restore settings.
 
-                drop_connections_to_databse (bool):  Drop connections to database.  Defaults to False.
+        Args:
+            content_to_restore: List of database names to restore.
+            drop_connections_to_databse: If True, drops existing connections to the database before restore. Defaults to False.
+            overwrite: If True, unconditionally overwrites existing files during restore. Defaults to True.
+            restore_path: Optional. Path on disk where the database should be restored. Defaults to None.
+            to_time: Optional. Point-in-time to restore to, as an integer timestamp or string in 'yyyy-MM-dd HH:mm:ss' format.
+            sql_restore_type: Optional. Type of SQL restore operation (e.g., 'DATABASE_RESTORE', 'STEP_RESTORE', 'RECOVER_ONLY').
+            sql_recover_type: Optional. SQL recovery state after restore (e.g., 'STATE_RECOVER', 'STATE_NORECOVER', 'STATE_STANDBY').
+            undo_path: Optional. File path for undo file (used in standby restores).
+            restricted_user: Optional. If True, restores the database in restricted user mode.
+            destination_instance: Optional. Name of the destination SQL Server instance for the restore.
 
-                overwrite (bool):  Unconditional overwrite files during restore.  Defaults to True.
+        Keyword Args:
+            point_in_time: Optional[int]. Time value to use for point-in-time restore.
+            schedule_pattern: Optional[dict]. Schedule pattern for scheduling the restore job.
+            hardware_revert: Optional[bool]. If True, performs a hardware revert. Defaults to False.
+            log_shipping: Optional[bool]. If True, restores log backups in standby or no recovery state.
 
-                restore_path (str):  Existing path on disk to restore.  Defaults to None.
+        Returns:
+            Job: Instance of the Job class representing the restore job.
+            Schedule: Instance of the Schedule class if the restore is scheduled.
 
-                to_time (int/str):  Restore to time. Can be integer value or string as 'yyyy-MM-dd HH:mm:ss'.
-                Defaults to None.
+        Raises:
+            SDKException: If content_to_restore is not a list, or if the restore response is empty or unsuccessful.
 
-                sql_recover_type (str):  Type of sql recovery state. (STATE_RECOVER, STATE_NORECOVER, STATE_STANDBY)
-                Defaults to STATE_RECOVER.
+        Example:
+            >>> # Restore a single database with default options
+            >>> job = sql_instance.restore(['MyDatabase'])
+            >>> print(f"Restore job started: {job}")
 
-                sql_restore_type (str):  Type of sql restore state.  (DATABASE_RESTORE, STEP_RESTORE, RECOVER_ONLY)
-                Defaults to DATABASE_RESTORE.
+            >>> # Restore multiple databases to a specific path and point in time
+            >>> job = sql_instance.restore(
+            ...     ['DB1', 'DB2'],
+            ...     restore_path='D:\\SQLRestores',
+            ...     to_time='2023-12-01 10:00:00'
+            ... )
+            >>> print(f"Restore job started: {job}")
 
-                undo_path (str):  File path for undo path for sql standby restores.  Defaults to None.
+            >>> # Schedule a restore job with a custom schedule pattern
+            >>> schedule_pattern = {'freq_type': 'daily', 'active_start_time': '02:00'}
+            >>> schedule = sql_instance.restore(
+            ...     ['MyDatabase'],
+            ...     schedule_pattern=schedule_pattern
+            ... )
+            >>> print(f"Scheduled restore: {schedule}")
 
-                restricted_user (bool):  Restore database in restricted user mode.  Defaults to None.
-
-                destination_instance (str):  Destination instance to restore too.  Defaults to None.
-
-            Keyword Args:
-                point_in_time (int, optional): Time value to use as point in time restore
-
-                schedule_pattern (dict):    Please refer SchedulePattern.create_schedule in schedules.py
-                for the types of patterns that can be sent
-
-                hardware_revert (bool): Does hardware revert. Default value is False
-
-                log_shipping (bool): Restores log backups on database in standby or no recovery state.
-
-            Returns:
-                object - instance of the Job class for this restore job
-                object - instance of the Schedule class for this restore job if its a scheduled Job
-
-            Raises:
-                SDKException:
-                    if content_to_restore is not a list
-
-                    if response is empty
-
-                    if response is not success
+        #ai-gen-doc
         """
         if not isinstance(content_to_restore, list):
             raise SDKException('Instance', '101')
@@ -1260,35 +1379,44 @@ class SQLServerInstance(Instance):
         return self._process_restore_response(request_json)
 
     def restore_to_destination_server(
-            self,
-            content_to_restore,
-            destination_server,
-            drop_connections_to_databse=False,
-            overwrite=True,
-            restore_path=None):
-        """Restores the databases specified in the input paths list.
+        self,
+        content_to_restore: list,
+        destination_server: str,
+        drop_connections_to_databse: bool = False,
+        overwrite: bool = True,
+        restore_path: str = None
+    ) -> 'Job':
+        """Restore specified SQL Server databases to a destination server.
 
-            Args:
-                content_to_restore (list):  List of databases to restore.
+        This method initiates a restore operation for the given list of databases, allowing you to specify
+        the destination server, whether to drop existing connections, whether to overwrite existing files,
+        and an optional restore path.
 
-                destination_server (str):  Destination server(instance) name.
+        Args:
+            content_to_restore: List of database names to restore.
+            destination_server: Name of the destination SQL Server instance.
+            drop_connections_to_databse: If True, drops active connections to the database before restore. Defaults to False.
+            overwrite: If True, unconditionally overwrites files during restore. Defaults to True.
+            restore_path: Optional. Path on disk where the databases should be restored. If None, uses default location.
 
-                drop_connections_to_databse (bool): Drop connections to database.  Defaults to False.
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                overwrite (bool):  Unconditional overwrite files during restore.  Defaults to True.
+        Raises:
+            SDKException: If content_to_restore is not a list, if the response is empty, or if the restore operation fails.
 
-                restore_path (str):  Existing path on disk to restore.  Default to None.
+        Example:
+            >>> databases = ['SalesDB', 'HRDB']
+            >>> job = sql_instance.restore_to_destination_server(
+            ...     content_to_restore=databases,
+            ...     destination_server='SQLServer02\\Instance1',
+            ...     drop_connections_to_databse=True,
+            ...     overwrite=True,
+            ...     restore_path='D:\\SQLRestores'
+            ... )
+            >>> print(f"Restore job started with ID: {job.job_id}")
 
-            Returns:
-                object - instance of the Job class for this restore job
-
-            Raises:
-                SDKException:
-                    if content_to_restore is not a list
-
-                    if response is empty
-
-                    if response is not success
+        #ai-gen-doc
         """
         if not isinstance(content_to_restore, list):
             raise SDKException('Instance', '101')
@@ -1303,13 +1431,14 @@ class SQLServerInstance(Instance):
 
         return self._process_restore_response(request_json)
 
-    def get_recovery_points(self):
-        """
-        lists all the recovery points.
+    def get_recovery_points(self) -> tuple:
+        """List all recovery points and clones for the SQL Server instance.
 
-        returns:
-            object (list) - list of all the recovery points and clones
-    """
+        Returns:
+            tuple: A list containing all recovery points and clones associated with the SQL Server instance.
+
+        #ai-gen-doc
+        """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'GET', self._commcell_object._services["SQL_CLONES"], None
         )
@@ -1320,37 +1449,43 @@ class SQLServerInstance(Instance):
             return 0, None
         raise SDKException('Response', '102', "failed to get recovery points")
 
-    def create_recovery_point(self,
-                              database_name,
-                              new_database_name=None,
-                              destination_instance=None,
-                              expire_days=1,
-                              snap=False
-                              ):
-        """stats a granular restore or recovery point job and creates a on demand restore of a database
+    def create_recovery_point(
+        self,
+        database_name: str,
+        new_database_name: Optional[str] = None,
+        destination_instance: Optional[str] = None,
+        expire_days: int = 1,
+        snap: bool = False
+    ) -> tuple:
+        """Start a granular restore or recovery point job and create an on-demand restore of a SQL Server database.
 
-        agrs:
-            database_name (str) :   Name of the database for granular restore
+        This method initiates a restore or recovery point job for the specified database, optionally creating a new database
+        with a custom name and/or on a different SQL Server instance. The recovery point will be available for the specified
+        number of days. Optionally, a recovery point can be created for a snapshot setup.
 
-            new_database_name (str) :   Name of the newly created database database
-                    default: None   creates a database with original dbname+ <TIMESTAMP>
+        Args:
+            database_name: Name of the database to perform granular restore or recovery point creation.
+            new_database_name: Name for the newly created database. If None, a name is generated using the original database name and a timestamp.
+            destination_instance: Name of the destination SQL Server instance. If None, the database is restored to the same instance.
+            expire_days: Number of days the recovery point will be available. Default is 1 day.
+            snap: Whether to create a recovery point for a snapshot setup. Default is False.
 
-            destination_instance (str):  Destination server(instance) name.
-                    default None .creates a database in the same instance
+        Returns:
+            A tuple containing:
+                - Job: An instance of the Job class representing the restore job.
+                - int: The unique recovery point ID.
+                - str: The name of the created recovery point database.
 
-            expire_days (int) :    days for which the database will be available
-                    default 1 day.
+        Example:
+            >>> # Create a recovery point for 'SalesDB' and restore as 'SalesDB_Restore' on the same instance
+            >>> job, recovery_point_id, recovery_db_name = sql_instance.create_recovery_point(
+            ...     database_name='SalesDB',
+            ...     new_database_name='SalesDB_Restore',
+            ...     expire_days=3
+            ... )
+            >>> print(f"Job ID: {job}, Recovery Point ID: {recovery_point_id}, Database Name: {recovery_db_name}")
 
-            snap (bool)     : create recovery point for the snap setup
-                    dafault False
-
-        returns:
-             object (Job) : instance of the Job class for this restore job
-
-             recovery point Id (int) : id to uniquely access the recovery point
-
-            recovery_point_name (str) : name of the database created
-
+        #ai-gen-doc
         """
         # write a wrapper over this to allow creating more than one recovery points at a time is neccessary
         if not isinstance(database_name, str):
@@ -1370,32 +1505,45 @@ class SQLServerInstance(Instance):
         )
         return self._process_recovery_point_request(recoverypoint_request)
 
-    def table_level_restore(self,
-                            src_db_name,
-                            tables_to_restore,
-                            destination_db_name,
-                            rp_name,
-                            include_child_tables,
-                            include_parent_tables):
-        """Starts a table level restore
+    def table_level_restore(
+        self,
+        src_db_name: str,
+        tables_to_restore: list,
+        destination_db_name: str,
+        rp_name: str,
+        include_child_tables: bool,
+        include_parent_tables: bool
+    ) -> 'Job':
+        """Initiate a table-level restore operation for a SQL Server database.
+
+        This method starts a restore job to recover specific tables from a source database to a destination database,
+        using a specified recovery point. You can choose to include related child and/or parent tables in the restore.
 
         Args:
-
-            src_db_name(str) : Name of the source database
-
-            tables_to_restore(list) : List of tables to restore
-
-            destination_db_name(str) : Destination database name
-
-            rp_name(str) : Name of recovery point
-
-            include_child_tables(bool) : Includes all child tables in restore.
-
-            include_parent_tables(bool) : Includes all parent tables in restore.
+            src_db_name: Name of the source SQL Server database from which tables will be restored.
+            tables_to_restore: List of table names to restore from the source database.
+            destination_db_name: Name of the destination database where tables will be restored.
+            rp_name: Name of the recovery point to use for the restore operation.
+            include_child_tables: If True, includes all child tables related to the specified tables in the restore.
+            include_parent_tables: If True, includes all parent tables related to the specified tables in the restore.
 
         Returns:
+            Job: An instance of the Job class representing the initiated restore job.
 
-            job : Instance of Job class for this restore job"""
+        Example:
+            >>> instance = SQLServerInstance()
+            >>> job = instance.table_level_restore(
+            ...     src_db_name="SalesDB",
+            ...     tables_to_restore=["Orders", "Customers"],
+            ...     destination_db_name="SalesDB_Restore",
+            ...     rp_name="RP_2023_10_01",
+            ...     include_child_tables=True,
+            ...     include_parent_tables=False
+            ... )
+            >>> print(f"Restore job started with ID: {job.job_id}")
+
+        #ai-gen-doc
+        """
 
         if not (isinstance(src_db_name, str)
                 or isinstance(tables_to_restore, list)
@@ -1413,12 +1561,13 @@ class SQLServerInstance(Instance):
 
         return self._process_restore_response(request_json)
 
-    def vss_option(self, value):
-        """Enables or disables VSS option on SQL instance
+    def vss_option(self, value: bool) -> None:
+        """Enable or disable the VSS (Volume Shadow Copy Service) option on the SQL Server instance.
 
-            Args:
-                value (bool)  --  Boolean value whether to set VSS option on or off
+        Args:
+            value: Set to True to enable VSS option, or False to disable it.
 
+        #ai-gen-doc
         """
 
         request_json = {
@@ -1427,12 +1576,15 @@ class SQLServerInstance(Instance):
 
         self._set_instance_properties("_mssql_instance_prop", request_json)
 
-    def vdi_timeout(self, value):
-        """Sets the SQL VDI timeout value on SQL instance
+    def vdi_timeout(self, value: int) -> None:
+        """Set the SQL VDI (Virtual Device Interface) timeout value for the SQL Server instance.
 
-            Args:
-                value (int)  --  value of vdi timeout for sql vdi operations
+        This method configures the timeout duration (in seconds) for SQL VDI operations on the instance.
 
+        Args:
+            value: The timeout value in seconds to be set for SQL VDI operations.
+
+        #ai-gen-doc
         """
 
         request_json = {
@@ -1441,15 +1593,28 @@ class SQLServerInstance(Instance):
 
         self._set_instance_properties("_mssql_instance_prop", request_json)
 
-    def impersonation(self, enable, credentials=None):
-        """Sets impersonation on SQL instance with local system account or provided credentials.
+    def impersonation(self, enable: bool, credentials: Optional[str] = None) -> None:
+        """Enable or disable impersonation on the SQL Server instance.
 
-            Args:
-                enable (bool)  --  boolean value whether to set impersonation
+        This method sets impersonation for the SQL Server instance using either the local system account 
+        or the provided credentials. If impersonation is enabled and no credentials are specified, 
+        the local system account will be used by default.
 
-                credentials (str, optional)   --  credentials to set for impersonation.
-                Defaults to local system account if enabled is True and credential name not provided.
+        Args:
+            enable: Set to True to enable impersonation, or False to disable it.
+            credentials: Optional. The name of the credentials to use for impersonation. If not provided 
+                and impersonation is enabled, the local system account will be used.
 
+        Example:
+            >>> sql_instance = SQLServerInstance()
+            >>> # Enable impersonation using the local system account
+            >>> sql_instance.impersonation(True)
+            >>> # Enable impersonation using specific credentials
+            >>> sql_instance.impersonation(True, credentials="sql_admin_creds")
+            >>> # Disable impersonation
+            >>> sql_instance.impersonation(False)
+
+        #ai-gen-doc
         """
 
         if enable and credentials is None:
@@ -1479,26 +1644,27 @@ class SQLServerInstance(Instance):
 
         self._set_instance_properties("_mssql_instance_prop", impersonate_json)
 
-    def create_sql_ag(self, client_name, ag_group_name, credentials=None):
-        """Creates a new SQL Availability Group client and instance.
+    def create_sql_ag(self, client_name: str, ag_group_name: str, credentials: Optional[str] = None) -> 'Instance':
+        """Create a new SQL Availability Group (AG) client and instance.
 
-            Args:
-                client_name (str)  --  name to use for Availability Group client
+        This method provisions a new SQL AG client and its associated instance using the specified client name 
+        and availability group name. Optionally, impersonation credentials can be provided.
 
-                ag_group_name (str)   --  name of the Availability Group to create
+        Args:
+            client_name: The name to assign to the new Availability Group client.
+            ag_group_name: The name of the Availability Group to create.
+            credentials: Optional. The name of the credentials to use for impersonation. If not provided, 
+                no impersonation is used.
 
-                credentials (str, optional)   --  name of credentials to use as impersonation
-                Default is no impersonation if credentials name is not provided.
+        Returns:
+            Instance: An instance of the Instance class representing the newly created Availability Group.
 
-            Returns:
-                object - instance of the Instance class for the newly created Availability Group
+        Raises:
+            SDKException: If the Availability Group for the given primary replica does not exist,
+                if the Availability Group client or instance fails to be created,
+                or if the specified credentials for impersonation do not exist.
 
-            Raises:
-                SDKException:
-                    if Availability Group for given primary replica does not exist
-                    if Availability Group client/instance fails to be created.
-                    if Credentials for impersonation does not exist
-
+        #ai-gen-doc
         """
         # If credentials passed, verify it exists
         if credentials:
@@ -1604,15 +1770,16 @@ class SQLServerInstance(Instance):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def database_details(self, database_name):
-        """Gets the database details
+    def database_details(self, database_name: str) -> Optional[dict]:
+        """Retrieve detailed information for a specific SQL Server database.
 
-            Args:
-                database_name (str)  --  name of database to get database details
+        Args:
+            database_name: The name of the database for which details are to be retrieved.
 
-            Returns:
-                dict - dictionary of database and details
+        Returns:
+            A dictionary containing the details of the specified database, such as configuration, status, and other relevant properties.
 
+        #ai-gen-doc
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'GET', self._commcell_object._services['SQL_DATABASE'] %(self.instance_id, database_name), None

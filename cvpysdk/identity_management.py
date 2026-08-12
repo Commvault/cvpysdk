@@ -48,6 +48,8 @@ IdentityManagementApps
 
     delete_saml_app()               --  deletes the specified saml app
 
+    get_saml_apps()                 --  get the list of all the saml apps in the commcell
+
     get_saml()                      --  returns instance of SamlApp class
 
     configure_saml_app()            --  creates a saml app
@@ -67,11 +69,10 @@ IdentityManagementApp
 
     __repr__()                  -- return the appname name, the instance it is associated with
 
-    _get_app_key()              -- gets the app key
-
-    _get_app_details()          --  gets the details of the identity management app
+    properties                  -- holds the updated properties of app
 
     get_app_props()             -- returns a dict containing the properties of a third party app
+                                   (via qoperation)
 
     refresh()                   -- refresh the details of the app
 
@@ -139,7 +140,10 @@ class IdentityManagementApps(object):
         self._APPS = commcell_object._services['IDENTITY_APPS']
         self._ADD_SAML = commcell_object._services['ADD_OR_GET_SAML']
         self._SAML = commcell_object._services['EDIT_SAML']
+        self._LOCAL_APP = commcell_object._services['LOCAL_APP']
+        self._V4_IDENTITY_SERVERS = commcell_object._services['V4_IDENTITY_SERVERS']
         self._apps = None
+        self._local_app = None
         self.refresh()
 
     def __str__(self):
@@ -243,6 +247,46 @@ class IdentityManagementApps(object):
 
             raise SDKException('IdentityManagement', '102')
 
+    def get_saml_apps(self):
+        """Returns a list of all SAML apps in the commcell
+
+            Returns:
+                list    -   List containing dicts for all SAML apps
+
+                    [
+                        {
+                            'id': 1097,
+                            'name': 'c1',
+                            'type': 'SAML',
+                            'samlType': 'ADFS',
+                            'company': {'id': 384, 'name': 'c1'},
+                            'configured': True
+                        },
+                        ...
+                    ]
+
+            Raises:
+                SDKException:
+                    if response is not success
+        """
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', self._V4_IDENTITY_SERVERS
+        )
+
+        if flag:
+            saml_apps = []
+            if response.json() and 'identityServers' in response.json():
+                identity_servers = response.json()['identityServers']
+
+                for server in identity_servers:
+                    if server.get('type') == 'SAML':
+                        saml_apps.append(server)
+
+            return saml_apps
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
     def get_saml(self, app_name):
         """Returns a SamlApp object of the specified app name
 
@@ -275,10 +319,25 @@ class IdentityManagementApps(object):
             Returns:
                 object    -   object of IdentityManangementApp class
         """
-        if self._apps:
-            for app in self._apps:
-                if self._apps[app]['appType'] == 4:
-                    return self.get(app)
+        if self._local_app is None:
+            flag, response = self._cvpysdk_object.make_request('GET', self._LOCAL_APP)
+            if flag:
+                if response.json() and 'clientThirdPartyApps' in response.json():
+                    local_apps = response.json()['clientThirdPartyApps']
+                    if local_apps:
+                        local_app = local_apps[0]
+                        self._local_app = IdentityManagementApp(
+                            self._commcell_object,
+                            local_app['appName'],
+                            local_app
+                        )
+                if self._local_app is None:
+                    raise SDKException('IdentityManagement', '102', 'No local identity app found')
+            else:
+                response_string = self._update_response_(response.text)
+                raise SDKException('Response', '101', response_string)
+
+        return self._local_app
 
     @property
     def get_commcell_identity_apps(self):
@@ -470,20 +529,22 @@ class IdentityManagementApps(object):
                 SDKException:
                     if failed to configure identity app
         """
-        users_list = []
-        if user_list.lower() == 'all':
-            users_list += [{'_type_': 12}]
+        if user_list is None:
+            user_list = []
+        if str(user_list).lower() == 'all':
+            users_list = [{'_type_': 12}]
         else:
-            users_list += [
+            users_list = [
                 {'userId': self._commcell_object.users.all_users[user_name], '_type_': 13}
                 for user_name in user_list
             ]
+
         third_party_json = {
             'opType': optype,
             'clientThirdPartyApps': [
                 {
                     'appType': 4,
-                    'isEnabled': True,
+                    'appName': self.get_local_identity_app.app_name,
                     'assocTree': users_list
                 }
             ]
@@ -655,14 +716,15 @@ class IdentityManagementApps(object):
 
         """
         third_party_json = {
-            "App_SetClientThirdPartyAppPropReq": {
                 "opType": 1,
                 "clientThirdPartyApps": [
                     {
+                        "appDescription": "",
+                        "appDisplayName": appname,
                         "appName": appname,
                         "flags": 0,
                         "appType": 5,
-                        "isEnabled": 1,
+                        "isEnabled": True,
                         "props": {
                             "nameValues": props
                         },
@@ -674,19 +736,26 @@ class IdentityManagementApps(object):
                         ]
                     }
                 ]
-            }
+
         }
 
-        response_json = self._commcell_object.qoperation_execute(third_party_json)
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._APPS, third_party_json
+        )
 
-        if response_json.get('errorCode', 0) != 0:
-            raise SDKException(
-                'IdentityManagement',
-                '103',
-                'Error: "{}"'.format(response_json['errorMessage'])
-            )
+        if flag:
+            if response.json() and 'error' in response.json():
+                if response.json()['error']['errorCode'] == 0:
+                    self.refresh()
+                else:
+                    raise SDKException(
+                        'IdentityManagement',
+                        '103',
+                        ' - error {0}'.format(response.json()['error']['errorString'])
+                    )
         else:
-            self.refresh()
+            response_string = self._update_response_(response.text)
+            raise SDKException('IdentityManagement', '103', response_string)
 
     def has_identity_app(self, app_name):
         """Checks if an identity app exits in the commcell
@@ -714,6 +783,7 @@ class IdentityManagementApps(object):
                 
         """
         self._apps = self._get_apps(hard)
+        self._local_app = None
 
 
 class IdentityManagementApp(object):
@@ -732,15 +802,10 @@ class IdentityManagementApp(object):
             Returns:
                 object - instance of the IdentityManagementApp class
         """
-        self._properties = None
+        self._properties = app_dict
         self._commcell_object = commcell_object
-        self._cvpysdk_object = commcell_object._cvpysdk_object
-        self._update_response_ = commcell_object._update_response_
 
         self._app_name = app_name
-        self._app_description = None
-        self._flags = None
-        self._app_type = None
         self._app_type_dict = {
             1: 'Regular',
             2: 'SAML',
@@ -748,18 +813,7 @@ class IdentityManagementApp(object):
             4: 'Local Identity',
             5: 'OpenId Connect'
         }
-        self._is_enabled = None
         self._app_displayname = None
-        self._app_dict = app_dict
-
-        if app_dict:
-            self._app_key = app_dict['appKey']
-        else:
-            self._app_key = self._get_app_key()
-
-        self._APPS = commcell_object._services['IDENTITY_APPS']
-
-        self.refresh()
 
     def __repr__(self):
         """String representation of the instance of this class."""
@@ -769,47 +823,6 @@ class IdentityManagementApp(object):
         return representation_string.format(
             self._app_name, self._commcell_object.commserv_name
         )
-
-    def _get_app_key(self):
-        """Gets the key of app associated to this object
-
-            Returns:
-                str - key associated with this app
-        """
-        apps = IdentityManagementApps(self._commcell_object)
-        return apps.get(self.app_name).app_key
-
-    def _get_app_details(self):
-        """Returns a dict containing the details of a third party app.
-
-            Returns:
-                dict    -   details of the identity app
-
-            Raises:
-                SDKException:
-                        if response is not success
-        """
-        if self._app_dict:
-            return self._app_dict
-
-        flag, response = self._cvpysdk_object.make_request(
-            'GET', self._APPS
-        )
-        if flag:
-            if response.json() and 'clientThirdPartyApps' in response.json():
-                response_value = response.json()['clientThirdPartyApps']
-                for app in response_value:
-                    if app['appKey'] == self._app_key:
-                        self._app_description = app.get('appDescription')
-                        self._flags = app.get('flags')
-                        self._app_type = self._app_type_dict[app.get('appType')]
-                        self._is_enabled = app.get('isEnabled')
-                        return app
-            else:
-                raise SDKException('IdentityManagement', '101')
-        else:
-            response_string = self._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
 
     def get_app_props(self):
         """Returns a dict containing the properties of a third party app.
@@ -832,7 +845,19 @@ class IdentityManagementApp(object):
 
     def refresh(self):
         """Refresh the properties of the app."""
-        self._properties = self._get_app_details()
+        apps = self._commcell_object.identity_management
+        apps.refresh()
+        if self.app_type == 'Local Identity':
+            self._properties = apps.get_local_identity_app.properties
+        else:
+            self._properties = apps.get(self.app_name).properties
+
+    @property
+    def properties(self):
+        """Returns the properties of the app."""
+        if self._properties is None:
+            self.refresh()
+        return self._properties
 
     @property
     def app_name(self):
@@ -842,27 +867,30 @@ class IdentityManagementApp(object):
     @property
     def app_key(self):
         """Treats the app key as a read-only attribute."""
-        return self._app_key
+        return self.properties.get('appKey')
 
     @property
     def app_description(self):
         """Treats the app description as a read-only attribute."""
-        return self._app_description
+        return self.properties.get('appDescription')
 
     @property
     def app_type(self):
         """Treats the app type as a read-only attribute."""
-        return self._app_type
+        return self._app_type_dict.get(
+            int(self.properties.get('appType', -1)), 
+            'unknown app type'
+        )
 
     @property
     def is_enabled(self):
-        """Treats the enabled peroperty as a read-only attribute."""
-        return self._is_enabled
+        """Treats the enabled property as a read-only attribute."""
+        return self.properties.get('isEnabled')
 
     @property
     def flags(self):
         """Treats the app flags as a read-only attribute."""
-        return self._flags
+        return self.properties.get('flags')
 
 
 class SamlApp(object):
@@ -887,7 +915,7 @@ class SamlApp(object):
         self._appname = appname
         self._properties = None
         self._SAML = commcell._services['EDIT_SAML']
-        self._redirecturl = commcell._services['POLL_REQUEST_ROUTER']
+        self._redirecturl = commcell._services['REDIRECT_LIST']
         self._APPS = commcell._services['IDENTITY_APPS']
         self._SAML_PROP = commcell._services['GET_SAML_PROP']
 
@@ -948,11 +976,8 @@ class SamlApp(object):
                 SDKException:
                     if response is not success
         """
-        req_json = {
-            "appKeys": [self._properties['appKey']],
-            "propLevel": 30
-        }
-        flag, response = self._cvpysdk_object.make_request('POST', self._SAML_PROP, req_json)
+        req_url = self._APPS+ '?appName=%s' % self._appname
+        flag, response = self._cvpysdk_object.make_request('GET', req_url)
         if flag:
             if response.json() and 'clientThirdPartyApps' in response.json():
                 return response.json()['clientThirdPartyApps'][0]

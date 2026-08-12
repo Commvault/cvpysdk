@@ -192,6 +192,7 @@ class ComplianceSearchUtils():
         if app_type in ComplianceConstants.FILE_TYPES:
             search_request["advSearchGrp"]["galaxyFilter"][0]["applicationType"] = ComplianceConstants.FILE_TYPE
             search_request["advSearchGrp"][ComplianceConstants.FILE_FILTERS_KEY] = ComplianceConstants.FILE_FILTERS
+            search_request["advSearchGrp"][ComplianceConstants.COMMON_FILTER] = ComplianceConstants.COMMON_FILTERS
             custom_facet = copy.deepcopy(ComplianceConstants.FILE_FACET)
             if app_type != ComplianceConstants.AppTypes.FILE_SYSTEM:
                 custom_facet = copy.deepcopy(ComplianceConstants.CUSTOM_FACET)
@@ -201,6 +202,13 @@ class ComplianceSearchUtils():
                         {
                             "param": "RESPONSE_FIELD_LIST",
                             "value": ComplianceConstants.RESPONSE_FIELD_LIST
+                        },
+                    )
+                if app_type == ComplianceConstants.AppTypes.SHAREPOINT:
+                    search_request["searchProcessingInfo"]["queryParams"].append(
+                        {
+                            "param": "RESPONSE_FIELD_LIST",
+                            "value": ComplianceConstants.RESPONSE_FIELD_LIST_SHAREPOINT
                         },
                     )
                 custom_facet[1]["stringParameter"][0]["name"] = ComplianceConstants.CUSTOM_FACETS[app_type]
@@ -759,6 +767,7 @@ class Export():
         self._update_response_ = None
         self._user_guid = None
         self._download_file_api = None
+        self._download_via_stream = None
         self._download_file_json_req = None
         self.refresh()
 
@@ -783,6 +792,7 @@ class Export():
         self._update_response_ = self._commcell._update_response_
         self._user_guid = self._commcell.users.get(self._commcell.commcell_username).user_guid
         self._download_file_api = self._services['DOWNLOAD_EXPORT_ITEMS']
+        self._download_via_stream = self._services['DOWNLOAD_VIA_STREAM']
         self._download_file_json_req = \
             {
                 "appTypeId": 200,
@@ -814,23 +824,54 @@ class Export():
 
         """
         flag, response = self._cvpysdk_object.make_request(
-            method="POST", url=self._download_file_api, payload=self._download_file_json_req)
-        if flag:
-            if response.json() and "fileContent" in response.json():
-                file_content = response.json()['fileContent']
-                download_file = os.path.join(download_folder, file_content['fileName'])
-                if 'cloudUrl' in response.json():
-                    url = response.json()['cloudUrl']
-                    cloud_file = requests.get(url)
-                    if cloud_file.status_code == 200:
-                        file_data = cloud_file.content
-                    else:
-                        raise SDKException('ComplianceSearch', '109')
-                else:
-                    file_data = base64.b64decode(file_content['data'])
-                with open(download_file, "wb") as f:
-                    f.write(file_data)
-                return download_file
-            raise SDKException('Response', '102')
-        else:
+            method="POST", url=self._download_file_api, payload=self._download_file_json_req
+        )
+
+        if not flag or not response.json() or not response.json().get("fileContent"):
             self._response_not_success(response)
+
+        file_content = response.json().get("fileContent", {})
+        download_file = os.path.join(download_folder, file_content.get("fileName", ""))
+        req_id = file_content.get("requestId")
+
+        if not download_file or not req_id:
+            raise SDKException('ComplianceSearch', '110')
+
+        # Handle response with 'cloudUrl' or 'data'
+        if 'cloudUrl' in response.json() or 'data' in file_content:
+            if 'cloudUrl' in response.json():
+                url = response.json().get('cloudUrl')
+                cloud_file = requests.get(url)
+                if cloud_file.status_code == 200:
+                    file_data = cloud_file.content
+                else:
+                    raise SDKException('ComplianceSearch', '109')
+            else:
+                file_data = base64.b64decode(file_content['data'])
+            with open(download_file, "wb") as f:
+                f.write(file_data)
+            return download_file
+        else:
+            # Handle download via stream API
+            self._download_file_json_req.update({
+                "requestId": req_id,
+                "userInformation": {
+                    "userGuid": self._user_guid,
+                    "userName": self._commcell.commcell_username,
+                }
+            })
+
+            flag, response = self._cvpysdk_object.make_request(
+                method="POST", url=self._download_via_stream, payload=self._download_file_json_req, stream=True
+            )
+
+            if flag:
+                try:
+                    with open(download_file, "wb") as f:
+                        for content in response.iter_content():
+                            f.write(content)
+                except Exception:
+                    raise SDKException('Response', '102')
+                return download_file
+            else:
+                self._response_not_success(response)

@@ -45,18 +45,42 @@ NetworkThrottle:
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
+from typing import Any, Dict, List
+
 from .exception import SDKException
 
-
 class NetworkThrottle(object):
-    """Class for performing network throttle related operations on a client or client group"""
+    """
+    Class for managing and configuring network throttling operations for clients and client groups.
 
-    def __init__(self, class_object):
-        """Initialize the NetworkThrottle class object
+    This class provides an interface to control network bandwidth usage by enabling or disabling
+    network throttling, sharing bandwidth among clients, and managing remote clients and client groups.
+    It also supports the configuration of throttle schedules and rules to optimize network performance.
 
-            Args:
-                class_object (object)  --  instance of the client/client group class
+    Key Features:
+        - Initialization with a class object for context
+        - Retrieval of throttle properties
+        - Enable or disable network throttling via property
+        - Share bandwidth among clients or groups
+        - Manage remote clients and remote client groups
+        - Configure and manage throttle schedules and rules
+        - Internal configuration of network throttle settings
 
+    #ai-gen-doc
+    """
+
+    def __init__(self, class_object: object) -> None:
+        """Initialize a NetworkThrottle instance for managing network throttling settings.
+
+        Args:
+            class_object: An instance of the client or client group class to which network throttling will be applied.
+
+        Example:
+            >>> client = Client('client_name')
+            >>> throttle = NetworkThrottle(client)
+            >>> print("NetworkThrottle object initialized for client.")
+
+        #ai-gen-doc
         """
         from .client import Client
         from .clientgroup import ClientGroup
@@ -82,11 +106,22 @@ class NetworkThrottle(object):
         self._remote_clients = []
         self._get_throttle_properties()
 
-    def _get_throttle_properties(self):
-        """Get all the existing network throttle properties on a client/client group
-        and retain each of them
+    def _get_throttle_properties(self) -> Dict[str, Any]:
+        """Retrieve and store all existing network throttle properties for a client or client group.
 
+        This method fetches the current network throttle settings associated with the client or client group
+        and retains each property for further use or inspection.
 
+        Returns:
+            A dictionary containing the network throttle properties and their values.
+
+        Example:
+            >>> throttle = NetworkThrottle()
+            >>> properties = throttle._get_throttle_properties()
+            >>> print(properties)
+            {'max_bandwidth': 100, 'throttle_type': 'client', ...}
+
+        #ai-gen-doc
         """
         if self.is_client:
             throttle_prop = self._client_object._properties['clientProps']
@@ -109,47 +144,86 @@ class NetworkThrottle(object):
             self._remote_clients = (throttle_prop.get('networkThrottle').get('clientList', []))
 
     @property
-    def enable_network_throttle(self):
-        """Gets the value for enable network throttling
+    def enable_network_throttle(self) -> bool:
+        """Get the current status of network throttling.
 
+        Returns:
+            bool: True if network throttling is enabled, False otherwise.
+
+        Example:
+            >>> throttle = NetworkThrottle()
+            >>> is_enabled = throttle.enable_network_throttle
+            >>> print(f"Network throttling enabled: {is_enabled}")
+
+        #ai-gen-doc
         """
         return self._enable_network_throttling
 
     @enable_network_throttle.setter
-    def enable_network_throttle(self, val):
-        """sets the value for enable network throttling
+    def enable_network_throttle(self, val: bool) -> None:
+        """Set the value to enable or disable network throttling.
 
-            Args:
-                val (boolean) --  value for enable network throttling
+        Args:
+            val: Boolean value indicating whether to enable (True) or disable (False) network throttling.
 
+        Example:
+            >>> throttle = NetworkThrottle()
+            >>> throttle.enable_network_throttle = True  # Enable network throttling
+            >>> throttle.enable_network_throttle = False  # Disable network throttling
+
+        #ai-gen-doc
         """
 
         self._enable_network_throttling = val
         self._config_network_throttle()
 
     @property
-    def share_bandwidth(self):
-        """Gets the value for share bandwidth
+    def share_bandwidth(self) -> int:
+        """Get the configured value for shared network bandwidth.
 
+        Returns:
+            The amount of bandwidth (in Mbps) allocated for sharing across network operations.
+
+        Example:
+            >>> throttle = NetworkThrottle()
+            >>> bandwidth = throttle.share_bandwidth
+            >>> print(f"Shared bandwidth: {bandwidth} Mbps")
+
+        #ai-gen-doc
         """
         return self._share_bandwidth
 
     @share_bandwidth.setter
-    def share_bandwidth(self, val):
-        """Sets the value for share bandwidth
+    def share_bandwidth(self, val: bool) -> None:
+        """Set the value for the share bandwidth property.
 
-            Args:
-                val (boolean) --  value for share bandwidth
+        Args:
+            val: Boolean value indicating whether to enable (True) or disable (False) bandwidth sharing.
 
+        Example:
+            >>> throttle = NetworkThrottle()
+            >>> throttle.share_bandwidth = True  # Enable bandwidth sharing
+            >>> throttle.share_bandwidth = False  # Disable bandwidth sharing
+
+        #ai-gen-doc
         """
 
         self._share_bandwidth = val
         self.enable_network_throttle = True
 
     @property
-    def remote_clients(self):
-        """Gets the associated client towards which throttling is configured
+    def remote_clients(self) -> List[str]:
+        """Get the list of remote clients for which network throttling is configured.
 
+        Returns:
+            List of client names (as strings) that have network throttling settings applied.
+
+        Example:
+            >>> throttle = NetworkThrottle()
+            >>> clients = throttle.remote_clients
+            >>> print(f"Throttling is configured for: {clients}")
+
+        #ai-gen-doc
         """
         clients = []
 
@@ -158,12 +232,18 @@ class NetworkThrottle(object):
         return clients
 
     @remote_clients.setter
-    def remote_clients(self, clients):
-        """Sets the remote clients towards which throttling will be configured
+    def remote_clients(self, clients: list) -> None:
+        """Set the list of remote clients for which network throttling will be configured.
 
-            Args:
-                clients (list) --   list of clients
+        Args:
+            clients: A list of client names (as strings) to apply throttling settings to.
 
+        Example:
+            >>> throttle = NetworkThrottle()
+            >>> throttle.remote_clients = ['client1', 'client2', 'client3']
+            >>> # The specified clients will now have throttling configured
+
+        #ai-gen-doc
         """
 
         for client in clients:
@@ -175,9 +255,18 @@ class NetworkThrottle(object):
         self.enable_network_throttle = True
 
     @property
-    def remote_client_groups(self):
-        """Gets the associated client groups towards which throttling is configured
+    def remote_client_groups(self) -> List[str]:
+        """Get the list of client groups associated with network throttling.
 
+        Returns:
+            List of client group names (as strings) for which throttling is configured.
+
+        Example:
+            >>> throttle = NetworkThrottle()
+            >>> groups = throttle.remote_client_groups
+            >>> print(f"Throttled client groups: {groups}")
+
+        #ai-gen-doc
         """
         client_groups = []
 
@@ -186,12 +275,18 @@ class NetworkThrottle(object):
         return client_groups
 
     @remote_client_groups.setter
-    def remote_client_groups(self, client_groups):
-        """Sets the remote client groups towards which throttling will be configured
+    def remote_client_groups(self, client_groups: list) -> None:
+        """Set the remote client groups for which network throttling will be configured.
 
-            Args:
-                client_groups (list) -- list of client groups
+        Args:
+            client_groups: A list of client group names or identifiers to apply throttling settings to.
 
+        Example:
+            >>> throttle = NetworkThrottle()
+            >>> throttle.remote_client_groups = ['GroupA', 'GroupB']
+            >>> # Throttling will now be configured for the specified remote client groups
+
+        #ai-gen-doc
         """
 
         for client_group in client_groups:
@@ -203,59 +298,72 @@ class NetworkThrottle(object):
         self.enable_network_throttle = True
 
     @property
-    def throttle_schedules(self):
-        """Gets the throttle rules set on a client or client group
+    def throttle_schedules(self) -> list:
+        """Retrieve the throttle rules configured for a client or client group.
 
+        Returns:
+            list: A list of throttle rule configurations currently set on the client or client group.
+
+        Example:
+            >>> network_throttle = NetworkThrottle()
+            >>> schedules = network_throttle.throttle_schedules
+            >>> print(f"Number of throttle schedules: {len(schedules)}")
+            >>> for rule in schedules:
+            ...     print(rule)
+
+        #ai-gen-doc
         """
         return self._throttle_schedules
 
     @throttle_schedules.setter
-    def throttle_schedules(self, throttle_rules):
-        """Sets different throttle schedules on a client/client group
+    def throttle_schedules(self, throttle_rules: list[dict]) -> None:
+        """Set throttle schedules for a client or client group.
 
-            Args:
-                throttle_rules (list of dict) --  list of throttle rules
+        This setter allows you to define multiple network throttle rules, specifying bandwidth limits and schedules
+        for sending and receiving data. Each rule is represented as a dictionary with supported keys such as
+        "sendRate", "recvRate", "days", and others.
 
-            Supported keys:
+        Args:
+            throttle_rules: A list of dictionaries, each representing a throttle rule. Supported keys in each
+                dictionary include:
+                    - "sendRate": (int) Maximum send rate in KBps.
+                    - "sendEnabled": (bool) Whether sending is enabled.
+                    - "receiveEnabled": (bool) Whether receiving is enabled.
+                    - "recvRate": (int) Maximum receive rate in KBps.
+                    - "days": (str) 7-character string representing days of the week (e.g., '1010101').
+                    - "isAbsolute": (bool) Whether the rate is absolute.
+                    - "startTime": (int) Start time in seconds from midnight.
+                    - "endTime": (int) End time in seconds from midnight.
+                    - "sendRatePercent": (int) Send rate as a percentage.
+                    - "recvRatePercent": (int) Receive rate as a percentage.
 
-                "sendRate"
-                "sendEnabled"
-                "receiveEnabled"
-                "recvRate"
-                "days"
-                "isAbsolute"
-                "startTime"
-                "endTime"
-                "sendRatePercent"
-                "recvRatePercent"
+        Example:
+            >>> throttle_rules = [
+            ...     {
+            ...         "sendRate": 1024,
+            ...         "sendEnabled": True,
+            ...         "receiveEnabled": True,
+            ...         "recvRate": 1024,
+            ...         "days": '1010101',
+            ...         "isAbsolute": True,
+            ...         "startTime": 0,
+            ...         "endTime": 0,
+            ...         "sendRatePercent": 40,
+            ...         "recvRatePercent": 40
+            ...     },
+            ...     {
+            ...         "sendRate": 1024,
+            ...         "sendEnabled": True,
+            ...         "receiveEnabled": True,
+            ...         "recvRate": 1024,
+            ...         "days": '1111111',
+            ...         "isAbsolute": False
+            ...     }
+            ... ]
+            >>> network_throttle = NetworkThrottle()
+            >>> network_throttle.throttle_schedules = throttle_rules  # Use assignment for property setter
 
-
-            Example:
-             [
-                {
-                    "sendRate": 1024,
-                    "sendEnabled": true,
-                    "receiveEnabled": true,
-                    "recvRate": 1024,
-                    "days": '1010101',
-                    "isAbsolute": true,
-                    "startTime": 0,
-                    "endTime": 0,
-                    "sendRatePercent": 40,
-                    "recvRatePercent": 40
-                },
-
-                {
-                    "sendRate": 1024,
-                    "sendEnabled": True,
-                    "receiveEnabled": True,
-                    "recvRate": 1024,
-                    "days": '1111111',
-                    "isAbsolute": False
-
-                }
-            ]
-
+        #ai-gen-doc
         """
 
         for throttle_rule in throttle_rules:
@@ -277,18 +385,22 @@ class NetworkThrottle(object):
 
         self.enable_network_throttle = True
 
-    def _config_network_throttle(self):
-        """Sets network throttle properties on the client/client group
+    def _config_network_throttle(self) -> None:
+        """Configure network throttle properties on the client or client group.
 
+        This method applies the network throttle settings to the associated client or client group.
+        It should be used to enforce bandwidth limitations or other network-related restrictions.
 
-                    Raises:
-                        SDKException:
-                            if  request was not successful
+        Raises:
+            SDKException: If the request was not successful, if invalid input was provided,
+                or if an empty response was received.
 
-                            if  invalid input was provided in the request
+        Example:
+            >>> throttle = NetworkThrottle()
+            >>> throttle._config_network_throttle()
+            >>> print("Network throttle configuration applied successfully.")
 
-                            if empty response was received
-
+        #ai-gen-doc
         """
 
         update_props_call = None

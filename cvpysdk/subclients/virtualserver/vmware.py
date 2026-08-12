@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------------
 # Copyright Commvault Systems, Inc.
@@ -38,6 +38,15 @@ VMWareVirtualServerSubclient:
     full_vm_restore_out_of_place() -- restores the VM specified to the provided
                                       VMware psuedoclient vcenter via
                                       vcenter_client
+
+    - ``full_vm_conversion_ahv`` — restore/convert a VMware VM into **Nutanix AHV**.
+
+    - ``full_vm_conversion_proxmox`` — restore/convert a VMware VM into **Proxmox VE**.
+
+        Both functions validate inputs, normalize common parameters (e.g., converting a
+        single VM name to a list), build the required restore options, produce the
+        request payload, and submit the job. A ``Job`` object is returned so callers can
+        monitor progress and final status.
 
 """
 
@@ -386,7 +395,8 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
                      copy_precedence=0,
                      convert_to=None,
                      media_agent=None,
-                     snap_proxy=None):
+                     snap_proxy=None,
+                     **kwargs):
         """Restores the disk specified in the input paths list to the same location
 
             Args:
@@ -743,6 +753,185 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
             subnetId=subnetId
         )
 
+        request_json = self._prepare_fullvm_restore_json(restore_option)
+        return self._process_restore_response(request_json)
+
+    def full_vm_conversion_ahv(
+        self,
+        vcenter_client,
+        vm_to_restore=None,
+        esx_host=None,
+        esx_server=None,
+        data_store=None,
+        overwrite=True,
+        power_on=True,
+        copy_precedence=0,
+        proxy_client=None,
+        destination_network=None,
+        destination_os_name=None
+    ):
+        """
+        Conversion from VMware VM to AHV VM.
+    
+        This operation restores a VMware virtual machine into an AHV environment.
+        It allows administrators to migrate workloads from VMware to Nutanix AHV
+        while providing options for datastore mapping, ESX source details, overwrite
+        policies, power-on behavior, and network configuration.
+    
+        Args:
+            vcenter_client (str): Name of the vCenter client where the VM should be restored from
+            vm_to_restore (list): VM name which needs to be restored
+            esx_host (str): Destination ESX host of the VMware VM
+            esx_server (str): Destination ESX server of the VMware VM
+            data_store (str): Destination container of the AHV VM
+            overwrite (bool): Whether to overwrite the existing VM on AHV. Default: True
+            power_on (bool): Whether to power on the restored VM on AHV. Default: True
+            copy_precedence (int): Copy precedence value. Default: 0
+            proxy_client (str): Destination Proxy client handling the restore
+            destination_network (str): Destination AHV network to which the VM should be connected
+            destination_os_name (str): OS name of the source VM
+    
+        Returns:
+            object: Instance of the Job class for this restore job.
+    
+        Raises:
+            SDKException:
+                - If inputs are not of correct type as per definition
+                - If failed to initialize job
+                - If response is empty
+                - If response is not successful
+        """
+        restore_option = {}
+    
+        if not isinstance(vcenter_client, str):
+            raise SDKException(
+                "Subclient",
+                "101",
+                "Invalid input: 'vcenter_client' must be a string."
+            )
+    
+        if vm_to_restore and not isinstance(vm_to_restore, (str, list)):
+            raise SDKException(
+                "Subclient",
+                "101",
+                f"Invalid input: 'vm_to_restore' must be a string or list, "
+                f"but received {type(vm_to_restore).__name__}."
+            )
+    
+        if vm_to_restore is not None and isinstance(vm_to_restore, str):
+            vm_to_restore = [vm_to_restore]
+    
+        sub_client = self._set_vm_conversion_defaults(vcenter_client, restore_option)
+        instance = sub_client._backupset_object._instance_object
+    
+        self._set_restore_inputs(
+            restore_option,
+            in_place=False,
+            vcenter_client=vcenter_client,
+            datastore=data_store,
+            esx_host=esx_host,
+            esx_server=esx_server,
+            unconditional_overwrite=overwrite,
+            client_name=proxy_client,
+            power_on=power_on,
+            vm_to_restore=vm_to_restore,
+            copy_precedence=copy_precedence,
+            volume_level_restore=1,
+            destination_instance=instance.instance_name,
+            backupset_client_name=instance._agent_object._client_object.client_name,
+            destination_network=destination_network,
+            destination_os_name=destination_os_name,
+        )
+    
+        request_json = self._prepare_fullvm_restore_json(restore_option)
+        return self._process_restore_response(request_json)
+
+    def full_vm_conversion_proxmox(
+        self,
+        vcenter_client,
+        vm_to_restore=None,
+        esx_host=None,
+        esx_server=None,
+        data_store=None,
+        overwrite=True,
+        power_on=True,
+        copy_precedence=0,
+        proxy_client=None,
+        destination_network=None,
+        networkName=None
+    ):
+        """
+        Conversion from VMware VM to proxmox VM.
+    
+        This operation restores a VMware virtual machine into an Promox environment.
+        It allows administrators to migrate workloads from VMware to Proxmox
+        while providing options for datastore mapping, ESX source details, overwrite
+        policies, power-on behavior, and network configuration.
+
+        Args:
+            vcenter_client (str): Name of the vCenter client where the VM should be restored 
+            vm_to_restore (list): VM name which needs to be restored
+            esx_host (str): Destination ESX host of the VMware VM
+            esx_server (str): Destination ESX server of the VMware VM
+            data_store (str): Destination container of the Proxmox VM
+            overwrite (bool): Whether to overwrite the existing VM on Proxmox. Default: True
+            power_on (bool): Whether to power on the restored VM on Proxmox. Default: True
+            copy_precedence (int): Copy precedence value. Default: 0
+            proxy_client (str): Destination Proxy client handling the restore
+            destination_network (str): Destination Proxmox network to which the VM should be connected
+            networkName (str): Destination network name
+
+        Returns:
+            object: Instance of the Job class for this restore job.
+    
+        Raises:
+            SDKException:
+                - If inputs are not of correct type as per definition
+                - If failed to initialize job
+                - If response is empty
+                - If response is not successful
+        """
+        restore_option = {}
+    
+        if not isinstance(vcenter_client, str):
+            raise SDKException(
+                "Subclient",
+                "101",
+                "Invalid input: 'vcenter_client' must be a string."
+            )
+    
+        if vm_to_restore and not isinstance(vm_to_restore, (str, list)):
+            raise SDKException(
+                "Subclient",
+                "101",
+                f"Invalid input: 'vm_to_restore' must be a string or list, "
+                f"but received {type(vm_to_restore).__name__}."
+            )
+    
+        if vm_to_restore is not None and isinstance(vm_to_restore, str):
+            vm_to_restore = [vm_to_restore]
+    
+        sub_client = self._set_vm_conversion_defaults(vcenter_client, restore_option)
+        instance = sub_client._backupset_object._instance_object
+    
+        self._set_restore_inputs(
+            restore_option,
+            in_place=False,
+            vcenter_client=vcenter_client,
+            datastore=data_store,
+            esx_host=esx_host,
+            esx_server=esx_server,
+            unconditional_overwrite=overwrite,
+            client_name=proxy_client,
+            power_on=power_on,
+            copy_precedence=copy_precedence,
+            vm_to_restore=vm_to_restore,
+            volume_level_restore=1,
+            destination_instance=instance.instance_name,
+            backupset_client_name=instance._agent_object._client_object.client_name,
+            destination_network=destination_network,
+            networkName=networkName
+        )
         request_json = self._prepare_fullvm_restore_json(restore_option)
         return self._process_restore_response(request_json)
 

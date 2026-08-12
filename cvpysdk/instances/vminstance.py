@@ -21,35 +21,43 @@
 
 VMInstance is the only class defined in this file.
 
-VMInstance:     Derived class from Instance  Base class, representing a
-                        VMInstance, and to perform operations on that instance
-
+VMInstance:     Derived class from Instance  Base class, representing a VMInstance,
+                and to perform operations on that instance
 
 VMInstance:
-
-    __init__(
-        agent_object,
-        instance_name,
-        instance_id)                    --  initialize object of VMInstance object
-                                                associated with the Instance Instance
+    __init__()                    --  initialize object of VMInstance object associated with the Instance
 """
 from ..instance import Instance
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ..agent import Agent
 
 
 class VMInstance(Instance):
     """
-    Class for representing VMWare instance of the Virtual Server agent.
+    Represents a VMWare instance managed by the Virtual Server agent.
+
+    This class encapsulates the details and management of a VMWare instance,
+    providing an interface for initializing and handling VMWare-specific
+    virtual server instances within the broader backup or virtualization
+    management framework.
+
+    Key Features:
+        - Initialization with agent object, instance name, and instance ID
+        - Specialized for VMWare virtual server environments
+        - Inherits core functionality from the base Instance class
+
+    #ai-gen-doc
     """
-    def __init__(self, agent_object, instance_name, instance_id=None):
-        """
-        Initialize the Instance object for the given Virtual Server instance.
+    def __init__(self, agent_object: 'Agent', instance_name: str, instance_id: int = None) -> None:
+        """Initialize a VMInstance object for the specified Virtual Server instance.
 
-                   Args:
-                       agent_object    (object)    --  instance of the Agent class
+        Args:
+            agent_object: An instance of the Agent class representing the associated agent.
+            instance_name: The name of the virtual server instance.
+            instance_id: Optional; the unique identifier for the instance. If not provided, it may be determined automatically.
 
-                       instance_name   (str)       --  instance name
-
-                       instance_id     (int)       --  instance id
-
+        #ai-gen-doc
         """
         super(VMInstance, self).__init__(agent_object, instance_name, instance_id)

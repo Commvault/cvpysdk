@@ -52,26 +52,60 @@ RemoteCache
     assoc_entity_to_remote_cache()        --  Associates entity to the Remote Cache
 
     delete_remote_cache_contents()        --  deletes remote cache contents
+
+    get_remote_cache_details()            --  gets all details of specific remote cache
+
+    get_qualified_servers_for_remote_cache() -- get the list of clients which can be configured as Remote Cache
+
+    update_cache_path()                   --  updates the cache path of Remote Cache
+
+    enable_rc()                           --  enables the remote cache
+
+    disable_rc()                          --  disables the remote cache
+
+    update_associations()                 --  updates the clients/client group associations to a remote cache
+
+    delete_remote_cache()                 --  deleted the remote cache
+
+    get_all_remote_cache()                --  get the list of all remote caches
 """
 from xml.etree import ElementTree as ET
 from ..exception import SDKException
 from .deploymentconstants import UnixDownloadFeatures
 from .deploymentconstants import WindowsDownloadFeatures
 from .deploymentconstants import OSNameIDMapping
+from typing import Optional, List, Dict, Any, TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from ..commcell import Commcell
 
 class CommServeCache(object):
-    """"class for downloading software packages"""
+    """class for downloading software packages
 
-    def __init__(self, commcell_object):
+    Description:
+        This class is used to perform operations on the CommServe cache.
+
+    Attributes:
+        commcell_object (object): Instance of the Commcell class.
+        request_xml (str): XML request for cache and remote cache related operations.
+        _cvpysdk_object (object): Instance of the CVPySDK class.
+        _services (dict): Dictionary of CommCell services.
+
+    Usage:
+        >>> cs_cache = CommServeCache(commcell_object)
+    """
+
+    def __init__(self, commcell_object: 'Commcell') -> None:
         """Initialize commcell_object of the Download class.
 
-            Args:
-                commcell_object (object)  --  instance of the Commcell class
+        Args:
+            commcell_object (object): Instance of the Commcell class.
 
-            Returns:
-                object - instance of the CommServeCache class
+        Returns:
+            CommServeCache: Instance of the CommServeCache class.
 
+        Usage:
+            >>> cs_cache = CommServeCache(commcell_object)
         """
 
         self.commcell_object = commcell_object
@@ -80,8 +114,15 @@ class CommServeCache(object):
         self._services = commcell_object._services
 
     @staticmethod
-    def get_request_xml():
-        """Returns request xml for cache and remote cache related operations"""
+    def get_request_xml() -> str:
+        """Returns request xml for cache and remote cache related operations
+
+        Returns:
+            str: The XML request string.
+
+        Usage:
+            >>> CommServeCache.get_request_xml()
+        """
         return """<EVGui_SetUpdateAgentInfoReq>
                 <uaInfo deletePackageCache="" deleteUpdateCache="" swAgentOpType=""
                 uaOpCode="0" uaPackageCacheStatus="0"
@@ -92,18 +133,19 @@ class CommServeCache(object):
                 </EVGui_SetUpdateAgentInfoReq>
                 """
 
-    def get_cs_cache_path(self):
-        """
-        Returns CS cache path
+    def get_cs_cache_path(self) -> str:
+        """Returns CS cache path
 
         Returns:
-            cs_cache_path (str) -- returns cs cache path
+            str: The CS cache path.
 
         Raises:
             SDKException:
-            - Failed to execute the api
+                - Failed to execute the API.
+                - Response is incorrect/empty.
 
-            - Response is incorrect/empty
+        Usage:
+            >>> cs_cache.get_cs_cache_path()
         """
         try:
             response = self.commcell_object.get_gxglobalparam_value()
@@ -129,15 +171,16 @@ class CommServeCache(object):
         except Exception:
             raise SDKException('Response', '102')
 
-    def delete_cache(self):
-        """
-        Delete CS cache
+    def delete_cache(self) -> None:
+        """Delete CS cache
 
         Raises:
             SDKException:
-            - Failed to execute the api
+                - Failed to execute the API.
+                - Response is incorrect.
 
-            - Response is incorrect
+        Usage:
+            >>> cs_cache.delete_cache()
         """
         root = ET.fromstring(self.request_xml)
         uaInfo = root.find(".//uaInfo")
@@ -156,15 +199,16 @@ class CommServeCache(object):
                 'Error Code:"{0}"\nError Message: "{1}"'.format(response.get('errorCode'), error_message)
             )
 
-    def commit_cache(self):
-        """
-        Commits CS cache
+    def commit_cache(self) -> None:
+        """Commits CS cache
 
         Raises:
             SDKException:
-            - Failed to execute the api
+                - Failed to execute the API.
+                - Response is incorrect.
 
-            - Response is incorrect
+        Usage:
+            >>> cs_cache.commit_cache()
         """
 
         root = ET.fromstring(self.request_xml)
@@ -184,10 +228,19 @@ class CommServeCache(object):
                 'Error Code:"{0}"\nError Message: "{1}"'.format(response.get('errorCode'), error_message)
             )
 
-    def get_remote_cache_clients(self):
-        """
-        Fetches the List of Remote Cache configured for a particular Admin/Tenant
-        :return: List of Remote Cache configured
+    def get_remote_cache_clients(self) -> List[str]:
+        """Fetches the List of Remote Cache configured for a particular Admin/Tenant
+
+        Returns:
+            List[str]: List of Remote Cache configured.
+
+        Raises:
+            SDKException:
+                - Response is incorrect.
+                - Failed to execute the API.
+
+        Usage:
+            >>> cs_cache.get_remote_cache_clients()
         """
         flag, response = self._cvpysdk_object.make_request('GET', self._services['GET_REMOTE_CACHE_CLIENTS'])
 
@@ -209,18 +262,34 @@ class CommServeCache(object):
 
 
 class RemoteCache(object):
-    """"class for downloading software packages"""
+    """class for downloading software packages
 
-    def __init__(self, commcell, client_name):
+    Description:
+        This class is used to perform operations on a remote cache client.
+
+    Attributes:
+        commcell (object): Instance of the Commcell class.
+        client_object (object): Instance of the Client class.
+        request_xml (str): XML request for cache and remote cache related operations.
+        _cvpysdk_object (object): Instance of the CVPySDK class.
+        _services (dict): Dictionary of CommCell services.
+
+    Usage:
+        >>> remote_cache = RemoteCache(commcell_object, 'client1')
+    """
+
+    def __init__(self, commcell: 'Commcell', client_name: str) -> None:
         """Initialize commcell_object of the Download class.
 
-            Args:
-                commcell (object)     --  commcell object
-                client_name           --  client name
+        Args:
+            commcell (object): Commcell object.
+            client_name (str): Client name.
 
-            Returns:
-                object - instance of the RemoteCache class
+        Returns:
+            RemoteCache: Instance of the RemoteCache class.
 
+        Usage:
+            >>> remote_cache = RemoteCache(commcell_object, 'client1')
         """
         self.commcell = commcell
         self.client_object = self.commcell.clients.get(client_name)
@@ -228,20 +297,19 @@ class RemoteCache(object):
         self._cvpysdk_object = commcell._cvpysdk_object
         self._services = commcell._services
 
-    def get_remote_cache_path(self):
-        """
-        Returns remote cache path, if exists, else None
+    def get_remote_cache_path(self) -> Optional[str]:
+        """Returns remote cache path, if exists, else None
 
         Returns:
-            remote_cache_path (str) - remote cache path of the client if exists
-            None                    - otherwise
+            Optional[str]: Remote cache path of the client if exists, otherwise None.
 
         Raises:
             SDKException:
-            - Failed to execute the api
+                - Failed to execute the API.
+                - Response is incorrect/empty.
 
-            - Response is incorrect/empty
-
+        Usage:
+            >>> remote_cache.get_remote_cache_path()
         """
         request_xml = '<EVGui_GetUpdateAgentInfoReq />'
         response = self.commcell.qoperation_execute(request_xml)
@@ -256,32 +324,38 @@ class RemoteCache(object):
         else:
             raise SDKException('Response', '102')
 
-    def configure_remotecache(self, cache_path):
-        """
-        Configures client as remote cache
+    def configure_remotecache(self, cache_path: str, cs_version: Optional[int] = None) -> None:
+        """Configures client as remote cache
 
         Args:
-              cache_path (str)  - Remote cache path
+            cache_path (str): Remote cache path.
+            cs_version (int, optional): CS SP version. Defaults to None.
+                        (This parameter should be passed if tennat admin is configuring RC)
 
         Raises:
             SDKException:
-            - Failed to execute the api
+                - Failed to execute the API.
+                - Response is incorrect.
 
-            - Response is incorrect
+        Usage:
+            >>> remote_cache.configure_remotecache(cache_path='/opt/remote_cache')
         """
+        if cs_version is None:
+            cs_version = self.commcell.commserv_version
 
         # using API to configure RC from SP34
-        if self.commcell.commserv_version >= 34:
+        if cs_version >= 34:
             request_json = {
                 "cacheDirectory": cache_path,
                 "associations": [],
                 "cache": {
-                    "name": self.client_object.client_name
+                    "name": self.client_object.client_name,
+                    "id": int(self.client_object.client_id)
                 }
             }
 
             flag, response = self._cvpysdk_object.make_request(
-                'POST', self._services['CREATE_RC'], request_json
+                'POST', self._services['SOFTWARE_CACHE'], request_json
             )
 
             if flag:
@@ -319,40 +393,37 @@ class RemoteCache(object):
                     'Error Code:"{0}"\nError Message: "{1}"'.format(response.get('errorCode'), error_message)
                 )
 
-    def configure_packages_to_sync(self, win_os=None, win_package_list=None, unix_os=None,
-                                   unix_package_list=None):
-        """
-        Configures packages to sync for the remote cache
+    def configure_packages_to_sync(self, win_os: Optional[List[str]] = None, win_package_list: Optional[List[str]] = None, unix_os: Optional[List[str]] = None,
+                                   unix_package_list: Optional[List[str]] = None) -> None:
+        """Configures packages to sync for the remote cache
 
         Args:
-            win_os 		(list)	 	-- list of windows oses to sync
-            win_package_list  (list)-- list of windows packages to sync
-            unix_os (list) 		  	-- list of unix oses to sync
-            unix_package_list (list)-- list of unix packages to sync
+            win_os (Optional[List[str]]): List of Windows OSes to sync. Defaults to None.
+            win_package_list (Optional[List[str]]): List of Windows packages to sync. Defaults to None.
+            unix_os (Optional[List[str]]): List of Unix OSes to sync. Defaults to None.
+            unix_package_list (Optional[List[str]]): List of Unix packages to sync. Defaults to None.
 
         Raises:
             SDKException:
-            - Failed to execute the api
-
-            - Response is incorrect
-
-            - Incorrect input
+                - Failed to execute the API.
+                - Response is incorrect.
+                - Incorrect input.
 
         Usage:
-            commcell_obj.configure_packages_to_sync()
-
-            win_os = ["WINDOWS_32", "WINDOWS_64"]
-            unix_os = ["UNIX_LINUX64", "UNIX_AIX"]
-            win_package_list = ["FILE_SYSTEM", "MEDIA_AGENT"]
-            unix_package_list = ["FILE_SYSTEM", "MEDIA_AGENT"]
-
-            OS_Name_ID_Mapping, WindowsDownloadFeatures and UnixDownloadFeatures enum is used for
-            providing input to the configure_packages_to_sync method, it can be imported by
-
-                >>> from cvpysdk.deployment.deploymentconstants import UnixDownloadFeatures
-                    from cvpysdk.deployment.deploymentconstants import OS_Name_ID_Mapping
-                    from cvpysdk.deployment.deploymentconstants import WindowsDownloadFeatures
-
+            >>> remote_cache.configure_packages_to_sync()
+            >>>
+            >>> win_os = ["WINDOWS_32", "WINDOWS_64"]
+            >>> unix_os = ["UNIX_LINUX64", "UNIX_AIX"]
+            >>> win_package_list = ["FILE_SYSTEM", "MEDIA_AGENT"]
+            >>> unix_package_list = ["FILE_SYSTEM", "MEDIA_AGENT"]
+            >>>
+            >>> remote_cache.configure_packages_to_sync(win_os=win_os, win_package_list=win_package_list, unix_os=unix_os, unix_package_list=unix_package_list)
+            >>>
+            >>> # OS_Name_ID_Mapping, WindowsDownloadFeatures and UnixDownloadFeatures enum is used for
+            >>> # providing input to the configure_packages_to_sync method, it can be imported by
+            >>> # from cvpysdk.deployment.deploymentconstants import UnixDownloadFeatures
+            >>> # from cvpysdk.deployment.deploymentconstants import OS_Name_ID_Mapping
+            >>> # from cvpysdk.deployment.deploymentconstants import WindowsDownloadFeatures
         """
         if win_os:
             win_os_id = [eval(f"OSNameIDMapping.{each}.value") for each in win_os]
@@ -387,15 +458,16 @@ class RemoteCache(object):
                     response['CVGui_GenericResp']['@errorCode'],
                     error_message))
 
-    def delete_remote_cache_contents(self):
-        """
-        Delete remote cache contents
+    def delete_remote_cache_contents(self) -> None:
+        """Delete remote cache contents
 
         Raises:
             SDKException:
-            - Failed to execute the api
+                - Failed to execute the API.
+                - Response is incorrect.
 
-            - Response is incorrect
+        Usage:
+            >>> remote_cache.delete_remote_cache_contents()
         """
         root = ET.fromstring(self.request_xml)
         uaInfo = root.find(".//uaInfo")
@@ -416,20 +488,21 @@ class RemoteCache(object):
                 'Error Code:"{0}"\nError Message: "{1}"'.format(response.get('errorCode'), error_message)
             )
 
-    def assoc_entity_to_remote_cache(self, client_name=None, client_group_name=None):
-        """
-            Points/Associates entity to the Remote Cache Client
+    def assoc_entity_to_remote_cache(self, client_name: Optional[str] = None, client_group_name: Optional[str] = None) -> None:
+        """Points/Associates entity to the Remote Cache Client
 
-                Args:
-                    client_name (str)  -- The client which has to be pointed to Remote Cache
+        Args:
+            client_name (Optional[str]): The client which has to be pointed to Remote Cache. Defaults to None.
+            client_group_name (Optional[str]): The client_group which has to be pointed to Remote Cache. Defaults to None.
 
-                    client_group_name (str)  -- The client_group which has to be pointed to Remote Cache
+        Raises:
+            SDKException:
+                - Failed to execute the API.
+                - Response is incorrect.
 
-                Raises:
-                    SDKException:
-                    - Failed to execute the api
-
-                    - Response is incorrect
+        Usage:
+            >>> remote_cache.assoc_entity_to_remote_cache(client_name='client1')
+            >>> remote_cache.assoc_entity_to_remote_cache(client_group_name='client_group1')
         """
 
         if client_name is None and client_group_name is None:
@@ -439,7 +512,7 @@ class RemoteCache(object):
             entity_obj = self.commcell.clients.get(client_name)
             entity_id = entity_obj.client_id
             entity_name = entity_obj.client_name
-            entity_type ="0"
+            entity_type = "0"
 
         elif client_group_name in self.commcell.client_groups.all_clientgroups:
             entity_obj = self.commcell.client_groups.get(client_group_name)
@@ -489,6 +562,276 @@ class RemoteCache(object):
                         )
                 else:
                     raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101')
+
+    def get_remote_cache_details(self) -> Dict[str, Any]:
+        """Retrieve details of the remote software cache.
+
+        The returned dictionary contains the following keys:
+            - cacheDirectory: Path to the cache directory.
+            - enabled: Boolean indicating if the cache is enabled.
+            - associations: List of associated entities.
+            - cacheContents: Information about the contents of the cache.
+            - status: Current status of the remote cache.
+
+        Returns:
+            Dictionary containing remote cache details for the client.
+
+        Raises:
+            SDKException: If the response from the server is invalid or the request fails.
+
+        Example:
+            >>> remote_cache = RemoteCache(...)
+            >>> cache_details = remote_cache.get_remote_cache_details()
+        """
+
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', self._services['SOFTWARE_CACHE']+f"/{self.client_object.client_id}"
+        )
+
+        if flag:
+            if response.json():
+                return response.json()['softwareCacheDetailList'][0]
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101')
+
+    def get_qualified_servers_for_remote_cache(self) -> List[Dict[str, Any]]:
+        """Retrieve all machines qualified to be configured as remote cache servers.
+
+        Returns:
+            List of dictionaries containing details for each qualified remote cache server.
+
+        Raises:
+            SDKException: If the response from the server is invalid or the request fails.
+
+        Example:
+            >>> remote_cache = RemoteCache(...)
+            >>> qualified_servers = remote_cache.get_qualified_servers_for_remote_cache()
+        """
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', self._services['QUALIFIED_SERVERS_SW']
+        )
+
+        if flag:
+            if response.json():
+                return response.json()['softwareCacheDetailList']
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101')
+
+    def update_cache_path(self, path: str) -> None:
+        """Update the cache directory path for the remote cache.
+
+        This method sets a new cache directory path for the remote cache associated with the client.
+        If the update fails or the response contains a non-zero error code, an SDKException is raised.
+
+        Args:
+            path: The new cache directory path as a string.
+
+        Raises:
+            SDKException: If the update operation fails or the response contains a non-zero error code.
+
+        Example:
+            >>> remote_cache = RemoteCache(...)
+            >>> remote_cache.update_cache_path("/mnt/remote/cache")
+            # If the operation fails, SDKException will be raised.
+        """
+        request_json = {}
+        request_json['cacheDirectory'] = path
+
+        flag, response = self._cvpysdk_object.make_request(
+            'PUT', self._services['SOFTWARE_CACHE'] + f"/{self.client_object.client_id}", request_json
+        )
+
+        if flag:
+            if response.json():
+                errorCode = response.json()['errorCode']
+                if errorCode != 0:
+                    raise SDKException(
+                        'Response',
+                        '101',
+                        'Error Code: "{0}"'.format(errorCode)
+                    )
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101')
+
+    def enable_rc(self) -> None:
+        """Enable the remote cache.
+
+        This method sends a request to enable the remote cache.
+        If the operation fails or the response contains a non-zero error code,
+        an SDKException is raised.
+
+        Raises:
+            SDKException: If the request fails or the response contains a non-zero error code.
+
+        Example:
+            >>> remote_cache = RemoteCache(...)
+            >>> remote_cache.enable_rc()
+            # If an error occurs, SDKException will be raised
+        """
+        flag, response = self._cvpysdk_object.make_request(
+            'PUT', self._services['SOFTWARE_CACHE'] + f"/{self.client_object.client_id}", {'enabled' : True}
+        )
+
+        if flag:
+            if response.json():
+                errorCode = response.json()['errorCode']
+                if errorCode != 0:
+                    raise SDKException(
+                        'Response',
+                        '101',
+                        'Error Code: "{0}"'.format(errorCode)
+                    )
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101')
+
+    def disable_rc(self) -> None:
+        """Disable the remote cache.
+
+        This method sends a request to disable the remote cache on the client.
+        If the operation fails or the response contains a non-zero error code,
+        an SDKException is raised.
+
+        Raises:
+            SDKException: If the request fails or the response contains a non-zero error code.
+
+        Example:
+            >>> remote_cache = RemoteCache(...)
+            >>> remote_cache.disable_rc()
+            # If an error occurs, SDKException will be raised
+        """
+        flag, response = self._cvpysdk_object.make_request(
+            'PUT', self._services['SOFTWARE_CACHE'] + f"/{self.client_object.client_id}", {'enabled': False}
+        )
+
+        if flag:
+            if response.json():
+                errorCode = response.json()['errorCode']
+                if errorCode != 0:
+                    raise SDKException(
+                        'Response',
+                        '101',
+                        'Error Code: "{0}"'.format(errorCode)
+                    )
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101')
+
+    def update_associations(self, associations: List[Dict[str, Any]]) -> None:
+        """Update the remote cache associations with specified clients or client groups.
+
+        Args:
+            associations: A list of dictionaries, each representing a client or client group association.
+                Each dictionary should contain:
+                    - name (str): Name of the client or client group.
+                    - id (int): ID of the client or client group.
+                    - type (int): 1 for client group, 0 for client.
+                    - opType (str): "ADD" to add association, "DELETE" to remove association.
+
+        Raises:
+            SDKException: If updating remote cache details fails due to an error response.
+
+        Example:
+            >>> associations = [
+            ...     {"name": "ClientA", "id": 101, "type": 0, "opType": "ADD"},
+            ... ]
+            >>> remote_cache = RemoteCache(...)
+            >>> remote_cache.update_associations(associations)
+
+        """
+
+        request_json = {}
+        request_json['associations'] = associations
+
+        flag, response = self._cvpysdk_object.make_request(
+            'PUT', self._services['SOFTWARE_CACHE'] + f"/{self.client_object.client_id}", request_json
+        )
+
+        if flag:
+            if response.json():
+                errorCode = response.json()['errorCode']
+                if errorCode != 0:
+                    raise SDKException(
+                        'Response',
+                        '101',
+                        'Error Code: "{0}"'.format(errorCode)
+                    )
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101')
+
+    def delete_remote_cache(self) -> None:
+        """Delete the remote cache.
+
+        This method sends a DELETE request to delete the remote cache.
+        If the operation fails or the response contains a non-zero error code, an SDKException is raised.
+
+        Raises:
+            SDKException: If the remote cache deletion fails or the response contains a non-zero error code.
+
+        Example:
+            >>> remote_cache = RemoteCache(...)
+            >>> remote_cache.delete_remote_cache()
+            # If an error occurs, SDKException will be raised.
+
+        """
+        flag, response = self._cvpysdk_object.make_request(
+            'DELETE', self._services['SOFTWARE_CACHE']+f"/{self.client_object.client_id}"
+        )
+
+        if flag:
+            if response.json():
+                errorCode = response.json()['errorCode']
+                if errorCode != 0:
+                    raise SDKException(
+                        'Response',
+                        '101',
+                        'Error Code: "{0}"'.format(errorCode)
+                    )
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101')
+
+    def get_all_remote_cache(self) -> List[Dict[str, Any]]:
+        """Retrieve all remote cache names and their details.
+
+        This method fetches the list of remote software caches configured in the Commcell.
+        The returned value is either a list of cache detail dictionaries or an empty list
+        if no caches are found.
+
+        Returns:
+            A list of dictionaries containing remote cache details, or an empty list if no caches exist.
+
+        Raises:
+            SDKException: If the response from the Commcell is invalid or an error occurs.
+
+        Example:
+            >>> remote_cache = RemoteCache(...)
+            >>> caches = remote_cache.get_all_remote_cache()
+        """
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', self._services['SOFTWARE_CACHE']
+        )
+
+        if flag:
+            if response.json():
+                return response.json()['softwareCacheDetailList']
+            elif response.status_code == 200:
+                return []
             else:
                 raise SDKException('Response', '102')
         else:

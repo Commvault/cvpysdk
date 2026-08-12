@@ -40,21 +40,46 @@ AzureStackInstance:         Derived class from VirtualServer
 
 from ..vsinstance import VirtualServerInstance
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ...agent import Agent
+
 
 class AzureStackInstance(VirtualServerInstance):
-    """Class for representing Azure stack instance of the Virtual Server agent"""
+    """
+    Represents an Azure Stack instance for the Virtual Server agent.
 
-    def __init__(self, agent, name, iid):
+    This class encapsulates the properties and behaviors specific to an Azure Stack
+    instance within the context of virtual server management. It provides mechanisms
+    to initialize the instance, retrieve its properties, and access key Azure Stack
+    identifiers such as server host name, subscription ID, and application ID.
 
-        """ Initialize the Instance object for the given Virtual Server instance
+    Key Features:
+        - Initialization with agent, name, and instance ID
+        - Retrieval of instance properties and their JSON representation
+        - Access to Azure Stack-specific properties:
+            - server_host_name
+            - subscriptionid
+            - applicationid
 
-            Args:
-                agent               (object)    --  the instance of the agent class
+    #ai-gen-doc
+    """
 
-                name                (str)       --  the name of the instance
+    def __init__(self, agent: 'Agent', name: str, iid: str) -> None:
+        """Initialize the AzureStackInstance object for a given Virtual Server instance.
 
-                iid                 (int)       --  the instance id
+        Args:
+            agent: The agent class instance associated with this Azure Stack instance.
+            name: The name of the Azure Stack instance.
+            iid: The unique identifier (ID) for the instance.
 
+        Example:
+            >>> agent = Agent(client_object, 'Virtual Server')
+            >>> instance = AzureStackInstance(agent, 'MyAzureStackInstance', '101')
+            >>> print(instance)
+            <AzureStackInstance: MyAzureStackInstance (ID: 101)>
+
+        #ai-gen-doc
         """
         self._subscriptionid = None
         self._applicationid = None
@@ -62,14 +87,16 @@ class AzureStackInstance(VirtualServerInstance):
         self._vendor_id = 403
         super(AzureStackInstance, self).__init__(agent, name, iid)
 
-    def _get_instance_properties(self):
-        """
-        Get the properties of this instance
+    def _get_instance_properties(self) -> None:
+        """Retrieve and update the properties of this AzureStackInstance.
 
-        Raise:
-            SDK Exception:
-                if response is not empty
-                if response is not success
+        This method fetches the latest properties for the current AzureStackInstance object
+        from the backend service and updates the instance accordingly.
+
+        Raises:
+            SDKException: If the response is not empty or the response indicates failure.
+
+        #ai-gen-doc
         """
 
         super(AzureStackInstance, self)._get_instance_properties()
@@ -89,12 +116,13 @@ class AzureStackInstance(VirtualServerInstance):
                 if 'clientName' in client.keys():
                     self._server_name.append(str(client['clientName']))
 
-    def _get_instance_properties_json(self):
-        """get the all instance related properties of this subclient.
+    def _get_instance_properties_json(self) -> dict:
+        """Retrieve all instance-related properties for this subclient.
 
-          Returns:
-               dict - all instance properties put inside a dict
+        Returns:
+            dict: A dictionary containing all properties associated with the current instance.
 
+        #ai-gen-doc
         """
         instance_json = {
             "instanceProperties": {
@@ -111,21 +139,48 @@ class AzureStackInstance(VirtualServerInstance):
         return instance_json
 
     @property
-    def server_host_name(self):
-        """return the associated clients with the instance"""
+    def server_host_name(self) -> list:
+        """Get the server host name associated with the Azure Stack instance.
+
+        Returns:
+            The server host name as a string.
+
+        Example:
+            >>> instance = AzureStackInstance()
+            >>> host_name = instance.server_host_name  # Use dot notation for property access
+            >>> print(f"Server host name: {host_name}")
+
+        #ai-gen-doc
+        """
         return self._server_name
 
     @property
-    def subscriptionid(self):
-        """
-        returns the subcriptionID of the instance
+    def subscriptionid(self) -> str:
+        """Get the subscription ID of the Azure Stack instance.
 
+        Returns:
+            The subscription ID associated with this Azure Stack instance as a string.
+
+        Example:
+            >>> instance = AzureStackInstance()
+            >>> sub_id = instance.subscriptionid  # Use dot notation for property access
+            >>> print(f"Subscription ID: {sub_id}")
+        #ai-gen-doc
         """
         return self._subscriptionid
 
     @property
-    def applicationid(self):
-        """
-        returns the applciationID of the instance
+    def applicationid(self) -> str:
+        """Get the application ID associated with this Azure Stack instance.
+
+        Returns:
+            The application ID (as a string) for the current Azure Stack instance.
+
+        Example:
+            >>> instance = AzureStackInstance()
+            >>> app_id = instance.applicationid  # Access the application ID property
+            >>> print(f"Application ID: {app_id}")
+
+        #ai-gen-doc
         """
         return self._applicationid

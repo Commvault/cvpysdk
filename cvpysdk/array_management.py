@@ -45,82 +45,121 @@ ArrayManagement:
 
     edit_array()                --  Method to Update Snap Configuration and Array Access Node MA
                                     for the given Array
+    add_atlas_array ()          --  Creates an Array for MongoDB Atlas
+
 """
 
 from __future__ import unicode_literals
+import base64
+from typing import Any, Optional
+
 from .job import Job
 from .exception import SDKException
-import base64
-
 
 class ArrayManagement(object):
-    """Class for representing all the array management activities with the commcell."""
+    """
+    Manages array-related operations within the Commcell environment.
 
-    def __init__(self, commcell_object):
-        """ Initialize the ArrayManagement class instance for performing Snap related operations
+    This class provides a comprehensive interface for handling array management activities,
+    including snapshot operations, mounting and unmounting volumes, deleting and reverting volumes,
+    and reconciling array states. It also supports array lifecycle management such as adding,
+    editing, and deleting arrays with detailed configuration options.
 
-            Args:
-                commcell_object     (object)    --  instance of the Commcell class
+    Key Features:
+        - Perform snapshot operations on volumes
+        - Mount and unmount volumes with support for VSS protection
+        - Force unmount and force delete operations for robust management
+        - Delete and revert volumes to previous states
+        - Reconcile array states and configurations
+        - Add new arrays with vendor-specific configurations
+        - Edit existing arrays with granular update levels
+        - Delete arrays from the Commcell environment
 
-            Returns:
-                object  -   instance of the ArrayManagement class
+    Args:
+        commcell_object: The Commcell object used for array management operations.
+
+    #ai-gen-doc
+    """
+
+    def __init__(self, commcell_object: object) -> None:
+        """Initialize an ArrayManagement instance for Snap-related operations.
+
+        Args:
+            commcell_object: An instance of the Commcell class used to interact with the Commcell environment.
+
+        Example:
+            >>> from cvpysdk.commcell import Commcell
+            >>> commcell = Commcell('commcell_host', 'username', 'password')
+            >>> array_mgmt = ArrayManagement(commcell)
+            >>> print("ArrayManagement instance created successfully")
+
+        #ai-gen-doc
         """
 
         self._commcell_object = commcell_object
         self._SNAP_OPS = self._commcell_object._services['SNAP_OPERATIONS']
         self.storage_arrays = self._commcell_object._services['STORAGE_ARRAYS']
+        self.atlas_array = self._commcell_object._services['ATLAS_ARRAYS']
 
-    def _snap_operation(self,
-                        operation,
-                        volume_id=None,
-                        client_name=None,
-                        mountpath=None,
-                        do_vssprotection=True,
-                        control_host=None,
-                        flags=None,
-                        reconcile=False,
-                        user_credentials=None,
-                        server_name=None,
-                        instance_details=None):
-        """ Common Method for Snap Operations
+    def _snap_operation(
+        self,
+        operation: int,
+        volume_id: Optional[list] = None,
+        client_name: Optional[str] = None,
+        mountpath: Optional[str] = None,
+        do_vssprotection: bool = True,
+        control_host: Optional[int] = None,
+        flags: Optional[int] = None,
+        reconcile: bool = False,
+        user_credentials: Optional[dict] = None,
+        server_name: Optional[str] = None,
+        instance_details: Optional[dict] = None,
+        **kwargs
+    ) -> object:
+        """Perform a snapshot operation such as mount, unmount, delete, or revert on specified volumes.
 
-            Args :
+        This common method handles various snapshot operations for array management, including mounting,
+        unmounting, deleting, and reverting snapshots. Additional options allow for VSS protection,
+        specifying control hosts, user credentials, and instance details.
 
-                operation    (int)         -- snap Operation value
-                                              0- mount, 1-unmount, 2-delete, 3-revert
+        Args:
+            operation: The snapshot operation to perform.
+                0 - mount
+                1 - unmount
+                2 - delete
+                3 - revert
+            volume_id: List of volume IDs associated with the snapshot backup job.
+            client_name: Name of the destination client for the operation.
+            mountpath: Mount path to use for the snapshot operation.
+            do_vssprotection: Whether to perform a VSS-protected snapshot mount. Defaults to True.
+            control_host: Control host ID for the snapshot reconcile operation.
+            flags: Integer flag to force certain operations.
+                1 - force unmount
+                2 - force delete
+            reconcile: If True, uses reconcile JSON for the operation.
+            user_credentials: Dictionary containing user credentials, e.g., {"userName": "vcentername"}.
+            server_name: Name of the vCenter server for mount operations.
+            instance_details: Dictionary with instance details such as apptypeId, instanceId, and instanceName.
+            **kwargs: Additional keyword arguments, such as 'destclientid' for VSA operations.
 
-                volume_id    (list)        -- volume id's of the snap backup job
+        Returns:
+            Job object representing the snapshot operation job.
 
-                client_name  (str)         -- name of the destination client, default: None
+        Example:
+            >>> # Mount a snapshot with VSS protection
+            >>> job = array_mgmt._snap_operation(
+            ...     operation=0,
+            ...     volume_id=[123, 456],
+            ...     client_name="DestinationClient",
+            ...     mountpath="/mnt/snap",
+            ...     do_vssprotection=True,
+            ...     user_credentials={"userName": "vcenteradmin"},
+            ...     server_name="vcenter01",
+            ...     instance_details={"apptypeId": 106, "instanceId": 7, "instanceName": "VMWare"}
+            ... )
+            >>> print(f"Snap operation job started: {job}")
 
-                MountPath    (str)         -- MountPath for Snap operation, default: None
-
-                do_vssprotection  (bool)   -- Performs VSS protected snapshot mount
-
-                control_host (int)         -- Control host for the Snap recon operation,
-                defaullt: None
-
-                flags        (int)         -- value to define when snap operation to be forced
-                1 - to force unmount
-                2 - to force delete
-
-                reconcile    (bool)        -- Uses Reconcile json if true
-
-                user_credentials  (dict)   -- dict containing userName of vcenter
-                eg: user_credentials = {"userName":"vcentername"}
-
-                server_name      (str)     -- vcenter name for mount operation
-
-                instance_details (dict)    -- dict containing apptypeId, InstanceId, InstanceName
-                eg: instance_details = {
-                "apptypeId": 106,
-                "instanceId": 7,
-                "instanceName": "VMWare"
-                }
-
-            Return :
-
-                object : Job object of Snap Operation job
+        #ai-gen-doc
         """
 
         if client_name is None:
@@ -138,6 +177,11 @@ class ArrayManagement(object):
             instance_details = {}
         else:
             server_type = 1
+
+        if kwargs.get('destclientid'):
+            destClientId = int(kwargs.get('destclientid'))
+        else:
+            destClientId = 0
 
         if reconcile:
             request_json = {
@@ -163,7 +207,8 @@ class ArrayManagement(object):
                 "operation": operation,
                 "userCredentials": {},
                 "volumes": [],
-                "appId": instance_details
+                "appId": instance_details,
+                "destClientId": destClientId
             }
             for i in range(len(volume_id)):
                 if i == 0:
@@ -196,25 +241,52 @@ class ArrayManagement(object):
         else:
             raise SDKException('Snap', '102')
 
-    def mount(self, volume_id, client_name, mountpath, do_vssprotection=True,
-              user_credentials=None, server_name=None, instance_details=None):
-        """ Mounts Snap of the given volume id
+    def mount(
+        self,
+        volume_id: int,
+        client_name: str,
+        mountpath: str,
+        do_vssprotection: bool = True,
+        user_credentials: Optional[dict] = None,
+        server_name: Optional[str] = None,
+        instance_details: Optional[dict] = None,
+        **kwargs: dict
+    ) -> Any:
+        """Mount a snapshot of the specified volume to a destination client.
 
-            Args:
+        This method mounts a snapshot (snap) of the given volume ID to the specified client and mount path.
+        It supports VSS protection, user credentials for vCenter, and additional instance or server details.
+        Extra keyword arguments can be provided for specific scenarios, such as VSA destination client ID.
 
-                volume_id    (int)        -- volume id of the snap backup job
+        Args:
+            volume_id: The ID of the volume from the snap backup job to mount.
+            client_name: The name of the destination client where the snapshot will be mounted.
+            mountpath: The mount path on the destination client for the snap operation.
+            do_vssprotection: Whether to perform a VSS-protected mount (default is True).
+            user_credentials: Optional dictionary containing user credentials (e.g., {'userName': 'vcenter_user'}).
+            server_name: Optional vCenter server name for the mount operation.
+            instance_details: Optional dictionary with instance details (e.g., {'apptypeId': 1, 'InstanceId': 2, 'InstanceName': 'name'}).
+            **kwargs: Additional keyword arguments, such as 'destclientid' for VSA operations.
 
-                client_name  (str)        -- name of the destination client, default: None
+        Returns:
+            The result of the mount operation. The return type may vary depending on the implementation.
 
-                MountPath    (str)        -- MountPath for Snap operation, default: None
+        Example:
+            >>> array_mgmt = ArrayManagement()
+            >>> result = array_mgmt.mount(
+            ...     volume_id=12345,
+            ...     client_name='DestinationClient',
+            ...     mountpath='/mnt/snap',
+            ...     do_vssprotection=True,
+            ...     user_credentials={'userName': 'vcenter_user'},
+            ...     server_name='vcenter01',
+            ...     instance_details={'apptypeId': 1, 'InstanceId': 2, 'InstanceName': 'Instance01'},
+            ...     destclientid='67890'
+            ... )
+            >>> print(result)
+            # The result contains details of the mount operation.
 
-                do_vssprotection (int)    -- Performs VSS protected mount
-
-                user_credentials (dict)   -- dict containing userName of vcenter
-
-                server_name   (str)       -- vcenter name for mount operation
-
-                instance_details (dict)   -- dict containing apptypeId, InstanceId, InstanceName
+        #ai-gen-doc
         """
         return self._snap_operation(0, volume_id,
                                     client_name,
@@ -222,96 +294,144 @@ class ArrayManagement(object):
                                     do_vssprotection,
                                     user_credentials=user_credentials,
                                     server_name=server_name,
-                                    instance_details=instance_details)
+                                    instance_details=instance_details, **kwargs)
 
-    def unmount(self, volume_id):
-        """ UnMounts Snap of the given volume id
+    def unmount(self, volume_id: int) -> object:
+        """Unmount the snapshot associated with the specified volume ID.
 
-            Args:
+        Args:
+            volume_id: The unique integer identifier of the volume whose snapshot should be unmounted.
 
-                volume_id    (int)        -- volume id of the snap backup job
+        Example:
+            >>> array_mgmt = ArrayManagement()
+            >>> array_mgmt.unmount(12345)
+            >>> print("Snapshot for volume 12345 has been unmounted.")
+
+        #ai-gen-doc
         """
         return self._snap_operation(1, volume_id)
 
-    def force_unmount(self, volume_id):
-        """ Force UnMounts Snap of the given volume id
+    def force_unmount(self, volume_id: int) -> object:
+        """Forcefully unmount the snapshot associated with the specified volume ID.
 
-            Args:
+        Args:
+            volume_id: The integer ID of the volume whose snapshot should be unmounted.
 
-                volume_id    (int)        -- volume id of the snap backup job
+        Example:
+            >>> array_mgmt = ArrayManagement()
+            >>> array_mgmt.force_unmount(12345)
+            >>> print("Snapshot for volume 12345 has been forcefully unmounted.")
+
+        #ai-gen-doc
         """
         return self._snap_operation(1, volume_id, flags=1)
 
-    def delete(self, volume_id):
-        """ Deletes Snap of the given volume id
+    def delete(self, volume_id: int) -> object:
+        """Delete the snapshot associated with the specified volume ID.
 
-            Args:
+        Args:
+            volume_id: The unique identifier of the volume whose snapshot should be deleted.
 
-                volume_id    (int)        -- volume id of the snap backup job
+        Example:
+            >>> array_mgmt = ArrayManagement()
+            >>> array_mgmt.delete(12345)
+            >>> print("Snapshot for volume 12345 deleted successfully.")
+
+        #ai-gen-doc
         """
         return self._snap_operation(2, volume_id)
 
-    def force_delete(self, volume_id):
-        """ Deletes Snap of the given volume id
+    def force_delete(self, volume_id: int) -> object:
+        """Forcefully delete the snapshot associated with the specified volume ID.
 
-            Args:
+        Args:
+            volume_id: The unique integer identifier of the volume whose snapshot should be deleted.
 
-                volume_id    (int)        -- volume id of the snap backup job
+        Example:
+            >>> array_mgmt = ArrayManagement()
+            >>> array_mgmt.force_delete(12345)
+            >>> print("Snapshot for volume 12345 deleted successfully.")
+
+        #ai-gen-doc
         """
         return self._snap_operation(2, volume_id, flags=2)
 
-    def revert(self, volume_id):
-        """ Reverts Snap of the given volume id
+    def revert(self, volume_id: int) -> object:
+        """Revert the snapshot of the specified volume by its ID.
 
-            Args:
+        Args:
+            volume_id: The unique integer ID of the volume whose snapshot should be reverted.
 
-                volume_id    (int)        -- volume id of the snap backup job
+        Example:
+            >>> array_mgmt = ArrayManagement()
+            >>> array_mgmt.revert(12345)
+            >>> print("Snapshot for volume 12345 has been reverted.")
+
+        #ai-gen-doc
         """
         return self._snap_operation(3, volume_id)
 
-    def reconcile(self, control_host):
-        """ Runs Reconcile Snap of the given control host id
+    def reconcile(self, control_host: int) -> object:
+        """Run a Reconcile Snap operation for the specified control host ID.
 
-            Args:
+        Args:
+            control_host: The control host ID of the array for which to perform the reconcile operation.
 
-                control_host    (int)        -- control host id of the array
+        Example:
+            >>> array_mgmt = ArrayManagement()
+            >>> array_mgmt.reconcile(12345)
+            >>> print("Reconcile Snap operation initiated for control host 12345")
+
+        #ai-gen-doc
         """
         return self._snap_operation(7, control_host=control_host, reconcile=True)
 
     def add_array(self,
-                  vendor_name,
-                  array_name,
-                  username,
-                  password,
-                  vendor_id,
-                  config_data,
-                  control_host=None,
-                  array_access_node=None,
-                  is_ocum=False):
-        """This method will help in adding array entry in the array management
-            Args :
-                    vendor_name         (str)               -- vendor name
+                  vendor_name: str,
+                  array_name: str,
+                  credential_vault_name: str,
+                  vendor_id: int,
+                  config_data: list,
+                  control_host: str = None,
+                  array_access_node: list = None,
+                  is_ocum: bool = False) -> str:
+        """Add a new array entry to the array management system.
 
-                    array_name          (str)               -- name of the array
+        This method registers a new storage array with the specified configuration and credentials.
+        It supports specifying vendor details, credential vault, configuration data, and optional
+        control host and access nodes. For NetApp arrays, the `is_ocum` flag determines whether to
+        use the primary file server or OCUM.
 
-                    username            (str)               -- username of the array
+        Args:
+            vendor_name: The name of the storage vendor (e.g., "NetApp", "Dell EMC").
+            array_name: The name to assign to the array.
+            credential_vault_name: The credential vault name associated with the array.
+            vendor_id: The unique identifier for the vendor.
+            config_data: List of configuration data (e.g., Snap configs) to be updated for the array.
+            control_host: (Optional) The control host of the array.
+            array_access_node: (Optional) List of MediaAgent names that serve as array access nodes.
+            is_ocum: (Optional) For NetApp arrays, set to True to use OCUM instead of the primary file server.
 
-                    password            (str)               -- password to access array
+        Returns:
+            str: An error message if the operation fails, or an empty string if successful.
 
-                    vendor_id           (int)               -- vendor id of the array
+        Example:
+            >>> error = array_mgmt.add_array(
+            ...     vendor_name="NetApp",
+            ...     array_name="ProdArray01",
+            ...     credential_vault_name="NetAppVault",
+            ...     vendor_id=101,
+            ...     config_data=[{"snap_config": "value"}],
+            ...     control_host="array01.company.com",
+            ...     array_access_node=["MA1", "MA2"],
+            ...     is_ocum=True
+            ... )
+            >>> if error:
+            ...     print(f"Failed to add array: {error}")
+            ... else:
+            ...     print("Array added successfully")
 
-                    config_data         (list)              -- SNap configs list to be updated
-
-                    control_host        (str)               -- control host of the array
-
-                    array_access_node   (list)              -- Array Access Node MediaAgent's Name list
-
-                    is_ocum             (bool)              -- used for netapp to specify whether
-                                                               to use Primary file server or OCUM
-
-            Return :
-
-                errorMessage   (string) :  Error message
+        #ai-gen-doc
         """
 
         snap_configs = {}
@@ -352,9 +472,6 @@ class ArrayManagement(object):
                     ]
                 }
                 selectedMAs.append(node_dict)
-
-        if password is not None:
-            password = base64.encodebytes(password.encode()).decode()
 
         request_json = {
             "clientId": 0,
@@ -402,9 +519,7 @@ class ArrayManagement(object):
                     "processHiddenPermission": 0
                 },
                 "userPswd": {
-                    "userName": username,
-                    "password": password,
-
+                    "userName": ""
                 },
                 "arraySecurity": {},
                 "arrayName": {
@@ -418,6 +533,9 @@ class ArrayManagement(object):
                 "client": {
                     "name": "",
                     "id": 0
+                },
+                "savedCredential": {
+                    "credentialName": credential_vault_name
                 }
             }
         }
@@ -463,12 +581,25 @@ class ArrayManagement(object):
         else:
             raise SDKException('StorageArray', '102')
 
-    def delete_array(self, control_host_array):
-        """This method Deletes an array from the array management
-            Args :
-                control_host_array      (str)        --   Control Host id of the array
-            Return :
-                errorMessage            (str)        --   Error message after the execution
+    def delete_array(self, control_host_array: str) -> str:
+        """Delete an array from the array management system.
+
+        Args:
+            control_host_array: The control host ID of the array to be deleted.
+
+        Returns:
+            A string containing the error message after execution. If the deletion is successful,
+            the error message may be empty or indicate success.
+
+        Example:
+            >>> array_mgmt = ArrayManagement()
+            >>> error_msg = array_mgmt.delete_array("CH12345")
+            >>> if error_msg:
+            ...     print(f"Failed to delete array: {error_msg}")
+            ... else:
+            ...     print("Array deleted successfully")
+
+        #ai-gen-doc
         """
 
         storagearrays_delete_service = self.storage_arrays + '/{0}'.format(control_host_array)
@@ -485,28 +616,40 @@ class ArrayManagement(object):
             return error_message
 
     def edit_array(self,
-                   control_host_id,
-                   config_data,
-                   config_update_level,
-                   level_id,
-                   array_access_node):
-        """Method to Update Snap Configuration and Array access nodes for the given Array
+                   control_host_id: int,
+                   config_data: dict,
+                   config_update_level: str,
+                   level_id: int,
+                   array_access_node: dict) -> None:
+        """Update the Snap Configuration and Array access nodes for a specified array.
+
+        This method allows you to modify the Snap configuration and manage array access nodes
+        for a given array by specifying the control host, configuration data, update level,
+        level ID, and access node operations.
+
         Args:
-            control_host_id        (int)        -- Control Host Id of the Array
+            control_host_id: The control host ID of the array.
+            config_data: Dictionary containing master config IDs and their corresponding values.
+            config_update_level: The update level for the Snap configuration.
+                Valid values include "array", "subclient", "copy", "client".
+            level_id: The ID of the level where the configuration should be added or updated.
+            array_access_node: Dictionary of array access nodes with their operation modes.
+                Example: {"snapautotest3": "add", "linuxautomation1": "add", "snapautofc1": "delete"}
 
-            Config_data            (dict)       -- Master config Id and the config value in dict format
+        Example:
+            >>> array_mgr = ArrayManagement()
+            >>> config = {"masterConfigId1": "value1", "masterConfigId2": "value2"}
+            >>> access_nodes = {"nodeA": "add", "nodeB": "delete"}
+            >>> array_mgr.edit_array(
+            ...     control_host_id=101,
+            ...     config_data=config,
+            ...     config_update_level="array",
+            ...     level_id=5,
+            ...     array_access_node=access_nodes
+            ... )
+            >>> print("Array configuration updated successfully")
 
-            config_update_level    (str)        -- update level for the Snap config
-            ex: "array", "subclient", "copy", "client"
-
-            level_id               (int)        -- level Id where the config needs to be
-                                                   added/updated
-
-            array_access_node      (dict)       -- Array Access Node MA's in dict format with
-                                                   operation mode
-            default: None
-            Ex: {"snapautotest3" : "add", "linuxautomation1" : "add", "snapautofc1" : "delete"}
-
+        #ai-gen-doc
         """
 
         copy_level_id = app_level_id = client_level_id = 0
@@ -664,3 +807,76 @@ class ArrayManagement(object):
                 raise SDKException('StorageArray', '103', o_str)
         else:
             raise SDKException('StorageArray', '103')
+
+    def add_atlas_array(self, arraydict:dict) -> str:
+        """Add a new array entry to the array management system.
+
+        This method registers a new storage array with the specified configuration and credentials.
+        It supports specifying vendor details, credential vault, configuration data, and optional
+        control host and access nodes.
+
+        Args:
+            arraydict (dict): Dictionary containing array detils
+
+        Returns:
+            str: An error message if the operation fails, or an empty string if successful.
+
+        Example:
+            >>> error = array_mgmt.add_array(arraydict)
+            >>> if error:
+            ...     print(f"Failed to add array: {error}")
+            ... else:
+            ...     print("Array added successfully")
+
+        #ai-gen-doc
+        """
+        # get List of existing arrays
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'GET', self.atlas_array
+        )
+        array_json = response.json()
+
+        # check if any array exists with name MongoDB Atlas else create a new one
+
+        if not (any(item["name"]=="MongoDB Atlas" for item in array_json["arrays"])):
+
+            request_json = {
+                              "snapConfigurations": [],
+                              "general": {
+                                "name": arraydict["array_name"],
+                                "controlHost": arraydict["control_host"],
+                                "snapVendor": "MongoDB Atlas",
+                                "savedCredential": {
+                                  "id":arraydict["credential_vault_id"],
+                                  "name": arraydict["credential_vault_name"]
+                                },
+                                "description": "MongoDB Atlas Array"
+                              },
+                              "accessNodes": [
+                                {
+                                  "name": arraydict["array_access_node"],
+                                  "id":arraydict["array_access_node_id"],
+                                  "pruning": True
+                                }
+                              ]
+                            }
+
+            flag, response = self._commcell_object._cvpysdk_object.make_request(
+                'POST', self.atlas_array, request_json
+            )
+
+            if response.json() and 'errorCode' in response.json():
+                error_code = response.json()['errorCode']
+                error_message = response.json()['errorMessage']
+
+                if error_code != 0:
+                    if error_code in [1, 10]:
+                        raise SDKException('StorageArray', '101')
+
+                    error_message = response.json().get('errorMessage', '')
+                    o_str = 'Error: "{0}"'.format(error_message)
+                    raise SDKException('StorageArray', '102', o_str)
+                return error_message
+            else:
+                raise SDKException('StorageArray', '102')

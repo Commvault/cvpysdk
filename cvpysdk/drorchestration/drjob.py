@@ -40,9 +40,7 @@ class DRJob(Job):
         """Initialise the DR job"""
         self._replication_job_stats = None
 
-        service_url = (commcell_object._services['DRORCHESTRATION_JOB_STATS']
-                       if commcell_object.commserv_version > 30
-                       else commcell_object._services['DR_JOB_STATS'])
+        service_url = commcell_object._services['DRORCHESTRATION_JOB_STATS']
         self._REPLICATION_STATS = service_url % job_id
 
         Job.__init__(self, commcell_object, job_id)

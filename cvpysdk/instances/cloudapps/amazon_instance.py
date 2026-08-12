@@ -76,22 +76,35 @@ from ...exception import SDKException
 
 
 class AmazonRDSInstance(CloudDatabaseInstance):
-    """Class for representing an Instance of Amazon RDS"""
+    """
+    Represents an instance of Amazon RDS within a cloud database management context.
 
-    def __init__(self, agent_object, instance_name, instance_id=None):
-        """Initializes the object of the AmazonRDSInstance class
+    This class provides functionality for managing and interacting with Amazon RDS instances,
+    including initialization with agent and instance details, processing browse responses,
+    and generating restore configurations in JSON format.
 
-            Args:
-                agent_object    (object)  --  instance of the Agent class
+    Key Features:
+        - Initialization with agent object, instance name, and instance ID
+        - Processing of browse responses for RDS instance operations
+        - Generation of restore configuration in JSON format
 
-                instance_name   (str)     --  name of the instance
+    #ai-gen-doc
+    """
 
-                instance_id     (str)     --  id of the instance
-                    default: None
+    def __init__(self, agent_object: object, instance_name: str, instance_id: str = None) -> None:
+        """Initialize an AmazonRDSInstance object.
 
-            Returns:
-                object - instance of the Instance class
+        Args:
+            agent_object: Instance of the Agent class associated with this Amazon RDS instance.
+            instance_name: The name of the Amazon RDS instance.
+            instance_id: Optional; the unique identifier of the Amazon RDS instance. Defaults to None.
 
+        Example:
+            >>> agent = Agent(commcell_object, "AmazonRDS")
+            >>> rds_instance = AmazonRDSInstance(agent, "my_rds_instance", "rds-123456")
+            >>> print(f"Amazon RDS Instance created: {rds_instance}")
+
+        #ai-gen-doc
         """
         super(
             AmazonRDSInstance,
@@ -102,20 +115,26 @@ class AmazonRDSInstance(CloudDatabaseInstance):
 
         self._browse_url = self._services['CLOUD_DATABASE_BROWSE']
 
-    def _process_browse_response(self, flag, response):
-        """ Process browse request response
+    def _process_browse_response(self, flag: bool, response: dict) -> dict:
+        """Process the response from a browse request for Amazon RDS snapshots.
 
-            Args:
+        Args:
+            flag: Indicates whether the REST API request was successful (True) or not (False).
+            response: The response dictionary returned if the request was successful.
 
-                flag -- indicates whether the rest API request is successful
+        Returns:
+            dict: The JSON response containing the snapshot list from the browse request.
 
-                response -- response returned if the request was successful.
+        Raises:
+            Exception: If the browse request failed (i.e., flag is False).
 
-            Returns:
+        Example:
+            >>> instance = AmazonRDSInstance()
+            >>> result = instance._process_browse_response(True, {"snapshots": [...]})
+            >>> print(result)
+            {'snapshots': [...]}
 
-                dict    - The snapshot list JSON response received from the browse request
-
-                Exception - If the browse request failed
+        #ai-gen-doc
         """
         if flag:
             if response.json() and 'snapList' in response.json():
@@ -131,31 +150,35 @@ class AmazonRDSInstance(CloudDatabaseInstance):
             raise SDKException('Instance', '102', o_str.format(response))
         return snapshot_list
 
-    def _restore_json(self, **kwargs):
-        """Returns the JSON request to pass to the API as per the options selected by the user.
+    def _restore_json(self, **kwargs: dict) -> dict:
+        """Generate the JSON request payload for the API based on user-selected restore options.
 
-             Args:
-                kwargs   (list)  --  list of options need to be set for restore
+        This method constructs a dictionary representing the restore request, using the provided keyword arguments
+        to specify restore parameters such as destination, source, and additional options.
 
-                Ex: For RDS Instance Cluster Restore following are the possible options
-                    {
-                        destination : 'instance/cluster',
-                        source : 'snapshot',
-                        options :   {
-                                        'archFileId': 123
-                                        'isMultiAZ' : true,
-                                        'publicallyAccess' : true,
-                                        'copyTagsToSnapshot' : false,
-                                        'enableDeletionProtection': false,
-                                        'targetParameterGroupName': 'param',
-                                        'targetSubnetGroup': 'subnet',
-                                        'targetDBInstanceClass': 'dc-large-8',
-                                        'targetPort': 2990
-                                    }
-                    }
+        Example:
+            >>> restore_json = rds_instance._restore_json(
+            ...     destination='instance/cluster',
+            ...     source='snapshot',
+            ...     options={
+            ...         'archFileId': 123,
+            ...         'isMultiAZ': True,
+            ...         'publicallyAccess': True,
+            ...         'copyTagsToSnapshot': False,
+            ...         'enableDeletionProtection': False,
+            ...         'targetParameterGroupName': 'param',
+            ...         'targetSubnetGroup': 'subnet',
+            ...         'targetDBInstanceClass': 'dc-large-8',
+            ...         'targetPort': 2990
+            ...     }
+            ... )
+            >>> print(restore_json)
+            {'destination': 'instance/cluster', 'source': 'snapshot', 'options': {...}}
 
-            Returns:
-                dict - JSON request to pass to the API
+        Returns:
+            dict: The JSON request dictionary to be sent to the API for restore operations.
+
+        #ai-gen-doc
         """
         restore_json = super(
             AmazonRDSInstance,
@@ -211,22 +234,36 @@ class AmazonRDSInstance(CloudDatabaseInstance):
 
 
 class AmazonRedshiftInstance(CloudDatabaseInstance):
-    """Class for representing an Instance of the Amazon Redshift"""
+    """
+    Represents an instance of Amazon Redshift within a cloud database management context.
 
-    def __init__(self, agent_object, instance_name, instance_id=None):
-        """Initializes the object of the AmazonRedshiftInstance class
+    This class provides functionality for managing and interacting with Amazon Redshift instances,
+    including initialization with agent and instance details, processing browse responses, and
+    handling restore operations in JSON format.
 
-            Args:
-                agent_object    (object)  --  instance of the Agent class
+    Key Features:
+        - Initialization with agent object, instance name, and instance ID
+        - Processing of browse responses for Redshift instance operations
+        - Handling and generation of restore operations in JSON format
 
-                instance_name   (str)     --  name of the instance
+    #ai-gen-doc
+    """
 
-                instance_id     (str)     --  id of the instance
-                    default: None
+    def __init__(self, agent_object: object, instance_name: str, instance_id: str = None) -> None:
+        """Initialize an AmazonRedshiftInstance object.
 
-            Returns:
-                object - instance of the Instance class
+        Args:
+            agent_object: Instance of the Agent class associated with this Redshift instance.
+            instance_name: The name of the Amazon Redshift instance.
+            instance_id: Optional; the unique identifier for the instance. Defaults to None.
 
+        Example:
+            >>> agent = Agent(commcell_object, "AmazonRedshift")
+            >>> redshift_instance = AmazonRedshiftInstance(agent, "Redshift-Prod", "12345")
+            >>> # If instance_id is not known, it can be omitted
+            >>> redshift_instance = AmazonRedshiftInstance(agent, "Redshift-Dev")
+
+        #ai-gen-doc
         """
         super(
             AmazonRedshiftInstance,
@@ -237,20 +274,23 @@ class AmazonRedshiftInstance(CloudDatabaseInstance):
 
         self._browse_url = self._services['CLOUD_DATABASE_BROWSE']
 
-    def _process_browse_response(self, flag, response):
-        """ Process browse request response
+    def _process_browse_response(self, flag: bool, response: dict) -> dict:
+        """Process the response from a browse request to Amazon Redshift.
 
-            Args:
+        Args:
+            flag: Indicates whether the REST API request was successful (True) or not (False).
+            response: The response dictionary returned if the request was successful.
 
-                flag -- indicates whether the rest API request is successful
+        Returns:
+            dict: The JSON response containing the snapshot list from the browse request.
 
-                response -- response returned if the request was successful.
+        Example:
+            >>> instance = AmazonRedshiftInstance()
+            >>> response = instance._process_browse_response(True, {"snapshots": [...]})
+            >>> print(response)
+            {'snapshots': [...]}
 
-            Returns:
-
-                dict    - The snapshot list JSON response received from the browse request
-
-                Exception - If the browse request failed
+        #ai-gen-doc
         """
         if flag:
             if response.json() and 'snapList' in response.json():
@@ -266,32 +306,59 @@ class AmazonRedshiftInstance(CloudDatabaseInstance):
             raise SDKException('Instance', '102', o_str.format(response))
         return snapshot_list
 
-    def _restore_json(self, **kwargs):
-        """Returns the JSON request to pass to the API as per the options selected by the user.
+    def _restore_json(self, **kwargs: dict) -> dict:
+        """Generate the JSON request payload for restoring an Amazon Redshift instance.
 
-             Args:
-                kwargs   (list)  --  list of options need to be set for restore
+        This method constructs a JSON dictionary based on the provided keyword arguments,
+        which specify the restore options selected by the user. The resulting JSON can be
+        passed directly to the API for initiating a restore operation.
 
-                Ex: For Redshift Instance Cluster Restore following are the possible options
-                    {
-                        destination : 'cluster',
-                        source : 'snapshot',
-                        options :   {
-                                        'allowVersionUpgrade' : true,
-                                        'publicallyAccessible' : true,
-                                        'restoreTags' : false,
-                                        'enableDeletionProtection': false,
-                                        'availabilityZone': 'us-east-2a',
-                                        'targetParameterGroup': 'param',
-                                        'targetSubnetGroup': 'subnet',
-                                        'nodeType': 'dc-large-8',
-                                        'targetPort': 2990,
-                                        'numberOfNodes': 1
-                                    }
+        Keyword Args:
+            kwargs: Arbitrary keyword arguments representing restore options. These should
+                match the expected structure for Redshift instance cluster restore. For example:
+
+                {
+                    "destination": "cluster",
+                    "source": "snapshot",
+                    "options": {
+                        "allowVersionUpgrade": True,
+                        "publicallyAccessible": True,
+                        "restoreTags": False,
+                        "enableDeletionProtection": False,
+                        "availabilityZone": "us-east-2a",
+                        "targetParameterGroup": "param",
+                        "targetSubnetGroup": "subnet",
+                        "nodeType": "dc-large-8",
+                        "targetPort": 2990,
+                        "numberOfNodes": 1
                     }
+                }
 
-            Returns:
-                dict - JSON request to pass to the API
+        Returns:
+            dict: The JSON request dictionary to be sent to the API for restore operations.
+
+        Example:
+            >>> instance = AmazonRedshiftInstance()
+            >>> restore_json = instance._restore_json(
+            ...     destination="cluster",
+            ...     source="snapshot",
+            ...     options={
+            ...         "allowVersionUpgrade": True,
+            ...         "publicallyAccessible": True,
+            ...         "restoreTags": False,
+            ...         "enableDeletionProtection": False,
+            ...         "availabilityZone": "us-east-2a",
+            ...         "targetParameterGroup": "param",
+            ...         "targetSubnetGroup": "subnet",
+            ...         "nodeType": "dc-large-8",
+            ...         "targetPort": 2990,
+            ...         "numberOfNodes": 1
+            ...     }
+            ... )
+            >>> print(restore_json)
+            {'destination': 'cluster', 'source': 'snapshot', 'options': {...}}
+
+        #ai-gen-doc
         """
         restore_json = super(
             AmazonRedshiftInstance,
@@ -351,22 +418,36 @@ class AmazonRedshiftInstance(CloudDatabaseInstance):
 
 
 class AmazonDocumentDBInstance(CloudDatabaseInstance):
-    """Class for representing an Instance of the Amazon DocumentDB"""
+    """
+    Represents an instance of Amazon DocumentDB within a cloud database management context.
 
-    def __init__(self, agent_object, instance_name, instance_id=None):
-        """Initializes the object of the AmazonDocumentDBInstance class
+    This class encapsulates the properties and behaviors associated with an Amazon DocumentDB instance,
+    providing mechanisms for initialization, processing browse responses, and restoring instance data
+    in JSON format. It is designed to be used as part of a larger cloud database management system,
+    inheriting core functionality from the CloudDatabaseInstance base class.
 
-            Args:
-                agent_object    (object)  --  instance of the Agent class
+    Key Features:
+        - Initialization with agent object, instance name, and instance ID
+        - Processing of browse responses for instance data management
+        - Restoration of instance state from JSON data
 
-                instance_name   (str)     --  name of the instance
+    #ai-gen-doc
+    """
 
-                instance_id     (str)     --  id of the instance
-                    default: None
+    def __init__(self, agent_object: object, instance_name: str, instance_id: str = None) -> None:
+        """Initialize an AmazonDocumentDBInstance object.
 
-            Returns:
-                object - instance of the Instance class
+        Args:
+            agent_object: Instance of the Agent class associated with this DocumentDB instance.
+            instance_name: The name of the Amazon DocumentDB instance.
+            instance_id: Optional; the unique identifier for the instance. Defaults to None.
 
+        Example:
+            >>> agent = Agent(commcell_object, "AmazonDocumentDB")
+            >>> docdb_instance = AmazonDocumentDBInstance(agent, "myDocDBInstance", "12345")
+            >>> # The docdb_instance object is now initialized and ready for use
+
+        #ai-gen-doc
         """
         super(
             AmazonDocumentDBInstance,
@@ -377,20 +458,26 @@ class AmazonDocumentDBInstance(CloudDatabaseInstance):
 
         self._browse_url = self._services['CLOUD_DATABASE_BROWSE']
 
-    def _process_browse_response(self, flag, response):
-        """ Process browse request response
+    def _process_browse_response(self, flag: bool, response: dict) -> dict:
+        """Process the response from a browse request for Amazon DocumentDB snapshots.
 
-            Args:
+        Args:
+            flag: Indicates whether the REST API request was successful (True) or not (False).
+            response: The response dictionary returned if the request was successful.
 
-                flag -- indicates whether the rest API request is successful
+        Returns:
+            dict: The JSON response containing the snapshot list from the browse request.
 
-                response -- response returned if the request was successful.
+        Raises:
+            Exception: If the browse request failed (i.e., flag is False).
 
-            Returns:
+        Example:
+            >>> instance = AmazonDocumentDBInstance()
+            >>> response = instance._process_browse_response(True, {"snapshots": [...]})
+            >>> print(response)
+            {'snapshots': [...]}
 
-                dict    - The snapshot list JSON response received from the browse request
-
-                Exception - If the browse request failed
+        #ai-gen-doc
         """
         if flag:
             if response.json() and 'snapList' in response.json():
@@ -406,29 +493,46 @@ class AmazonDocumentDBInstance(CloudDatabaseInstance):
             raise SDKException('Instance', '102', o_str.format(response))
         return snapshot_list
 
-    def _restore_json(self, **kwargs):
-        """Returns the JSON request to pass to the API as per the options selected by the user.
+    def _restore_json(self, **kwargs: dict) -> dict:
+        """Generate the JSON request payload for restoring an Amazon DocumentDB instance.
 
-             Args:
-                kwargs   (list)  --  list of options need to be set for restore
+        This method constructs a JSON dictionary based on the options provided via keyword arguments.
+        The generated JSON can be used as the request body for the restore API.
 
-                Ex: For DocumentDB Instance Cluster Restore following are the possible options
-                    {
-                        destination : 'cluster',
-                        source : 'snapshot',
-                        options :   {
-                                        'restoreTags' : false,
-                                        'enableDeletionProtection': false,
-                                        'availabilityZone': 'us-east-2a',
-                                        'targetSubnetGroup': 'subnet',
-                                        'targetInstanceClass': 'dc-large-8',
-                                        'targetPort': 2990,
-                                        'numberOfNodes': 1
-                                    }
-                    }
+        Keyword Args:
+            kwargs: Key-value pairs specifying restore options. Typical options include:
+                - destination (str): The restore destination, e.g., 'cluster'.
+                - source (str): The restore source, e.g., 'snapshot'.
+                - options (dict): Additional restore parameters, such as:
+                    - restoreTags (bool): Whether to restore tags.
+                    - enableDeletionProtection (bool): Enable deletion protection.
+                    - availabilityZone (str): Target availability zone.
+                    - targetSubnetGroup (str): Subnet group for the target.
+                    - targetInstanceClass (str): Instance class for the target.
+                    - targetPort (int): Port number for the target.
+                    - numberOfNodes (int): Number of nodes to restore.
 
-            Returns:
-                dict - JSON request to pass to the API
+        Returns:
+            dict: The JSON request payload to be sent to the API.
+
+        Example:
+            >>> restore_json = docdb_instance._restore_json(
+            ...     destination='cluster',
+            ...     source='snapshot',
+            ...     options={
+            ...         'restoreTags': False,
+            ...         'enableDeletionProtection': False,
+            ...         'availabilityZone': 'us-east-2a',
+            ...         'targetSubnetGroup': 'subnet',
+            ...         'targetInstanceClass': 'dc-large-8',
+            ...         'targetPort': 2990,
+            ...         'numberOfNodes': 1
+            ...     }
+            ... )
+            >>> print(restore_json)
+            {'destination': 'cluster', 'source': 'snapshot', 'options': {'restoreTags': False, 'enableDeletionProtection': False, 'availabilityZone': 'us-east-2a', 'targetSubnetGroup': 'subnet', 'targetInstanceClass': 'dc-large-8', 'targetPort': 2990, 'numberOfNodes': 1}}
+
+        #ai-gen-doc
         """
         restore_json = super(
             AmazonDocumentDBInstance,
@@ -478,41 +582,59 @@ class AmazonDocumentDBInstance(CloudDatabaseInstance):
         return restore_json
 
 class AmazonDynamoDBInstance(CloudDatabaseInstance):
-    """Class for representing an Instance of the Amazon DynamoDB"""
+    """
+    Represents an instance of Amazon DynamoDB within a cloud database management context.
 
-    def _restore_json(self, **kwargs):
-        """Returns the JSON request to pass to the API as per the options selected by the user.
+    This class provides the foundational structure for managing and interacting with
+    Amazon DynamoDB instances. It includes internal mechanisms for restoring instance
+    state from JSON representations, facilitating persistence and recovery operations.
 
-             Args:
-                kwargs   (list)  --  list of options need to be set for restore
+    Key Features:
+        - Representation of Amazon DynamoDB instances
+        - Support for restoring instance state from JSON data
 
-                For DynamoDB Instance Cluster Restore following are the required parameters
-                        destination : "",
-                        source : "",
-                        options = {
-                            'paths':  (list of strings)
-                            'table_map': (list of dicts)
-                            'adjust_write_capacity': (int)
-                            'destination_client': (string))
-                            'destination_instance': string
-                    }
+    #ai-gen-doc
+    """
 
-                    }
-                Example:
-                        destination : "",
-                        source : "",
-                        options :   {
-                                    'paths': ['/us-east-1/table_1'],
-                                    'table_map': [{
-                                    'srcTable':{'name': 'table_1', 'region':'us-east-1'},
-                                    'destTable':{'name': 'table_2', 'region': 'us-east-2'}
-                                    }]
-                                    'adjust_write_capacity': 100,
-                                    'destination_client': 'client1',
-                                    'destination_instance': 'DynamoDB'
-                                    }
-            Returns:
-                dict - JSON request to pass to the API
+    def _restore_json(self, **kwargs: dict) -> dict:
+        """Construct the JSON request payload for a DynamoDB instance restore operation.
+
+        This method generates the JSON structure required by the API based on the options 
+        provided by the user for restoring a DynamoDB instance. The options should include 
+        details such as destination, source, and restore-specific parameters.
+
+        Common required parameters for DynamoDB instance cluster restore:
+            - destination (str): The destination for the restore.
+            - source (str): The source from which to restore.
+            - options (dict): Additional restore options, such as:
+                - 'paths' (list of str): List of table paths to restore.
+                - 'table_map' (list of dict): Mapping of source to destination tables.
+                - 'adjust_write_capacity' (int): Write capacity units to set.
+                - 'destination_client' (str): Name of the destination client.
+                - 'destination_instance' (str): Name of the destination DynamoDB instance.
+
+        Example:
+            >>> restore_payload = instance._restore_json(
+            ...     destination="",
+            ...     source="",
+            ...     options={
+            ...         'paths': ['/us-east-1/table_1'],
+            ...         'table_map': [{
+            ...             'srcTable': {'name': 'table_1', 'region': 'us-east-1'},
+            ...             'destTable': {'name': 'table_2', 'region': 'us-east-2'}
+            ...         }],
+            ...         'adjust_write_capacity': 100,
+            ...         'destination_client': 'client1',
+            ...         'destination_instance': 'DynamoDB'
+            ...     }
+            ... )
+            >>> print(restore_payload)
+            {'destination': '', 'source': '', 'options': {...}}
+
+        Returns:
+            dict: The JSON request payload to be sent to the API for restore.
+
+        #ai-gen-doc
         """
         restore_json = super(
             AmazonDynamoDBInstance,

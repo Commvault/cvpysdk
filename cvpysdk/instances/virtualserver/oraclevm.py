@@ -26,12 +26,8 @@ OracleVMInstance:     Derived class from VirtualServer  Base class, representing
 
 OracleVMInstance:
 
-    __init__(
-        agent_object,
-        instance_name,
-        instance_id)                    --  initialize object of oraclevm Instance object
-                                                associated with the VirtualServer Instance
-
+    __init__()                    --  initialize object of oraclevm Instance object
+                                        associated with the VirtualServer Instance
 
     _get_instance_properties()          --  VirtualServer Instance class method overwritten
                                                 to get oraclevm specific instance properties
@@ -41,23 +37,43 @@ OracleVMInstance:
 
 """
 
-
 from ..vsinstance import VirtualServerInstance
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ...agent import Agent
+
+
 class OracleVMInstance(VirtualServerInstance):
+    """
+    Represents an Oracle VM instance managed by the Virtual Server agent.
 
-    """Class for representing VMWare instance of the Virtual Server agent."""
+    This class provides an interface for handling Oracle VM instances within the
+    Virtual Server environment. It allows for initialization with agent details,
+    retrieval of instance properties, and access to key server information.
 
-    def __init__(self, agent_object, instance_name, instance_id=None):
-        """Initialize the Instance object for the given Virtual Server instance.
+    Key Features:
+        - Initialize Oracle VM instance with agent object, name, and ID
+        - Retrieve instance properties and their JSON representation
+        - Access server host name and server name via properties
 
-            Args:
-                agent_object    (object)    --  instance of the Agent class
+    #ai-gen-doc
+    """
 
-                instance_name   (str)       --  instance name
+    def __init__(self, agent_object: 'Agent', instance_name: str, instance_id: str = None) -> None:
+        """Initialize an OracleVMInstance object for the specified Virtual Server instance.
 
-                instance_id     (int)       --  instance id
+        Args:
+            agent_object: Instance of the Agent class associated with this Oracle VM instance.
+            instance_name: The name of the Oracle VM instance.
+            instance_id: Optional; the unique identifier for the Oracle VM instance. If not provided, it will be determined automatically.
 
+        Example:
+            >>> agent = Agent(client_object, 'Virtual Server')
+            >>> ovm_instance = OracleVMInstance(agent, 'MyOracleVM', '101')
+            >>> # The OracleVMInstance object is now initialized and ready for use
+
+        #ai-gen-doc
         """
         self._vendor_id = 10
         self._vmwarvendor = None
@@ -65,15 +81,16 @@ class OracleVMInstance(VirtualServerInstance):
         self._server_host_name = []
         super(OracleVMInstance, self).__init__(agent_object, instance_name, instance_id)
 
-    def _get_instance_properties(self):
-        """Gets the properties of this instance.
+    def _get_instance_properties(self) -> None:
+        """Retrieve and update the properties of this OracleVMInstance.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        This method fetches the latest properties for the OracleVMInstance from the backend
+        and updates the instance's internal state accordingly.
 
-                    if response is not success
+        Raises:
+            SDKException: If the response from the backend is empty or indicates a failure.
 
+        #ai-gen-doc
         """
         super(OracleVMInstance, self)._get_instance_properties()
         if "vmwareVendor" in self._virtualserverinstance:
@@ -83,12 +100,13 @@ class OracleVMInstance(VirtualServerInstance):
 
             self._server_host_name.append(self._vmwarvendor["domainName"])
 
-    def _get_instance_properties_json(self):
-        """get the all instance related properties of this subclient.
+    def _get_instance_properties_json(self) -> dict:
+        """Retrieve all instance-related properties for this OracleVM subclient.
 
-           Returns:
-                dict - all instance properties put inside a dict
+        Returns:
+            dict: A dictionary containing all properties associated with this instance.
 
+        #ai-gen-doc
         """
         instance_json = {
             "instanceProperties": {
@@ -106,11 +124,33 @@ class OracleVMInstance(VirtualServerInstance):
         return instance_json
 
     @property
-    def server_host_name(self):
-        """getter for the domain name in the OracleVM vendor json"""
+    def server_host_name(self) -> list:
+        """Get the domain name (server host name) from the OracleVM vendor JSON.
+
+        Returns:
+            The domain name or server host name as a list.
+
+        Example:
+            >>> instance = OracleVMInstance()
+            >>> domain_name = instance.server_host_name
+            >>> print(f"OracleVM domain name: {domain_name}")
+
+        #ai-gen-doc
+        """
         return self._server_host_name
 
     @property
-    def server_name(self):
-        """return the Oracle client associated with the PseudoClient"""
+    def server_name(self) -> list:
+        """Get the name of the Oracle client associated with the PseudoClient.
+
+        Returns:
+            The name of the Oracle client as a list.
+
+        Example:
+            >>> instance = OracleVMInstance()
+            >>> client_name = instance.server_name
+            >>> print(f"Oracle client name: {client_name}")
+
+        #ai-gen-doc
+        """
         return self._server_name

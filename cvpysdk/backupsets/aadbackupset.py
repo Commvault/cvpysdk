@@ -59,21 +59,58 @@ from __future__ import unicode_literals
 import base64
 from ..backupset import Backupset
 from ..exception import SDKException
-
+from typing import Dict, Any, Tuple, List
 
 class AzureAdBackupset(Backupset):
-    """ Azure AD agent backupset class """
+    """
+    Azure AD agent backupset class for managing and browsing Azure Active Directory backup data.
 
-    def _azuread_browse_basic(self, options):
-        """ do basic browse activity with options
-            Args:
-                options    (dict)    browse option from impoort
-                                adv_attributes    get object advanced attribute
-            Return:
-                count     (int)    return count from browse
-                result    (list)    objects list from browse
-            Raise:
-                101    If browse return Nothing
+    This class provides specialized methods for interacting with Azure AD backupsets, enabling
+    users to browse, query, and retrieve metadata and folder information from Azure AD backups.
+    It supports building search and view attribute requests, processing browse responses, and
+    formatting results for further analysis.
+
+    Key Features:
+        - Basic, meta, and folder-level browsing of Azure AD backup data
+        - Metadata retrieval and object-level metadata browsing
+        - Double query support for advanced browsing scenarios
+        - Options builder for constructing browse requests
+        - Preparation of search JSON for custom queries
+        - Retrieval of search and view attribute responses based on job time and attributes
+        - URL builder for view attributes
+        - Processing and formatting of browse results
+
+    #ai-gen-doc
+    """
+
+    def _azuread_browse_basic(self, options: Dict[str, Any]) -> Tuple[int, List[Any]]:
+        """Perform a basic browse operation on Azure AD objects using the provided options.
+
+        This method executes a browse activity with the specified options, returning the count of 
+        objects found and a list of the resulting objects. Advanced attributes can be included in 
+        the options to retrieve additional object details.
+
+        Args:
+            options: Dictionary containing browse options, such as filters and advanced attributes.
+
+        Returns:
+            A tuple containing:
+                - count (int): The number of objects returned from the browse operation.
+                - result (list): List of objects retrieved from Azure AD.
+
+        Raises:
+            SDKException: If the browse operation returns no results (error code 101).
+
+        Example:
+            >>> options = {
+            ...     "object_type": "User",
+            ...     "adv_attributes": ["displayName", "mail"]
+            ... }
+            >>> count, result = azuread_backupset._azuread_browse_basic(options)
+            >>> print(f"Found {count} users")
+            >>> for user in result:
+            ...     print(user)
+        #ai-gen-doc
         """
         options = self._prepare_browse_options(options)
 
@@ -88,14 +125,30 @@ class AzureAdBackupset(Backupset):
             raise SDKException('Response', '101', self._update_response_(response.text))
         return count, result
 
-    def _azuread_browse_meta(self, options):
-        """ get basic browse related meta data
-            Args:
-                options    (dict)    browse option from impoort
-            Return:
-                azure_meta    (dict)    azure ad meta data from browse result
-            Raise:
-                None
+    def _azuread_browse_meta(self, options: Dict[str, Any]) -> Dict[str, Any]:
+        """Retrieve Azure AD browse metadata based on the provided options.
+
+        This method processes the browse options to extract and organize metadata 
+        from Azure Active Directory browse results. It updates the options dictionary 
+        with relevant filters and metadata as needed.
+
+        Args:
+            options: Dictionary containing browse options and filters for Azure AD metadata retrieval.
+
+        Returns:
+            Dictionary containing Azure AD metadata extracted from the browse results.
+
+        Example:
+            >>> options = {
+            ...     'filters': [('76', 'some_id', '9')],
+            ...     # Additional browse options as needed
+            ... }
+            >>> azuread_backupset = AzureAdBackupset(...)
+            >>> meta_data = azuread_backupset._azuread_browse_meta(options)
+            >>> print(meta_data)
+            {'root': {...}, 'User1': {...}, 'Group1': {...}}
+
+        #ai-gen-doc
         """
         if "meta" in options:
             azure_meta = options['meta']
@@ -123,15 +176,35 @@ class AzureAdBackupset(Backupset):
                     azure_meta[name] = metainfo
         return azure_meta
 
-    def _azuread_browse_folder(self, options):
-        """ browse folder content
-            Args:
-                options    (dict)    browse option from impoort
-            Return:
-                count     (int)    return count from browse
-                result    (list)    objects list from browse
-            Raise:
-                None
+    def _azuread_browse_folder(self, options: Dict[str, Any]) -> Tuple[int, List[Any]]:
+        """Browse the contents of a specified Azure AD folder.
+
+        This method prepares browse filters based on the provided options and retrieves 
+        the folder content from Azure AD. The results are processed and returned as a count 
+        and a list of objects.
+
+        Args:
+            options: Dictionary containing browse options, including 'folder', 'meta', 'path', 
+                and optional 'search' criteria.
+
+        Returns:
+            A tuple containing:
+                - count: The number of objects found in the folder (int).
+                - results: A list of objects representing the folder contents.
+
+        Example:
+            >>> options = {
+            ...     'folder': 'user',
+            ...     'meta': {'Users': {'id': '12345'}},
+            ...     'path': '/Users',
+            ...     'search': {'obj_id': 'abcde', 'source': 'AzureAD'}
+            ... }
+            >>> count, results = azure_ad_backupset._azuread_browse_folder(options)
+            >>> print(f"Found {count} users")
+            >>> for user in results:
+            ...     print(user)
+
+        #ai-gen-doc
         """
         azure_meta_mapper = {
             "user" : { "displayname" : "Users", "browsetype" : 2, "browsestring" : "USER"},
@@ -143,7 +216,8 @@ class AzureAdBackupset(Backupset):
             "ca_auth_context" : { "displayname" : "Authentication context","browsetype": 13, "browsestring" : "AUTHENTICATION_CONTEXT"},
             "ca_auth_strength" : { "displayname" : "Authentication strengths","browsetype": 14, "browsestring" : "AUTHENTICATION_STRENGTH"},
             "role" : { "displayname" : "Roles","browsetype": 15, "browsestring" : "DIRECTORY_ROLE_DEFINITIONS"},
-            "admin_unit" : { "displayname" : "Admin units","browsetype": 16, "browsestring" : "ADMINISTRATIVE_UNIT"}}
+            "admin_unit" : { "displayname" : "Admin units","browsetype": 16, "browsestring" : "ADMINISTRATIVE_UNIT"},
+            "device_compliance_policy" : { "displayname" : "Compliance","browsetype": 17, "browsestring" : "DEVICE_COMPLIANCE_POLICY"}}
         azure_meta = options['meta']
         newid = azure_meta[azure_meta_mapper[options['folder']]['displayname']]['id']
         options['filters'] = [("76", newid, "9"),
@@ -168,16 +242,32 @@ class AzureAdBackupset(Backupset):
         results = self._process_result_format(results)
         return count, results
 
-    def browse(self, *args, **kwargs):
-        """Browses the content of the Backupset.
-            Args:
-                args    list    args passed for browse
-                kwargs    dict    dict passed for browse
-            Return:
-                count     (int)    return count from browse
-                browse_result    (list)    objects list from browse
-            Raise:
-                None
+    def browse(self, *args: Any, **kwargs: Any) -> Tuple[int, List[Any]]:
+        """Browse the content of the Azure AD Backupset.
+
+        This method allows you to retrieve objects and their count from the backupset by specifying browse options.
+        Options can be provided either as a dictionary in the first positional argument or as keyword arguments.
+
+        Args:
+            *args: Optional positional arguments. The first argument can be a dictionary of browse options.
+            **kwargs: Optional keyword arguments representing browse options.
+
+        Returns:
+            A tuple containing:
+                - count (int): The number of objects found in the browse operation.
+                - browse_result (list): A list of objects retrieved from the backupset.
+
+        Example:
+            >>> backupset = AzureAdBackupset(...)
+            >>> # Browse using a dictionary of options
+            >>> count, objects = backupset.browse({'folder': 'Users', 'recursive': True})
+            >>> print(f"Found {count} objects in 'Users' folder")
+            >>> 
+            >>> # Browse using keyword arguments
+            >>> count, objects = backupset.browse(folder='Groups', recursive=False)
+            >>> print(f"Found {count} objects in 'Groups' folder")
+
+        #ai-gen-doc
         """
         if args and isinstance(args[0], dict):
             options = args[0]
@@ -190,20 +280,35 @@ class AzureAdBackupset(Backupset):
 
         return count, browse_result
 
-    def _process_browse_response(self, flag, response, options):
-        """Retrieves the items from browse response.
-            Args:
-                flag    (bool)  --  boolean, whether the response was success or not
-                response (dict)  --  JSON response received for the request from the Server
-                options  (dict)  --  The browse options dictionary
-            Returns:
-                list - List of only the file / folder paths from the browse response
-                dict - Dictionary of all the paths with additional metadata retrieved from browse
-            Raises:
-                SDKException:
-                    if failed to browse/search for content
-                    if response is empty
-                    if response is not success
+    def _process_browse_response(self, flag: bool, response: Any, options: dict) -> tuple:
+        """Process the browse response and retrieve item metadata.
+
+        This method parses the server's browse response to extract the total number of items found 
+        and a list of metadata dictionaries for each item. It raises an SDKException if the response 
+        is invalid or if browsing fails.
+
+        Args:
+            flag: Boolean indicating whether the response was successful.
+            response: The server response object, expected to have a .json() method returning a dictionary.
+            options: Dictionary containing browse options.
+
+        Returns:
+            A tuple containing:
+                - The total number of items found (int).
+                - A list of metadata dictionaries for each item (List[dict]).
+
+        Raises:
+            SDKException: If browsing fails, the response is empty, or the response indicates failure.
+
+        Example:
+            >>> flag = True
+            >>> response = server.get_browse_response()
+            >>> options = {'path': '/users'}
+            >>> total_items, metadatas = backupset._process_browse_response(flag, response, options)
+            >>> print(f"Total items found: {total_items}")
+            >>> print(f"Metadata list: {metadatas}")
+
+        #ai-gen-doc
         """
         metadatas = []
         if flag:
@@ -230,25 +335,65 @@ class AzureAdBackupset(Backupset):
             raise SDKException('Response', '101', self._update_response_(response.text))
         return browseresulttcount, metadatas
 
-    def _process_result_format(self, results):
-        """
-        process the browse result to original data format
+    def _process_result_format(self, results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Convert browse results to the original data format for Azure AD.
+
+        This method updates each result dictionary by replacing all occurrences of "x" with "-" 
+        in the 'id' field found under 'commonData', and stores the result in a new 'azureid' key.
+
         Args:
-            results     (list)  search results list
-        return
-            results     (list)  search results list
+            results: List of dictionaries representing search results. Each dictionary should contain
+                a 'commonData' key with an 'id' field.
+
+        Returns:
+            List of dictionaries with the added 'azureid' field reflecting the formatted ID.
+
+        Example:
+            >>> results = [
+            ...     {'commonData': {'id': 'abcx123xdef'}, 'other': 'value'},
+            ...     {'commonData': {'id': 'xyzx456xuvw'}, 'other': 'value2'}
+            ... ]
+            >>> backupset = AzureAdBackupset()
+            >>> formatted_results = backupset._process_result_format(results)
+            >>> print(formatted_results)
+            [{'commonData': {'id': 'abcx123xdef'}, 'other': 'value', 'azureid': 'abc-123-def'},
+             {'commonData': {'id': 'xyzx456xuvw'}, 'other': 'value2', 'azureid': 'xyz-456-uvw'}]
+
+        #ai-gen-doc
         """
         for _ in results:
             _['azureid'] =  _['commonData']['id'].replace("x","-")
         return results
-    def azuread_get_metadata(self, result):
-        """ Get azure ad meta data for browse result
-            Args:
-                result    (list)    objects list from browse
-            Return:
-                metadata    (dict)    azure ad browse meta data
-            Raise:
-                110    can't find meta data
+    def azuread_get_metadata(self, result: Dict[str, Any]) -> Dict[str, Any]:
+        """Retrieve Azure AD metadata from the provided browse result.
+
+        This method extracts Azure AD metadata from the given browse result dictionary.
+        If the required metadata is not found, an SDKException with error code 110 is raised.
+
+        Args:
+            result: Dictionary containing the browse result data, typically including 'advancedData'.
+
+        Returns:
+            Dictionary containing Azure AD browse metadata.
+
+        Raises:
+            SDKException: If Azure AD metadata is not found in the result (error code 110).
+
+        Example:
+            >>> browse_result = {
+            ...     "advancedData": {
+            ...         "browseMetaData": {
+            ...             "azureADDataV2": {}
+            ...         },
+            ...         "objectGuid": "1234-5678-90ab-cdef"
+            ...     }
+            ... }
+            >>> backupset = AzureAdBackupset(...)
+            >>> metadata = backupset.azuread_get_metadata(browse_result)
+            >>> print(metadata)
+            # The returned metadata dictionary contains Azure AD browse information.
+
+        #ai-gen-doc
         """
         metadata = {}
         if "advancedData" in result:
@@ -261,15 +406,29 @@ class AzureAdBackupset(Backupset):
                                        "Azure AD meta data is not found")
         return metadata
 
-    def azuread_browse_obj_meta(self, obj_):
-        """ get azure ad obj meta info
-            Args:
-                obj_    (obj)    azuare ad object
-            Return:
-                name    (str)    azure ad display name
-                metainfo     (dict)    azure ad browse meta data
-            Raise:
-                None
+    def azuread_browse_obj_meta(self, obj_: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
+        """Extract Azure AD object metadata information.
+
+        Args:
+            obj_: Dictionary representing the Azure AD object. Must contain keys 'commonData', 'guid', and 'objType'.
+
+        Returns:
+            A tuple containing:
+                - name: The display name of the Azure AD object as a string.
+                - metainfo: Dictionary with metadata including 'id', 'azureid', 'name', 'guid', and 'type'.
+
+        Example:
+            >>> azuread_obj = {
+            ...     'commonData': {'displayName': 'John Doe', 'id': 'x123'},
+            ...     'guid': 'abcd-efgh-ijkl',
+            ...     'objType': 'User'
+            ... }
+            >>> backupset = AzureAdBackupset()
+            >>> name, meta = backupset.azuread_browse_obj_meta(azuread_obj)
+            >>> print(f"Display Name: {name}")
+            >>> print(f"Metadata: {meta}")
+
+        #ai-gen-doc
         """
         name = obj_['commonData']['displayName']
         metainfo = {}
@@ -280,15 +439,39 @@ class AzureAdBackupset(Backupset):
         metainfo['type'] = obj_['objType']
         return name, metainfo
 
-    def azuread_browse_double_query(self, options, request_json):
-        """ create request json for azure ad based on double query
-            Args:
-                options    (dict)    browse option from impoort
-                request_json    (json)    request json file from basic request class
-            Return:
-                request_json    (json)    request json with addittional options
-            Raise:
-                None
+    def azuread_browse_double_query(self, options: Dict[str, Any], request_json: Dict[str, Any]) -> Dict[str, Any]:
+        """Create a request JSON for Azure AD double query browsing.
+
+        This method constructs and modifies the request JSON to include double query parameters
+        for Azure AD browsing, based on the provided options. It sets up query structures,
+        applies filters, and removes unnecessary paths from the request.
+
+        Args:
+            options: Dictionary containing browse options such as 'page_size', 'skip_node', and 'filters'.
+            request_json: Dictionary representing the base request JSON to be modified.
+
+        Returns:
+            The updated request JSON dictionary with double query parameters and applied filters.
+
+        Example:
+            >>> options = {
+            ...     'page_size': 100,
+            ...     'skip_node': 0,
+            ...     'filters': [
+            ...         ['123', 'value1'],
+            ...         ['124', 'value2', 2]
+            ...     ]
+            ... }
+            >>> request_json = {
+            ...     'paths': ['/azuread/users'],
+            ...     # other base request fields
+            ... }
+            >>> backupset = AzureAdBackupset()
+            >>> updated_json = backupset.azuread_browse_double_query(options, request_json)
+            >>> print(updated_json)
+            # The returned dictionary can be used for Azure AD browse operations.
+
+        #ai-gen-doc
         """
         request_json['queries'] = [{
                         "type": "0",
@@ -329,14 +512,26 @@ class AzureAdBackupset(Backupset):
         del(request_json['paths'])
         return request_json
 
-    def azuread_browse_options_builder(self, options):
-        """ build browse options
-            Args:
-                options    (dict)    browse option from impoort
-            Return:
-                options    (list)    create formated options based on import
-            Raise:
-                None
+    def azuread_browse_options_builder(self, options: Dict[str, Any]) -> Dict[str, Any]:
+        """Build and format browse options for Azure AD backupset operations.
+
+        This method ensures that the provided options dictionary contains all required
+        keys for a browse operation. If certain keys are missing, default values are added.
+
+        Args:
+            options: Dictionary containing browse options. Missing keys such as 'filters',
+                'operation', 'page_size', and 'skip_node' will be populated with defaults.
+
+        Returns:
+            Dictionary with all necessary browse options formatted for Azure AD operations.
+
+        Example:
+            >>> backupset = AzureAdBackupset()
+            >>> browse_options = {'operation': 'browse'}
+            >>> formatted_options = backupset.azuread_browse_options_builder(browse_options)
+            >>> print(formatted_options)
+            {'operation': 'browse', 'page_size': 20, 'skip_node': 0, 'filters': [('76', '00000000000000000000000000000001', '9'), ('76', '00000000000000000000000000000001', '9')]}
+        #ai-gen-doc
         """
         if "filters" not in options:
             options['filters'] = [("76", "00000000000000000000000000000001", "9"),
@@ -347,14 +542,37 @@ class AzureAdBackupset(Backupset):
             options['skip_node'] = 0
         return options
 
-    def __prepare_search_json(self, options):
-        """
-        performs view_properties (Cvpysdk Api call)
+    def __prepare_search_json(self, options: Dict[str, Any]) -> Dict[str, Any]:
+        """Prepare the search JSON payload for the view_properties API call.
+
+        This method constructs a search request JSON using the provided options, 
+        which include search attributes, time filters, and subclient information. 
+        The resulting JSON can be used to perform advanced search operations 
+        against Azure AD backup data.
+
         Args:
-            options     (dict)      example {"to_time":(epoch) ,
-                                            "subclient_id":(string/optional),
-                                            "attribute": "attribute to perform search "}
-            Return:     (dict)      view properties
+            options: Dictionary containing search parameters. 
+                Example:
+                    {
+                        "to_time": <epoch_time>,
+                        "subclient_id": <string, optional>,
+                        "attribute": <attribute to perform search>
+                    }
+
+        Returns:
+            Dictionary representing the search request JSON for the API call.
+
+        Example:
+            >>> options = {
+            ...     "to_time": 1712345678,
+            ...     "attribute": "AD_DISPLAYNAME"
+            ... }
+            >>> backupset = AzureAdBackupset(...)
+            >>> search_json = backupset.__prepare_search_json(options)
+            >>> print(search_json)
+            # The returned dictionary can be used in an API request to perform the search.
+
+        #ai-gen-doc
         """
         options["subclient_id"] = self.subclients.all_subclients['default']['id']
 
@@ -493,20 +711,29 @@ class AzureAdBackupset(Backupset):
 
         return request_json
 
-    def get_search_response(self, job_time, attribute):
-        """
-            Searches for jobs based on the specified parameters.
+    def get_search_response(self, job_time: str, attribute: str) -> Dict[str, Any]:
+        """Search for jobs based on the specified job end time and attribute.
 
-            This method performs a search operation for jobs using the
-            given job time, display name and application ID.
-            Args:
-                job_time    (str)   The job ends time.
-                attribute   (str)  Attribute to search for.
-            Return:
-                The response contains the search results.
-            Raises:
-                SDKException: If there is a bad request
-                or no object found with the specified display name.
+        This method performs a search operation for jobs using the provided job end time and attribute.
+        It returns the search results as a dictionary containing job details.
+
+        Args:
+            job_time: The job end time as a string (e.g., "2024-06-01T12:00:00Z").
+            attribute: The attribute to search for (e.g., display name, application ID).
+
+        Returns:
+            Dictionary containing the search results for jobs matching the criteria.
+
+        Raises:
+            SDKException: If the request is invalid or no jobs are found with the specified attribute.
+
+        Example:
+            >>> backupset = AzureAdBackupset(...)
+            >>> results = backupset.get_search_response("2024-06-01T12:00:00Z", "displayName")
+            >>> print(f"Total jobs found: {results['proccessingInfo']['totalHits']}")
+            >>> # Access job details from the results dictionary
+
+        #ai-gen-doc
         """
 
         uri = self._services["DO_WEB_SEARCH"]
@@ -520,19 +747,27 @@ class AzureAdBackupset(Backupset):
             raise SDKException('Backupset', '107', "no result found with specified attribute")
         return response
 
-    def view_attributes_url_builder(self,
-                                    job_time,
-                                    display_name):
-        """
-        Builds a URL for viewing attributes based on the specified parameters.
+    def view_attributes_url_builder(self, job_time: str, display_name: str) -> str:
+        """Build a URL for viewing attributes of an object based on job time and display name.
 
-        This method constructs a URL for viewing attributes of an
-        object identified by the given job time and display name.
+        This method constructs a URL that allows users to view the attributes of an object
+        identified by the specified job time and display name. The URL is generated using
+        internal service endpoints and encoded parameters.
+
         Args:
-            job_time    (str)   The job time.
-            display_name    (str)   The display name of the object.
-        Return:
-            The URL for viewing attributes.
+            job_time: The job time as a string, representing when the job was executed.
+            display_name: The display name of the object whose attributes are to be viewed.
+
+        Returns:
+            A string containing the URL for viewing the object's attributes.
+
+        Example:
+            >>> backupset = AzureAdBackupset(...)
+            >>> url = backupset.view_attributes_url_builder('2024-06-01 12:00:00', 'UserAccount01')
+            >>> print(f"View attributes URL: {url}")
+            >>> # The returned URL can be used to access the object's attribute view in the web console
+
+        #ai-gen-doc
         """
 
         subclient_id = self.subclients.all_subclients['default']['id']
@@ -561,21 +796,29 @@ class AzureAdBackupset(Backupset):
             raise SDKException('Backupset', '107',
                                f"No result found with specified attribute {e.exception_message}")
 
-    def get_view_attribute_response(self,
-                                    job_time,
-                                    display_name):
-        """
-        Retrieves view attributes based on the specified parameters.
+    def get_view_attribute_response(self, job_time: int, display_name: str) -> Dict[str, Any]:
+        """Retrieve view attributes for an object using job time and display name.
 
-        This method retrieves the view attributes of an
-        object identified by the given job time and display name.
+        This method fetches the view attributes of an object identified by the specified job time and display name.
+        The response contains the attributes in JSON format.
+
         Args:
-            job_time    (int)   The job time.
-            display_name    (string)    The display name of the object.
-        Return:
-            (dict)  The JSON response contains the view attributes.
+            job_time: The job time as an integer, representing when the job was executed.
+            display_name: The display name of the object whose view attributes are to be retrieved.
+
+        Returns:
+            Dictionary containing the view attributes as returned by the API.
+
         Raises:
             SDKException: If there is an error while retrieving the view attributes.
+
+        Example:
+            >>> backupset = AzureAdBackupset(...)
+            >>> attributes = backupset.get_view_attribute_response(1681234567, "AzureADUser01")
+            >>> print(attributes)
+            >>> # The returned dictionary contains the view attributes for the specified object
+
+        #ai-gen-doc
         """
         try:
             url = self.view_attributes_url_builder(display_name=display_name,

@@ -208,24 +208,56 @@ _Roles Attributes
     """
 import json
 
+import enum
 import http.client as httplib
 from copy import deepcopy
-import enum
+
 from .exception import SDKException
 from .datacube.constants import IndexServerConstants
 
+from typing import Any, Dict, List, Optional, Union, TYPE_CHECKING
+if TYPE_CHECKING:
+    import requests
+    from cvpysdk.commcell import Commcell
+
 
 class IndexServers(object):
-    """Class for representing all the index servers associated with the commcell."""
+    """
+    Manages all index servers associated with a CommCell environment.
 
-    def __init__(self, commcell_object):
-        """Initialize object of the IndexServers class.
+    This class provides a comprehensive interface for interacting with index servers,
+    including retrieving, creating, updating, and deleting index server configurations.
+    It also supports role management, property retrieval, and maintenance operations
+    such as pruning orphaned data sources.
 
-            Args:
-                commcell_object (object)  --  instance of the Commcell class
+    Key Features:
+        - Retrieve and list all index servers and their roles
+        - Access index server and role data via properties
+        - Create new index servers with specified configurations
+        - Delete existing index servers by cloud name
+        - Check for the existence of an index server
+        - Get properties of a specific index server
+        - Update roles data for index servers
+        - Refresh the index server information from the CommCell
+        - Prune orphaned data sources associated with index servers
+        - Utility methods for string representation and length
 
-            Returns:
-                object - instance of the IndexServers class
+    #ai-gen-doc
+    """
+
+    def __init__(self, commcell_object: 'Commcell') -> None:
+        """Initialize an IndexServers object with the given Commcell connection.
+
+        Args:
+            commcell_object: An instance of the Commcell class representing the active Commcell connection.
+
+        Example:
+            >>> from cvpysdk.commcell import Commcell
+            >>> commcell = Commcell('commcell_host', 'username', 'password')
+            >>> index_servers = IndexServers(commcell)
+            >>> print("IndexServers object created successfully")
+
+        #ai-gen-doc
         """
         self._commcell_object = commcell_object
         self._cvpysdk_object = commcell_object._cvpysdk_object
@@ -235,12 +267,15 @@ class IndexServers(object):
         self._roles_obj = None
         self.refresh()
 
-    def __str__(self):
-        """Representation string consisting of all index servers of the commcell.
+    def __str__(self) -> str:
+        """Return a string representation of all index servers in the Commcell.
 
-                Returns:
-                    str - string of all the index servers with different roles associated
-                    with the commcell
+        The returned string lists all index servers along with their associated roles.
+
+        Returns:
+            A string containing details of all index servers and their roles in the Commcell.
+
+        #ai-gen-doc
         """
         representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'IS Name')
         index = 1
@@ -250,35 +285,59 @@ class IndexServers(object):
             index += 1
         return representation_string
 
-    def __repr__(self):
-        """Representation string for the instance of the IndexServers class."""
+    def __repr__(self) -> str:
+        """Return the string representation of the IndexServers instance.
+
+        This method provides a developer-friendly string that represents the current
+        IndexServers object, useful for debugging and logging purposes.
+
+        Returns:
+            A string representation of the IndexServers instance.
+
+        #ai-gen-doc
+        """
         return "IndexServers class instance for Commcell"
 
-    def __len__(self):
-        """Returns the number of the index servers associated with the commcell"""
+    def __len__(self) -> int:
+        """Get the number of index servers associated with the Commcell.
+
+        Returns:
+            The total count of index servers managed by this IndexServers instance.
+
+        #ai-gen-doc
+        """
         return len(self._all_index_servers)
 
-    def _response_not_success(self, response):
-        """Helper method to raise exception when response is not 200 (ok)
+    def _response_not_success(self, response: 'requests.Response') -> None:
+        """Raise an exception if the HTTP response is not successful (status code 200).
 
-                Raises:
-                    SDKException:
-                        Response was not success
+        This helper method checks the provided response object and raises an SDKException
+        if the response does not indicate a successful HTTP request.
+
+        Args:
+            response: The response object to check for success.
+
+        Raises:
+            SDKException: If the response status code is not 200 (OK).
+
+        #ai-gen-doc
         """
         raise SDKException(
             'Response',
             '101',
-            self._update_response_(
-                response.text))
+            self._update_response_(response.text)
+        )
 
-    def _get_index_servers(self):
-        """Method to retrieve all the index server available on commcell.
+    def _get_index_servers(self) -> None:
+        """Retrieve all index servers available on the Commcell.
 
-            Raises:
-                SDKException:
-                    Failed to get the list of analytics engines
+        Returns:
+            None
 
-                    Response was not success
+        Raises:
+            SDKException: If the retrieval of the index server list fails or the response is not successful.
+
+        #ai-gen-doc
         """
         flag, response = self._cvpysdk_object.make_request(
             'GET', self._services['GET_ALL_INDEX_SERVERS'])
@@ -312,81 +371,108 @@ class IndexServers(object):
         else:
             self._response_not_success(response)
 
-    def _get_all_roles(self):
-        """Creates an instance of _Roles class and adds it to the IndexServer class"""
+    def _get_all_roles(self) -> None:
+        """Create and return an instance of the _Roles class for the IndexServer.
+
+        This method initializes the _Roles class and associates it with the IndexServer instance.
+
+        Returns:
+            None
+
+        #ai-gen-doc
+        """
         self._roles_obj = _Roles(self._commcell_object)
 
     @property
-    def all_index_servers(self):
-        """Returns the details of all the index server for associated commcell.
+    def all_index_servers(self) -> dict:
+        """Get details of all index servers associated with the Commcell.
 
-                Returns:
-                    dict - dictionary consisting details of all the index servers
-                    associated with commcell
-                    Sample - {
-                                <cloud_id_1>   :
-                                    {
-                                        "engineName" : <property_value>,
-                                        "internalCloudName" : <property_value>,
-                                        ...
-                                    },
-                                <cloud_id_2>   :
-                                    {
-                                        "engineName" : <property_value>,
-                                        "cloudID" : <property_value>,
-                                        ...
-                                    }
-                            }
+        Returns:
+            dict: A dictionary containing details of all index servers, where each key is a cloud ID
+            and the value is a dictionary of properties for that index server.
+
+            Example structure:
+                {
+                    "cloud_id_1": {
+                        "engineName": "IndexServer1",
+                        "internalCloudName": "InternalName1",
+                        ...
+                    },
+                    "cloud_id_2": {
+                        "engineName": "IndexServer2",
+                        "cloudID": "cloud_id_2",
+                        ...
+                    }
+                }
+
+        #ai-gen-doc
         """
         return self._all_index_servers
 
     @property
-    def roles_data(self):
-        """Returns the details of all the cloud roles data
+    def roles_data(self) -> List[Dict[str, Any]]:
+        """Get details of all cloud roles associated with the IndexServers.
 
-                Returns:
-                    list - list of dictionary containing details of the cloud roles
+        Returns:
+            List of dictionaries, each containing information about a cloud role.
+
+        #ai-gen-doc
         """
         return self._roles_obj.roles_data
 
-    def refresh(self):
-        """Refresh the properties of IndexServers class"""
+    def refresh(self) -> None:
+        """Reload the properties and state of the IndexServers class.
+
+        This method refreshes the internal data of the IndexServers instance, ensuring that 
+        any changes made externally are reflected in the current object.
+
+        #ai-gen-doc
+        """
         self._all_index_servers = {}
         self._get_index_servers()
         if not self._roles_obj:
             self._get_all_roles()
 
-    def update_roles_data(self):
-        """Synchronises all the cloud roles details with the commcell"""
+    def update_roles_data(self) -> None:
+        """Synchronize all cloud role details with the Commcell.
+
+        This method updates the internal data to reflect the latest cloud roles 
+        information from the Commcell, ensuring that any changes or new roles 
+        are accurately represented.
+
+        #ai-gen-doc
+        """
         self._roles_obj.update_roles_data()
 
-    def get_properties(self, cloud_name):
-        """Returns all details of a index server with the cloud name
+    def get_properties(self, cloud_name: str) -> dict:
+        """Retrieve all details of an index server by its cloud name.
 
-                Args:
-                    cloud_name     (str)       --  cloud name of index server
+        Args:
+            cloud_name: The cloud name of the index server whose properties are to be fetched.
 
-                Returns:
-                    dict        -   dict consisting details of the index server
+        Returns:
+            A dictionary containing details of the specified index server.
+
+        #ai-gen-doc
         """
         for index_server in self._all_index_servers:
             if self._all_index_servers[index_server]['engineName'] == cloud_name:
                 return self._all_index_servers[index_server]
         raise SDKException('IndexServers', '102')
 
-    def has(self, cloud_name):
-        """Returns True if the index server with given name is present in commcell.
+    def has(self, cloud_name: str) -> bool:
+        """Check if an index server with the specified name exists in the Commcell.
 
-                Args:
-                    cloud_name     (str)       --  the engine name of index server
+        Args:
+            cloud_name: The engine name of the index server to check.
 
-                Returns:
-                    boolean     -   True if index server with given name as is_name
-                    is associated with the commcell else returns False
+        Returns:
+            True if an index server with the given name is associated with the Commcell, otherwise False.
 
-                Raises:
-                    SDKExecption:
-                        Data type of the input(s) is not valid
+        Raises:
+            SDKException: If the data type of the input is not valid.
+
+        #ai-gen-doc
         """
         if isinstance(cloud_name, str):
             for index_server in self._all_index_servers:
@@ -395,22 +481,19 @@ class IndexServers(object):
             return False
         raise SDKException('IndexServers', '101')
 
-    def get(self, cloud_data):
-        """Returns IndexServer object if a index server is found.
+    def get(self, cloud_data: Union[int, str]) -> 'IndexServer':
+        """Retrieve an IndexServer object by cloud name or cloud ID.
 
-                Args:
-                    cloud_data        (int/str)       --    cloud name or
-                                                            cloud ID of index server
+        Args:
+            cloud_data: The cloud name (str) or cloud ID (int) of the index server to retrieve.
 
-                Returns:
-                    object            (IndexServer)   --  Instance on index server with
-                    the engine name or cloud id as item
+        Returns:
+            IndexServer: An instance representing the index server identified by the provided cloud name or ID.
 
-                Raises:
-                    SDKException:
-                        Index Server not found.
+        Raises:
+            SDKException: If the index server is not found or if the input data type is invalid.
 
-                        Data type of the input(s) is not valid.
+        #ai-gen-doc
         """
         if isinstance(cloud_data, int):
             if cloud_data in self._all_index_servers:
@@ -432,44 +515,49 @@ class IndexServers(object):
         raise SDKException('IndexServers', '101')
 
     def create(
-            self,
-            index_server_name,
-            index_server_node_names,
-            index_directory,
-            index_server_roles,
-            index_pool_name=None,
-            is_cloud=False,
-            cloud_param=None):
-        """Creates an index server within the commcell
+        self,
+        index_server_name: str,
+        index_server_node_names: list,
+        index_directory: list,
+        index_server_roles: list,
+        index_pool_name: str = None,
+        is_cloud: bool = False,
+        cloud_param: list = None
+    ) -> None:
+        """Create a new index server within the Commcell environment.
 
-                Args:
-                    index_server_node_names         (list)  --  client names for index server node
-                    index_server_name               (str)   --  name for the index server
-                    index_directory                 (list)  --  list of index locations for the index server
-                                                                nodes respectively
-                                                    For example:
-                                                            [<path_1>] - same index location for all the nodes
-                                                            [<path_1>, <path_2>, <path_3>] - different index
-                                                    location for index server with 3 nodes
-                    index_server_roles              (list)  --  list of role names to be assigned
-                    index_pool_name                 (str)   --  name for the index pool to used by cloud index server
-                    cloud_param                     (list)  --  list of custom parameters to be parsed
-                                                    into the json for index server meta info
-                                                    [
-                                                        {
-                                                            "name": <name>,
-                                                            "value": <value>
-                                                        }
-                                                    ]
-                    is_cloud            (bool)  --  if true then creates a cloud mode index server
+        This method provisions an index server with the specified configuration, including node clients,
+        index directories, assigned roles, and optional cloud or custom parameters.
 
-                Raises:
-                    SDKException:
-                        Data type of the input(s) is not valid.
+        Args:
+            index_server_name: Name to assign to the new index server.
+            index_server_node_names: List of client names to be used as index server nodes.
+            index_directory: List of index directory paths for the index server nodes. 
+                - If a single path is provided, it is used for all nodes.
+                - If multiple paths are provided, each path is assigned to the corresponding node.
+            index_server_roles: List of role names to assign to the index server.
+            index_pool_name: (Optional) Name of the index pool to use for a cloud index server.
+            is_cloud: If True, creates a cloud mode index server.
+            cloud_param: (Optional) List of custom parameters to include in the index server meta info.
+                Each parameter should be a dictionary with "name" and "value" keys.
 
-                        Response was not success.
+        Raises:
+            SDKException: If any input parameter is invalid, or if the server response is unsuccessful or empty.
 
-                        Response was empty.
+        Example:
+            >>> index_servers = IndexServers(commcell_object)
+            >>> index_servers.create(
+            ...     index_server_name="MyIndexServer",
+            ...     index_server_node_names=["node1", "node2"],
+            ...     index_directory=["/index/path1", "/index/path2"],
+            ...     index_server_roles=["Search", "Analytics"],
+            ...     index_pool_name="MyIndexPool",
+            ...     is_cloud=True,
+            ...     cloud_param=[{"name": "customParam", "value": "customValue"}]
+            ... )
+            >>> print("Index server created successfully.")
+
+        #ai-gen-doc
         """
         if not (isinstance(index_server_roles, list) and isinstance(index_server_node_names, list)
                 and isinstance(index_server_name, str)):
@@ -568,20 +656,16 @@ class IndexServers(object):
         else:
             self._response_not_success(response)
 
-    def delete(self, cloud_name):
-        """Deletes / removes an index server from the commcell
+    def delete(self, cloud_name: str) -> None:
+        """Delete or remove an index server from the Commcell.
 
-                Args:
-                    cloud_name      (str)   --  cloud name of index server
-                    to be removed from the commcell
+        Args:
+            cloud_name: The name of the index server (cloud) to be removed from the Commcell.
 
-                Raises:
-                    SDKException:
-                        Data type of the input(s) is not valid.
+        Raises:
+            SDKException: If the input data type is invalid, the response is unsuccessful, or the response is empty.
 
-                        Response was not success.
-
-                        Response was empty.
+        #ai-gen-doc
         """
         if not isinstance(cloud_name, str):
             raise SDKException('IndexServers', '101')
@@ -606,15 +690,16 @@ class IndexServers(object):
             raise SDKException('Response', '102')
         self._response_not_success(response)
 
-    def prune_orphan_datasources(self):
-        """Deletes all the orphan datasources
-            Raises:
-                SDKException:
-                    if failed to prune the orphan datasources
+    def prune_orphan_datasources(self) -> None:
+        """Delete all orphan datasources associated with the IndexServers.
 
-                    If response is empty
+        This method removes datasources that are no longer associated with any active index server.
+        It is useful for cleaning up unused or stale datasources to maintain optimal system performance.
 
-                    if response is not success
+        Raises:
+            SDKException: If the operation fails, if the response is empty, or if the response indicates failure.
+
+        #ai-gen-doc
         """
         prune_datasource = self._services['PRUNE_DATASOURCE']
         request_json = IndexServerConstants.PRUNE_REQUEST_JSON
@@ -631,28 +716,64 @@ class IndexServers(object):
 
 
 class IndexServerOSType(enum.Enum):
-    """Enum class for Index Server OS Type"""
+    """
+    Enumeration for Index Server Operating System Types.
+
+    This enum class defines the possible operating system types that an Index Server can run on.
+    It is intended to provide a clear and type-safe way to specify or check the OS type in code
+    that interacts with Index Servers.
+
+    Key Features:
+        - Enumerates supported Index Server OS types
+        - Ensures type safety and code clarity when handling OS types
+        - Useful for configuration, validation, and conditional logic based on OS
+
+    #ai-gen-doc
+    """
     WINDOWS = "Windows"
     UNIX = "Unix"
     MIXED = "Mixed"
 
 
 class IndexServer(object):
-    """Class for performing index server operations for a specific index server"""
+    """
+    Class for managing and performing operations on a specific index server.
 
-    def __init__(self, commcell_obj, name, cloud_id=None):
-        """Initialize the IndexServer class instance.
+    The IndexServer class provides a comprehensive interface for interacting with
+    and managing an index server within a cloud or on-premises environment. It supports
+    operations such as modifying index server configurations, managing roles and nodes,
+    executing Solr queries, handling document deletion and commits, and retrieving
+    various server and client properties.
 
-            Args:
-                commcell_obj    (object)        --  instance of the Commcell class
+    Key Features:
+        - Initialization and representation of index server objects
+        - Retrieval and refresh of index server properties and health indicators
+        - Management of roles, nodes, and index locations
+        - Plan management, including changing and retrieving plan information
+        - Execution of Solr queries and creation of Solr query parameters
+        - Document management within Solr cores, including deletion and hard commits
+        - Access to detailed server, client, and cloud properties via properties
+        - Retrieval of OS information and index node details
+        - Support for both cloud and non-cloud index server types
 
-                name            (str)           --  name of the index server
+    #ai-gen-doc
+    """
 
-                cloud_id        (int)           --  cloud id of the index server
-                    default: None
+    def __init__(self, commcell_obj: 'Commcell', name: str, cloud_id: int = None) -> None:
+        """Initialize an IndexServer class instance.
 
-            Returns:
-                object - instance of the IndexServer class
+        Args:
+            commcell_obj: Instance of the Commcell class representing the connected Commcell.
+            name: Name of the index server.
+            cloud_id: Optional cloud ID associated with the index server. Defaults to None.
+
+        Example:
+            >>> commcell = Commcell('hostname', 'username', 'password')
+            >>> index_server = IndexServer(commcell, 'MyIndexServer')
+            >>> # With cloud_id specified
+            >>> index_server_with_cloud = IndexServer(commcell, 'CloudIndexServer', cloud_id=123)
+
+        #ai-gen-doc
         """
         self._engine_name = name
         self._commcell_obj = commcell_obj
@@ -668,26 +789,50 @@ class IndexServer(object):
         self.os_type = None
         self.refresh()
 
-    def __repr__(self):
-        """String representation of the instance of this class."""
+    def __repr__(self) -> str:
+        """Return the string representation of the IndexServer instance.
+
+        This method provides a developer-friendly string that represents the current
+        IndexServer object, which can be useful for debugging and logging purposes.
+
+        Returns:
+            A string representation of the IndexServer instance.
+
+        #ai-gen-doc
+        """
         return 'IndexServer class instance for index server: "{0}"'.format(
             self._engine_name)
 
-    def _get_cloud_id(self):
-        """Get the cloud id for the index server
+    def _get_cloud_id(self) -> int:
+        """Retrieve the cloud ID associated with the index server.
 
-                Returns:
-                    int - cloud id for the index server
+        Returns:
+            The cloud ID as an integer for the current index server instance.
+
+        #ai-gen-doc
         """
         return self._commcell_obj.index_servers.get(self._engine_name).cloud_id
 
-    def _get_properties(self):
-        """Get the properties of the index server"""
+    def _get_properties(self) -> None:
+        """Retrieve the properties of the index server.
+
+        Returns:
+            A dictionary containing the properties and configuration details of the index server.
+
+        #ai-gen-doc
+        """
         self._properties = self._commcell_obj.index_servers.get_properties(
             self._engine_name)
 
-    def refresh(self):
-        """Refresh the index server properties"""
+    def refresh(self) -> None:
+        """Reload the properties of the index server to ensure the latest configuration is available.
+
+        This method refreshes the internal state of the IndexServer object, updating its properties 
+        from the underlying data source. Use this method if you suspect the index server's properties 
+        have changed, and you want to ensure you are working with the most current information.
+
+        #ai-gen-doc
+        """
         self._commcell_obj.index_servers.refresh()
         self._get_properties()
         if self.os_type is None:
@@ -697,27 +842,48 @@ class IndexServer(object):
         if self.plan_info is None:
             self.plan_info = self.get_plan_info()
 
-    def update_roles_data(self):
-        """Synchronize the cloud roles data with the commcell"""
+    def update_roles_data(self) -> None:
+        """Synchronize the cloud roles data with the Commcell.
+
+        This method updates the roles data for the IndexServer by fetching the latest
+        information from the Commcell. Use this method to ensure that the IndexServer
+        has the most current cloud roles configuration.
+
+        #ai-gen-doc
+        """
         self._roles_obj.update_roles_data()
 
-    def modify(self, index_location, node_name, node_params):
-        """Modifies the properties of an index server
+    def modify(self, index_location: str, node_name: str, node_params: List[Dict]) -> None:
+        """Modify the properties of an index server.
 
-            Args:
-                index_location      (str)       --  index server data directory
-                node_name           (str)       --  index server node name
-                node_params         (dict)      --  parameters to be passed
-                                                    [
-                                                        {
-                                                            "name" : <property_name>,
-                                                            "value" : <property_value>
-                                                        }
-                                                    ]
-            Raises:
-                SDKException:
-                    Response was not success.
-                    Response was empty.
+        Updates the configuration of the index server by specifying a new data directory,
+        node name, and a set of parameters to be applied to the node.
+
+        Args:
+            index_location: The file system path to the index server's data directory.
+            node_name: The name of the index server node to modify.
+            node_params: A list of dictionary containing the parameters to update
+                with "name" and "value" keys, for example:
+                [
+                    {
+                        "name": "property_name",
+                        "value": "property_value"
+                    }
+                ]
+
+        Raises:
+            SDKException: If the response from the server is unsuccessful or empty.
+
+        Example:
+            >>> index_server = IndexServer()
+            >>> params = [
+            ...     {"name": "maxConnections", "value": 100},
+            ...     {"name": "enableLogging", "value": True}
+            ... ]
+            >>> index_server.modify("/data/index", "NodeA", params)
+            >>> print("Index server properties updated successfully.")
+
+        #ai-gen-doc
         """
         json_req = deepcopy(IndexServerConstants.REQUEST_JSON)
         json_req['opType'] = IndexServerConstants.OPERATION_EDIT
@@ -746,16 +912,19 @@ class IndexServer(object):
             raise SDKException('Response', '102')
         raise SDKException('Response', '101')
 
-    def change_plan(self, plan_name):
-        """Modifies the plan used by an index server
+    def change_plan(self, plan_name: str) -> None:
+        """Modify the plan associated with the index server.
 
-            Args:
-                plan_name      (str)       --  Name of the plan to be used for the index server
-            Raises:
-                SDKException:
-                    Response was not success.
-                    Response was empty.
-                    if plan with given name doesn't exist
+        Changes the plan used by the index server to the specified plan name.
+
+        Args:
+            plan_name: The name of the plan to assign to the index server.
+
+        Raises:
+            SDKException: If the response is not successful, the response is empty,
+                or if a plan with the given name does not exist.
+
+        #ai-gen-doc
         """
         if not self._commcell_obj.plans.has_plan(plan_name):
             raise SDKException(
@@ -780,26 +949,38 @@ class IndexServer(object):
             raise SDKException('Response', '102')
         raise SDKException('Response', '101')
 
-    def update_role(self, props=None):
-        """Updates a role of an Index Server
+    def update_role(self, props: Optional[List[Dict[str, Any]]] = None) -> None:
+        """Update the roles assigned to the Index Server.
 
-            Args:
-                props               (list)  --  array of dictionaries
-                consisting details of the roles such as role name
-                and operation type.
-                                            [{
-                                                "roleName": <name>          (str)
-                                                "operationType": 1 or 2     (int)
-                                                    1 for adding a role
-                                                    2 for removing a role
-                                            }]
+        This method allows you to add or remove roles for the Index Server by providing
+        a list of dictionaries specifying the role name and the operation type.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Args:
+            props: Optional list of dictionaries, each containing:
+                - "roleName": The name of the role to add or remove (str).
+                - "operationType": The operation type (int), where
+                    1 indicates adding a role,
+                    2 indicates removing a role.
 
-                    if response is not success
+                Example:
+                    [
+                        {"roleName": "Search", "operationType": 1},
+                        {"roleName": "Analytics", "operationType": 2}
+                    ]
 
+        Raises:
+            SDKException: If the response from the server is empty or not successful.
+
+        Example:
+            >>> index_server = IndexServer()
+            >>> roles_to_update = [
+            ...     {"roleName": "Search", "operationType": 1},
+            ...     {"roleName": "Analytics", "operationType": 2}
+            ... ]
+            >>> index_server.update_role(roles_to_update)
+            >>> print("Roles updated successfully.")
+
+        #ai-gen-doc
         """
         json_req = {"cloudId": self.cloud_id, "roles": []}
         if props:
@@ -820,28 +1001,30 @@ class IndexServer(object):
             raise SDKException('Response', '102')
         raise SDKException('Response', '101')
 
-    def delete_docs_from_core(self, core_name, select_dict = None):
-        """Deletes the docs from the given core name on index server depending on the select dict passed
+    def delete_docs_from_core(self, core_name: str, select_dict: Optional[dict] = None) -> None:
+        """Delete documents from the specified Solr core on the index server.
 
-                Args:
+        This method removes documents from the given Solr core based on the provided selection criteria.
+        If no selection dictionary is provided, all documents in the core will be deleted.
 
-                        core_name               (str)  --  name of the solr core
-                        select_dict             (dict) --  dict with query to delete specific documents
-                                                    default query - "*:*" (Deletes all the docs)
+        Args:
+            core_name: The name of the Solr core from which documents should be deleted.
+            select_dict: Optional dictionary specifying the query to select documents for deletion.
+                If not provided, the default query "*:*" will be used to delete all documents.
 
-                    Returns:
-                        None
+        Raises:
+            SDKException: If the input data is invalid, if the index server is a cloud server (not implemented),
+                if the response is empty, or if the response indicates failure.
 
-                    Raises:
-                        SDKException:
+        Example:
+            >>> index_server = IndexServer()
+            >>> # Delete all documents from the 'my_core' Solr core
+            >>> index_server.delete_docs_from_core('my_core')
+            >>> # Delete documents matching a specific query
+            >>> query = {'query': 'field:value'}
+            >>> index_server.delete_docs_from_core('my_core', select_dict=query)
 
-                            if input data is not valid
-
-                            if index server is cloud, not implemented error
-
-                            if response is empty
-
-                            if response is not success
+        #ai-gen-doc
         """
         if not isinstance(core_name, str):
             raise SDKException('IndexServers', '101')
@@ -862,26 +1045,20 @@ class IndexServer(object):
                 return
         raise SDKException('IndexServers', '111')
 
-    def hard_commit(self, core_name):
-        """do hard commit for the given core name on index server
+    def hard_commit(self, core_name: str) -> None:
+        """Perform a hard commit operation for the specified Solr core on the index server.
 
-                    Args:
+        This method triggers a hard commit, ensuring that all recent changes to the given Solr core 
+        are flushed and made durable on the index server.
 
-                        core_name               (str)  --  name of the solr core
+        Args:
+            core_name: The name of the Solr core to commit.
 
-                    Returns:
-                        None
+        Raises:
+            SDKException: If the input data is invalid, if the index server is a cloud instance 
+                (not implemented), if the response is empty, or if the response indicates failure.
 
-                    Raises:
-                        SDKException:
-
-                            if input data is not valid
-
-                            if index server is cloud, not implemented error
-
-                            if response is empty
-
-                            if response is not success
+        #ai-gen-doc
         """
         if not isinstance(core_name, str):
             raise SDKException('IndexServers', '101')
@@ -899,24 +1076,22 @@ class IndexServer(object):
                 return
         raise SDKException('IndexServers', '104', "Something went wrong with hard commit")
 
-    
-    def get_health_indicators(self, client_name=None):
-        """Get health indicators for index server node by client name
+    def get_health_indicators(self, client_name: Optional[str] = None) -> str:
+        """Retrieve health indicators for an index server node by client name.
 
-                Args:
-                    client_name     (str)       --  name of the client node
+        Args:
+            client_name: Optional; the name of the client node for which health indicators are requested.
+                If not provided, the method may return health indicators for all nodes or raise an exception
+                depending on the index server configuration.
 
-                Returns:
-                    (response(str)) -- str json object
+        Returns:
+            A JSON string containing the health indicators for the specified index server node.
 
-                Raises:
+        Raises:
+            SDKException: If input data is invalid, if client name is required but not provided,
+                if the response is unsuccessful, or if the response is empty.
 
-                    SDKException:
-                        if input data is not valid
-                        if client name is not passed for index server cloud
-                        if response is not success
-                        if response is empty
-
+        #ai-gen-doc
         """
         server_url = self.server_url[0]
         response = None
@@ -935,29 +1110,29 @@ class IndexServer(object):
             return response
         raise SDKException('IndexServers', '104', "Could not get health summary for [{}]".format(client_name))
 
-    def get_all_cores(self, client_name=None):
-        """gets all cores & core details from index server
+    def get_all_cores(self, client_name: Optional[str] = None) -> (List, str):
+        """Retrieve all core names and their details from the index server.
 
-                Args:
-                    client_name     (str)       --  name of the client node
-                        ***Applicable only for solr cloud mode or multi node Index Server***
+        Args:
+            client_name: Optional; the name of the client node. This parameter is required for Solr cloud mode or
+            multi-node Index Server configurations.
 
-                Returns:
-                    (list,dict)     -- list containing core names
-                                    -- dict containing details about cores
+        Returns:
+            A list of core names if only core names are requested, or a dictionary containing details about each core.
 
-                Raises:
+        Raises:
+            SDKException: If the input data is invalid, if the client name is not provided for an index server cloud,
+            if the response is unsuccessful, or if the response is empty.
 
-                    SDKException:
+        Example:
+            >>> index_server = IndexServer()
+            >>> core_list = index_server.get_all_cores()
+            >>> print(core_list)
+            >>> # For Solr cloud or multi-node Index Server:
+            >>> core_details = index_server.get_all_cores(client_name="node01")
+            >>> print(core_details)
 
-                        if input data is not valid
-
-                        if client name is not passed for index server cloud
-
-                        if response is not success
-
-                        if response is empty
-
+        #ai-gen-doc
         """
         server_url = self.server_url[0]
         if self.is_cloud or len(self.client_name) > 1:
@@ -978,25 +1153,40 @@ class IndexServer(object):
                 return core_names, response.json()['status']
         raise SDKException('IndexServers', '104', "Something went wrong while getting core names")
 
-    def _create_solr_query(self, select_dict=None, attr_list=None, op_params=None):
-        """Method to create the solr query based on the params
-            Args:
-                select_dict     (dictionary)     --  Dictionary containing search criteria and value
-                                                     Acts as 'q' field in solr query
+    def _create_solr_query(
+        self,
+        select_dict: Optional[Dict[str, Any]] = None,
+        attr_list: Optional[set] = None,
+        op_params: Optional[Dict[str, Any]] = None
+    ) -> str:
+        """Create a Solr query URL based on the provided parameters.
 
-                attr_list       (set)            --  Column names to be returned in results.
-                                                     Acts as 'fl' in solr query
+        This method constructs a Solr query URL using the specified search criteria, 
+        result columns, and additional operational parameters.
 
-                op_params       (dictionary)     --  Other params and values for solr query
-                                                        (Ex: start, rows)
+        Args:
+            select_dict: Optional dictionary containing search criteria and their values.
+                This acts as the 'q' field in the Solr query.
+            attr_list: Optional set of column names to be returned in the results.
+                This acts as the 'fl' (field list) in the Solr query.
+            op_params: Optional dictionary of additional parameters and their values for the Solr query,
+                such as 'start' and 'rows'.
 
-            Returns:
-                The solr url based on params
+        Returns:
+            A string representing the constructed Solr query URL based on the provided parameters.
 
-            Raises:
-                SDKException:
+        Raises:
+            SDKException: If the Solr query URL could not be formed due to invalid parameters or internal errors.
 
-                        if failed to form solr query
+        Example:
+            >>> select_criteria = {'name': 'John Doe', 'age': 30}
+            >>> columns = {'name', 'email', 'age'}
+            >>> options = {'start': 0, 'rows': 10}
+            >>> solr_url = index_server._create_solr_query(select_criteria, columns, options)
+            >>> print(solr_url)
+            # Output: (example) '/solr/select?q=name:John+Doe+AND+age:30&fl=name,email,age&start=0&rows=10'
+
+        #ai-gen-doc
         """
         try:
             search_query = f'q='
@@ -1060,55 +1250,53 @@ class IndexServer(object):
             raise SDKException('IndexServers', '104', f"Something went wrong while creating solr query - {excp}")
 
     def execute_solr_query(
-            self,
-            core_name,
-            solr_client=None,
-            select_dict=None,
-            attr_list=None,
-            op_params=None):
-        """Creates solr url based on input and executes it on solr on given core/collection
-            Args:
+        self,
+        core_name: str,
+        solr_client: Optional[str] = None,
+        select_dict: Optional[dict] = None,
+        attr_list: Optional[set] = None,
+        op_params: Optional[dict] = None
+    ) -> dict:
+        """Execute a Solr query on the specified core or collection.
 
-                core_name               (str)           --  Core name/collection name where we want to query
+        This method constructs a Solr query URL based on the provided parameters and executes it
+        on the given core or collection in the Index Server. It allows for flexible search criteria,
+        attribute selection, and additional Solr query parameters.
 
-                solr_client             (str)           --  Index Server client name to execute solr query
-                                                                Default : None (picks first client on index server)
+        Args:
+            core_name: The name of the Solr core or collection to query.
+            solr_client: Optional; the Index Server client name to execute the Solr query. If not provided,
+                the first available client on the index server is used.
+            select_dict: Optional; a dictionary specifying search criteria and values. This acts as the 'q'
+                field in the Solr query. Supports various formats:
+                    - General filter: {"jid": 1024, "datatype": 2, "clid": 2}
+                    - Keyword search: {'keyword': 'SearchKeyword'}
+                    - Multiple values for a field: {'cvowner': ['xxx', 'yyy']}
+                    - Single value for multiple fields: {('cvowner', 'cvreaddisp'): 'xxx'}
+            attr_list: Optional; a set of column names to be returned in the results. Acts as the 'fl'
+                (field list) in the Solr query.
+                    Example: {'msgclass', 'ccsmtp', 'fmsmtp', 'folder'}
+            op_params: Optional; a dictionary of additional Solr query parameters (excluding 'wt', which is always 'json').
+                Example: {"rows": 0}
 
-                select_dict             (dictionary)    --  Dictionary containing search criteria and
-                                                            value. Acts as 'q' field in solr query
+        Returns:
+            dict: The content of the Solr response as a dictionary.
 
-                        Example :
+        Raises:
+            SDKException: If the request cannot be sent or if the response indicates failure.
 
-                            1. General Criteria to filter results              -   {"jid": 1024, "datatype": 2,clid: 2}
-                            2. Keyword Searches on solr                        -   {'keyword': 'SearchKeyword'}
-                            3. For multiple value searches on single field     -   {'cvowner': ['xxx','yyy']}
-                            4. For single value searches on multiple fields    -   {('cvowner','cvreaddisp') : 'xxx'}
+        Example:
+            >>> # Execute a Solr query to fetch messages with a specific job ID
+            >>> response = index_server.execute_solr_query(
+            ...     core_name='mailbox_core',
+            ...     select_dict={'jid': 1024},
+            ...     attr_list={'msgclass', 'folder'},
+            ...     op_params={'rows': 10}
+            ... )
+            >>> print(response)
+            {'response': {'numFound': 1, 'docs': [{'msgclass': 'IPM.Note', 'folder': 'Inbox'}]}}
 
-                attr_list               (set)           --  Column names to be returned in results.
-                                                                Acts as 'fl' in solr query
-
-                        Example (For Exchange Mailbox IDA, below fields are there in solr) :
-                                    {
-                                     'msgclass',
-                                     'ccsmtp',
-                                     'fmsmtp',
-                                     'folder'
-                                   }
-
-                op_params               (dictionary)    --  Other params and values for solr query. Do not
-                                                            mention 'wt' param as it is always json
-
-                                                            Example : {"rows": 0}
-
-            Returns:
-                content of the response
-
-            Raises:
-                SDKException:
-
-                        if unable to send request
-
-                        if response is not success
+        #ai-gen-doc
         """
         solr_url = f"solr/{core_name}/select?{self._create_solr_query(select_dict, attr_list, op_params)}"
         if solr_client is None:
@@ -1147,37 +1335,52 @@ class IndexServer(object):
                 raise SDKException('IndexServers', '104', f"Something went wrong while querying solr - {output}")
         raise SDKException('IndexServers', '104', "Something went wrong while querying solr")
 
-    def get_index_node(self, node_name):
-        """Returns an Index server node object for given node name
-            Args:
-                node_name           (str)   --  Index server node name
+    def get_index_node(self, node_name: str) -> 'IndexNode':
+        """Retrieve the IndexNode object for the specified index server node name.
 
-            Returns:
-                IndexNode class object
+        Args:
+            node_name: The name of the index server node to retrieve.
 
-            Raises:
-                SDKException:
+        Returns:
+            IndexNode: An object representing the specified index server node.
 
-                        if node not found for the given node name
+        Raises:
+            SDKException: If a node with the given name is not found.
 
+        #ai-gen-doc
         """
         node_name = node_name.lower()
         if node_name in self.client_name:
             return IndexNode(self._commcell_obj, self.engine_name, node_name)
         raise SDKException("IndexServers", '104', 'Index server node not found')
 
-    def get_plan_info(self):
-        """Gets the plan information of the index server
-            Returns:
-                dict - containing the plan information
+    def get_plan_info(self) -> dict:
+        """Retrieve the plan information associated with the index server.
+
+        Returns:
+            dict: A dictionary containing details about the plan configured for the index server.
+
+        Example:
+            >>> index_server = IndexServer()
+            >>> plan_info = index_server.get_plan_info()
+            >>> print(plan_info)
+            >>> # Output will be a dictionary with plan details such as plan name, ID, and configuration
+
+        #ai-gen-doc
         """
         client = self._commcell_obj.clients.get(self.engine_name)
         instance_props = client.properties.get("pseudoClientInfo", {}).get("distributedClusterInstanceProperties", {})
-        plan_details = instance_props.get("clusterConfig",{}).get("cloudInfo", {}).get("planInfo", {})
+        plan_details = instance_props.get("clusterConfig", {}).get("cloudInfo", {}).get("planInfo", {})
         return plan_details
 
-    def get_os_info(self):
-        """Returns the OS type for the Index server"""
+    def get_os_info(self) -> str:
+        """Retrieve the operating system type for the Index server.
+
+        Returns:
+            The OS type of the Index server as a string (e.g., 'Windows', 'Linux').
+
+        #ai-gen-doc
+        """
 
         nodes_name = self.client_name
         nodes = [self._commcell_obj.clients.get(node) for node in nodes_name]
@@ -1193,14 +1396,18 @@ class IndexServer(object):
                     return IndexServerOSType.MIXED.value
             return IndexServerOSType.UNIX.value
 
-    def __form_field_query(self, key, value):
-        """
-        Returns the query with the key and value passed
+    @staticmethod
+    def __form_field_query(key: str, value: str) -> str:
+        """Construct a Solr query string using the specified key and value.
+
         Args:
-                key(str)    -- key for forming the query
-                value(str)  -- value for forming the query
-            Returns:
-                query to be executed against solr
+            key: The field name to use in the query.
+            value: The value to match for the specified field.
+
+        Returns:
+            A string representing the Solr query to be executed.
+
+        #ai-gen-doc
         """
         query = None
         if value is None:
@@ -1210,81 +1417,168 @@ class IndexServer(object):
         return query
 
     @property
-    def plan_name(self):
-        """Returns the plan name associated with index server
-            Returns:
-                str - name of the plan
+    def plan_name(self) -> str:
+        """Get the name of the plan associated with the index server.
+
+        Returns:
+            The name of the plan as a string.
+
+        #ai-gen-doc
         """
         return self.plan_info.get("planName")
 
     @property
-    def os_info(self):
-        """Returns the OS type for the Index server"""
+    def os_info(self) -> str:
+        """Get the operating system type for the Index server.
+
+        Returns:
+            The OS type of the Index server as a string (e.g., 'Windows', 'Linux').
+
+        #ai-gen-doc
+        """
         return self.os_type
 
     @property
-    def is_cloud(self):
-        """Returns true if the Index server is cloud and false if not"""
+    def is_cloud(self) -> bool:
+        """Check if the Index Server is a cloud-based server.
+
+        Returns:
+            True if the Index Server is a cloud server, False otherwise.
+
+        #ai-gen-doc
+        """
         return self.server_type == 5
 
     @property
-    def nodes_count(self):
-        """Returns the count of Index server nodes"""
+    def nodes_count(self) -> int:
+        """Get the number of Index Server nodes configured.
+
+        Returns:
+            The count of Index Server nodes as an integer.
+
+        #ai-gen-doc
+        """
         return len(self.client_id)
 
     @property
-    def roles_data(self):
-        """Returns the cloud roles data"""
+    def roles_data(self) -> dict:
+        """Get the cloud roles data associated with the IndexServer.
+
+        Returns:
+            dict: A dictionary containing information about the cloud roles configured for the IndexServer.
+
+        #ai-gen-doc
+        """
         return self._roles_obj.roles_data
 
     @property
-    def properties(self):
-        """Returns the index server properties"""
+    def properties(self) -> dict:
+        """Get the properties of the index server.
+
+        Returns:
+            dict: A dictionary containing the properties and configuration details of the index server.
+
+        #ai-gen-doc
+        """
         return self._properties
 
     @property
-    def host_name(self):
-        """Returns a list of host names of all index server nodes"""
+    def host_name(self) -> List[str]:
+        """Get the list of host names for all index server nodes.
+
+        Returns:
+            List of strings representing the host names of all nodes in the index server.
+
+        #ai-gen-doc
+        """
         return self._properties[IndexServerConstants.HOST_NAME]
 
     @property
-    def cloud_name(self):
-        """Returns the internal cloud name of index server"""
+    def cloud_name(self) -> str:
+        """Get the internal cloud name of the index server.
+
+        Returns:
+            The internal cloud name as a string.
+
+        #ai-gen-doc
+        """
         return self._properties[IndexServerConstants.CLOUD_NAME]
 
     @property
-    def client_name(self):
-        """Returns a list of client names of all index server nodes"""
+    def client_name(self) -> List[str]:
+        """Get the list of client names for all index server nodes.
+
+        Returns:
+            List of strings representing the client names of all index server nodes.
+
+        #ai-gen-doc
+        """
         return self._properties[IndexServerConstants.CLIENT_NAME]
 
     @property
-    def server_url(self):
-        """Returns a list of Solr url of all index server nodes"""
+    def server_url(self) -> list:
+        """Get the list of Solr URLs for all index server nodes.
+
+        Returns:
+            list: A list containing the Solr URLs (as strings) for each index server node.
+
+        #ai-gen-doc
+        """
         return self._properties[IndexServerConstants.CI_SERVER_URL]
 
     @property
-    def type(self):
-        """Returns the type of index server"""
+    def type(self) -> str:
+        """Get the type of the index server.
+
+        Returns:
+            The type of the index server as a string.
+
+        #ai-gen-doc
+        """
         return self._properties[IndexServerConstants.TYPE]
 
     @property
-    def base_port(self):
-        """Returns a list of base ports of all index server nodes"""
+    def base_port(self) -> list:
+        """Get the list of base ports for all index server nodes.
+
+        Returns:
+            list: A list containing the base port numbers (as integers) for each index server node.
+
+        #ai-gen-doc
+        """
         return self._properties[IndexServerConstants.BASE_PORT]
 
     @property
-    def client_id(self):
-        """Returns a list client ids of all index server nodes"""
+    def client_id(self) -> List[int]:
+        """Get the list of client IDs for all index server nodes.
+
+        Returns:
+            List of integers representing the client IDs of all index server nodes.
+
+        #ai-gen-doc
+        """
         return self._properties[IndexServerConstants.CLIENT_ID]
 
     @property
-    def roles(self):
-        """Returns a list of roles of index server"""
+    def roles(self) -> List[str]:
+        """Get the list of roles assigned to the index server.
+
+        Returns:
+            List of strings representing the roles associated with the index server.
+
+        #ai-gen-doc
+        """
         return self._properties[IndexServerConstants.ROLES]
 
     @property
-    def role_display_name(self):
-        """Returns the roles display name of index server"""
+    def role_display_name(self) -> list:
+        """Get the display name of the roles assigned to the index server.
+
+        Returns:
+            The display name of the roles configured for this index server as a string.
+
+        #ai-gen-doc
+        """
         role_disp_name = []
         for role_version in self.roles:
             for role in self.roles_data:
@@ -1294,48 +1588,94 @@ class IndexServer(object):
         return role_disp_name
 
     @property
-    def cloud_id(self):
-        """Returns the cloud id of index server"""
+    def cloud_id(self) -> int:
+        """Get the cloud ID associated with the index server.
+
+        Returns:
+            int: The unique cloud ID of the index server.
+
+        #ai-gen-doc
+        """
         return self._properties[IndexServerConstants.CLOUD_ID]
 
     @property
-    def server_type(self):
-        """Returns the server type of index server"""
+    def server_type(self) -> str:
+        """Get the server type of the index server.
+
+        Returns:
+            The server type as a string.
+
+        #ai-gen-doc
+        """
         return self._properties[IndexServerConstants.SERVER_TYPE]
 
     @property
-    def engine_name(self):
-        """Returns the engine name of index server"""
+    def engine_name(self) -> str:
+        """Get the engine name of the index server.
+
+        Returns:
+            The engine name as a string.
+
+        #ai-gen-doc
+        """
         return self._properties[IndexServerConstants.ENGINE_NAME]
 
     @property
-    def index_server_client_id(self):
-        """Returns the index server client id of index server"""
+    def index_server_client_id(self) -> int:
+        """Get the client ID of the index server.
+
+        Returns:
+            int: The unique client ID associated with this index server.
+
+        #ai-gen-doc
+        """
         return self._properties[IndexServerConstants.INDEX_SERVER_CLIENT_ID]
 
     @property
-    def fs_collection(self):
-        """Returns the multinode collection name of File System Index
+    def fs_collection(self) -> str:
+        """Get the multinode collection name for the File System Index.
 
-            Returns:
+        Returns:
+            The multinode collection name as a string, representing the File System index.
 
-                str --  File System index multinode collection name
-
+        #ai-gen-doc
         """
         return f'fsindex_{"".join(letter for letter in self.cloud_name if letter.isalnum())}_multinode'
 
 
 class IndexNode(object):
-    """Class for Index server node object"""
+    """
+    Represents an Index server node within a CommCell environment.
 
-    def __init__(self, commcell_obj, index_server_name, node_name):
-        """Initialize the IndexNode class
+    This class encapsulates the properties and operations associated with an Index server node,
+    providing access to node-specific information and configuration management. It allows users
+    to retrieve and update node attributes such as node name, node ID, Solr port, Solr URL, roles,
+    index location, and JVM memory allocation. The class also supports refreshing the node's state
+    to ensure up-to-date information.
 
-            Args:
-                commcell_obj        (object)    --  commcell object
-                index_server_name   (int)       --  Index server name
-                node_name           (str)       --  Index server node client name
+    Key Features:
+        - Initialize an IndexNode with CommCell object, index server name, and node name
+        - Refresh node information to reflect current state
+        - Access node properties: name, ID, Solr port, Solr URL, roles, index location, JVM memory
+        - Update Solr port and JVM memory settings
 
+    #ai-gen-doc
+    """
+
+    def __init__(self, commcell_obj: 'Commcell', index_server_name: str, node_name: str) -> None:
+        """Initialize an IndexNode instance representing a node in an index server.
+
+        Args:
+            commcell_obj: The Commcell object representing the connection to the Commcell environment.
+            index_server_name: The name of the index server as a string.
+            node_name: The client name of the index server node.
+
+        Example:
+            >>> commcell = Commcell('commcell_host', 'username', 'password')
+            >>> index_node = IndexNode(commcell, 'IndexServer01', 'NodeClient01')
+            >>> print(f"IndexNode created for server: {index_node}")
+
+        #ai-gen-doc
         """
         self.commcell = commcell_obj
         self.index_server_name = index_server_name
@@ -1346,8 +1686,15 @@ class IndexNode(object):
         self.index_client_properties = None
         self.refresh()
 
-    def refresh(self):
-        """Refresh the index node properties"""
+    def refresh(self) -> None:
+        """Reload the properties of the index node to ensure the latest information is available.
+
+        This method refreshes the internal state of the IndexNode object, updating its properties
+        from the underlying data source. Use this method if you suspect the index node's properties
+        have changed and want to ensure you are working with the most current data.
+
+        #ai-gen-doc
+        """
         self.commcell.index_servers.refresh()
         self.index_server = self.commcell.index_servers.get(self.index_server_name)
         self.data_index = self.index_server.client_name.index(self.index_node_name)
@@ -1358,55 +1705,96 @@ class IndexNode(object):
                                         get('indexServerProperties', {}))
 
     @property
-    def node_name(self):
-        """Returns Index server node client name"""
+    def node_name(self) -> str:
+        """Get the client name of the Index Server node.
+
+        Returns:
+            The client name of the Index Server node as a string.
+
+        #ai-gen-doc
+        """
         return self.index_server.client_name[self.data_index]
 
     @property
-    def node_id(self):
-        """Returns Index server node client id"""
+    def node_id(self) -> int:
+        """Get the client ID of the Index Server node.
+
+        Returns:
+            The client ID of the Index Server node as an integer.
+
+        #ai-gen-doc
+        """
         return self.index_server.client_id[self.data_index]
 
     @property
-    def solr_port(self):
-        """Returns port number Solr is running on the Index server node"""
+    def solr_port(self) -> int:
+        """Get the port number on which Solr is running on the Index server node.
+
+        Returns:
+            The port number as an integer.
+
+        #ai-gen-doc
+        """
         return self.index_server.base_port[self.data_index]
 
     @property
-    def solr_url(self):
-        """Returns Solr URL for Index server node"""
+    def solr_url(self) -> str:
+        """Get the Solr URL for the Index server node.
+
+        Returns:
+            The Solr URL as a string associated with this IndexNode instance.
+
+        #ai-gen-doc
+        """
         return self.index_server.server_url[self.data_index]
 
     @property
-    def roles(self):
-        """Returns the array of roles installed with the index server within the commcell"""
+    def roles(self) -> list:
+        """Get the list of roles installed with the index server in the Commcell.
+
+        Returns:
+            list: An array containing the roles installed on the index server.
+
+        #ai-gen-doc
+        """
         return self.index_server.role_display_name
 
     @property
-    def index_location(self):
-        """Returns Index directory for the Index server Node"""
+    def index_location(self) -> Union[str, None]:
+        """Get the index directory path for the Index server node.
+
+        Returns:
+            The file system path to the index directory used by this Index server node.
+
+        #ai-gen-doc
+        """
         node_meta_infos = self.index_client_properties['nodeMetaInfos']
         for info in node_meta_infos:
             if info['name'] == 'INDEXLOCATION':
                 return info['value']
-        return None
 
     @property
-    def jvm_memory(self):
-        """Returns Solr JVM memory for the Index server Node"""
+    def jvm_memory(self) -> Union[str, None]:
+        """Get the Solr JVM memory allocated for the Index server node.
+
+        Returns:
+            The amount of JVM memory (in megabytes) configured for the Index server node.
+
+        #ai-gen-doc
+        """
         node_meta_infos = self.index_client_properties['nodeMetaInfos']
         for info in node_meta_infos:
             if info['name'] == 'JVMMAXMEMORY':
                 return info['value']
-        return None
 
     @solr_port.setter
-    def solr_port(self, port_no):
-        """Setter to set the Solr port number for the node
+    def solr_port(self, port_no: str) -> None:
+        """Set the Solr port number for this index node.
 
-            Args:
-                port_no     (str)   --  Solr port number to be set for node
+        Args:
+            port_no: The Solr port number to assign to the node, as a string.
 
+        #ai-gen-doc
         """
         solr_port_param = deepcopy(IndexServerConstants.SOLR_PORT_META_INFO)
         solr_port_param['value'] = str(port_no)
@@ -1415,12 +1803,13 @@ class IndexNode(object):
         self.refresh()
 
     @jvm_memory.setter
-    def jvm_memory(self, memory):
-        """Setter to set the Solr JVM memory for the node
+    def jvm_memory(self, memory: str) -> None:
+        """Set the Solr JVM memory allocation for this index node.
 
-                    Args:
-                        memory      (str)   --  Solr JVM memory to be set for the node
+        Args:
+            memory: The amount of JVM memory to allocate, specified as a string (e.g., '4g', '1024m').
 
+        #ai-gen-doc
         """
         solr_jvm_param = deepcopy(IndexServerConstants.SOLR_JVM_META_INFO)
         solr_jvm_param['value'] = str(memory)
@@ -1432,33 +1821,64 @@ class IndexNode(object):
 
 
 class _Roles(object):
-    """Class for cloud roles data operations"""
+    """
+    Class for managing and operating on cloud roles data.
 
-    def __init__(self, commcell_object):
-        """Initializes _Roles class with commcell object
+    This class provides a set of methods and properties to interact with, retrieve,
+    and update cloud roles information within a CommCell environment. It allows for
+    refreshing the roles data, retrieving all available roles, obtaining role IDs by
+    name, and updating the internal roles data cache. The `roles_data` property
+    provides access to the current roles' data.
 
-            Args:
-                commcell_object (object)    --  instance of Commcell class
+    Key Features:
+        - Initialization with a CommCell object for context
+        - Refreshing roles data to ensure up-to-date information
+        - Retrieving all available roles
+        - Fetching role IDs by role name
+        - Updating roles data from the source
+        - Accessing roles data via a property
 
-            Returns:
-                object  -   instance of _Roles class
+    #ai-gen-doc
+    """
+
+    def __init__(self, commcell_object: 'Commcell') -> None:
+        """Initialize the _Roles class with a Commcell connection object.
+
+        Args:
+            commcell_object: An instance of the Commcell class representing the active Commcell connection.
+
+        Example:
+            >>> from cvpysdk.commcell import Commcell
+            >>> commcell = Commcell('commcell_host', 'username', 'password')
+            >>> roles = _Roles(commcell)
+            >>> print("Roles object initialized successfully")
+        #ai-gen-doc
         """
         self.commcell_object = commcell_object
         self._roles_data = None
         self.refresh()
 
-    def refresh(self):
-        """Refreshes the class data"""
+    def refresh(self) -> None:
+        """Reload the role data associated with this _Roles instance.
+
+        This method refreshes the internal data, ensuring that any changes to roles
+        are reflected in the current object. Use this method to update the role information
+        after making changes externally.
+
+        #ai-gen-doc
+        """
         self._get_all_roles()
 
-    def _get_all_roles(self):
-        """Method to get all cloud roles details available on the commcell.
+    def _get_all_roles(self) -> List[Dict[str, Any]]:
+        """Retrieve all cloud role details available on the Commcell.
 
-            Raises:
-                SDKException:
-                    Response was empty.
+        Returns:
+            A list of dictionaries, each containing details of a cloud role.
 
-                    Response was not success.
+        Raises:
+            SDKException: If the response from the Commcell is empty or not successful.
+
+        #ai-gen-doc
         """
         flag, response = self.commcell_object._cvpysdk_object.make_request(
             "GET", self.commcell_object._services['GET_ALL_ROLES']
@@ -1467,31 +1887,44 @@ class _Roles(object):
             if response.json():
                 if 'rolesInfo' in response.json():
                     self._roles_data = response.json()['rolesInfo']
-                    return
+                    return self._roles_data
             raise SDKException('Response', '102')
         raise SDKException('Response', '101')
 
-    def get_role_id(self, role_name):
-        """Method to get a cloud role id with given name
+    def get_role_id(self, role_name: str) -> Optional[int]:
+        """Retrieve the ID of a cloud role by its name.
 
-            Args:
-                role_name       (str)   --  cloud role name of which role id has to be returned
+        Args:
+            role_name: The name of the cloud role for which the ID is required.
 
-            Returns:
-                role_id         (int)   --  if role name is found in roles data then returns the id
-                                            else returns None
+        Returns:
+            The integer ID of the role if the role name exists in the roles data; otherwise, None.
 
+        #ai-gen-doc
         """
         for role_data in self._roles_data:
             if role_data['roleName'] == role_name:
                 return role_data['roleId']
         return None
 
-    def update_roles_data(self):
-        """Synchronize the cloud role data with the commcell database"""
+    def update_roles_data(self) -> None:
+        """Update and synchronize the cloud role data with the Commcell database.
+
+        This method refreshes the internal role data to ensure it matches the current state 
+        of the Commcell database. Use this method to reload role information after changes 
+        have been made in the Commcell environment.
+
+        #ai-gen-doc
+        """
         self._get_all_roles()
 
     @property
-    def roles_data(self):
-        """Returns the list of dictionary of details of each cloud role"""
+    def roles_data(self) -> List[Dict[str, Any]]:
+        """Get the details of each cloud role as a list of dictionaries.
+
+        Returns:
+            List[Dict[str, Any]]: A list where each dictionary contains details about a cloud role.
+
+        #ai-gen-doc
+        """
         return self._roles_data

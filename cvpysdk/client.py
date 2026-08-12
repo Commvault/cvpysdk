@@ -122,18 +122,35 @@ Clients
 
     add_nutanix_files_client()                  --  adds a new nutanix files client
 
+    add_lustre_client()                     -- adds a new lustre client
+    
     add_onedrive_client()                 --  adds a new onedrive client
 
     add_cassandra_client()                --  add cassandra client
 
     add_cockroachdb_client()              --  add cockroachdb client
+    
+    add_mongodb_client()              		--  add mongodb client
 
     add_azure_cosmosdb_client()             --  add client for azure cosmosdb cloud account
+
+    add_mongodb_atlas_client()              --  add client for MongoDB Atlas cloud account
+
+    add_s3_compatible_client()             --  add client for S3 Compatible object storage
+
+    add_google_cloud_object_storage_client() -- add client for google cloud object storage
+
+    add_ibm_cos_object_storage_client()     -- add client for IBM cloud object storage
+
+    add_alibaba_oss_object_storage_client() -- add client for Alibaba cloud object storage
 
     get(client_name)                      --  returns the Client class object of the input client
     name
 
     delete(client_name)                   --  deletes the client specified by the client name from
+    the commcell
+
+    retire(client_name)                     --  retires the client specified by the client name from
     the commcell
 
     filter_clients_return_displaynames()  --  filter clients based on criteria
@@ -197,6 +214,8 @@ Client
 
                 START / STOP / RESTART
 
+    _set_patch_options()         --  set the patch options for the client
+
     _make_request()              --  makes the upload request to the server
 
     _process_update_request()    --  to process the request using API call
@@ -228,6 +247,10 @@ Client
     enable_intelli_snap()        --  enables intelli snap for the client
 
     disable_intelli_snap()       --  disables intelli snap for the client
+
+    set_windows_os_updates()     -- Sets Windows OS updates for the client
+
+    set_microsoft_sql_server_updates()  -- Sets Microsoft SQL Server updates for the client
 
     upload_file()                --  uploads the specified file on controller to the client machine
 
@@ -296,6 +319,14 @@ Client
     disable_owner_privacy()                 --  Disables the privacy option for client
 
     enable_owner_privacy()                  --  Enables the privacy option for client
+
+    add_http_proxy()                    --  Adds HTTP proxy for the client
+
+    remove_http_proxy()                 --  Removes HTTP proxy for the client
+    
+    passkey_for_restores()                 --  Enables or disables passkey for restores for the client
+    
+    passkey_authorize_for_restore()       --  Authorizes or deauthorizes passkey for restores for the client
 
 Client Attributes
 -----------------
@@ -410,15 +441,21 @@ Client Attributes
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
+import copy
+import datetime
 import os
 import re
 import time
-import copy
-import datetime
 from base64 import b64encode
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
+from urllib.parse import quote
 
 import requests
 
+if TYPE_CHECKING:
+    from .commcell import Commcell
+
+from .additional_settings import AdditionalSettings
 from .job import Job
 from .agent import Agents
 from .schedules import Schedules
@@ -436,18 +473,54 @@ from .organization import Organizations
 from .constants import AppIDAType, AppIDAName, OSType
 from .constants import ResourcePoolAppType
 
+from .security.security_association import SecurityAssociation
 
 class Clients(object):
-    """Class for representing all the clients associated with the commcell."""
+    """
+    Manages and represents all clients associated with a CommCell environment.
 
-    def __init__(self, commcell_object):
-        """Initialize object of the Clients class.
+    The Clients class provides a comprehensive interface for interacting with various types of clients
+    within a CommCell, including management, retrieval, addition, deletion, and property access. It supports
+    a wide range of client types such as Azure AD, Office 365, Dynamics 365, Salesforce, virtualization platforms,
+    file servers, laptops, cloud services, and specialized database clients.
 
-            Args:
-                commcell_object (object)  --  instance of the Commcell class
+    This class enables users to:
+        - Retrieve and enumerate clients using indexing, length, and string representations
+        - Add new clients for multiple platforms and services (e.g., Azure, AWS, Google, Salesforce, VMware, Hyper-V, NAS, Splunk, Yugabyte, Couchbase, Exchange, Cassandra, CockroachDB, CosmosDB, Nutanix, SharePoint, Teams, OneDrive, AliCloud)
+        - Access categorized client lists via properties (e.g., office_365_clients, dynamics365_clients, salesforce_clients, virtualization_clients, file_server_clients, laptop_clients, hidden_clients, virtual_machines)
+        - Manage client cache and refresh client information
+        - Check for existence of clients and hidden clients
+        - Create pseudo clients and register decoupled clients
+        - Delete or retire clients from the CommCell
+        - Retrieve clients by name, hostname, or display name
+        - Access and process client details and parameters for advanced operations
 
-            Returns:
-                object - instance of the Clients class
+    Key Features:
+        - Comprehensive client management for CommCell environments
+        - Support for adding clients across cloud, virtualization, and database platforms
+        - Categorized access to specialized client types
+        - Client existence checks and retrieval by various identifiers
+        - Client cache management and refresh capabilities
+        - Pseudo client creation and decoupled client registration
+        - Deletion and retirement of clients
+        - Advanced internal methods for processing and organizing client data
+
+    #ai-gen-doc
+    """
+
+    def __init__(self, commcell_object: 'Commcell') -> None:
+        """Initialize a Clients object with the provided Commcell instance.
+
+        Args:
+            commcell_object: Instance of the Commcell class used to interact with the Commcell environment.
+
+        Example:
+            >>> from cvpysdk.commcell import Commcell
+            >>> commcell = Commcell(command_center_hostname, username, password)
+            >>> clients = Clients(commcell)
+            >>> # The Clients object is now ready to manage and query client entities
+
+        #ai-gen-doc
         """
         self._commcell_object = commcell_object
         self._cvpysdk_object = commcell_object._cvpysdk_object
@@ -465,8 +538,10 @@ class Clients(object):
         self._VIRTUALIZATION_CLIENTS = self._services['GET_VIRTUAL_CLIENTS']
         self._GET_VIRTUALIZATION_ACCESS_NODES = self._services['GET_VIRTUALIZATION_ACCESS_NODES']
         self._FS_CLIENTS = self._services['GET_FILE_SERVER_CLIENTS']
+        self._LAPTOP_CLIENTS = self._services['GET_LAPTOP_CLIENTS']
+        self._VIRTUAL_MACHINES = self._services['GET_VIRTUAL_MACHINES']
         self._ADD_EXCHANGE_CLIENT = self._ADD_SHAREPOINT_CLIENT = self._ADD_SALESFORCE_CLIENT = \
-            self._ADD_GOOGLE_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
+            self._ADD_GOOGLE_CLIENT = self._ADD_OKTA_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
         self._ADD_SPLUNK_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
         self._ADD_COCKROACHDB_CLIENT = self._services['COCKROACHDB']
         self._ADD_CASSANDRA_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
@@ -475,6 +550,8 @@ class Clients(object):
         self._ADD_NUTANIX_CLIENT = self._services['CREATE_NUTANIX_CLIENT']
         self._ADD_NAS_CLIENT = self._services['CREATE_NAS_CLIENT']
         self._ADD_ONEDRIVE_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
+        self._ADD_MONGODB_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
+        self._ADD_LUSTRE_CLIENT = self._services['CREATE_LUSTRE_CLIENT']
         self._clients = None
         self._hidden_clients = None
         self._virtualization_clients = None
@@ -483,16 +560,33 @@ class Clients(object):
         self._dynamics365_clients = None
         self._salesforce_clients = None
         self._file_server_clients = None
+        self._laptop_clients = None
+        self._virtual_machines = None
         self._client_cache = None
         self._all_clients_props = None
+        self._infra_clients = None
         self.filter_query_count = 0
         self.refresh()
 
-    def __str__(self):
-        """Representation string consisting of all clients of the commcell.
+    def __str__(self) -> str:
+        """Return a formatted string representation of all clients associated with the Commcell.
 
-            Returns:
-                str - string of all the clients associated with the commcell
+        The output lists each client with its serial number in a tabular format.
+
+        Returns:
+            A string containing the serial number and name of each client.
+
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> print(str(clients))
+            S. No.    	Client
+
+            1        	ClientA
+            2        	ClientB
+            3        	ClientC
+            # The output displays all clients in a formatted table
+
+        #ai-gen-doc
         """
         representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'Client')
 
@@ -502,30 +596,64 @@ class Clients(object):
 
         return representation_string.strip()
 
-    def __repr__(self):
-        """Representation string for the instance of the Clients class."""
+    def __repr__(self) -> str:
+        """Return a string representation of the Clients class instance.
+
+        This method provides a human-readable description of the Clients object,
+        typically used for debugging and logging purposes.
+
+        Returns:
+            A string indicating that this is a Clients class instance for Commcell.
+
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> print(repr(clients))
+            Clients class instance for Commcell
+
+        #ai-gen-doc
+        """
         return "Clients class instance for Commcell"
 
-    def __len__(self):
-        """Returns the number of the clients associated to the Commcell."""
+    def __len__(self) -> int:
+        """Get the number of clients associated with the Commcell.
+
+        Returns:
+            The total count of clients as an integer.
+
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> num_clients = len(clients)
+            >>> print(f"Total clients: {num_clients}")
+        #ai-gen-doc
+        """
         return len(self.all_clients)
 
-    def __getitem__(self, value):
-        """Returns the name of the client for the given client ID or
-            the details of the client for given client Name.
+    def __getitem__(self, value: Union[str, int]) -> Union[str, Dict[str, Any]]:
+        """Retrieve client information by name or ID.
 
-            Args:
-                value   (str / int)     --  Name or ID of the client
+        If a client name is provided, returns the details dictionary for that client.
+        If a client ID is provided, returns the name of the corresponding client.
 
-            Returns:
-                str     -   name of the client, if the client id was given
+        Args:
+            value: The name (str) or ID (int or str) of the client to retrieve.
 
-                dict    -   dict of details of the client, if client name was given
+        Returns:
+            If a client name is provided, returns a dictionary containing client details.
+            If a client ID is provided, returns the name of the client as a string.
 
-            Raises:
-                IndexError:
-                    no client exists with the given Name / Id
+        Raises:
+            IndexError: If no client exists with the given name or ID.
 
+        Example:
+            >>> clients = Clients(...)
+            >>> # Get client details by name
+            >>> details = clients['ClientA']
+            >>> print(details)
+            >>> # Get client name by ID
+            >>> name = clients[12345]
+            >>> print(f"Client name: {name}")
+
+        #ai-gen-doc
         """
         value = str(value).lower()
 
@@ -537,21 +665,33 @@ class Clients(object):
             except IndexError:
                 raise IndexError('No client exists with the given Name / Id')
 
-    def add_azure_ad_client(self,client_name,plan_name,application_Id,application_Secret,azure_directory_Id):
-        """
-        Function to add a new Azure AD Client
+    def add_azure_ad_client(self, client_name: str, plan_name: str, application_Id: str, application_Secret: str, azure_directory_Id: str):
+        """Add a new Azure Active Directory (AD) client to the Commcell.
+
+        This method registers a new Azure AD client using the provided application credentials and associates it with the specified server plan.
+
         Args:
-            plan_name               (str)   --  plan name
-            application_Id          (str)   --  application id of azure ad app
-            application_Secret      (str)   --  application secret of azure ad app
-            azure_directory_Id      (str)   --  directory id of azure ad app
+            client_name: Name to assign to the new Azure AD client.
+            plan_name: Name of the server plan to associate with the client.
+            application_Id: Application ID of the Azure AD app.
+            application_Secret: Application secret of the Azure AD app.
+            azure_directory_Id: Directory ID of the Azure AD app.
 
         Raises:
-            SDKException:
+            SDKException: If the plan name is invalid, the response is empty, or the request is unsuccessful.
 
-                if response is empty
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> clients.add_azure_ad_client(
+            ...     client_name="FinanceADClient",
+            ...     plan_name="AzureServerPlan",
+            ...     application_Id="12345678-90ab-cdef-1234-567890abcdef",
+            ...     application_Secret="superSecretValue",
+            ...     azure_directory_Id="abcdef12-3456-7890-abcd-ef1234567890"
+            ... )
+            >>> print("Azure AD client added successfully.")
 
-                if response is not success
+        #ai-gen-doc
         """
         azure_ad_client=self._services['ADDAZURECLIENT']
         plan_id=None
@@ -583,41 +723,42 @@ class Clients(object):
         else:
             raise SDKException('Response', '102', self._update_response_(response.text))
 
-    def _get_clients(self, full_response: bool = False):
-        """Gets all the clients associated with the commcell
+    def _get_clients(self, full_response: bool = False) -> Dict[str, Dict[str, str]]:
+        """Retrieve all clients associated with the Commcell.
 
-            Args:
-                full_response(bool) --  flag to return complete response
+        Args:
+            full_response: If True, returns the complete response from the Commcell API.
+                If False, returns a simplified dictionary of client details.
 
-            Returns:
-                dict    -   consists of all clients in the commcell
+        Returns:
+            Dictionary containing client information, where each key is the client name and
+            the value is a dictionary with 'id', 'hostname', and 'displayName' for that client.
+            If no clients are available, returns an empty dictionary.
 
-                    {
-                        "client1_name": {
+        Raises:
+            SDKException: If the response from the Commcell API is empty or unsuccessful.
 
-                            "id": client1_id,
-
-                            "hostname": client1_hostname,
-
-                            "displayName": client1_displayname
-                        },
-
-                        "client2_name": {
-
-                            "id": client2_id,
-
-                            "hostname": client2_hostname.
-
-                            "displayName": client2_displayname
-                        }
-                    }
-
-            Raises:
-                SDKException:
-                    if response is empty
-
-                    if response is not success
-
+        Example:
+            >>> clients_obj = Clients(commcell_object)
+            >>> clients = clients_obj._get_clients()
+            >>> print(clients)
+            >>> # Output:
+            >>> # {
+            >>> #     "client1_name": {
+            >>> #         "id": "client1_id",
+            >>> #         "hostname": "client1_hostname",
+            >>> #         "displayName": "client1_displayname"
+            >>> #     },
+            >>> #     "client2_name": {
+            >>> #         "id": "client2_id",
+            >>> #         "hostname": "client2_hostname",
+            >>> #         "displayName": "client2_displayname"
+            >>> #     }
+            >>> # }
+            >>> # To get the full API response:
+            >>> full_response = clients_obj._get_clients(full_response=True)
+            >>> print(full_response)
+        #ai-gen-doc
         """
         attempts = 0
         while attempts < 5:
@@ -649,31 +790,31 @@ class Clients(object):
                     raise SDKException('Response', '101', self._update_response_(response.text))
                 time.sleep(5)
 
-    def _get_office_365_clients(self):
-        """REST API call to get all office365 clients in the commcell
+    def _get_office_365_clients(self) -> Dict[str, Dict[str, str]]:
+        """Retrieve all Office 365 clients in the Commcell via REST API.
 
-                  Returns:
-                      dict    -   consists of all office 365 clients in the commcell
-                          {
-                              "client1_name": {
+        This method makes a REST API call to fetch all Office 365 clients configured in the Commcell.
+        The returned dictionary maps each client name (in lowercase) to its corresponding client ID.
 
-                                  "id": client1_id
+        Returns:
+            Dictionary where keys are Office 365 client names (str) and values are dictionaries containing the client ID.
+            Example:
+                {
+                    "client1_name": {"id": "client1_id"},
+                    "client2_name": {"id": "client2_id"}
+                }
 
-                              },
+        Raises:
+            SDKException: If the response is empty or unsuccessful.
 
-                              "client2_name": {
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> o365_clients = clients._get_office_365_clients()
+            >>> print(o365_clients)
+            >>> # Output: {'client1_name': {'id': 'client1_id'}, ...}
 
-                                  "id": client2_id
-                              }
-                          }
-
-                  Raises:
-                      SDKException:
-                          if response is empty
-
-                          if response is not success
-
-              """
+        #ai-gen-doc
+        """
         flag, response = self._cvpysdk_object.make_request('GET', self._OFFICE_365_CLIENTS)
 
         if flag:
@@ -694,39 +835,53 @@ class Clients(object):
             raise SDKException('Response', '101', self._update_response_(response.text))
 
     @property
-    def office_365_clients(self):
-        """Returns the dict of all office 365 clients in the commcell"""
+    def office_365_clients(self) -> Dict[str, Any]:
+        """Get a dictionary of all Office 365 clients in the Commcell.
+
+        Returns:
+            Dictionary mapping client names to their respective details.
+
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> o365_clients = clients.office_365_clients  # Use dot notation for property access
+            >>> print(f"Total Office 365 clients: {len(o365_clients)}")
+            >>> # Access details for a specific client
+            >>> if 'ClientA' in o365_clients:
+            >>>     print(f"ClientA details: {o365_clients['ClientA']}")
+
+        #ai-gen-doc
+        """
         if self._office_365_clients is None:
             self._office_365_clients = self._get_office_365_clients()
         return self._office_365_clients
 
-    def _get_dynamics_365_clients(self):
+    def _get_dynamics_365_clients(self) -> Dict[str, Dict[str, str]]:
+        """Retrieve all Dynamics 365 clients in the Commcell via REST API.
+
+        This method makes a REST API call to fetch all Dynamics 365 clients configured in the Commcell.
+        The returned dictionary maps each client name to its corresponding client ID.
+
+        Returns:
+            Dictionary where keys are Dynamics 365 client names (as lowercase strings), and values are
+            dictionaries containing the client ID under the 'id' key.
+
+            Example format:
+                {
+                    "client1_name": {"id": "client1_id"},
+                    "client2_name": {"id": "client2_id"}
+                }
+
+        Raises:
+            SDKException: If the API response is empty or indicates a failure.
+
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> dynamics_clients = clients._get_dynamics_365_clients()
+            >>> print(dynamics_clients)
+            >>> # Output: {'client1_name': {'id': 'client1_id'}, 'client2_name': {'id': 'client2_id'}}
+
+        #ai-gen-doc
         """
-            REST API call to get all Dynamics 365 clients in the commcell
-
-                  Returns:
-                      dict    -   For the Dynamics 365 clients in the Commcell
-                      Format:
-                          {
-                              "client1_name": {
-
-                                  "id": client1_id
-
-                              },
-
-                              "client2_name": {
-
-                                  "id": client2_id
-                              }
-                          }
-
-                  Raises:
-                      SDKException:
-                          if response is empty
-
-                          if response is not success
-
-              """
         flag, response = self._cvpysdk_object.make_request('GET', self._DYNAMICS365_CLIENTS)
 
         if flag:
@@ -743,18 +898,34 @@ class Clients(object):
             raise SDKException('Response', '101', self._update_response_(response.text))
 
     @property
-    def dynamics365_clients(self):
-        """Returns the dict of all Dynamics 365 clients in the commcell"""
+    def dynamics365_clients(self) -> Dict[str, Any]:
+        """Get a dictionary of all Dynamics 365 clients in the Commcell.
+
+        Returns:
+            Dictionary mapping client names to their respective details for Dynamics 365 clients.
+
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> d365_clients = clients.dynamics365_clients  # Use dot notation for property access
+            >>> print(f"Total Dynamics 365 clients: {len(d365_clients)}")
+            >>> # Access details for a specific client
+            >>> if 'ClientA' in d365_clients:
+            >>>     print(f"ClientA details: {d365_clients['ClientA']}")
+        #ai-gen-doc
+        """
         if self._dynamics365_clients is None:
             self._dynamics365_clients = self._get_dynamics_365_clients()
         return self._dynamics365_clients
 
-    def _get_salesforce_clients(self):
-        """
-        REST API call to get all Salesforce clients in the commcell
+    def _get_salesforce_clients(self) -> Dict[str, Dict[str, Any]]:
+        """Retrieve all Salesforce clients in the Commcell via REST API.
+
+        This method makes a REST API call to fetch all Salesforce clients configured in the Commcell.
+        The returned dictionary maps each client's display name to its corresponding ID and client name.
 
         Returns:
-            dict[str, dict]: Containing Salesforce clients and ids in the Commcell like
+            Dictionary where each key is a Salesforce client's display name, and the value is another
+            dictionary containing the client's ID and name. Example format:
 
                 {
                     "client1_displayName": {
@@ -766,6 +937,16 @@ class Clients(object):
                         "clientName": "client2_name"
                     }
                 }
+
+        Raises:
+            SDKException: If the REST API call fails or returns an error response.
+
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> salesforce_clients = clients._get_salesforce_clients()
+            >>> for display_name, details in salesforce_clients.items():
+            ...     print(f"Salesforce Client: {display_name}, ID: {details['id']}, Name: {details['clientName']}")
+        #ai-gen-doc
         """
         flag, response = self._cvpysdk_object.make_request('GET', self._SALESFORCE_CLIENTS)
 
@@ -784,43 +965,57 @@ class Clients(object):
             raise SDKException('Response', '101', self._update_response_(response.text))
 
     @property
-    def salesforce_clients(self):
-        """Returns the dict of all salesforce clients in the commcell"""
+    def salesforce_clients(self) -> Dict[str, Any]:
+        """Get a dictionary of all Salesforce clients configured in the Commcell.
+
+        Returns:
+            Dictionary mapping Salesforce client names to their details.
+
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> sf_clients = clients.salesforce_clients  # Use dot notation for property access
+            >>> print(f"Total Salesforce clients: {len(sf_clients)}")
+            >>> # Access details of a specific client
+            >>> if 'SalesforceClient01' in sf_clients:
+            >>>     details = sf_clients['SalesforceClient01']
+            >>>     print(f"Details for SalesforceClient01: {details}")
+
+        #ai-gen-doc
+        """
         if self._salesforce_clients is None:
             self._salesforce_clients = self._get_salesforce_clients()
         return self._salesforce_clients
 
-    def _get_hidden_clients(self):
-        """Gets all the clients associated with the commcell, including all VM's and hidden clients
+    def _get_hidden_clients(self) -> Dict[str, Dict[str, str]]:
+        """Retrieve all hidden clients associated with the Commcell, including VMs and clients not visible in the main client list.
 
-            Returns:
-                dict    -   consists of all clients (including hidden clients) in the commcell
+        This method returns a dictionary of hidden clients, where each key is the client name and the value is a dictionary containing the client's ID, hostname, and display name. Hidden clients are those present in the Commcell but not listed in the main client collection.
 
-                    {
-                        "client1_name": {
-
-                            "id": client1_id,
-
-                            "hostname": client1_hostname,
-
-                            "displayName": client1_displayname
-                        },
-
-                        "client2_name": {
-
-                            "id": client2_id,
-
-                            "hostname": client2_hostname,
-
-                            "displayName": client1_displayname
-                        }
+        Returns:
+            Dictionary mapping hidden client names to their details:
+                {
+                    "client1_name": {
+                        "id": "client1_id",
+                        "hostname": "client1_hostname",
+                        "displayName": "client1_displayname"
+                    },
+                    "client2_name": {
+                        "id": "client2_id",
+                        "hostname": "client2_hostname",
+                        "displayName": "client2_displayname"
                     }
+                }
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException: If the response from the Commcell is empty or unsuccessful.
 
-                    if response is not success
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> hidden_clients = clients._get_hidden_clients()
+            >>> print(f"Found {len(hidden_clients)} hidden clients")
+            >>> for name, details in hidden_clients.items():
+            ...     print(f"Client: {name}, ID: {details['id']}, Hostname: {details['hostname']}")
+        #ai-gen-doc
         """
         flag, response = self._cvpysdk_object.make_request('GET', self._ALL_CLIENTS)
 
@@ -853,34 +1048,26 @@ class Clients(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def _get_virtualization_clients(self):
-        """REST API call to get all virtualization clients in the commcell
+    def _get_virtualization_clients(self) -> Dict[str, Dict[str, Any]]:
+        """Retrieve all virtualization clients in the Commcell via REST API.
 
-            Returns:
-                dict    -   consists of all virtualization clients in the commcell
+        This method makes a REST API call to fetch all virtualization clients configured in the Commcell.
+        The returned dictionary maps each client name (in lowercase) to its details, including client ID,
+        client name, and host name.
 
-                    {
-                        "client1_name": {
+        Returns:
+            Dictionary where each key is a virtualization client name (str), and the value is a dictionary
+            containing 'clientId', 'clientName', and 'hostName' for that client.
 
-                            "id": client1_id,
+        Raises:
+            SDKException: If the API response is empty or indicates a failure.
 
-                            "hostname": client1_hostname
-                        },
-
-                        "client2_name": {
-
-                            "id": client2_id,
-
-                            "hostname": client2_hostname
-                        }
-                    }
-
-            Raises:
-                SDKException:
-                    if response is empty
-
-                    if response is not success
-
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> virtualization_clients = clients._get_virtualization_clients()
+            >>> for name, details in virtualization_clients.items():
+            ...     print(f"Client: {name}, ID: {details['clientId']}, Host: {details['hostName']}")
+        #ai-gen-doc
         """
         flag, response = self._cvpysdk_object.make_request('GET', self._VIRTUALIZATION_CLIENTS)
 
@@ -902,28 +1089,33 @@ class Clients(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def _get_virtualization_access_nodes(self):
-        """REST API call to get all virtualization access nodes in the commcell
-            Returns:
-                dict - consists of all access nodes in the commcell
-                {
-                     "display_name1": {
-                            "id": client1_id,
-                            "name": client1_name,
-                            "hostname": client1_hostname
-                    },
-                     "display_name2": {
-                            "id": client2_id,
-                            "name": client2_name,
-                            "hostname": client2_hostname
-                     },
-                }
+    def _get_virtualization_access_nodes(self) -> Dict[str, Dict[str, Any]]:
+        """Retrieve all virtualization access nodes in the Commcell via REST API.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        This method performs a REST API call to obtain details of all virtualization access nodes
+        configured in the Commcell. The returned dictionary maps each access node's display name
+        to its corresponding details, including client ID, client name, and host name.
 
-                    if response is not success
+        Returns:
+            Dictionary where each key is the display name of an access node, and the value is
+            another dictionary containing:
+                - 'id': The client ID of the access node.
+                - 'name': The client name of the access node.
+                - 'hostName': The host name of the access node.
+
+        Raises:
+            SDKException: If the API response is empty or unsuccessful.
+
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> access_nodes = clients._get_virtualization_access_nodes()
+            >>> for display_name, node_info in access_nodes.items():
+            ...     print(f"Access Node: {display_name}")
+            ...     print(f"  ID: {node_info['id']}")
+            ...     print(f"  Name: {node_info['name']}")
+            ...     print(f"  Hostname: {node_info['hostName']}")
+
+        #ai-gen-doc
         """
         flag, response = self._cvpysdk_object.make_request('GET', self._GET_VIRTUALIZATION_ACCESS_NODES)
 
@@ -945,33 +1137,26 @@ class Clients(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def _get_fileserver_clients(self):
-        """REST API call to get all file server clients in the commcell
+    def _get_fileserver_clients(self) -> Dict[str, Dict[str, Any]]:
+        """Retrieve all file server clients in the Commcell via REST API.
 
-            Returns:
-                dict    -   consists of all file server clients in the commcell
+        This method makes a REST API call to fetch all file server clients configured in the Commcell.
+        The returned dictionary maps each client name to its details, including client ID and display name.
 
-                    {
-                        "client1_name": {
+        Returns:
+            Dictionary where each key is a file server client name, and the value is a dictionary with:
+                - 'id': The unique identifier of the client.
+                - 'displayName': The display name of the client.
 
-                            "id": client1_id,
+        Raises:
+            SDKException: If the API response is empty or indicates a failure.
 
-                            "displayName": client1_displayname
-                        },
-
-                        "client2_name": {
-
-                            "id": client2_id,
-
-                            "displayName": client2_displayname
-                        }
-                    }
-
-            Raises:
-                SDKException:
-                    if response is empty
-
-                    if response is not success
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> fs_clients = clients._get_fileserver_clients()
+            >>> for name, details in fs_clients.items():
+            ...     print(f"Client: {name}, ID: {details['id']}, Display Name: {details['displayName']}")
+        #ai-gen-doc
         """
         flag, response = self._cvpysdk_object.make_request('GET', self._FS_CLIENTS)
 
@@ -987,16 +1172,137 @@ class Clients(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
+    def _get_laptop_clients(self) -> Dict[str, Dict[str, Any]]:
+        """Retrieve all laptop clients in the Commcell via REST API.
+
+        This method makes a REST API call to fetch all laptop clients registered in the Commcell.
+        The returned dictionary maps each client name to its details, including client ID and display name.
+
+        Returns:
+            Dictionary where each key is a laptop client name and the value is a dictionary containing:
+                - 'id': The unique identifier of the client.
+                - 'displayName': The display name of the client.
+
+        Raises:
+            SDKException: If the API response is empty or unsuccessful.
+
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> laptop_clients = clients._get_laptop_clients()
+            >>> for name, info in laptop_clients.items():
+            ...     print(f"Client: {name}, ID: {info['id']}, Display Name: {info['displayName']}")
+        #ai-gen-doc
+        """
+        request_url = f'{self._LAPTOP_CLIENTS}?fl=clientsFileSystem'
+        flag, response = self._cvpysdk_object.make_request('GET', request_url)
+
+        if not flag:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+        if not response:
+            raise SDKException('Response','102')
+
+        devices = {}
+        if 'clientsFileSystem' in response.json():
+            for device in response.json()['clientsFileSystem']:
+                client_info = device.get('client', {})
+                client_name = client_info.get('clientName')
+                plan = device.get('plan', {})
+                plan_name = plan.get('planName', None)
+                is_cloud_laptop = device.get('isCloudLaptop', False)
+                if not client_name:
+                    continue  # Skip clients without a name
+
+                devices[client_name] = {
+                    'id': client_info.get('clientId'),
+                    'displayName': client_name,
+                    'planName': plan_name,
+                    'isCloudLaptop': is_cloud_laptop
+                }
+        return devices
+
+    def _get_virtual_machines(self) -> Dict[str, Dict[str, Any]]:
+        """Retrieve all virtual machine clients in the Commcell via REST API.
+
+        This method makes a REST API call to fetch details of all virtual machine clients
+        managed by the Commcell. The returned dictionary maps each VM's unique name to
+        its details, including hypervisor, vendor, and display name. Duplicate VM names
+        are handled by appending a numeric suffix.
+
+        Returns:
+            Dictionary where each key is a VM name and the value is a dictionary with VM details:
+                {
+                    "vm1_name": {
+                        "hypervisor": str,
+                        "vendor": str,
+                        "displayName": str
+                    },
+                    "vm2_name": {
+                        "hypervisor": str,
+                        "vendor": str,
+                        "displayName": str
+                    }
+                }
+
+        Raises:
+            SDKException: If the REST API response is empty or unsuccessful.
+
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> vm_clients = clients._get_virtual_machines()
+            >>> for vm_name, vm_info in vm_clients.items():
+            ...     print(f"VM: {vm_name}, Hypervisor: {vm_info['hypervisor']}, Vendor: {vm_info['vendor']}")
+        #ai-gen-doc
+        """
+        flag, response = self._cvpysdk_object.make_request('GET', self._VIRTUAL_MACHINES)
+
+        if not flag:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+        if not response:
+            raise SDKException('Response','102')
+
+        vms = {}
+        if 'virtualMachines' in response.json():
+            name_count = {} # to handle duplicate names
+
+            for vm in response.json().get('virtualMachines', []):
+                original_name = vm.get('name')
+
+                if not original_name:
+                    continue  # Skip VMs without a name
+                # Check and update name for duplicates
+                if original_name in name_count:
+                    name_count[original_name] += 1
+                    unique_name = f"{original_name}_{name_count[original_name]}"
+                else:
+                    name_count[original_name] = 0
+                    unique_name = original_name
+
+                vms[unique_name] = {
+                    'hypervisor': vm.get('hypervisor', {}).get('name'),
+                    'vendor': vm.get('vendor'),
+                    'displayName': vm.get('displayName')
+                }
+        return vms
+
     @staticmethod
-    def _get_client_dict(client_object):
-        """Returns the client dict for the client object to be appended to member server.
+    def _get_client_dict(client_object: 'Client') -> Dict[str, Any]:
+        """Generate a dictionary representation for a Client object to associate with a Virtual Client.
 
-            Args:
-                client_object   (object)    --  instance of the Client class
+        Args:
+            client_object: Instance of the Client class whose details are to be included.
 
-            Returns:
-                dict    -   dictionary for a single client to be associated with the Virtual Client
+        Returns:
+            Dictionary containing client information formatted for Virtual Client association.
 
+        Example:
+            >>> client = Client(...)
+            >>> client_dict = Clients._get_client_dict(client)
+            >>> print(client_dict)
+            {'client': {'clientName': client.client_name, 'clientId': int(client.client_id), '_type_': 3}}
+
+        #ai-gen-doc
         """
         client_dict = {
             "client": {
@@ -1008,19 +1314,28 @@ class Clients(object):
 
         return client_dict
 
-    def _member_servers(self, clients_list):
-        """Returns the member clients to be associated with the Virtual Client.
+    def _member_servers(self, clients_list: List[Union[str, 'Client']]) -> List[Dict[str, Any]]:
+        """Get the member servers to be associated with the Virtual Client.
 
-            Args:
-                clients_list (list)    --  list of the clients to associated to the virtual client
+        Args:
+            clients_list: List of client names (as strings) or Client objects to associate with the virtual client.
 
-            Returns:
-                list - list consisting of all member servers to be associated to the Virtual Client
+        Returns:
+            List of dictionaries, each representing a member server eligible for association with the Virtual Client.
 
-            Raises:
-                SDKException:
-                    if type of clients list argument is not list
+        Raises:
+            SDKException: If the clients_list argument is not a list.
 
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> member_servers = clients._member_servers(['client1', 'client2'])
+            >>> print(f"Eligible member servers: {member_servers}")
+            >>> # You can also pass Client objects in the list
+            >>> client_obj = clients.get('client3')
+            >>> member_servers = clients._member_servers(['client1', client_obj])
+            >>> print(f"Member servers: {member_servers}")
+
+        #ai-gen-doc
         """
         if not isinstance(clients_list, list):
             raise SDKException('Client', '101')
@@ -1046,17 +1361,24 @@ class Clients(object):
 
         return member_servers
 
-    def _get_client_from_hostname(self, hostname):
-        """Checks if a client is associated with the given hostname.
+    def _get_client_from_hostname(self, hostname: str) -> Optional[str]:
+        """Check if a client is associated with the specified hostname.
 
-            Args:
-                hostname    (str)   --  host name of the client on this commcell
+        Args:
+            hostname: Host name of the client to search for in the Commcell.
 
-            Returns:
-                str     -   name of the client associated with this hostname
+        Returns:
+            The name of the client associated with the given hostname if found, otherwise None.
 
-                None    -   if no client has the same hostname as the given input
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> client_name = clients._get_client_from_hostname('server01.domain.com')
+            >>> if client_name:
+            >>>     print(f"Client found: {client_name}")
+            >>> else:
+            >>>     print("No client associated with the given hostname.")
 
+        #ai-gen-doc
         """
         # verify there is no client in the Commcell with the same name as the given hostname
         # for multi-instance clients
@@ -1065,18 +1387,27 @@ class Clients(object):
                 if hostname.lower() == self.all_clients[client]['hostname']:
                     return client
 
-    def _get_hidden_client_from_hostname(self, hostname):
-        """Checks if hidden client associated given hostname exists and returns the hidden client
-            name
+    def _get_hidden_client_from_hostname(self, hostname: str) -> Optional[str]:
+        """Check if a hidden client associated with the given hostname exists and return its name.
 
-            Args:
-                hostname    (str)   --  host name of the client on this commcell
+        This method searches for a hidden client whose hostname matches the provided value.
+        If a match is found, the hidden client's name is returned; otherwise, None is returned.
 
-            Returns:
-                str     -   name of the client associated with this hostname
+        Args:
+            hostname: Host name of the client to search for in hidden clients.
 
-                None    -   if no client has the same hostname as the given input
+        Returns:
+            The name of the hidden client associated with the given hostname, or None if no match is found.
 
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> hidden_client_name = clients._get_hidden_client_from_hostname('server01.domain.com')
+            >>> if hidden_client_name:
+            ...     print(f"Hidden client found: {hidden_client_name}")
+            ... else:
+            ...     print("No hidden client found for the given hostname.")
+
+        #ai-gen-doc
         """
         # verify there is no client in the Commcell with the same name as the given hostname
         # for multi-instance clients
@@ -1085,18 +1416,27 @@ class Clients(object):
                 if hostname.lower() == self.hidden_clients[hidden_client]['hostname']:
                     return hidden_client
 
-    def _get_client_from_displayname(self, display_name):
-        """get the client name for given display name
-            Args:
-                displayname    (str)   --  display name of the  client on this commcell
+    def _get_client_from_displayname(self, display_name: str) -> Optional[str]:
+        """Retrieve the client name associated with the given display name.
 
-            Returns:
-                str     -   name of the client associated with this display name
+        Args:
+            display_name: The display name of the client on this Commcell.
 
-                None    -   None when no clients exists with this name
-            Raises:
-                Exception:
-                    if multiple clients has same display name
+        Returns:
+            The name of the client associated with the specified display name as a string.
+            Returns None if no client exists with the given display name.
+
+        Raises:
+            Exception: If multiple clients have the same display name.
+
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> client_name = clients._get_client_from_displayname("WebServer01")
+            >>> if client_name:
+            ...     print(f"Client name found: {client_name}")
+            ... else:
+            ...     print("No client found with the specified display name")
+        #ai-gen-doc
         """
         display_name_occurence = 0
         client_name = None
@@ -1108,15 +1448,34 @@ class Clients(object):
                 raise SDKException('Client', '102', 'Multiple clients have the same display name')
         return client_name
 
-    def _get_fl_parameters(self, fl: list = None) -> str:
-        """
-        Returns the fl parameters to be passed in the mongodb caching api call
+    def _get_fl_parameters(self, fl: Optional[List[str]] = None) -> str:
+        """Generate the 'fl' parameter string for MongoDB caching API calls.
+
+        This method constructs the 'fl' query parameter used to specify which client columns
+        should be included in the API response. If no columns are provided, a default set is used.
 
         Args:
-            fl    (list)  --   list of columns to be passed in API request
+            fl: Optional list of column names to include in the API request. Each column name
+                must be one of the valid columns supported by the API.
 
         Returns:
-            fl_parameters(str) -- fl parameter string
+            A string representing the 'fl' parameter to be appended to the API request URL.
+
+        Raises:
+            SDKException: If any column name in the provided list is invalid.
+
+        Example:
+            >>> clients = Clients()
+            >>> fl_param = clients._get_fl_parameters(['clientName', 'hostName'])
+            >>> print(fl_param)
+            &fl=clientProperties.client.clientEntity.clientName,clientProperties.client.clientEntity.clientName,clientProperties.client.clientEntity.hostName
+
+            >>> # Using default columns
+            >>> fl_param = clients._get_fl_parameters()
+            >>> print(fl_param)
+            &fl=clientProperties.client%2CclientProperties.clientProps%2Coverview
+
+        #ai-gen-doc
         """
         self.valid_columns = {'clientName': 'clientProperties.client.clientEntity.clientName',
                               'clientId': 'clientProperties.client.clientEntity.clientId',
@@ -1125,7 +1484,7 @@ class Clients(object):
                               'clientGUID': 'clientProperties.client.clientEntity.clientGUID',
                               'companyName': 'clientProperties.client.clientEntity.entityInfo.companyName',
                               'idaList': 'client.idaList.idaEntity.appName',
-                              'clientRoles': 'clientProperties.clientProps.clientRoles',
+                              'clientRoles': 'clientProperties.clientProps.clientRoles.name',
                               'isDeletedClient': 'clientProperties.clientProps.IsDeletedClient',
                               'version': 'clientProperties.client.versionInfo.version',
                               'OSName': 'client.osInfo.OsDisplayInfo.OSName',
@@ -1146,17 +1505,28 @@ class Clients(object):
 
         return fl_parameters
 
-    def _get_sort_parameters(self, sort: list = None) -> str:
-        """
-        Returns the sort parameters to be passed in the mongodb caching api call
+    def _get_sort_parameters(self, sort: Optional[List[str]] = None) -> str:
+        """Generate the sort parameter string for MongoDB caching API calls.
 
         Args:
-            sort  (list)  --   contains the name of the column on which sorting will be performed and type of sort
-                                valid sor type -- 1 for ascending and -1 for descending
-                                e.g. sort = ['ColumnName','1']
+            sort: A list containing the column name and sort type.
+                - The first element is the column name to sort by.
+                - The second element is the sort type: '1' for ascending, '-1' for descending.
+                Example: ['ColumnName', '1']
 
         Returns:
-            sort_parameters(str) -- sort parameter string
+            A string representing the sort parameter to be used in the API call.
+
+        Raises:
+            SDKException: If an invalid column name or sort type is provided.
+
+        Example:
+            >>> clients = Clients(...)
+            >>> sort_param = clients._get_sort_parameters(['ClientName', '1'])
+            >>> print(sort_param)
+            &sort=clientName:1
+
+        #ai-gen-doc
         """
         sort_type = str(sort[1])
         col = sort[0]
@@ -1166,16 +1536,35 @@ class Clients(object):
             raise SDKException('Client', '102', 'Invalid column name passed')
         return sort_parameter
 
-    def _get_fq_parameters(self, fq: list = None) -> str:
-        """
-        Returns the fq parameters based on the fq list passed.
+    def _get_fq_parameters(self, fq: Optional[List[List[Any]]] = None) -> str:
+        """Generate the filter query (fq) parameter string based on the provided filter criteria.
 
         Args:
-            fq (list): Contains the columnName, condition, and value.
-                       e.g. fq = [['displayName','contains', 'test'],['clientRoles','contains', 'Command Center']]
+            fq: Optional list of filter criteria, where each item is a list containing
+                [columnName, condition, value]. For example:
+                [['displayName', 'contains', 'test'], ['clientRoles', 'contains', 'Command Center']]
+                - columnName: Name of the client property to filter (e.g., 'displayName', 'clientRoles').
+                - condition: Filter condition ('contains', 'notContains', 'eq', 'neq', 'isEmpty').
+                - value: Value to match for the filter (may be omitted for 'isEmpty').
 
         Returns:
-            str: fq parameter string.
+            A string representing the constructed fq parameter for use in API queries.
+
+        Raises:
+            SDKException: If an invalid column name or condition is provided.
+
+        Example:
+            >>> fq_filters = [
+            ...     ['displayName', 'contains', 'test'],
+            ...     ['clientRoles', 'contains', 'Command Center'],
+            ...     ['networkStatus', 'eq', 'Online'],
+            ...     ['isDeletedClient', 'eq', True]
+            ... ]
+            >>> fq_param_str = clients._get_fq_parameters(fq_filters)
+            >>> print(fq_param_str)
+            # Output: &fq=clientProperties.isServerClient:eq:true&fq=displayName:contains:test&fq=clientRoles:contains:Command Center&fq=networkStatus:eq:ONLINE&fq=isDeletedClient:eq:true
+
+        #ai-gen-doc
         """
         conditions = {"contains", "notContains", "eq", "neq"}
         params = ["&fq=clientProperties.isServerClient:eq:true"]
@@ -1210,27 +1599,34 @@ class Clients(object):
 
         return "".join(params)
 
-    def get_clients_cache(self, hard: bool = False, **kwargs) -> dict:
-        """
-        Gets all the clients present in CommcellEntityCache DB.
+    def get_clients_cache(self, hard: bool = False, **kwargs: Any) -> Dict[str, Dict[str, Any]]:
+        """Retrieve all clients present in the CommcellEntityCache database.
+
+        This method fetches client details from the CommcellEntityCache DB, with options to filter, sort, limit,
+        and search the results. It supports both soft and hard refreshes of the client cache.
 
         Args:
-            hard  (bool)        --   Flag to perform hard refresh on clients cache.
-            **kwargs (dict):
-                fl (list)       --   List of columns to return in response (default: None).
-                sort (list)     --   Contains the name of the column on which sorting will be performed and type of sort.
-                                           Valid sort type: 1 for ascending and -1 for descending
-                                           e.g. sort = ['connectName', '1'] (default: None).
-                limit (list)    --   Contains the start and limit parameter value.
-                                            Default ['0', '100'].
-                search (str)    --   Contains the string to search in the commcell entity cache (default: None).
-                fq (list)       --   Contains the columnName, condition and value.
-                                            e.g. fq = [['displayName', 'contains', 'test'],
-                                             ['clientRoles', 'contains', 'Command Center']] (default: None).
-                enum (bool)     --   Flag to return enums in the response (default: True).
+            hard: If True, performs a hard refresh on the clients cache.
+            **kwargs: Optional parameters to customize the response:
+                fl (list): List of columns to include in the response (default: None).
+                sort (list): List specifying the column to sort by and sort order (1 for ascending, -1 for descending).
+                    Example: ['connectName', 1]
+                limit (list): List containing start and limit values for pagination. Example: ['0', '100']
+                search (str): String to search within supported columns.
+                fq (list): List of filter queries, each as [columnName, condition, value].
+                    Example: [['displayName', 'contains', 'test']]
+                enum (bool): If True, returns enums in the response (default: True).
 
         Returns:
-            dict: Dictionary of all the properties present in response.
+            Dictionary mapping client names to their respective property dictionaries.
+
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> cache = clients.get_clients_cache(hard=True, fl=['clientName', 'hostName'], limit=['0', '50'], search='Server')
+            >>> print(f"Found {len(cache)} clients in cache")
+            >>> for name, props in cache.items():
+            >>>     print(f"Client: {name}, Host: {props.get('hostName')}")
+        #ai-gen-doc
         """
         # computing params
         fl_parameters = self._get_fl_parameters(kwargs.get('fl', None))
@@ -1277,7 +1673,7 @@ class Clients(object):
                     'version': temp_client.get('versionInfo', {}).get('version',''),
                     'updateStatus': temp_client.get('versionInfo', {}).get('UpdateStatus'),
                     'idaList': [agent.get("idaEntity", {}).get('appName', None)
-                                            for agent in temp_client.get('idaList', [])] or []
+                                for agent in temp_client.get('idaList', [])] or []
                 }
                 if 'osInfo' in temp_client:
                     client_config['OSName'] = temp_client.get('osInfo', {}).get('OsDisplayInfo', {}).get('OSName')
@@ -1304,108 +1700,120 @@ class Clients(object):
             raise SDKException('Response', '102')
 
     @property
-    def all_clients(self):
-        """Returns the dictionary consisting of all the clients and their info.
+    def all_clients(self) -> Dict[str, Dict[str, Any]]:
+        """Get a dictionary containing all clients and their associated information.
 
-            dict - consists of all clients in the commcell
-                    {
-                         "client1_name": {
-                                "id": client1_id,
-                                "hostname": client1_hostname,
-                                "displayName": client1 display name
-                        },
-                         "client2_name": {
-                                "id": client2_id,
-                                "hostname": client2_hostname,
-                                "displayName": client2 display name
-                         },
-                    }
+        Returns:
+            Dictionary mapping client names to their details, including ID, hostname, and display name.
+            Example structure:
+                {
+                    "client1_name": {
+                        "id": client1_id,
+                        "hostname": client1_hostname,
+                        "displayName": client1_display_name
+                    },
+                    "client2_name": {
+                        "id": client2_id,
+                        "hostname": client2_hostname,
+                        "displayName": client2_display_name
+                    },
+                    ...
+                }
 
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> all_clients_info = clients.all_clients  # Use dot notation for property
+            >>> print(f"Total clients: {len(all_clients_info)}")
+            >>> # Access details for a specific client
+            >>> if "client1_name" in all_clients_info:
+            >>>     client_details = all_clients_info["client1_name"]
+            >>>     print(f"Client ID: {client_details['id']}")
+            >>>     print(f"Hostname: {client_details['hostname']}")
+            >>>     print(f"Display Name: {client_details['displayName']}")
+
+        #ai-gen-doc
         """
         return self._clients
 
     @property
-    def all_clients_cache(self) -> dict:
-        """returns th dictionary consisting of all the clients and their info from CommcellEntityCache DB in Mongo
+    def all_clients_cache(self) -> Dict[str, Dict[str, Any]]:
+        """Get a cached dictionary of all clients and their details from the CommcellEntityCache database.
 
-            dict - consists of all clients in the CommcellEntityCache
-                    {
-                         "client1_name": {
-                                "clientName": client1_unique_client_specifier
-                                "id": client1_id,
-                                "hostname": client1_hostname,
-                                "displayName": client1 display name,
-                                "clientGUID": client1 GUID,
-                                "company": client1 company,
-                                "version": client1 version,
-                                "OsInfo": client1 os info,
-                                "idaList": client1 ida list,
-                                "tags": client1 tags,
-                                "isDeletedClient": client1 status,
-                                "isInfrastructure": client1 infrastructure flag,
-                                "networkStatus": client1 network status,
-                                "region": client1 region,
-                                "roles": client1 roles
-                        },
-                         "client2_name": {
-                                "clientName": client2_unique_client_specifier
-                                "id": client2_id,
-                                "hostname": client2_hostname,
-                                "displayName": client2 display name,
-                                "clientGUID": client2 GUID,
-                                "company": client2 company,
-                                "version": client2 version,
-                                "OsInfo": client2 os info,
-                                "idaList": client2 ida list,
-                                "tags": client2 tags,
-                                "isDeletedClient": client2 status,
-                                "isInfrastructure": client2 infrastructure flag,
-                                "networkStatus": client2 network status,
-                                "region": client2 region,
-                                "roles": client2 roles
-                         },
-                    }
+        This property returns a dictionary where each key is a client name, and the value is another dictionary
+        containing detailed information about that client, such as ID, hostname, display name, GUID, company,
+        version, OS info, IDA list, tags, deletion status, infrastructure flag, network status, region, and roles.
+
+        Returns:
+            Dictionary mapping client names to their respective information dictionaries.
+
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> client_cache = clients.all_clients_cache  # Use dot notation for property access
+            >>> print(f"Total clients cached: {len(client_cache)}")
+            >>> # Access details for a specific client
+            >>> if "client1_name" in client_cache:
+            >>>     details = client_cache["client1_name"]
+            >>>     print(f"Client ID: {details['id']}, Hostname: {details['hostname']}")
+        #ai-gen-doc
         """
         if not self._client_cache:
             self._client_cache = self.get_clients_cache()
         return self._client_cache
 
     @property
-    def all_clients_prop(self)->list[dict]:
-        """
-        Returns complete GET API response
+    def all_clients_prop(self) -> List[Dict[str, Any]]:
+        """Get the complete GET API response containing all client properties.
+
+        Returns:
+            List of dictionaries, each representing the properties of a client as returned by the API.
+
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> all_props = clients.all_clients_prop  # Use dot notation for property access
+            >>> print(f"Total clients found: {len(all_props)}")
+            >>> # Access properties of the first client
+            >>> if all_props:
+            >>>     first_client = all_props[0]
+            >>>     print(f"First client properties: {first_client}")
+
+        #ai-gen-doc
         """
         self._all_clients_props = self._get_clients(full_response=True).get('clientProperties',[])
         return self._all_clients_props
 
-    def create_pseudo_client(self, client_name, client_hostname=None, client_type="windows"):
-        """ Creates a pseudo client
+    def create_pseudo_client(self, client_name: str, client_hostname: Optional[str] = None, client_type: str = "windows") -> 'Client':
+        """Create a pseudo client with the specified name, hostname, and type.
 
-            Args:
-                client_name     (str)   --  name of the client to be created
+        This method creates a pseudo client in the Commcell environment. The client type can be one of:
+        "windows", "unix", "unix cluster", or "sap hana". If no hostname is provided, the client name is used as the hostname.
 
-                client_hostname (str)   --  hostname of the client to be created
-                    default:None
+        Args:
+            client_name: Name of the client to be created.
+            client_hostname: Optional hostname for the client. If not provided, defaults to client_name.
+            client_type: OS/type of the client to be created. Available values are:
+                - "windows"
+                - "unix"
+                - "unix cluster"
+                - "sap hana"
+                Default is "windows".
 
-                client_type(str)     --  OS/Type of client to be created
-                    default : "windows"
+        Returns:
+            Client object representing the newly created pseudo client.
 
-                    Available Values for client_type : "windows"
-                                                       "unix"
-                                                       "unix cluster"
-                                                       "sap hana"
+        Raises:
+            SDKException: If the client name type is incorrect, if the response is empty,
+                or if the client creation fails due to an error in the response.
 
-            Returns:
-                client object for the created client.
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> pseudo_client = clients.create_pseudo_client(
+            ...     client_name="TestPseudoClient",
+            ...     client_hostname="test-host",
+            ...     client_type="unix"
+            ... )
+            >>> print(f"Pseudo client created: {pseudo_client}")
 
-            Raises:
-                SDKException:
-                    if client name type is incorrect
-
-                    if response is empty
-
-                    if failed to get client id from response
-
+        #ai-gen-doc
         """
         client_type_dict = {
             "windows": "WINDOWS",
@@ -1457,27 +1865,31 @@ class Clients(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def register_decoupled_client(self, client_name, client_host_name, port_number=8400):
-        """ registers decoupled client
+    def register_decoupled_client(self, client_name: str, client_host_name: str, port_number: int = 8400):
+        """Register a decoupled client with the specified host name and port.
 
-            Args:
-                client_name (str)    --  client name
+        Args:
+            client_name: Name of the client to register.
+            client_host_name: Host name of the decoupled client.
+            port_number: Port number used by the decoupled client (default is 8400).
 
-                client_host_name (str)  -- client host name
+        Returns:
+            The client object for the registered client.
 
-                port_number (int)   -- port number of the decoupled client
+        Raises:
+            SDKException: If the client name type is incorrect, the response is empty, or the client ID cannot be retrieved from the response.
 
-            Returns:
-                client object for the registered client.
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> client_obj = clients.register_decoupled_client(
+            ...     client_name="WebServer01",
+            ...     client_host_name="webserver01.domain.com",
+            ...     port_number=8500
+            ... )
+            >>> print(f"Registered client: {client_obj}")
+            >>> # The returned client object can be used for further client operations
 
-            Raises:
-                SDKException:
-                    if client name type is incorrect
-
-                    if response is empty
-
-                    if failed to get client id from response
-
+        #ai-gen-doc
         """
         request_json = {
             "App_RegisterClientRequest":
@@ -1513,101 +1925,202 @@ class Clients(object):
             raise SDKException('Response', '101', self._update_response_(response.text))
 
     @property
-    def hidden_clients(self):
-        """Returns the dictionary consisting of the hidden clients and their info.
+    def hidden_clients(self) -> Dict[str, Dict[str, Any]]:
+        """Get a dictionary of hidden clients and their associated information.
 
-            dict - consists of all clients in the commcell
-                    {
-                         "client1_name": {
-                                "id": client1_id,
-                                "hostname": client1_hostname
-                        },
-                         "client2_name": {
-                                "id": client2_id,
-                                "hostname": client2_hostname
-                         },
-                    }
+        Returns:
+            Dictionary mapping hidden client names to their details, including client ID and hostname.
+            Example structure:
+                {
+                    "client1_name": {
+                        "id": client1_id,
+                        "hostname": client1_hostname
+                    },
+                    "client2_name": {
+                        "id": client2_id,
+                        "hostname": client2_hostname
+                    },
+                }
 
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> hidden = clients.hidden_clients  # Use dot notation for property access
+            >>> print(f"Number of hidden clients: {len(hidden)}")
+            >>> for name, info in hidden.items():
+            ...     print(f"Client: {name}, ID: {info['id']}, Hostname: {info['hostname']}")
+
+        #ai-gen-doc
         """
         return self._hidden_clients
 
     @property
-    def virtualization_clients(self):
-        """Returns the dictionary consisting of the virtualization clients and their info.
+    def virtualization_clients(self) -> Dict[str, Dict[str, Any]]:
+        """Get a dictionary of virtualization clients and their details.
 
-            dict - consists of all clients in the commcell
-                    {
-                         "client1_name": {
-                                "id": client1_id,
-                                "hostname": client1_hostname
-                        },
-                         "client2_name": {
-                                "id": client2_id,
-                                "hostname": client2_hostname
-                         },
-                    }
+        Returns:
+            Dictionary mapping virtualization client names to their information, including client ID and hostname.
+            Example structure:
+                {
+                    "client1_name": {
+                        "id": client1_id,
+                        "hostname": client1_hostname
+                    },
+                    "client2_name": {
+                        "id": client2_id,
+                        "hostname": client2_hostname
+                    },
+                    ...
+                }
 
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> v_clients = clients.virtualization_clients  # Use dot notation for property access
+            >>> print(f"Total virtualization clients: {len(v_clients)}")
+            >>> for name, info in v_clients.items():
+            ...     print(f"Client: {name}, ID: {info['id']}, Hostname: {info['hostname']}")
+
+        #ai-gen-doc
         """
         return self._virtualization_clients
 
     @property
-    def virtualization_access_nodes(self):
-        """Returns the dictionary consisting of the virtualization access nodes
+    def virtualization_access_nodes(self) -> Dict[str, Dict[str, Any]]:
+        """Get the dictionary of virtualization access nodes available in the Commcell.
 
-                dict - consists of all access nodes in the commcell
-                {
-                     "display_name1": {
-                            "id": client1_id,
-                            "name": client1_name,
-                            "hostname": client1_hostname
-                    },
-                     "display_name2": {
-                            "id": client2_id,
-                            "name": client2_name,
-                            "hostname": client2_hostname
-                     },
-                }
+        Each key in the dictionary is the display name of an access node, and its value is a dictionary
+        containing the node's ID, name, and hostname.
+
+        Returns:
+            Dictionary mapping display names to access node details. Each value contains:
+                - id: Unique identifier of the access node.
+                - name: Name of the access node.
+                - hostname: Hostname of the access node.
+
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> access_nodes = clients.virtualization_access_nodes  # Use dot notation for property
+            >>> for display_name, node_info in access_nodes.items():
+            ...     print(f"Access Node: {display_name}")
+            ...     print(f"  ID: {node_info['id']}")
+            ...     print(f"  Name: {node_info['name']}")
+            ...     print(f"  Hostname: {node_info['hostname']}")
+
+        #ai-gen-doc
         """
         return self._virtualization_access_nodes
 
     @property
-    def file_server_clients(self):
-        """Returns the dictionary consisting of the file server clients and their info.
+    def file_server_clients(self) -> Dict[str, Dict[str, Any]]:
+        """Get a dictionary of all file server clients and their details in the Commcell.
 
-            dict - consists of all file server clients in the commcell
-                    {
-                        "client1_name": {
-
-                            "id": client1_id,
-
-                            "displayName": client1_displayname
-                        },
-
-                        "client2_name": {
-
-                            "id": client2_id,
-
-                            "displayName": client2_displayname
-                        }
+        Returns:
+            Dictionary mapping client names to their information, including client ID and display name.
+            Example structure:
+                {
+                    "client1_name": {
+                        "id": client1_id,
+                        "displayName": client1_displayname
+                    },
+                    "client2_name": {
+                        "id": client2_id,
+                        "displayName": client2_displayname
                     }
+                }
+
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> file_servers = clients.file_server_clients  # Use dot notation for property access
+            >>> print(f"Total file server clients: {len(file_servers)}")
+            >>> for name, info in file_servers.items():
+            ...     print(f"Client: {name}, ID: {info['id']}, Display Name: {info['displayName']}")
+
+        #ai-gen-doc
         """
         if self._file_server_clients is None:
             self._file_server_clients = self._get_fileserver_clients()
         return self._file_server_clients
 
-    def has_client(self, client_name):
-        """Checks if a client exists in the commcell with the given client name / hostname.
+    @property
+    def laptop_clients(self) -> Dict[str, Dict[str, Any]]:
+        """Get a dictionary of all laptop clients and their information in the Commcell.
 
-            Args:
-                client_name     (str)   --  name / hostname of the client
+        Returns:
+            Dictionary mapping laptop client names to their details, including client ID and display name.
+            Example structure:
+                {
+                    "client1_name": {
+                        "id": client1_id,
+                        "displayName": client1_displayname
+                    },
+                    "client2_name": {
+                        "id": client2_id,
+                        "displayName": client2_displayname
+                    }
+                }
 
-            Returns:
-                bool    -   boolean output whether the client exists in the commcell or not
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> laptop_info = clients.laptop_clients  # Use dot notation for property access
+            >>> print(f"Total laptop clients: {len(laptop_info)}")
+            >>> for name, info in laptop_info.items():
+            >>>     print(f"Client: {name}, ID: {info['id']}, Display Name: {info['displayName']}")
+        #ai-gen-doc
+        """
+        if not self._laptop_clients:
+            self._laptop_clients = self._get_laptop_clients()
+        return self._laptop_clients
 
-            Raises:
-                SDKException:
-                    if type of the client name argument is not string
+    @property
+    def virtual_machines(self) -> Dict[str, Dict[str, Any]]:
+        """Get a dictionary of all virtual machine clients and their details in the Commcell.
 
+        Returns:
+            Dictionary mapping virtual machine client names to their information, including hypervisor, vendor, and display name.
+            Example structure:
+                {
+                    "vm1_name": {
+                        "hypervisor": "hypervisor1",
+                        "vendor": "vendor_name",
+                        "displayName": "vm1_displayname"
+                    },
+                    "client2_name": {
+                        "hypervisor": "hypervisor2",
+                        "vendor": "vendor_name",
+                        "displayName": "vm2_displayname"
+                    }
+                }
+
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> vm_clients = clients.virtual_machines  # Use dot notation for property access
+            >>> print(f"Total VM clients: {len(vm_clients)}")
+            >>> for vm_name, vm_info in vm_clients.items():
+            >>>     print(f"VM: {vm_name}, Hypervisor: {vm_info['hypervisor']}, Vendor: {vm_info['vendor']}")
+        #ai-gen-doc
+        """
+        if not self._virtual_machines:
+            self._virtual_machines = self._get_virtual_machines()
+        return self._virtual_machines
+
+    def has_client(self, client_name: str) -> bool:
+        """Check if a client exists in the Commcell by name or hostname.
+
+        Args:
+            client_name: Name or hostname of the client to check.
+
+        Returns:
+            True if the client exists in the Commcell, False otherwise.
+
+        Raises:
+            SDKException: If the client_name argument is not a string.
+
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> exists = clients.has_client("Server01")
+            >>> print(f"Client exists: {exists}")
+            >>> # Output: Client exists: True or False
+
+        #ai-gen-doc
         """
         if not isinstance(client_name, str):
             raise SDKException('Client', '101')
@@ -1623,19 +2136,23 @@ class Clients(object):
             return True
         return False
 
-    def has_hidden_client(self, client_name):
-        """Checks if a client exists in the commcell with the input client name as a hidden client.
+    def has_hidden_client(self, client_name: str) -> bool:
+        """Check if a client exists in the Commcell as a hidden client.
 
-            Args:
-                client_name (str)  --  name of the client
+        Args:
+            client_name: Name of the client to check, provided as a string.
 
-            Returns:
-                bool - boolean output whether the client exists in the commcell or not as a hidden
-                client
+        Returns:
+            True if the client exists as a hidden client in the Commcell, False otherwise.
 
-            Raises:
-                SDKException:
-                    if type of the client name argument is not string
+        Raises:
+            SDKException: If the client_name argument is not a string.
+
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> is_hidden = clients.has_hidden_client("Server01")
+            >>> print(f"Is 'Server01' a hidden client? {is_hidden}")
+        #ai-gen-doc
         """
         if not isinstance(client_name, str):
             raise SDKException('Client', '101')
@@ -1643,27 +2160,37 @@ class Clients(object):
         return ((self.hidden_clients and client_name.lower() in self.hidden_clients) or
                 self._get_hidden_client_from_hostname(client_name) is not None)
 
-    def _process_add_response(self, request_json, endpoint=None):
-        """Runs the Client Add API with the request JSON provided,
-            and returns the contents after parsing the response.
+    def _process_add_response(self, request_json: Dict[str, Any], endpoint: Optional[str] = None):
+        """Run the Client Add API with the provided request JSON and parse the response.
 
-            Args:
-                request_json    (dict)  --  JSON request to run for the API
-                endpoint        (str)   --  Endpoint for making request to (default is '/Client')
+        This method sends a POST request to the specified endpoint to add a client,
+        then processes the response to determine success or failure. If the client
+        is successfully created, the method refreshes the client list and returns
+        the newly created client object. If the response indicates an error or is
+        empty, an SDKException is raised.
 
-            Returns:
-                (bool, str, str):
-                    bool -  flag specifies whether success / failure
+        Args:
+            request_json: Dictionary containing the JSON request payload for the API.
+            endpoint: Optional string specifying the API endpoint to use. Defaults to '/Client'.
 
-                    str  -  error code received in the response
+        Returns:
+            The newly created client object if the operation is successful.
 
-                    str  -  error message received
+        Raises:
+            SDKException: If the response is empty, indicates failure, or contains an error.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Example:
+            >>> request_json = {
+            ...     "clientInfo": {
+            ...         "clientName": "NewClient",
+            ...         "clientType": 1
+            ...     }
+            ... }
+            >>> clients = Clients(commcell_object)
+            >>> new_client = clients._process_add_response(request_json)
+            >>> print(f"Created client: {new_client}")
 
-                    if response is not success
+        #ai-gen-doc
         """
         if not endpoint:
             endpoint = self._ADD_CLIENT
@@ -1698,43 +2225,49 @@ class Clients(object):
 
     def add_kubernetes_client(
             self,
-            client_name,
-            api_server_endpoint,
-            service_account,
-            service_token,
-            encoded_service_token,
-            access_nodes=None
-    ):
+            client_name: str,
+            api_server_endpoint: str,
+            credential_id: int,
+            credential_name: str,
+            access_nodes: Optional[Union[List[str], str]] = None
+    ) -> 'Client':
         """Adds a new Kubernetes Cluster client to the Commcell.
 
+            This method creates a Kubernetes client in the Commcell using the provided API server endpoint,
+            service account credentials, and optional access nodes (proxy clients). If a client with the
+            specified name already exists, an exception is raised.
             Args:
                 client_name         (str)   --  name of the new Kubernetes Cluster client
 
                 api_server_endpoint (str)   --  Kubernetes API Server endpoint of the cluster
 
-                service_account     (str)   --  Name of the Service Account for authentication
+                credential_id       (int)   --  ID of the credential to be associated with this client
 
-                service_token       (str)   --  Token fetched from the Service Account
-
-                encoded_service_token  (str)   -- Base64 encoded Service Account Token
+                credential_name (str)   --  Name of the credential to be associated with this client
 
                 access_nodes        (list/str)  --  Virtual Server proxy clients as access nodes
 
 
 
-            Returns:
-                object  -   instance of the Client class for this new client
+        Returns:
+            Client: Instance of the Client class representing the newly created Kubernetes client.
 
-            Raises:
-                SDKException:
-                    if client with given name already exists
+        Raises:
+            SDKException: If a client with the given name already exists, if access nodes do not exist,
+                if the client creation fails, or if the response from the server is empty or unsuccessful.
 
-                    if failed to add the client
-
-                    if response is empty
-
-                    if response is not success
-
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> k8s_client = clients.add_kubernetes_client(
+            ...     client_name="K8sCluster01",
+            ...     api_server_endpoint="https://k8s.example.com:6443",
+            ...     service_account="my-service-account",
+            ...     service_token="eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
+            ...     encoded_service_token="ZXlKaGJHY2lPaUpJVXpJMU5pSjkuZXlK...",
+            ...     access_nodes=["Proxy01", "Proxy02"]
+            ... )
+            >>> print(f"Created Kubernetes client: {k8s_client}")
+        #ai-gen-doc
         """
         if self.has_client(client_name):
             raise SDKException('Client', '102', 'Client "{0}" already exists.'.format(client_name))
@@ -1764,12 +2297,12 @@ class Clients(object):
                 "virtualServerClientProperties": {
                     "virtualServerInstanceInfo": {
                         "vsInstanceType": 20,
+                        "virtualServerCredentialinfo":{
+                            "credentialId": credential_id,
+                            "credentialName": credential_name
+                        },
                         "k8s": {
-                            "secretName": service_account,
-                            "secretKey": service_token,
-                            "secretKeyV2": encoded_service_token,
                             "secretType": "ServiceAccount",
-                            "endpointurl": api_server_endpoint
                         },
                         "associatedClients": {},
                         "vmwareVendor": {
@@ -1816,35 +2349,42 @@ class Clients(object):
             raise SDKException('Response', '101', self._update_response_(response.text))
 
     def add_nas_client(self,
-                    ndmp_server_clientname,
-                    ndmp_server_hostname,
-                    username,
-                    password,
-                    listenPort = 10000
-                    ):
+                       ndmp_server_clientname: str,
+                       ndmp_server_hostname: str,
+                       username: str,
+                       password: str,
+                       listenPort: int = 10000
+                       ):
+        """Add a new NAS client with NDMP and NetworkShare iDA support.
 
-        """
-        Adds new NAS client with NDMP and NetworkShare iDA
+        This method creates a NAS client using the provided NDMP server details and credentials.
+        The client will be configured to use the specified listening port for NDMP communication.
 
         Args:
-            ndmp_server_clientname    (str)   --  new NAS client name
-
-            ndmp_server_hostname      (str)   --  HostName for new NAS client
-
-            username                (str)   --  NDMP user name
-
-            password                (str)   --  NDMP password
+            ndmp_server_clientname: Name of the new NAS client to be created.
+            ndmp_server_hostname: Hostname of the NDMP server for the NAS client.
+            username: NDMP username for authentication.
+            password: NDMP password for authentication.
+            listenPort: Port number for NDMP server to listen on (default is 10000).
 
         Returns:
-                client_object     (obj)   --  client object associated with the new NAS client
+            The client object associated with the newly created NAS client.
 
         Raises:
-            SDKException:
-                if failed to add the client
+            SDKException: If the client creation fails, the response is empty, or the response indicates an error.
 
-                if response is empty
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> nas_client = clients.add_nas_client(
+            ...     ndmp_server_clientname="NAS_Server01",
+            ...     ndmp_server_hostname="nas01.example.com",
+            ...     username="ndmpuser",
+            ...     password="ndmppass",
+            ...     listenPort=12000
+            ... )
+            >>> print(f"Created NAS client: {nas_client}")
 
-                if response is not success
+        #ai-gen-doc
         """
         password = b64encode(password.encode()).decode()
         request_json = {
@@ -1896,7 +2436,7 @@ class Clients(object):
         }
 
         flag, response = self._cvpysdk_object.make_request(
-           'POST', self._ADD_NAS_CLIENT, request_json
+            'POST', self._ADD_NAS_CLIENT, request_json
         )
 
         if flag:
@@ -1929,33 +2469,42 @@ class Clients(object):
 
     def add_vmware_client(
             self,
-            client_name,
-            vcenter_hostname,
-            vcenter_username,
-            vcenter_password,
-            clients):
-        """Adds a new VMWare Virtualization Client to the Commcell.
+            client_name: str,
+            vcenter_hostname: str,
+            vcenter_username: str,
+            vcenter_password: str,
+            clients: list
+        ):
+        """Add a new VMware Virtualization Client to the Commcell.
 
-            Args:
-                client_name         (str)   --  name of the new VMWare Virtual Client
-                vcenter_hostname    (str)   --  hostname of the vcenter to connect to
-                vcenter_username    (str)   --  login username for the vcenter
-                vcenter_password    (str)   --  plain-text password for the vcenter
-                clients             (list)  --  list cotaining client names / client objects,
-                                                    to associate with the Virtual Client
+        This method creates a VMware Virtual Client and associates it with the specified member clients.
+        The vCenter credentials are used to connect and configure the virtualization client.
 
-            Returns:
-                object  -   instance of the Client class for this new client
+        Args:
+            client_name: Name of the new VMware Virtual Client.
+            vcenter_hostname: Hostname of the vCenter server to connect to.
+            vcenter_username: Username for vCenter authentication.
+            vcenter_password: Plain-text password for vCenter authentication.
+            clients: List containing client names or client objects to associate with the Virtual Client.
 
-            Raises:
-                SDKException:
-                    if client with given name already exists
+        Returns:
+            Instance of the Client class representing the newly created VMware Virtual Client.
 
-                    if failed to add the client
+        Raises:
+            SDKException: If a client with the given name already exists, if the client creation fails,
+                if the response is empty, or if the response indicates failure.
 
-                    if response is empty
-
-                    if response is not success
+        Example:
+            >>> clients_list = ['ClientA', 'ClientB']
+            >>> new_vmware_client = clients_obj.add_vmware_client(
+            ...     client_name='VMwareClient01',
+            ...     vcenter_hostname='vcenter.example.com',
+            ...     vcenter_username='administrator',
+            ...     vcenter_password='password123',
+            ...     clients=clients_list
+            ... )
+            >>> print(f"Created VMware client: {new_vmware_client}")
+        #ai-gen-doc
         """
         if self.has_client(client_name):
             raise SDKException('Client', '102', 'Client "{0}" already exists.'.format(client_name))
@@ -2016,28 +2565,43 @@ class Clients(object):
 
     def add_hyperv_client(
             self,
-            client_name,
-            hyperv_hostname,
-            hyperv_username,
-            hyperv_password,
-            clients
-    ):
-        """Adds a new Hyper-V Virtualization Client to the Commcell.
-            Args:
-                client_name        (str)   --  name of the new Hyper-V Virtual Client
-                hyperv_hostname    (str)   --  hostname of the hyperv to connect to
-                hyperv_username    (str)   --  login username for the hyperv
-                hyperv_password    (str)   --  plain-text password for the hyperv
-                clients            (list)  --  list cotaining client names / client objects,
-                                                    to associate with the Virtual Client
-            Returns:
-                object  -   instance of the Client class for this new client
-            Raises:
-                SDKException:
-                    if client with given name already exists
-                    if failed to add the client
-                    if response is empty
-                    if response is not success
+            client_name: str,
+            hyperv_hostname: str,
+            hyperv_username: str,
+            hyperv_password: str,
+            clients: list
+    ) -> 'Client':
+        """Add a new Hyper-V Virtualization Client to the Commcell.
+
+        This method creates a Hyper-V Virtualization Client and associates the specified member clients
+        with it. The Hyper-V credentials are encoded before being sent to the Commcell server.
+
+        Args:
+            client_name: Name of the new Hyper-V Virtual Client.
+            hyperv_hostname: Hostname of the Hyper-V server to connect to.
+            hyperv_username: Login username for the Hyper-V server.
+            hyperv_password: Plain-text password for the Hyper-V server.
+            clients: List containing client names or client objects to associate with the Virtual Client.
+
+        Returns:
+            Client: Instance of the Client class representing the newly created Hyper-V Virtualization Client.
+
+        Raises:
+            SDKException: If a client with the given name already exists, if the client creation fails,
+                or if the response from the server is empty or unsuccessful.
+
+        Example:
+            >>> clients_list = ['ClientA', 'ClientB']
+            >>> new_client = clients_mgr.add_hyperv_client(
+            ...     client_name='HyperV01',
+            ...     hyperv_hostname='hyperv01.domain.com',
+            ...     hyperv_username='admin',
+            ...     hyperv_password='password123',
+            ...     clients=clients_list
+            ... )
+            >>> print(f"Created Hyper-V client: {new_client}")
+
+        #ai-gen-doc
         """
         if self.has_client(client_name):
             raise SDKException('Client', '102', 'Client "{0}" already exists.'.format(client_name))
@@ -2096,81 +2660,297 @@ class Clients(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
+    def add_okta_client(
+            self,
+            client_name: str,
+            server_plan: str,
+            index_server: str,
+            access_nodes_list: List[Any]=[],
+            **kwargs: Any
+    ) -> 'Client':
+        """Add a new Okta Pseudo Client to the Commcell.
+
+        This method creates a okta pseudo client, associating it with the specified server plan,
+        index server, and access nodes. Additional configuration can be provided via keyword arguments for authentication,
+        okta app integration and certificate details.
+
+        Args:
+            client_name: Name of the new SharePoint pseudo client.
+            server_plan: Name of the server plan to associate with the client.
+            index_server: Name of the index server for the virtual client.
+            access_nodes_list: List of client names (str) or Client objects to be added as access nodes.
+            **kwargs: Additional configuration options, such as:
+                - organization_url (str): URL of the Okta organization.
+                - app_id (str): application ID for Okta.
+                - cloud_region (int): Cloud region for the Okta client (default is 1).
+                - shared_jr_directory (dict): Shared job results directory configuration.
+                - credential_name(str): Credential name for Okta credential
+        Returns:
+            Client: Instance of the Client class representing the newly created Okta pseudo client.
+
+        Raises:
+            SDKException: If the client with the given name already exists, index server or server plan is not found,
+                failed to add the client, or if the response is empty or unsuccessful.
+
+        Example:
+            >>> service_type = {
+            ...     "Okta Global Administrator": 4,
+            ...     "Okta Online": 2,
+            ...     "Okta Azure Storage": 3
+            ... }
+            >>> access_nodes = ["client1", "client2"]
+            >>> client = clients.add_okta_client(
+            ...     client_name="OktaPseudo01",
+            ...     server_plan="O365Plan",
+            ...     service_type=service_type,
+            ...     index_server="IndexServer01",
+            ...     access_nodes_list=access_nodes,
+            ...     tenant_url="https://tenant.okta.com",
+            ...     user_username="user@domain.com",
+            ...     user_password="password",
+            ...     cloud_region=1
+            ... )
+            >>> print(f"Created Okta client: {client.client_name}")
+        #ai-gen-doc
+        """
+        if self.has_client(client_name):
+            raise SDKException('Client', '102', 'Client "{0}" already exists.'.format(client_name))
+
+        index_server_dict = {}
+
+        if index_server:
+            if self.has_client(index_server):
+                index_server_cloud = self.get(index_server)
+
+                if index_server_cloud.agents.has_agent(AppIDAName.BIG_DATA_APPS.value):
+                    index_server_dict = {
+                        "mediaAgentId": int(index_server_cloud.client_id),
+                        "_type_": 11,
+                        "mediaAgentName": index_server_cloud.client_name
+                    }
+            else:
+                raise SDKException('IndexServers', '102', f"Index server {index_server} not found")
+
+        if self._commcell_object.plans.has_plan(server_plan):
+            server_plan_object = self._commcell_object.plans.get(server_plan)
+            server_plan_dict = {
+                "planId": int(server_plan_object.plan_id),
+                "planType": int(server_plan_object.plan_type)
+            }
+        else:
+            raise SDKException('Storage', '102', f"Server Plan {server_plan} not found")
+
+        member_servers = []
+        proxy_servers = []
+        number_of_backup_streams = kwargs.get('number_of_backup_streams', 10)
+
+        for client in access_nodes_list:
+            if isinstance(client, str):
+                client = client.strip().lower()
+
+                if self.has_client(client):
+                    client_dict = {
+                        "client": {
+                            "clientName": client,
+                            "clientId": int(self.all_clients[client]['id']),
+                            "_type_": 3
+                        }
+                    }
+                    member_servers.append(client_dict)
+
+            elif isinstance(client, Client):
+                client_dict = {
+                    "client": {
+                        "clientName": client.client_name,
+                        "clientId": int(client.client_id),
+                        "_type_": 3
+                    }
+                }
+                member_servers.append(client_dict)
+
+        server_resource_pool_map = server_plan_object._properties.get('storageResourcePoolMap', [])
+        if server_resource_pool_map:
+            server_plan_resources = server_resource_pool_map[0].get('resources', None)
+        else:
+            server_plan_resources = None
+
+        # use resource pool only if resource pool type is Office365 or Sharepoint
+        is_resource_pool_enabled = False
+        if server_plan_resources is not None:
+            for resource in server_plan_resources:
+                if resource.get('appType', 0) in (ResourcePoolAppType.O365.value, ResourcePoolAppType.SHAREPOINT.value):
+                    is_resource_pool_enabled = True
+
+        request_json = {
+            "clientInfo": {
+                "clientType": 51,
+                "lookupPlanInfo": False,
+                "cloudClonnectorProperties": {
+                    "instance": {
+                        "cloudAppsInstance": {
+                            "generalCloudProperties": {
+                                "indexServer": index_server_dict,
+                                "numberOfBackupStreams": number_of_backup_streams,
+                                "jobResultsDir": {},
+                                "memberServers": member_servers,
+                                "proxyServers": proxy_servers
+                            },
+                            "instanceType": 59,
+                            "oktaInstance": {
+                                "blobPath": {},
+                                "infraStructurePoolEnabled": False,
+                                "isAutoDiscoveryEnabled": False,
+                                "oktaAppList": {
+                                    "oktaApps": []
+                                },
+                                "oktaOrganisationUrl": ""
+                            }
+                        },
+                        "instance": {
+                            "applicationId": 0,
+                            "clientId": 0,
+                            "clientName": client_name,
+                            "instanceId": 0,
+                            "instanceName": f"{client_name}_Instance001"
+                        }
+                    },
+                    "instanceType": 59
+                },
+                "environmentType": 0,
+                "plan": server_plan_dict,
+                "resourcePoolAppType": -1,
+                "setKeyForMultiTenantApp": False,
+                "useResourcePoolInfo": False
+            },
+            "entity": {
+                "clientName": client_name
+            },
+            "metaInfo": None
+        }
+
+        credential_name = kwargs.get("credential_name", "")
+        if credential_name:
+            credential_properties = self._commcell_object.credentials.get(credential_name)
+            credential_id = credential_properties.credential_id
+            okta_app_dict = {
+                "isCVCreated": True,
+                "oktaAppType": 1,
+                "credentialEntity": {
+                    "credentialId": credential_id,
+                    "credentialName": kwargs.get("credential_name")
+                }
+            }
+
+            request_json["clientInfo"]["cloudClonnectorProperties"]["instance"][
+                "cloudAppsInstance"]["oktaInstance"]["oktaAppList"]["oktaApps"].append(okta_app_dict)
+
+        if len(access_nodes_list) > 1:
+            request_json["clientInfo"]["cloudClonnectorProperties"]["instance"][
+                "cloudAppsInstance"]["generalCloudProperties"]["jobResultsDir"] = {
+                "path": kwargs.get('shared_jr_directory').get('Path')
+            }
+
+        if is_resource_pool_enabled:
+            request_json["clientInfo"]["useResourcePoolInfo"] = is_resource_pool_enabled
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._ADD_OKTA_CLIENT, request_json
+        )
+
+        if flag:
+            if response.json():
+                if 'response' in response.json():
+                    error_code = response.json()['response']['errorCode']
+
+                    if error_code != 0:
+                        error_string = response.json()['response']['errorString']
+                        o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+
+                        raise SDKException('Client', '102', o_str)
+                    else:
+
+                        # initialize the clients again
+                        # so the client object has all the clients
+                        self.refresh()
+                        return self.get(client_name)
+
+                elif 'errorMessage' in response.json():
+                    error_string = response.json()['errorMessage']
+                    o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+                    raise SDKException('Client', '102', o_str)
+
+                else:
+                    raise SDKException('Response', '102', 'Response/Error message not found')
+            else:
+                raise SDKException('Response', '102', 'Response is not json serializable')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
     def add_share_point_client(
             self,
-            client_name,
-            server_plan,
-            service_type,
-            index_server,
-            access_nodes_list,
-            **kwargs):
-        """Adds a new Office 365 Share Point Pseudo Client to the Commcell.
+            client_name: str,
+            server_plan: str,
+            service_type: Dict[str, int],
+            index_server: str,
+            access_nodes_list: List[Any],
+            **kwargs: Any
+        ) -> 'Client':
+        """Add a new Office 365 SharePoint Pseudo Client to the Commcell.
 
-            Args:
-                client_name                 (str)   --  name of the new Sharepoint Pseudo Client
+        This method creates a SharePoint pseudo client for Office 365, associating it with the specified server plan,
+        index server, and access nodes. Additional configuration can be provided via keyword arguments for authentication,
+        Azure app integration, certificate details, and cloud region selection.
 
-                server_plan                 (str)   --  server_plan to associate with the client
+        Args:
+            client_name: Name of the new SharePoint pseudo client.
+            server_plan: Name of the server plan to associate with the client.
+            service_type: Dictionary mapping SharePoint service types to their integer values.
+            index_server: Name of the index server for the virtual client.
+            access_nodes_list: List of client names (str) or Client objects to be added as access nodes.
+            **kwargs: Additional configuration options, such as:
+                - tenant_url (str): URL of the SharePoint tenant.
+                - user_username (str): Username for SharePoint user authentication.
+                - user_password (str): Password for SharePoint user authentication.
+                - azure_username (str): Username for Azure app authentication.
+                - azure_secret (str): Secret key for Azure app authentication.
+                - global_administrator (str): Username of the global administrator.
+                - global_administrator_password (str): Password for the global administrator.
+                - azure_app_id (str): Azure app ID for SharePoint Online.
+                - azure_app_key_id (str): App key for SharePoint Online.
+                - azure_directory_id (str): Azure directory ID for SharePoint Online.
+                - cert_string (str): Certificate string for authentication.
+                - cert_password (str): Certificate password.
+                - cloud_region (int): Cloud region for the SharePoint client (default is 1).
+                - shared_jr_directory (dict): Shared job results directory configuration.
+                - is_modern_auth_enabled (bool): Enable modern authentication (default is False).
+                - credential_name(str):  Credential
+        Returns:
+            Client: Instance of the Client class representing the newly created SharePoint pseudo client.
 
-                service_type                (dict)  --  service type of Sharepoint
-                                                         "ServiceType": {
-                                                                    "Sharepoint Global Administrator": 4
-                                                         }
+        Raises:
+            SDKException: If the client with the given name already exists, index server or server plan is not found,
+                failed to add the client, or if the response is empty or unsuccessful.
 
-                index_server                (str)   --  index server for virtual client
-
-                access_nodes_list           (list)  --  list containing client names / client objects
-
-            Kwargs :
-
-                tenant_url                  (str)   --  url of sharepoint tenant
-
-                user_username                (str)   --  username of sharepoint user
-
-                user_password               (str)   -- password of sharepoint user
-
-                azure_username              (str)   --  username of azure app
-
-                azure_secret                (str)   --  secret key of azure app
-
-                global_administrator        (str)   --  username of global administrator
-
-                global_administrator_password (str)  -- password of global administrator
-
-                azure_app_id            (str)       --  azure app id for sharepoint online
-
-                azure_app_key_id        (str)       --  app key for sharepoint online
-
-                azure_directory_id    (str)         --  azure directory id for sharepoint online
-
-                cert_string           (str)         -- certificate string
-
-                cert_password         (str)         -- certificate password
-
-                cloud_region            (int)   --  stores the cloud region for the SharePoint client
-                                                    - Default (Global Service) [1]
-                                                    - Germany [2]
-                                                    - China [3]
-                                                    - U.S. Government GCC [4]
-                                                    - U.S. Government GCC High [5]
-
-
-            Returns:
-                object  -   instance of the Client class for this new client
-
-            Raises:
-                SDKException:
-                    if client with given name already exists
-
-                    if index_server is not found
-
-                    if server_plan is not found
-
-                    if failed to add the client
-
-                    if response is empty
-
-                    if response is not success
-
+        Example:
+            >>> service_type = {
+            ...     "Sharepoint Global Administrator": 4,
+            ...     "Sharepoint Online": 2,
+            ...     "Sharepoint Azure Storage": 3
+            ... }
+            >>> access_nodes = ["client1", "client2"]
+            >>> client = clients.add_share_point_client(
+            ...     client_name="SharePointPseudo01",
+            ...     server_plan="O365Plan",
+            ...     service_type=service_type,
+            ...     index_server="IndexServer01",
+            ...     access_nodes_list=access_nodes,
+            ...     tenant_url="https://tenant.sharepoint.com",
+            ...     user_username="user@domain.com",
+            ...     user_password="password",
+            ...     cloud_region=1
+            ... )
+            >>> print(f"Created SharePoint client: {client.client_name}")
+        #ai-gen-doc
         """
         if self.has_client(client_name):
             raise SDKException('Client', '102', 'Client "{0}" already exists.'.format(client_name))
@@ -2225,10 +3005,9 @@ class Clients(object):
                 }
                 member_servers.append(client_dict)
 
-
-        server_resource_pool_map = server_plan_object._properties.get('storageResourcePoolMap',[])
+        server_resource_pool_map = server_plan_object._properties.get('storageResourcePoolMap', [])
         if server_resource_pool_map:
-            server_plan_resources= server_resource_pool_map[0].get('resources', None)
+            server_plan_resources = server_resource_pool_map[0].get('resources', None)
         else:
             server_plan_resources = None
 
@@ -2276,9 +3055,9 @@ class Clients(object):
             "cloudRegion": cloud_region,
             "isModernAuthEnabled": kwargs.get('is_modern_auth_enabled', False),
             "infraStructurePoolEnabled": False,
-             "office365Credentials": {
-                    "userName": ""
-                }
+            "office365Credentials": {
+                "userName": ""
+            }
         }
         if global_administrator:
             azure_app_key_id = b64encode(kwargs.get('azure_app_key_id').encode()).decode()
@@ -2304,65 +3083,83 @@ class Clients(object):
                 }
                 azure_app_dict.update(cert_dict)
 
-
-
             global_administrator_password = b64encode(kwargs.get('global_administrator_password').encode()).decode()
             request_json["clientInfo"]["sharepointPseudoClientProperties"]["sharepointBackupSet"][
                 "spOffice365BackupSetProp"]["azureAppList"] = {
-                    "azureApps": [
-                        azure_app_dict
-                    ]
-                }
+                "azureApps": [
+                    azure_app_dict
+                ]
+            }
 
             request_json["clientInfo"]["sharepointPseudoClientProperties"]["sharepointBackupSet"][
                 "spOffice365BackupSetProp"]["serviceAccounts"] = {
-                    "accounts": [
-                        {
-                            "serviceType": service_type["Sharepoint Global Administrator"],
-                            "userAccount": {
-                                "userName": global_administrator,
-                                "password": global_administrator_password
-                            }
+                "accounts": [
+                    {
+                        "serviceType": service_type["Sharepoint Global Administrator"],
+                        "userAccount": {
+                            "userName": global_administrator,
+                            "password": global_administrator_password
                         }
-                    ]
-                }
+                    }
+                ]
+            }
         else:
             user_password = b64encode(kwargs.get('user_password').encode()).decode()
             request_json["clientInfo"]["sharepointPseudoClientProperties"]["sharepointBackupSet"][
                 "spOffice365BackupSetProp"]["serviceAccounts"] = {
-                    "accounts": [
-                        {
-                            "serviceType": service_type["Sharepoint Online"],
-                            "userAccount": {
-                                "password": user_password,
-                                "userName": kwargs.get('user_username')
-                            }
+                "accounts": [
+                    {
+                        "serviceType": service_type["Sharepoint Online"],
+                        "userAccount": {
+                            "password": user_password,
+                            "userName": kwargs.get('user_username')
                         }
-                    ]
-                }
+                    }
+                ]
+            }
             if kwargs.get('is_modern_auth_enabled'):
                 azure_app_key_id = b64encode(kwargs.get('azure_app_key_id').encode()).decode()
 
-                azure_app_dict = {
-                    "azureAppId": kwargs.get('azure_app_id'),
-                    "azureAppKeyValue": azure_app_key_id,
-                    "azureDirectoryId": kwargs.get('azure_directory_id')
-                }
-
-                if 'cert_string' in kwargs:
-                    # cert_string needs to be encoded twice
-                    cert_string = b64encode(kwargs.get('cert_string')).decode()
-                    cert_string = b64encode(cert_string.encode()).decode()
-
-                    cert_password = b64encode(kwargs.get('cert_password').encode()).decode()
-
-                    cert_dict = {
-                        "certificate": {
-                            "certBase64String": cert_string,
-                            "certPassword": cert_password
+                if kwargs.get("credential_name", None):
+                    credential_properties = self._commcell_object.credentials.get(kwargs.get("credential_name"))
+                    credential_id = credential_properties.credential_id
+                    azure_app_dict = {
+                        "appStatus": 1,
+                        "azureAppType": 1,
+                        "certificate": {},
+                        "credentialEntity": {
+                            "credentialId": credential_id,
+                            "credentialName": kwargs.get("credential_name")
                         }
                     }
-                    azure_app_dict.update(cert_dict)
+
+                    tenant_info_dict = {
+                        "azureTenantID": kwargs.get('azure_directory_id')
+                    }
+                    request_json["clientInfo"]["sharepointPseudoClientProperties"]["sharepointBackupSet"][
+                        "spOffice365BackupSetProp"]["tenantInfo"] = tenant_info_dict
+
+                else:
+                    azure_app_dict = {
+                        "azureAppId": kwargs.get('azure_app_id'),
+                        "azureAppKeyValue": azure_app_key_id,
+                        "azureDirectoryId": kwargs.get('azure_directory_id')
+                    }
+
+                    if 'cert_string' in kwargs:
+                        # cert_string needs to be encoded twice
+                        cert_string = b64encode(kwargs.get('cert_string')).decode()
+                        cert_string = b64encode(cert_string.encode()).decode()
+
+                        cert_password = b64encode(kwargs.get('cert_password').encode()).decode()
+
+                        cert_dict = {
+                            "certificate": {
+                                "certBase64String": cert_string,
+                                "certPassword": cert_password
+                            }
+                        }
+                        azure_app_dict.update(cert_dict)
 
                 request_json["clientInfo"]["sharepointPseudoClientProperties"]["sharepointBackupSet"][
                     "spOffice365BackupSetProp"]["azureAppList"] = {
@@ -2432,40 +3229,55 @@ class Clients(object):
             raise SDKException('Response', '101', self._update_response_(response.text))
 
     def add_splunk_client(self,
-                          new_client_name,
-                          password,
-                          master_uri,
-                          master_node,
-                          user_name,
-                          plan):
-
-        """
-        Adds new splunk client after clientname and plan validation
+                          new_client_name: str,
+                          master_uri: str,
+                          master_node: str,
+                          plan: str,
+                          **kwargs: Any):
+        """Add a new Splunk client to the Commcell environment after validating the client name and plan.
 
         Args:
-            new_client_name       (str)   --  new splunk client name
-
-            password              (str)   --  splunk instance password
-
-            master_uri            (str)   --  URI for the master node
-
-            master_node           (str)   --  master node name
-
-            user_name             (str)   --  splunk instance username
-
-            plan                  (str)   --  plan assocated with the new client
+            new_client_name: Name of the new Splunk client to be added.
+            master_uri: URI for the Splunk master node.
+            master_node: Name of the master node client.
+            plan: Name of the plan to associate with the new client.
+            **kwargs: Additional keyword arguments for authentication:
+                password (str): Password for the Splunk instance (if not using credential_name).
+                user_name (str): Username for the Splunk instance (if not using credential_name).
+                credential_name (str): Name of the credential associated with the Splunk instance.
 
         Returns:
-                client_object     (obj)   --  client object associated with the new splunk client
+            The client object associated with the newly created Splunk client.
 
         Raises:
-            SDKException:
-                if failed to add the client
+            SDKException: If the plan or master client is invalid, or if the client creation fails.
 
-                if response is empty
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> # Using username and password
+            >>> splunk_client = clients.add_splunk_client(
+            ...     new_client_name="SplunkNode01",
+            ...     master_uri="https://splunk-master:8089",
+            ...     master_node="MasterNode",
+            ...     plan="SplunkPlan",
+            ...     user_name="admin",
+            ...     password="splunk_password"
+            ... )
+            >>> print(f"Created Splunk client: {splunk_client}")
 
-                if response is not success
+            >>> # Using credential name
+            >>> splunk_client = clients.add_splunk_client(
+            ...     new_client_name="SplunkNode02",
+            ...     master_uri="https://splunk-master:8089",
+            ...     master_node="MasterNode",
+            ...     plan="SplunkPlan",
+            ...     credential_name="SplunkCredential"
+            ... )
+            >>> print(f"Created Splunk client with credential: {splunk_client}")
+
+        #ai-gen-doc
         """
+
         if self._commcell_object.plans.has_plan(plan):
             plan_object = self._commcell_object.plans.get(plan)
             plan_id = int(plan_object.plan_id)
@@ -2501,10 +3313,6 @@ class Clients(object):
                                     "clientId": client_id,
                                     "clientName": master_node
                                 }
-                            },
-                            "splunkUser": {
-                                "password": password,
-                                "userName": user_name
                             }
                         }
                     }
@@ -2520,6 +3328,21 @@ class Clients(object):
                 "clientName": new_client_name
             }
         }
+
+        if 'credential_name' not in kwargs:
+            request_json["clientInfo"]["distributedClusterInstanceProperties"]["clusterConfig"]["splunkConfig"][
+                "splunkUser"] = {
+                "password": kwargs.get('password'),
+                "userName": kwargs.get('user_name')
+            }
+        else:
+            cred_name=kwargs.get('credential_name')
+            self.credential = self._commcell_object.credentials.get(cred_name)
+            request_json["clientInfo"]["distributedClusterInstanceProperties"]["clusterConfig"]["splunkConfig"][
+                "splunkUserCredInfo"] = {
+                "credentialId": self.credential.credential_id,
+                "credentialName": cred_name
+            }
 
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._ADD_SPLUNK_CLIENT, request_json
@@ -2554,56 +3377,65 @@ class Clients(object):
             raise SDKException('Response', '101', self._update_response_(response.text))
 
     def add_yugabyte_client(self,
-                            instance_name,
-                            db_host,
-                            api_token,
-                            universe_name,
-                            config_name,
-                            credential_name,
-                            content,
-                            plan_name,
-                            data_access_nodes,
-                            user_uuid,
-                            universe_uuid,
-                            config_uuid):
+                            instance_name: str,
+                            db_host: str,
+                            yugabyte_credname: str,
+                            universe_name: str,
+                            config_name: str,
+                            credential_name: str,
+                            content: List[str],
+                            plan_name: str,
+                            data_access_nodes: List[str],
+                            user_uuid: str,
+                            universe_uuid: str,
+                            config_uuid: str):
+        """Add a new Yugabyte client to the Commcell environment.
 
-        """
-        Adds new yugabyte client
+        This method creates a new Yugabyte client using the provided configuration details,
+        including instance information, database host, API token, universe details, customer
+        configuration, credentials, content paths, plan association, and data access nodes.
+
         Args:
-            instance_name            (str)   --  new yugabyte instance name
 
-            db_host                  (str)   --  hostname of the yugabyteanywhere application
-
-            api_token                (str)   --  apiToken of the yugabyteanywhere user
-
-            universe_name            (str)   --  universe name to be backed up
-
-            config_name              (str)   --  customer configuration name
-
-            credential_name          (str)   --  credential name associated with customer config
-
-            content                  (str)   --  content of the default subclient
-
-            plan_name                (str)   -- name of the plan to be associated
-
-            data_access_nodes        (str)   -- list of data access nodes to be used
-
-            user_uuid                (str)   --  UUID of the yugabytedb user
-
-            universe_uuid            (str)   --  UUID of the yugabytedb universe
-
-            config_uuid              (str)   --  UUID of the yugabytedb user configuration
+            instance_name: Name for the new Yugabyte instance.
+            db_host: Hostname of the YugabyteAnywhere application.
+            yugabyte_credname: yugabyte credential name.
+            universe_name: Name of the Yugabyte universe to be backed up.
+            config_name: Customer configuration name.
+            credential_name: Credential name associated with the customer configuration.
+            content: List of content paths for the default subclient.
+            plan_name: Name of the plan to associate with the client.
+            data_access_nodes: List of data access node client names.
+            user_uuid: UUID of the YugabyteDB user.
+            universe_uuid: UUID of the YugabyteDB universe.
+            config_uuid: UUID of the YugabyteDB user configuration.
 
         Returns:
-                client_object     (obj)   --  client object associated with the new yugabyte client
+            The client object associated with the newly created Yugabyte client.
 
         Raises:
-            SDKException:
-                if failed to add the client
+            SDKException: If the client creation fails, the response is empty, or the response indicates an error.
 
-                if response is empty
+        Example:
+            >>> content_paths = ["/data/yugabyte/table1", "/data/yugabyte/table2"]
+            >>> access_nodes = ["node1", "node2"]
+            >>> client_obj = clients.add_yugabyte_client(
+            ...     instance_name="YB_Instance01",
+            ...     db_host="yugabyte.example.com",
+            ...     yugabyte_credname="ybcredname",
+            ...     universe_name="TestUniverse",
+            ...     config_name="CustomerConfig01",
+            ...     credential_name="YB_Credential",
+            ...     content=content_paths,
+            ...     plan_name="YB_BackupPlan",
+            ...     data_access_nodes=access_nodes,
+            ...     user_uuid="user-uuid-123",
+            ...     universe_uuid="universe-uuid-456",
+            ...     config_uuid="config-uuid-789"
+            ... )
+            >>> print(f"Created Yugabyte client: {client_obj}")
 
-                if response is not success
+        #ai-gen-doc
         """
 
         content_temp = []
@@ -2614,7 +3446,11 @@ class Clients(object):
         for node in data_access_nodes:
             access_nodes.append({"clientName": node})
 
-        apitoken_temp = b64encode(api_token.encode()).decode()
+        yugabyte_credential = self._commcell_object.credentials.get(yugabyte_credname)
+        yugabyte_cred_id = yugabyte_credential.credential_id
+
+        s3_credential = self._commcell_object.credentials.get(credential_name)
+        s3_cred_id = s3_credential.credential_id
 
         request_json = {
             "createPseudoClientRequest": {
@@ -2639,7 +3475,10 @@ class Clients(object):
                         "clusterConfig": {
                             "yugabytedbConfig": {
                                 "dbHost": db_host,
-                                "apiToken": apitoken_temp,
+                                "yugaByteCredInfo": {
+                                    "credentialId": yugabyte_cred_id,
+                                    "credentialName": yugabyte_credname
+                                },
                                 "customer": {
                                     "name": "",
                                     "uuid": user_uuid
@@ -2658,6 +3497,7 @@ class Clients(object):
                                     "stagingType": 1,
                                     "stagingCredentials": {
                                         "credentialName": credential_name,
+                                        "credentialId": s3_cred_id
                                     }
                                 }
                             }
@@ -2705,60 +3545,72 @@ class Clients(object):
             raise SDKException('Response', '101', self._update_response_(response.text))
 
     def add_couchbase_client(self,
-                             instance_name,
-                             data_access_nodes,
-                             user_name,
-                             password,
-                             port,
-                             staging_type,
-                             staging_path,
-                             credential_name,
-                             service_host,
-                             plan_name,
+                             instance_name: str,
+                             data_access_nodes: List[str],
+                             couchbase_credname: str,
+                             port: Union[str, int],
+                             staging_type: str,
+                             staging_path: str,
+                             credential_name: str,
+                             service_host: str,
+                             plan_name: str,
+                             db_host: str
                              ):
-        """
-        Adds new couchbase client
+        """Add a new Couchbase client to the Commcell environment.
+
+        This method creates a Couchbase pseudo-client with the specified configuration,
+        including data access nodes, credentials, staging type, and associated plan.
+        Supports both FileSystem and S3 staging types.
+
         Args:
+            instance_name: Name for the new Couchbase instance.
+            data_access_nodes: List of client names to be used as data access nodes.
+            couchbase_credname: Couchbase credential name.
+            port: Couchbase database port (as string or integer).
+            staging_type: Staging type, either "FileSystem" or "S3".
+            staging_path: Path for staging data (filesystem path or S3 bucket path).
+            credential_name: Name of the S3 credential (required for S3 staging).
+            service_host: AWS service host (required for S3 staging).
+            plan_name: Name of the plan to associate with the client.
+            db_host: Couchbase database host.
 
-                instance_name            (str)   --  new couchbase instance name
+        Returns:
+            Object representing the newly created Couchbase client.
 
-                data_access_nodes        (str)   -- list of data access nodes to be used
-
-                user_name                (str)   --  couchbase admin username
-
-                password                 (str)   --  couchbase admin password
-
-                port                     (str)   --  couchbase db port
-
-                staging_type             (str)   --  staging type : FileSystem or S3
-
-                staging_path             (str)   --  staging path
-
-                credential_name          (str)   --  name of the s3 credential
-
-                service_host             (str)   --  aws service host
-
-                plan_name                (str)   --  name of the plan to be associated
+        Raises:
+            SDKException: If the client creation fails, the response is empty, or the response indicates an error.
 
 
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> couchbase_client = clients.add_couchbase_client(
+            ...     instance_name="CB_Instance01",
+            ...     data_access_nodes=["node1", "node2"],
+            ...     user_name="admin",
+            ...     password="securepass",
+            ...     port=8091,
+            ...     staging_type="FileSystem",
+            ...     staging_path="/mnt/couchbase_staging",
+            ...     credential_name="",
+            ...     service_host="",
+            ...     plan_name="CouchbasePlan"
+            ... )
+            >>> print(f"Created Couchbase client: {couchbase_client}")
 
-            Returns:
-                    client_object     (obj)   --  client object associated with the new couchbase client
-
-            Raises:
-                SDKException:
-                    if failed to add the client
-
-                    if response is empty
-
-                    if response is not success"""
+        #ai-gen-doc
+        """
 
         access_nodes = []
         for node in data_access_nodes:
             access_nodes.append({"clientName": node})
-        pwd = b64encode(password.encode()).decode()
 
         port = int(port)
+
+        couchbase_credential = self._commcell_object.credentials.get(couchbase_credname)
+        couchbase_cred_id = couchbase_credential.credential_id
+
+        s3_credential = self._commcell_object.credentials.get(credential_name)
+        s3_cred_id = s3_credential.credential_id
 
         if staging_type == "FileSystem":
             request_json = {
@@ -2780,9 +3632,10 @@ class Clients(object):
                             "clusterConfig": {
                                 "couchbaseConfig": {
                                     "port": port,
-                                    "user": {
-                                        "userName": user_name,
-                                        "password": pwd
+                                    "dbHost": db_host,
+                                    "couchBaseCMCredInfo": {
+                                        "credentialId": couchbase_cred_id,
+                                        "credentialName": couchbase_credname
                                     },
                                     "staging": {
                                         "stagingType": 0,
@@ -2821,9 +3674,10 @@ class Clients(object):
                             "clusterConfig": {
                                 "couchbaseConfig": {
                                     "port": port,
-                                    "user": {
-                                        "userName": user_name,
-                                        "password": pwd
+                                    "dbHost": db_host,
+                                    "couchBaseCMCredInfo": {
+                                        "credentialId": couchbase_cred_id,
+                                        "credentialName": couchbase_credname
                                     },
                                     "staging": {
                                         "stagingType": 1,
@@ -2833,7 +3687,8 @@ class Clients(object):
                                         "cloudURL": "s3.amazonaws.com",
                                         "recordType": "AMAZON_S3",
                                         "stagingCredentials": {
-                                            "credentialName": credential_name
+                                            "credentialName": credential_name,
+                                            "credentialId": s3_cred_id
                                         }
                                     }
                                 }
@@ -2883,82 +3738,89 @@ class Clients(object):
 
     def add_exchange_client(
             self,
-            client_name,
-            index_server,
-            clients_list,
-            server_plan,
-            recall_service_url,
-            job_result_dir,
-            exchange_servers,
-            service_accounts,
-            azure_app_key_secret,
-            azure_tenant_name,
-            azure_app_key_id,
-            environment_type,
-            backupset_type_to_create = 1,
-            **kwargs):
-        """Adds a new Exchange Mailbox Client to the Commcell.
+            client_name: str,
+            index_server: str,
+            clients_list: List[Any],
+            server_plan: str,
+            recall_service_url: str,
+            job_result_dir: str,
+            exchange_servers: List[Any],
+            service_accounts: List[Dict[str, Any]],
+            azure_app_key_secret: str = "",
+            azure_tenant_name: str = "",
+            azure_app_key_id: str = "",
+            environment_type: int = 0,
+            backupset_type_to_create: int = 1,
+            **kwargs: Any
+        ) -> Any:
+        """Add a new Exchange Mailbox Client to the Commcell.
 
-            Args:
-                client_name             (str)   --  name of the new Exchange Mailbox Client
+        This method creates a new Exchange Mailbox Client with the specified configuration,
+        including associated member servers, service accounts, Exchange servers, and Azure credentials.
+        It supports both on-premise and Exchange Online environments.
 
-                index_server            (str)   --  index server for virtual client
+        Args:
+            client_name: Name of the new Exchange Mailbox Client.
+            index_server: Index server for the virtual client.
+            clients_list: List of client names (str) or client objects to associate with the virtual client.
+            server_plan: Server plan to associate with the client.
+            recall_service_url: Recall service URL for the client.
+            job_result_dir: Directory path for job results.
+            exchange_servers: List of Exchange server names or objects.
+            service_accounts: List of dictionaries containing service account details. Each dictionary should include:
+                - 'ServiceType': int
+                - 'Username': str
+                - 'Password': str
+            azure_app_key_secret: App secret for Exchange Online.
+            azure_tenant_name: Azure tenant name for Exchange Online.
+            azure_app_key_id: App key ID for Exchange Online.
+            environment_type: Exchange environment type.
+                Supported values:
+                    1: Exchange on-premise
+                    2: Exchange Hybrid with on-premise Exchange Server
+                    3: Exchange Hybrid with on-premise AD
+                    4: Exchange Online
+            backupset_type_to_create: Backup set type to create.
+                Supported values:
+                    1: User mailbox (default)
+                    2: Journal mailbox
+                    3: Content store mailbox
+            **kwargs: Additional optional arguments.
+                - is_modern_auth_enabled (bool): Whether to enable modern authentication for Exchange Online. Default is True.
+                - credential_name (str): Credential name for Azure authentication.
 
-                clients_list            (list)  --  list containing client names / client objects,
-                to associate with the Virtual Client
+        Returns:
+            Instance of the Client class representing the newly created Exchange Mailbox Client.
 
-                server_plan          (str)   --  server_plan to associate with the client
+        Raises:
+            SDKException: If a client with the given name already exists, if the client creation fails,
+                or if the response from the server is invalid.
 
-                recall_service_url      (str)   --  recall service for client
-
-                job_result_dir          (str)   --  job result directory path
-
-                exchange_servers        (list)  --  list of exchange servers
-
-                azure_app_key_secret    (str)   --  app secret for the Exchange online
-
-                azure_tenant_name       (str)   --  tenant for exchange online
-
-                azure_app_key_id        (str)   --  app key for exchange online
-
-                environment_type        (int)   --  Exchange Environment Type for the Client.
-                    Supported Value and corresponding types:
-                        1   :   Exchange on- premise
-                        2   :   Exchange Hybrid with on- premise Exchange Server
-                        3   :   Exchange Hybrid with on- premise AD
-                        4   :   Exchange Online
-
-                backupset_type_to_create (int)  --  Backup set type to create
-                    Supported Value and corresponding types:
-                        1   :   user mailbox
-                        2   :   journal mailbox
-                        3   :   content store mailbox
-                    Default Value: 1 (user mailbox)
-
-                kwargs                  (dict)  --  Extra/ Additional Arguments
-                    Accepted Values:
-                        is_modern_auth_enabled  --
-                            (bool)  --  Whether to create Exchange Online client with modern auth
-                                        enabled
-                            Default Value:
-                                True
-                            Applicable For:
-                                Exchange Online Client
-
-
-            Returns:
-                object  -   instance of the Client class for this new client
-
-            Raises:
-                SDKException:
-                    if client with given name already exists
-
-                    if failed to add the client
-
-                    if response is empty
-
-                    if response is not success
-
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> service_accounts = [
+            ...     {'ServiceType': 1, 'Username': 'admin@domain.com', 'Password': 'password123'},
+            ...     {'ServiceType': 2, 'Username': 'admin2@domain.com', 'Password': 'password456'}
+            ... ]
+            >>> exchange_servers = ['EXCH01', 'EXCH02']
+            >>> new_client = clients.add_exchange_client(
+            ...     client_name='ExchangeClient01',
+            ...     index_server='IndexServer01',
+            ...     clients_list=['ClientA', 'ClientB'],
+            ...     server_plan='ExchangePlan',
+            ...     recall_service_url='https://recall.service.url',
+            ...     job_result_dir='/var/results',
+            ...     exchange_servers=exchange_servers,
+            ...     service_accounts=service_accounts,
+            ...     azure_app_key_secret='app_secret',
+            ...     azure_tenant_name='tenant_name',
+            ...     azure_app_key_id='app_key_id',
+            ...     environment_type=4,
+            ...     backupset_type_to_create=1,
+            ...     is_modern_auth_enabled=True
+            ... )
+            >>> print(f"Created Exchange client: {new_client}")
+        #ai-gen-doc
         """
         if self.has_client(client_name):
             raise SDKException('Client', '102', 'Client "{0}" already exists.'.format(client_name))
@@ -3022,7 +3884,6 @@ class Clients(object):
 
         azure_app_key_secret = b64encode(azure_app_key_secret.encode()).decode()
 
-
         server_plan_resources = server_plan_object._properties.get('storageResourcePoolMap')[0].get('resources')
 
         # use resource pool only if resource pool type is Office365 or Exchange
@@ -3037,7 +3898,7 @@ class Clients(object):
                 "clientType": 25,
                 "plan": server_plan_dict,
                 "exchangeOnePassClientProperties": {
-                    "backupSetTypeToCreate" : backupset_type_to_create,
+                    "backupSetTypeToCreate": backupset_type_to_create,
                     "recallService": recall_service_url,
                     "onePassProp": {
                         "environmentType": environment_type,
@@ -3045,7 +3906,6 @@ class Clients(object):
                         "accounts": {
                             "adminAccounts": account_list
                         }
-
                     },
                     "memberServers": {
                         "memberServers": member_servers
@@ -3060,32 +3920,49 @@ class Clients(object):
                 "clientName": client_name
             }
         }
-
-        if int(self._commcell_object.version.split(".")[1]) >= 23:
+        if kwargs.get("credential_name", None):
+            credential_properties = self._commcell_object.credentials.get(kwargs.get("credential_name"))
+            credential_id = credential_properties.credential_id
             azure_app_dict = {
-                            "azureApps": [
-                                {
-                                    "azureDirectoryId": azure_tenant_name,
-                                    "azureAppKeyValue": azure_app_key_secret,
-                                    "azureAppId": azure_app_key_id,
-                                    "appStatus": 1,
-                                    "azureAppType": 1
-                                }
-                            ]
+                "azureApps": [
+                    {
+                        "appStatus": 1,
+                        "azureAppType": 1,
+                        "credentialEntity": {
+                            "credentialId": credential_id,
+                            "credentialName": kwargs.get("credential_name")
                         }
+                    }
+                ]
+            }
+            request_json["clientInfo"]["exchangeOnePassClientProperties"]["onePassProp"][
+                "azureAppList"] = azure_app_dict
+        elif int(self._commcell_object.version.split(".")[1]) >= 23:
+            azure_app_dict = {
+                "azureApps": [
+                    {
+                        "azureDirectoryId": azure_tenant_name,
+                        "azureAppKeyValue": azure_app_key_secret,
+                        "azureAppId": azure_app_key_id,
+                        "appStatus": 1,
+                        "azureAppType": 1
+                    }
+                ]
+            }
             request_json["clientInfo"]["exchangeOnePassClientProperties"]["onePassProp"][
                 "azureAppList"] = azure_app_dict
         else:
             azure_app_dict = {
-                            "azureAppKeySecret": azure_app_key_secret,
-                            "azureTenantName": azure_tenant_name,
-                            "azureAppKeyID": azure_app_key_id
-                        }
+                "azureAppKeySecret": azure_app_key_secret,
+                "azureTenantName": azure_tenant_name,
+                "azureAppKeyID": azure_app_key_id
+            }
             request_json["clientInfo"]["exchangeOnePassClientProperties"]["onePassProp"][
                 "azureDetails"] = azure_app_dict
 
-        if int(self._commcell_object.version.split(".")[1]) >= 25 and (environment_type == 4 or environment_type == 2) :
-            request_json["clientInfo"]["clientType"] = 37 #37 - Office365 Client type. Exchange Online falls under O365 AppType
+        if int(self._commcell_object.version.split(".")[1]) >= 25 and (environment_type == 4 or environment_type == 2):
+            request_json["clientInfo"][
+                "clientType"] = 37  # 37 - Office365 Client type. Exchange Online falls under O365 AppType
             request_json["clientInfo"]["exchangeOnePassClientProperties"]["onePassProp"][
                 "isModernAuthEnabled"] = kwargs.get('is_modern_auth_enabled', True)
         if is_resource_pool_enabled:
@@ -3125,34 +4002,41 @@ class Clients(object):
 
     def add_case_client(
             self,
-            client_name,
-            server_plan,
-            dc_plan,
-            hold_type):
-        """Adds a new Exchange Mailbox Client to the Commcell.
+            client_name: str,
+            server_plan: str,
+            dc_plan: str,
+            hold_type: int
+        ) -> 'Client':
+        """Add a new Exchange Mailbox Case Client to the Commcell.
 
-            Args:
-                client_name             (str)   --  name of the new Case Client
+        This method creates a new Case Client with the specified name, associates it with the provided
+        server and DC plans, and sets the client type according to the hold_type value.
 
-                server_plan             (str)   --  Server plan to assocaite to case
+        Args:
+            client_name: Name of the new Case Client to be created.
+            server_plan: Name of the server plan to associate with the case client.
+            dc_plan: Name of the DC plan to associate with the case client.
+            hold_type: Type of client (valid values: 1, 2, or 3).
 
-                dc_plan                (str)    --  DC plan to assocaite to case
+        Returns:
+            Client: An instance of the Client class representing the newly created case client.
 
-                hold_type              (int)    --  Type of client (values: 1, 2, 3)
+        Raises:
+            SDKException: If a client with the given name already exists, if the client creation fails,
+                if the response is empty, or if the response indicates failure.
 
-            Returns:
-                object  -   instance of the Client class for this new client
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> new_client = clients.add_case_client(
+            ...     client_name="LegalCase01",
+            ...     server_plan="ServerPlanA",
+            ...     dc_plan="DCPlanB",
+            ...     hold_type=1
+            ... )
+            >>> print(f"Created case client: {new_client}")
+            >>> # The returned Client object can be used for further client operations
 
-            Raises:
-                SDKException:
-                    if client with given name already exists
-
-                    if failed to add the client
-
-                    if response is empty
-
-                    if response is not success
-
+        #ai-gen-doc
         """
 
         plans_list = []
@@ -3232,63 +4116,86 @@ class Clients(object):
 
     def add_salesforce_client(
             self,
-            client_name,
-            access_node,
-            salesforce_options,
-            db_options=None,
-            **kwargs
-    ):
-        """Adds a new Salesforce Client to the Commcell.
+            client_name: str,
+            access_node: str,
+            salesforce_options: Dict[str, Any],
+            db_options: Optional[Dict[str, Any]] = None,
+            **kwargs: Any
+        ):
+        """Add a new Salesforce Client to the Commcell environment.
 
-            Args:
-                client_name          (str)    --    salesforce pseudo client name
-                access_node          (str)    --    access node name
+        This method creates a Salesforce pseudo client with the specified configuration,
+        including Salesforce connection options, access node, and optional database settings
+        for sync operations. Additional keyword arguments allow customization of instance name,
+        cache paths, storage policy, and backup streams.
 
-                salesforce_options   (dict)   --    salesforce options
-                                                    {
-                                                        "login_url": 'salesforce login url',
-                                                        "consumer_id": 'salesforce consumer key',
-                                                        "consumer_secret": 'salesforce consumer secret',
-                                                        "salesforce_user_name": 'salesforce login user',
-                                                        "salesforce_user_password": 'salesforce user password',
-                                                        "salesforce_user_token": 'salesforce user token',
-                                                        "sandbox": True or False (default False)
-                                                    }
+        Args:
+            client_name: Name of the Salesforce pseudo client to be created.
+            access_node: Name of the access node for the client.
+            salesforce_options: Dictionary containing Salesforce connection options, such as:
+                - login_url: Salesforce login URL.
+                - consumer_id: Salesforce consumer key.
+                - consumer_secret: Salesforce consumer secret.
+                - salesforce_user_name: Salesforce login user.
+                - salesforce_user_password: Salesforce user password.
+                - salesforce_user_token: Salesforce user token.
+                - sandbox: Boolean indicating sandbox environment (default False).
+            db_options: Optional dictionary for database sync configuration, such as:
+                - db_enabled: Boolean to enable database sync.
+                - db_type: 'SQLSERVER' or 'POSTGRESQL'.
+                - db_host_name: Database hostname.
+                - db_instance: Database instance name.
+                - db_name: Database name.
+                - db_port: Database port.
+                - db_user_name: Database user name.
+                - db_user_password: Database user password.
+            **kwargs: Additional keyword arguments for client customization:
+                - instance_name: Name of the Salesforce instance.
+                - download_cache_path: Path for download cache.
+                - mutual_auth_path: Path to mutual auth certificate.
+                - storage_policy: Storage policy name.
+                - streams: Number of backup streams.
 
-                db_options           (dict)   --    database options to configure sync db
-                                                    {
-                                                        "db_enabled": 'True or False',
-                                                        "db_type": 'SQLSERVER or POSTGRESQL',
-                                                        "db_host_name": 'database hostname',
-                                                        "db_instance": 'database instance name',
-                                                        "db_name": 'database name',
-                                                        "db_port": 'port of the database',
-                                                        "db_user_name": 'database user name',
-                                                        "db_user_password": 'database user password'
-                                                    }
+        Returns:
+            Client: Instance of the Client class representing the newly added Salesforce client.
 
-                **kwargs             (dict)   --    dict of keyword arguments as follows
+        Raises:
+            SDKException: If a client with the given name already exists, if required inputs are missing,
+                or if the client addition fails due to an unsuccessful response.
 
-                                                    instance_name           (str)   -- name of the salesforce instance
-                                                    download_cache_path     (str)   -- download cache path
-                                                    mutual_auth_path        (str)   -- mutual auth certificate path
-                                                    storage_policy          (str)   -- storage policy
-                                                    streams                 (int)   -- number of streams
+        Example:
+            >>> salesforce_options = {
+            ...     "login_url": "https://login.salesforce.com",
+            ...     "consumer_id": "your_consumer_key",
+            ...     "consumer_secret": "your_consumer_secret",
+            ...     "salesforce_user_name": "user@example.com",
+            ...     "salesforce_user_password": "password123",
+            ...     "salesforce_user_token": "user_token",
+            ...     "sandbox": False
+            ... }
+            >>> db_options = {
+            ...     "db_enabled": True,
+            ...     "db_type": "SQLSERVER",
+            ...     "db_host_name": "db.example.com",
+            ...     "db_instance": "instance1",
+            ...     "db_name": "sfdb",
+            ...     "db_port": 1433,
+            ...     "db_user_name": "dbuser",
+            ...     "db_user_password": "dbpass"
+            ... }
+            >>> client = clients.add_salesforce_client(
+            ...     client_name="SalesforceClient01",
+            ...     access_node="AccessNode01",
+            ...     salesforce_options=salesforce_options,
+            ...     db_options=db_options,
+            ...     instance_name="SF_Instance",
+            ...     download_cache_path="/tmp/sf_cache",
+            ...     storage_policy="SalesforcePolicy",
+            ...     streams=4
+            ... )
+            >>> print(f"Salesforce client created: {client}")
 
-
-
-            Returns:
-                object  -   instance of the Client class for this new client
-
-            Raises:
-                SDKException:
-                    if client with given name already exists
-
-                    if failed to add the client
-
-                    if response is empty
-
-                    if response is not success
+        #ai-gen-doc
         """
         if self.has_client(client_name):
             raise SDKException('Client', '102', 'Client "{0}" already exists.'.format(client_name))
@@ -3373,28 +4280,40 @@ class Clients(object):
                     "db_instance"]
         self._process_add_response(request_json, self._ADD_SALESFORCE_CLIENT)
 
-    def add_azure_client(self, client_name, access_node, azure_options):
-        """
-            Method to add new azure cloud client
-            Args:
-                client_name     (str)   -- azure client name
-                access_node     (str)   -- cloud access node name
-                azure_options   (dict)  -- dictionary for Azure details:
-                                            Example:
-                                               azure_options = {
-                                                    "subscription_id": 'subscription id',
-                                                    "tenant_id": 'tenant id',
-                                                    "application_id": 'application id',
-                                                    "password": 'application password',
-                                                }
-            Returns:
-                object  -   instance of the Client class for this new client
-            Raises:
-                SDKException:
-                    if None value in azure options
+    def add_azure_client(self, client_name: str, access_node: str, azure_options: Dict[str, str]):
+        """Add a new Azure cloud client to the Commcell environment.
 
-                    if pseudo client with same name already exists
+        This method creates a pseudo client for Azure cloud by providing the required subscription, tenant,
+        application, and password details. The client will be associated with the specified access node.
 
+        Args:
+            client_name: Name of the Azure cloud client to be created.
+            access_node: Name of the cloud access node to associate with the client.
+            azure_options: Dictionary containing Azure configuration details. Must include:
+                - "subscription_id": Azure subscription ID as a string.
+                - "tenant_id": Azure tenant ID as a string.
+                - "application_id": Azure application ID as a string.
+                - "password": Azure application password as a string.
+
+        Returns:
+            Instance of the Client class representing the newly created Azure client.
+
+        Raises:
+            SDKException: If any value in azure_options is None.
+            SDKException: If a client with the same name already exists.
+
+        Example:
+            >>> azure_options = {
+            ...     "subscription_id": "your-subscription-id",
+            ...     "tenant_id": "your-tenant-id",
+            ...     "application_id": "your-application-id",
+            ...     "password": "your-application-password"
+            ... }
+            >>> clients = Clients(commcell_object)
+            >>> new_client = clients.add_azure_client("AzureClient01", "AccessNode01", azure_options)
+            >>> print(f"Created Azure client: {new_client}")
+
+        #ai-gen-doc
         """
 
         if None in azure_options.values():
@@ -3453,38 +4372,50 @@ class Clients(object):
 
         self._process_add_response(request_json)
 
-    def add_amazon_client(self, client_name, access_node, amazon_options):
-        """
-            Method to add new amazon cloud client
-            Args:
-                client_name     (str)   -- amazon client name
-                access_node     (str)   -- cloud access node name
-                amazon_options   (dict)  -- dictionary for Amazon details:
-                AccessKey and Secretkey authentication
-                                            Example:
-                                               amazon_options = {
-                                                    "accessKey": amazon_options.get("accessKey"),
-                                                    "secretkey": amazon_options.get("secretkey")
-                                                }
-                IAM authentication ( pass the key value pair "useIamRole":True )
-                                            Example:
-                                               amazon_options = {
-                                                    "useIamRole": amazon_options.get("useIamRole"),
-                                                }
-                STS Role Authentication ( pass the Role arn Name in accessKey of amazon_options)
-                                            Example:
-                                               amazon_options = {
-                                                    "accessKey": amazon_options.get("accessKey"),
-                                                }
+    def add_amazon_client(self, client_name: str, access_node: str, amazon_options: Dict[str, Any]):
+        """Add a new Amazon cloud client to the Commcell environment.
 
-            Returns:
-                object  -   instance of the Client class for this new client
-            Raises:
-                SDKException:
-                    if None value in amazon options
+        This method creates a new Amazon cloud client using the provided authentication details.
+        The `amazon_options` dictionary should contain the necessary credentials or IAM role information
+        for authenticating with Amazon Web Services.
 
-                    if pseudo client with same name already exists
+        Args:
+            client_name: Name of the Amazon cloud client to be created.
+            access_node: Name of the cloud access node to associate with the client.
+            amazon_options: Dictionary containing Amazon authentication details. Supported authentication methods:
+                - AccessKey and SecretKey authentication:
+                    Example:
+                        amazon_options = {
+                            "accessKey": "your-access-key",
+                            "secretkey": "your-secret-key"
+                        }
+                - IAM Role authentication (set "useIamRole" to True):
+                    Example:
+                        amazon_options = {
+                            "useIamRole": True
+                        }
+                - STS Role ARN authentication (provide Role ARN in "accessKey"):
+                    Example:
+                        amazon_options = {
+                            "accessKey": "arn:aws:iam::123456789012:role/YourRole"
+                        }
 
+        Returns:
+            Instance of the Client class representing the newly created Amazon cloud client.
+
+        Raises:
+            SDKException: If any value in amazon_options is None, or if a client with the same name already exists.
+
+        Example:
+            >>> amazon_options = {
+            ...     "accessKey": "AKIA...",
+            ...     "secretkey": "abcd1234..."
+            ... }
+            >>> clients = Clients(commcell_object)
+            >>> new_client = clients.add_amazon_client("AmazonClient01", "AccessNode01", amazon_options)
+            >>> print(f"Created Amazon client: {new_client}")
+
+        #ai-gen-doc
         """
 
         if None in amazon_options.values():
@@ -3554,27 +4485,39 @@ class Clients(object):
 
         self._process_add_response(request_json)
 
-    def add_google_client(self, client_name, access_node, google_options):
-        """
-            Method to add new google cloud client
-            Args:
-                client_name     (str)   -- google client name
-                access_node     (str)   -- cloud access node name
-                google_options   (dict)  -- dictionary for google details:
-                                            Example:
-                                               google_options = {
-                                                    "serviceAccountId": google_options.get("serviceAccountId"),
-                                                    "userName": google_options.get("userName"),
-                                                    "password": google_options.get("password")
-                                                }
-            Returns:
-                object  -   instance of the Client class for this new client
-            Raises:
-                SDKException:
-                    if None value in google options
+    def add_google_client(self, client_name: str, access_node: str, google_options: Dict[str, Any]) -> 'Client':
+        """Add a new Google Cloud client to the Commcell environment.
 
-                    if pseudo client with same name already exists
+        This method creates a pseudo client for Google Cloud using the provided credentials and access node.
+        The google_options dictionary must contain valid values for 'serviceAccountId', 'userName', and 'password'.
 
+        Args:
+            client_name: Name of the Google Cloud client to be created.
+            access_node: Name of the cloud access node to associate with the client.
+            google_options: Dictionary containing Google Cloud credentials and details.
+                Required keys:
+                    - serviceAccountId: Service account ID for Google Cloud.
+                    - userName: Username for authentication.
+                    - password: Password for authentication.
+
+        Returns:
+            Client: Instance of the Client class representing the newly created Google Cloud client.
+
+        Raises:
+            SDKException: If any value in google_options is None.
+            SDKException: If a pseudo client with the same name already exists.
+
+        Example:
+            >>> google_options = {
+            ...     "serviceAccountId": "my-service-account-id",
+            ...     "userName": "admin@domain.com",
+            ...     "password": "securepassword"
+            ... }
+            >>> clients = Clients(commcell_object)
+            >>> new_client = clients.add_google_client("GoogleClient01", "AccessNode01", google_options)
+            >>> print(f"Created Google Cloud client: {new_client}")
+
+        #ai-gen-doc
         """
 
         if None in google_options.values():
@@ -3628,42 +4571,77 @@ class Clients(object):
 
         self._process_add_response(request_json)
 
-    def add_googleworkspace_client(self, plan_name, client_name, indexserver,
-                                   service_account_details, credential_name,
-                                   instance_type, **kwargs):
-        """
-                    Method to add new google cloud client
-                    Args:
-                        plan_name (str): Name of server plan
-                        client_name (str): The name to be assigned to the client.
-                        indexserver (str): The index server address used for the client.
-                        credential_name (str): Credential Name that created in Credential Vault.
-                        instance_type (int): Type of Google client
-                        service_account_details (dict): A dictionary containing service account details
-                                                        required for authentication and authorization.
-                                                           Example:
-                                                           "ServiceAccountDetails": {
-                                                                   "accounts": [
-                                                                     {
-                                                                       "serviceType": "ExampleAgentServiceType",
-                                                                       "AdminSmtpAddress": "example@google.com"
-                                                                     }
-                                                                   ]
-                                                           }
-                        **kwargs (dict) : Additional parameters.
-                                            client_group_name (str) : Access Node Group Name.
-                                            access_node (str) : Access Node name.
-                                            jr_path (str): Job Results Dir path. Mandatory if client_group_name is provided.
-                                            no_of_streams(int): Number of streams to create a client.
-                                          Note:
-                                            Either client_group_name or access_node should be provided.
-                                            If both are given client_group_name will be treated as default.
-                    Returns:
-                        object  -   instance of the Client class for this new client
-                    Raises:
-                        SDKException:
-                            if client_group_name is given None
+    def add_googleworkspace_client(
+        self,
+        plan_name: str,
+        client_name: str,
+        indexserver: str,
+        service_account_details: Dict[str, Any],
+        credential_name: str,
+        instance_type: int,
+        **kwargs: Any
+    ):
+        """Add a new Google Workspace client to the Commcell environment.
 
+        This method creates a new Google Workspace client using the provided plan, credentials,
+        and service account details. You must specify either `client_group_name` or `access_node`
+        in the keyword arguments. If both are provided, `client_group_name` is used by default.
+
+        Args:
+            plan_name: Name of the server plan to associate with the client.
+            client_name: The name to assign to the new Google Workspace client.
+            indexserver: The index server address for the client.
+            service_account_details: Dictionary containing service account details required for authentication and authorization.
+                Example:
+                    {
+                        "accounts": [
+                            {
+                                "serviceType": "ExampleAgentServiceType",
+                                "AdminSmtpAddress": "example@google.com"
+                            }
+                        ]
+                    }
+            credential_name: Name of the credential created in Credential Vault.
+            instance_type: Integer representing the type of Google client.
+            **kwargs: Additional parameters for client creation.
+                - client_group_name (str): Access Node Group Name.
+                - access_node (str): Access Node name.
+                - jr_path (str): Job Results Directory path (mandatory if client_group_name is provided).
+                - no_of_streams (int): Number of backup streams to create for the client.
+
+        Returns:
+            Client: Instance of the Client class representing the newly created Google Workspace client.
+
+        Raises:
+            SDKException: If neither `client_group_name` nor `access_node` is provided, or if client creation fails.
+
+        Example:
+            >>> service_account_details = {
+            ...     "accounts": [
+            ...         {
+            ...             "serviceType": "SYSTEM_ACCOUNT",
+            ...             "AdminSmtpAddress": "admin@google.com",
+            ...             "userAccount": {
+            ...                 "password": "my_password",
+            ...                 "confirmPassword": "my_password"
+            ...             }
+            ...         }
+            ...     ]
+            ... }
+            >>> client = clients.add_googleworkspace_client(
+            ...     plan_name="GooglePlan",
+            ...     client_name="GoogleClient01",
+            ...     indexserver="IndexServer01",
+            ...     service_account_details=service_account_details,
+            ...     credential_name="GoogleCred",
+            ...     instance_type=1,
+            ...     client_group_name="AccessNodeGroup01",
+            ...     jr_path="/job/results/dir",
+            ...     no_of_streams=5
+            ... )
+            >>> print(f"Created Google Workspace client: {client}")
+
+        #ai-gen-doc
         """
         is_client_group = True if kwargs.get('client_group_name') else False
         proxy_node = kwargs.get('client_group_name') if is_client_group else kwargs.get('access_node')
@@ -3672,13 +4650,6 @@ class Clients(object):
                 'Client',
                 '102',
                 "Either client_group_name or access_node should be provided.")
-        account_dict = service_account_details["accounts"]
-        for account in account_dict:
-            if account['serviceType'] == "SYSTEM_ACCOUNT":
-                account["userAccount"]["password"] = b64encode(
-                    account["userAccount"]["password"].encode()).decode()
-                account["userAccount"]["confirmPassword"] = b64encode(
-                    account["userAccount"]["confirmPassword"].encode()).decode()
 
         request_payload = {
             "clientInfo": {
@@ -3759,26 +4730,35 @@ class Clients(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def add_alicloud_client(self, client_name, access_node, alicloud_options):
-        """
-            Method to add new alicloud cloud client
-            Args:
-                client_name     (str)   -- alicloud client name
-                access_node     (str)   -- cloud access node name
-                alicloud_options   (dict)  -- dictionary for alicloud details:
-                                            Example:
-                                               alicloud_options = {
-                                                    "accessKey": alicloud_options.get("accessKey"),
-                                                    "secretkey": alicloud_options.get("secretkey")
-                                                }
-            Returns:
-                object  -   instance of the Client class for this new client
-            Raises:
-                SDKException:
-                    if None value in alicloud options
+    def add_alicloud_client(self, client_name: str, access_node: str, alicloud_options: Dict[str, str]):
+        """Add a new Alibaba Cloud (Alicloud) client to the Commcell.
 
-                    if pseudo client with same name already exists
+        This method creates a pseudo client for Alibaba Cloud using the provided credentials and access node.
+        The `alicloud_options` dictionary must contain valid "accessKey" and "secretkey" values.
 
+        Args:
+            client_name: Name of the new Alicloud client as a string.
+            access_node: Name of the cloud access node as a string.
+            alicloud_options: Dictionary containing Alicloud credentials. Must include:
+                - "accessKey": The access key for Alicloud authentication.
+                - "secretkey": The secret key for Alicloud authentication.
+
+        Returns:
+            Instance of the Client class representing the newly added Alicloud client.
+
+        Raises:
+            SDKException: If any value in `alicloud_options` is None, or if a client with the same name already exists.
+
+        Example:
+            >>> alicloud_options = {
+            ...     "accessKey": "your-access-key",
+            ...     "secretkey": "your-secret-key"
+            ... }
+            >>> clients = Clients(commcell_object)
+            >>> new_client = clients.add_alicloud_client("AlicloudClient01", "AccessNode01", alicloud_options)
+            >>> print(f"Added new Alicloud client: {new_client}")
+
+        #ai-gen-doc
         """
 
         if None in alicloud_options.values():
@@ -3832,45 +4812,493 @@ class Clients(object):
 
         self._process_add_response(request_json)
 
-    def add_teams_client(self, client_name, server_plan, azure_app_id, azure_directory_id,
-                     azure_app_key_id, **kwargs):
+    def add_s3_compatible_client(
+            self,
+            client_name: str,
+            plan_name: str,
+            credential_name: str,
+            host_url: str,
+            access_nodes: List[str],
+            use_iam_role: bool = False,
+            is_cloud_encryption_key_set: bool = False
+    ) -> 'Client':
+        """Add an S3-Compatible Object Storage pseudo client using POST /Client.
+
+        Args:
+            client_name: Name for the new S3-Compatible client (also becomes the instanceName).
+            plan_name: Plan name to associate.
+            credential_name: Existing credential name configured on Commcell.
+            host_url: S3-compatible endpoint URL (e.g. http://backup.labs.vast.com/).
+            access_nodes: Required list of access node client names (member servers).
+            use_iam_role: Whether to use IAM Role auth. Defaults to False.
+            is_cloud_encryption_key_set: Whether cloud encryption key is set. Defaults to False.
+
+        Returns:
+            Client object for the created S3-Compatible client.
+
+        Raises:
+            SDKException: If client already exists, plan/credential/access node not found,
+                          or API returns an error.
         """
-            Adds Teams client
+        if self.has_client(client_name):
+            raise SDKException('Client', '102', f'Client "{client_name}" already exists.')
 
-            Args:
-                client_name (str) : Client Name
-                server_plan (str) : Server Plan's Name
-                azure_app_id (str) : Azure app ID
-                azure_directory_id (str) : Azure directory ID
-                azure_app_key_id (str) : Azure App key ID
+        if not access_nodes or not isinstance(access_nodes, list):
+            raise SDKException('Client', '101')
 
-                **kwargs (dict) : Additional parameters
-                    index_server (str) : Index Server's Name
-                    access_nodes_list (list[str/object]) : List of names/objects of access node clients
-                    number_of_backup_streams (int) : Number of backup streams to be associated (default: 10)
-                    user_name (str) : User name for shared job results
-                    user_password (str) : User password for shared job results
-                    shared_jr_directory (str) : Shared Job results directory path
-                    cloud_region(int) : Cloud region for the client which determines the gcc or gcc high configuration
+        if not self._commcell_object.credentials.has_credential(credential_name):
+            raise SDKException('Client', '102', f'Credential "{credential_name}" does not exist.')
+        credential = self._commcell_object.credentials.get(credential_name)
 
-            Returns:
-                object  -   instance of the Client class for this new client
+        if not self._commcell_object.plans.has_plan(plan_name):
+            raise SDKException('Client', '102', f'Plan "{plan_name}" does not exist.')
+        plan = self._commcell_object.plans.get(plan_name)
 
-            Raises:
-                SDKException:
-                    if client with given name already exists
+        member_servers = []
+        for node in access_nodes:
+            if not isinstance(node, str) or not node.strip():
+                raise SDKException('Client', '101')
+            node = node.strip()
+            if not self.has_client(node):
+                raise SDKException('Client', '102', f'Access node "{node}" does not exist.')
+            node_client = self.get(node)
+            member_servers.append({
+                'client': {
+                    'clientId': int(node_client.client_id),
+                    'clientName': node_client.client_name,
+                    '_type_': 3
+                }
+            })
 
-                    if server plan  donot exists with the given name
+        request_json = {
+            'clientInfo': {
+                'clientType': 15,
+                'cloudClonnectorProperties': {
+                    'instanceType': 'S3_COMPATIBLE',
+                    'instance': {
+                        'instance': {
+                            'instanceName': client_name,
+                            'applicationId': 134
+                        },
+                        'cloudAppsInstance': {
+                            'instanceTypeDisplayName': 'S3 Compatible',
+                            'instanceType': 'S3_COMPATIBLE',
+                            'generalCloudProperties': {
+                                'numberOfBackupStreams': 0,
+                                'memberServers': member_servers,
+                                'credentials': {
+                                    'credentialId': int(credential.credential_id),
+                                    'credentialName': credential_name
+                                }
+                            },
+                            'objectStorageInstance': {
+                                'isCloudEncryptionKeySet': bool(is_cloud_encryption_key_set)
+                            },
+                            's3CompatibleInstance': {
+                                'hostURL': host_url.strip(),
+                                'useIamRole': bool(use_iam_role)
+                            },
+                            'credentialType': 'AMAZON_S3'
+                        },
+                        'useResourcePoolInfo': False
+                    }
+                },
+                'plan': {
+                    'planId': int(plan.plan_id),
+                    'planName': plan_name
+                }
+            },
+            'entity': {
+                'clientName': client_name
+            }
+        }
 
-                    if data type of the input(s) is not valid
+        return self._process_add_response(request_json)
 
-                    if access node do not exists with the given name
+    def add_google_cloud_object_storage_client(
+            self,
+            client_name: str,
+            plan_name: str,
+            credential_name: str,
+            access_nodes: List[str],
+            server_name: str = 'storage.googleapis.com',
+            is_cloud_encryption_key_set: bool = False
+    ) -> 'Client':
+        """Add a Google Cloud Object Storage pseudo client using POST /Client.
 
-                    if failed to add the client
+        Args:
+            client_name: Name for the new Google Cloud client (also becomes the instanceName).
+            plan_name: Plan name to associate.
+            credential_name: Existing credential name configured on Commcell.
+            access_nodes: Required list of access node client names (member servers).
+            server_name: Google Cloud Storage server endpoint. Defaults to 'storage.googleapis.com'.
+            is_cloud_encryption_key_set: Whether cloud encryption key is set. Defaults to False.
 
-                    if response is empty
+        Returns:
+            Client object for the created Google Cloud Object Storage client.
 
-                    if response is not success
+        Raises:
+            SDKException: If client already exists, plan/credential/access node not found,
+                          or API returns an error.
+
+        Example:
+            >>> clients = commcell_obj.clients
+            >>> new_client = clients.add_google_cloud_object_storage_client(
+            ...     client_name='gcp-obj-storage-01',
+            ...     plan_name='my-plan',
+            ...     credential_name='gcp-creds',
+            ...     access_nodes=['proxy-node-01']
+            ... )
+        """
+        if self.has_client(client_name):
+            raise SDKException('Client', '102', f'Client "{client_name}" already exists.')
+
+        if not access_nodes or not isinstance(access_nodes, list):
+            raise SDKException('Client', '101')
+
+        if not self._commcell_object.credentials.has_credential(credential_name):
+            raise SDKException('Client', '102', f'Credential "{credential_name}" does not exist.')
+        credential = self._commcell_object.credentials.get(credential_name)
+
+        if not self._commcell_object.plans.has_plan(plan_name):
+            raise SDKException('Client', '102', f'Plan "{plan_name}" does not exist.')
+        plan = self._commcell_object.plans.get(plan_name)
+
+        member_servers = []
+        for node in access_nodes:
+            if not isinstance(node, str) or not node.strip():
+                raise SDKException('Client', '101')
+            node = node.strip()
+            if not self.has_client(node):
+                raise SDKException('Client', '102', f'Access node "{node}" does not exist.')
+            node_client = self.get(node)
+            member_servers.append({
+                'client': {
+                    'clientId': int(node_client.client_id),
+                    'clientName': node_client.client_name,
+                    '_type_': 3
+                }
+            })
+
+        request_json = {
+            'clientInfo': {
+                'clientType': 15,
+                'cloudClonnectorProperties': {
+                    'instanceType': 'GOOGLE_CLOUD',
+                    'instance': {
+                        'instance': {
+                            'instanceName': client_name,
+                            'applicationId': 134
+                        },
+                        'cloudAppsInstance': {
+                            'instanceTypeDisplayName': 'Google Cloud',
+                            'instanceType': 'GOOGLE_CLOUD',
+                            'generalCloudProperties': {
+                                'numberOfBackupStreams': 0,
+                                'memberServers': member_servers,
+                                'credentials': {
+                                    'credentialId': int(credential.credential_id),
+                                    'credentialName': credential_name
+                                }
+                            },
+                            'objectStorageInstance': {
+                                'isCloudEncryptionKeySet': bool(is_cloud_encryption_key_set)
+                            },
+                            'googleCloudInstance': {
+                                'serverName': server_name.strip()
+                            },
+                            'credentialType': 'GOOGLE_CLOUD'
+                        },
+                        'useResourcePoolInfo': False
+                    }
+                },
+                'plan': {
+                    'planId': int(plan.plan_id),
+                    'planName': plan_name
+                }
+            },
+            'entity': {
+                'clientName': client_name
+            }
+        }
+
+        return self._process_add_response(request_json)
+
+    def add_ibm_cos_object_storage_client(
+            self,
+            client_name: str,
+            plan_name: str,
+            credential_name: str,
+            access_nodes: List[str],
+            host_url: str = 's3.us-east.cloud-object-storage.appdomain.cloud',
+            is_cloud_encryption_key_set: bool = False
+    ) -> 'Client':
+        """Add an IBM Cloud Object Storage pseudo client using POST /Client.
+
+        Args:
+            client_name: Name for the new IBM COS client (also becomes the instanceName).
+            plan_name: Plan name to associate.
+            credential_name: Existing credential name configured on Commcell.
+            access_nodes: Required list of access node client names (member servers).
+            host_url: IBM COS S3-compatible endpoint. Defaults to US-East regional endpoint.
+            is_cloud_encryption_key_set: Whether cloud encryption key is set. Defaults to False.
+
+        Returns:
+            Client object for the created IBM COS client.
+
+        Raises:
+            SDKException: If client already exists, plan/credential/access node not found,
+                          or API returns an error.
+
+        Example:
+            >>> clients = commcell_obj.clients
+            >>> new_client = clients.add_ibm_cos_object_storage_client(
+            ...     client_name='ibm-cos-01',
+            ...     plan_name='my-plan',
+            ...     credential_name='ibm-creds',
+            ...     access_nodes=['proxy-node-01'],
+            ...     host_url='s3.us-east.cloud-object-storage.appdomain.cloud'
+            ... )
+        """
+        if self.has_client(client_name):
+            raise SDKException('Client', '102', f'Client "{client_name}" already exists.')
+
+        if not access_nodes or not isinstance(access_nodes, list):
+            raise SDKException('Client', '101')
+
+        if not self._commcell_object.credentials.has_credential(credential_name):
+            raise SDKException('Client', '102', f'Credential "{credential_name}" does not exist.')
+        credential = self._commcell_object.credentials.get(credential_name)
+
+        if not self._commcell_object.plans.has_plan(plan_name):
+            raise SDKException('Client', '102', f'Plan "{plan_name}" does not exist.')
+        plan = self._commcell_object.plans.get(plan_name)
+
+        member_servers = []
+        for node in access_nodes:
+            if not isinstance(node, str) or not node.strip():
+                raise SDKException('Client', '101')
+            node = node.strip()
+            if not self.has_client(node):
+                raise SDKException('Client', '102', f'Access node "{node}" does not exist.')
+            node_client = self.get(node)
+            member_servers.append({
+                'client': {
+                    'clientId': int(node_client.client_id),
+                    'clientName': node_client.client_name,
+                    '_type_': 3
+                }
+            })
+
+        request_json = {
+            'clientInfo': {
+                'clientType': 15,
+                'cloudClonnectorProperties': {
+                    'instanceType': 'IBM_COS',
+                    'instance': {
+                        'instance': {
+                            'instanceName': client_name,
+                            'applicationId': 134
+                        },
+                        'cloudAppsInstance': {
+                            'instanceTypeDisplayName': 'IBM Cloud Object Storage',
+                            'instanceType': 'IBM_COS',
+                            'generalCloudProperties': {
+                                'numberOfBackupStreams': 0,
+                                'memberServers': member_servers,
+                                'credentials': {
+                                    'credentialId': int(credential.credential_id),
+                                    'credentialName': credential_name
+                                }
+                            },
+                            'objectStorageInstance': {
+                                'isCloudEncryptionKeySet': bool(is_cloud_encryption_key_set)
+                            },
+                            'ibmCosInstance': {
+                                'hostURL': host_url.strip()
+                            },
+                            'credentialType': 'IBM_CLOUD'
+                        },
+                        'useResourcePoolInfo': False
+                    }
+                },
+                'plan': {
+                    'planId': int(plan.plan_id),
+                    'planName': plan_name
+                }
+            },
+            'entity': {
+                'clientName': client_name
+            }
+        }
+
+        return self._process_add_response(request_json)
+
+    def add_alibaba_oss_object_storage_client(
+            self,
+            client_name: str,
+            plan_name: str,
+            credential_name: str,
+            access_nodes: List[str],
+            host_url: str = 'oss-us-east-1.aliyuncs.com',
+            is_cloud_encryption_key_set: bool = False
+    ) -> 'Client':
+        """Add an Alibaba Cloud OSS pseudo client using POST /Client.
+
+        Args:
+            client_name: Name for the new Alibaba OSS client (also becomes the instanceName).
+            plan_name: Plan name to associate.
+            credential_name: Existing credential name configured on Commcell.
+            access_nodes: Required list of access node client names (member servers).
+            host_url: Alibaba OSS endpoint. Defaults to US-East-1 regional endpoint.
+            is_cloud_encryption_key_set: Whether cloud encryption key is set. Defaults to False.
+
+        Returns:
+            Client object for the created Alibaba OSS client.
+
+        Raises:
+            SDKException: If client already exists, plan/credential/access node not found,
+                          or API returns an error.
+
+        Example:
+            >>> clients = commcell_obj.clients
+            >>> new_client = clients.add_alibaba_oss_object_storage_client(
+            ...     client_name='alibaba-oss-01',
+            ...     plan_name='my-plan',
+            ...     credential_name='ali-creds',
+            ...     access_nodes=['proxy-node-01'],
+            ...     host_url='oss-us-east-1.aliyuncs.com'
+            ... )
+        """
+        if self.has_client(client_name):
+            raise SDKException('Client', '102', f'Client "{client_name}" already exists.')
+
+        if not access_nodes or not isinstance(access_nodes, list):
+            raise SDKException('Client', '101')
+
+        if not self._commcell_object.credentials.has_credential(credential_name):
+            raise SDKException('Client', '102', f'Credential "{credential_name}" does not exist.')
+        credential = self._commcell_object.credentials.get(credential_name)
+
+        if not self._commcell_object.plans.has_plan(plan_name):
+            raise SDKException('Client', '102', f'Plan "{plan_name}" does not exist.')
+        plan = self._commcell_object.plans.get(plan_name)
+
+        member_servers = []
+        for node in access_nodes:
+            if not isinstance(node, str) or not node.strip():
+                raise SDKException('Client', '101')
+            node = node.strip()
+            if not self.has_client(node):
+                raise SDKException('Client', '102', f'Access node "{node}" does not exist.')
+            node_client = self.get(node)
+            member_servers.append({
+                'client': {
+                    'clientId': int(node_client.client_id),
+                    'clientName': node_client.client_name,
+                    '_type_': 3
+                }
+            })
+
+        request_json = {
+            'clientInfo': {
+                'clientType': 15,
+                'cloudClonnectorProperties': {
+                    'instanceType': 'ALIBABA_OSS',
+                    'instance': {
+                        'instance': {
+                            'instanceName': client_name,
+                            'applicationId': 134
+                        },
+                        'cloudAppsInstance': {
+                            'instanceTypeDisplayName': 'Alibaba Cloud OSS',
+                            'instanceType': 'ALIBABA_OSS',
+                            'generalCloudProperties': {
+                                'numberOfBackupStreams': 0,
+                                'memberServers': member_servers,
+                                'credentials': {
+                                    'credentialId': int(credential.credential_id),
+                                    'credentialName': credential_name
+                                }
+                            },
+                            'objectStorageInstance': {
+                                'isCloudEncryptionKeySet': bool(is_cloud_encryption_key_set)
+                            },
+                            'alibabaInstance': {
+                                'hostURL': host_url.strip()
+                            },
+                            'credentialType': 'ALICLOUD_OSS'
+                        },
+                        'useResourcePoolInfo': False
+                    }
+                },
+                'plan': {
+                    'planId': int(plan.plan_id),
+                    'planName': plan_name
+                }
+            },
+            'entity': {
+                'clientName': client_name
+            }
+        }
+
+        return self._process_add_response(request_json)
+
+    def add_teams_client(
+        self,
+        client_name: str,
+        server_plan: str,
+        azure_app_id: str,
+        azure_directory_id: str,
+        azure_app_key_id: str,
+        **kwargs: Any
+    ):
+        """Add a new Teams client to the Commcell environment.
+
+        This method creates a Teams client using the provided Azure and server plan details.
+        Additional infrastructure and configuration options can be specified via keyword arguments.
+
+        Args:
+            client_name: Name of the Teams client to be added.
+            server_plan: Name of the server plan to associate with the client.
+            azure_app_id: Azure application ID for authentication.
+            azure_directory_id: Azure directory (tenant) ID.
+            azure_app_key_id: Azure application key ID.
+            **kwargs: Optional keyword arguments for advanced configuration:
+                - index_server (str): Name of the index server client.
+                - access_nodes_list (List[Union[str, 'Client']]): List of access node client names or Client objects.
+                - number_of_backup_streams (int): Number of backup streams to associate (default: 10).
+                - user_name (str): Username for shared job results (required for multi-access node clients).
+                - user_password (str): Password for shared job results (required for multi-access node clients).
+                - shared_jr_directory (str): Path to shared job results directory (required for multi-access node clients).
+                - cloud_region (int): Cloud region identifier (default: 1).
+                - credential_name (str): Name of the credential to use.
+
+        Returns:
+            Instance of the Client class representing the newly added Teams client.
+
+        Raises:
+            SDKException: If the client already exists, the server plan does not exist,
+                invalid input types are provided, access node does not exist,
+                required infrastructure details are missing, or if the client addition fails.
+
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> teams_client = clients.add_teams_client(
+            ...     client_name="TeamsClient01",
+            ...     server_plan="TeamsServerPlan",
+            ...     azure_app_id="your-azure-app-id",
+            ...     azure_directory_id="your-azure-directory-id",
+            ...     azure_app_key_id="your-azure-app-key-id",
+            ...     index_server="IndexServer01",
+            ...     access_nodes_list=["AccessNode01", "AccessNode02"],
+            ...     user_name="serviceuser",
+            ...     user_password="password123",
+            ...     shared_jr_directory="/shared/results",
+            ...     cloud_region=1
+            ... )
+            >>> print(f"Teams client added: {teams_client.client_name}")
+        #ai-gen-doc
         """
 
         if self.has_client(client_name):
@@ -3979,9 +5407,9 @@ class Clients(object):
                             "serviceAccounts": {},
                             "v2CloudAppsInstance": {
                                 "advanceSettings": {
-                                        "channelChatOpMode": 1,
-                                        "isPersonalChatOperationsEnabled": False
-                                    },
+                                    "channelChatOpMode": 1,
+                                    "isPersonalChatOperationsEnabled": False
+                                },
                                 "cloudRegion": cloud_region,
                                 "callbackUrl": "",
                                 "createAdditionalSubclients": False,
@@ -4026,6 +5454,25 @@ class Clients(object):
             }
         }
 
+        if kwargs.get("credential_name", None):
+            credential_properties = self._commcell_object.credentials.get(kwargs.get("credential_name"))
+            credential_id = credential_properties.credential_id
+            azure_app_dict = {
+                "azureApps": [
+                    {
+                        "appStatus": 1,
+                        "azureAppType": 2,
+                        "credentialEntity": {
+                            "credentialId": credential_id,
+                            "credentialName": kwargs.get("credential_name")
+                        }
+                    }
+                ]
+            }
+            request_json["clientInfo"]["cloudClonnectorProperties"]["instance"]["cloudAppsInstance"][
+                "v2CloudAppsInstance"][
+                "azureAppList"] = azure_app_dict
+
         if not is_resource_pool_enabled:
             request_json["clientInfo"]["cloudClonnectorProperties"]["instance"]["cloudAppsInstance"][
                 "generalCloudProperties"]["indexServer"] = {
@@ -4053,56 +5500,74 @@ class Clients(object):
                     }
                 ]
             }
-
         self._process_add_response(request_json, self._ADD_ONEDRIVE_CLIENT)
-
 
     def add_onedrive_for_business_client(
             self,
-            client_name,
-            server_plan,
-            azure_app_id,
-            azure_directory_id,
-            azure_app_key_id,
-            **kwargs):
+            client_name: str,
+            server_plan: str,
+            azure_app_id: str,
+            azure_directory_id: str,
+            azure_app_key_id: str,
+            **kwargs: Any
+        ):
+        """Add a OneDrive for Business (v2) client to the Commcell environment.
 
-        """
-            Adds OneDrive for Business (v2) client
+        This method provisions a new OneDrive for Business client using the specified Azure application credentials
+        and associates it with a server plan. Additional infrastructure details such as access nodes, index server,
+        backup streams, and service account information can be provided via keyword arguments.
 
-            Args:
-                client_name (str) : Client Name
-                server_plan (str) : Server Plan's Name
-                azure_app_id (str) : Azure app ID
-                azure_directory_id (str) : Azure directory ID
-                azure_app_key_id (str) : Azure App key ID
+        Args:
+            client_name: Name of the client to be created.
+            server_plan: Name of the server plan to associate with the client.
+            azure_app_id: Azure application ID for authentication.
+            azure_directory_id: Azure directory (tenant) ID.
+            azure_app_key_id: Azure application key ID (will be base64 encoded).
+            **kwargs: Additional optional parameters:
+                index_server (str): Name of the index server client.
+                access_nodes_list (List[Union[str, 'Client']]): List of access node client names or Client objects.
+                number_of_backup_streams (int): Number of backup streams to associate (default: 10).
+                user_name (str): Service account username for shared job results.
+                user_password (str): Service account password for shared job results.
+                shared_jr_directory (str): Path to the shared job results directory.
+                cloud_region (int): Cloud region identifier (default: 1).
+                credential_name(str):  Credential
+        Returns:
+            Instance of the Client class representing the newly created OneDrive for Business client.
 
-                **kwargs (dict) : Additional parameters
-                    index_server (str) : Index Server's Name
-                    access_nodes_list (list[str/object]) : List of names/objects of access node clients
-                    number_of_backup_streams (int) : Number of backup streams to be associated (default: 10)
-                    user_name (str) : User name for shared job results
-                    user_password (str) : User password for shared job results
-                    shared_jr_directory (str) : Shared Job results directory path
-                    cloud_region(int) : Cloud region for the client which determines the gcc or gcc high configuration
+        Raises:
+            SDKException: If the client already exists, server plan is invalid, access node is missing,
+                input data types are incorrect, required infrastructure details are missing, or client creation fails.
 
-            Returns:
-                object  -   instance of the Client class for this new client
+        Example:
+            >>> # Add a OneDrive for Business client with a single access node
+            >>> client = clients.add_onedrive_for_business_client(
+            ...     client_name="OneDriveClient01",
+            ...     server_plan="O365ServerPlan",
+            ...     azure_app_id="your-azure-app-id",
+            ...     azure_directory_id="your-azure-directory-id",
+            ...     azure_app_key_id="your-azure-app-key-id",
+            ...     index_server="IndexServer01",
+            ...     access_nodes_list=["AccessNode01"]
+            ... )
+            >>> print(f"Created OneDrive client: {client.client_name}")
 
-            Raises:
-                SDKException:
-                    if client with given name already exists
+            >>> # Add a client with multiple access nodes and service account details
+            >>> client = clients.add_onedrive_for_business_client(
+            ...     client_name="OneDriveClient02",
+            ...     server_plan="O365ServerPlan",
+            ...     azure_app_id="your-azure-app-id",
+            ...     azure_directory_id="your-azure-directory-id",
+            ...     azure_app_key_id="your-azure-app-key-id",
+            ...     index_server="IndexServer01",
+            ...     access_nodes_list=["AccessNode01", "AccessNode02"],
+            ...     user_name="serviceuser",
+            ...     user_password="servicepassword",
+            ...     shared_jr_directory="/shared/job/results"
+            ... )
+            >>> print(f"Created OneDrive client with multiple access nodes: {client.client_name}")
 
-                    if server plan  donot exists with the given name
-
-                    if data type of the input(s) is not valid
-
-                    if access node do not exists with the given name
-
-                    if failed to add the client
-
-                    if response is empty
-
-                    if response is not success
+        #ai-gen-doc
         """
 
         # If client with given name already exists, raise Exception
@@ -4240,6 +5705,25 @@ class Clients(object):
             }
         }
 
+        if kwargs.get("credential_name", None):
+            credential_properties = self._commcell_object.credentials.get(kwargs.get("credential_name"))
+            credential_id = credential_properties.credential_id
+            azure_app_dict = {
+                "azureApps": [
+                    {
+                        "appStatus": 1,
+                        "azureAppType": 1,
+                        "credentialEntity": {
+                            "credentialId": credential_id,
+                            "credentialName": kwargs.get("credential_name")
+                        }
+                    }
+                ]
+            }
+
+            request_json["clientInfo"]["cloudClonnectorProperties"]["instance"]["cloudAppsInstance"][
+                "oneDriveInstance"]["azureAppList"] = azure_app_dict
+
         if not is_resource_pool_enabled:
             request_json["clientInfo"]["cloudClonnectorProperties"]["instance"]["cloudAppsInstance"][
                 "generalCloudProperties"]["indexServer"] = {
@@ -4267,56 +5751,61 @@ class Clients(object):
                     }
                 ]
             }
-
         self._process_add_response(request_json, self._ADD_ONEDRIVE_CLIENT)
 
     def add_onedrive_client(self,
-                            client_name,
-                            instance_name,
-                            server_plan,
-                            connection_details,
-                            access_node=None,
-                            auto_discovery=False
+                            client_name: str,
+                            instance_name: str,
+                            server_plan: str,
+                            connection_details: Dict[str, str],
+                            access_node: Optional[str] = None,
+                            auto_discovery: bool = False
                             ):
+        """Add a new OneDrive Client to the Commcell environment.
 
-        """Adds a new OneDrive Client to the Commcell.
+        This method creates a new OneDrive client using the provided Azure application details,
+        associates it with the specified server plan, and optionally configures an access node
+        and auto-discovery settings.
 
-            Args:
-                client_name             (str)   --  name of the new Exchange Mailbox Client
+        Args:
+            client_name: Name of the new OneDrive client to be created.
+            instance_name: Name of the instance for the OneDrive client.
+            server_plan: Name of the server plan to associate with the client.
+            connection_details: Dictionary containing Azure application details. Example:
+                {
+                    "azure_directory_id": "your-azure-directory-id",
+                    "application_id": "your-application-id",
+                    "application_key_value": "your-application-key-value"
+                }
+            access_node: Optional; name of the access node to use for proxy operations.
+            auto_discovery: Optional; set to True to enable auto-discovery of OneDrive accounts.
 
-                server_plan            (str)   --  name of the server plan to be associated
-                                                   with the client
+        Returns:
+            Instance of the Client class representing the newly created OneDrive client.
 
-                connection_details   (dict)  -- dictionary for Azure App details:
-                                            Example:
-                                               connection_details = {
-                                                    "azure_directory_id": 'azure directory id',
-                                                    "application_id": 'application id',
-                                                    "application_key_value": 'application key value',
-                                                }
+        Raises:
+            SDKException: If the client name already exists, the server plan is invalid,
+                the access node is invalid, the client creation fails, or the response is empty or unsuccessful.
 
-                access_node          (str)   --  name of the access node
+        Example:
+            >>> connection_details = {
+            ...     "azure_directory_id": "your-azure-directory-id",
+            ...     "application_id": "your-application-id",
+            ...     "application_key_value": "your-application-key-value"
+            ... }
+            >>> clients = Clients(commcell_object)
+            >>> new_client = clients.add_onedrive_client(
+            ...     client_name="OneDriveClient01",
+            ...     instance_name="OneDriveInstance01",
+            ...     server_plan="OneDriveServerPlan",
+            ...     connection_details=connection_details,
+            ...     access_node="AccessNode01",
+            ...     auto_discovery=True
+            ... )
+            >>> print(f"Created OneDrive client: {new_client}")
 
-                auto_discovery      (bool)   --  Enable/Disable (True/False)
-
-            Returns:
-                object  -   instance of the Client class for this new client
-
-            Raises:
-                SDKException:
-                    if client with given name already exists
-
-                    if server plan  donot exists with the given name
-
-                    if access node  donot exists with the given name
-
-                    if failed to add the client
-
-                    if response is empty
-
-                    if response is not success
-
-                """
+        #ai-gen-doc
+        """
 
         if self.has_client(client_name):
             raise SDKException('Client', '102', 'Client "{0}" already exists.'.format(client_name))
@@ -4436,27 +5925,36 @@ class Clients(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def add_nutanix_files_client(self, client_name, array_name, cifs_option=True, nfs_option=True):
-        """
-            Method to add new Nutanix Files client
+    def add_nutanix_files_client(self, client_name: str, array_name: str, cifs_option: bool = True, nfs_option: bool = True):
+        """Add a new Nutanix Files client to the Commcell.
 
-            Args:
-                client_name     (str)   --  Nutanix files client name
-                array_name      (str)   --  FQDN of the Nutanix array(File Server)
-                                            to be associated with client
-                cifs_option     (bool)  --  option for adding Windows File System agent in
-                                            the created client i.e for adding CIFS agent
-                nfs_option      (bool)  --  option for adding Linux File System agent in
-                                            the created client  i.e for adding NFS agent
+        This method creates a Nutanix Files pseudo client associated with the specified array name.
+        You can optionally enable Windows (CIFS) and/or Linux (NFS) File System agents for the client.
 
-            Returns:
-                object  -   instance of the Client class for this new client
+        Args:
+            client_name: Name of the Nutanix Files client to be created.
+            array_name: FQDN of the Nutanix array (File Server) to associate with the client.
+            cifs_option: If True, adds the Windows File System (CIFS) agent to the client.
+            nfs_option: If True, adds the Linux File System (NFS) agent to the client.
 
-            Raises:
-                SDKException:
-                    if nfs_option and cifs_option both are false
+        Returns:
+            Instance of the Client class representing the newly created Nutanix Files client.
 
-                    if pseudo client with same name already exists
+        Raises:
+            SDKException: If both nfs_option and cifs_option are False.
+            SDKException: If a pseudo client with the same name already exists.
+            SDKException: If the Commcell response indicates a failure.
+
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> nutanix_client = clients.add_nutanix_files_client(
+            ...     client_name="NutanixFiles01",
+            ...     array_name="nutanix-array.domain.com",
+            ...     cifs_option=True,
+            ...     nfs_option=False
+            ... )
+            >>> print(f"Created Nutanix Files client: {nutanix_client}")
+        #ai-gen-doc
         """
 
         if self.has_client(client_name):
@@ -4471,20 +5969,20 @@ class Clients(object):
                 "nfs_option and cifs_option both cannot be false")
 
         request_json = {
-                        "createPseudoClientRequest": {
-                            "clientInfo": {
-                                "fileServerInfo": {
-                                    "arrayName": array_name,
-                                    "arrayId": 0
-                                    },
-                                "clientAppType":2,
-                                "clientType": 18,
-                                },
-                            "entity": {
-                                "clientName": client_name
-                                }
-                            }
-                        }
+            "createPseudoClientRequest": {
+                "clientInfo": {
+                    "fileServerInfo": {
+                        "arrayName": array_name,
+                        "arrayId": 0
+                    },
+                    "clientAppType":2,
+                    "clientType": 18,
+                },
+                "entity": {
+                    "clientName": client_name
+                }
+            }
+        }
 
         if(nfs_option != cifs_option):
             additional_json = {}
@@ -4525,45 +6023,225 @@ class Clients(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def add_cassandra_client(self,
-                             new_client_name,
-                             gatewaynode,
-                             cql_port,
-                             cql_username,
-                             cql_password,
-                             jmx_port,
-                             config_file_path,
-                             plan_name):
-        """
-        Adds new cassandra client after clientname and plan validation
+    def add_lustre_client(
+        self,
+        client_name: str,
+        data_access_nodes: List[str],
+        plan_name: str,
+        content: List[str],
+        isAzureManagedLustre: bool = False
+    ):
+        """Add a new Lustre client to the Commcell environment.
+
+        This method creates a Lustre distributed file system client with the specified configuration,
+        including data access nodes, plan association, and content paths. It supports both standard
+        Lustre and Azure Managed Lustre configurations.
 
         Args:
-            new_client_name       (str)   --  new cassandra client name
-
-            gatewaynode           (str)   --  gateway node
-
-            cql_port              (int)   --  cql port
-
-            jmx_port              (int)   --  jmx port
-
-            cql_username          (str)   --  cql username
-
-            cql_password          (str)   --  cql password
-
-            plan_name             (str)   --  plan name
+            client_name (str): Name for the new Lustre client to be created.
+            
+            data_access_nodes (List[str]): List of client names to be used as data access nodes 
+                for the Lustre client. These nodes handle data transfer operations.
+            
+            plan_name (str): Name of the backup plan to associate with the client. The plan must 
+                exist in the Commcell.
+            
+            content (List[str]): List of file system paths to be included in the backup content.
+                Example: ["/lustre/data", "/lustre/home"]
+            
+            isAzureManagedLustre (bool, optional): If True, configures the client as an Azure 
+                Managed Lustre client. Default is False.
 
         Returns:
-                client_object     (obj)   --  client object associated with the new cassandra client
+            Client: Instance of the Client class representing the newly created Lustre client.
 
         Raises:
-            SDKException:
-                if plan name is not valid
+            SDKException: If the plan name is invalid or not found in the Commcell
+            SDKException: If the client creation fails
 
-                if failed to add the client
+        Example:
+            >>> from cvpysdk.commcell import Commcell
+            >>> 
+            >>> # Initialize Commcell connection
+            >>> commcell = Commcell('commserv.example.com', 'admin', 'password')
+            >>> 
+            >>> # Create a standard Lustre client
+            >>> lustre_client = commcell.clients.add_lustre_client(
+            ...     client_name="LustreFS01",
+            ...     data_access_nodes=["AccessNode01", "AccessNode02"],
+            ...     plan_name="LustreBackupPlan",
+            ...     content=["/lustre/data", "/lustre/projects"]
+            ... )
+            >>> print(f"Created Lustre client: {lustre_client.client_name}")
+            >>> 
+            >>> # Create an Azure Managed Lustre client
+            >>> azure_lustre = commcell.clients.add_lustre_client(
+            ...     client_name="AzureLustreFS",
+            ...     data_access_nodes=["AzureNode01"],
+            ...     plan_name="AzureLustrePlan",
+            ...     content=["/mnt/lustre"],
+            ...     isAzureManagedLustre=True
+            ... )
+            >>> print(f"Created Azure Managed Lustre client: {azure_lustre.client_name}")
 
-                if response is empty
+        Note:
+            - Data access nodes must exist in the Commcell before creating the client
+            - Content paths should be valid Lustre mount points
+            - For Azure Managed Lustre, ensure Azure-specific configurations are in place
+            - The method refreshes the clients list after successful creation
+            - Uses client type 29 (Distributed Cluster) with cluster type 13 (Lustre)
+            - Application ID 64 is used for Distributed Apps
+        """
 
-                if response is not success
+        content_temp = []
+        for path in content:
+            content_temp.append({"path": path})
+
+        access_nodes = []
+        for node in data_access_nodes:
+            access_nodes.append({"clientName": node})
+
+        if self._commcell_object.plans.has_plan(plan_name):
+            plan_object = self._commcell_object.plans.get(plan_name)
+            plan_id = int(plan_object.plan_id)
+        else:
+            raise SDKException('Plan', '102', 'Provide Valid Plan Name')
+
+        request_json = {
+            "createPseudoClientRequest": {
+                "clientInfo": {
+                    "clientType": 29,
+                    "plan": {
+                        "planName": plan_name,
+                        "planId": plan_id
+                    },
+                    "distributedClusterInstanceProperties": {
+                        "clusterType": 13,
+                        "opType": 2,
+                        "instance": {
+                            "instanceId": 0,
+                            "instanceName": client_name,
+                            "clientName": client_name,
+                            "applicationId": 64
+                        },
+                        "clusterConfig": {
+                            "uxfsConfig": {}
+                        },
+                        "dataAccessNodes" : {
+                            "dataAccessNodes" : access_nodes
+                        }
+                    },
+                    "subclientInfo": {
+                        "useLocalContent": True,
+                        "contentOperationType": 1,
+                        "fsSubClientProp": {},
+                        "dfsSubclientProp": {
+                            "useGPFSSnapshot": False
+                        },
+                        "content": content_temp
+                    }
+                },
+                "entity": {
+                    "clientName": client_name
+                }
+            }
+        }
+
+        if isAzureManagedLustre:
+            request_json["createPseudoClientRequest"]["clientInfo"]["cloudFileShareWorkloadType"] = 6028
+        
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._ADD_LUSTRE_CLIENT, payload=request_json
+        )
+
+        if flag and response:
+            response_json = response.json()
+            if 'response' in response_json:
+                # errorCode is nested inside 'response' key
+                error_code = response_json.get('response', {}).get('errorCode', 0)
+
+                if error_code != 0:
+                    error_string = response_json.get('response', {}).get('errorMessage', 'Unknown error')
+                    o_str = 'Failed to create client\nError: "{0}"'.format(
+                        error_string)
+
+                    raise SDKException('Client', '102', o_str)
+                else:
+                    # initialize the clients again
+                    # so the client object has all the clients
+                    self.refresh()
+                    return self.get(client_name)
+
+            elif 'errorMessage' in response_json:
+                error_string = response_json.get('errorMessage')
+                o_str = 'Failed to create client\nError: "{0}"'.format(
+                    error_string)
+
+                raise SDKException('Client', '102', o_str)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException(
+                'Response',
+                '101',
+                self._update_response_(
+                    response.text))
+        
+    def add_cassandra_client(
+        self,
+        new_client_name: str,
+        gatewaynode: str,
+        cql_port: int,
+        config_file_path: str,
+        plan_name: str,
+        cql_username: Optional[str] = None,
+        cql_password: Optional[str] = None,
+        jmx_port: int = 7199,
+        cql_credential_id: Optional[str] = None,
+        jmx_credential_id: Optional[str] = None,
+        keystore_credential_id: Optional[str] = None,
+        truststore_credential_id: Optional[str] = None
+    ):
+        """Add a new Cassandra client to the Commcell environment.
+
+        This method creates and registers a new Cassandra client using the provided configuration details,
+        credentials, and plan. It supports both direct username/password authentication and credential IDs
+        for secure access.
+
+        Args:
+            new_client_name: Name of the new Cassandra client to be created.
+            gatewaynode: Hostname of the gateway node for Cassandra communication.
+            cql_port: Port number for CQL connections.
+            config_file_path: Path to the Cassandra configuration file.
+            plan_name: Name of the plan to associate with the client.
+            cql_username: Optional CQL username for authentication.
+            cql_password: Optional CQL password for authentication.
+            jmx_port: Port number for JMX connections (default: 7199).
+            cql_credential_id: Optional credential ID for CQL authentication.
+            jmx_credential_id: Optional credential ID for JMX authentication.
+            keystore_credential_id: Optional credential ID for the keystore.
+            truststore_credential_id: Optional credential ID for the truststore.
+
+        Returns:
+            The client object associated with the newly created Cassandra client.
+
+        Raises:
+            SDKException: If the plan is invalid, required credentials are missing, or client creation fails.
+
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> cassandra_client = clients.add_cassandra_client(
+            ...     new_client_name="CassandraNode01",
+            ...     gatewaynode="gateway01.domain.com",
+            ...     cql_port=9042,
+            ...     config_file_path="/etc/cassandra/cassandra.yaml",
+            ...     plan_name="CassandraBackupPlan",
+            ...     cql_username="admin",
+            ...     cql_password="securepassword"
+            ... )
+            >>> print(f"Created Cassandra client: {cassandra_client}")
+
+        #ai-gen-doc
         """
         if self._commcell_object.plans.has_plan(plan_name):
             plan_object = self._commcell_object.plans.get(plan_name)
@@ -4573,9 +6251,21 @@ class Clients(object):
         else:
             raise SDKException('Plan', '102', 'Provide Valid Plan Name')
 
-        cql_password = b64encode(cql_password.encode()).decode()
-        jmx_port_int = int(jmx_port)
+        if cql_username:
+            cql_password = b64encode(cql_password.encode()).decode()
+            jmx_port_int = int(jmx_port)
         cql_port_int = int(cql_port)
+        cql_cred_id = int(cql_credential_id) if cql_credential_id else 0
+        jmx_cred_id = int(jmx_credential_id) if jmx_credential_id else 0
+        keystore_cred_id = int(keystore_credential_id) if keystore_credential_id else 0
+        truststore_cred_id = int(truststore_credential_id) if truststore_credential_id else 0
+
+        # Build base request
+
+        gateway_node = {
+            "clientNode": {"clientName": gatewaynode},
+            "jmxConnection": {}
+        }
 
         request_json = {
             "clientInfo": {
@@ -4595,20 +6285,8 @@ class Clients(object):
                     "clusterConfig": {
                         "cassandraConfig": {
                             "gateway": {
-                                "node": {
-                                    "clientNode": {
-                                        "clientName": gatewaynode
-                                    },
-                                    "jmxConnection": {
-                                        "port": jmx_port_int
-                                    }
-                                },
+                                "node": gateway_node,
                                 "gatewayCQLPort": cql_port_int,
-                                "gatewayCQLUser": {
-                                    "userName": cql_username,
-                                    "password": cql_password,
-                                    "confirmPassword": cql_password
-                                }
                             },
                             "configFilePath": config_file_path
                         }
@@ -4619,6 +6297,33 @@ class Clients(object):
                 "clientName": new_client_name
             }
         }
+
+        # Add credentials
+
+        cassandra_config = request_json["clientInfo"]["distributedClusterInstanceProperties"]["clusterConfig"]["cassandraConfig"]
+        gateway = cassandra_config["gateway"]
+
+        if cql_username:
+            gateway["node"]["jmxConnection"]["port"] = jmx_port_int
+            gateway["gatewayCQLUser"] = {
+                "userName": cql_username,
+                "password": cql_password,
+                "confirmPassword": cql_password
+            }
+        else:
+            if cql_cred_id:
+                gateway["cqlCMCredInfo"] = {"credentialId": cql_cred_id}
+            if jmx_cred_id:
+                gateway["node"]["jmxConnection"]["jmxCMCredInfo"] = {"credentialId": jmx_cred_id}
+            if keystore_cred_id:
+                ssl_config = {
+                    "useSSL": True,
+                    "keyStoreCMCredInfo": {"credentialId": keystore_cred_id}
+                }
+                if truststore_cred_id:
+                    ssl_config["trustStoreCMCredInfo"] = {"credentialId": truststore_cred_id}
+                gateway.setdefault("node", {}).setdefault("authConfig", {})["sslConfig"] = ssl_config
+
 
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._ADD_CASSANDRA_CLIENT, payload=request_json
@@ -4659,62 +6364,74 @@ class Clients(object):
                 self._update_response_(
                     response.text))
 
-    def add_cockroachdb_client(self,
-                               new_client_name,
-                               s3_credential_name,
-                               cockroachdb_host,
-                               cockroachdb_port,
-                               db_username,
-                               db_password,
-                               sslcert,
-                               sslkey,
-                               sslrootcert,
-                               s3_service_host,
-                               s3_staging_path,
-                               accessnodes,
-                               plan_name):
-        """
-        Adds new cockroachdb client after clientname and plan validation
+    def add_cockroachdb_client(
+        self,
+        new_client_name: str,
+        cockroachdb_host: str,
+        cockroachdb_port: int,
+        s3_service_host: str,
+        s3_staging_path: str,
+        accessnodes: List[str],
+        plan_name: str,
+        s3_credential_name: Optional[str] = None,
+        db_username: Optional[str] = None,
+        db_password: Optional[str] = None,
+        sslcert: Optional[str] = None,
+        sslkey: Optional[str] = None,
+        sslrootcert: Optional[str] = None,
+        s3_credential_id: Optional[str] = None,
+        db_credential_id: Optional[str] = None,
+        ssl_credential_id: Optional[str] = None
+    ) -> Any:
+        """Add a new CockroachDB client to the Commcell environment.
+
+        This method provisions a CockroachDB pseudo client with the specified configuration,
+        including database connection details, S3 staging information, access nodes, plan association,
+        and optional credential and SSL settings.
 
         Args:
-            new_client_name       (str)   --  new cockroachdb client name
-
-            s3_credential_name    (str)   --  AWS S3 credential name
-
-            cockroachdb_host      (str)   --  cockroachdb host machine name or ip
-
-            cockroachdb_port      (int)   --  cockroachdb port number
-
-            db_username           (str)   --  database user name
-
-            db_password           (str)   --  database password
-
-            sslcert                (str)  --  ssl cert path
-
-            sslkey                 (str)  --  ssl key path
-
-            sslrootcert           (str)   --  ssl root cert path
-
-            s3_service_host       (str)   --  s3 service host
-
-            s3_staging_path       (str)   --  s3 staging path
-
-            accessnodes           (list)  --  list of access nodes
-
-            plan_name             (str)   --  plan assocated with the new client
+            new_client_name: Name for the new CockroachDB client.
+            cockroachdb_host: Hostname or IP address of the CockroachDB server.
+            cockroachdb_port: Port number for CockroachDB access.
+            s3_service_host: Hostname of the S3 service for staging.
+            s3_staging_path: Path on the S3 service for staging data.
+            accessnodes: List of client names to be used as access nodes.
+            plan_name: Name of the plan to associate with the new client.
+            s3_credential_name: Optional AWS S3 credential name.
+            db_username: Optional database username for authentication.
+            db_password: Optional database password for authentication.
+            sslcert: Optional path to the SSL certificate file.
+            sslkey: Optional path to the SSL key file.
+            sslrootcert: Optional path to the SSL root certificate file.
+            s3_credential_id: Optional AWS S3 credential ID.
+            db_credential_id: Optional database authentication credential ID.
+            ssl_credential_id: Optional CockroachDB SSL credential ID.
 
         Returns:
-                client_object     (obj)   --  client object associated with the new cockroachdb client
+            The client object associated with the newly created CockroachDB client.
 
         Raises:
-            SDKException:
-                if plan name is not valid
+            SDKException: If the plan is invalid, required credentials are missing, or client creation fails.
 
-                if failed to add the client
+        Example:
+            >>> access_nodes = ['node1', 'node2']
+            >>> client_obj = clients.add_cockroachdb_client(
+            ...     new_client_name='CockroachDB01',
+            ...     cockroachdb_host='db.example.com',
+            ...     cockroachdb_port=26257,
+            ...     s3_service_host='s3.example.com',
+            ...     s3_staging_path='/staging/path',
+            ...     accessnodes=access_nodes,
+            ...     plan_name='CockroachDBPlan',
+            ...     db_username='admin',
+            ...     db_password='securepassword',
+            ...     sslcert='/path/to/cert.pem',
+            ...     sslkey='/path/to/key.pem',
+            ...     sslrootcert='/path/to/rootcert.pem'
+            ... )
+            >>> print(f"Created CockroachDB client: {client_obj}")
 
-                if response is empty
-
-                if response is not success
+        #ai-gen-doc
         """
         if self._commcell_object.plans.has_plan(plan_name):
             plan_object = self._commcell_object.plans.get(plan_name)
@@ -4737,41 +6454,77 @@ class Clients(object):
             }
             access_nodes.append(access_node)
 
-        db_password = b64encode(db_password.encode()).decode()
-        cockroachdb_port = int(cockroachdb_port)
+        if db_username:
+            db_password = b64encode(db_password.encode()).decode()
 
+        cockroachdb_port = int(cockroachdb_port)
+        s3_cred_id = int(s3_credential_id) if s3_credential_id else 0
+        db_cred_id = int(db_credential_id) if db_credential_id else 0
+        ssl_cred_id = int(ssl_credential_id) if ssl_credential_id else 0
+
+        # Build base request
+
+        cockroach_config = {
+            "dbCredentials": {"credentialId": 0},
+            "dbHost": cockroachdb_host,
+            "port": cockroachdb_port,
+            "staging": {
+                "cloudURL": "s3.amazonaws.com",
+                "instanceType": 5,
+                "recordType": 102,
+                "serviceHost": s3_service_host,
+                "stagingPath": s3_staging_path,
+                "stagingType": 1,
+                "stagingCredentials": {}
+            },
+            "user": {"password": ""}
+        }
+
+        #Handle DB Credentials
+        if db_username:
+            cockroach_config["dbCredentials"]["credentialName"] = ""
+            cockroach_config["user"]["userName"] = db_username
+            cockroach_config["user"]["password"] = db_password
+        elif db_cred_id:
+            cockroach_config["dbCredentials"]["credentialId"] = db_cred_id
+        else:
+            raise SDKException('database', '102', 'Provide valid DB user name or db credential id')
+
+        #Handle SSL
+        if sslrootcert:
+            cockroach_config["sslRootCert"] = sslrootcert
+            cockroach_config["sslKey"] = sslkey
+            cockroach_config["sslCert"] = sslcert
+        elif ssl_cred_id:
+            cockroach_config["sslCredentials"] = {"credentialId": ssl_cred_id}
+
+        #Handle S3 credential
+        if s3_credential_name:
+            cockroach_config["staging"]["stagingCredentials"] = {
+                "credentialName": s3_credential_name
+            }
+        elif s3_cred_id:
+            cockroach_config["staging"]["stagingCredentials"] = {
+                "credentialId": s3_cred_id
+            }
+        else:
+            cockroach_config["staging"] = {
+                    "cloudURL": "s3.amazonaws.com",
+                    "instanceType": 5,
+                    "recordType": 14,
+                    "serviceHost": s3_service_host,
+                    "stagingPath": s3_staging_path,
+                    "stagingType": 1
+                }
+
+        # Final request JSON
         request_json = {
             "createPseudoClientRequest": {
                 "clientInfo": {
                     "clientType": 29,
                     "distributedClusterInstanceProperties": {
                         "clusterConfig": {
-                            "cockroachdbConfig": {
-                                "dbCredentials": {
-                                    "credentialId": 0,
-                                    "credentialName": ""
-                                },
-                                "dbHost": cockroachdb_host,
-                                "port": cockroachdb_port,
-                                "sslCert": sslcert,
-                                "sslKey": sslkey,
-                                "sslRootCert": sslrootcert,
-                                "staging": {
-                                    "cloudURL": "s3.amazonaws.com",
-                                    "instanceType": 5,
-                                    "recordType": 102,
-                                    "serviceHost": s3_service_host,
-                                    "stagingCredentials": {
-                                        "credentialName": s3_credential_name
-                                    },
-                                    "stagingPath": s3_staging_path,
-                                    "stagingType": 1
-                                },
-                                "user": {
-                                    "password": db_password,
-                                    "userName": db_username
-                                }
-                            }
+                            "cockroachdbConfig": cockroach_config
                         },
                         "clusterType": 18,
                         "dataAccessNodes": {
@@ -4806,6 +6559,7 @@ class Clients(object):
                 }
             }
         }
+
 
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._ADD_COCKROACHDB_CLIENT, payload=request_json
@@ -4846,49 +6600,199 @@ class Clients(object):
                 self._update_response_(
                     response.text))
 
+    def add_mongodb_client(self,
+                           new_client_name,
+                           master_node,
+                           master_hostname,
+                           port,
+                           os_user,
+                           bin_path,
+                           plan,
+                           db_user = '',
+                           db_password ='',
+                           db_credential_id = None,
+                           ssl_credential_id = None):
+
+        """
+                Adds new mongodb  client after client name and plan validation
+
+                Args:
+                    new_client_name     (str)   --  New pseudo client name
+                    master_node         (str)   --  Master node name
+                    master_hostname     (str)   --  Master Node's Host name
+                    port                (int)   --  Mongodb Port on master node
+                    os_user             (str)   --  MongoDB OS user used for impersonation
+                    bin_path            (str)   --  Bin path for mongodb installation
+                    plan                (str)   --  Plan associated with the new client
+                    db_user             (str)   --  Db user if Authentication is Enabled on Cluster
+                    db_password         (str)   --  Db Password  corresponding to db_user
+
+
+                Returns:
+                    client_object       (obj)   --  Client object associated with the new MongoDB client
+
+
+                Raises:
+                    SDKException:
+                        if failed to add the client
+
+                        if response is empty
+
+                        if response is not success
+                """
+
+        if self._commcell_object.plans.has_plan(plan):
+            plan_object = self._commcell_object.plans.get(plan)
+            plan_id = int(plan_object.plan_id)
+            plan_type = int(plan_object.plan_type)
+            plan_subtype = int(plan_object.subtype)
+
+
+        else:
+            raise SDKException('Plan', '102', 'Provide Valid Plan Name')
+        db_credential_id = int(db_credential_id)
+        ssl_credential_id = int(ssl_credential_id)
+        if self._commcell_object.clients.has_client(master_node):
+            master_client_id = int(self._commcell_object.clients.all_clients[master_node.lower()]['id'])
+        else:
+            raise SDKException('Client', '102', 'Provide Valid Master Client')
+        company_id = 0
+        if (company_id == 0 ):
+            company_name = "Commcell"
+        else:
+            company_name = ""
+        request_json= {
+            "clientInfo": {
+                "clientType": "DISTRIBUTED_IDA",
+                "distributedClusterInstanceProperties": {
+                    "instance": {
+                        "instanceId": 0,
+                        "instanceName": new_client_name,
+                        "applicationId": 64,
+                        "clientName": new_client_name
+                    },
+                    "opType": 2,
+                    "clusterType": "MONGODB",
+                    "clusterConfig": {
+                        "mdbConfig": {
+                        "sslCMCredInfo": {
+                            "credentialId": ssl_credential_id
+                        },
+                        "authCMCredInfo": {
+                            "credentialId": db_credential_id
+                        },
+                            "masterNode": {
+                                "client": {
+                                    "clientId": master_client_id,
+                                    "clientName": master_node
+                                },
+                                "hostName": master_hostname,
+                                "portNumber": port,
+                                "osUser": os_user,
+                                "binPath": bin_path
+                            }
+                        }
+                    }
+                },
+                "plan": {
+                    "planId": plan_id,
+                    "planName": plan,
+                    "planType": plan_type,
+                    "planSubtype": plan_subtype,
+                    "entityInfo": {
+                        "companyId": company_id,
+                        "companyName": company_name,
+                        "multiCommcellId": 0
+                    }
+                }
+            },
+            "entity": {
+                "clientName": new_client_name
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request('POST', self._ADD_MONGODB_CLIENT, request_json)
+
+        if flag:
+            if response.json():
+                if 'response' in response.json():
+                    error_code = response.json()['response']['errorCode']
+
+                    if error_code != 0:
+                        error_string = response.json()['response']['errorString']
+                        o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+
+                        raise SDKException('Client', '102', o_str)
+                    else:
+                        # initialize the clients again
+                        # so the client object has all the clients
+                        self.refresh()
+                        return self.get(new_client_name)
+
+                elif 'errorMessage' in response.json():
+                    error_string = response.json()['errorMessage']
+                    o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+
+                    raise SDKException('Client', '102', o_str)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+
     def add_azure_cosmosdb_client(
             self,
-            client_name,
-            access_nodes,
-            credential_name,
-            azure_options):
-        """
-            Method to add new azure cosmos db client
+            client_name: str,
+            access_nodes: List[str],
+            credential_name: str,
+            azure_options: Dict[str, Any]
+        ) -> 'Client':
+        """Add a new Azure Cosmos DB client to the Commcell environment.
 
-            Args:
+        This method creates a pseudo client for Azure Cosmos DB using the provided client name,
+        access nodes, credentials, and Azure-specific options. It validates the input parameters,
+        encodes sensitive information, and sends a request to the Commcell server to create the client.
 
-                client_name     (str)   -- new azure cosmosdb client name
+        Args:
+            client_name: Name for the new Azure Cosmos DB client.
+            access_nodes: List of access node names to associate with the client.
+            credential_name: Name of the credential to use for authentication.
+            azure_options: Dictionary containing Azure details. Example:
+                {
+                    "subscription_id": "your-subscription-id",
+                    "tenant_id": "your-tenant-id",
+                    "application_id": "your-application-id",
+                    "password": "your-application-secret",
+                    "credential_id": 12345
+                }
 
-                access_nodes    (str)   -- list of access node name
+        Returns:
+            Client: Instance of the Client class representing the newly created Azure Cosmos DB client.
 
-                credential_name (str)   -- credential name
+        Raises:
+            SDKException: If any required Azure option is None, if a client with the same name already exists,
+                if the client creation fails, or if the response from the server is invalid.
 
-                azure_options   (dict)  -- dictionary for Azure details:
-                                            Example:
-                                               azure_options = {
-                                                    "subscription_id": 'subscription id',
-                                                    "tenant_id": 'tenant id',
-                                                    "application_id": 'application id',
-                                                    "password": 'application secret',
-                                                    "credential_id": credential_id
-                                                }
+        Example:
+            >>> azure_options = {
+            ...     "subscription_id": "sub-id",
+            ...     "tenant_id": "tenant-id",
+            ...     "application_id": "app-id",
+            ...     "password": "secret",
+            ...     "credential_id": 12345
+            ... }
+            >>> access_nodes = ["AccessNode1", "AccessNode2"]
+            >>> client = clients.add_azure_cosmosdb_client(
+            ...     client_name="CosmosDBClient01",
+            ...     access_nodes=access_nodes,
+            ...     credential_name="AzureCreds",
+            ...     azure_options=azure_options
+            ... )
+            >>> print(f"Created Cosmos DB client: {client}")
 
-            Returns:
-                object  -   instance of the Client class for this new client
-
-            Raises:
-
-                SDKException:
-                    if None value in azure options
-
-                    if pseudo client with same name already exists
-
-                    if failed to add the client
-
-                    if response is empty
-
-                    if response is not success
-
+        #ai-gen-doc
         """
 
         if None in azure_options.values():
@@ -4907,29 +6811,41 @@ class Clients(object):
         password = b64encode(azure_options.get("password").encode()).decode()
 
         memberservers = []
-        for node in access_nodes:
-            client_object = self._commcell_object.clients.get(node)
-            client_object._get_client_properties()
-            client_id = int(client_object.client_id)
-            clienttype = int(client_object._client_type_id)
-            access_node = {
-                "client": {
-                    "_type_": clienttype,
-                    "clientId": client_id,
-                    "clientName": client_object.client_name,
-                    "groupLabel": "Access nodes",
-                    "selected": True
+        cloudAppInstanceInfo = {}
+        emptyMemberServers = False
+
+        if any(access_nodes):
+            for node in access_nodes:
+                client_object = self._commcell_object.clients.get(node)
+                client_object._get_client_properties()
+                client_id = int(client_object.client_id)
+                clienttype = int(client_object._client_type_id)
+                access_node = {
+                    "client": {
+                        "_type_": clienttype,
+                        "clientId": client_id,
+                        "clientName": client_object.client_name,
+                        "groupLabel": "Access nodes",
+                        "selected": True
+                    }
+                }
+                memberservers.append(access_node)
+
+        if azure_options.get("useHosted"):
+            emptyMemberServers = True
+            memberservers = []
+            cloudAppInstanceInfo = {
+                "generalCloudProperties": {
+                    "regionEndPoints": azure_options.get("region")
                 }
             }
-            memberservers.append(access_node)
-
         request_json = {
             "clientInfo": {
                 "clientType": 12,
                 "idaInfo": {
                 },
                 "virtualServerClientProperties": {
-                    "allowEmptyMemberServers": False,
+                    "allowEmptyMemberServers": emptyMemberServers,
                     "appTypes": [
                         {
                             "applicationId": 106
@@ -4951,7 +6867,7 @@ class Clients(object):
                             "tenantId": "",
                             "useManagedIdentity": False
                         },
-                        "cloudAppInstanceInfoList": [
+                        "cloudAppInstanceInfoList": [cloudAppInstanceInfo
                         ],
                         "skipCredentialValidation": False,
                         "virtualServerCredentialinfo": {
@@ -5012,23 +6928,127 @@ class Clients(object):
                 self._update_response_(
                     response.text))
 
-    def get(self, name):
-        """Returns a client object if client name or host name or ID or display name matches the client attribute
+    def add_mongodb_atlas_client(self,client_name: str ,
+                                 access_nodes: str,
+                                 credential_name: str,
+                                 description: str):
+        """
+        adds a new cloud account for mongodb atlas
 
-            We check if specified name matches any of the existing client names else
-            compare specified name with host names of existing clients else if name matches with the ID
+        Args :
 
-            Args:
-                name (str/int)  --  name / hostname / ID of the client / display name
+        client_name         :   str         # cloud Account Name
+        access_nodes        :   List[str]   # Access Node to be associated with cloud account
+        credential_name     :   str         # credentail to be associated with cloud account .
+        description         :   str         # description for cloud account
 
-            Returns:
-                object - instance of the Client class for the given client name
+        """
+        request_json={
+            "clientInfo": {
+                "clientType": 15,
+                "cloudClonnectorProperties": {
+                    "instanceType": 40,
+                    "instance": {
+                        "cloudAppsInstance": {
+                            "instanceType": 40,
+                            "generalCloudProperties": {
+                                "credentials": {
+                                    "credentialId": 0,
+                                    "credentialName": credential_name,
+                                    "recordType": 23,
+                                    "description": description,
+                                    "selected": True
+                                },
+                                "accessNodes": {
+                                    "memberServers": [
+                                        {
+                                            "client": {
+                                                "clientId": 0,
+                                                "clientName": access_nodes[0],
+                                                "_type_": 3,
+                                                "isClientGroup": False,
+                                                "displayLabel": access_nodes[0],
+                                                "typeLabel": "Access nodes",
+                                                "selected": True
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "entity": {
+                "clientName": client_name
+            }
+        }
 
-            Raises:
-                SDKException:
-                    if type of the client name argument is not string or Int
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['GET_ALL_CLIENTS'], payload=request_json
+        )
 
-                    if no client exists with the given name
+        if flag:
+            if response.json():
+                if 'response' in response.json():
+                    error_code = response.json()['response']['errorCode']
+
+                    if error_code != 0:
+                        error_string = response.json(
+                        )['response']['errorString']
+                        o_str = 'Failed to create client\nError: "{0}"'.format(
+                            error_string)
+
+                        raise SDKException('Client', '102', o_str)
+                    else:
+                        # initialize the clients again
+                        # so the client object has all the clients
+                        self.refresh()
+                        return self.get(client_name)
+
+                elif 'errorMessage' in response.json():
+                    error_string = response.json()['errorMessage']
+                    o_str = 'Failed to create client\nError: "{0}"'.format(
+                        error_string)
+
+                    raise SDKException('Client', '102', o_str)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException(
+                'Response',
+                '101',
+                self._update_response_(
+                    response.text))
+
+    def get(self, name: Union[str, int]) -> 'Client':
+        """Retrieve a Client object by name, hostname, ID, or display name.
+
+        This method searches for a client using the provided identifier, which can be a client name,
+        host name, display name, or numeric ID. If a matching client is found, an instance of the
+        Client class is returned.
+
+        Args:
+            name: The client identifier, which can be a string (name, hostname, display name)
+                  or an integer (client ID).
+
+        Returns:
+            Client: Instance of the Client class corresponding to the specified identifier.
+
+        Raises:
+            SDKException: If the type of the name argument is not str or int.
+            SDKException: If no client exists with the given name, hostname, display name, or ID.
+
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> client_obj = clients.get('Server01')  # Search by client name
+            >>> client_obj = clients.get('server01.domain.com')  # Search by hostname
+            >>> client_obj = clients.get(12345)  # Search by client ID
+            >>> print(f"Client found: {client_obj}")
+
+        #ai-gen-doc
         """
         if isinstance(name, str):
             name = name.lower()
@@ -5038,7 +7058,7 @@ class Clients(object):
             if self.has_client(name):
                 client_from_hostname_or_displayname = self._get_client_from_hostname(name)
                 if self.has_hidden_client(name) and not client_from_hostname_or_displayname \
-                                                and name not in self.all_clients:
+                        and name not in self.all_clients:
                     client_from_hostname_or_displayname = self._get_hidden_client_from_hostname(name)
                 if client_from_hostname_or_displayname is None:
                     client_from_hostname_or_displayname = self._get_client_from_displayname(name)
@@ -5069,25 +7089,30 @@ class Clients(object):
 
         raise SDKException('Client', '101')
 
-    def delete(self, client_name, forceDelete= True):
-        """Deletes the client from the commcell.
+    def delete(self, client_name: str, forceDelete: bool = True):
+        """Delete a client from the Commcell.
 
-            Args:
-                client_name (str)  --  name of the client to remove from  commcell
+        Removes the specified client from the Commcell environment. If `forceDelete` is True,
+        the client will be forcefully deleted, bypassing certain checks.
 
-                forceDelete (bool) --  Force delete client if True
-            Raises:
-                SDKException:
-                    if type of the client name argument is not string
+        Args:
+            client_name: Name of the client to remove from the Commcell.
+            forceDelete: If True, forcefully deletes the client. Defaults to True.
 
-                    if failed to delete client
+        Raises:
+            SDKException:
+                - If the type of `client_name` is not string.
+                - If the client does not exist.
+                - If the deletion fails due to an unsuccessful response.
+                - If the response is empty or not successful.
 
-                    if response is empty
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> clients.delete("Server01")
+            >>> # To force delete a client
+            >>> clients.delete("Server02", forceDelete=True)
 
-                    if response is not success
-
-                    if no client exists with the given name
-
+        #ai-gen-doc
         """
         if not isinstance(client_name, str):
             raise SDKException('Client', '101')
@@ -5145,14 +7170,85 @@ class Clients(object):
                     'Client', '102', 'No client exists with name: {0}'.format(client_name)
                 )
 
-    def refresh(self, **kwargs):
-        """
-        Refresh the clients associated with the Commcell.
+    def retire(self, client_name: str) -> 'Job':
+        """Retire the specified client from the Commcell environment.
 
-            Args:
-                **kwargs (dict):
-                    mongodb (bool)  -- Flag to fetch client groups cache from MongoDB (default: False).
-                    hard (bool)     -- Flag to hard refresh MongoDB cache for this entity (default: False).
+        This method initiates the client retirement process, which uninstalls the client and removes it from active management.
+        If successful, it returns a Job object representing the uninstall job.
+
+        Args:
+            client_name: The name of the client to retire (case-insensitive).
+
+        Returns:
+            Job: Job object representing the uninstall job for the retired client.
+
+        Raises:
+            SDKException: If the client retirement fails, the response is empty, or the response code is not as expected.
+
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> job = clients.retire("Server01")
+            >>> print(f"Retirement job started with Job ID: {job.job_id}")
+            >>> # The returned Job object can be used to monitor the uninstall progress
+
+        #ai-gen-doc
+        """
+        client_name = client_name.lower()
+        if self.has_client(client_name):
+            if client_name in self.all_clients:
+                client_id = self.all_clients[client_name]['id']
+            else:
+                client_id = self.hidden_clients[client_name]['id']
+
+            request_json = {
+                "client": {
+                    "clientId": int(client_id),
+                    "clientName": client_name
+                }
+            }
+            flag, response = self._cvpysdk_object.make_request(
+                'DELETE', self._services['RETIRE'] % client_id, request_json
+            )
+
+            if flag:
+                if response.json() and 'response' in response.json():
+                    error_code = response.json()['response']['errorCode']
+                    error_string = response.json()['response'].get('errorString', '')
+
+                    if error_code == 0:
+                        if 'jobId' in response.json():
+                            return Job(self._commcell_object, (response.json()['jobId']))
+                    else:
+                        o_str = 'Failed to Retire Client. Error: "{0}"'.format(error_string)
+                        raise SDKException('Client', '102', o_str)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '101', self._update_response_(response.text))
+        else:
+            raise SDKException(
+                'Client', '102', 'No client exists with name: {0}'.format(client_name)
+            )
+
+    def refresh(self, **kwargs: Any) -> None:
+        """Refresh the clients associated with the Commcell.
+
+        This method reloads all client-related data, including hidden clients, virtualization clients,
+        access nodes, and specialized client types. Optionally, it can refresh the client groups cache
+        from MongoDB, with an option for a hard refresh.
+
+        Args:
+            **kwargs: Optional keyword arguments to control refresh behavior.
+                mongodb (bool): If True, fetch client groups cache from MongoDB (default: False).
+                hard (bool): If True, perform a hard refresh of the MongoDB cache for this entity (default: False).
+
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> clients.refresh()  # Standard refresh of all client data
+            >>> clients.refresh(mongodb=True)  # Refresh client groups cache from MongoDB
+            >>> clients.refresh(mongodb=True, hard=True)  # Hard refresh of MongoDB cache
+
+        #ai-gen-doc
         """
         self._clients = self._get_clients()
         self._hidden_clients = self._get_hidden_clients()
@@ -5161,29 +7257,124 @@ class Clients(object):
         self._office_365_clients = None
         self._file_server_clients = None
         self._salesforce_clients = None
+        self._laptop_clients = None
+        self._virtual_machines = None
 
         mongodb = kwargs.get('mongodb', False)
         hard = kwargs.get('hard', False)
         if mongodb:
             self._client_cache = self.get_clients_cache(hard=hard)
 
+    def _get_infrastructure_clients(self) -> Dict[str, Dict[str, str]]:
+        """Retrieve all infrastructure clients in the Commcell.
+        
+        This method scans through all clients in the Commcell cache and identifies those marked
+        as infrastructure clients. Infrastructure clients are typically CommServ, WebConsole,
+        WebServer, and other core Commvault infrastructure components.
+        
+        Returns:
+            dict: Dictionary with infrastructure client names (lowercase) as keys and their details as values.
+                  Each value contains client information including ID, hostname, and infrastructure flag.
+        
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> infra_clients = clients._get_infrastructure_clients()
+            >>> for client_name, client_info in infra_clients.items():
+            ...     print(f"Infrastructure client: {client_name}, ID: {client_info['id']}")
+        
+        #ai-gen-doc
+        """
+        all_clients = self.all_clients_cache
+        infrastructure_clients = {}
+        for client_name, client_info in all_clients.items():
+            if client_info.get('isInfrastructure', False):              
+                infrastructure_clients[client_name] = client_info
+        
+        return infrastructure_clients
+    
+    @property
+    def infrastructure_clients(self) -> Dict[str, Dict[str, str]]:
+        """Returns a dictionary containing information of all infrastructure clients in the Commcell.
+        
+        This property provides access to all infrastructure clients such as CommServ, WebConsole,
+        WebServer, and other core Commvault components. The data is cached after the first access
+        for improved performance.
+        
+        Returns:
+            dict: Dictionary with infrastructure client names (lowercase) as keys and their details as values.
+                  Each value contains client information including:
+                  - 'id': Client ID
+                  - 'hostName': Hostname of the client
+                  - 'isInfrastructure': Boolean flag (always True for this property)
+                  - Additional client metadata
+        
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> infra_clients = clients.infrastructure_clients
+            >>> print(f"Total infrastructure clients: {len(infra_clients)}")
+        
+        #ai-gen-doc
+        """
+        if not self._infra_clients:
+            self._infra_clients = self._get_infrastructure_clients()
+        return self._infra_clients
 
 class Client(object):
-    """Class for performing client operations for a specific client."""
+    """
+    Comprehensive class for managing and performing operations on a specific client within a CommCell environment.
 
-    def __new__(cls, commcell_object, client_name, client_id=None, username=None, password=None):
-        """Decides and creates which client object needs to be created
-            Args:
-                commcell_object (object)     --  instance of the Commcell class
+    The Client class provides a rich interface for interacting with client entities, enabling configuration,
+    management, monitoring, and operational control. It supports a wide range of functionalities including
+    property management, backup and restore operations, service control, network configuration, user and owner
+    associations, software management, and advanced settings.
 
-                client_name     (str)        --  name of the client
+    Key Features:
+        - Client property access and updates via properties and update methods
+        - Backup, restore, data aging, IntelliSnap, and content indexing enable/disable operations
+        - Service management: start, stop, restart individual or all services
+        - Network configuration, throttling, and status monitoring
+        - File and folder upload capabilities to the client
+        - Execution of scripts and commands on the client with authentication support
+        - Management of client owners, user associations, and client groups
+        - Software operations: push service packs/hotfixes, repair, uninstall, reconfigure, retire
+        - License management and release
+        - Advanced settings: encryption, deduplication, additional settings management
+        - Privacy and security role management
+        - Environment, readiness, and needs attention details retrieval
+        - Log file reading and job results directory management
+        - Support for virtual machine clients and cluster configurations
+        - Company and migration operations for client entities
 
-                client_id       (str)        --  id of the client
-                    default: None
+    This class is designed to be instantiated with CommCell context and client credentials, providing
+    both high-level and granular control over client operations and configurations.
 
-            Returns:
-                object - instance of the Client class
-                """
+    #ai-gen-doc
+    """
+
+    def __new__(cls, commcell_object: 'Commcell', client_name: str, client_id: Optional[str] = None, username: Optional[str] = None, password: Optional[str] = None) -> object:
+        """Create and return the appropriate client object based on client properties.
+
+        This method determines the type of client (e.g., VMClient, OneDriveClient, or generic Client)
+        to instantiate based on the provided Commcell object and client details.
+
+        Args:
+            commcell_object: Instance of the Commcell class representing the Commcell connection.
+            client_name: Name of the client as a string.
+            client_id: Optional client ID as a string. Defaults to None.
+            username: Optional username for authentication. Defaults to None.
+            password: Optional password for authentication. Defaults to None.
+
+        Returns:
+            An instance of the appropriate client class (VMClient, OneDriveClient, or Client).
+
+        Example:
+            >>> commcell = Commcell(command_center_hostname, username, password)
+            >>> client = Client(commcell, "Client01", client_id="12345")
+            >>> print(type(client))
+            >>> # The returned object may be a VMClient, OneDriveClient, or Client depending on client properties
+
+        #ai-gen-doc
+        """
         from .clients.vmclient import VMClient
         from .clients.onedrive_client import OneDriveClient
         _client = commcell_object._services['CLIENT'] % (client_id)
@@ -5192,29 +7383,33 @@ class Client(object):
             if response.json() and 'clientProperties' in response.json():
                 if response.json().get('clientProperties', {})[0].get('vmStatusInfo', {}).get('vsaSubClientEntity',
                                                                                               {}).get(
-                        'applicationId') == 106:
+                    'applicationId') == 106:
                     return object.__new__(VMClient)
 
                 elif (len(response.json().get('clientProperties', {})[0].get('client', {}).get('idaList', [])) > 0 and
-                        response.json().get('clientProperties', {})[0].get('client', {}).get('idaList', [])[0]
-                        .get('idaEntity', {}).get('applicationId') == AppIDAType.CLOUD_APP.value):
+                      response.json().get('clientProperties', {})[0].get('client', {}).get('idaList', [])[0]
+                              .get('idaEntity', {}).get('applicationId') == AppIDAType.CLOUD_APP.value):
                     return object.__new__(OneDriveClient)
 
         return object.__new__(cls)
 
-    def __init__(self, commcell_object, client_name, client_id=None, username=None, password=None):
-        """Initialise the Client class instance.
+    def __init__(self, commcell_object: 'Commcell', client_name: str, client_id: Optional[str] = None, username: Optional[str] = None, password: Optional[str] = None) -> None:
+        """Initialize a Client instance for managing backup and restore operations.
 
-            Args:
-                commcell_object (object)     --  instance of the Commcell class
+        Args:
+            commcell_object: Instance of the Commcell class representing the Commcell connection.
+            client_name: Name of the client as a string.
+            client_id: Optional client ID as a string. If not provided, it will be determined automatically.
+            username: Optional username for client authentication.
+            password: Optional password for client authentication.
 
-                client_name     (str)        --  name of the client
+        Example:
+            >>> from cvpysdk.commcell import Commcell
+            >>> commcell = Commcell(command_center_hostname, username, password)
+            >>> client = Client(commcell, "Server01")
+            >>> print(f"Initialized client: {client}")
 
-                client_id       (str)        --  id of the client
-                    default: None
-
-            Returns:
-                object - instance of the Client class
+        #ai-gen-doc
         """
         self._commcell_object = commcell_object
 
@@ -5243,6 +7438,7 @@ class Client(object):
             self._client_type_id = _client_type['Hidden Client']
 
         self._CLIENT = self._services['CLIENT'] % (self.client_id)
+        self._SECURITY_ASSOCIATION = self._services['SECURITY_ASSOCIATION']
 
         self._instance = None
 
@@ -5290,32 +7486,65 @@ class Client(object):
         self._is_infrastructure = None
         self._network_status = None
         self._update_status = None
+        self._additional_settings = None
         self.refresh()
 
-    def __repr__(self):
-        """String representation of the instance of this class."""
+    def __repr__(self) -> str:
+        """Return a string representation of the Client instance.
+
+        This method provides a human-readable description of the Client object,
+        including the client name for easier identification during debugging or logging.
+
+        Returns:
+            A string describing the Client instance and its associated client name.
+
+        Example:
+            >>> client = Client(...)
+            >>> print(repr(client))
+            Client class instance for Client: "MyClient"
+        #ai-gen-doc
+        """
         representation_string = 'Client class instance for Client: "{0}"'
         return representation_string.format(self.client_name)
 
-    def _get_client_id(self):
-        """Gets the client id associated with this client.
+    def _get_client_id(self) -> str:
+        """Retrieve the client ID associated with this Client instance.
 
-            Returns:
-                str - id associated with this client
+        Returns:
+            The unique client ID as a string.
+
+        Example:
+            >>> client = Client(commcell_object, client_name)
+            >>> client_id = client._get_client_id()
+            >>> print(f"Client ID: {client_id}")
+
+        #ai-gen-doc
         """
         return self._commcell_object.clients.get(self.client_name).client_id
 
-    def _get_client_properties(self):
-        """Gets the client properties of this client.
+    def _get_client_properties(self) -> Dict[str, Any]:
+        """Retrieve and update the properties of this client from the Commcell.
 
-            Returns:
-                dict - dictionary consisting of the properties of this client
+        This method fetches the client properties from the Commcell server and updates
+        the internal state of the Client object with the latest configuration, activity,
+        and infrastructure details.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Returns:
+            Dictionary containing the properties of this client, such as OS information,
+            activity controls, infrastructure details, and other metadata.
 
-                    if response is not success
+        Raises:
+            SDKException: If the response from the Commcell server is empty or indicates failure.
+
+        Example:
+            >>> client = Client(commcell_object, client_name)
+            >>> properties = client._get_client_properties()
+            >>> print(properties)
+            >>> # Access specific property values
+            >>> os_info = properties['client']['osInfo']
+            >>> print(f"Client OS: {os_info}")
+
+        #ai-gen-doc
         """
         flag, response = self._cvpysdk_object.make_request('GET', self._CLIENT)
 
@@ -5439,23 +7668,53 @@ class Client(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def _request_json(self, option, enable=True, enable_time=None, job_start_time=None, **kwargs):
-        """Returns the JSON request to pass to the API as per the options selected by the user.
+    def _request_json(
+        self,
+        option: str,
+        enable: bool = True,
+        enable_time: Optional[int] = None,
+        job_start_time: Optional[int] = None,
+        **kwargs: Any
+    ) -> Dict[str, Any]:
+        """Construct the JSON request payload for client activity control operations.
 
-            Args:
-                option (str)  --  string option for which to run the API for
-                    e.g.; Backup / Restore / Data Aging
+        This method generates the appropriate JSON structure to be sent to the API based on the selected option
+        (e.g., Backup, Restore, Data Aging) and additional parameters. It supports enabling/disabling activities
+        immediately or after a specified delay, and allows customization of timezone and job start time.
 
-                **kwargs (dict)  -- dict of keyword arguments as follows
+        Args:
+            option: The activity option for which to generate the API request (e.g., "Backup", "Restore", "Data Aging").
+            enable: Whether to enable the specified activity type immediately. Defaults to True.
+            enable_time: Optional epoch time (int) to enable the activity after a delay. If provided, the request will include a delayed enable configuration.
+            job_start_time: Optional epoch time (int) specifying when the job should start. If provided, it is added to the request.
+            **kwargs: Additional keyword arguments. Supported keys:
+                - timezone (str): Timezone name to use for the operation. If not provided, defaults to the Commcell's default timezone.
 
-                    timezone    (str)   -- timezone to be used of the operation
+        Returns:
+            Dictionary representing the JSON request payload to be sent to the API.
 
-                        **Note** make use of TIMEZONES dict in constants.py to pass timezone
+        Example:
+            >>> # Enable backup activity immediately
+            >>> payload = client._request_json("Backup", enable=True)
+            >>> print(payload)
+            >>>
+            >>> # Schedule restore activity to enable after a delay in a specific timezone
+            >>> payload = client._request_json(
+            ...     "Restore",
+            ...     enable=False,
+            ...     enable_time=1680307200,
+            ...     timezone="GMT"
+            ... )
+            >>> print(payload)
+            >>>
+            >>> # Set job start time for data aging activity
+            >>> payload = client._request_json(
+            ...     "Data Aging",
+            ...     job_start_time=1680310800
+            ... )
+            >>> print(payload)
 
-                        **Note** In case of linux CommServer provide time in GMT timezone
-
-            Returns:
-                dict - JSON request to pass to the API
+        #ai-gen-doc
         """
         options_dict = {
             "Backup": 1,
@@ -5513,18 +7772,27 @@ class Client(object):
 
         return request_json1
 
-    def _update_client_props_json(self, properties_dict):
-        """Returns the update client properties JSON request to pass to the API as per
-            the property mentioned by the user.
+    def _update_client_props_json(self, properties_dict: Dict[str, Any]) -> Dict[str, Any]:
+        """Construct the JSON request for updating client properties via the API.
 
-            Args:
-                properties_dict (dict)  --  client property dict which is to be updated
-                    e.g.: {
-                            "EnableSnapBackups": True
-                          }
+        Args:
+            properties_dict: Dictionary containing client properties to update.
+                Example:
+                    {
+                        "EnableSnapBackups": True
+                    }
 
-            Returns:
-                Client Properties update dict
+        Returns:
+            Dictionary representing the client properties update request in the required API format.
+
+        Example:
+            >>> client = Client(...)
+            >>> update_dict = {"EnableSnapBackups": True}
+            >>> request_json = client._update_client_props_json(update_dict)
+            >>> print(request_json)
+            # Output will be a JSON-ready dictionary for the API request
+
+        #ai-gen-doc
         """
         request_json = {
             "clientProperties": {
@@ -5544,41 +7812,42 @@ class Client(object):
         return request_json
 
     def _make_request(self,
-                      upload_url,
-                      file_contents,
-                      headers,
-                      request_id=None,
-                      chunk_offset=None):
-        """Makes the request to the server to upload the specified file contents on the
-            client machine
+                      upload_url: str,
+                      file_contents: str,
+                      headers: str,
+                      request_id: Optional[int] = None,
+                      chunk_offset: Optional[int] = None) -> Tuple[int, int]:
+        """Send a request to upload file contents to the client machine.
 
-            Args:
-                upload_url      (str)   --  request url on which the request is to be done
+        This method uploads the specified file data to the server using the provided URL and headers.
+        It supports chunked uploads by accepting a request ID and chunk offset, which are used to
+        uniquely identify and position data chunks.
 
-                file_contents   (str)   --  data from the file which is to be copied
+        Args:
+            upload_url: The request URL to which the file contents will be uploaded.
+            file_contents: The data from the file to be copied, as a string.
+            headers: Request headers for the API call.
+            request_id: Optional request ID from a previous upload, used to identify data chunks.
+            chunk_offset: Optional number of bytes written in previous upload requests, used to specify
+                the starting position for writing data.
 
-                headers         (str)   --  request headers for this api
+        Returns:
+            A tuple containing:
+                - request_id (int): The request ID returned from the server response.
+                - chunk_offset (int): The chunk offset returned from the server response.
 
-                request_id      (int)   --  request id received from the first upload request.
-                                                request id is used to uniquely identify
-                                                chunks of data
-                    default: None
+        Raises:
+            SDKException: If the upload fails, the response is empty, or the response indicates an error.
 
-                chunk_offset    (int)   --  number of bytes written till previous upload request.
-                                                chunk_offset is used to specify from where to
-                                                write data on specified file
-                    default: None
+        Example:
+            >>> client = Client(...)
+            >>> upload_url = "http://server/upload"
+            >>> file_contents = "file data here"
+            >>> headers = "Authorization: Bearer <token>"
+            >>> request_id, chunk_offset = client._make_request(upload_url, file_contents, headers)
+            >>> print(f"Upload successful. Request ID: {request_id}, Chunk Offset: {chunk_offset}")
 
-            Returns:
-                (int, int)  -   request id and chunk_offset returned from the response
-
-            Raises:
-                SDKException:
-                    if failed to upload the file
-
-                    if response is empty
-
-                    if response is not success
+        #ai-gen-doc
         """
         if request_id is not None:
             upload_url += '&requestId={0}'.format(request_id)
@@ -5613,24 +7882,29 @@ class Client(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def _get_instance_of_client(self):
-        """Gets the instance associated with this client.
+    def _get_instance_of_client(self) -> str:
+        """Retrieve the instance name associated with this client.
 
-            Returns:
-                str     -   instance on which the client is installed
+        This method determines the instance on which the client is installed, based on the client's operating system.
+        For Windows clients, it reads the instance information from the QinetixVM file.
+        For Unix clients, it extracts the instance name from the galaxy_vm file.
 
-                    e.g.;   Instance001
+        Returns:
+            The name of the instance as a string (e.g., "Instance001").
 
-            Raises:
-                SDKException:
-                    if failed to get the value of instance
+        Raises:
+            SDKException: If the instance value cannot be retrieved or if the operation is not supported for the client OS.
 
-                    if operation is not supported for the client OS
+        Example:
+            >>> client = Client(...)
+            >>> instance_name = client._get_instance_of_client()
+            >>> print(f"Client is installed on instance: {instance_name}")
 
+        #ai-gen-doc
         """
         if 'windows' in self.os_info.lower():
             command = 'powershell.exe Get-Content "{0}"'.format(
-                os.path.join(self.install_directory, 'Base', 'QinetixVM').replace(" ", "' '")
+                os.path.join(self.install_directory.replace(' ', '` '), 'Base', 'QinetixVM')
             )
 
             exit_code, output, __ = self.execute_command(command)
@@ -5659,24 +7933,30 @@ class Client(object):
         else:
             raise SDKException('Client', '109')
 
-    def _get_log_directory(self):
-        """Gets the path of the log directory on the client.
+    def _get_log_directory(self) -> str:
+        """Retrieve the path of the log directory on the client.
 
-            Returns:
-                str     -   path of the log directory on the client
+        This method determines the log directory path based on the client's operating system.
+        For Windows clients, it queries the registry for the log directory location.
+        For Unix clients, it reads the appropriate properties file to obtain the path.
 
-                    e.g.;
+        Returns:
+            The path to the log directory on the client as a string.
+            Example values:
+                - "..\\ContentStore\\Log Files" (Windows)
+                - "../commvault/Log_Files" (Unix)
 
-                        -   ..\\\\ContentStore\\\\Log Files
+        Raises:
+            SDKException: If unable to retrieve the log directory path or if the operation
+                is not supported for the client's operating system.
 
-                        -   ../commvault/Log_Files
+        Example:
+            >>> client = Client(...)
+            >>> log_dir = client._get_log_directory()
+            >>> print(f"Client log directory: {log_dir}")
+            >>> # Use the returned path for log file operations
 
-            Raises:
-                SDKException:
-                    if failed to get the value of log directory path
-
-                    if operation is not supported for the client OS
-
+        #ai-gen-doc
         """
         if 'windows' in self.os_info.lower():
             key = r'HKLM:\SOFTWARE\CommVault Systems\Galaxy\{0}\EventManager'.format(self.instance)
@@ -5721,34 +8001,30 @@ class Client(object):
         else:
             raise SDKException('Client', '109')
 
-    def _service_operations(self, service_name=None, operation=None):
-        """Executes the command on the client machine to start / stop / restart a
-            Commvault service, or ALL services.
+    def _service_operations(self, service_name: Optional[str] = None, operation: Optional[str] = None) -> None:
+        """Execute a command on the client machine to start, stop, or restart a Commvault service or all services.
 
-            Args:
-                service_name        (str)   --  name of the service to be operated on
+        This method performs the specified operation (START, STOP, RESTART, or RESTART_SVC_GRP) on a given service
+        or all services on the client. If no operation is provided, it defaults to RESTART_SVC_GRP. The method
+        automatically determines the appropriate command based on the client's operating system.
 
-                    default:    None
+        Args:
+            service_name: Name of the service to operate on. If None, operates on all services.
+            operation: Operation to perform. Valid values are 'START', 'STOP', 'RESTART', and 'RESTART_SVC_GRP'.
+                If None, defaults to 'RESTART_SVC_GRP'.
 
-                operation           (str)   --  name of the operation to be done
+        Raises:
+            SDKException: If an invalid operation is specified, the client OS is unsupported, or the command fails.
 
-                    Valid Values are:
-
-                        -   START
-
-                        -   STOP
-
-                        -   RESTART
-
-                        -   RESTART_SVC_GRP     **Only available for Windows Clients**
-
-                    default:    None
-
-                    for None as the input, we will run **RESTART_SVC_GRP** operation
-
-            Returns:
-                None    -   if the operation was performed successfully
-
+        Example:
+            >>> client = Client(...)
+            >>> # Restart all services on the client
+            >>> client._service_operations()
+            >>> # Start a specific service
+            >>> client._service_operations(service_name="GxEvMgrS", operation="START")
+            >>> # Stop all services
+            >>> client._service_operations(operation="STOP")
+        #ai-gen-doc
         """
         operations_dict = {
             'START': {
@@ -5802,9 +8078,7 @@ class Client(object):
                     operations_dict[operation]['exception_message'].format(service_name, output)
                 )
         elif 'unix' in self.os_info.lower():
-            commvault = r'/usr/bin/commvault'
-            if 'darwin' in self.os_info.lower():
-                commvault = r'/usr/local/bin/commvault'
+            commvault = f"{self.install_directory}/Base/commvault"
 
             if self.instance:
                 command = '{0} -instance {1} {2} {3}'.format(
@@ -5812,33 +8086,94 @@ class Client(object):
                     self.instance,
                     f"-service {service_name}" if service_name != 'ALL' else "",
                     operations_dict[operation]['unix_command'])
-
-                __, __, error = self.execute_command(command, wait_for_completion=False)
-
-                if error:
-                    raise SDKException(
-                        'Client', '102', 'Failed to {0} services.\nError: {1}'.format(
-                            operations_dict[operation]['unix_command'],
-                            error
-                        )
-                    )
             else:
-                raise SDKException('Client', '109')
+                command = '{0} {1} {2}'.format(
+                    commvault,
+                    f"-service {service_name}" if service_name != 'ALL' else "",
+                    operations_dict[operation]['unix_command'])
+
+            __, __, error = self.execute_command(command, wait_for_completion=False)
+
+            if error:
+                raise SDKException(
+                    'Client', '102', 'Failed to {0} services.\nError: {1}'.format(
+                        operations_dict[operation]['unix_command'],
+                        error
+                    )
+                )
         else:
             raise SDKException('Client', '109')
 
-    def _process_update_request(self, request_json):
-        """Runs the Client update API
+    def _set_patch_options(self, option_type: int, enable: bool = True) -> None:
+        """Set patch management options for this Client.
 
-            Args:
-                request_json    (dict)  -- request json sent as payload
+        This method enables or disables patch management options (e.g., Windows OS updates).
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Args:
+            option_type: The type of patch option to set (e.g., 2 for Windows OS updates).
+            enable: True to enable the patch option, False to disable. Default: True.
 
-                    if response is not success
+        Raises:
+            SDKException: If the request fails or the response indicates an error.
 
+        Example:
+            >>> client = Client(...)
+            >>> # Enable Windows OS updates
+            >>> client._set_patch_options(option_type=2, enable=True)
+            >>> # Enable Microsoft SQL Server updates
+            >>> client._set_patch_options(option_type=1, enable=True)
+        #ai-gen-doc
+        """
+        request_json = {
+            "clientID": int(self.client_id),
+            "optionType": option_type,
+            "value": enable
+        }
+
+        flag, response = self._cvpysdk_object.make_request('POST', self._services['SET_PATCH_OPTIONS'], request_json)
+
+        if flag:
+            if response.json():
+                error_code = response.json().get('errorCode', 0)
+                if error_code != 0:
+                    raise SDKException(
+                        'Response', '101',
+                        self._commcell_object._update_response_(response.text)
+                    )
+                return
+            raise SDKException('Response', '102')
+        raise SDKException(
+            'Response', '101', self._commcell_object._update_response_(response.text))
+
+    def _process_update_request(self, request_json: Dict[str, Any]) -> None:
+        """Run the Client update API with the provided request payload.
+
+        This method sends a client update request to the Commcell server using the specified
+        request JSON payload. It validates the response and raises an SDKException if the update
+        fails or if the response is empty.
+
+        Args:
+            request_json: Dictionary containing the request payload for the client update API.
+
+        Raises:
+            SDKException: If the response is empty or the update operation is not successful.
+
+        Example:
+            >>> client = Client(commcell_object, client_name)
+            >>> update_payload = {
+            ...     "association": {
+            ...         "entity": [
+            ...             {"clientName": "MyClient"}
+            ...         ]
+            ...     },
+            ...     "properties": {
+            ...         # Additional update properties
+            ...     }
+            ... }
+            >>> client._process_update_request(update_payload)
+            >>> # If the update fails, an SDKException will be raised
+
+        #ai-gen-doc
         """
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._CLIENT, request_json
@@ -5866,26 +8201,27 @@ class Client(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def update_properties(self, properties_dict):
-        """Updates the client properties
+    def update_properties(self, properties_dict: Dict[str, Any]) -> None:
+        """Update the properties of the client.
 
-            Args:
-                properties_dict (dict)  --  client property dict which is to be updated
+        This method updates the client configuration using the provided properties dictionary.
+        To modify client properties, obtain a deep copy of the current properties using `self.properties`,
+        make the necessary changes, and then pass the updated dictionary to this method.
 
-            Returns:
-                None
+        Args:
+            properties_dict: Dictionary containing the client properties to be updated.
 
-            Raises:
-                SDKException:
-                    if failed to add
+        Raises:
+            SDKException: If the update fails, the response is empty, or the response code is not as expected.
 
-                    if response is empty
+        Example:
+            >>> client = Client(...)
+            >>> props = client.properties.copy()  # Get a deep copy of current properties
+            >>> props['clientProps']['clientName'] = "NewClientName"
+            >>> client.update_properties(props)
+            >>> print("Client properties updated successfully")
 
-                    if response code is not as expected
-
-        **Note** self.properties can be used to get a deep copy of all the properties, modify the properties which you
-        need to change and use the update_properties method to set the properties
-
+        #ai-gen-doc
         """
         request_json = {
             "clientProperties": {},
@@ -5899,100 +8235,244 @@ class Client(object):
         }
 
         request_json['clientProperties'].update(properties_dict)
-        request_json['clientProperties']['clientProps'].pop("CVS3BucketName")
+        if "CVS3BucketName" in request_json.get("clientProperties", {}).get("clientProps", {}) \
+                and request_json.get("clientProperties", {}).get("clientProps", {}).get("CVS3BucketName") == "":
+            request_json['clientProperties']['clientProps'].pop("CVS3BucketName")
+
         self._process_update_request(request_json)
 
     @property
-    def properties(self):
-        """Returns the client properties"""
+    def properties(self) -> Dict[str, Any]:
+        """Get a copy of the client properties.
+
+        Returns:
+            Dictionary containing all properties associated with the client.
+
+        Example:
+            >>> client = Client(...)
+            >>> props = client.properties  # Use dot notation for properties
+            >>> print(f"Client properties: {props}")
+            >>> # The returned dictionary contains key-value pairs for client configuration
+
+        #ai-gen-doc
+        """
         return copy.deepcopy(self._properties)
 
     @property
-    def latitude(self):
-        """Returns the client latitude from clientRegionInfo GeoLocation"""
+    def latitude(self) -> float:
+        """Get the latitude of the client from the clientRegionInfo GeoLocation.
+
+        Returns:
+            The latitude value as a float.
+
+        Example:
+            >>> client = Client(...)
+            >>> lat = client.latitude  # Use dot notation for property access
+            >>> print(f"Client latitude: {lat}")
+
+        #ai-gen-doc
+        """
         return self._client_latitude
 
     @property
-    def longitude(self):
-        """Returns the client Longitude from clientRegionInfo GeoLocation"""
+    def longitude(self) -> float:
+        """Get the longitude value of the client from the clientRegionInfo GeoLocation.
+
+        Returns:
+            The longitude of the client as a float.
+
+        Example:
+            >>> client = Client(...)
+            >>> longitude = client.longitude  # Use dot notation for property access
+            >>> print(f"Client longitude: {longitude}")
+
+        #ai-gen-doc
+        """
         return self._client_longitude
 
     @property
-    def is_vm(self):
-        """Returns True if the given client is a VM else False"""
+    def is_vm(self) -> bool:
+        """Indicate whether the client is a virtual machine (VM).
+
+        Returns:
+            True if the client is a VM, False otherwise.
+
+        Example:
+            >>> client = Client(...)
+            >>> if client.is_vm:
+            ...     print("This client is a virtual machine.")
+            ... else:
+            ...     print("This client is a physical machine.")
+
+        #ai-gen-doc
+        """
         return self._is_vm
 
     @property
-    def hyperv_id_of_vm(self):
-        """Returns the Hypervisor ID associated to a VM client"""
+    def hyperv_id_of_vm(self) -> str:
+        """Get the Hypervisor ID associated with this VM client.
+
+        Returns:
+            The Hypervisor ID as a string.
+
+        Example:
+            >>> client = Client(...)
+            >>> hypervisor_id = client.hyperv_id_of_vm  # Use dot notation for property access
+            >>> print(f"VM Hypervisor ID: {hypervisor_id}")
+
+        #ai-gen-doc
+        """
         return self._vm_hyperv_id
 
     @property
-    def associated_client_groups(self):
-        """Returns the list of client groups to which the given client is assocaited with"""
+    def associated_client_groups(self) -> List[str]:
+        """Get the list of client groups associated with this client.
+
+        Returns:
+            List of client group names as strings to which the client is associated.
+
+        Example:
+            >>> client = Client(...)
+            >>> groups = client.associated_client_groups  # Use dot notation for property access
+            >>> print(f"Client is part of groups: {groups}")
+            >>> # The returned list contains the names of all associated client groups
+
+        #ai-gen-doc
+        """
         return self._associated_client_groups
 
     @property
-    def company_id(self):
-        """Returns the client's Company ID"""
+    def company_id(self) -> int:
+        """Get the company ID associated with this client.
+
+        Returns:
+            The company ID as an integer.
+
+        Example:
+            >>> client = Client(...)
+            >>> company_id = client.company_id  # Use dot notation for property access
+            >>> print(f"Client's company ID: {company_id}")
+
+        #ai-gen-doc
+        """
         return self._company_id
 
     @property
-    def name(self):
-        """Returns the Client name"""
+    def name(self) -> str:
+        """Get the name of the client.
+
+        Returns:
+            The client name as a string.
+
+        Example:
+            >>> client = Client(...)
+            >>> client_name = client.name  # Use dot notation for properties
+            >>> print(f"Client name: {client_name}")
+
+        #ai-gen-doc
+        """
         return self._properties['client']['clientEntity']['clientName']
 
     @property
-    def display_name(self):
-        """Returns the Client display name"""
+    def display_name(self) -> str:
+        """Get the display name of the client.
+
+        Returns:
+            The display name of the client as a string.
+
+        Example:
+            >>> client = Client(...)
+            >>> name = client.display_name  # Use dot notation for property access
+            >>> print(f"Client display name: {name}")
+
+        #ai-gen-doc
+        """
         return self._properties['client']['displayName']
 
     @display_name.setter
-    def display_name(self, display_name):
-        """setter to set the display name of the client
+    def display_name(self, display_name: str) -> None:
+        """Set the display name for the client.
 
         Args:
-            display_name    (str)   -- Display name to be set for the client
+            display_name: The new display name to assign to the client.
 
+        Example:
+            >>> client = Client(...)
+            >>> client.display_name = "ProductionServer01"  # Use assignment for property setters
+            >>> # The client's display name is now updated to "ProductionServer01"
+        #ai-gen-doc
         """
         update_properties = self.properties
         update_properties['client']['displayName'] = display_name
         self.update_properties(update_properties)
 
     @property
-    def description(self):
-        """Returns the Client description"""
+    def description(self) -> Optional[str]:
+        """Get the description of the client.
+
+        Returns:
+            The client description as a string, or None if not set.
+
+        Example:
+            >>> client = Client(...)
+            >>> desc = client.description  # Use dot notation for property access
+            >>> print(f"Client description: {desc}")
+
+        #ai-gen-doc
+        """
         return self._properties.get('client', {}).get('clientDescription')
 
     @description.setter
-    def description(self, description):
-        """setter to set the display name of the client
+    def description(self, description: str) -> None:
+        """Set the display name (description) for the client.
 
         Args:
-            description    (str)   -- description to be set for the client
+            description: The description string to assign to the client.
 
+        Example:
+            >>> client = Client(...)
+            >>> client.description = "Production Database Server"  # Use assignment for property setter
+            >>> # The client's display name is now updated
+
+        #ai-gen-doc
         """
         update_description = {
-          "client": {
-            "clientDescription": description
-          }
+            "client": {
+                "clientDescription": description
+            }
         }
         self.update_properties(update_description)
 
     @property
-    def timezone(self):
-        """Returns the timezone of the client"""
+    def timezone(self) -> str:
+        """Get the timezone setting of the client.
+
+        Returns:
+            The timezone of the client as a string.
+
+        Example:
+            >>> client = Client(...)
+            >>> tz = client.timezone  # Use dot notation for property access
+            >>> print(f"Client timezone: {tz}")
+
+        #ai-gen-doc
+        """
         return self._timezone
 
     @timezone.setter
-    def timezone(self, timezone=None):
-        """Setter to set the timezone of the client
+    def timezone(self, timezone: Optional[str] = None) -> None:
+        """Set the timezone for the client.
 
         Args:
-            timezone    (str)   -- timezone to be set for the client
+            timezone: The timezone name to assign to the client as a string.
+                Refer to the TIMEZONES dictionary in constants.py for valid timezone values.
 
-        **Note** make use of TIMEZONES dict in constants.py to set timezone
+        Example:
+            >>> client = Client(...)
+            >>> client.timezone = "Asia/Kolkata"  # Set the client's timezone
+            >>> # Ensure the timezone string matches a key in the TIMEZONES dict
 
+        #ai-gen-doc
         """
         update_properties = self.properties
         update_properties['client']['TimeZone']['TimeZoneName'] = timezone
@@ -6000,18 +8480,52 @@ class Client(object):
         self.update_properties(update_properties)
 
     @property
-    def commcell_name(self):
-        """Returns the Client's commcell name"""
+    def commcell_name(self) -> str:
+        """Get the name of the Commcell associated with this Client.
+
+        Returns:
+            The Commcell name as a string.
+
+        Example:
+            >>> client = Client(...)
+            >>> name = client.commcell_name  # Use dot notation for property access
+            >>> print(f"Commcell name: {name}")
+        #ai-gen-doc
+        """
         return self._properties['client']['clientEntity']['commCellName']
 
     @property
-    def name_change(self):
-        """Returns an instance of Namechange class"""
+    def name_change(self) -> 'NameChange':
+        """Get the NameChange instance associated with this Client.
+
+        Returns:
+            NameChange: An object for managing client name changes.
+
+        Example:
+            >>> client = Client(...)
+            >>> name_change_obj = client.name_change  # Use dot notation for property access
+            >>> print(f"NameChange object: {name_change_obj}")
+            >>> # The returned NameChange object can be used to perform name change operations
+
+        #ai-gen-doc
+        """
         return NameChange(self)
 
     @property
-    def _security_association(self):
-        """Returns the security association object"""
+    def _security_association(self) -> 'SecurityAssociation':
+        """Get the SecurityAssociation object associated with this Client.
+
+        Returns:
+            SecurityAssociation: An object for managing security associations of the client.
+
+        Example:
+            >>> client = Client(commcell_object, "ClientName")
+            >>> security_assoc = client._security_association  # Use dot notation for property access
+            >>> print(f"Security association object: {security_assoc}")
+            >>> # The returned SecurityAssociation object can be used for security operations
+
+        #ai-gen-doc
+        """
         if self._association_object is None:
             from .security.security_association import SecurityAssociation
             self._association_object = SecurityAssociation(self._commcell_object, self)
@@ -6019,161 +8533,476 @@ class Client(object):
         return self._association_object
 
     @property
-    def available_security_roles(self):
-        """Returns the list of available security roles"""
+    def available_security_roles(self) -> str:
+        """Get the list of available security roles for the client as a string.
+
+        Returns:
+            A string representation of the client's available security roles.
+
+        Example:
+            >>> client = Client(...)
+            >>> roles = client.available_security_roles  # Use dot notation for properties
+            >>> print(f"Available security roles: {roles}")
+            >>> # The returned string lists all roles associated with the client
+
+        #ai-gen-doc
+        """
         return self._security_association.__str__()
 
     @property
-    def client_id(self):
-        """Treats the client id as a read-only attribute."""
+    def client_id(self) -> str:
+        """Get the unique identifier for this client as a read-only property.
+
+        Returns:
+            The client ID as a string.
+
+        Example:
+            >>> client = Client(...)
+            >>> print(client.client_id)  # Access the client ID using dot notation
+            >>> # The client_id property is read-only and cannot be modified directly
+
+        #ai-gen-doc
+        """
         return self._client_id
 
     @property
-    def client_name(self):
-        """Treats the client name as a read-only attribute."""
+    def client_name(self) -> str:
+        """Get the name of the client as a read-only property.
+
+        Returns:
+            The client name as a string.
+
+        Example:
+            >>> client = Client(...)
+            >>> name = client.client_name  # Access the client name property
+            >>> print(f"Client name: {name}")
+        #ai-gen-doc
+        """
         return self._client_name
 
     @property
-    def client_hostname(self):
-        """Treats the client host name as a read-only attribute."""
+    def client_hostname(self) -> str:
+        """Get the host name of the client as a read-only property.
+
+        Returns:
+            The client host name as a string.
+
+        Example:
+            >>> client = Client(...)
+            >>> hostname = client.client_hostname  # Access via property
+            >>> print(f"Client host name: {hostname}")
+        #ai-gen-doc
+        """
         return self._client_hostname
 
     @property
-    def os_info(self):
-        """Treats the os information as a read-only attribute."""
+    def os_info(self) -> str:
+        """Get the operating system information for the client as a read-only property.
+
+        Returns:
+            Dictionary containing details about the client's operating system, such as name, version, and architecture.
+
+        Example:
+            >>> client = Client(...)
+            >>> os_details = client.os_info  # Access as a property
+            >>> print(f"OS Name: {os_details}")
+        #ai-gen-doc
+        """
         return self._os_info
 
     @property
-    def os_type(self):
-        """Treats the os type as a read-only attribute."""
+    def os_type(self) -> 'OSType':
+        """Get the operating system type of the client as a read-only property.
+
+        Returns:
+            OSType: The operating system type, such as OSType.WINDOWS or OSType.UNIX.
+
+        Example:
+            >>> client = Client(...)
+            >>> os_type = client.os_type  # Use dot notation for property access
+            >>> print(f"Client OS type: {os_type.name}")
+            >>> # The returned OSType object can be used for OS-specific logic
+
+        #ai-gen-doc
+        """
         os_type = OSType.WINDOWS if OSType.WINDOWS.name.lower() in self.os_info.lower() else OSType.UNIX
         return os_type
 
     @property
-    def is_data_recovery_enabled(self):
-        """Treats the is data recovery enabled as a read-only attribute."""
+    def is_data_recovery_enabled(self) -> bool:
+        """Indicate whether data recovery is enabled for this client.
+
+        Returns:
+            True if data recovery is enabled; False otherwise.
+
+        Example:
+            >>> client = Client(...)
+            >>> if client.is_data_recovery_enabled:
+            ...     print("Data recovery is enabled for this client.")
+            ... else:
+            ...     print("Data recovery is not enabled for this client.")
+
+        #ai-gen-doc
+        """
         return self._is_data_recovery_enabled
 
     @property
-    def is_data_management_enabled(self):
-        """Treats the is data management enabled as a read-only attribute."""
+    def is_data_management_enabled(self) -> bool:
+        """Indicate whether data management is enabled for this client.
+
+        Returns:
+            True if data management is enabled; False otherwise.
+
+        Example:
+            >>> client = Client(...)
+            >>> if client.is_data_management_enabled:
+            ...     print("Data management is enabled for this client.")
+            ... else:
+            ...     print("Data management is not enabled.")
+
+        #ai-gen-doc
+        """
         return self._is_data_management_enabled
 
     @property
-    def is_ci_enabled(self):
-        """Treats the is online content index enabled as a read-only attribute."""
+    def is_ci_enabled(self) -> bool:
+        """Indicate whether online content indexing is enabled for the client.
+
+        Returns:
+            True if online content indexing is enabled; False otherwise.
+
+        Example:
+            >>> client = Client(...)
+            >>> if client.is_ci_enabled:
+            ...     print("Online content indexing is enabled for this client.")
+            ... else:
+            ...     print("Online content indexing is not enabled.")
+
+        #ai-gen-doc
+        """
         return self._is_ci_enabled
 
     @property
-    def is_backup_enabled(self):
-        """Treats the is backup enabled as a read-only attribute."""
+    def is_backup_enabled(self) -> bool:
+        """Indicate whether backup is enabled for this client.
+
+        Returns:
+            True if backup is enabled for the client, False otherwise.
+
+        Example:
+            >>> client = Client(...)
+            >>> if client.is_backup_enabled:
+            ...     print("Backup is enabled for this client.")
+            ... else:
+            ...     print("Backup is disabled for this client.")
+
+        #ai-gen-doc
+        """
         return self._is_backup_enabled
 
     @property
-    def is_restore_enabled(self):
-        """Treats the is restore enabled as a read-only attribute."""
+    def is_restore_enabled(self) -> bool:
+        """Indicate whether restore operations are enabled for this client.
+
+        Returns:
+            True if restore operations are enabled; False otherwise.
+
+        Example:
+            >>> client = Client(...)
+            >>> if client.is_restore_enabled:
+            ...     print("Restore is enabled for this client.")
+            ... else:
+            ...     print("Restore is disabled for this client.")
+
+        #ai-gen-doc
+        """
         return self._is_restore_enabled
 
     @property
-    def is_data_aging_enabled(self):
-        """Treats the is data aging enabled as a read-only attribute."""
+    def is_data_aging_enabled(self) -> bool:
+        """Indicate whether data aging is enabled for this client.
+
+        Returns:
+            True if data aging is enabled; False otherwise.
+
+        Example:
+            >>> client = Client(...)
+            >>> if client.is_data_aging_enabled:
+            ...     print("Data aging is enabled for this client.")
+            ... else:
+            ...     print("Data aging is not enabled for this client.")
+
+        #ai-gen-doc
+        """
         return self._is_data_aging_enabled
 
     @property
-    def is_intelli_snap_enabled(self):
-        """Treats the is intelli snap enabled as a read-only attribute."""
+    def is_intelli_snap_enabled(self) -> bool:
+        """Indicate whether IntelliSnap is enabled for this client.
+
+        Returns:
+            True if IntelliSnap is enabled for the client, False otherwise.
+
+        Example:
+            >>> client = Client(...)
+            >>> if client.is_intelli_snap_enabled:
+            ...     print("IntelliSnap is enabled for this client.")
+            ... else:
+            ...     print("IntelliSnap is not enabled.")
+
+        #ai-gen-doc
+        """
         return self._is_intelli_snap_enabled
 
     @property
-    def is_privacy_enabled(self):
-        """Returns if client privacy is enabled"""
+    def is_privacy_enabled(self) -> bool:
+        """Indicate whether privacy is enabled for this client.
+
+        Returns:
+            True if client privacy is enabled, False otherwise.
+
+        Example:
+            >>> client = Client(...)
+            >>> if client.is_privacy_enabled:
+            ...     print("Privacy is enabled for this client.")
+            ... else:
+            ...     print("Privacy is not enabled for this client.")
+
+        #ai-gen-doc
+        """
         return self._is_privacy_enabled
 
     @property
     def is_deleted_client(self) -> bool:
-        """
-        Returns if the is deleted
+        """Indicate whether the client has been deleted.
 
         Returns:
-            bool  --  True if deleted else false
+            True if the client is deleted, False otherwise.
+
+        Example:
+            >>> client = Client(...)
+            >>> if client.is_deleted_client:
+            ...     print("Client has been deleted.")
+            ... else:
+            ...     print("Client is active.")
+
+        #ai-gen-doc
         """
         return self._is_deleted_client
 
     @property
     def is_infrastructure(self) -> bool:
-        """
-        returns if the client is infrastructure
+        """Indicate whether this client is classified as an infrastructure client.
 
         Returns:
-            bool  --  True if infrastructure client else false
+            True if the client is an infrastructure client, False otherwise.
+
+        Example:
+            >>> client = Client(...)
+            >>> if client.is_infrastructure:
+            ...     print("This is an infrastructure client.")
+            ... else:
+            ...     print("This is a regular client.")
+
+        #ai-gen-doc
         """
         return self._is_infrastructure
 
     @property
     def update_status(self) -> int:
-        """
-        returns the update status of the client
+        """Get the update status flag of the client.
 
         Returns:
-            int -- update status flag of the client
+            Integer value representing the update status of the client.
+
+        Example:
+            >>> client = Client(...)
+            >>> status = client.update_status  # Use dot notation for property access
+            >>> print(f"Client update status: {status}")
+            >>> # The returned status can be used to determine if updates are pending or completed
+
+        #ai-gen-doc
         """
         return self._update_status
 
     @property
-    def is_command_center(self):
-        """Returns if a client has command center package installed"""
+    def is_command_center(self) -> bool:
+        """Indicate whether the client has the Command Center package installed.
+
+        Returns:
+            True if the Command Center package is installed on the client, False otherwise.
+
+        Example:
+            >>> client = Client(...)
+            >>> if client.is_command_center:
+            ...     print("Command Center package is installed.")
+            ... else:
+            ...     print("Command Center package is not installed.")
+
+        #ai-gen-doc
+        """
         return self._is_command_center
 
     @property
-    def is_web_server(self):
-        """Returns if a client has web server package installed"""
+    def is_web_server(self) -> bool:
+        """Check if the client has the web server package installed.
+
+        Returns:
+            True if the web server package is installed on the client, False otherwise.
+
+        Example:
+            >>> client = Client(...)
+            >>> if client.is_web_server:
+            ...     print("Web server package is installed.")
+            ... else:
+            ...     print("Web server package is not installed.")
+
+        #ai-gen-doc
+        """
         return self._is_web_server
 
     @property
-    def install_directory(self):
-        """Treats the install directory as a read-only attribute."""
+    def install_directory(self) -> str:
+        """Get the installation directory of the client as a read-only property.
+
+        Returns:
+            The path to the installation directory as a string.
+
+        Example:
+            >>> client = Client(...)
+            >>> install_path = client.install_directory  # Use dot notation for property access
+            >>> print(f"Client is installed at: {install_path}")
+        #ai-gen-doc
+        """
         return self._install_directory
 
     @property
-    def version(self):
-        """Treats the version as a read-only attribute."""
+    def version(self) -> str:
+        """Get the version of the client as a read-only property.
+
+        Returns:
+            The version string representing the client's software version.
+
+        Example:
+            >>> client = Client(...)
+            >>> print(client.version)  # Access the version property
+            >>> # Output: '11.28.20' (example version string)
+        #ai-gen-doc
+        """
         return self._version
 
     @property
-    def service_pack(self):
-        """Treats the service pack as a read-only attribute."""
+    def service_pack(self) -> str:
+        """Get the service pack version installed on the client.
+
+        This property provides read-only access to the service pack information for the client.
+
+        Returns:
+            The service pack version as a string.
+
+        Example:
+            >>> client = Client(...)
+            >>> sp_version = client.service_pack  # Use dot notation for property access
+            >>> print(f"Service Pack: {sp_version}")
+
+        #ai-gen-doc
+        """
         return self._service_pack
 
     @property
-    def owners(self):
-        """Treats the client owners as a read-only attribute."""
+    def owners(self) -> List[str]:
+        """Get the list of owners associated with this client as a read-only property.
+
+        Returns:
+            List of owner names as strings.
+
+        Example:
+            >>> client = Client(...)
+            >>> owner_list = client.owners  # Use dot notation for property access
+            >>> print(f"Client owners: {owner_list}")
+            >>> # The returned list contains all owners assigned to the client
+
+        #ai-gen-doc
+        """
         return self._client_owners
 
     @property
-    def job_results_directory(self):
-        """Treats the job_results_directory pack as a read-only attribute."""
+    def job_results_directory(self) -> str:
+        """Get the job results directory for the client as a read-only property.
+
+        Returns:
+            The path to the job results directory as a string.
+
+        Example:
+            >>> client = Client(...)
+            >>> results_dir = client.job_results_directory  # Use dot notation for properties
+            >>> print(f"Job results directory: {results_dir}")
+            >>> # The returned string can be used to access job result files
+
+        #ai-gen-doc
+        """
         return self._job_results_directory
 
     @property
-    def block_level_cache_dir(self):
-        """Returns the Block level cache directory"""
+    def block_level_cache_dir(self) -> str:
+        """Get the block-level cache directory path for the client.
+
+        Returns:
+            The path to the block-level cache directory as a string.
+
+        Example:
+            >>> client = Client(...)
+            >>> cache_dir = client.block_level_cache_dir  # Use dot notation for property access
+            >>> print(f"Block-level cache directory: {cache_dir}")
+
+        #ai-gen-doc
+        """
         return self._block_level_cache_dir
 
     @property
-    def instance(self):
-        """Returns the value of the instance the client is installed on."""
+    def instance(self) -> Any:
+        """Get the instance information for the client.
+
+        This property retrieves the value of the instance on which the client is installed.
+        If the instance information is not already cached, it attempts to fetch it.
+
+        Returns:
+            The instance object or value associated with the client. The type may vary depending on implementation.
+
+        Example:
+            >>> client = Client(...)
+            >>> instance_info = client.instance  # Use dot notation for property access
+            >>> print(f"Client instance: {instance_info}")
+
+        #ai-gen-doc
+        """
         if self._instance is None:
             try:
                 self._instance = self._get_instance_of_client()
-            except SDKException:
-                # pass silently if failed to get the value of instance
+            except SDKException as e:
+                import logging
+                logging.getLogger(__name__).warning(
+                    f"_get_instance_of_client failed for client '{self.client_name}': {e}"
+                )
                 pass
 
         return self._instance
 
     @property
-    def log_directory(self):
-        """Returns the path of the log directory on the client."""
+    def log_directory(self) -> Optional[str]:
+        """Get the path of the log directory on the client.
+
+        Returns:
+            The log directory path as a string, or None if unavailable.
+
+        Example:
+            >>> client = Client(...)
+            >>> log_dir = client.log_directory  # Use dot notation for property access
+            >>> print(f"Client log directory: {log_dir}")
+            >>> # The returned value may be None if the log directory cannot be determined
+
+        #ai-gen-doc
+        """
         if self._log_directory is None:
             try:
                 self._log_directory = self._get_log_directory()
@@ -6184,9 +9013,19 @@ class Client(object):
         return self._log_directory
 
     @property
-    def agents(self):
-        """Returns the instance of the Agents class representing the list of Agents
-        installed / configured on the Client.
+    def agents(self) -> 'Agents':
+        """Get the Agents instance representing all agents installed or configured on this Client.
+
+        Returns:
+            Agents: An object for managing and accessing agent details for the client.
+
+        Example:
+            >>> client = Client(...)
+            >>> agents = client.agents  # Use dot notation for property access
+            >>> print(f"Total agents installed: {len(agents)}")
+            >>> # The returned Agents object can be used to list, add, or manage agents
+
+        #ai-gen-doc
         """
         if self._agents is None:
             self._agents = Agents(self)
@@ -6194,9 +9033,19 @@ class Client(object):
         return self._agents
 
     @property
-    def schedules(self):
-        """Returns the instance of the Schedules class representing the Schedules
-        configured on the Client.
+    def schedules(self) -> 'Schedules':
+        """Get the Schedules instance configured for this Client.
+
+        Returns:
+            Schedules: An object representing all schedules associated with the client.
+
+        Example:
+            >>> client = Client(...)
+            >>> schedules = client.schedules  # Access schedules property
+            >>> print(f"Schedules object: {schedules}")
+            >>> # The returned Schedules object can be used to manage client schedules
+
+        #ai-gen-doc
         """
         if self._schedules is None:
             self._schedules = Schedules(self)
@@ -6204,9 +9053,19 @@ class Client(object):
         return self._schedules
 
     @property
-    def users(self):
-        """Returns the instance of the Users class representing the list of Users
-        with permissions set on the Client.
+    def users(self) -> 'Users':
+        """Get the Users instance representing users with permissions on this Client.
+
+        Returns:
+            Users: An object for managing and accessing users assigned to the client.
+
+        Example:
+            >>> client = Client(commcell_object, client_name)
+            >>> users = client.users  # Use dot notation for property access
+            >>> print(f"Total users with permissions: {len(users)}")
+            >>> # The returned Users object can be used to manage user permissions
+
+        #ai-gen-doc
         """
         if self._users is None:
             self._users = Users(self._commcell_object)
@@ -6214,46 +9073,95 @@ class Client(object):
         return self._users
 
     @property
-    def network(self):
-        """Returns the object of Network class"""
+    def network(self) -> 'Network':
+        """Get the Network object associated with this Client.
+
+        Returns:
+            Network: An instance for managing network-related operations of the client.
+
+        Example:
+            >>> client = Client(...)
+            >>> network_obj = client.network  # Use dot notation for property access
+            >>> print(f"Network object: {network_obj}")
+            >>> # The returned Network object can be used for network configuration and management
+
+        #ai-gen-doc
+        """
         if self._network is None:
             self._network = Network(self)
 
         return self._network
 
     @property
-    def network_throttle(self):
-        """Returns the object of NetworkThrottle class"""
+    def network_throttle(self) -> 'NetworkThrottle':
+        """Get the NetworkThrottle object associated with this Client.
+
+        Returns:
+            NetworkThrottle: An instance for managing network throttling settings for the client.
+
+        Example:
+            >>> client = Client(...)
+            >>> throttle = client.network_throttle  # Use dot notation for property access
+            >>> print(f"Network throttle object: {throttle}")
+            >>> # The returned NetworkThrottle object can be used to configure bandwidth limits
+
+        #ai-gen-doc
+        """
         if self._network_throttle is None:
             self._network_throttle = NetworkThrottle(self)
 
         return self._network_throttle
 
     @property
-    def is_cluster(self):
-        """Returns True if the client is of cluster type"""
+    def is_cluster(self) -> bool:
+        """Check if the client is of cluster type.
+
+        Returns:
+            True if the client is identified as a cluster type, False otherwise.
+
+        Example:
+            >>> client = Client(...)
+            >>> if client.is_cluster:
+            ...     print("This client is a cluster type.")
+            ... else:
+            ...     print("This client is not a cluster type.")
+
+        #ai-gen-doc
+        """
         return 'clusterGroupAssociation' in self._properties['clusterClientProperties']
 
     @property
     def network_status(self) -> int:
-        """
-        Returns network status for the client
+        """Get the network status flag for the client.
 
         Returns:
-            int  --  network status flag
+            Integer value representing the client's network status. The meaning of the flag depends on the implementation.
+
+        Example:
+            >>> client = Client(...)
+            >>> status = client.network_status  # Use dot notation for property access
+            >>> print(f"Client network status: {status}")
+
+        #ai-gen-doc
         """
         return self._network_status
 
-    def enable_backup(self):
-        """Enable Backup for this Client.
+    def enable_backup(self) -> None:
+        """Enable backup operations for this client.
 
-            Raises:
-                SDKException:
-                    if failed to enable backup
+        This method sends a request to enable backup for the current client instance.
+        If the operation fails, an SDKException is raised with details about the failure.
 
-                    if response is empty
+        Raises:
+            SDKException: If enabling backup fails, the response is empty, or the response indicates an error.
 
-                    if response is not success
+        Example:
+            >>> client = Client(...)
+            >>> client.enable_backup()
+            >>> print("Backup enabled successfully for the client.")
+            # If an error occurs, SDKException will be raised with the error details.
+
+        #ai-gen-doc
         """
         request_json = self._request_json('Backup')
 
@@ -6277,24 +9185,24 @@ class Client(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def enable_backup_at_time(self, enable_time, **kwargs):
-        """Disables Backup if not already disabled, and enables at the time specified.
+    def enable_backup_at_time(self, enable_time: str, **kwargs: Any) -> None:
+        """Disable backup if currently enabled, and schedule backup to be enabled at the specified time.
 
-            Args:
-                enable_time (str)  --  Time to enable the backup at, in 24 Hour format
-                    format: YYYY-MM-DD HH:mm:ss
+        Args:
+            enable_time: Time to enable the backup, in 24-hour format "YYYY-MM-DD HH:mm:ss".
+            **kwargs: Additional keyword arguments for backup configuration.
 
-            Raises:
-                SDKException:
-                    if time value entered is less than the current time
+        Raises:
+            SDKException: If the specified time is in the past, not in the correct format,
+                if enabling backup fails, or if the response is empty or unsuccessful.
 
-                    if time value entered is not of correct format
-
-                    if failed to enable backup
-
-                    if response is empty
-
-                    if response is not success
+        Example:
+            >>> client = Client(...)
+            >>> # Schedule backup to be enabled at 2024-07-01 23:00:00
+            >>> client.enable_backup_at_time("2024-07-01 23:00:00")
+            >>> # You can also pass additional options as keyword arguments
+            >>> client.enable_backup_at_time("2024-07-01 23:00:00", force=True)
+        #ai-gen-doc
         """
         try:
             time_tuple = time.strptime(enable_time, "%Y-%m-%d %H:%M:%S")
@@ -6325,16 +9233,22 @@ class Client(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def disable_backup(self):
-        """Disables Backup for this Client.
+    def disable_backup(self) -> None:
+        """Disable backup operations for this client.
 
-            Raises:
-                SDKException:
-                    if failed to disable backup
+        This method sends a request to disable backup for the current client instance.
+        If the operation fails, or if the response is empty or unsuccessful, an SDKException is raised.
 
-                    if response is empty
+        Raises:
+            SDKException: If the backup could not be disabled, if the response is empty, or if the response indicates failure.
 
-                    if response is not success
+        Example:
+            >>> client = Client(...)
+            >>> client.disable_backup()
+            >>> print("Backup disabled successfully for the client.")
+            >>> # If the operation fails, an SDKException will be raised.
+
+        #ai-gen-doc
         """
         request_json = self._request_json('Backup', False)
 
@@ -6358,16 +9272,22 @@ class Client(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def enable_restore(self):
-        """Enable Restore for this Client.
+    def enable_restore(self) -> None:
+        """Enable restore functionality for this client.
 
-            Raises:
-                SDKException:
-                    if failed to enable restore
+        This method sends a request to enable restore operations for the client.
+        If the operation fails, an SDKException is raised with details about the failure.
 
-                    if response is empty
+        Raises:
+            SDKException: If enabling restore fails, the response is empty, or the response indicates an error.
 
-                    if response is not success
+        Example:
+            >>> client = Client(...)
+            >>> client.enable_restore()
+            >>> print("Restore enabled successfully for the client.")
+            # If an error occurs, SDKException will be raised with details.
+
+        #ai-gen-doc
         """
         request_json = self._request_json('Restore')
 
@@ -6391,30 +9311,29 @@ class Client(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def enable_restore_at_time(self, enable_time, **kwargs):
-        """Disables Restore if not already disabled, and enables at the time specified.
+    def enable_restore_at_time(self, enable_time: str, **kwargs: Any) -> None:
+        """Enable restore functionality at a specified future time.
 
-            Args:
-                enable_time (str)  --  Time to enable the restore at, in 24 Hour format
-                    format: YYYY-MM-DD HH:mm:ss
+        This method disables restore if it is currently enabled, and schedules it to be enabled
+        at the provided time. The time must be specified in 24-hour format (YYYY-MM-DD HH:mm:ss).
+        Additional keyword arguments, such as timezone, can be provided to customize the operation.
 
-                **kwargs (dict)  -- dict of keyword arguments as follows
+        Args:
+            enable_time: The time to enable restore, in 24-hour format (YYYY-MM-DD HH:mm:ss).
+            **kwargs: Additional keyword arguments for the operation.
+                timezone: The timezone to use for scheduling the restore. Refer to the TIMEZONES dict in constants.py.
 
-                    timezone    (str)   -- timezone to be used of the operation
+        Raises:
+            SDKException: If the provided time is in the past, not in the correct format,
+                if enabling restore fails, or if the response is empty or unsuccessful.
 
-                        **Note** make use of TIMEZONES dict in constants.py to pass timezone
+        Example:
+            >>> client = Client(...)
+            >>> # Enable restore at 2024-07-01 22:30:00 in UTC timezone
+            >>> client.enable_restore_at_time("2024-07-01 22:30:00", timezone="UTC")
+            >>> print("Restore scheduled successfully.")
 
-            Raises:
-                SDKException:
-                    if time value entered is less than the current time
-
-                    if time value entered is not of correct format
-
-                    if failed to enable restore
-
-                    if response is empty
-
-                    if response is not success
+        #ai-gen-doc
         """
         try:
             time_tuple = time.strptime(enable_time, "%Y-%m-%d %H:%M:%S")
@@ -6445,16 +9364,21 @@ class Client(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def disable_restore(self):
-        """Disables Restore for this Client.
+    def disable_restore(self) -> None:
+        """Disable restore operations for this client.
 
-            Raises:
-                SDKException:
-                    if failed to disable restore
+        This method sends a request to the Commcell to disable restore functionality for the current client.
+        If the operation fails, an SDKException is raised with details about the error.
 
-                    if response is empty
+        Raises:
+            SDKException: If the request to disable restore fails, the response is empty, or the response indicates an error.
 
-                    if response is not success
+        Example:
+            >>> client = Client(commcell_object, client_name)
+            >>> client.disable_restore()
+            >>> print("Restore operations have been disabled for the client.")
+
+        #ai-gen-doc
         """
         request_json = self._request_json('Restore', False)
 
@@ -6478,16 +9402,19 @@ class Client(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def enable_data_aging(self):
-        """Enable Data Aging for this Client.
+    def enable_data_aging(self) -> None:
+        """Enable Data Aging for this client.
 
-            Raises:
-                SDKException:
-                    if failed to enable data aging
+        This method sends a request to enable Data Aging on the client. Data Aging allows the removal of aged data according to retention policies.
 
-                    if response is empty
+        Raises:
+            SDKException: If enabling data aging fails, the response is empty, or the response indicates an error.
 
-                    if response is not success
+        Example:
+            >>> client = Client(commcell_object, "ClientName")
+            >>> client.enable_data_aging()
+            >>> print("Data Aging enabled successfully for the client.")
+        #ai-gen-doc
         """
         request_json = self._request_json('Data Aging')
 
@@ -6511,30 +9438,29 @@ class Client(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def enable_data_aging_at_time(self, enable_time, **kwargs):
-        """Disables Data Aging if not already disabled, and enables at the time specified.
+    def enable_data_aging_at_time(self, enable_time: str, **kwargs: Any) -> None:
+        """Enable Data Aging at a specified future time.
 
-            Args:
-                enable_time (str)  --  Time to enable the data aging at, in 24 Hour format
-                    format: YYYY-MM-DD HH:mm:ss
+        This method disables Data Aging if it is currently enabled, and then schedules
+        Data Aging to be enabled at the provided time. The time must be specified in
+        24-hour format: 'YYYY-MM-DD HH:mm:ss'. Optional keyword arguments such as
+        'timezone' can be provided to specify the timezone for the operation.
 
-                **kwargs (dict)  -- dict of keyword arguments as follows
+        Args:
+            enable_time: The time to enable Data Aging, in 'YYYY-MM-DD HH:mm:ss' format.
+            **kwargs: Additional keyword arguments for the operation.
+                timezone: (str) Timezone to use for scheduling. Refer to the TIMEZONES dict in constants.py.
 
-                    timezone    (str)   -- timezone to be used of the operation
+        Raises:
+            SDKException: If the provided time is in the past, not in the correct format,
+                if enabling Data Aging fails, or if the response is empty or unsuccessful.
 
-                        **Note** make use of TIMEZONES dict in constants.py to pass timezone
-
-            Raises:
-                SDKException:
-                    if time value entered is less than the current time
-
-                    if time value entered is not of correct format
-
-                    if failed to enable data aging
-
-                    if response is empty
-
-                    if response is not success
+        Example:
+            >>> client = Client(...)
+            >>> # Enable Data Aging at 11:30 PM on June 30, 2024, in UTC timezone
+            >>> client.enable_data_aging_at_time('2024-06-30 23:30:00', timezone='UTC')
+            >>> print("Data Aging scheduled successfully")
+        #ai-gen-doc
         """
         try:
             time_tuple = time.strptime(enable_time, "%Y-%m-%d %H:%M:%S")
@@ -6565,16 +9491,20 @@ class Client(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def disable_data_aging(self):
-        """Disables Data Aging for this Client.
+    def disable_data_aging(self) -> None:
+        """Disable Data Aging for this Client.
 
-            Raises:
-                SDKException:
-                    if failed to disable data aging
+        This method sends a request to disable data aging for the client.
+        If the operation fails, an SDKException is raised with details about the failure.
 
-                    if response is empty
+        Raises:
+            SDKException: If the request to disable data aging fails, the response is empty, or the response indicates an error.
 
-                    if response is not success
+        Example:
+            >>> client = Client(...)
+            >>> client.disable_data_aging()
+            >>> print("Data Aging has been disabled for the client.")
+        #ai-gen-doc
         """
         request_json = self._request_json('Data Aging', False)
 
@@ -6598,73 +9528,57 @@ class Client(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def execute_script(self, script_type, script, script_arguments=None, wait_for_completion=True, username=None, password=None):
-        """Executes the given script of the script type on this client.
+    def execute_script(
+        self,
+        script_type: str,
+        script: str,
+        script_arguments: Optional[str] = None,
+        wait_for_completion: bool = True,
+        username: Optional[str] = None,
+        password: Optional[str] = None
+    ) -> Tuple[int, str, str]:
+        """Execute a text-based script of the specified type on this client.
 
-            **Only scripts of text format are supported**, i.e., the scripts should not have
-            any binary/bytes content
+        Only scripts in text format are supported; binary or byte content is not allowed.
+        The method executes the given script (either as a file path or direct script content)
+        on the client, optionally with arguments and user impersonation.
 
-            Args:
-                script_type             (str)   --  type of script to be executed on the client
+        Args:
+            script_type: Type of script to execute. Supported values are:
+                - "JAVA"
+                - "Python"
+                - "PowerShell"
+                - "WindowsBatch"
+                - "UnixShell"
+            script: Path to the script file or the script content as a string.
+            script_arguments: Optional arguments to pass to the script.
+            wait_for_completion: Whether to wait for the script execution to finish before returning.
+            username: Optional username for user impersonation during script execution.
+            password: Optional password for the impersonation user.
 
-                    Script Types Supported:
+        Returns:
+            A tuple containing:
+                int: Exit code returned from executing the script on the client (-1 if not returned).
+                str: Output from the script execution ('' if not returned).
+                str: Error message from the script execution ('' if not returned).
 
-                        JAVA
+        Raises:
+            SDKException: If script type or script argument is not a string,
+                if script type is invalid, or if the response is empty or unsuccessful.
 
-                        Python
+        Example:
+            >>> client = Client(...)
+            >>> exit_code, output, error = client.execute_script(
+            ...     script_type="Python",
+            ...     script="/path/to/script.py",
+            ...     script_arguments="--option value",
+            ...     wait_for_completion=True
+            ... )
+            >>> print(f"Exit code: {exit_code}")
+            >>> print(f"Output: {output}")
+            >>> print(f"Error: {error}")
 
-                        PowerShell
-
-                        WindowsBatch
-
-                        UnixShell
-
-                script                  (str)   --  path of the script to be executed on the client
-
-                script_arguments        (str)   --  arguments to the script
-
-                    default: None
-
-                wait_for_completion     (bool)  --  boolean specifying whether to wait for the
-                script execution to finish or not
-
-                    default: True
-
-                username                (str)   --  username to execute the script
-
-                    default: None
-
-                password                (str)   --  password of the username to execute the script
-
-                    default: None
-
-
-            Returns:
-                    (int, str, str)
-
-                int     -   exit code returned from executing the script on the client
-
-                    default: -1     (exit code not returned in the response)
-
-                str     -   output returned from executing the script on the client
-
-                    default: ''     (output not returned in the response)
-
-                str     -   error returned from executing the script on the client
-
-                    default: ''     (error not returned in the response)
-
-            Raises:
-                SDKException:
-                    if script type argument is not of type string
-
-                    if script argument is not of type string
-
-                    if script type is not valid
-
-                    if response is empty
-
-                    if response is not success
+        #ai-gen-doc
         """
         if not (isinstance(script_type, str) and (isinstance(script, str))):
             raise SDKException('Client', '101')
@@ -6745,58 +9659,71 @@ class Client(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def execute_command(self, command, script_arguments=None, wait_for_completion=True, username=None, password=None):
-        """Executes a command on this client.
+    def execute_command(
+        self,
+        command: str,
+        script_arguments: Optional[str] = None,
+        wait_for_completion: bool = True,
+        username: Optional[str] = None,
+        password: Optional[str] = None
+    ) -> Tuple[int, str, str]:
+        """Execute a command on the client system.
 
-            Args:
-                command                 (str)   --  command in string to be executed on the client
+        This method sends a command to be executed on the client, optionally with script arguments and user impersonation.
+        It can wait for the command to complete and returns the exit code, output, and error message from the execution.
 
-                script_arguments        (str)   --  arguments to the script
+        Args:
+            command: The command string to be executed on the client.
+            script_arguments: Optional arguments to pass to the script or command.
+            wait_for_completion: Whether to wait for the command execution to finish before returning.
+            username: Optional username for user impersonation during command execution.
+            password: Optional password for the impersonated user.
 
-                    default: None
+        Returns:
+            A tuple containing:
+                int: Exit code returned from executing the command on the client (default: -1 if not returned).
+                str: Output returned from executing the command (default: '' if not returned).
+                str: Error message returned from executing the command (default: '' if not returned).
 
-                wait_for_completion     (bool)  --  boolean specifying whether to wait for the
-                script execution to finish or not
+        Raises:
+            SDKException: If the command argument is not a string, if the response is empty, or if the response indicates failure.
 
-                    default: True
+        Example:
+            >>> client = Client(...)
+            >>> exit_code, output, error = client.execute_command(
+            ...     command="ls -l /tmp",
+            ...     script_arguments=None,
+            ...     wait_for_completion=True
+            ... )
+            >>> print(f"Exit code: {exit_code}")
+            >>> print(f"Output: {output}")
+            >>> print(f"Error: {error}")
 
-                username                (str)   --  username to execute the command
-
-                    default: None
-
-                password                (str)   --  password of the username to execute the command
-
-                    default: None
-
-            Returns:
-                    (int, str, str)
-
-                int     -   exit code returned from executing the command on the client
-
-                    default: -1     (exit code not returned in the response)
-
-                str     -   output returned from executing the command on the client
-
-                    default: ''     (output not returned in the response)
-
-                str     -   error returned from executing the command on the client
-
-                    default: ''     (error not returned in the response)
-
-            Raises:
-                SDKException:
-                    if command argument is not of type string
-
-                    if response is empty
-
-                    if response is not success
-
+        #ai-gen-doc
         """
         if not isinstance(command, str):
             raise SDKException('Client', '101')
 
 
-        script_arguments = '' if script_arguments is None else script_arguments
+        # If script_arguments is None, split the command string properly
+        # handling quoted paths (e.g., "C:\Program Files\app.exe" -arg1)
+        if script_arguments is None:
+            command = command.strip()
+            # Check if command is properly quoted with matching closing quote
+            if command.startswith(('"', "'")) and command.find(command[0], 1) > 0:
+                quote_char = command[0]
+                closing_quote_idx = command.find(quote_char, 1)
+                script_arguments = command[closing_quote_idx + 1:].strip()
+                command = command[1:closing_quote_idx]
+            else:
+                # No quotes or malformed quotes - split at first whitespace
+                command_parts = command.split(None, 1)
+                if len(command_parts) > 1:
+                    command = command_parts[0]
+                    script_arguments = command_parts[1]
+                else:
+                    script_arguments = ''
+
         execute_command_payload = {
             "App_ExecuteCommandReq": {
                 "arguments": f"{script_arguments}",
@@ -6856,16 +9783,20 @@ class Client(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def enable_intelli_snap(self):
-        """Enables Intelli Snap for this Client.
+    def enable_intelli_snap(self) -> None:
+        """Enable Intelli Snap backups for this Client.
 
-            Raises:
-                SDKException:
-                    if failed to enable intelli snap
+        This method updates the client properties to enable Intelli Snap functionality.
+        It sends a request to the Commcell server and refreshes the client properties upon success.
 
-                    if response is empty
+        Raises:
+            SDKException: If enabling Intelli Snap fails, the response is empty, or the response indicates an error.
 
-                    if response is not success
+        Example:
+            >>> client = Client(commcell_object, client_name)
+            >>> client.enable_intelli_snap()
+            >>> print("Intelli Snap has been enabled for the client.")
+        #ai-gen-doc
         """
         enable_intelli_snap_dict = {
             "EnableSnapBackups": True
@@ -6893,16 +9824,20 @@ class Client(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def disable_intelli_snap(self):
-        """Disables Intelli Snap for this Client.
+    def disable_intelli_snap(self) -> None:
+        """Disable Intelli Snap backups for this client.
 
-            Raises:
-                SDKException:
-                    if failed to disable intelli snap
+        This method updates the client properties to disable Intelli Snap functionality.
+        If the operation fails or the response is invalid, an SDKException is raised.
 
-                    if response is empty
+        Raises:
+            SDKException: If disabling Intelli Snap fails, the response is empty, or the response indicates an error.
 
-                    if response is not success
+        Example:
+            >>> client = Client(...)
+            >>> client.disable_intelli_snap()
+            >>> print("Intelli Snap has been disabled for the client.")
+        #ai-gen-doc
         """
         disable_intelli_snap_dict = {
             "EnableSnapBackups": False
@@ -6930,55 +9865,114 @@ class Client(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
+    def set_windows_os_updates(self, enable: bool = True) -> None:
+        """Set Windows os updates for this client.
+
+        This method sends a request to set Windows os updates for the current client instance.
+        If the operation fails, an SDKException is raised with details about the failure.
+
+        Args:
+            enable: True to enable the option, False to disable. Default: True.
+
+        Raises:
+            SDKException: If setting Windows os updates fails, the response is empty, or the response indicates an
+                          error.
+
+        Example:
+            >>> client = Client(...)
+            >>> client.set_windows_os_updates()
+            >>> print("windows os updates enabled successfully for the client.")
+            # If an error occurs, SDKException will be raised with the error details.
+
+        #ai-gen-doc
+        """
+        self._set_patch_options(option_type=2, enable=enable)
+
+    def set_microsoft_sql_server_updates(self, enable: bool = True) -> None:
+        """Set Microsoft SQL Server updates for this client.
+
+        This method sends a request to set Microsoft SQL server updates for the current client instance.
+        If the operation fails, an SDKException is raised with details about the failure.
+
+        Args:
+            enable: True to enable the option, False to disable. Default: True.
+
+        Raises:
+            SDKException: If setting Microsoft SQL server updates fails, the response is empty, or the response
+                          indicates an error.
+
+        Example:
+            >>> client = Client(...)
+            >>> client.set_microsoft_sql_server_updates()
+            >>> print("Microsoft SQL Server updates enabled successfully for the client.")
+            # If an error occurs, SDKException will be raised with the error details.
+
+        #ai-gen-doc
+        """
+        self._set_patch_options(option_type=1, enable=enable)
+
     @property
-    def is_ready(self):
-        """Checks if CommServ is able to communicate to the client.
+    def is_ready(self) -> bool:
+        """Check if CommServ is able to communicate with the client.
 
-            Returns:
-                True    -   if the CS is able to connect to the client
+        Returns:
+            True if the CommServ (CS) can successfully connect to the client.
+            False if communication between the CS and the client fails.
 
-                False   -   if communication fails b/w the CS and the client
+        Raises:
+            SDKException: If the response from the readiness check is empty or not successful.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Example:
+            >>> client = Client(...)
+            >>> if client.is_ready:
+            ...     print("Client is reachable from CommServ.")
+            ... else:
+            ...     print("Communication with client failed.")
 
-                    if response is not success
+        #ai-gen-doc
         """
         return self.readiness_details.is_ready()
 
     @property
-    def is_mongodb_ready(self):
-        """
-        Checks the status mongoDB
+    def is_mongodb_ready(self) -> bool:
+        """Check if MongoDB is operational for this client.
 
-            Returns:
-                True : if the MongoDB is working fine
-                False : if there is any error in mongoDB
+        Returns:
+            True if MongoDB is working correctly; False if there is an error.
 
-            Raises:
-                SDKException:
-                    if response is not success
+        Raises:
+            SDKException: If the response from the readiness check is not successful.
+
+        Example:
+            >>> client = Client(...)
+            >>> if client.is_mongodb_ready:
+            ...     print("MongoDB is ready for operations.")
+            ... else:
+            ...     print("MongoDB is not ready. Please check the configuration.")
+
+        #ai-gen-doc
         """
         return self.readiness_details.is_mongodb_ready()
 
-    def upload_file(self, source_file_path, destination_folder):
-        """Upload the specified source file to destination path on the client machine
+    def upload_file(self, source_file_path: str, destination_folder: str) -> None:
+        """Upload a source file from the controller machine to a destination folder on the client machine.
 
-            Args:
-                source_file_path    (str)   --  path on the controller machine
+        This method transfers the specified file to the client, either as a single upload or in chunks,
+        depending on the file size.
 
-                destination_folder  (str)   --  path on the client machine where the files
-                                                    are to be copied
+        Args:
+            source_file_path: Path to the source file on the controller machine.
+            destination_folder: Path to the destination folder on the client machine where the file will be copied.
 
-            Raises:
-                SDKException:
-                    if failed to upload the file
+        Raises:
+            SDKException: If the file upload fails, the response is empty, or the response indicates failure.
 
-                    if response is empty
+        Example:
+            >>> client = Client(...)
+            >>> client.upload_file('/home/user/data.txt', 'C:\\Data\\Uploads')
+            >>> print("File uploaded successfully to the client machine.")
 
-                    if response is not success
-
+        #ai-gen-doc
         """
         chunk_size = 1024 ** 2 * 2
         request_id = None
@@ -7014,22 +10008,26 @@ class Client(object):
                 upload_url, file_stream.read(file_size), headers, request_id, chunk_offset
             )
 
-    def upload_folder(self, source_dir, destination_dir):
-        """Uploads the specified source dir to destination path on the client machine
+    def upload_folder(self, source_dir: str, destination_dir: str):
+        """Upload a folder from the controller machine to the specified destination on the client machine.
 
-            Args:
-                source_dir          (str)   --  path on the controller machine
+        This method recursively uploads all files and subfolders from the given source directory
+        to the destination directory on the client machine. The destination path is constructed
+        based on the client's operating system.
 
-                destination_dir     (str)   --  path on the client machine where the files
-                                                    are to be copied
+        Args:
+            source_dir: Path to the source directory on the controller machine.
+            destination_dir: Path on the client machine where the folder and its contents will be copied.
 
-            Raises:
-                SDKException:
-                    if failed to upload the file
+        Raises:
+            SDKException: If the upload fails, the response is empty, or the response indicates failure.
 
-                    if response is empty
+        Example:
+            >>> client = Client(...)
+            >>> client.upload_folder('/home/user/data', 'C:\\Backup\\Data')
+            >>> # The contents of '/home/user/data' will be uploaded to 'C:\\Backup\\Data' on the client
 
-                    if response is not success
+        #ai-gen-doc
         """
 
         def _create_destination_path(base_path, *args):
@@ -7059,100 +10057,98 @@ class Client(object):
             else:
                 self.upload_folder(item, destination_dir)
 
-    def start_service(self, service_name=None):
-        """Executes the command on the client machine to start the Commvault service(s).
+    def start_service(self, service_name: Optional[str] = None) -> None:
+        """Start a Commvault service on the client machine.
 
-            Args:
-                service_name    (str)   --  name of the service to be started
+        Executes the command to start the specified Commvault service. If no service name is provided,
+        the default service(s) will be started.
 
+        Args:
+            service_name: Optional name of the service to start (e.g., "GxVssProv(Instance001)"). If None, starts default services.
 
-                    default:    None
+        Raises:
+            SDKException: If the service fails to start.
 
-                    Example:    GxVssProv(Instance001)
-
-            Returns:
-                None    -   if the service was started successfully
-
-            Raises:
-                SDKException:
-                    if failed to start the service
-
+        Example:
+            >>> client = Client(...)
+            >>> client.start_service("GxVssProv(Instance001)")
+            >>> # To start default services
+            >>> client.start_service()
+        #ai-gen-doc
         """
         return self._service_operations(service_name, 'START')
 
-    def stop_service(self, service_name=None):
-        """Executes the command on the client machine to stop the Commvault service(s).
+    def stop_service(self, service_name: Optional[str] = None) -> None:
+        """Stop a Commvault service on the client machine.
 
-            Args:
-                service_name    (str)   --  name of the service to be stopped
+        Executes a command to stop the specified Commvault service. If no service name is provided,
+        all relevant services may be stopped depending on the client configuration.
 
-                    default:    None
+        Args:
+            service_name: Optional; the name of the service to stop (e.g., "GxVssProv(Instance001)"). If None, stops default services.
 
-                    Example:    GxVssProv(Instance001)
+        Raises:
+            SDKException: If the service fails to stop.
 
-            Returns:
-                None    -   if the service was stopped successfully
-
-            Raises:
-                SDKException:
-                    if failed to stop the service
-
+        Example:
+            >>> client = Client(...)
+            >>> client.stop_service("GxVssProv(Instance001)")
+            >>> # To stop all default services
+            >>> client.stop_service()
+        #ai-gen-doc
         """
         return self._service_operations(service_name, 'STOP')
 
-    def restart_service(self, service_name=None):
-        """Executes the command on the client machine to restart the Commvault service(s).
+    def restart_service(self, service_name: Optional[str] = None) -> None:
+        """Restart a Commvault service on the client machine.
 
-            Args:
-                service_name    (str)   --  name of the service to be restarted
+        Executes the command to restart the specified Commvault service. If no service name is provided,
+        the default service(s) will be restarted.
 
-                    default:    None
+        Args:
+            service_name: Optional; name of the service to be restarted (e.g., "GxVssProv(Instance001)").
+                If None, restarts the default service(s).
 
-                    Example:    GxVssProv(Instance001)
+        Raises:
+            SDKException: If the service fails to restart.
 
-            Returns:
-                None    -   if the service was restarted successfully
-
-            Raises:
-                SDKException:
-                    if failed to restart the service
-
+        Example:
+            >>> client = Client(...)
+            >>> client.restart_service("GxVssProv(Instance001)")
+            >>> # To restart the default service(s)
+            >>> client.restart_service()
+        #ai-gen-doc
         """
         return self._service_operations(service_name, 'RESTART')
 
-    def restart_services(self, wait_for_service_restart=True, timeout=10, implicit_wait=5):
-        """Executes the command on the client machine to restart **ALL** services.
+    def restart_services(self, wait_for_service_restart: bool = True, timeout: int = 10, implicit_wait: int = 5) -> None:
+        """Restart all services on the client machine.
 
-            Args:
-                wait_for_service_restart    (bool)  --  boolean to specify whether to wait for the
-                services to restart, or just execute the command and exit
+        This method executes a command to restart all services on the client. Optionally, it can wait until
+        the services are fully restarted, or simply trigger the restart and exit immediately.
 
-                    if set to True, the method will wait till the services of the client are up
+        Args:
+            wait_for_service_restart: If True, waits until all client services are restarted before returning.
+                If False, triggers the restart and exits without waiting.
+            timeout: Maximum time in minutes to wait for services to restart. If services are not restarted
+                within this period, an SDKException is raised.
+            implicit_wait: Time in seconds to wait before checking if the services are ready after restart.
 
-                    otherwise, the method will trigger a service restart, and exit
+        Raises:
+            SDKException: If the services fail to restart within the specified timeout.
 
-                    default: True
+        Example:
+            >>> client = Client(...)
+            >>> # Restart all services and wait for completion (default behavior)
+            >>> client.restart_services()
+            >>>
+            >>> # Restart services and exit immediately without waiting
+            >>> client.restart_services(wait_for_service_restart=False)
+            >>>
+            >>> # Restart services with custom timeout and implicit wait
+            >>> client.restart_services(timeout=15, implicit_wait=10)
 
-                timeout                     (int)   --  timeout **(in minutes)** to wait for the
-                services to restart
-
-                    if the services are not restarted by the timeout value, the method will exit
-                    out with Exception
-
-                    default: 10
-
-                implicit_wait               (int)   -- Time (in seconds) to wait before the readiness is checked.
-
-                    default: 5
-
-
-            Returns:
-                None    -   if the services were restarted sucessfully
-
-            Raises:
-                SDKException:
-                    if failed to restart the services before the timeout value
-
+        #ai-gen-doc
         """
         self._service_operations('ALL', 'RESTART_SVC_GRP')
 
@@ -7172,16 +10168,25 @@ class Client(object):
 
             raise SDKException('Client', '107')
 
-    def get_network_summary(self):
-        """Gets the network summary for the client
+    def get_network_summary(self) -> str:
+        """Retrieve the network summary information for the client.
+
+        This method sends a request to the Commcell to obtain the network configuration summary
+        for the current client. If no network configuration is found, an empty string is returned.
 
         Returns:
-             str    -   Network Summary
+            The network summary as a string. Returns an empty string if no network configuration is found.
 
         Raises:
-            SDKException:
-                    if response is not successful
+            SDKException: If the response from the Commcell is not successful.
 
+        Example:
+            >>> client = Client(commcell_object, client_id)
+            >>> summary = client.get_network_summary()
+            >>> print(f"Network Summary: {summary}")
+            >>> # If no network configuration exists, summary will be an empty string
+
+        #ai-gen-doc
         """
 
         flag, response = self._cvpysdk_object.make_request(
@@ -7193,27 +10198,30 @@ class Client(object):
         raise SDKException('Response', '101', self._update_response_(response.text))
 
     def change_exchange_job_results_directory(
-            self, new_directory_path, username=None, password=None):
-        """
-            Change the Job Result Directory of an Exchange Online Client
+            self, new_directory_path: str, username: Optional[str] = None, password: Optional[str] = None
+        ) -> None:
+        """Change the Job Result Directory for an Exchange Online Client.
 
-            Arguments:
-                new_directory_path    (str)   -- The new JR directory
-                    Example:
-                        C:\\JR
-                        or
-                        <UNC-PATH>
+        This method updates the job results directory for the Exchange Online client.
+        If the new directory is a network share (UNC path), valid credentials must be provided.
 
+        Args:
+            new_directory_path: The new job results directory path. Can be a local path (e.g., "C:\\JR") or a UNC path (e.g., "\\\\server\\share").
+            username: Optional. Username for accessing the network share, required if new_directory_path is a UNC path.
+            password: Optional. Password for accessing the network share, required if new_directory_path is a UNC path.
 
-                username    (str)   --
-                    username of the machine, if new JobResults directory is a shared/ UNC path.
+        Raises:
+            SDKException: If the operation fails due to invalid client type, missing credentials for UNC path, or errors during the directory move.
 
-                password    (str)   --
-                    Password of the machine, if new JobResults directory is a shared/ UNC path.
-
-            Raises
-                SDKException   (object)
-                    Error in moving the job results directory
+        Example:
+            >>> client = Client(...)
+            >>> # Change to a local directory
+            >>> client.change_exchange_job_results_directory("C:\\JR")
+            >>> # Change to a network share with credentials
+            >>> client.change_exchange_job_results_directory(
+            ...     "\\\\server\\share", username="admin", password="password123"
+            ... )
+        #ai-gen-doc
         """
         if self.client_type not in [25, 37, 15]:
             raise SDKException(
@@ -7273,40 +10281,49 @@ class Client(object):
                 'Unable to move the job result directory')
 
     def change_o365_client_job_results_directory(
-            self, new_directory_path, username=None, password=None):
-        """
-                Change the Job Result Directory of a O365 Client
+            self, new_directory_path: str, username: Optional[str] = None, password: Optional[str] = None
+        ) -> None:
+        """Change the Job Result Directory for an Office 365 Client.
 
-                Arguments:
-                    new_directory_path   (str)   -- The new JR directory
-                        Example:
-                            C:\\JR
-                            or
-                            <UNC-PATH>
+        This method updates the location where job results are stored for the O365 client.
+        If the new directory is a shared or UNC path, provide the appropriate username and password
+        for authentication.
 
+        Args:
+            new_directory_path: The new job results directory path. Can be a local path (e.g., "C:\\JR") or a UNC path (e.g., "\\\\server\\share").
+            username: Optional username for accessing the new directory if it is a shared or UNC path.
+            password: Optional password for accessing the new directory if it is a shared or UNC path.
 
-                    username    (str)   --
-                        username of the machine, if new JobResults directory is a shared/ UNC path.
+        Raises:
+            SDKException: If there is an error moving the job results directory.
 
-                    password    (str)   --
-                        Password of the machine, if new JobResults directory is a shared/ UNC path.
-
-                Raises
-                    SDKException   (object)
-                        Error in moving the job results directory
+        Example:
+            >>> client = Client(...)
+            >>> client.change_o365_client_job_results_directory("C:\\JR")
+            >>> # For UNC path with credentials
+            >>> client.change_o365_client_job_results_directory(
+            ...     "\\\\server\\share", username="admin", password="password123"
+            ... )
+        #ai-gen-doc
         """
         self.change_exchange_job_results_directory(new_directory_path, username, password)
 
-    def push_network_config(self):
-        """Performs a push network configuration on the client
+    def push_network_config(self) -> None:
+        """Push the network configuration to the client.
 
-                Raises:
-                SDKException:
-                    if input data is invalid
+        This method sends a network configuration update request to the client using the Commcell services.
+        It performs a push operation for firewall configuration and validates the response for success.
 
-                    if response is empty
+        Raises:
+            SDKException: If input data is invalid, the response is empty, or the response indicates failure.
 
-                    if response is not success
+        Example:
+            >>> client = Client(commcell_object, "Client01")
+            >>> client.push_network_config()
+            >>> print("Network configuration pushed successfully")
+            # If an error occurs, SDKException will be raised.
+
+        #ai-gen-doc
         """
 
         xml_execute_command = """
@@ -7344,39 +10361,66 @@ class Client(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def add_user_associations(self, associations_list):
-        """Adds the users to the owners list of this client
+    def add_user_associations(self, associations_list: List[Dict[str, str]]) -> None:
+        """Add user associations to the owners list of this client.
+
+        This method associates a list of users with specific roles as owners of the client.
+        Each association should be a dictionary containing 'user_name' and 'role_name' keys.
 
         Args:
-            associations_list   (list)  --  list of owners to be associated with this client
+            associations_list: List of dictionaries, each specifying a user and their role to be associated with the client.
                 Example:
                     associations_list = [
                         {
-                            'user_name': user1,
-                            'role_name': role1
+                            'user_name': 'user1',
+                            'role_name': 'role1'
                         },
                         {
-                            'user_name': user2,
-                            'role_name': role2
+                            'user_name': 'user2',
+                            'role_name': 'role2'
                         }
                     ]
 
-            Note: You can get available roles list using self.available_security_roles
+        Note:
+            You can retrieve available roles using the `available_security_roles` property of the Client object.
 
+        Example:
+            >>> associations = [
+            ...     {'user_name': 'alice', 'role_name': 'BackupAdmin'},
+            ...     {'user_name': 'bob', 'role_name': 'Operator'}
+            ... ]
+            >>> client = Client(...)
+            >>> client.add_user_associations(associations)
+            >>> print("User associations added successfully")
+
+        #ai-gen-doc
         """
         if not isinstance(associations_list, list):
             raise SDKException('Client', '101')
 
         self._security_association._add_security_association(associations_list, user=True)
 
-    def add_client_owner(self, owner_list):
-        """Adds the users to the owners list of this client
-            Args:
-                owner_list   (list)  --  list of owners to be associated with this client
+    def add_client_owner(self, owner_list: List[str]) -> None:
+        """Add users to the owners list of this client.
 
-             Raises:
-                SDKException:
-                    if input data is invalid
+        This method associates the specified users as owners of the client.
+        Each user in the list must exist in the Commcell. If a user is not found,
+        an exception is raised. The method updates the client's properties to reflect
+        the new owner associations.
+
+        Args:
+            owner_list: List of user names (as strings) to be added as owners of the client.
+
+        Raises:
+            SDKException: If the input data is invalid (e.g., owner_list is not a list).
+            Exception: If any user in owner_list does not exist in the Commcell.
+
+        Example:
+            >>> client = Client(...)
+            >>> client.add_client_owner(['alice', 'bob'])
+            >>> # 'alice' and 'bob' are now owners of the client
+
+        #ai-gen-doc
         """
         if not isinstance(owner_list, list):
             raise SDKException('Client', '101')
@@ -7403,40 +10447,79 @@ class Client(object):
         else:
             properties_dict['clientProps'] = {'securityAssociations': {'ownerAssociations': {
                 "ownersOperationType": 1, "owners": owners}}}
-        self.update_properties(properties_dict)
 
-    def filter_clients_return_displaynames(self, filter_by="OS", **kwargs):
-        """Gets all the clients associated with the commcell with properties
+        owner_dict = {"entityAssociated": {
+                        "entity": [
+                          {
+                            "_type_": 3,
+                            "clientId": int(self.client_id)
+                          }
+                        ]
+                      }
+                    }
+        owner_dict["securityAssociations"] = properties_dict['clientProps']['securityAssociations']
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._SECURITY_ASSOCIATION, owner_dict
+        )
+
+        if flag:
+            if response.json():
+                if 'response' in response.json():
+                    if response.json()['response'][0].get('errorCode', 0):
+                        error_message = response.json()['response'][0].get('errorMessage')
+                        if not error_message:
+                            error_message = response.json()['response'][0].get('errorString', '')
+
+                        if not error_message:
+                            error_message = response.json()['response'][0].get('warningMessage', '')
+
+                        if not error_message:
+                            o_str = 'Failed to add owner\nError: "{0}"'.format(error_message)
+                            raise SDKException('Client', '102', o_str)
+                    self.refresh()
+            else:
+                raise SDKException('Response', '102')
+        else:
+            error_message = self._update_response_(response.text)
+            if response.json():
+                error_message = response.json().get('errorMessage', '')
+            raise SDKException('Response', '101', error_message)
+
+    def filter_clients_return_displaynames(self, filter_by: str = "OS", **kwargs: Any) -> List[str]:
+        """Retrieve display names of clients filtered by operating system or other criteria.
+
+        This method fetches all clients associated with the Commcell and returns their display names
+        based on the specified filter criteria. The primary filter supported is by operating system (OS),
+        with optional arguments to further refine the results.
 
         Args:
-            filter_by   (str)         --  filters clients based on criteria
-
-                                            Accepted values:
-
-                                            1. OS
-
-            **kwargs    (str)         --  accepted optional arguments:
-
-                                            os_type    (str)  - accepted values Windows, Unix, NAS
-
-                                            url_params (dict) - dict of url parameters and values
-
-                                                                Example:
-
-                                                               {"Hiddenclients":"true"}
+            filter_by: Criteria to filter clients. Accepted value is "OS".
+            **kwargs: Optional arguments to customize filtering:
+                os_type (str): Operating system type to filter clients (e.g., "Windows", "Unix", "NAS").
+                url_params (dict): Dictionary of additional URL parameters for the request.
+                    Example: {"Hiddenclients": "true"}
 
         Returns:
-
-            list    -   list of clients of given os_type
+            List of client display names matching the specified filter criteria.
 
         Raises:
+            SDKException: If the response is empty or unsuccessful.
 
-            SDKException:
+        Example:
+            >>> # Filter clients by Windows OS
+            >>> client_mgr = Client(commcell_object)
+            >>> windows_clients = client_mgr.filter_clients_return_displaynames(
+            ...     filter_by="OS", os_type="Windows"
+            ... )
+            >>> print(f"Windows clients: {windows_clients}")
 
-                if response is empty
+            >>> # Filter clients with additional URL parameters
+            >>> hidden_clients = client_mgr.filter_clients_return_displaynames(
+            ...     filter_by="OS", os_type="Unix", url_params={"Hiddenclients": "true"}
+            ... )
+            >>> print(f"Hidden Unix clients: {hidden_clients}")
 
-                if response is not success
-
+        #ai-gen-doc
         """
 
         client_list = []
@@ -7478,10 +10561,20 @@ class Client(object):
 
         return client_list
 
-    def refresh(self):
-        """Refreshes the properties of the Client."""
-        self._get_client_properties()
+    def refresh(self) -> None:
+        """Reload the properties and cached data for this Client instance.
 
+        This method refreshes the client's properties and clears any cached settings, agents, schedules, users, and network information if applicable. Use this to ensure the Client object reflects the latest state from the Commcell.
+
+        Example:
+            >>> client = Client(commcell_object, "Server01")
+            >>> client.refresh()  # Updates client properties and clears cached data
+            >>> print("Client properties refreshed successfully")
+
+        #ai-gen-doc
+        """
+        self._get_client_properties()
+        self._additional_settings = None
         if self._client_type_id == 0:
             self._agents = None
             self._schedules = None
@@ -7489,24 +10582,36 @@ class Client(object):
             self._network = None
 
     def set_encryption_property(self,
-                                enc_setting="USE_SPSETTINGS",
-                                key=None,
-                                key_len=None):
-        """updates encryption properties on client
+                               enc_setting: str = "USE_SPSETTINGS",
+                               key: Optional[str] = None,
+                               key_len: Optional[str] = None) -> None:
+        """Update the encryption properties for the client.
+
+        This method configures the encryption settings on the client, allowing you to enable or disable encryption,
+        and specify the cipher type and key length when enabling client-side encryption.
 
         Args:
+            enc_setting: Sets the encryption level on the client. Valid values are "USE_SPSETTINGS", "OFF", or "ON_CLIENT".
+                - "USE_SPSETTINGS": Use storage policy settings (default).
+                - "OFF": Disable encryption on the client.
+                - "ON_CLIENT": Enable client-side encryption (requires `key` and `key_len`).
+            key: Cipher type to use when enabling client-side encryption (e.g., "TwoFish"). Required if `enc_setting` is "ON_CLIENT".
+            key_len: Cipher key length as a string (e.g., "256"). Required if `enc_setting` is "ON_CLIENT".
 
-            enc_setting (str)   --  sets encryption level on client
-                                    (USE_SPSETTINGS / OFF/ ON_CLIENT)
-            default : USE_SPSETTINGS
+        Raises:
+            SDKException: If invalid parameters are provided or if the encryption property update fails.
 
-            key         (str)   --  cipher type
+        Example:
+            >>> # Enable client-side encryption with TwoFish cipher and 256-bit key
+            >>> client_object.set_encryption_property("ON_CLIENT", "TwoFish", "256")
+            >>>
+            >>> # Disable encryption on the client
+            >>> client_object.set_encryption_property("OFF")
+            >>>
+            >>> # Use storage policy encryption settings (default)
+            >>> client_object.set_encryption_property()
 
-            key_len     (str)   --  cipher key length
-
-            to enable encryption    : client_object.set_encryption_property("ON_CLIENT", "TwoFish", "256")
-            to disable encryption   : client_object.set_encryption_property("OFF")
-
+        #ai-gen-doc
         """
         client_props = self._properties['clientProps']
         if enc_setting is not None:
@@ -7555,48 +10660,52 @@ class Client(object):
             raise SDKException('Response', '101', self._update_response_(response.text))
 
     def set_dedup_property(self,
-                           prop_name,
-                           prop_value,
-                           client_side_cache=None,
-                           max_cache_db=None,
-                           high_latency_optimization=None,
-                           variable_content_alignment=None
-                           ):
-        """
-            Set DDB propeties
+                           prop_name: str,
+                           prop_value: str,
+                           client_side_cache: Optional[bool] = None,
+                           max_cache_db: Optional[int] = None,
+                           high_latency_optimization: Optional[bool] = None,
+                           variable_content_alignment: Optional[bool] = None
+                           ) -> None:
+        """Set deduplication (DDB) properties for the client.
 
-          :param prop_name:    property name
-        :param prop_value:   property value
-        :return:
+        This method configures deduplication settings such as client-side deduplication, disk cache usage,
+        cache database size, high latency optimization, and variable content alignment for the client.
 
-        prop_name and prop_value:
-            clientSideDeduplication values:
-                USE_SPSETTINGS, to use storage policy settings
-                ON_CLIENT, to enable client side deduplication
-                OFF, to disable client side deduplication
+        Args:
+            prop_name: Name of the deduplication property to set. Common values:
+                - "clientSideDeduplication"
+            prop_value: Value for the deduplication property. For "clientSideDeduplication", valid values are:
+                - "USE_SPSETTINGS": Use storage policy settings
+                - "ON_CLIENT": Enable client-side deduplication
+                - "OFF": Disable client-side deduplication
+            client_side_cache: Whether to enable client-side disk cache. If None, property is not modified.
+            max_cache_db: Size of the cache database in MB. Valid values include:
+                1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072. If None, uses default size.
+            high_latency_optimization: Enable optimization for high latency networks. If None, property is not modified.
+            variable_content_alignment: Enable variable content alignment for improved deduplication. If None, property is not modified.
 
-                enableClientSideCache: To set usage of Client Side Cache
-                                Values - None(Default) - DoNot Modify the property value
-                                         True/False - Enable/Disable Cache respectively
-                    maxCacheDB: Size of Cache DB if enabled. Default Value: None (use default size)
-                                Valid values are:
-                                    1024
-                                    2048
-                                    4096
-                                    8192
-                                    16384
-                                    32768
-                                    65536
-                                    131072
-                    variable_content_alignment: to increase the effectiveness of deduplication on the client computer.
-                                                Variable content alignment reduces the amount of data stored during a
-                                                backup operation.
-                               Values - None(Default) - DoNotModify the property value
-                                        True/False - Enable/Disable optimization respectively
+        Raises:
+            SDKException: If invalid property names/values are provided, or if the update fails.
 
-                    high_latency_optimization: To set Optimization for High latency Networks
-                                Values - None(Default) - DoNotModify the property value
-                                         True/False - Enable/Disable optimization respectively
+        Example:
+            >>> client = Client(...)
+            >>> # Enable client-side deduplication with disk cache and 8192MB cache DB
+            >>> client.set_dedup_property(
+            ...     prop_name="clientSideDeduplication",
+            ...     prop_value="ON_CLIENT",
+            ...     client_side_cache=True,
+            ...     max_cache_db=8192,
+            ...     high_latency_optimization=True,
+            ...     variable_content_alignment=True
+            ... )
+            >>> # Disable client-side deduplication
+            >>> client.set_dedup_property(
+            ...     prop_name="clientSideDeduplication",
+            ...     prop_value="OFF"
+            ... )
+
+        #ai-gen-doc
         """
         if not (isinstance(prop_name, str) and isinstance(prop_value, str)):
             raise SDKException('Client', '101')
@@ -7667,27 +10776,34 @@ class Client(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def add_additional_setting(self, category, key_name, data_type, value):
-        """Adds registry key to the client property
+    def add_additional_setting(self, category: str, key_name: str, data_type: str, value: str) -> None:
+        """Add a registry key to the client property.
 
-            Args:
-                category        (str)            --  Category of registry key
+        This method adds an additional registry key to the client configuration, allowing customization
+        of client behavior through registry settings.
 
-                key_name        (str)            --  Name of the registry key
+        Args:
+            category: Category of the registry key (e.g., "Network", "Security").
+            key_name: Name of the registry key to add.
+            data_type: Data type of the registry key. Accepted values are:
+                "BOOLEAN", "INTEGER", "STRING", "MULTISTRING", "ENCRYPTED".
+            value: Value to assign to the registry key.
 
-                data_type       (str)            --  Data type of registry key
+        Raises:
+            SDKException: If the registry key could not be added, if the response is empty,
+                or if the response code is not as expected.
 
-                    Accepted Values: BOOLEAN, INTEGER, STRING, MULTISTRING, ENCRYPTED
-
-                value           (str)            --  Value of registry key
-
-            Raises:
-                SDKException:
-                    if failed to add
-
-                    if response is empty
-
-                    if response code is not as expected"""
+        Example:
+            >>> client = Client(...)
+            >>> client.add_additional_setting(
+            ...     category="Network",
+            ...     key_name="EnableIPv6",
+            ...     data_type="BOOLEAN",
+            ...     value="True"
+            ... )
+            >>> print("Registry key added successfully")
+        #ai-gen-doc
+        """
 
         properties_dict = {
             "registryKeys": [{"deleted": 0,
@@ -7715,21 +10831,25 @@ class Client(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def delete_additional_setting(self, category, key_name):
-        """Deletes registry key from the client property
+    def delete_additional_setting(self, category: str, key_name: str) -> None:
+        """Delete a registry key from the client's additional settings.
+
+        Removes the specified registry key under the given category from the client properties.
+        Raises an SDKException if the deletion fails, the response is empty, or the response code is not as expected.
 
         Args:
-            category        (str)  --  Category of registry key
-
-            key_name        (str)  --  Name of the registry key
+            category: Category of the registry key to delete (as a string).
+            key_name: Name of the registry key to delete (as a string).
 
         Raises:
-            SDKException:
-                if failed to delete
+            SDKException: If the deletion fails, the response is empty, or the response code is not as expected.
 
-                if response is empty
-
-                if response code is not as expected"""
+        Example:
+            >>> client = Client(...)
+            >>> client.delete_additional_setting('Network', 'ProxyServer')
+            >>> print("Registry key deleted successfully")
+        #ai-gen-doc
+        """
 
         properties_dict = {
             "registryKeys": [{"deleted": 1,
@@ -7754,8 +10874,26 @@ class Client(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def get_configured_additional_settings(self) -> list:
-        """Method to get configured additional settings name"""
+    def get_configured_additional_settings(self) -> List[str]:
+        """Retrieve the names of configured additional settings for the client.
+
+        This method fetches the list of additional registry keys (settings) that have been configured
+        for the client. If the request fails or an error is returned, an SDKException is raised.
+
+        Returns:
+            List of strings representing the names of configured additional settings.
+
+        Raises:
+            SDKException: If the request fails or the response contains an error message.
+
+        Example:
+            >>> client = Client(...)
+            >>> settings = client.get_configured_additional_settings()
+            >>> print(f"Configured additional settings: {settings}")
+            >>> # Each item in 'settings' is the name of an additional registry key
+
+        #ai-gen-doc
+        """
         url = self._services['GET_ADDITIIONAL_SETTINGS'] % self.client_id
         flag, response = self._cvpysdk_object.make_request('GET', url)
         if flag:
@@ -7774,43 +10912,42 @@ class Client(object):
         else:
             raise SDKException('Response', '101')
 
-    def release_license(self, license_name=None):
-        """Releases a license from a client
+    def release_license(self, license_name: Optional[str] = None) -> None:
+        """Release a license from the client.
+
+        If a specific license name is provided, releases that license from the client.
+        If no license name is given, releases all licenses associated with the client except mediaagent license.
 
         Args:
-
-            license_name    (str)  --  Name of the license to be released.
-
-                Releases all the licenses in the client if no value is passed.
-
-                self.consumed_licenses() method will provide all the available
-
-                license details along with license_name.
-
-                default: None
+            license_name: Name of the license to be released. If None, all licenses will be released.
 
         Raises:
-            SDKException:
-                if failed to release license
+            SDKException: If the license release fails, the response is empty, or the response code is not as expected.
 
-                if response is empty
-
-                if response code is not as expected
-
+        Example:
+            >>> client = Client(...)
+            >>> # Release a specific license
+            >>> client.release_license('FileSystemAgent')
+            >>> # Release all licenses from the client
+            >>> client.release_license()
+        #ai-gen-doc
         """
         license_type_id = 0
         app_type_id = 0
         platform_type = 1
-
+        is_client_level_operation = True
+        
         if license_name is not None:
             if self.consumed_licenses.get(license_name):
                 license_type_id = self.consumed_licenses[license_name].get('licenseType')
                 app_type_id = self.consumed_licenses[license_name].get('appType')
                 platform_type = self.consumed_licenses[license_name].get('platformType')
+                is_client_level_operation = False
             else:
                 raise Exception(
                     "Provided license name is not configured in the client")
         request_json = {
+            "isClientLevelOperation": is_client_level_operation,
             "licensesInfo": [{
                 "platformType": platform_type,
                 "license": {
@@ -7841,21 +10978,26 @@ class Client(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def retire(self):
-        """Uninstalls the CommVault Software on the client, releases the license and deletes the client.
+    def retire(self) -> 'Job':
+        """Uninstall the CommVault Software from the client, release its license, and delete the client.
+
+        This method initiates the client retirement process, which includes uninstalling the software,
+        releasing the associated license, and removing the client from the Commcell. Upon successful
+        completion, it returns a Job object representing the uninstall job.
 
         Returns:
-            Job - job object of the uninstall job
+            Job: Job object corresponding to the uninstall operation.
 
         Raises:
+            SDKException: If the client retirement fails, the response is empty, or the response code is not as expected.
 
-            SDKException:
+        Example:
+            >>> client = Client(...)
+            >>> uninstall_job = client.retire()
+            >>> print(f"Uninstall job started with Job ID: {uninstall_job.job_id}")
+            >>> # The returned Job object can be used to monitor the uninstall progress
 
-                if failed to retire client
-
-                if response is empty
-
-                if response code is not as expected
+        #ai-gen-doc
         """
         request_json = {
             "client": {
@@ -7883,17 +11025,22 @@ class Client(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def reconfigure_client(self):
-        """Reapplies license to the client
+    def reconfigure_client(self) -> None:
+        """Reapply the license to the client.
 
-            Raises:
-                SDKException:
-                    if failed to reconfigure client
+        This method sends a request to the Commcell to reconfigure the license for the client.
+        It updates the license information upon successful completion.
 
-                    if response is empty
+        Raises:
+            SDKException: If the client reconfiguration fails, the response is empty, or the response code is not as expected.
 
-                    if response code is not as expected
+        Example:
+            >>> client = Client(...)
+            >>> client.reconfigure_client()
+            >>> print("License reapplied successfully")
+            >>> # If an error occurs, SDKException will be raised
 
+        #ai-gen-doc
         """
         request_json = {
             "clientInfo": {
@@ -7921,36 +11068,34 @@ class Client(object):
 
     def push_servicepack_and_hotfix(
             self,
-            reboot_client=False,
-            run_db_maintenance=True):
-        """triggers installation of service pack and hotfixes
+            reboot_client: bool = False,
+            run_db_maintenance: bool = True
+        ) -> 'Job':
+        """Trigger installation of service pack and hotfixes on the client.
+
+        This method initiates the download and installation of service packs and hotfixes
+        for the client. You can specify whether the client should be rebooted after installation
+        and whether database maintenance should be performed.
+
+        Note:
+            This method cannot be used for revision upgrades.
 
         Args:
-            reboot_client (bool)            -- boolean to specify whether to reboot the client
-            or not
-
-                default: False
-
-            run_db_maintenance (bool)      -- boolean to specify whether to run db
-            maintenance not
-
-                default: True
+            reboot_client: Whether to reboot the client after installation. Default is False.
+            run_db_maintenance: Whether to run database maintenance during installation. Default is True.
 
         Returns:
-            object - instance of the Job class for this download job
+            Job: Instance of the Job class representing the download and installation job.
 
         Raises:
-                SDKException:
-                    if Download job failed
+            SDKException: If the download job fails, the response is empty, the response is not successful,
+                or another download job is already running.
 
-                    if response is empty
-
-                    if response is not success
-
-                    if another download job is already running
-
-        **NOTE:** push_serivcepack_and_hotfixes cannot be used for revision upgrades
-
+        Example:
+            >>> client = Client(...)
+            >>> job = client.push_servicepack_and_hotfix(reboot_client=True, run_db_maintenance=False)
+            >>> print(f"Service pack and hotfix job started: {job}")
+        #ai-gen-doc
         """
         install = Install(self._commcell_object)
         return install.push_servicepack_and_hotfix(
@@ -7961,36 +11106,33 @@ class Client(object):
 
     def repair_software(
             self,
-            username=None,
-            password=None,
-            reboot_client=False):
-        """triggers Repair software on the client machine
+            username: Optional[str] = None,
+            password: Optional[str] = None,
+            reboot_client: bool = False
+        ):
+        """Trigger a repair of the software on the client machine.
+
+        This method initiates a repair operation for the client software, optionally using provided credentials
+        and specifying whether the client machine should be rebooted after the repair.
 
         Args:
-             username    (str)               -- username of the machine to re-install features on
-
-                default : None
-
-            password    (str)               -- base64 encoded password
-
-                default : None
-
-            reboot_client (bool)            -- boolean to specify whether to reboot the client
-            or not
-
-                default: False
+            username: Optional username for the machine to re-install features on. If None, uses default credentials.
+            password: Optional base64-encoded password for authentication. If None, uses default credentials.
+            reboot_client: Boolean flag indicating whether to reboot the client machine after repair. Defaults to False.
 
         Returns:
-            object - instance of the Job class for this download job
+            Instance of the Job class representing the repair job.
 
         Raises:
-                SDKException:
-                if install job failed
+            SDKException: If the install job fails, the response is empty, or the response indicates failure.
 
-                if response is empty
+        Example:
+            >>> client = Client(commcell_object, "Client01")
+            >>> job = client.repair_software(username="admin", password="cGFzc3dvcmQ=", reboot_client=True)
+            >>> print(f"Repair job started: {job}")
+            >>> # The returned Job object can be used to monitor the repair progress
 
-                if response is not success
-
+        #ai-gen-doc
         """
         install = Install(self._commcell_object)
         return install.repair_software(
@@ -8000,17 +11142,25 @@ class Client(object):
             reboot_client=reboot_client
         )
 
-    def get_dag_member_servers(self):
-        """Gets the member servers for an Exchange DAG client.
+    def get_dag_member_servers(self) -> List[str]:
+        """Retrieve the member servers for an Exchange DAG client.
 
-            Returns:
-                list - list consisting of the member servers
+        This method fetches the list of server names that are part of the Exchange Database Availability Group (DAG)
+        associated with this client. It communicates with the Commcell to obtain the DAG member server details.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Returns:
+            List of server names (as strings) that are members of the Exchange DAG.
 
-                    if response is not success
+        Raises:
+            SDKException: If the response from the Commcell is empty or unsuccessful.
+
+        Example:
+            >>> client = Client(...)
+            >>> dag_members = client.get_dag_member_servers()
+            >>> print(f"DAG member servers: {dag_members}")
+            >>> # The returned list contains the names of all servers in the DAG
+
+        #ai-gen-doc
         """
         member_servers = []
         url = self._services['GET_DAG_MEMBER_SERVERS'] % self.client_id
@@ -8035,45 +11185,27 @@ class Client(object):
             raise SDKException('Response', '101')
 
     @property
-    def consumed_licenses(self):
-        """returns dictionary of all the license details which is consumed by the client
+    def consumed_licenses(self) -> Dict[str, Dict[str, Any]]:
+        """Get a dictionary of all license details consumed by the client.
 
-            Returns:
-                dict - consisting of all licenses consumed by the client
-                    {
-                         "license_name_1": {
-                            "licenseType": license_type_id,
+        Returns:
+            Dictionary mapping license names to their details. Each entry contains:
+                - licenseType: The license type ID.
+                - appType: The application type ID.
+                - licenseName: The name of the license.
+                - platformType: The platform type ID.
 
-                            "appType": app_type_id,
+        Raises:
+            SDKException: If the license details cannot be retrieved, the response is empty, or the response code is unexpected.
 
-                            "licenseName": license_name,
+        Example:
+            >>> client = Client(...)
+            >>> licenses = client.consumed_licenses  # Use dot notation for property access
+            >>> for name, details in licenses.items():
+            ...     print(f"License: {name}, Type: {details['licenseType']}, Platform: {details['platformType']}")
+            >>> # The returned dictionary contains all licenses consumed by the client
 
-                            "platformType": platform_type_id
-
-                        },
-
-                        "license_name_2": {
-
-                            "licenseType": license_type_id,
-
-                            "appType": app_type_id,
-
-                            "licenseName": license_name,
-
-                            "platformType": platform_type_id
-
-                        }
-
-                    }
-
-            Raises:
-                SDKException:
-                    if failed to get the licenses
-
-                    if response is empty
-
-                    if response code is not as expected
-
+        #ai-gen-doc
         """
         if self._license_info is None:
             flag, response = self._cvpysdk_object.make_request(
@@ -8102,39 +11234,94 @@ class Client(object):
         return self._license_info
 
     @property
-    def cvd_port(self):
-        """Returns CVD port of the client"""
+    def cvd_port(self) -> int:
+        """Get the CVD (Commvault Daemon) port number configured for the client.
+
+        Returns:
+            The CVD port number as an integer.
+
+        Example:
+            >>> client = Client(...)
+            >>> port = client.cvd_port  # Use dot notation for property access
+            >>> print(f"CVD port: {port}")
+            >>> # The returned port can be used for network configuration or diagnostics
+
+        #ai-gen-doc
+        """
 
         return self._cvd_port
 
     @property
-    def client_guid(self):
-        """Returns client GUID"""
+    def client_guid(self) -> str:
+        """Get the globally unique identifier (GUID) of the client.
+
+        Returns:
+            The client GUID as a string.
+
+        Example:
+            >>> client = Client(...)
+            >>> guid = client.client_guid  # Use dot notation for property access
+            >>> print(f"Client GUID: {guid}")
+            >>> # The GUID uniquely identifies the client in the Commcell environment
+
+        #ai-gen-doc
+        """
 
         return self._properties.get('client', {}).get('clientEntity', {}).get('clientGUID', {})
 
     @property
-    def client_type(self):
-        """Returns client Type"""
+    def client_type(self) -> str:
+        """Get the type of the client as a string.
+
+        Returns:
+            The client type, such as 'Virtual', 'Physical', or other supported types.
+
+        Example:
+            >>> client = Client(...)
+            >>> client_type = client.client_type  # Use dot notation for property access
+            >>> print(f"Client type: {client_type}")
+            >>> # Output might be: "Virtual" or "Physical"
+
+        #ai-gen-doc
+        """
 
         return self._properties.get('pseudoClientInfo', {}).get('clientType', "")
 
     @property
-    def vm_guid(self):
-        """Returns guid of the vm client"""
+    def vm_guid(self) -> str:
+        """Get the GUID of the VM client.
+
+        Returns:
+            The globally unique identifier (GUID) of the VM client as a string.
+
+        Example:
+            >>> client = Client(...)
+            >>> guid = client.vm_guid  # Use dot notation for property access
+            >>> print(f"VM GUID: {guid}")
+
+        #ai-gen-doc
+        """
 
         return self._vm_guid
 
-    def set_job_start_time(self, job_start_time_value):
-        """Sets the jobstarttime for this Client.
+    def set_job_start_time(self, job_start_time_value: int) -> None:
+        """Set the job start time for this Client.
 
-            Raises:
-                SDKException:
-                    if failed to set the job start time
+        This method updates the job start time property for the client. The value should be provided
+        as an integer representing the desired start time (typically in seconds since epoch or as required by the API).
 
-                    if response is empty
+        Args:
+            job_start_time_value: The job start time value to set for the client.
 
-                    if response is not success
+        Raises:
+            SDKException: If the job start time could not be set, if the response is empty, or if the response indicates failure.
+
+        Example:
+            >>> client = Client(...)
+            >>> client.set_job_start_time(1622548800)  # Set job start time to a specific timestamp
+            >>> print("Job start time updated successfully")
+
+        #ai-gen-doc
         """
         request_json = self._request_json(option='Backup', job_start_time=job_start_time_value)
 
@@ -8158,25 +11345,28 @@ class Client(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def uninstall_software(self, force_uninstall=True,software_list=[]):
-        """
-        Performs readiness check on the client
+    def uninstall_software(self, force_uninstall: bool = True, software_list: Optional[List[str]] = None):
+        """Uninstall specified software components from the client.
 
-            Args:
-                force_uninstall (bool): Uninstalls packages forcibly. Defaults to True.
-                software_list (list): The client_composition will contain the list of components need to be uninstalled.
+        This method initiates an uninstall job for the given client, optionally forcing the uninstall
+        and specifying which software components to remove.
 
-            Usage:
-                client_obj.uninstall_software(force_uninstall=False,software_list=["Index Store","File System"])
+        Args:
+            force_uninstall: If True, forcibly uninstalls the specified packages. Defaults to True.
+            software_list: Optional list of component names to uninstall from the client. If not provided,
+                no components will be specified for removal.
 
-            Returns:
-                The job object of the uninstall software job
+        Returns:
+            The job object representing the uninstall software job.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException: If the uninstall response is empty or unsuccessful.
 
-                    if response is not success
+        Example:
+            >>> client_obj.uninstall_software(force_uninstall=False, software_list=["Index Store", "File System"])
+            >>> # The returned job object can be used to monitor uninstall progress
+
+        #ai-gen-doc
         """
 
         uninstall = Uninstall(self._commcell_object)
@@ -8184,27 +11374,35 @@ class Client(object):
         if software_list:
             componentInfo = self.__get_componentInfo(software_list)
             client_composition = [{"activateClient": True, "packageDeliveryOption": 0,
-                                "components": {
-                                    "componentInfo": componentInfo}
-                                }]
+                                   "components": {
+                                       "componentInfo": componentInfo}
+                                   }]
 
         return uninstall.uninstall_software(self.client_name, force_uninstall=force_uninstall,
                                             client_composition=client_composition)
 
-    def __get_componentInfo(self, software_list):
-        """get the component info for the installed software
+    def __get_componentInfo(self, software_list: List[str]) -> List[Dict[str, str]]:
+        """Retrieve component information for the specified installed software.
 
         Args:
-            software_list (list): list of software to uninstall
+            software_list: List of software names to retrieve component information for.
 
         Returns:
-            list: list of componetInfo for the software list.
+            A list of dictionaries containing component information for each software item.
+            Each dictionary includes:
+                - "osType": The operating system type ("Windows" or "Unix").
+                - "ComponentName": The name of the software component.
+
+        Example:
+            >>> client = Client(...)
+            >>> software_list = ["High Availability Computing", "File System Agent"]
+            >>> component_info = client.__get_componentInfo(software_list)
+            >>> print(component_info)
             [
-                {
-                    "osType": "Windows",
-                    "ComponentName": "High Availability Computing"
-                }
+                {"osType": "Windows", "ComponentName": "High Availability Computing"},
+                {"osType": "Windows", "ComponentName": "File System Agent"}
             ]
+        #ai-gen-doc
         """
         componentInfo = []
         os_type = "Windows" if "Windows" in self._os_info else "Unix"
@@ -8218,28 +11416,66 @@ class Client(object):
         return componentInfo
 
     @property
-    def job_start_time(self):
-        """Returns the job start time"""
+    def job_start_time(self) -> str:
+        """Get the start time of the job associated with this client.
+
+        Returns:
+            The job start time as a string, typically in a standard date-time format.
+
+        Example:
+            >>> client = Client(...)
+            >>> start_time = client.job_start_time  # Use dot notation for property access
+            >>> print(f"Job started at: {start_time}")
+
+        #ai-gen-doc
+        """
 
         return self._job_start_time
 
     @property
-    def readiness_details(self):
-        """ returns instance of readiness"""
+    def readiness_details(self) -> '_Readiness':
+        """Get the readiness details for this client.
+
+        Returns:
+            _Readiness: An instance representing the readiness status and details of the client.
+
+        Example:
+            >>> client = Client(commcell_object, client_id)
+            >>> readiness = client.readiness_details  # Use dot notation for property access
+            >>> print(f"Client readiness: {readiness}")
+            >>> # The returned _Readiness object can be used to check client status
+
+        #ai-gen-doc
+        """
         if self._readiness is None:
             self._readiness = _Readiness(self._commcell_object, self.client_id)
         return self._readiness
 
-    def get_environment_details(self):
-        """
-        Returns a dictionary with the count of fileservers, VM, Laptop for all the service commcells
+    def get_environment_details(self) -> Dict[str, Dict[str, int]]:
+        """Retrieve environment details for all service Commcells.
 
-         example output:
-            {
-            'fileServerCount': {'commcell_name': count},
-            'laptopCount': {'commcell_name': count},
-            'vmCount': {'commcell_name': count}
-            }
+        This method returns a dictionary containing the count of file servers, virtual machines (VMs),
+        and laptops for each service Commcell. The result is organized by environment type, with each
+        type mapping to a dictionary of Commcell names and their respective counts.
+
+        Returns:
+            Dictionary with keys 'fileServerCount', 'laptopCount', and 'vmCount', each mapping to a
+            dictionary of Commcell names and their counts.
+
+        Raises:
+            SDKException: If the response from the server is invalid or cannot be processed.
+
+        Example:
+            >>> client = Client(...)
+            >>> env_details = client.get_environment_details()
+            >>> print(env_details)
+            >>> # Example output:
+            >>> # {
+            >>> #     'fileServerCount': {'CommcellA': 5, 'CommcellB': 3},
+            >>> #     'laptopCount': {'CommcellA': 10, 'CommcellB': 7},
+            >>> #     'vmCount': {'CommcellA': 2, 'CommcellB': 4}
+            >>> # }
+        #ai-gen-doc
         """
         self._headers = {
             'Accept': 'application/json',
@@ -8264,17 +11500,34 @@ class Client(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def get_needs_attention_details(self):
-        """
-        Returns a dictionary with the count of AnomalousServers, AnomalousJobs, InfrastructureServers
-        for all the service commcells
+    def get_needs_attention_details(self) -> Dict[str, Dict[str, int]]:
+        """Retrieve counts of anomalous servers, jobs, and infrastructure servers for all service Commcells.
 
-        example output:
-            {
-            'CountOfAnomalousInfrastructureServers': {'commcell_name': count},
-            'CountOfAnomalousServers': {'commcell_name': count},
-            'CountOfAnomalousJobs': {'commcell_name': count}
-            }
+        This method returns a dictionary containing the count of anomalous infrastructure servers,
+        anomalous servers, and anomalous jobs for each Commcell in the environment.
+
+        Returns:
+            Dictionary mapping anomaly types to per-Commcell counts. The keys are:
+                - 'CountOfAnomalousInfrastructureServers'
+                - 'CountOfAnomalousServers'
+                - 'CountOfAnomalousJobs'
+            Each value is a dictionary mapping Commcell names to their respective counts.
+
+        Example:
+            >>> client = Client(...)
+            >>> needs_attention = client.get_needs_attention_details()
+            >>> print(needs_attention)
+            >>> # Output:
+            >>> # {
+            >>> #   'CountOfAnomalousInfrastructureServers': {'CommcellA': 2, 'CommcellB': 0},
+            >>> #   'CountOfAnomalousServers': {'CommcellA': 1, 'CommcellB': 3},
+            >>> #   'CountOfAnomalousJobs': {'CommcellA': 0, 'CommcellB': 5}
+            >>> # }
+
+        Raises:
+            SDKException: If the response from the server is invalid or the request fails.
+
+        #ai-gen-doc
         """
         self._headers = {
             'Accept': 'application/json',
@@ -8300,19 +11553,35 @@ class Client(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def get_mount_volumes(self, volume_names=None):
-        """"Gets mount volumes information for client
-            Args:
-                volume_names (list): List of volume names to be fetched (optional)
-            Returns:
-                volume_guids (list) : Returns list volume dictionaries
-            eg: [{
-                  "volumeTypeFlags": 1,
-                  "freeSize": 63669854208,
-                  "size": 106779639808,
-                  "guid": "8459b015-4c07-4312-8440-a64cb426203c",
-                  "accessPathList": ["C:"]
-                }]
+    def get_mount_volumes(self, volume_names: Optional[List[str]] = None) -> List[Dict[str, Any]]:
+        """Retrieve mount volumes information for the client.
+
+        Args:
+            volume_names: Optional list of volume names (as strings) to filter the returned volumes.
+                If provided, only volumes matching these names will be returned. If None, all mount volumes are returned.
+
+        Returns:
+            List of dictionaries containing mount volume details. Each dictionary includes keys such as:
+                - "volumeTypeFlags": int
+                - "freeSize": int
+                - "size": int
+                - "guid": str
+                - "accessPathList": List[str]
+
+        Raises:
+            SDKException: If the response is invalid or if a specified volume name is not found.
+
+        Example:
+            >>> client = Client(...)
+            >>> # Get all mount volumes for the client
+            >>> all_volumes = client.get_mount_volumes()
+            >>> print(f"Total volumes: {len(all_volumes)}")
+            >>> # Get specific volumes by name
+            >>> selected_volumes = client.get_mount_volumes(['C:', 'D:'])
+            >>> for vol in selected_volumes:
+            ...     print(f"Volume GUID: {vol['guid']}, Paths: {vol['accessPathList']}")
+
+        #ai-gen-doc
         """
         flag, response = self._cvpysdk_object.make_request('GET', self._services['BROWSE_MOUNT_POINTS']
                                                            % self.client_id)
@@ -8336,20 +11605,52 @@ class Client(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def enable_content_indexing(self):
-        """Enables the v1 content indexing on the client"""
+    def enable_content_indexing(self) -> None:
+        """Enable v1 content indexing for the client.
+
+        This method updates the client's properties to activate v1 content indexing,
+        allowing enhanced search and retrieval capabilities for client data.
+
+        Example:
+            >>> client = Client(...)
+            >>> client.enable_content_indexing()
+            >>> print("Content indexing enabled for the client.")
+
+        #ai-gen-doc
+        """
         update_properties = self.properties
         update_properties['client']['EnableContentIndexing'] = 'true'
         self.update_properties(update_properties)
 
-    def disable_content_indexing(self):
-        """Disables the v1 content indexing on the client"""
+    def disable_content_indexing(self) -> None:
+        """Disable v1 content indexing for this client.
+
+        This method updates the client properties to turn off v1 content indexing,
+        ensuring that content indexing is no longer performed on this client.
+
+        Example:
+            >>> client = Client(...)
+            >>> client.disable_content_indexing()
+            >>> print("Content indexing disabled for client.")
+        #ai-gen-doc
+        """
         update_properties = self.properties
         update_properties['client']['EnableContentIndexing'] = 'false'
         self.update_properties(update_properties)
 
-    def enable_owner_privacy(self):
-        """Enables the privacy option for client"""
+    def enable_owner_privacy(self) -> None:
+        """Enable the privacy option for the client.
+
+        This method activates owner privacy for the client, ensuring that sensitive information
+        is protected according to privacy settings. If privacy is already enabled, no action is taken.
+
+        Example:
+            >>> client = Client(...)
+            >>> client.enable_owner_privacy()
+            >>> # Owner privacy is now enabled for the client
+
+        #ai-gen-doc
+        """
 
         if self.is_privacy_enabled:
             return
@@ -8357,23 +11658,42 @@ class Client(object):
         self.set_privacy(True)
 
     @property
-    def company_name(self):
-        """Returns Company Name to which client belongs to, Returns Empty String, If client belongs to Commcell"""
-        return self._company_name
-
-    def check_eligibility_for_migration(self, destination_company_name):
-        """Checks whether Client is Eligible for migration
-        Args:
-            destination_company_name (str)  --  Destination company name to which client is to be migrated
+    def company_name(self) -> str:
+        """Get the company name to which the client belongs.
 
         Returns:
-            eligibility_status (bool)   --  True, If Clients are eligible for migration else False
+            The company name as a string. Returns an empty string if the client belongs to the Commcell.
+
+        Example:
+            >>> client = Client(...)
+            >>> company = client.company_name  # Use dot notation for property access
+            >>> print(f"Client belongs to company: {company if company else 'Commcell'}")
+        #ai-gen-doc
+        """
+        return self._company_name
+
+    def check_eligibility_for_migration(self, destination_company_name: str) -> bool:
+        """Check if the client is eligible for migration to the specified destination company.
+
+        This method verifies whether the current client can be migrated to the given destination company.
+        It returns True if the client is eligible for migration, otherwise returns False.
+
+        Args:
+            destination_company_name: The name of the destination company to which the client is to be migrated.
+
+        Returns:
+            True if the client is eligible for migration; False otherwise.
 
         Raises:
-            SDKException:
-                if response is empty
+            SDKException: If the response from the server is empty or not successful.
 
-                if response is not success
+        Example:
+            >>> client = Client(...)
+            >>> is_eligible = client.check_eligibility_for_migration("AcmeCorp")
+            >>> print(f"Migration eligibility: {is_eligible}")
+            >>> # Returns True if eligible, False otherwise
+
+        #ai-gen-doc
         """
         company_id = (int(Organizations(self._commcell_object).get(
             destination_company_name).organization_id)) if destination_company_name.lower() != 'commcell' else 0
@@ -8401,28 +11721,40 @@ class Client(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def disable_owner_privacy(self):
-        """Enables the privacy option for client"""
+    def disable_owner_privacy(self) -> None:
+        """Disable the owner privacy option for the client.
+
+        This method turns off the privacy setting for the client if it is currently enabled.
+
+        Example:
+            >>> client = Client(...)
+            >>> client.disable_owner_privacy()
+            >>> print("Owner privacy disabled for the client.")
+        #ai-gen-doc
+        """
         if not self.is_privacy_enabled:
             return
 
         self.set_privacy(False)
 
-    def set_privacy(self, value):
-        """
-        Internal function to enable/disable privacy for client
+    def set_privacy(self, value: bool) -> None:
+        """Enable or disable privacy settings for the client.
+
+        This method updates the privacy status of the client by sending a request to the Commcell server.
+        If the operation fails or the response is invalid, an SDKException is raised.
 
         Args:
-            value(bool): True/False to enable/disable the privacy
+            value: Set to True to enable privacy, or False to disable privacy for the client.
 
         Raises:
-            SDKException:
+            SDKException: If setting privacy for the client fails, the response is empty, or the response indicates failure.
 
-                if setting privacy for client fails
+        Example:
+            >>> client = Client(...)
+            >>> client.set_privacy(True)   # Enable privacy for the client
+            >>> client.set_privacy(False)  # Disable privacy for the client
 
-                if response is empty
-
-                if response is not success
+        #ai-gen-doc
         """
         url = self._services['DISABLE_CLIENT_PRIVACY'] % self.client_id
         if value:
@@ -8441,6 +11773,122 @@ class Client(object):
             else:
                 raise SDKException('Response', '102')
 
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        self.refresh()
+
+    def passkey_for_restores(self, current_password: str, action: str) -> None:
+        """Enable or disable the client setting "Require passkey for restores".
+
+        Args:
+            current_password: Passkey value used in request payload.
+            action: Operation to perform. Supported values: ``enable`` or ``disable``.
+
+        Raises:
+            SDKException: If action is invalid, request fails, or API returns an error.
+        
+        Example:
+            >>> client = Client(...)
+            >>> client.passkey_for_restores(current_password="mySecretPasskey", action="enable")
+            >>> print("Passkey for restores enabled.")
+            >>> client.passkey_for_restores(current_password="mySecretPasskey", action="disable")
+            >>> print("Passkey for restores disabled.")
+            
+        # ai-gen-doc
+        """
+        encoded_password = b64encode(current_password.encode()).decode()
+
+        req_url = self._services['CLIENT_PASSKEY'] % self.client_id
+        if action.lower() == 'enable':
+            req_json = {
+                "passkeyOpType": 1,
+                "newPasskey": encoded_password
+            }  
+        elif action.lower() == 'disable':
+            req_json = {
+                "passkeyOpType": 3,
+                "currentPasskey": encoded_password
+            }
+        else:
+            raise SDKException('Client', '102', 'Invalid action specified. Use "enable" or "disable".')
+
+        flag, response = self._cvpysdk_object.make_request('POST', req_url, req_json)
+
+        if flag:
+            if response.json():
+                if 'error' in response.json():
+                    error_message = response.json()['error']['errorCode']
+                    if error_message != 0:
+                        error_message = response.json()['error']['errorMessage']
+                    raise SDKException('Client', '110', 'Error: {0}'.format(error_message))
+            else:
+                raise SDKException('Commcell', '110')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        self.refresh()
+
+    def passkey_authorize_for_restore(self, current_password: str, action: str, expiration_time: int = 1800) -> None:
+        """Enable or disable the client setting "Authorize for restore".
+
+        This operation is allowed only when client property
+        ``advancedPrivacySettings.isPasskeyFeatureEnabled`` is True.
+
+        Args:
+            current_password: Passkey value used in request payload.
+            action: Operation to perform. Supported values: ``enable`` or ``disable``.
+            expiration_time: Expiry in seconds for authorization when enabling.
+
+        Raises:
+            SDKException: If passkey feature is not enabled, action is invalid,
+                request fails, or API returns an error.
+                
+        Example:
+            >>> client = Client(...)
+            >>> client.passkey_authorize_for_restore(current_password="mySecretPasskey", action="enable", expiration_time=3600)
+            >>> print("Passkey authorization for restore enabled.")
+            >>> client.passkey_authorize_for_restore(current_password="mySecretPasskey", action="disable")
+            >>> print("Passkey authorization for restore disabled.")
+            
+        # ai-gen-doc
+        """
+        encoded_password = b64encode(current_password.encode()).decode()
+
+        req_url = self._services['CLIENT_AUTH_RESTORE'] % self.client_id
+        if action.lower() == 'enable':
+            req_json = {
+                "passkey": encoded_password,
+                "passkeySettings": {
+                    "enableAuthorizeForRestore": True,
+                    "passkeyExpirationInterval": {
+                        "toTime": expiration_time
+                    }
+                }
+            } 
+        elif action.lower() == 'disable':
+            req_json = {
+                "passkeySettings": {
+                    "enableAuthorizeForRestore": False,
+                    "passkeyExpirationInterval": {}
+                }
+            }
+        else:
+            raise SDKException('Client', '102', 'Invalid action specified. Use "enable" or "disable".')
+
+        flag, response = self._cvpysdk_object.make_request('POST', req_url, req_json)
+
+        if flag:
+            if response.json():
+                if 'error' in response.json():
+                    error_code = response.json()['error']['errorCode']
+                    if error_code != 0:
+                        error_message = response.json()['error']['errorMessage']
+                        raise SDKException('Commcell', '110', 'Error: {0}'.format(error_message))
+            else:
+                raise SDKException('Commcell', '110')
         else:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
@@ -8470,20 +11918,27 @@ class Client(object):
         """
         self.change_o365_client_job_results_directory(new_directory_path, username, password)
 
-    def change_company_for_client(self, destination_company_name):
-        """
-        Changes Company for Client
+    def change_company_for_client(self, destination_company_name: str) -> None:
+        """Change the company association for this client.
+
+        Migrates the client to the specified destination company. This operation will validate
+        migration eligibility and perform the migration if allowed. If the migration fails or
+        the client is not eligible, an SDKException is raised.
 
         Args:
-            destination_company_name (str)  --  Destination company name to which client is to be migrated
+            destination_company_name: The name of the destination company to which the client should be migrated.
 
         Raises:
-            SDKException:
-                If Client is not eligible for migration
+            SDKException: If the client is not eligible for migration, if the response is empty,
+                or if the migration request is unsuccessful.
 
-                if response is empty
+        Example:
+            >>> client = Client(...)
+            >>> client.change_company_for_client("NewCompany")
+            >>> print("Client migration successful.")
+            # If the client is not eligible or migration fails, an SDKException will be raised.
 
-                if response is not success
+        #ai-gen-doc
         """
         if not self.check_eligibility_for_migration(destination_company_name):
             raise SDKException('Client', 102, f'Client [{self.client_name}] is Not Eligible For Migration')
@@ -8514,15 +11969,24 @@ class Client(object):
         self.refresh()
 
     def read_log_file(self, file_name: str, complete_file: bool = False) -> list:
-        """
-        Reads the log file from the client
+        """Read the specified log file from the client.
 
         Args:
-            file_name (str)     --  Name of the log file to be read
-            complete_file (bool) --  True if the complete file needs to be read, False otherwise
+            file_name: Name of the log file to be read.
+            complete_file: If True, reads the entire log file; if False, reads a partial log.
 
         Returns:
-            list    --  List of lines in the log file
+            List of lines from the log file as strings.
+
+        Raises:
+            SDKException: If the log file cannot be read or the response is invalid.
+
+        Example:
+            >>> client = Client(...)
+            >>> log_lines = client.read_log_file('Backup.log', complete_file=True)
+            >>> for line in log_lines:
+            ...     print(line)
+        #ai-gen-doc
         """
         url_params = f"?LogFileName={file_name}&completeFile={str(complete_file).lower()}"
         flag, response = self._cvpysdk_object.make_request(
@@ -8536,55 +12000,437 @@ class Client(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
+    def available_log_files(self, path: str = "/") -> Dict[str, Any]:
+        """List log files and folders under a path on this client (log browser root is ``/``).
+
+        Args:
+            path: Folder to list; default is the log root.
+
+        Returns:
+            Parsed JSON (typically ``path`` and ``browseItems``).
+
+        Raises:
+            SDKException: If the request fails or the response is empty.
+
+        """
+        if not path.startswith('/'):
+            path = '/' + path
+        path_param = quote(path, safe='')
+        url = self._services['CLIENT_LOGS_BROWSE'] % self.client_id + '?path={0}'.format(path_param)
+        flag, response = self._cvpysdk_object.make_request('GET', url)
+        if flag:
+            if response.json():
+                return response.json()
+            raise SDKException('Response', '102')
+        raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def set_debug_level(
+        self,
+        log_name: str,
+        debug_level: int,
+        file_size_mb: int = 5,
+        file_versions: int = 1,
+    ) -> Dict[str, Any]:
+        """Set debug level and log file rotation for a named log (e.g. ``CommandCenter``, ``Webserver``).
+
+        Args:
+            log_name: Log to update, as shown in the client log viewer.
+            debug_level: Debug level.
+            file_size_mb: Maximum log file size in MB.
+            file_versions: How many rotated log files to keep.
+
+        Returns:
+            Server response body (often empty or minimal).
+
+        Raises:
+            SDKException: If the request fails.
+
+        """
+        path_segment = quote(str(log_name), safe='')
+        url = self._services['CLIENT_LOG_SERVICE'] % (self.client_id, path_segment)
+        payload = {
+            'debugLevel': debug_level,
+            'fileSizeInMB': file_size_mb,
+            'fileVersions': file_versions,
+        }
+        flag, response = self._cvpysdk_object.make_request('POST', url, payload=payload)
+        if flag:
+            if response.json():
+                return response.json()
+            return {}
+        raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def add_http_proxy(self, use_client_os_proxy_settings=False, proxy_server="", proxy_port=0,
+                       use_authentication=False, use_with_network_topology=False,
+                       proxy_credential_name=None, proxy_credential_id=None, proxy_bypass_list="") -> None:
+        """Add an HTTP proxy configuration to the client
+
+        Args:
+            use_client_os_proxy_settings (bool): Use the client OS proxy settings.
+
+            proxy_server (str): The proxy server address.
+
+            proxy_port (int): The proxy server port.
+
+            use_authentication (bool): Use authentication for the proxy.
+
+            use_with_network_topology (bool): Use the proxy with network topology.
+
+            proxy_credential_name (str): The name of the proxy credential.
+
+            proxy_credential_id (int): The ID of the proxy credential.
+
+            proxy_bypass_list (str): Comma-separated list of addresses to bypass the proxy.
+
+        """
+
+        proxy_type = "GLOBAL" if use_client_os_proxy_settings else "EXPLICIT"
+
+        if proxy_type == "EXPLICIT":
+            if not proxy_server or not isinstance(proxy_server, str):
+                raise SDKException( 'Client', 102,
+                    "proxy_server is required and must be a non-empty string when using EXPLICIT proxy."
+                )
+            if not isinstance(proxy_port, int) or not (1 <= proxy_port <= 65535):
+                raise SDKException( 'Client', 102,
+                    "proxy_port must be an integer between 1 and 65535 when using EXPLICIT proxy."
+                )
+
+        request_json = {
+            "entity": {
+                "clientId": int(self.client_id)
+            },
+            "httpProxy": {
+                "server": proxy_server,
+                "port": proxy_port,
+                "useForNetworkRoutes": use_with_network_topology,
+                "proxyBypassList": proxy_bypass_list,
+                "configureHTTPProxy": True,
+                "useAuthentication": use_authentication,
+                "proxyType": proxy_type
+            }
+        }
+
+        if proxy_credential_id and proxy_credential_name:
+            request_json["httpProxy"]["credentials"] = {
+                "credentialId": proxy_credential_id,
+                "credentialName": proxy_credential_name
+            }
+        else:
+            request_json["httpProxy"]["selectedCredential"] = None
+
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._services['HTTP_PROXY'], request_json
+        )
+
+        if flag:
+            if response.json():
+                error_code = -1
+                error_message ="Failed to add HTTP proxy configuration to the client group."
+                if 'errorCode' in response.json():
+                        error_code = response.json()['errorCode']
+                if error_code != 0:
+                    raise SDKException('Client', '102', error_message)
+
+            else:
+                raise SDKException('Response', '102')
+
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def remove_http_proxy(self) -> None:
+        """Remove the HTTP proxy configuration from the client."""
+
+        request_json = {
+            "entity": {
+                "clientId": int(self.client_id)
+            },
+            "httpProxy": {
+                "configureHTTPProxy": False
+            }
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._services['HTTP_PROXY'], request_json
+        )
+
+        if flag:
+            if response.json():
+                error_code = -1
+                error_message ="Failed to remove HTTP proxy configuration from the client."
+                if 'errorCode' in response.json():
+                    error_code = response.json()['errorCode']
+                if error_code != 0:
+                    raise SDKException('Client', '102', error_message)
+
+            else:
+                raise SDKException('Response', '102')
+
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    @property
+    def additional_settings(self) -> 'AdditionalSettings':
+        """Get the AdditionalSettings instance associated with this Client.
+
+        Returns:
+            AdditionalSettings: An object for managing advanced or custom settings for the client.
+
+        Example:
+            >>> client = Client(...)
+            >>> settings = client.additional_settings  # Access via property
+            >>> print(f"Additional settings object: {settings}")
+            >>> # The returned AdditionalSettings object can be used to configure client-specific options
+
+        #ai-gen-doc
+        """
+        if self._additional_settings is None:
+            self._additional_settings = AdditionalSettings(self)
+        return self._additional_settings
+
+    def send_logs(self, email_ids: Optional[List[str]], **kwargs) -> bool:
+        """Send logs for this client to specified email addresses.
+
+        This method creates a send logs task for the current client and sends the logs to the
+        provided list of email addresses. It waits for the log sending task to complete and
+        returns True if successful.
+
+        Args:
+            email_ids: list of email addresses to which the client logs should be sent.
+            **kwargs: Additional keyword arguments for the operation.
+                email_subject: (str) Subject line for the email containing the logs.
+
+        Returns:
+            True if the logs were sent successfully.
+
+        Raises:
+            SDKException: If the log sending operation fails or the response contains an error.
+
+        Example:
+            >>> client = Client(commcell_object, "Client01")
+            >>> success = client.send_logs(['admin@example.com', 'support@example.com'])
+            >>> print(f"Logs sent successfully: {success}")
+            >>> # Send logs with job results included
+            >>> client.send_logs(['admin@example.com'], include_job_results=True)
+
+        #ai-gen-doc
+        """
+        if isinstance(email_ids, str):
+            email_ids = [email_ids]
+
+        email_subject = kwargs.get('email_subject',
+                                   f"{self._commcell_object.commserv_name} : Logs for Client '{self.client_name}'")
+
+        request_json = {
+            "taskInfo": {
+                "task": {
+                    "taskType": 1,
+                    "initiatedFrom": 1,
+                    "policyType": 0,
+                    "taskFlags": {
+                        "disabled": False
+                    }
+                },
+                "subTasks": [
+                    {
+                        "subTask": {
+                            "subTaskType": 1,
+                            "operationType": 5010
+                        },
+                        "options": {
+                            "adminOpts": {
+                                "sendLogFilesOption": {
+                                    "actionLogsEndJobId": 0,
+                                    "emailSelected": True,
+                                    "jobid": 0,
+                                    "tsDatabase": False,
+                                    "galaxyLogs": False,
+                                    "getLatestUpdates": False,
+                                    "actionLogsStartJobId": 0,
+                                    "computersSelected": True,
+                                    "csDatabase": False,
+                                    "otherDatabases": False,
+                                    "crashDump": False,
+                                    "isNetworkPath": False,
+                                    "saveToFolderSelected": False,
+                                    "notifyMe": True,
+                                    "includeJobResults": False,
+                                    "doNotIncludeLogs": True,
+                                    "machineInformation": False,
+                                    "scrubLogFiles": False,
+                                    "emailSubject": email_subject,
+                                    "osLogs": False,
+                                    "allUsersProfile": False,
+                                    "splitFileSizeMB": 512,
+                                    "actionLogs": False,
+                                    "includeIndex": False,
+                                    "databaseLogs": True,
+                                    "includeDCDB": False,
+                                    "collectHyperScale": False,
+                                    "logFragments": False,
+                                    "uploadLogsSelected": True,
+                                    "useDefaultUploadOption": True,
+                                    "enableChunking": True,
+                                    "collectRFC": False,
+                                    "collectUserAppLogs": False,
+                                    "impersonateUser": {
+                                        "useImpersonation": False
+                                    },
+                                    "clients": [
+                                        {
+                                            "clientId": int(self.client_id),
+                                            "clientName": self.client_name
+                                        }
+                                    ],
+                                    "recipientTo": {
+                                        "emailids": email_ids,
+                                        "users": [],
+                                        "userGroups": []
+                                    },
+                                    "sendLogsOnJobCompletion": False,
+                                    "emailDescription": f"Client logs for {self.client_name}"
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['CREATE_TASK'], request_json
+        )
+
+        if flag:
+            if response.json():
+                if 'errorCode' in response.json() and response.json()['errorCode'] != 0:
+                    error_message = response.json().get('errorMessage', 'nil')
+                    raise SDKException(
+                        'Client', '102', 'Sending logs failed\nError: "{0}"'.format(error_message)
+                    )
+                else:
+                    # Wait for the send logs job to complete
+                    from .job import Job
+                    send_logs_job = Job(self._commcell_object, response.json()['jobIds'][0])
+                    try:
+                        send_logs_job.wait_for_completion()
+                    except Exception:
+                        pass
+                return True
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', response.text)
+
+    def get_mongodb_config(self, refresh: bool = False) -> Dict[str, Any]:
+        """Retrieve the MongoDB configuration details for this client.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing MongoDB configuration details for the client.
+
+        Raises:
+            SDKException: If the configuration cannot be retrieved or the response is invalid.
+
+        Example:
+            >>> client = Client(...)
+            >>> mongodb_config = client.get_mongodb_config()
+            >>> print(mongodb_config)
+        """
+        url = self._services['MONGODB_CLIENT_CONFIG'] % self.client_id + "?refresh={0}".format(str(refresh).lower())
+        flag, response = self._cvpysdk_object.make_request(
+            "GET",url
+        )
+        if not flag:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        if not response.json():
+            raise SDKException('Response', '102')
+
+        return response.json()
 
 class _Readiness:
-    """ Class for checking the connection details of a client """
+    """
+    Class for assessing and reporting the readiness status of a client connection.
 
-    def __init__(self, commcell, client_id):
+    This class provides mechanisms to check various aspects of client readiness,
+    including network connectivity, resource availability, application status, and
+    MongoDB-specific readiness. It encapsulates detailed checks and exposes methods
+    to retrieve readiness status, failure reasons, and diagnostic details.
+
+    Key Features:
+        - Initialization with commcell and client ID for context
+        - Comprehensive readiness checks across network, resources, and applications
+        - MongoDB-specific readiness verification and failure diagnostics
+        - Retrieval of failure reasons and detailed status information
+        - Property access to current readiness status
+        - Internal methods for detailed status, reason, and detail checks
+
+    #ai-gen-doc
+    """
+
+    def __init__(self, commcell: 'Commcell', client_id: str) -> None:
+        """Initialize the _Readiness object with Commcell and client ID.
+
+        Args:
+            commcell: Instance of the Commcell class representing the backup environment.
+            client_id: Unique identifier for the client as a string.
+
+        Example:
+            >>> commcell = Commcell(command_center_hostname, username, password)
+            >>> readiness = _Readiness(commcell, "client_123")
+            >>> # The _Readiness object is now initialized for the specified client
+
+        #ai-gen-doc
+        """
         self.__commcell = commcell
         self.__client_id = client_id
         self._reason = None
         self._detail = None
         self._status = None
         self._dict = None
-        self._response = None
+        self._mongodb_dict = None
 
     def __fetch_readiness_details(
             self,
-            network=True,
-            resource=False,
-            disabled_clients=False,
-            cs_cc_network_check=False,
-            application_check=False,
-            additional_resources=False,
-    ):
-        """
-        Performs readiness check on the client
+            network: bool = True,
+            resource: bool = False,
+            disabled_clients: bool = False,
+            cs_cc_network_check: bool = False,
+            application_check: bool = False,
+            additional_resources: bool = False,
+            application_readiness_option: bool = False
+        ):
+        """Perform readiness checks on the client with configurable options.
 
-            Args:
-                network (bool)  - Performs Network Readiness Check.
-                                    Default: True
+        Args:
+            network: If True, performs a network readiness check. Default is True.
+            resource: If True, performs a resource readiness check. Default is False.
+            disabled_clients: If True, includes clients with backup activity disabled. Default is False.
+            cs_cc_network_check: If True, performs network readiness check between CommServe and client only. Default is False.
+            application_check: If True, performs application readiness check. Default is False.
+            additional_resources: If True, includes additional resources in the readiness check. Default is False.
+            application_readiness_option: If True, includes application readiness option in the check. Default is False.
 
-                resource (bool) - Performs Resource Readiness Check.
-                                    Default: False
+        Raises:
+            SDKException: If the response is empty or not successful.
 
-                disabled_clients (bool) - Includes backup activity disabled clients.
-                                            Default: False
+        Example:
+            >>> readiness = _Readiness(commcell_object, client_id)
+            >>> readiness.__fetch_readiness_details(
+            ...     network=True,
+            ...     resource=True,
+            ...     disabled_clients=False,
+            ...     cs_cc_network_check=True,
+            ...     application_check=True,
+            ...     additional_resources=True
+            ... )
+            >>> # The readiness details will be updated in the readiness object
 
-                cs_cc_network_check (bool)  - Performs network readiness check between CS and client alone.
-                                                Default: False
-
-                application_check (bool) - Performs Application Readiness check.
-                                             Default: False
-
-                additional_resources (bool) - Include Additional Resources.
-                                               Default: False
-
-            Raises:
-                SDKException:
-                    if response is empty
-
-                    if response is not success
+        #ai-gen-doc
         """
         flag, response = self.__commcell._cvpysdk_object.make_request(
             'GET',
@@ -8595,7 +12441,8 @@ class _Readiness:
                 disabled_clients,
                 cs_cc_network_check,
                 application_check,
-                additional_resources)
+                additional_resources,
+                int(application_readiness_option))
         )
 
         if flag:
@@ -8609,97 +12456,204 @@ class _Readiness:
         else:
             raise SDKException('Response', '101', self.__commcell._update_response_(response.text))
 
-    def is_ready(self, network=True, resource=False, disabled_clients=False, cs_cc_network_check=False,
-                 application_check=False, additional_resources=False):
-        """Performs readiness check on the client
+    def is_ready(
+            self,
+            network: bool = True,
+            resource: bool = False,
+            disabled_clients: bool = False,
+            cs_cc_network_check: bool = False,
+            application_check: bool = False,
+            additional_resources: bool = False,
+            application_readiness_option = False
+    ) -> bool:
+        """Perform a readiness check on the client with configurable options.
 
         Args:
-                network (bool)  - Performs Network Readiness Check.
-                                    Default: True
-
-                resource (bool) - Performs Resource Readiness Check.
-                                    Default: False
-
-                disabled_clients (bool) - Includes backup activity disabled clients.
-                                            Default: False
-
-                cs_cc_network_check (bool)  - Performs network readiness check between CS and client alone.
-                                                Default: False
-
-                application_check (bool) - Performs Application Readiness check.
-                                             Default: False
-
-                additional_resources (bool) - Include Additional Resources.
-                                         Default: False
+            network: If True, performs a network readiness check. Default is True.
+            resource: If True, performs a resource readiness check. Default is False.
+            disabled_clients: If True, includes clients with backup activity disabled. Default is False.
+            cs_cc_network_check: If True, performs a network readiness check between CommServe (CS) and client only. Default is False.
+            application_check: If True, performs an application readiness check. Default is False.
+            additional_resources: If True, includes additional resources in the readiness check. Default is False.
+            application_readiness_option: If True, includes application readiness option in the check. Default is False.
 
         Returns:
+            True if the client is ready based on the selected checks, otherwise False.
 
-            (bool)  - True if ready else False
+        Example:
+            >>> readiness = _Readiness()
+            >>> # Perform a full readiness check including network and resource
+            >>> is_client_ready = readiness.is_ready(network=True, resource=True)
+            >>> print(f"Client readiness: {'Ready' if is_client_ready else 'Not Ready'}")
+            >>> # Check readiness including disabled clients and application check
+            >>> is_ready = readiness.is_ready(disabled_clients=True, application_check=True)
+            >>> print(f"Readiness with disabled clients and application check: {is_ready}")
 
+        #ai-gen-doc
         """
         self.__fetch_readiness_details(network, resource, disabled_clients, cs_cc_network_check,
-                                        application_check, additional_resources)
+                                       application_check, additional_resources, application_readiness_option)
         return self._status == "Ready."
 
-    def is_mongodb_ready(self):
-        """
-        mongodb_readiness (bool) - performs mongoDB check readiness by calling mongodb readiness API
+    def is_mongodb_ready(self) -> bool:
+        """Check if the MongoDB service is ready by calling the readiness API.
+
+        This method performs a readiness check for the MongoDB service by sending a request to the
+        MongoDB readiness API endpoint. It returns True if the service is ready, otherwise raises
+        an SDKException if the check fails or the response is invalid.
 
         Returns:
-            (bool) - True if ready else False
-        """
-        flag, response = self.__commcell._cvpysdk_object.make_request(
-            "GET",self.__commcell._services["MONGODB_CHECK_READINESS"])
-        if flag:
-            self._response = response.json()
-            if response.json():
-                if not (self._response.get('response', [])[0].get('errorString', '') and
-                        self._response.get('response', [])[0].get('errorCode', None)):
-                    return True
-            else:
-                raise SDKException('Response', '102')
-        else:
-            raise SDKException('Response', '101', self.__commcell._update_response_(response.text))
+            True if MongoDB is ready; False otherwise.
 
-    def __check_reason(self):
+        Raises:
+            SDKException: If the API response indicates an error or is invalid.
+
+        Example:
+            >>> readiness = _Readiness(commcell_object)
+            >>> if readiness.is_mongodb_ready():
+            ...     print("MongoDB is ready for operations.")
+            ... else:
+            ...     print("MongoDB is not ready.")
+        #ai-gen-doc
+        """
+        self.__fetch_readiness_details(application_readiness_option=True)
+        for entityName in self._dict.get('summary',[]):
+            if entityName.get('entity', {}).get('entityName', "") == 'MongoDB':
+                self._mongodb_dict = entityName
+                status = entityName.get('status', "")
+                return status.strip() == "Ready."
+        return False
+
+    def __check_reason(self) -> None:
+        """Extract and set the reason for readiness from the internal summary dictionary.
+
+        This method attempts to retrieve the 'reason' field from the first element of the 'summary' list
+        within the internal dictionary. If the required keys are missing, the method silently ignores the error.
+
+        Example:
+            >>> readiness = _Readiness()
+            >>> readiness._dict = {'summary': [{'reason': 'All systems operational'}]}
+            >>> readiness.__check_reason()
+            >>> print(readiness._reason)
+            All systems operational
+
+        #ai-gen-doc
+        """
         try:
             self._reason = self._dict['summary'][0]['reason']
         except KeyError:
             pass
 
-    def __check_status(self):
+    def __check_status(self) -> None:
+        """Check and update the readiness status from the internal summary dictionary.
+
+        This method attempts to extract the 'status' value from the first element of the 'summary' list
+        within the internal dictionary and updates the object's status attribute. If the required keys
+        are missing, the status remains unchanged.
+
+        Example:
+            >>> readiness = _Readiness()
+            >>> readiness._dict = {'summary': [{'status': 'Ready'}]}
+            >>> readiness.__check_status()
+            >>> # The _status attribute is now updated to 'Ready'
+
+        #ai-gen-doc
+        """
         try:
             self._status = self._dict['summary'][0]['status']
         except KeyError:
             pass
 
-    def __check_details(self):
+    def __check_details(self) -> None:
+        """Check and update the '_detail' attribute from the internal dictionary.
+
+        This method attempts to retrieve the 'detail' key from the internal '_dict' attribute
+        and assigns its value to the '_detail' attribute. If the 'detail' key is not present,
+        the method silently ignores the missing key.
+
+        Example:
+            >>> readiness = _Readiness()
+            >>> readiness._dict = {'detail': 'System is ready'}
+            >>> readiness.__check_details()
+            >>> print(readiness._detail)
+            System is ready
+
+        #ai-gen-doc
+        """
         try:
             self._detail = self._dict['detail']
         except KeyError:
             pass
 
-    def get_failure_reason(self):
-        """ Retrieve client readiness failure reason"""
+    def get_failure_reason(self) -> str:
+        """Retrieve the failure reason for client readiness.
+
+        Returns:
+            The failure reason as a string, describing why the client is not ready.
+
+        Example:
+            >>> readiness = _Readiness()
+            >>> reason = readiness.get_failure_reason()
+            >>> print(f"Failure reason: {reason}")
+
+        #ai-gen-doc
+        """
         if not self._dict:
             self.__fetch_readiness_details()
         return self._reason
 
     @property
-    def status(self):
-        """ Retrieve client readiness status """
+    def status(self) -> str:
+        """Get the client readiness status.
+
+        Returns:
+            The readiness status of the client as a string.
+
+        Example:
+            >>> readiness = _Readiness(...)
+            >>> current_status = readiness.status  # Use dot notation for property access
+            >>> print(f"Client readiness status: {current_status}")
+
+        #ai-gen-doc
+        """
         if not self._dict:
             self.__fetch_readiness_details()
         return self._status
 
-    def get_detail(self):
-        """ Retrieve client readiness details """
+    def get_detail(self) -> Dict[str, Any]:
+        """Retrieve detailed readiness information for the client.
+
+        Returns:
+            Dictionary containing client readiness details.
+
+        Example:
+            >>> readiness = _Readiness()
+            >>> details = readiness.get_detail()
+            >>> print(details)
+            >>> # The details dictionary contains readiness status and related information
+
+        #ai-gen-doc
+        """
         if not self._dict:
             self.__fetch_readiness_details()
         return self._detail
 
-    def get_mongodb_failure_reason(self):
-        """Retrieve mongoDB readiness failure details"""
-        if not self._response:
+    def get_mongodb_failure_reason(self) -> Any:
+        """Retrieve the failure reason for MongoDB readiness.
+
+        This method returns details about why MongoDB is not ready, if applicable.
+        If the readiness status has not been checked, it will trigger a readiness check before returning the failure details.
+
+        Returns:
+            Failure details for MongoDB readiness. The type and structure of the response may vary depending on the implementation.
+
+        Example:
+            >>> readiness = _Readiness()
+            >>> failure_reason = readiness.get_mongodb_failure_reason()
+            >>> print(f"MongoDB failure reason: {failure_reason}")
+
+        #ai-gen-doc
+        """
+        if not self._mongodb_dict:
             self.is_mongodb_ready()
-        return self._response
+        return self._mongodb_dict.get('reason', "")

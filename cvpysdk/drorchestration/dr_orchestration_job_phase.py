@@ -64,7 +64,12 @@ class DRJobPhases(Enum):
     PRE_SCRIPT_EXECUTION = 52
     POST_SCRIPT_EXECUTION = 53
     VM_LEVEL = 54
-
+    DEPLOY_CLEANROOM_RESOURCES = 86
+    SECURE_CONNECTION_DEPLOYMENT = 87
+    SECURITY_SCAN = 88
+    CLEANUP_DEPLOYED_RESOURCES = 90
+    CREATE_ACCESS_NODE = 83
+    WAIT_BACKUPCOPY_JOB = 85
 
 class DRJobPhaseToText(Enum):
     SCRIPT_EXECUTION = "Script Execution"
@@ -119,3 +124,9 @@ class DRJobPhaseToText(Enum):
     PRE_SCRIPT_EXECUTION = "Pre Script Execution"
     POST_SCRIPT_EXECUTION = "Post Script Execution"
     VM_LEVEL = "VM Level"
+    DEPLOY_CLEANROOM_RESOURCES = "Deploy Cleanroom Resources"
+    SECURE_CONNECTION_DEPLOYMENT = "Secure Connection Deployment"
+    CLEANUP_DEPLOYED_RESOURCES = "Cleanup Deployed Resources"
+    SECURITY_SCAN = "Security Scan"
+    CREATE_ACCESS_NODE = "Create Access Node"
+    WAIT_BACKUPCOPY_JOB = "Waiting on Backup copy job"

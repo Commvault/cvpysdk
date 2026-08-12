@@ -93,23 +93,55 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 from base64 import b64encode
+
 from ..instance import Instance
 from ..exception import SDKException
+from ..job import Job
+
+from typing import Optional, TYPE_CHECKING
+if TYPE_CHECKING:
+    from ..agent import Agent
 
 
 class PostgreSQLInstance(Instance):
-    """Derived class from Instance Base class, representing a POSTGRESQL instance,
-        and to perform operations on that Instance."""
+    """
+    Represents a PostgreSQL database instance, extending the base Instance class.
 
-    def __init__(self, agent_object, instance_name, instance_id):
-        """Initialize object of the Instances class.
+    This class provides comprehensive management and operational capabilities for
+    PostgreSQL instances, including configuration, backup, restore, and security
+    operations. It exposes properties for accessing and modifying key PostgreSQL
+    instance attributes such as binary and library directories, archive log
+    directories, server user and port information, SSL configuration, standby
+    settings, and storage policies.
 
-            Args:
-                agent_object (object)  --  instance of the Agent class
+    Additionally, the class offers methods for retrieving and manipulating
+    instance properties, handling restore operations with various options, and
+    managing security aspects like changing the superuser password.
 
-            Returns:
-                object - instance of the Instances class
+    Key Features:
+        - Access to PostgreSQL binary, library, and archive log directories
+        - Management of log storage policies
+        - Retrieval and configuration of server user, port, and maintenance database
+        - PostgreSQL version and SSL configuration management
+        - Standby instance support and status checks
+        - Control over log and data backup sources (master/standby)
+        - Archive log deletion management
+        - Secure password change for the superuser account
+        - Retrieval of instance properties in both object and JSON formats
+        - Flexible restore operations, including in-place and advanced options
 
+    #ai-gen-doc
+    """
+
+    def __init__(self, agent_object: 'Agent', instance_name: str, instance_id: int) -> None:
+        """Initialize a PostgreSQLInstance object.
+
+        Args:
+            agent_object: Instance of the Agent class associated with this PostgreSQL instance.
+            instance_name: The name of the PostgreSQL instance.
+            instance_id: The unique identifier for the PostgreSQL instance.
+
+        #ai-gen-doc
         """
         super(
             PostgreSQLInstance,
@@ -125,11 +157,13 @@ class PostgreSQLInstance(Instance):
         self._destination_restore_json = None
 
     @property
-    def postgres_bin_directory(self):
-        """Returns the bin directory of postgres server
+    def postgres_bin_directory(self) -> str:
+        """Get the bin directory path of the PostgreSQL server.
 
-            Return Type: str
+        Returns:
+            The absolute path to the PostgreSQL server's bin directory as a string.
 
+        #ai-gen-doc
         """
         if self._properties['postGreSQLInstance']['BinaryDirectory']:
             return self._properties['postGreSQLInstance']['BinaryDirectory']
@@ -139,11 +173,13 @@ class PostgreSQLInstance(Instance):
             "Could not fetch the Binary directory.")
 
     @property
-    def postgres_lib_directory(self):
-        """Returns the lib directory of postgres server
+    def postgres_lib_directory(self) -> str:
+        """Get the library directory path of the PostgreSQL server.
 
-            Return Type: str
+        Returns:
+            The absolute path to the PostgreSQL server's library (lib) directory as a string.
 
+        #ai-gen-doc
         """
         if self._properties['postGreSQLInstance']['LibDirectory']:
             return self._properties['postGreSQLInstance']['LibDirectory']
@@ -153,11 +189,13 @@ class PostgreSQLInstance(Instance):
             "Could not fetch the Lib directory.")
 
     @property
-    def postgres_archive_log_directory(self):
-        """Returns the archive log directory of postgres server
+    def postgres_archive_log_directory(self) -> str:
+        """Get the archive log directory path of the PostgreSQL server.
 
-            Return Type: str
+        Returns:
+            The file system path to the PostgreSQL server's archive log directory as a string.
 
+        #ai-gen-doc
         """
         if self._properties['postGreSQLInstance']['ArchiveLogDirectory']:
             return self._properties['postGreSQLInstance']['ArchiveLogDirectory']
@@ -167,22 +205,24 @@ class PostgreSQLInstance(Instance):
             "Could not fetch the Archive log directory.")
 
     @property
-    def log_storage_policy(self):
-        """Returns the log storage policy for the instance
+    def log_storage_policy(self) -> Optional[str]:
+        """Get the log storage policy associated with this PostgreSQL instance.
 
-            Return Type: str
-			Default: None
+        Returns:
+            The name of the log storage policy as a string, or None if no policy is set.
+
+        #ai-gen-doc
         """
         return self._properties.get('postGreSQLInstance', {}).get('logStoragePolicy', {}).get('storagePolicyName', None)
 
     @log_storage_policy.setter
-    def log_storage_policy(self, value):
-        """ Setter for log storage policy in instance property
+    def log_storage_policy(self, value: str) -> None:
+        """Set the log storage policy for the PostgreSQL instance.
 
-            Args:
+        Args:
+            value: The name of the storage policy to assign for log backups.
 
-                value (str)  -- Storage policy name
-
+        #ai-gen-doc
         """
         if not isinstance(value, str):
             raise SDKException('Instance', '101')
@@ -192,14 +232,16 @@ class PostgreSQLInstance(Instance):
         self.update_properties(properties)
 
     @property
-    def postgres_server_user_name(self):
-        """Returns the username of postgres server
+    def postgres_server_user_name(self) -> str:
+        """Get the username of the PostgreSQL server.
 
-            Return Type: str
+        Returns:
+            The username used to connect to the PostgreSQL server as a string.
 
+        #ai-gen-doc
         """
         if self.credentials:
-            return self._commcell_object.credentials.get(self.credentials).credential_user_name
+            return self._commcell_object.credentials.get(self.credentials)._credential_properties.get("userName")
         else:
             if self._properties['postGreSQLInstance']['SAUser']['userName']:
                 return self._properties['postGreSQLInstance']['SAUser']['userName']
@@ -209,11 +251,13 @@ class PostgreSQLInstance(Instance):
             "Could not fetch the Server name.")
 
     @property
-    def postgres_server_port_number(self):
-        """Returns the port number associated with postgres server
+    def postgres_server_port_number(self) -> str:
+        """Get the port number associated with the PostgreSQL server.
 
-            Return Type: str
+        Returns:
+            The port number used by the PostgreSQL server as a string.
 
+        #ai-gen-doc
         """
         if self._properties['postGreSQLInstance']['port']:
             return self._properties['postGreSQLInstance']['port']
@@ -223,11 +267,13 @@ class PostgreSQLInstance(Instance):
             "Could not fetch the port Number.")
 
     @property
-    def maintenance_database(self):
-        """Returns the maintenance database associated with postgres server
+    def maintenance_database(self) -> str:
+        """Get the maintenance database associated with the PostgreSQL server.
 
-            Return Type: str
+        Returns:
+            The name of the maintenance database as a string.
 
+        #ai-gen-doc
         """
         if self._properties['postGreSQLInstance'].get('MaintainenceDB'):
             return self._properties['postGreSQLInstance']['MaintainenceDB']
@@ -237,11 +283,13 @@ class PostgreSQLInstance(Instance):
             "Could not fetch maintenance database.")
 
     @property
-    def postgres_version(self):
-        """Returns the postgres server version
+    def postgres_version(self) -> str:
+        """Get the PostgreSQL server version for this instance.
 
-            Return Type: str
+        Returns:
+            The version of the PostgreSQL server as a string.
 
+        #ai-gen-doc
         """
         if self._properties.get('version'):
             return self._properties['version']
@@ -251,22 +299,26 @@ class PostgreSQLInstance(Instance):
             "Could not fetch postgres version.")
 
     @property
-    def archive_delete(self):
-        """Returns True if archive delete enabled. False if not
+    def archive_delete(self) -> bool:
+        """Check if archive delete is enabled for the PostgreSQL instance.
 
-            Return Type: bool
+        Returns:
+            True if archive delete is enabled; False otherwise.
 
+        #ai-gen-doc
         """
         return self._properties.get('postGreSQLInstance', {}).get('ArchiveDelete', False)
 
     @archive_delete.setter
-    def archive_delete(self, value):
-        """ Setter for archive delete instance property
+    def archive_delete(self, value: bool) -> None:
+        """Set the archive delete property for the PostgreSQL instance.
 
-            Args:
+        This setter enables or disables the archive delete feature for the instance.
 
-                value (bool)  -- True to enable archive delete
+        Args:
+            value: Set to True to enable archive delete, or False to disable it.
 
+        #ai-gen-doc
         """
         if not isinstance(value, bool):
             raise SDKException('Instance', '101')
@@ -275,57 +327,65 @@ class PostgreSQLInstance(Instance):
         self.update_properties(properties)
 
     @property
-    def standby_instance_name(self):
-        """Returns the standby instance name
+    def standby_instance_name(self) -> Optional[str]:
+        """Get the name of the standby PostgreSQL instance.
 
-            Return Type: str
+        Returns:
+            The name of the standby instance as a string.
 
+        #ai-gen-doc
         """
         if self.is_standby_enabled:
-            return self._properties.get('postGreSQLInstance', {}).get('standbyOptions', {}).get('standbyInstance',
-                                                                                                {}).get('instanceName',
-                                                                                                        "")
+            return self._properties.get('postGreSQLInstance', {}).get(
+                'standbyOptions', {}).get('standbyInstance', {}).get('instanceName', "")
+
         return None
 
     @property
-    def standby_instance_id(self):
-        """Returns the standby instance id
+    def standby_instance_id(self) -> Optional[str]:
+        """Get the standby instance ID for the PostgreSQL instance.
 
-            Return Type: str
+        Returns:
+            The standby instance ID as a string.
 
+        #ai-gen-doc
         """
         if self.is_standby_enabled:
-            return self._properties.get('postGreSQLInstance', {}).get('standbyOptions', {}).get('standbyInstance',
-                                                                                                {}).get('instanceId',
-                                                                                                        "")
+            return self._properties.get('postGreSQLInstance', {}).get(
+                'standbyOptions', {}).get('standbyInstance', {}).get('instanceId', "")
+
         return None
 
     @property
-    def is_standby_enabled(self):
-        """Returns True if standby enabled. False if not
+    def is_standby_enabled(self) -> bool:
+        """Check if standby mode is enabled for the PostgreSQL instance.
 
-            Return Type: bool
+        Returns:
+            True if standby mode is enabled; False otherwise.
 
+        #ai-gen-doc
         """
         return self._properties.get('postGreSQLInstance', {}).get('standbyOptions', {}).get('isStandbyEnabled', False)
 
     @property
-    def use_master_for_log_backup(self):
-        """ Returns True if master is used for log backup
+    def use_master_for_log_backup(self) -> bool:
+        """Indicate whether the master database is used for log backup operations.
 
-            Return Type: bool
+        Returns:
+            True if the master database is configured to be used for log backup; False otherwise.
 
+        #ai-gen-doc
         """
         return self._properties.get('postGreSQLInstance', {}).get('standbyOptions', {}).get('useMasterForLogBkp', False)
 
     @use_master_for_log_backup.setter
-    def use_master_for_log_backup(self, value):
-        """ Setter for user master for log backup standby property
+    def use_master_for_log_backup(self, value: bool) -> None:
+        """Set whether to use the master server for log backup in standby mode.
 
-            Args:
+        Args:
+            value: Set to True to enable using the master server for log backup; False to disable.
 
-                value (bool)  -- True to use master for log backup
-
+        #ai-gen-doc
         """
         if not isinstance(value, bool):
             raise SDKException('Instance', '101')
@@ -334,23 +394,25 @@ class PostgreSQLInstance(Instance):
         self.update_properties(properties)
 
     @property
-    def use_master_for_data_backup(self):
-        """ Returns True if master is used for data backup
+    def use_master_for_data_backup(self) -> bool:
+        """Indicate whether the master server is used for data backup.
 
-            Return Type: bool
+        Returns:
+            True if the master server is configured to be used for data backup; otherwise, False.
 
+        #ai-gen-doc
         """
-        return self._properties.get('postGreSQLInstance', {}).get('standbyOptions', {}).get('useMasterForDataBkp',
-                                                                                            False)
+        return self._properties.get('postGreSQLInstance', {}).get(
+            'standbyOptions', {}).get('useMasterForDataBkp', False)
 
     @use_master_for_data_backup.setter
-    def use_master_for_data_backup(self, value):
-        """ Setter for user master for data backup standby property
+    def use_master_for_data_backup(self, value: bool) -> None:
+        """Set the property to use the master server for data backup in a PostgreSQL standby configuration.
 
-            Args:
+        Args:
+            value: Set to True to enable using the master server for data backup; set to False to disable.
 
-                value (bool)  -- True to use master for data backup
-
+        #ai-gen-doc
         """
         if not isinstance(value, bool):
             raise SDKException('Instance', '101')
@@ -359,32 +421,56 @@ class PostgreSQLInstance(Instance):
         self.update_properties(properties)
 
     @property
-    def postgres_ssl_status(self):
-        """Returns True/False based on if ssl is enabled or not"""
+    def postgres_ssl_status(self) -> bool:
+        """Check whether SSL is enabled for the PostgreSQL instance.
+
+        Returns:
+            True if SSL is enabled for the PostgreSQL instance, False otherwise.
+
+        #ai-gen-doc
+        """
         return self._properties.get("postGreSQLInstance", {}).get("sslOpt", {}).get("sslEnabled", False)
 
     @property
-    def postgres_ssl_ca_file(self):
-        """Returns: str - ssl ca file path"""
+    def postgres_ssl_ca_file(self) -> str:
+        """Get the file path to the SSL CA certificate used by the PostgreSQL instance.
+
+        Returns:
+            The file path to the SSL CA (Certificate Authority) file as a string.
+
+        #ai-gen-doc
+        """
         return self._properties.get("postGreSQLInstance", {}).get("sslOpt", {}).get("sslCa", "")
 
     @property
-    def postgres_ssl_key_file(self):
-        """Returns: str - ssl key file path"""
+    def postgres_ssl_key_file(self) -> str:
+        """Get the file path to the PostgreSQL SSL key file.
+
+        Returns:
+            The full path to the SSL key file used by the PostgreSQL instance.
+
+        #ai-gen-doc
+        """
         return self._properties.get("postGreSQLInstance", {}).get("sslOpt", {}).get("sslKey", "")
 
     @property
-    def postgres_ssl_cert_file(self):
-        """Returns:str - ssl cert file path"""
+    def postgres_ssl_cert_file(self) -> str:
+        """Get the file path to the PostgreSQL SSL certificate.
+
+        Returns:
+            The file system path to the SSL certificate used by the PostgreSQL instance.
+
+        #ai-gen-doc
+        """
         return self._properties.get("postGreSQLInstance", {}).get("sslOpt", {}).get("sslCert", "")
 
-    def change_sa_password(self, value):
-        """ Changes postgresql user password
+    def change_sa_password(self, value: str) -> None:
+        """Change the password for the PostgreSQL user (SA user).
 
-            Args:
+        Args:
+            value: The new password to set for the PostgreSQL user.
 
-                value (bool)  -- PostgreSQL password
-
+        #ai-gen-doc
         """
         if not isinstance(value, str):
             raise SDKException('Instance', '101')
@@ -392,25 +478,27 @@ class PostgreSQLInstance(Instance):
         properties['postGreSQLInstance']['SAUser']['password'] = b64encode(value.encode()).decode()
         self.update_properties(properties)
 
-    def _get_instance_properties(self):
-        """Gets the properties of this instance.
+    def _get_instance_properties(self) -> None:
+        """Retrieve and update the properties of this PostgreSQL instance.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        This method fetches the latest properties for the PostgreSQL instance from the Commcell
+        and updates the instance's internal state accordingly.
 
-                    if response is not success
+        Raises:
+            SDKException: If the response from the Commcell is empty or indicates a failure.
 
+        #ai-gen-doc
         """
         super(PostgreSQLInstance, self)._get_instance_properties()
         self._postgresql_instance = self._properties['postGreSQLInstance']
 
-    def _get_instance_properties_json(self):
-        """ Gets all the instance related properties of PostgreSQL instance.
+    def _get_instance_properties_json(self) -> dict:
+        """Retrieve all properties related to the PostgreSQL instance as a dictionary.
 
-           Returns:
-                dict - all instance properties put inside a dict
+        Returns:
+            dict: A dictionary containing all instance properties for the PostgreSQL instance.
 
+        #ai-gen-doc
         """
         instance_json = {
             "instanceProperties":
@@ -421,15 +509,20 @@ class PostgreSQLInstance(Instance):
         }
         return instance_json
 
-    def _restore_json(self, **kwargs):
-        """Returns the JSON request to pass to the API as per the options selected by the user.
+    def _restore_json(self, **kwargs) -> dict:
+        """Generate the JSON request payload for a restore operation based on user-selected options.
 
-            Args:
-                kwargs   (dict)  --  Dictionary of options need to be set for restore
+        This method constructs a dictionary representing the JSON request to be sent to the API,
+        using the provided keyword arguments to specify restore options.
 
-            Returns:
-                dict             -- JSON request to pass to the API
+        Args:
+            **kwargs: Arbitrary keyword arguments representing restore options. Each key-value pair
+                corresponds to a specific restore parameter required by the API.
 
+        Returns:
+            dict: The JSON request dictionary to be passed to the API for the restore operation.
+
+        #ai-gen-doc
         """
         rest_json = super(PostgreSQLInstance, self)._restore_json(**kwargs)
         restore_option = {}
@@ -446,8 +539,14 @@ class PostgreSQLInstance(Instance):
             "restoreOptions"]["postgresRstOption"] = self.postgres_restore_json
         return rest_json
 
-    def _restore_common_options_json(self, value):
-        """setter for  the Common options of in restore JSON"""
+    def _restore_common_options_json(self, value: dict) -> None:
+        """Set the common options section in the restore JSON configuration.
+
+        Args:
+            value: A dictionary containing the common options to be set in the restore JSON.
+
+        #ai-gen-doc
+        """
         if not isinstance(value, dict):
             raise SDKException('Subclient', '101')
         super(PostgreSQLInstance, self)._restore_common_options_json(value)
@@ -463,12 +562,15 @@ class PostgreSQLInstance(Instance):
                 "syncRestore": value.get("sync_restore", True)
             }
 
-    def _restore_destination_json(self, value):
-        """setter for the Destination options in restore JSON
+    def _restore_destination_json(self, value: dict) -> None:
+        """Set the destination options in the restore JSON configuration.
 
-            Args:
-                value   (dict)  --  Dictionary of options need to be set for restore
+        This method updates the restore JSON with the specified destination options.
 
+        Args:
+            value: Dictionary containing the destination options to be set for the restore operation.
+
+        #ai-gen-doc
         """
 
         if not isinstance(value, dict):
@@ -489,12 +591,13 @@ class PostgreSQLInstance(Instance):
                 }
             }
 
-    def _restore_postgres_option_json(self, value):
-        """setter for the restore option in restore JSON
+    def _restore_postgres_option_json(self, value: dict) -> None:
+        """Set the restore options in the PostgreSQL restore JSON.
 
-            Args:
-                value   (dict)  --  Dictionary of options need to be set for restore
+        Args:
+            value: Dictionary containing the options to be set for the restore operation.
 
+        #ai-gen-doc
         """
 
         if not isinstance(value, dict):
@@ -536,143 +639,77 @@ class PostgreSQLInstance(Instance):
             self.postgres_restore_json["fsBackupSetRestore"] = False
 
     def restore_in_place(
-            self,
-            path,
-            dest_client_name,
-            dest_instance_name,
-            backupset_name,
-            backupset_flag,
-            overwrite=True,
-            copy_precedence=None,
-            from_time=None,
-            to_time=None,
-            clone_env=False,
-            clone_options=None,
-            media_agent=None,
-            table_level_restore=False,
-            staging_path=None,
-            no_of_streams=None,
-            volume_level_restore=False,
-            redirect_enabled=False,
-            redirect_path=None,
-            restore_to_disk=False,
-            restore_to_disk_job=None,
-            destination_path=None,
-            revert=False):
-        """Restores the postgres data/log files specified in the input paths
-        list to the same location.
+        self,
+        path: list,
+        dest_client_name: str,
+        dest_instance_name: str,
+        backupset_name: str,
+        backupset_flag: bool,
+        overwrite: bool = True,
+        copy_precedence: int = None,
+        from_time: str = None,
+        to_time: str = None,
+        clone_env: bool = False,
+        clone_options: dict = None,
+        media_agent: str = None,
+        table_level_restore: bool = False,
+        staging_path: str = None,
+        no_of_streams: int = None,
+        volume_level_restore: bool = False,
+        redirect_enabled: bool = False,
+        redirect_path: str = None,
+        restore_to_disk: bool = False,
+        restore_to_disk_job: int = None,
+        destination_path: str = None,
+        revert: bool = False
+    ) -> 'Job':
+        """Restore PostgreSQL data or log files in place to their original location.
 
-            Args:
-                path                    (list)  --  list of database/databases to be restored
+        This method restores the specified PostgreSQL databases or files to the same location on the destination client and instance.
+        It supports various restore options such as cloning, table-level restore, volume-level restore, redirect restore, and restore to disk.
 
-                dest_client_name        (str)   --  destination client name where files are to be
-                restored
+        Args:
+            path: List of database names or file paths to be restored.
+            dest_client_name: Name of the destination client where the data will be restored.
+            dest_instance_name: Name of the destination PostgreSQL instance.
+            backupset_name: Name of the backupset to restore from.
+            backupset_flag: Flag indicating if the backup is file system-based.
+            overwrite: If True, files will be unconditionally overwritten during restore. Default is True.
+            copy_precedence: Copy precedence value of the storage policy copy. Default is None.
+            from_time: Restore data backed up after this time (format: 'YYYY-MM-DD HH:MM:SS'). Default is None.
+            to_time: Restore data backed up before this time (format: 'YYYY-MM-DD HH:MM:SS'). Default is None.
+            clone_env: If True, the database will be cloned. Default is False.
+            clone_options: Dictionary of clone restore options. Example:
+                {
+                    "stagingLocaion": "/gk_snap",
+                    "forceCleanup": True,
+                    "port": "5595",
+                    "libDirectory": "/opt/PostgreSQL/9.6/lib",
+                    "isInstanceSelected": True,
+                    "reservationPeriodS": 3600,
+                    "user": "postgres",
+                    "binaryDirectory": "/opt/PostgreSQL/9.6/bin"
+                }
+                Default is None.
+            media_agent: Name of the media agent to use for the restore. Default is None.
+            table_level_restore: If True, perform a table-level restore. Default is False.
+            staging_path: Staging path location for table-level restore. Default is None.
+            no_of_streams: Number of streams to use for volume-level restore. Default is None.
+            volume_level_restore: If True, perform a volume-level restore. Default is False.
+            redirect_enabled: If True, enable redirect restore. Default is False.
+            redirect_path: Path to redirect the restore to. Default is None.
+            restore_to_disk: If True, restore to disk instead of the original location. Default is False.
+            restore_to_disk_job: Backup job ID to restore to disk. Default is None.
+            destination_path: Destination path for the restore. Default is None.
+            revert: If True, perform a hardware revert during restore. Default is False.
 
-                dest_instance_name      (str)   --  destination postgres instance name of
-                destination client
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                backupset_name          (str)   --  destination postgres backupset name of
-                destination client
+        Raises:
+            SDKException: If the path is not a list, if the job fails to initialize, if the response is empty, or if the response is not successful.
 
-                backupset_flag          (bool)  --  flag to indicate fsbased backup
-
-                overwrite               (bool)  --  unconditional overwrite files during restore
-                    default: True
-
-                copy_precedence         (int)   --  copy precedence value of storage policy copy
-                    default: None
-
-                from_time               (str)   --  time to retore the contents after
-                    format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                to_time                 (str)   --  time to retore the contents before
-                    format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                clone_env               (bool)  --  boolean to specify whether the database
-                should be cloned or not
-
-                    default: False
-
-                clone_options           (dict)  --  clone restore options passed in a dict
-
-                    default: None
-
-                    Accepted format: {
-                                        "stagingLocaion": "/gk_snap",
-                                        "forceCleanup": True,
-                                        "port": "5595",
-                                        "libDirectory": "/opt/PostgreSQL/9.6/lib",
-                                        "isInstanceSelected": True,
-                                        "reservationPeriodS": 3600,
-                                        "user": "postgres",
-                                        "binaryDirectory": "/opt/PostgreSQL/9.6/bin"
-                                     }
-
-                media_agent             (str)   --  media agent name
-
-                    default: None
-
-                table_level_restore     (bool)  --  boolean to specify if the restore operation
-                is table level
-
-                    default: False
-
-                staging_path            (str)   --  staging path location for table level restore
-
-                    default: None
-
-                no_of_streams           (int)   --  number of streams to be used by
-                volume level restore
-
-                    default: None
-
-                volume_level_restore    (bool)  --  volume level restore flag
-
-                    default: False
-
-                redirect_enabled         (bool)  --  boolean to specify if redirect restore is
-                enabled
-
-                    default: False
-
-                redirect_path           (str)   --  Path specified in advanced restore options
-                in order to perform redirect restore
-
-                    default: None
-
-                restore_to_disk         (bool)  --  restore to disk flag
-
-                    default: False
-
-                restore_to_disk_job     (int)   --  backup job id to restore to disk
-
-                    default: None
-
-                destination_path        (str)   --  destinath path for restore
-
-                    default: None
-
-                revert                  (bool)  --  boolean to specify whether to do a
-                                                    hardware revert in restore
-                    default: False
-
-            Returns:
-                object - instance of the Job class for this restore job
-
-            Raises:
-                SDKException:
-                    if paths is not a list
-
-                    if failed to initialize job
-
-                    if response is empty
-
-                    if response is not success
-
+        #ai-gen-doc
         """
         if not (isinstance(path, list) and
                 isinstance(overwrite, bool)):

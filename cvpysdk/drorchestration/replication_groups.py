@@ -374,6 +374,7 @@ class ReplicationGroup:
 
         self._subclient = None
         self._vm_pairs = None
+        self._replication_schedule = None
 
         self.refresh()
 
@@ -429,6 +430,8 @@ class ReplicationGroup:
 
         if flag:
             if response.json().get('replicationInfo', {}).get('replicationTargets', {}).get('taskInfo'):
+                if response.json().get('replicationInfo', {}).get('schedule', {}):
+                    self._replication_schedule = response.json().get('replicationInfo', {}).get('schedule')
                 return response.json().get('replicationInfo', {}).get('replicationTargets', {}).get('taskInfo')[0]
             if response.json().get('taskInfo'):
                 return response.json().get('taskInfo')
@@ -458,6 +461,14 @@ class ReplicationGroup:
     def task_id(self):
         """Returns: (str) Returns the ID of the task associated to the replication group"""
         return str(self._replication_group_properties.get('task', {}).get('taskId'))
+
+    @property
+    def schedule_task_id(self):
+        """Returns: (str) Returns the ID of the task associated to the replication group schedule"""
+        if self._replication_schedule:
+            return str(self._replication_schedule.get('task', {}).get('taskId'))
+        else:
+            return None
 
     @property
     def replication_type(self):
@@ -491,7 +502,7 @@ class ReplicationGroup:
         """Returns: (bool) Whether Warm sync is enabled or not"""
         return (self.restore_options.get('virtualServerRstOption', {})
                 .get('diskLevelVMRestoreOption', {}).get('createVmsDuringFailover', False))
-    
+
     @property
     def is_intelli_snap_enabled(self):
         """Returns: (bool) Whether Snapshot on source is utilised or not"""
@@ -550,10 +561,15 @@ class ReplicationGroup:
         if not self._destination_instance:
             instance_name = (self.restore_options.get('virtualServerRstOption', {})
                              .get('vCenterInstance', {}).get('instanceName'))
-            
+
             # TODO : Depends on DR Layer changes : Workaround used
-            instance_name = 'Amazon Web Services' if instance_name == 'Amazon' else instance_name
-            
+            if instance_name == 'Amazon':
+                instance_name = 'Amazon Web Services'
+            elif instance_name == 'VMware Cloud Director':
+                instance_name = 'vCloud Director'
+            else:
+                instance_name = instance_name
+
             self._destination_instance = self.destination_agent.instances.get(instance_name)
         return self._destination_instance
 
@@ -602,7 +618,7 @@ class ReplicationGroup:
             elif self.replication_type == ReplicationGroups.ReplicationGroupType.VSA_CONTINUOUS:
                 blr_pairs = BLRPairs(self._commcell_object, self.group_name)
                 self._vm_pairs = {pair_dict.get('sourceName'):
-                                  blr_pairs.get(pair_dict.get('sourceName'), pair_dict.get('destinationName'))
+                                      blr_pairs.get(pair_dict.get('sourceName'), pair_dict.get('destinationName'))
                                   for pair_dict in blr_pairs.blr_pairs.values()}
             else:
                 raise SDKException('ReplicationGroup', '101', 'Implemented only for replication groups'

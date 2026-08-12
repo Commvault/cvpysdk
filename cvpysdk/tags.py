@@ -47,15 +47,31 @@ Tag:
         **tag_name  --  returns tag name
 
 """
+from typing import TYPE_CHECKING
+
 from cvpysdk.exception import SDKException
 
+if TYPE_CHECKING:
+    from .commcell import Commcell
 
 class Tags:
-    """Class for doing operations related to entity tags from backend"""
+    """Class for doing operations related to entity tags from backend
 
-    DEFAULT_TAGSET_ID = -1
+    Attributes:
+        _commcell_object (object): Instance of the Commcell class.
+        _service (dict): Dictionary of service URLs.
+        _cvpysdk_object (object): Instance of the CVPYSDK class.
+        _get_tags_url (str): URL to get entity tags.
+        _create_tags_url (str): URL to create entity tags.
+        _tags (dict): Dictionary of tags.
 
-    def __init__(self, commcell_object: object) -> None:
+    Usage:
+        >>> tags = Tags(commcell_object)
+    """
+
+    DEFAULT_TAGSET_ID: int = -1
+
+    def __init__(self, commcell_object: 'Commcell') -> None:
         """Method to initialize tags class
 
             Args:
@@ -68,7 +84,7 @@ class Tags:
         self._cvpysdk_object = commcell_object._cvpysdk_object
         self._get_tags_url = self._service['GET_ENTITY_TAGS']
         self._create_tags_url = self._service['CREATE_ENTITY_TAGS']
-        self._tags = None
+        self._tags: dict = None
 
         self.refresh()
 
@@ -101,7 +117,7 @@ class Tags:
 
         self.DEFAULT_TAGSET_ID = resp['tagSetInfo']['id']
 
-        tag_dict = {}
+        tag_dict: dict = {}
         if 'tags' in resp:
             for tag in resp.get("tags", []):
                 tag_dict[tag.get("name").lower()] = tag.get("id")
@@ -142,14 +158,14 @@ class Tags:
 
         return self._tags and tag_name.lower() in self._tags
 
-    def get(self, name: str):
+    def get(self, name: str) -> 'Tag':
         """Returns an instance of the Tag class for the given tag name.
 
             Args:
-                name    (str)   --  name of the tag to get the instance of
+                name (str): name of the tag to get the instance of
 
             Returns:
-                object  -   instance of the Tag class for the given tag name
+                object: instance of the Tag class for the given tag name
 
             Raises:
                 SDKException:
@@ -168,14 +184,25 @@ class Tags:
         """Refresh the list of tags"""
         self._tags = self._get_tags()
 
-    def add(self, tag_name: str):
+    def add(self, tag_name: str) -> 'Tag':
         """Method to add an entity tag
 
             Args:
                 tag_name (str): entity tag name
 
             Returns:
-                object  -   instance of the Tag class, for the newly created entity tag
+                object: instance of the Tag class, for the newly created entity tag
+
+            Raises:
+                SDKException:
+                    if tag_name is not a string
+
+                    if response is not success
+
+                    if error occurs while creating tag
+
+            Usage:
+                >>> tags.add('mytag')
         """
         if not isinstance(tag_name, str):
             raise SDKException('EntityTags', '101')
@@ -213,6 +240,17 @@ class Tags:
 
         Args:
             tag_name (str): entity tag name to delete
+
+        Raises:
+            SDKException:
+                if no tag exists with the given name
+
+                if response is not success
+
+                if error occurs while deleting tag
+
+        Usage:
+            >>> tags.delete('mytag')
         """
         if not self.has_tag(tag_name):
             raise SDKException("EntityTags", '105')
@@ -227,8 +265,8 @@ class Tags:
             raise SDKException('Response', '101', response_string)
 
         resp = response.json()
-        err_code = 0
-        err_message = ""
+        err_code: int = 0
+        err_message: str = ""
         if resp:
             err_code = resp.get('errorCode', 0)
             err_message = resp.get('errorMessage', "")
@@ -240,9 +278,21 @@ class Tags:
 
 
 class Tag:
-    """Class for performing actions related to tag """
+    """Class for performing actions related to tag
 
-    def __init__(self, commcell_object, tag_name, tag_id=None):
+    Attributes:
+        _commcell_object (object): Instance of the Commcell class.
+        _cvpysdk_object (object): Instance of the CVPYSDK class.
+        _services (dict): Dictionary of service URLs.
+        _update_response_ (callable): Method to update the response.
+        _tag_name (str): Name of the entity tag.
+        _tag_id (str): ID of the entity tag.
+
+    Usage:
+        >>> tag = Tag(commcell_object, 'mytag', '123')
+    """
+
+    def __init__(self, commcell_object: 'Commcell', tag_name: str, tag_id: str = None) -> None:
         """Initialise the Tag class instance.
 
             Args:
@@ -276,11 +326,11 @@ class Tag:
         return tags.get(self._tag_name).tag_id
 
     @property
-    def tag_id(self):
+    def tag_id(self) -> str:
         """Returns tag id"""
         return self._tag_id
 
     @property
-    def tag_name(self):
+    def tag_name(self) -> str:
         """Returns tag name"""
         return self._tag_name

@@ -31,24 +31,57 @@ GoogleCloudInstance:
 """
 
 from ..vsinstance import VirtualServerInstance
-from ...exception import SDKException
-from ...instance import Instance
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ...agent import Agent
 
 
 class GoogleCloudInstance(VirtualServerInstance):
-    def __init__(self, agent, name, iid):
+    """
+    Represents a Google Cloud virtual server instance within a virtual server management framework.
+
+    This class provides mechanisms to initialize and manage Google Cloud instances, retrieve their
+    properties, and access key server information such as server name and host name. It is designed
+    to integrate with an agent and supports property-based access to important instance attributes.
+
+    Key Features:
+        - Initialization of Google Cloud instance objects with agent, name, and instance ID
+        - Retrieval of instance properties in both standard and JSON formats
+        - Property accessors for server name and server host name
+        - Inherits from VirtualServerInstance for extended virtual server management capabilities
+
+    #ai-gen-doc
+    """
+    def __init__(self, agent: 'Agent', name: str, iid: str) -> None:
+        """Initialize a GoogleCloudInstance object with the specified agent, name, and instance ID.
+
+        Args:
+            agent: The agent object associated with this Google Cloud instance.
+            name: The name of the Google Cloud instance.
+            iid: The unique instance ID for the Google Cloud instance.
+
+        Example:
+            >>> agent = Agent()
+            >>> instance = GoogleCloudInstance(agent, "my-instance", "instance-12345")
+
+        #ai-gen-doc
+        """
         self._vendor_id = 16
         self._server_name = []
         super(GoogleCloudInstance, self).__init__(agent, name, iid)
 
-    def _get_instance_properties(self):
-        """
-        Get the properties of this instance
+    def _get_instance_properties(self) -> None:
+        """Retrieve and update the properties of this Google Cloud instance.
 
-        Raise:
-            SDK Exception:
-                if response is not empty
-                if response is not success
+        This method fetches the latest properties for the instance from the backend service
+        and updates the internal state accordingly. It ensures that the instance properties
+        are current and accurate.
+
+        Raises:
+            SDKException: If the response is not empty or the response indicates failure.
+
+        #ai-gen-doc
         """
 
         super(GoogleCloudInstance, self)._get_instance_properties()
@@ -61,12 +94,13 @@ class GoogleCloudInstance(VirtualServerInstance):
                 if 'clientName' in client.keys():
                     self._server_name.append(str(client['clientName']))
 
-    def _get_instance_properties_json(self):
-        """get the all instance related properties of this subclient.
+    def _get_instance_properties_json(self) -> dict:
+        """Retrieve all instance-related properties for this subclient as a dictionary.
 
-           Returns:
-                dict - all instance properties put inside a dict
+        Returns:
+            dict: A dictionary containing all properties associated with this Google Cloud instance subclient.
 
+        #ai-gen-doc
         """
         instance_json = {
             "instanceProperties": {
@@ -84,11 +118,33 @@ class GoogleCloudInstance(VirtualServerInstance):
         return instance_json
 
     @property
-    def server_name(self):
-        """getter for the domain name in the Google Cloud vendor json"""
+    def server_name(self) -> list:
+        """Get the domain name associated with the Google Cloud instance from the vendor JSON.
+
+        Returns:
+            The domain name as a list.
+
+        Example:
+            >>> instance = GoogleCloudInstance()
+            >>> domain = instance.server_name
+            >>> print(f"Google Cloud domain: {domain}")
+
+        #ai-gen-doc
+        """
         return self._server_name
 
     @property
-    def server_host_name(self):
-        """getter for the domain name in the Google CLoyd vendor json"""
+    def server_host_name(self) -> list:
+        """Get the domain name (server host name) from the Google Cloud vendor JSON.
+
+        Returns:
+            The domain name (server host name) as a list.
+
+        Example:
+            >>> instance = GoogleCloudInstance()
+            >>> host_name = instance.server_host_name  # Use dot notation for property access
+            >>> print(f"Google Cloud server host name: {host_name}")
+
+        #ai-gen-doc
+        """
         return self._server_name

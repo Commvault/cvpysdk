@@ -43,26 +43,45 @@ TwoFactorAuthentication Instance Attributes
                                     only if user group level tfa is enabled
 """
 
+from typing import Union, Optional, List, Dict, Any
+
 from ..exception import SDKException
 
 
 class TwoFactorAuthentication:
-    """Class for managing the security associations roles on the commcell"""
+    """Class for managing the security associations roles on the commcell
 
-    def __init__(self, commcell_object, organization_id=None):
+    Attributes:
+        _commcell (Commcell): Commcell class object.
+        _tfa_status (bool): Two factor authentication status.
+        _tfa_enabled_user_groups (list): User groups on which tfa is enabled.
+        _org_id (int): Organization ID.
+        _cvpysdk_object (object): CVPySDK object.
+        _services (dict): Dictionary of services.
+        _update_response_ (method): Method to update response.
+
+    Usage:
+        >>> from commvault import Commcell
+        >>> commcell = Commcell('hostname', 'user', 'password')
+        >>> tfa = TwoFactorAuthentication(commcell)
+    """
+
+    def __init__(self, commcell_object: object, organization_id: Optional[Union[int, str]] = None) -> None:
         """
         Initializes TwoFactorAuthentication class object
 
         Args:
-            commcell_object     --      commcell class object.
-
-            organization_id     --      id of the organization on which two factor authentication
-                                        operations to be performed.
-                default:None
+            commcell_object (object): commcell class object.
+            organization_id (Union[int, str], optional): id of the organization on which two factor authentication
+                                        operations to be performed. Defaults to None.
 
         Raises:
             SDKException:
                 if invalid args are sent.
+
+        Usage:
+            >>> tfa = TwoFactorAuthentication(commcell_object)
+            >>> tfa = TwoFactorAuthentication(commcell_object, organization_id=123)
         """
         self._commcell = commcell_object
         self._tfa_status = None
@@ -78,16 +97,19 @@ class TwoFactorAuthentication:
                 raise SDKException('Security', '101')
         self.refresh()
 
-    def refresh(self):
+    def refresh(self) -> None:
         """
         Refresh the properties of two factor authentication
 
         Returns:
             None
+
+        Usage:
+            >>> tfa.refresh()
         """
         self._get_tfa_info()
 
-    def _get_tfa_info(self):
+    def _get_tfa_info(self) -> None:
         """
         Executes api on the server and fetches commcell/organization two factor authentication info.
 
@@ -99,6 +121,9 @@ class TwoFactorAuthentication:
                 if failed to fetch details
                 if response is emmpty
                 if response is not success
+
+        Usage:
+            >>> tfa._get_tfa_info()
         """
         url = self._services['TFA']
 
@@ -133,22 +158,20 @@ class TwoFactorAuthentication:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _process_response(self, flag, response):
+    def _process_response(self, flag: int, response: Any) -> None:
         """
         Processes the flag and response json
 
         Args:
-
-            flag    (int)   --  status of api execution
-
-            response    (byte)  --  data received from server
-
-        Returns:
-            None
+            flag     (int):   status of api execution
+            response (byte): data received from server
 
         Raises:
             SDKException:
                 if failed to get required info
+
+        Usage:
+            >>> tfa._process_response(flag, response)
         """
         if flag:
             if response.json():
@@ -170,33 +193,44 @@ class TwoFactorAuthentication:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def disable_tfa(self):
+    def disable_tfa(self, otp: str = None) -> None:
         """
          Disables two factor authentication at commcell/organization level
-
+        Args:
+            otp (str): otp for two-factor authentication operation.
          Returns:
              None
 
         Raises:
             SDKException:
                 if failed to disable tfa.
+
+        Usage:
+            >>> tfa.disable_tfa()
         """
         url = self._services['TFA_DISABLE']
         if self._org_id:
             url = self._services['ORG_TFA_DISABLE'] % self._org_id
+        headers = None
+        if otp:
+            headers = self._commcell._headers.copy()
+            headers["otp"] = otp
+
         flag, response = self._cvpysdk_object.make_request(
-            'PUT', url
+            'PUT', url, headers=headers
         )
         self._process_response(flag=flag, response=response)
 
-    def enable_tfa(self, user_groups=None, usernameless=False, passwordless=False):
+    def enable_tfa(self, user_groups: Optional[list] = None, usernameless: bool = False, passwordless: bool = False,
+                   otp: str = None) -> None:
         """
         Enables two factor authentication at commcell/organization level.
 
         Args:
-            user_groups     (list)  --  user group names on which two factor authentication needs to be enabled
-            usernameless    (bool)  --  allow usernameless login if True
-            passwordless    (bool)  --  allow passwordless login if True
+            user_groups  (list, optional):  user group names on which two factor authentication needs to be enabled. Defaults to None.
+            usernameless (bool, optional):  allow usernameless login if True. Defaults to False.
+            passwordless (bool, optional):  allow passwordless login if True. Defaults to False.
+            otp (str): otp for two-factor authentication operation.
 
         Returns:
             None
@@ -204,6 +238,11 @@ class TwoFactorAuthentication:
         Raises:
             SDKException:
                 if failed to enable tfa.
+
+        Usage:
+            >>> tfa.enable_tfa()
+            >>> tfa.enable_tfa(user_groups=['group1', 'group2'])
+            >>> tfa.enable_tfa(usernameless=True, passwordless=True)
         """
         url = self._services['TFA_ENABLE']
 
@@ -237,18 +276,30 @@ class TwoFactorAuthentication:
                 }
             }
 
+        headers = None
+        if otp:
+            headers = self._commcell._headers.copy()
+            headers["otp"] = otp
+
         flag, response = self._cvpysdk_object.make_request(
-            'PUT', url, payload
+            'PUT', url, payload, headers=headers
         )
         self._process_response(flag=flag, response=response)
 
     @property
-    def is_tfa_enabled(self):
-        """Returns status of two factor authentication(True/False)"""
+    def is_tfa_enabled(self) -> bool:
+        """Returns status of two factor authentication(True/False)
+
+        Returns:
+            bool: True if tfa is enabled, False otherwise.
+
+        Usage:
+            >>> tfa.is_tfa_enabled
+        """
         return self._tfa_status
 
     @property
-    def tfa_enabled_user_groups(self):
+    def tfa_enabled_user_groups(self) -> list:
         """
         Returns list of user group names for which two factor authentication is enabled
             eg:-
@@ -258,5 +309,11 @@ class TwoFactorAuthentication:
                 "userGroupName": "dummy"
                 }
             ]
+
+        Returns:
+            list: List of user group names.
+
+        Usage:
+            >>> tfa.tfa_enabled_user_groups
         """
         return self._tfa_enabled_user_groups

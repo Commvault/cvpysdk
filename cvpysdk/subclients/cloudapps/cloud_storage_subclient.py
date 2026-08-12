@@ -47,26 +47,63 @@ CloudStorageSubclient:
                                             proxy passing explicit credentials of destination cloud
 
 """
+from typing import Optional
+
 from ..casubclient import CloudAppsSubclient
 from ...exception import SDKException
-
+from ...job import Job
 
 class CloudStorageSubclient(CloudAppsSubclient):
-    """ Derived class from Subclient Base class, representing a Cloud Storage subclient,
-        and to perform operations on that subclient. """
+    """
+    Represents a Cloud Storage subclient for managing and performing operations on cloud-based data.
 
-    def _get_subclient_properties(self):
-        """ Gets the subclient related properties of Cloud Storage subclient. """
+    This class extends the CloudAppsSubclient base class and provides specialized methods for
+    handling cloud storage subclient properties, content management, and various restore operations.
+    It is designed to facilitate backup, recovery, and content configuration tasks for cloud storage
+    environments.
+
+    Key Features:
+        - Retrieve subclient properties and properties in JSON format
+        - Manage subclient content with getter and setter methods
+        - Restore data in place within the original location
+        - Restore data out of place to a different client, instance, or path
+        - Restore data to a file system destination
+        - Restore data using a proxy to a cloud destination
+        - Support for overwrite options, copy precedence, and stream configuration during restore operations
+
+    #ai-gen-doc
+    """
+
+    def _get_subclient_properties(self) -> dict:
+        """Retrieve the properties specific to the Cloud Storage subclient.
+
+        Returns:
+            dict: A dictionary containing the subclient-related properties for the Cloud Storage subclient.
+
+        Example:
+            >>> properties = cloud_storage_subclient._get_subclient_properties()
+            >>> print(properties)
+            >>> # Output will be a dictionary with subclient property details
+
+        #ai-gen-doc
+        """
         super(CloudStorageSubclient, self)._get_subclient_properties()
         if 'content' in self._subclient_properties:
             self._content = self._subclient_properties['content']
 
-    def _get_subclient_properties_json(self):
-        """ Gets the properties JSON of Cloud Storage Subclient.
+    def _get_subclient_properties_json(self) -> dict:
+        """Retrieve the properties JSON for the Cloud Storage Subclient.
 
-           Returns:
-                dict - all subclient properties put inside a dict
+        Returns:
+            dict: A dictionary containing all properties of the Cloud Storage Subclient.
 
+        Example:
+            >>> subclient = CloudStorageSubclient()
+            >>> properties = subclient._get_subclient_properties_json()
+            >>> print(properties)
+            >>> # Output will be a dictionary with subclient configuration details
+
+        #ai-gen-doc
         """
         subclient_json = {
             "subClientProperties":
@@ -83,13 +120,21 @@ class CloudStorageSubclient(CloudAppsSubclient):
         }
         return subclient_json
 
-    def _set_content(self,
-                     content=None):
-        """ Sets the subclient content
+    def _set_content(self, content: Optional[list] = None) -> None:
+        """Set the content for the cloud storage subclient.
 
-            Args:
-                content         (list)      --  list of subclient content
+        This method assigns the specified content list to the subclient, defining which data or objects
+        are included in backup or restore operations.
 
+        Args:
+            content: Optional list specifying the subclient content. If not provided, the content will be set to an empty list or default value.
+
+        Example:
+            >>> subclient = CloudStorageSubclient()
+            >>> subclient._set_content(['bucket1/folderA', 'bucket2/folderB'])
+            >>> # The subclient content is now set to the specified cloud storage paths
+
+        #ai-gen-doc
         """
         if content is None:
             content = self.content
@@ -104,12 +149,18 @@ class CloudStorageSubclient(CloudAppsSubclient):
         self._set_subclient_properties("_content", update_content)
 
     @property
-    def content(self):
-        """ Gets the appropriate content from the Subclient relevant to the user.
+    def content(self) -> list:
+        """Retrieve the content associated with the CloudStorageSubclient.
 
-            Returns:
-                list - list of content associated with the subclient
+        Returns:
+            list: A list containing the content items relevant to the subclient.
 
+        Example:
+            >>> subclient = CloudStorageSubclient()
+            >>> content_list = subclient.content
+            >>> print(f"Subclient content: {content_list}")
+
+        #ai-gen-doc
         """
         content = []
 
@@ -120,19 +171,26 @@ class CloudStorageSubclient(CloudAppsSubclient):
         return content
 
     @content.setter
-    def content(self, subclient_content):
-        """ Creates the list of content JSON to pass to the API to add/update content of a
-            Cloud Storage Subclient.
+    def content(self, subclient_content: list) -> None:
+        """Set the content for the Cloud Storage Subclient.
 
-            Args:
-                subclient_content (list)  --  list of the content to add to the subclient
+        This setter creates and assigns the list of content JSON objects required to add or update
+        the content of a Cloud Storage Subclient. The provided list should contain the content items
+        to be managed by the subclient.
 
-            Returns:
-                list - list of the appropriate JSON for an agent to send to the POST Subclient API
+        Args:
+            subclient_content: A list containing the content items to add to the subclient.
 
-            Raises :
-                SDKException : if the subclient content is not a list value and if it is empty
+        Raises:
+            SDKException: If the subclient_content is not a list or if it is empty.
 
+        Example:
+            >>> cloud_subclient = CloudStorageSubclient()
+            >>> new_content = ['bucket1/folderA', 'bucket2/folderB']
+            >>> cloud_subclient.content = new_content  # Use assignment for property setter
+            >>> # The subclient content is now updated with the specified items
+
+        #ai-gen-doc
         """
         if isinstance(subclient_content, list) and subclient_content != []:
             self._set_content(content=subclient_content)
@@ -143,28 +201,29 @@ class CloudStorageSubclient(CloudAppsSubclient):
 
     def restore_in_place(
             self,
-            paths,
-            overwrite=True,
-            copy_precedence=None,
-            no_of_streams=2):
-        """ Restores the files/folders specified in the input paths list to the same location.
+            paths: list,
+            overwrite: bool = True,
+            copy_precedence: int = None,
+            no_of_streams: int = 2
+        ) -> 'Job':
+        """Restore the specified files or folders to their original location in the cloud storage subclient.
 
-            Args:
-                paths                   (list)  --  list of full paths of files/folders
-                     to restore
+        Args:
+            paths: List of full file or folder paths to restore in place.
+            overwrite: If True, existing files at the destination will be overwritten. Defaults to True.
+            copy_precedence: Optional storage policy copy precedence value to use for the restore. If None, the default copy is used.
+            no_of_streams: Number of parallel streams to use for the restore operation. Defaults to 2.
 
-                overwrite               (bool)  --  unconditional overwrite files during restore
-                    default: True
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                copy_precedence         (int)   --  copy precedence value of storage policy copy
-                    default: None
+        Example:
+            >>> subclient = CloudStorageSubclient(commcell_object, client_name, instance_name, backupset_name, subclient_name)
+            >>> restore_paths = ["/data/file1.txt", "/data/folder1/"]
+            >>> job = subclient.restore_in_place(restore_paths, overwrite=True, copy_precedence=1, no_of_streams=4)
+            >>> print(f"Restore job started with ID: {job.job_id}")
 
-                no_of_streams           (int)   --  number of streams for restore
-                                                    default : 2
-
-            Returns:
-                object - instance of the Job class for this restore job
-
+        #ai-gen-doc
         """
 
         self._instance_object._restore_association = self._subClientEntity
@@ -177,57 +236,56 @@ class CloudStorageSubclient(CloudAppsSubclient):
 
     def restore_out_of_place(
             self,
-            paths,
-            destination_client,
-            destination_instance_name,
-            destination_path,
-            overwrite=True,
-            copy_precedence=None,
-            no_of_streams=2,
-            **kwargs):
+            paths: list,
+            destination_client: str,
+            destination_instance_name: str,
+            destination_path: str,
+            overwrite: bool = True,
+            copy_precedence: int = None,
+            no_of_streams: int = 2,
+            **kwargs
+        ) -> 'Job':
+        """Restore specified files or folders to a different client and location.
 
-        """ Restores the files/folders specified in the input paths list to the input client,
-            at the specified destionation location.
+        This method restores the files or folders listed in `paths` to the specified
+        `destination_client` and `destination_instance_name` at the given `destination_path`.
+        The restore operation can be customized with options such as overwriting existing files,
+        specifying copy precedence, and setting the number of streams. Additional restore
+        options can be provided via keyword arguments.
 
-            Args:
-                paths                    (list)  --  list of full paths of files/folders to restore
+        Args:
+            paths: List of full file or folder paths to restore.
+            destination_client: Name of the client to which the data will be restored.
+            destination_instance_name: Name of the instance on the destination client.
+            destination_path: Path on the destination instance where data will be restored.
+            overwrite: If True, existing files at the destination will be overwritten. Defaults to True.
+            copy_precedence: Optional; storage policy copy precedence value. Defaults to None.
+            no_of_streams: Number of streams to use for the restore. Defaults to 2.
+            **kwargs: Additional keyword arguments for advanced restore options:
+                - from_time (str): Restore contents after this time (format: 'YYYY-MM-DD HH:MM:SS').
+                - to_time (str): Restore contents before this time (format: 'YYYY-MM-DD HH:MM:SS').
+                - no_image (bool): If True, restore deleted items. Defaults to False.
 
-                destination_client       (str)   --  name of the client to which the files are
-                    to be restored.
-                    default: None for in place restores
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                destination_instance_name(str)   --  name of the instance to which the files are
-                    to be restored.
-                    default: None for in place restores
+        Example:
+            >>> subclient = CloudStorageSubclient()
+            >>> job = subclient.restore_out_of_place(
+            ...     paths=['/data/file1.txt', '/data/file2.txt'],
+            ...     destination_client='client2',
+            ...     destination_instance_name='instanceB',
+            ...     destination_path='/restore/location',
+            ...     overwrite=True,
+            ...     copy_precedence=1,
+            ...     no_of_streams=4,
+            ...     from_time='2023-01-01 00:00:00',
+            ...     to_time='2023-12-31 23:59:59',
+            ...     no_image=False
+            ... )
+            >>> print(f"Restore job started with ID: {job.job_id}")
 
-                destination_path         (str)   --  location where the files are to be restored
-                    in the destination instance.
-
-                overwrite                (bool)  --  unconditional overwrite files during restore
-                    default: True
-
-                copy_precedence          (int)   --  copy precedence value of storage policy copy
-                    default: None
-
-                no_of_streams           (int)   --  number of streams for restore
-                                                    default : 2
-
-                kwargs                  (dict)  -- dict of keyword arguments as follows
-
-                    from_time           (str)   --  time to retore the contents after
-                        format: YYYY-MM-DD HH:MM:SS
-                        default: None
-
-                    to_time             (str)   --  time to retore the contents before
-                        format: YYYY-MM-DD HH:MM:SS
-                        default: None
-
-                    no_image            (bool)  --  restore deleted items
-                        default: False
-
-            Returns:
-                object - instance of the Job class for this restore job
-
+        #ai-gen-doc
         """
 
         self._instance_object._restore_association = self._subClientEntity
@@ -244,36 +302,43 @@ class CloudStorageSubclient(CloudAppsSubclient):
 
     def restore_to_fs(
             self,
-            paths,
-            destination_path,
-            destination_client=None,
-            overwrite=True,
-            copy_precedence=None,
-            no_of_streams=2):
-        """ Restores the files/folders specified in the input paths list to the fs client
+            paths: list,
+            destination_path: str,
+            destination_client: str = None,
+            overwrite: bool = True,
+            copy_precedence: int = None,
+            no_of_streams: int = 2
+        ) -> 'Job':
+        """Restore specified files or folders from cloud storage to a file system client.
 
-            Args:
-                paths                   (list)  --  list of full paths of files/folders to restore
+        This method initiates a restore job to copy the given files or folders from cloud storage
+        to the specified destination path on a file system client. You can control overwrite behavior,
+        copy precedence, and the number of restore streams.
 
-                destination_path        (str)   --  location where the files are to be restored
-                    in the destination instance.
+        Args:
+            paths: List of full file or folder paths to restore from cloud storage.
+            destination_path: The target directory path on the destination client where files/folders will be restored.
+            destination_client: Name of the file system client to restore to. If None, restores to the backup or proxy client.
+            overwrite: If True, existing files at the destination will be overwritten. Defaults to True.
+            copy_precedence: Optional storage policy copy precedence value. If None, the default precedence is used.
+            no_of_streams: Number of parallel streams to use for the restore operation. Defaults to 2.
 
-                destination_client      (str)   --  name of the fs client to which the files
-                    are to be restored.
-                    default: None for restores to backup or proxy client.
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                overwrite               (bool)  --  unconditional overwrite files during restore
-                    default: True
+        Example:
+            >>> subclient = CloudStorageSubclient()
+            >>> restore_job = subclient.restore_to_fs(
+            ...     paths=['/cloud/data/file1.txt', '/cloud/data/folder/'],
+            ...     destination_path='/mnt/restore/',
+            ...     destination_client='FSClient01',
+            ...     overwrite=True,
+            ...     copy_precedence=1,
+            ...     no_of_streams=4
+            ... )
+            >>> print(f"Restore job started with ID: {restore_job.job_id}")
 
-                copy_precedence         (int)   --  copy precedence value of storage policy copy
-                    default: None
-
-                no_of_streams           (int)   --  number of streams for restore
-                                                    default : 2
-
-            Returns:
-                object - instance of the Job class for this restore job
-
+        #ai-gen-doc
         """
 
         self._instance_object._restore_association = self._subClientEntity
@@ -289,83 +354,74 @@ class CloudStorageSubclient(CloudAppsSubclient):
             copy_precedence=copy_precedence,
             no_of_streams=no_of_streams)
 
-    def restore_using_proxy(self,
-                            paths,
-                            destination_client_proxy,
-                            destination_path,
-                            overwrite=True,
-                            copy_precedence=None,
-                            destination_cloud=None):
-        """
-        To perform restore to different cloud using
-        proxy passing explicit credentials of destination cloud
+    def restore_using_proxy(
+        self,
+        paths: list,
+        destination_client_proxy: str,
+        destination_path: str,
+        overwrite: bool = True,
+        copy_precedence: int = None,
+        destination_cloud: dict = None
+    ) -> 'Job':
+        """Restore files or folders to a different cloud using a proxy and explicit destination cloud credentials.
+
+        This method allows you to restore specified files or folders to a different cloud storage provider
+        by routing the restore through a proxy machine with the cloud connector package installed.
+        You must provide the destination cloud credentials explicitly in the `destination_cloud` parameter.
 
         Args:
-            destination_client_proxy (str)          --  name of proxy machine having cloud connector package
+            paths: List of full file or folder paths to restore.
+            destination_client_proxy: Name of the proxy machine with the cloud connector package.
+            destination_path: Target location in the destination cloud where files will be restored.
+            overwrite: If True, existing files at the destination will be overwritten. Defaults to True.
+            copy_precedence: Optional copy precedence value for the storage policy copy.
+            destination_cloud: Dictionary containing credentials for the destination cloud provider.
+                The dictionary should have a single key for the cloud vendor (e.g., 'google_cloud', 'amazon_s3', 'azure_blob'),
+                with a nested dictionary of required credentials. Example:
 
-            paths                    (list)         --  list of full paths of files/folders to restore
-
-            destination_path         (str)          --  location where the files are to be restored
-                                                        in the destination instance.
-
-            overwrite                (bool)         --  unconditional overwrite files during restore
-                                                        default: True
-
-            copy_precedence          (int)          --  copy precedence value of storage policy copy
-                                                        default: None
-
-
-            destination_cloud        (dict(dict))  --     dict of dict representing cross cloud credentials
-
-            Sample dict(dict) :
-
-            destination_cloud = {
-                                    'google_cloud': {
-                                                        'google_host_url':'storage.googleapis.com',
-                                                        'google_access_key':'xxxxxx',
-                                                        'google_secret_key':'yyyyyy'
-                                                    }
-                                }
-
-            destination_cloud = {
-                                    'amazon_s3':    {
-                                                        's3_host_url':'s3.amazonaws.com',
-                                                        's3_access_key':'xxxxxx',
-                                                        's3_secret_key':'yyyyyy'
-                                                    }
-                                }
-            destination_cloud = {
-                                    'azure_blob':   {
-                                                        'azure_host_url':'blob.core.windows.net',
-                                                        'azure_account_name':'xxxxxx',
-                                                        'azure_access_key':'yyyyyy'
-                                                    }
-                                }
+                destination_cloud = {
+                    'google_cloud': {
+                        'google_host_url': 'storage.googleapis.com',
+                        'google_access_key': 'xxxxxx',
+                        'google_secret_key': 'yyyyyy'
+                    }
+                }
 
         Returns:
-                object - instance of the Job class for this restore job
+            Job: An instance of the Job class representing the restore job.
 
         Raises:
-            SDKException:
+            SDKException: If any of the following conditions are met:
+                - Destination cloud credentials are empty.
+                - More than one vendor is specified in destination_cloud.
+                - An unsupported destination cloud is chosen.
+                - destination_client_proxy is not a string or Client object.
+                - destination_path is not a string.
+                - paths is not a list.
+                - Failed to initialize the job.
+                - The response is empty or not successful.
 
-                    if destination cloud credentials empty
+        Example:
+            >>> restore_paths = ['/data/file1.txt', '/data/file2.txt']
+            >>> proxy = 'cloud-proxy01'
+            >>> dest_path = '/restore/target/'
+            >>> dest_cloud = {
+            ...     'amazon_s3': {
+            ...         's3_host_url': 's3.amazonaws.com',
+            ...         's3_access_key': 'AKIAxxxxxx',
+            ...         's3_secret_key': 'yyyyyyyy'
+            ...     }
+            ... }
+            >>> job = subclient.restore_using_proxy(
+            ...     paths=restore_paths,
+            ...     destination_client_proxy=proxy,
+            ...     destination_path=dest_path,
+            ...     overwrite=True,
+            ...     destination_cloud=dest_cloud
+            ... )
+            >>> print(f"Restore job started with ID: {job.job_id}")
 
-                    if destination cloud has more than one vendor details
-
-                    if unsupported destination cloud for restore is chosen
-
-                    if client is not a string or Client object
-
-                    if destination_path is not a string
-
-                    if paths is not a list
-
-                    if failed to initialize job
-
-                    if response is empty
-
-                    if response is not success
-
+        #ai-gen-doc
         """
         self._instance_object._restore_association = self._subClientEntity
 

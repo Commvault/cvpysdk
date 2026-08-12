@@ -61,16 +61,35 @@ from .exception import SDKException
 
 
 class GlobalFilters(object):
-    """Class for managing global filters for this commcell"""
+    """
+    Class for managing global filters within a CommCell environment.
 
-    def __init__(self, commcell_object):
-        """Initializes global filter object
+    This class provides an interface to interact with and manage global filters
+    associated with a specific CommCell object. It allows users to retrieve
+    filter details by name and offers a convenient representation for debugging
+    and logging purposes.
 
-            Args:
-                commcell_object (object)  --  instance of the Commcell class
+    Key Features:
+        - Initialization with a CommCell object for context-specific filter management
+        - Retrieval of global filter details by filter name
+        - String representation for easy inspection of the filter manager
 
-            Returns:
-                object - instance of the GlobalFilter class
+    #ai-gen-doc
+    """
+
+    def __init__(self, commcell_object: object) -> None:
+        """Initialize a GlobalFilters object with the given Commcell connection.
+
+        Args:
+            commcell_object: An instance of the Commcell class representing the active Commcell connection.
+
+        Example:
+            >>> from cvpysdk.commcell import Commcell
+            >>> commcell = Commcell('commcell_host', 'username', 'password')
+            >>> global_filters = GlobalFilters(commcell)
+            >>> print("GlobalFilters object created successfully")
+
+        #ai-gen-doc
         """
         self._commcell_object = commcell_object
 
@@ -80,28 +99,43 @@ class GlobalFilters(object):
             "NAS":  'nasGlobalFilters'
         }
 
-    def __repr__(self):
-        """Representation string for the instance of the GlobalFilter class."""
+    def __repr__(self) -> str:
+        """Return the string representation of the GlobalFilters instance.
+
+        This method provides a developer-friendly string that represents the current
+        GlobalFilters object, useful for debugging and logging purposes.
+
+        Example:
+            >>> filters = GlobalFilters()
+            >>> print(repr(filters))
+            <GlobalFilters object at 0x7f8c2b1e2d30>
+
+        #ai-gen-doc
+        """
         o_str = "GlobalFilter class instance for CommServ '{0}'".format(
             self._commcell_object.commserv_name
         )
         return o_str
 
-    def get(self, filter_name):
-        """Returns the global filter agent object for specified filter name
+    def get(self, filter_name: str) -> 'GlobalFilter':
+        """Retrieve the global filter agent object for the specified filter name.
 
-            Args:
-                filter_name     (str)   -- Global filter name for which the object is to be created
-                    Accepted values: WINDOWS/ UNIX/ NAS
+        Args:
+            filter_name: The name of the global filter for which the object is to be created.
+                Accepted values include: "WINDOWS", "UNIX", or "NAS".
 
-            Returns:
-                object - GlobalFilter object for specified global filter
+        Returns:
+            GlobalFilter: The global filter object corresponding to the specified filter name.
 
-            Raises:
-                SDKException:
-                    if data type of input is invalid
+        Raises:
+            SDKException: If the input data type is invalid or if the specified global filter does not exist.
 
-                    if specified global filter doesn't exist
+        Example:
+            >>> global_filters = GlobalFilters()
+            >>> windows_filter = global_filters.get("WINDOWS")
+            >>> print(f"Retrieved filter: {windows_filter}")
+
+        #ai-gen-doc
         """
         if not isinstance(filter_name, str):
             raise SDKException('GlobalFilter', '101')
@@ -119,15 +153,41 @@ class GlobalFilters(object):
 
 
 class GlobalFilter(object):
-    """Class to represent any one particular agent global filter"""
+    """
+    Represents a global filter for a particular agent within a CommCell environment.
 
-    def __init__(self, commcell_object, filter_name, filter_key):
-        """Initializes global filter object
+    This class provides an interface to manage global filters, including adding, overwriting,
+    deleting, and refreshing filter configurations. It interacts with the CommCell object to
+    retrieve and update filter information, ensuring that agent-level filtering is consistent
+    and up-to-date.
 
-            Args:
-                commcell_object     (object)    -- commcell object
+    Key Features:
+        - Initialization with CommCell object, filter name, and filter key
+        - Retrieval and initialization of global filters
+        - Addition of new filters to the global filter set
+        - Overwriting existing filters with new configurations
+        - Deletion of all filters from the global filter set
+        - Refreshing filter data to synchronize with the latest state
+        - Access to filter content via a property
+        - String representation for debugging and logging purposes
 
-                agent_key           (str)       --  agent key that shall be used in requests
+    #ai-gen-doc
+    """
+
+    def __init__(self, commcell_object: object, filter_name: str, filter_key: str) -> None:
+        """Initialize a GlobalFilter object.
+
+        Args:
+            commcell_object: The Commcell object representing the connection to the Commcell environment.
+            filter_name: The name of the global filter to be managed.
+            filter_key: The unique key identifying the global filter.
+
+        Example:
+            >>> commcell = Commcell('hostname', 'username', 'password')
+            >>> global_filter = GlobalFilter(commcell, 'ExcludeTempFiles', 'filter_123')
+            >>> print(f"Global filter '{global_filter}' initialized successfully")
+
+        #ai-gen-doc
         """
         self._filter_name = filter_name
         self._filter_key = filter_key
@@ -137,12 +197,36 @@ class GlobalFilter(object):
 
         self.refresh()
 
-    def __repr__(self):
-        """String representation of the instance of this class."""
+    def __repr__(self) -> str:
+        """Return a string representation of the GlobalFilter instance.
+
+        This method provides a developer-friendly string that can be used to 
+        identify the GlobalFilter object during debugging or logging.
+
+        Returns:
+            A string representation of the GlobalFilter instance.
+
+        Example:
+            >>> gf = GlobalFilter()
+            >>> print(repr(gf))
+            <GlobalFilter object at 0x7f8b2c1d2e80>
+        #ai-gen-doc
+        """
         return "Global Filter object for: {0}".format(self._filter_name)
 
-    def _get_global_filters(self):
-        """Returns the global filters associated with this commcell"""
+    def _get_global_filters(self) -> dict:
+        """Retrieve the global filters associated with this Commcell.
+
+        Returns:
+            dict: A dictionary containing the global filters configured for the Commcell.
+
+        Example:
+            >>> filters = global_filter._get_global_filters()
+            >>> print(filters)
+            >>> # Output will be a dictionary of global filter settings
+
+        #ai-gen-doc
+        """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'GET', self._GLOBAL_FILTER
         )
@@ -156,8 +240,18 @@ class GlobalFilter(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _initialize_global_filters(self):
-        """Initializes global filters"""
+    def _initialize_global_filters(self) -> None:
+        """Initialize the global filters for the GlobalFilter instance.
+
+        This method sets up the necessary global filters used by the GlobalFilter object.
+        It should be called internally to ensure that all required filters are properly configured.
+
+        Example:
+            >>> gf = GlobalFilter()
+            >>> gf._initialize_global_filters()  # Typically used internally, not called directly by users
+
+        #ai-gen-doc
+        """
         global_filters = self._get_global_filters()
 
         self._content = []
@@ -165,22 +259,26 @@ class GlobalFilter(object):
         if self._filter_key in global_filters:
             self._content = global_filters[self._filter_key]
 
-    def _update(self, op_type, filters_list):
-        """Updates the global filters list on tise commcell
+    def _update(self, op_type: str, filters_list: list) -> None:
+        """Update the global filters list on this Commcell.
 
-            Args:
-                op_type         (dict)  --  operation type to be performed
-                        Accepted values: ADD/ OVERWRITE/ DELETE
+        This method updates the global filters by performing the specified operation type
+        (such as 'ADD', 'OVERWRITE', or 'DELETE') on the provided list of filters.
 
-                filters_list    (list)  --  list of filters to be associated
+        Args:
+            op_type: The operation type to be performed. Accepted values are 'ADD', 'OVERWRITE', or 'DELETE'.
+            filters_list: The list of filters to be associated with the global filter configuration.
 
-            Raises:
-                SDKException:
-                    if failed to update global filter content
+        Raises:
+            SDKException: If the update operation fails, if the response received is empty, or if the response indicates failure.
 
-                    if response received is empty
+        Example:
+            >>> global_filter = GlobalFilter()
+            >>> filters = ['*.tmp', '*.log']
+            >>> global_filter._update('ADD', filters)
+            >>> print("Global filters updated successfully.")
 
-                    if response is not success
+        #ai-gen-doc
         """
         op_dict = {
             "ADD": 1,
@@ -219,65 +317,101 @@ class GlobalFilter(object):
             raise SDKException('Response', '101', response_string)
 
     @property
-    def content(self):
-        """Treats filter content as read-only property"""
+    def content(self) -> str:
+        """Get the content of the global filter as a read-only property.
+
+        Returns:
+            The filter content as a string.
+
+        Example:
+            >>> global_filter = GlobalFilter()
+            >>> filter_content = global_filter.content  # Access the filter content
+            >>> print(filter_content)
+
+        #ai-gen-doc
+        """
         return self._content
 
-    def add(self, filters_list):
-        """Adds the filters list to the specified agent global filters list
+    def add(self, filters_list: list) -> None:
+        """Add a list of filters to the agent's global filters list.
 
-            Args:
-                filters_list    (list)  --  list of filters to be added to this agent
+        Args:
+            filters_list: A list of filters to be added to this agent's global filter configuration.
 
-            Raises:
-                SDKException:
-                    if data type of input is invalid
+        Raises:
+            SDKException: If the input data type is invalid, if updating the global filter content fails,
+                if the response received is empty, or if the response is not successful.
 
-                    if failed to update global filter content
+        Example:
+            >>> global_filter = GlobalFilter()
+            >>> filters = ['*.tmp', '/var/log', '*.bak']
+            >>> global_filter.add(filters)
+            >>> print("Filters added successfully.")
 
-                    if response received is empty
-
-                    if response is not success
+        #ai-gen-doc
         """
         if not isinstance(filters_list, list):
             raise SDKException('GlobalFilter', '101')
 
         self._update("ADD", filters_list + self.content)
 
-    def overwrite(self, filters_list):
-        """Overwrites the existing filters list with given filter list
+    def overwrite(self, filters_list: list) -> None:
+        """Overwrite the existing global filters list with a new list of filters.
 
-            Args:
-                filters_list    (list)  --  list of filters to be replaced with existing
+        Replaces the current set of global filters with the provided list. This operation 
+        will remove all existing filters and set the filters list to the new values.
 
-            Raises:
-                SDKException:
-                    if data type of input is invalid
+        Args:
+            filters_list: A list of filters to replace the existing global filters.
 
-                    if failed to update global filter content
+        Raises:
+            SDKException: 
+                If the input data type is invalid.
+                If the update of global filter content fails.
+                If the response received is empty.
+                If the response indicates failure.
 
-                    if response received is empty
+        Example:
+            >>> global_filter = GlobalFilter()
+            >>> new_filters = ['*.tmp', '*.log', '/var/cache']
+            >>> global_filter.overwrite(new_filters)
+            >>> print("Global filters have been overwritten successfully.")
 
-                    if response is not success
+        #ai-gen-doc
         """
         if not isinstance(filters_list, list):
             raise SDKException('GlobalFilter', '101')
 
         self._update("OVERWRITE", filters_list)
 
-    def delete_all(self):
-        """Deletes all the filters from given agent filters list
+    def delete_all(self) -> None:
+        """Delete all filters from the agent filters list.
 
-            Raises:
-                SDKException:
-                    if failed to update global filter content
+        This method removes every filter currently present in the agent's global filter list.
 
-                    if response received is empty
+        Raises:
+            SDKException: If the global filter content update fails, if the response is empty, or if the response indicates failure.
 
-                    if response is not success
+        Example:
+            >>> global_filter = GlobalFilter()
+            >>> global_filter.delete_all()
+            >>> print("All filters have been deleted from the agent filters list.")
+
+        #ai-gen-doc
         """
         self._update("OVERWRITE", [""])
 
-    def refresh(self):
-        """Refresh the properties of the GlobalFilter."""
+    def refresh(self) -> None:
+        """Reload the properties of the GlobalFilter object.
+
+        This method updates the GlobalFilter instance with the latest information,
+        ensuring that any changes made externally are reflected in the current object.
+
+        Example:
+            >>> global_filter = GlobalFilter()
+            >>> global_filter.refresh()
+            >>> print("GlobalFilter properties refreshed successfully")
+
+        #ai-gen-doc
+        """
         self._initialize_global_filters()

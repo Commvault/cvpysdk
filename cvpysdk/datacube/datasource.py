@@ -116,17 +116,41 @@ from ..exception import SDKException
 
 
 class Datasources(object):
-    """Class for representing all the Datasources in the Datacube."""
+    """
+    Manages and represents all Datasources within a Datacube environment.
 
-    def __init__(self, datacube_object):
-        """Initializes an instance of the Datasources class.
+    This class provides a comprehensive interface for handling datasources,
+    including creation, retrieval, deletion, and property management. It is
+    designed to interact with a Datacube object and supports operations for
+    maintaining and querying the collection of datasources.
 
-            Args:
-                datacube_object     (object)    --  instance of the Datacube class
+    Key Features:
+        - Initialization with a Datacube object
+        - String and representation methods for easy inspection
+        - Retrieve properties of a specific datasource
+        - Internal methods for extracting datasources from collections
+        - Fetch all available datasources
+        - Check existence of a datasource by name
+        - Get a datasource by name
+        - Add new datasources with analytics engine, type, and input parameters
+        - Delete existing datasources
+        - Refresh the datasource collection
 
-            Returns:
-                object  -   instance of the Datasources class
+    #ai-gen-doc
+    """
 
+    def __init__(self, datacube_object: object) -> None:
+        """Initialize a new instance of the Datasources class.
+
+        Args:
+            datacube_object: An instance of the Datacube class to associate with this Datasources object.
+
+        Example:
+            >>> datacube = Datacube('server_name', 'username', 'password')
+            >>> datasources = Datasources(datacube)
+            >>> print("Datasources object created successfully")
+
+        #ai-gen-doc
         """
         self._datacube_object = datacube_object
         self.commcell_obj = self._datacube_object._commcell_object
@@ -139,12 +163,21 @@ class Datasources(object):
         self._datasources = None
         self.refresh()
 
-    def __str__(self):
-        """Representation string consisting of all datasources in datacube.
+    def __str__(self) -> str:
+        """Return a string representation of all datasources in the datacube.
 
-            Returns:
-                str - string of all the datasources associated with the datacube
+        This method provides a human-readable summary of all datasources associated 
+        with the datacube, typically listing their names or identifiers.
 
+        Returns:
+            A string containing the details of all datasources in the datacube.
+
+        Example:
+            >>> datasources = Datasources()
+            >>> print(str(datasources))
+            >>> # Output: "Datasource1, Datasource2, Datasource3"
+
+        #ai-gen-doc
         """
         representation_string = '{:^5}\t{:30}\n\n'.format(
             'ID', 'Data Source Name')
@@ -156,57 +189,84 @@ class Datasources(object):
 
         return representation_string
 
-    def __repr__(self):
-        """Representation string for the instance of the Datasources class."""
+    def __repr__(self) -> str:
+        """Return the string representation of the Datasources instance.
+
+        This method provides a developer-friendly string that represents the current
+        Datasources object, useful for debugging and logging purposes.
+
+        Returns:
+            A string representation of the Datasources instance.
+
+        Example:
+            >>> datasources = Datasources()
+            >>> print(repr(datasources))
+            <Datasources object at 0x7f8b2c1d2e80>
+
+        #ai-gen-doc
+        """
         return "Datasources class instance for Commcell"
 
-    def get_datasource_properties(self, data_source_name):
-        """Returns the properties of datasources.
+    def get_datasource_properties(self, data_source_name: str) -> dict:
+        """Retrieve the properties of a specified data source.
 
-            Args:
+        Args:
+            data_source_name: The name of the data source whose properties are to be fetched.
 
-                data_source_name    (str)       -- Name of the data source
+        Returns:
+            A dictionary containing the properties of the specified data source.
 
-            Returns:
-                dict - dictionary consisting of the properties of  datasources
+        Example:
+            >>> datasources = Datasources()
+            >>> properties = datasources.get_datasource_properties("OracleDB")
+            >>> print(properties)
+            {'name': 'OracleDB', 'type': 'Database', 'status': 'Active', ...}
 
+        #ai-gen-doc
         """
         return self._datasources[data_source_name]
 
     @staticmethod
-    def _get_datasources_from_collections(collections):
-        """Extracts all the datasources, and their details from the list of collections given,
-            and returns the dictionary of all datasources.
+    def _get_datasources_from_collections(collections: list) -> dict:
+        """Extract all datasources and their details from a list of collections.
 
-            Args:
-                collections     (list)  --  list of all collections
+        This method processes the provided list of collection objects and extracts
+        information about each datasource contained within. The result is a dictionary
+        where each key is a datasource name, and the value is a dictionary of its details.
 
-            Returns:
-                dict    -   dictionary consisting of dictionaries, where each dictionary stores the
-                                details of a single datasource
+        Args:
+            collections: List of collection objects or dictionaries containing datasource information.
 
-                    {
-                        'data_source_1_name': {
+        Returns:
+            Dictionary mapping datasource names to their details. Each value is a dictionary
+            with keys such as 'data_source_id', 'data_source_name', 'description',
+            'data_source_type', 'total_count', and 'state'.
 
-                            'data_source_id': 21,
-
-                            'data_source_name': '',
-
-                            'description': '',
-
-                            'data_source_type': '',
-
-                            'total_count': 1234,
-
-                            'state': 1
-                        },
-
-                        'data_source_2_name': {},
-
-                        'data_source_3_name': {}
+            Example return structure:
+                {
+                    'data_source_1_name': {
+                        'data_source_id': 21,
+                        'data_source_name': 'data_source_1_name',
+                        'description': 'Description of datasource 1',
+                        'data_source_type': 'TypeA',
+                        'total_count': 1234,
+                        'state': 1
+                    },
+                    'data_source_2_name': {
                         ...
                     }
+                }
 
+        Example:
+            >>> collections = [...]  # List of collection objects with datasource info
+            >>> datasources = Datasources._get_datasources_from_collections(collections)
+            >>> print(datasources.keys())
+            dict_keys(['data_source_1_name', 'data_source_2_name'])
+            >>> first_ds = datasources['data_source_1_name']
+            >>> print(first_ds['description'])
+            Description of datasource 1
+
+        #ai-gen-doc
         """
         _datasources = {}
         for collection in collections:
@@ -237,35 +297,37 @@ class Datasources(object):
                 _datasources[datasource['datasourceName']] = datasource_dict
         return _datasources
 
-    def _get_all_datasources(self):
-        """Gets the list of all datasources associated with this Datacube instance.
+    def _get_all_datasources(self) -> dict:
+        """Retrieve all datasources associated with this Datacube instance.
 
-            Returns:
-                dict    -   dictionary consisting of dictionaries, where each dictionary stores the
-                                details of a single datasource
+        Returns:
+            dict: A dictionary where each key is a datasource name and the value is a dictionary
+            containing details about that datasource, such as its ID, name, description, type,
+            total count, and state.
 
-                    {
-                        'data_source_1_name': {
-
-                            'data_source_id': 21,
-
-                            'data_source_name': '',
-
-                            'description': '',
-
-                            'data_source_type': '',
-
-                            'total_count': 1234,
-
-                            'state': 1
-                        },
-
-                        'data_source_2_name': {},
-
-                        'data_source_3_name': {}
+            Example structure:
+                {
+                    'data_source_1_name': {
+                        'data_source_id': 21,
+                        'data_source_name': 'data_source_1_name',
+                        'description': 'Sample description',
+                        'data_source_type': 'TypeA',
+                        'total_count': 1234,
+                        'state': 1
+                    },
+                    'data_source_2_name': {
                         ...
                     }
+                }
 
+        Example:
+            >>> datasources = Datasources()
+            >>> all_sources = datasources._get_all_datasources()
+            >>> for name, details in all_sources.items():
+            ...     print(f"Datasource: {name}, ID: {details['data_source_id']}")
+            >>> # This will print the name and ID of each datasource
+
+        #ai-gen-doc
         """
         flag, response = self.commcell_obj._cvpysdk_object.make_request(
             'GET', self._all_datasources
@@ -282,40 +344,49 @@ class Datasources(object):
                 return response
         self._datacube_object._response_not_success(response)
 
-    def has_datasource(self, datasource_name):
-        """Checks if a datasource exists in the Datacube with the input datasource name.
+    def has_datasource(self, datasource_name: str) -> bool:
+        """Check if a datasource with the specified name exists in the Datacube.
 
-            Args:
-                datasource_name     (str)   --  name of the datasource
+        Args:
+            datasource_name: The name of the datasource to check for existence.
 
-            Returns:
-                bool    -   boolean output whether the datasource exists in the datacube or not
+        Returns:
+            True if the datasource exists in the Datacube, False otherwise.
 
-            Raises:
-                SDKException:
-                    if type of the datasource name argument is not string
+        Raises:
+            SDKException: If the type of the datasource_name argument is not a string.
 
+        Example:
+            >>> datasources = Datasources()
+            >>> exists = datasources.has_datasource("SalesData")
+            >>> print(f"Datasource exists: {exists}")
+            # Output: Datasource exists: True
+
+        #ai-gen-doc
         """
         if not isinstance(datasource_name, str):
             raise SDKException('Datacube', '101')
 
         return self._datasources and datasource_name in self._datasources
 
-    def get(self, datasource_name):
-        """Returns a datasource object of the specified datasource name.
+    def get(self, datasource_name: str) -> 'Datasource':
+        """Retrieve a Datasource object by its name.
 
-            Args:
-                datasource_name     (str)   --  name of the datasource
+        Args:
+            datasource_name: The name of the datasource to retrieve.
 
-            Returns:
-                object  -   instance of the Datasource class for the given datasource name
+        Returns:
+            Datasource: An instance of the Datasource class corresponding to the specified name.
 
-            Raises:
-                SDKException:
-                    if type of the datasource name argument is not string
+        Raises:
+            SDKException: If the datasource_name is not a string or if no datasource exists with the given name.
 
-                    if no datasource exists with the given name
+        Example:
+            >>> datasources = Datasources(commcell_object)
+            >>> ds = datasources.get("SalesDB")
+            >>> print(f"Datasource name: {ds.name}")
 
+        #ai-gen-doc
         """
         if not isinstance(datasource_name, str):
             raise SDKException('Datacube', '101')
@@ -332,44 +403,50 @@ class Datasources(object):
                 datasource_name)
         )
 
-    def add(self, datasource_name, analytics_engine, datasource_type, input_param):
-        """Add a datasource.
+    def add(self, datasource_name: str, analytics_engine: str, datasource_type: str, input_param: list) -> None:
+        """Add a new datasource to the datacube.
 
-            Args:
-                datasource_name (str)   --  name of the datasource to add to the datacube
+        This method registers a new datasource with the specified name, associates it with an analytics engine,
+        and sets its type and properties.
 
-                analytics_engine (str)  --  name of the analytics engine or index server node to be associated with this
-                                                datacube.
+        Args:
+            datasource_name: The name of the datasource to add to the datacube.
+            analytics_engine: The name of the analytics engine or index server node to associate with this datacube.
+            datasource_type: The type of datasource to add. Valid values include:
+                1: Database
+                2: Web site
+                3: CSV
+                4: File system
+                5: NAS
+                6: Eloqua
+                8: Salesforce
+                9: LDAP
+                10: Federated Search
+                11: Open data source
+                12: HTTP
+            input_param: A list of properties for the datasource.
 
-                datasource_type (str)  --  type of datasource to add
+        Raises:
+            SDKException: If any of the following conditions occur:
+                - The type of the datasource_name argument is not string.
+                - The type of the analytics_engine argument is not string.
+                - The type of the datasource_type argument is not string.
+                - Failed to add the datasource.
+                - The response is empty.
+                - The response is not successful.
 
-                                            Valid values are:
-                                            1: Database
-                                            2: Web site
-                                            3: CSV
-                                            4: File system
-                                            5: NAS
-                                            6: Eloqua
-                                            8: Salesforce
-                                            9: LDAP
-                                            10: Federated Search
-                                            11: Open data source
-                                            12: HTTP
-                input_param(list)      -- properties for datasource
-            Raises:
-                SDKException:
-                    if type of the datasource name argument is not string
+        Example:
+            >>> datasources = Datasources()
+            >>> properties = [{"propertyName": "host", "propertyValue": "db.example.com"}]
+            >>> datasources.add(
+            ...     datasource_name="SalesDB",
+            ...     analytics_engine="IndexServer1",
+            ...     datasource_type="1",
+            ...     input_param=properties
+            ... )
+            >>> print("Datasource 'SalesDB' added successfully.")
 
-                    if type of the analytics_engine  argument is not string
-
-                    if type of the datasource_type  argument is not string
-
-                    if failed to add datasource
-
-                    if response is empty
-
-                    if response is not success
-
+        #ai-gen-doc
         """
 
         if not isinstance(datasource_name, str):
@@ -430,18 +507,21 @@ class Datasources(object):
             response.text)
         raise SDKException('Response', '101', response_string)
 
-    def delete(self, datasource_name):
-        """Deletes specified datasource from data cube .
+    def delete(self, datasource_name: str) -> None:
+        """Delete the specified datasource from the data cube.
 
-            Args:
-                datasource_name     (str)   --  name of the datasource
+        Args:
+            datasource_name: The name of the datasource to be deleted.
 
-            Raises:
-                SDKException:
-                    if type of the datasource name argument is not string
+        Raises:
+            SDKException: If the datasource_name is not a string, or if no datasource exists with the given name.
 
-                    if no datasource exists with the given name
+        Example:
+            >>> datasources = Datasources()
+            >>> datasources.delete("SalesData")
+            >>> print("Datasource 'SalesData' deleted successfully.")
 
+        #ai-gen-doc
         """
 
         if not isinstance(datasource_name, str):
@@ -468,27 +548,61 @@ class Datasources(object):
         else:
             raise SDKException('Response', '101', response.text)
 
-    def refresh(self):
-        """Refresh the datasources associated with the Datacube."""
+    def refresh(self) -> None:
+        """Reload all datasource information associated with the Datacube.
+
+        This method refreshes the internal state of the Datasources object, ensuring that
+        any changes to the datasources in the Datacube are reflected in the current instance.
+
+        Example:
+            >>> datasources = Datasources(datacube_object)
+            >>> datasources.refresh()  # Updates the datasources to reflect the latest state
+
+        #ai-gen-doc
+        """
         self._datasources = self._get_all_datasources()
 
 
 class Datasource(object):
-    """Class for performing operations on a single datasource"""
+    """
+    Class for managing and performing operations on a single datasource.
 
-    def __init__(self, datacube_object, datasource_name, datasource_id=None):
-        """Initialize an object of the Datasource class.
+    This class provides a comprehensive interface for interacting with a datasource,
+    including lifecycle management, schema operations, data import, content deletion,
+    job initiation, status monitoring, and sharing capabilities. It exposes various
+    properties for accessing datasource metadata and configuration details.
 
-            Args:
-                datacube_object     (object)    --  instance of the Datacube class
+    Key Features:
+        - Initialization with datacube object, datasource name, and ID
+        - Access to datasource properties and identifiers
+        - Start and monitor jobs related to the datasource
+        - Delete datasource and its content
+        - Retrieve and update datasource schema
+        - Import data into the datasource
+        - Refresh datasource state
+        - Retrieve crawl history and status information
+        - Share datasource with users, specifying permissions and operations
+        - Access computed core name, index server cloud ID, and datasource type
+        - Manage datasource handlers
 
-                datasource_name     (str)       --  name of the datasource
+    #ai-gen-doc
+    """
 
-                datasource_id       (str)       --  id of the datasource
-                    default: None
+    def __init__(self, datacube_object: object, datasource_name: str, datasource_id: str = None) -> None:
+        """Initialize a Datasource object.
 
-            Returns:
-                object  -   instance of the Datasource class
+        Args:
+            datacube_object: Instance of the Datacube class to which this datasource belongs.
+            datasource_name: The name of the datasource.
+            datasource_id: Optional; the unique identifier for the datasource. If not provided, it can be set later.
+
+        Example:
+            >>> datacube = Datacube()
+            >>> datasource = Datasource(datacube, "SalesData")
+            >>> # Optionally, provide a datasource ID
+            >>> datasource_with_id = Datasource(datacube, "InventoryData", "ds_12345")
+
+        #ai-gen-doc
         """
         self._datacube_object = datacube_object
         self._datasource_name = datasource_name
@@ -536,32 +650,56 @@ class Datasource(object):
         self._properties = None
         self.refresh()
 
-    def __repr__(self):
-        """String representation of the instance of this class."""
+    def __repr__(self) -> str:
+        """Return a string representation of the Datasource instance.
+
+        This method provides a developer-friendly string that can be used to 
+        inspect the Datasource object, typically for debugging purposes.
+
+        Returns:
+            A string representing the Datasource instance.
+
+        Example:
+            >>> datasource = Datasource()
+            >>> print(repr(datasource))
+            <Datasource object at 0x7f8b1c2d3e80>
+
+        #ai-gen-doc
+        """
         return 'Datasource class instance for Commcell'
 
-    def _get_datasource_id(self):
-        """Gets the datasource id associated with this datasource.
+    def _get_datasource_id(self) -> str:
+        """Retrieve the unique identifier associated with this datasource.
 
-            Returns:
-                str     -   id associated with this datasource
+        Returns:
+            The ID of the datasource as a string.
 
+        Example:
+            >>> datasource = Datasource()
+            >>> datasource_id = datasource._get_datasource_id()
+            >>> print(f"Datasource ID: {datasource_id}")
+
+        #ai-gen-doc
         """
         datasources = Datasources(self._datacube_object)
         return datasources.get(self.datasource_name).datasource_id
 
-    def _get_datasource_properties(self):
-        """Gets the properties of this datasource.
+    def _get_datasource_properties(self) -> dict:
+        """Retrieve the properties of this datasource.
 
-            Returns:
-                dict - dictionary consisting of the properties of this datasource
+        Returns:
+            dict: A dictionary containing the properties of the datasource.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException: If the response is empty or if the response indicates a failure.
 
-                    if response is not success
+        Example:
+            >>> datasource = Datasource()
+            >>> properties = datasource._get_datasource_properties()
+            >>> print(properties)
+            {'property1': 'value1', 'property2': 'value2'}
 
+        #ai-gen-doc
         """
         data_source_dict = self._commcell_object.datacube.datasources.get_datasource_properties(self.datasource_name)
         if 'computedCoreName' in data_source_dict:
@@ -571,16 +709,23 @@ class Datasource(object):
         self._data_source_type = data_source_dict['data_source_type']
         return data_source_dict
 
-    def start_job(self):
-        """Starts the crawl job for the datasource
+    def start_job(self) -> str:
+        """Start the crawl job for the datasource.
 
-                Returns:
-                    Str  -   Job id of crawl job
+        Initiates a crawl job associated with this datasource and returns the job ID.
 
-                Raises:
-                    Exception:
-                        failed to start job
+        Returns:
+            str: The job ID of the started crawl job.
 
+        Raises:
+            Exception: If the job fails to start.
+
+        Example:
+            >>> datasource = Datasource()
+            >>> job_id = datasource.start_job()
+            >>> print(f"Crawl job started with ID: {job_id}")
+
+        #ai-gen-doc
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', self._start_job_datasource % (self._datasource_id))
@@ -596,17 +741,22 @@ class Datasource(object):
                 raise SDKException('Datacube', '102', "Status object not found in response")
         raise SDKException('Response', '101', response.text)
 
-    def delete_datasource(self):
-        """deletes the datasource
+    def delete_datasource(self) -> bool:
+        """Delete the datasource from the system.
 
-                    Returns:
-                        true  -   if success
+        Returns:
+            True if the datasource was successfully deleted.
 
-                    Raises:
-                        Exception:
-                            Error message for failed ops
+        Raises:
+            Exception: If the deletion operation fails, an exception is raised with an error message.
 
-                """
+        Example:
+            >>> datasource = Datasource()
+            >>> success = datasource.delete_datasource()
+            >>> print(f"Datasource deleted: {success}")
+
+        #ai-gen-doc
+        """
         flag, response = self._datacube_object._commcell_object._cvpysdk_object.make_request(
             'POST', self._delete_datasource % (self._datasource_id))
 
@@ -619,16 +769,22 @@ class Datasource(object):
                 return True
         raise SDKException('Response', '101', response.text)
 
-    def get_status(self):
-        """Gets status of the datasource.
+    def get_status(self) -> dict:
+        """Retrieve the current status information of the datasource.
 
-                Returns:
-                    dict - containing all status information of datasource
+        Returns:
+            dict: A dictionary containing all status details of the datasource.
 
-                Raises:
-                    Exception:
-                            Failure to find datasource details
+        Raises:
+            Exception: If the datasource details cannot be found.
 
+        Example:
+            >>> datasource = Datasource()
+            >>> status_info = datasource.get_status()
+            >>> print(status_info)
+            >>> # Output will be a dictionary with status information about the datasource
+
+        #ai-gen-doc
         """
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -645,35 +801,35 @@ class Datasource(object):
                 raise SDKException('Datacube', '102', "Status object not found in response")
         raise SDKException('Response', '101', response.text)
 
-    def get_crawl_history(self, last_crawl_history=False):
-        """Gets the Crawling  history for this datasource.
+    def get_crawl_history(self, last_crawl_history: bool = False) -> list:
+        """Retrieve the crawling history for this datasource.
 
-            Args:
-                last_crawl_history (bool)    -- if set to True , returns
-                the status of and information about the most recent crawling
-                operation for a data source in Data Cube
+        Args:
+            last_crawl_history: If True, returns only the status and information about the most recent crawling
+                operation for this datasource in Data Cube. If False, returns the complete crawl history.
 
-            Returns:
-                list - list consisting of key value pair for history details of this datasource
+        Returns:
+            list: A list of dictionaries, each containing key-value pairs with details about crawl history for this datasource.
+            Each dictionary may include:
+                - "numFailed": Number of failed items.
+                - "totalcount": Total number of items processed.
+                - "endUTCTime": End time of the crawl operation (UTC).
+                - "numAccessDenied": Number of access denied errors.
+                - "numAdded": Number of items added.
+                - "startUTCTime": Start time of the crawl operation (UTC).
+                - "state": State of the crawl operation.
 
-                 [
-                    {
-                        "numFailed": ,
-                        "totalcount": ,
-                        "endUTCTime": ,
-                        "numAccessDenied": ,
-                        "numAdded": ,
-                        "startUTCTime": ,
-                        "state":
-                    }
-                ]
+        Raises:
+            SDKException: If the response is empty or not successful.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Example:
+            >>> datasource = Datasource()
+            >>> history = datasource.get_crawl_history()
+            >>> print(f"Total crawl operations: {len(history)}")
+            >>> if history:
+            ...     print(f"Most recent crawl state: {history[0]['state']}")
 
-                    if response is not success
-
+        #ai-gen-doc
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'GET', self._crawl_history
@@ -689,53 +845,130 @@ class Datasource(object):
         raise SDKException('Response', '101', response_string)
 
     @property
-    def datasource_id(self):
-        """Returns the value of the data source id attribute."""
+    def datasource_id(self) -> int:
+        """Get the unique identifier of the data source.
+
+        Returns:
+            int: The ID value associated with this data source.
+
+        Example:
+            >>> datasource = Datasource()
+            >>> ds_id = datasource.datasource_id  # Use dot notation for property access
+            >>> print(f"Datasource ID: {ds_id}")
+
+        #ai-gen-doc
+        """
         return self._datasource_id
 
     @property
-    def properties(self):
-        """Returns all the data source properties"""
+    def properties(self) -> dict:
+        """Get all properties associated with the data source.
+
+        Returns:
+            dict: A dictionary containing all properties of the data source.
+
+        Example:
+            >>> datasource = Datasource()
+            >>> props = datasource.properties  # Access properties using dot notation
+            >>> print(props)
+            {'name': 'DataSource1', 'type': 'SQL', 'status': 'active'}
+
+        #ai-gen-doc
+        """
         return self._properties
 
     @property
-    def datasource_name(self):
-        """Returns the value of the data source name attribute."""
+    def datasource_name(self) -> str:
+        """Get the name of the data source.
+
+        Returns:
+            The name of the data source as a string.
+
+        Example:
+            >>> ds = Datasource()
+            >>> name = ds.datasource_name  # Use dot notation to access the property
+            >>> print(f"Datasource name: {name}")
+
+        #ai-gen-doc
+        """
         return self._datasource_name
 
     @property
-    def computed_core_name(self):
-        """Returns the value of the computedcorename attribute."""
+    def computed_core_name(self) -> str:
+        """Get the value of the computed core name attribute for this datasource.
+
+        Returns:
+            The computed core name as a string.
+
+        Example:
+            >>> datasource = Datasource()
+            >>> core_name = datasource.computed_core_name  # Access as a property
+            >>> print(f"Computed core name: {core_name}")
+
+        #ai-gen-doc
+        """
         return self._computed_core_name
 
     @property
-    def index_server_cloud_id(self):
-        """Returns the value of the cloud id attribute."""
+    def index_server_cloud_id(self) -> int:
+        """Get the cloud ID associated with the index server for this datasource.
+
+        Returns:
+            int: The cloud ID value of the index server.
+
+        Example:
+            >>> datasource = Datasource()
+            >>> cloud_id = datasource.index_server_cloud_id
+            >>> print(f"Index server cloud ID: {cloud_id}")
+
+        #ai-gen-doc
+        """
         return self._cloud_id
 
     @property
-    def data_source_type(self):
-        """Returns the value of the data source type attribute."""
+    def data_source_type(self) -> str:
+        """Get the type of the data source.
+
+        Returns:
+            The data source type as a string.
+
+        Example:
+            >>> ds = Datasource()
+            >>> ds_type = ds.data_source_type  # Use dot notation for property access
+            >>> print(f"Datasource type: {ds_type}")
+
+        #ai-gen-doc
+        """
         return self._data_source_type
 
-    def get_datasource_schema(self):
-        """returns information about the schema of a data source.
+    def get_datasource_schema(self) -> dict:
+        """Retrieve information about the schema of the data source.
 
-            Returns:
-                dict - dict consisting of all schema fields of this datasource grouped
-                under dynSchemaFields and schemaFields
+        Returns:
+            dict: A dictionary containing all schema fields of this data source, grouped under
+            'dynSchemaFields' and 'schemaFields'. The dictionary structure is as follows:
 
                 {
-                "uniqueKey": "contentid",
-                "schemaFields": [{properties of field},list of fields]
-               "dynSchemaFields":[{properties of field},list of fields]
+                    "uniqueKey": "contentid",
+                    "schemaFields": [ {field properties}, ... ],
+                    "dynSchemaFields": [ {field properties}, ... ]
+                }
 
-            Raises:
-                SDKException:
-                    if response is empty
+            - 'uniqueKey': The primary key field for the data source.
+            - 'schemaFields': List of dictionaries, each representing a static schema field.
+            - 'dynSchemaFields': List of dictionaries, each representing a dynamic schema field.
 
-                    if response is not success
+        Raises:
+            SDKException: If the response is empty or the request is not successful.
 
+        Example:
+            >>> datasource = Datasource()
+            >>> schema_info = datasource.get_datasource_schema()
+            >>> print(schema_info["uniqueKey"])
+            >>> print("Number of static fields:", len(schema_info["schemaFields"]))
+            >>> print("Number of dynamic fields:", len(schema_info["dynSchemaFields"]))
+
+        #ai-gen-doc
         """
         flag, response = self._datacube_object._commcell_object._cvpysdk_object.make_request(
             'GET', self._get_datasource_schema
@@ -750,31 +983,44 @@ class Datasource(object):
         )
         raise SDKException('Response', '101', response_string)
 
-    def update_datasource_schema(self, schema):
-        """updates the schema of a data source.
+    def update_datasource_schema(self, schema: list[dict[str, str]]) -> None:
+        """Update the schema of the data source.
 
-            Args:
-                schema (list)   -- list of  properties of schemas represented as key value pair.
-                [{
-                                    "fieldName": "",
-                                    "indexed": "",
-                                    "autocomplete": "",
-                                    "type": "",
-                                    "searchDefault": "",
-                                    "multiValued": ""
-                                }]
-                Valid values for type are as follows:
-                    [string, int, float, long, double, date, longstring]
-                indexed, autocomplete, searchDefault, multiValued takes 0/1
+        This method updates the schema definition for the data source using the provided list of field property dictionaries.
+        Each dictionary should represent a field and its properties, such as field name, type, and indexing options.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Args:
+            schema: A list of dictionaries, where each dictionary defines the properties of a schema field.
+                Example field dictionary:
+                    {
+                        "fieldName": "username",
+                        "indexed": "1",
+                        "autocomplete": "0",
+                        "type": "string",
+                        "searchDefault": "1",
+                        "multiValued": "0"
+                    }
+                Valid values for "type" are: "string", "int", "float", "long", "double", "date", "longstring".
+                The values for "indexed", "autocomplete", "searchDefault", and "multiValued" should be "0" or "1" as strings.
 
-                    if type of the schema argument is not list
+        Raises:
+            SDKException: If the response is empty, if the schema argument is not a list, or if the response indicates failure.
 
-                    if response is not success
+        Example:
+            >>> schema = [
+            ...     {
+            ...         "fieldName": "email",
+            ...         "indexed": "1",
+            ...         "autocomplete": "1",
+            ...         "type": "string",
+            ...         "searchDefault": "0",
+            ...         "multiValued": "0"
+            ...     }
+            ... ]
+            >>> datasource.update_datasource_schema(schema)
+            >>> print("Datasource schema updated successfully.")
 
+        #ai-gen-doc
         """
         if not isinstance(schema, list):
             raise SDKException('Datacube', '101')
@@ -807,18 +1053,25 @@ class Datasource(object):
             response.text)
         raise SDKException('Response', '101', response_string)
 
-    def import_data(self, data):
-        """imports/pumps given data into data source.
+    def import_data(self, data: list) -> None:
+        """Import or pump the given data into the data source for indexing.
 
-            Args:
-                data (list)   -- data to be indexed and pumped into  solr.list of key value pairs.
+        Args:
+            data: A list of key-value pairs representing the data to be indexed and pumped into Solr.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException: If the response from the data source is empty or not successful.
 
-                    if response is not success
+        Example:
+            >>> datasource = Datasource()
+            >>> sample_data = [
+            ...     {"id": 1, "name": "Document1"},
+            ...     {"id": 2, "name": "Document2"}
+            ... ]
+            >>> datasource.import_data(sample_data)
+            >>> print("Data imported successfully.")
 
+        #ai-gen-doc
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', self._datacube_import_data, data
@@ -837,17 +1090,21 @@ class Datasource(object):
         )
         raise SDKException('Response', '101', response_string)
 
-    def delete_content(self):
-        """deletes the content of a data source from Data Cube.
-           The data source itself is not deleted using this API.
+    def delete_content(self) -> None:
+        """Delete the content of the data source from Data Cube.
 
-            Raises:
-                SDKException:
+        This method removes all content associated with the data source, but does not delete the data source itself.
 
-                    if response is empty
+        Raises:
+            SDKException: If the response from the Data Cube API is empty or indicates a failure.
 
-                    if response is not success
+        Example:
+            >>> datasource = Datasource()
+            >>> datasource.delete_content()
+            >>> print("Datasource content deleted successfully")
+            # The data source object remains, but its content is removed.
 
+        #ai-gen-doc
         """
         flag, response = self._datacube_object._commcell_object._cvpysdk_object.make_request(
             'POST', self._delete_datasource_contents
@@ -861,14 +1118,36 @@ class Datasource(object):
             return
         raise SDKException('Response', '101', response.text)
 
-    def refresh(self):
-        """Refresh the properties of the Datasource."""
+    def refresh(self) -> None:
+        """Reload the properties of the Datasource object.
+
+        This method updates the Datasource instance with the latest information from the underlying data source.
+        Use this method to ensure that the object's properties reflect the current state.
+
+        Example:
+            >>> datasource = Datasource()
+            >>> datasource.refresh()
+            >>> print("Datasource properties refreshed successfully")
+
+        #ai-gen-doc
+        """
         self._properties = self._get_datasource_properties()
         self.handlers = Handlers(self)
 
     @property
-    def ds_handlers(self):
-        """Returns the instance of the Handlers class."""
+    def ds_handlers(self) -> 'Handlers':
+        """Get the Handlers instance associated with this Datasource.
+
+        Returns:
+            Handlers: An instance of the Handlers class for managing datasource handlers.
+
+        Example:
+            >>> datasource = Datasource()
+            >>> handlers = datasource.ds_handlers  # Access the Handlers instance via property
+            >>> print(f"Handlers object: {handlers}")
+
+        #ai-gen-doc
+        """
         try:
             if self._handlers_obj is None:
                 self._handlers_obj = Handlers(self)
@@ -876,30 +1155,29 @@ class Datasource(object):
         except BaseException:
             raise SDKException('Datacube', '102', "Failed to init Handlers")
 
-    def share(self, permission_list, operation_type, user_id, user_name, user_type):
-        """ Share datasource with user/usergroup
-                Args:
-                    permission_list (list)-- List of permission
+    def share(self, permission_list: list, operation_type: int, user_id: int, user_name: str, user_type: int) -> None:
+        """Share the datasource with a specified user or user group.
 
-                    operation_type (int)  -- Operation type (2-add / 3- delete)
+        This method assigns or removes permissions for a user or user group on the datasource,
+        based on the provided operation type and permission list.
 
-                    user_id (int)         -- User id of share user
+        Args:
+            permission_list: List of permissions to assign or remove for the user/user group.
+            operation_type: The type of operation to perform (2 for add, 3 for delete).
+            user_id: The unique identifier of the user or user group to share with.
+            user_name: The name of the user or user group to share with.
+            user_type: The type of user (e.g., 13 for User).
 
-                    user_name (str)       -- Share user name
+        Raises:
+            SDKException: If the response is empty, not successful, or if sharing the datasource fails.
 
-                    user_type (int)       -- Share user type (Ex : 13- User)
+        Example:
+            >>> datasource = Datasource()
+            >>> permissions = ['read', 'write']
+            >>> datasource.share(permissions, 2, 101, 'jdoe', 13)
+            >>> print("Datasource shared successfully with user jdoe.")
 
-                Returns:
-                    None
-
-                Raises:
-                    SDKExpception:
-
-                        if response is empty
-
-                        if response is not success
-
-                        if failed to share the datasource with User/userGroup
+        #ai-gen-doc
         """
         category_permission_list = []
         for permission in permission_list:

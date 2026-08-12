@@ -92,34 +92,63 @@ User Mailbox Subclient Instance Attributes:
 """
 
 from __future__ import unicode_literals
+
+import datetime
+import time
+from typing import Any, Dict, List, Optional, Union, Tuple
+
 from ...exception import SDKException
+from ...job import Job
 from ..exchsubclient import ExchangeSubclient
-from ...subclient import Subclients
-from ...backupset import Backupsets
 from .constants import ExchangeConstants
 
-import time
-import datetime
-
-
 class UsermailboxSubclient(ExchangeSubclient):
-    """Derived class from ExchangeSubclient Base class.
+    """
+    UsermailboxSubclient provides management and operations for user mailbox subclients
+    within an Exchange backup environment.
 
-        This represents a usermailbox subclient,
-        and can perform discover and restore operations on only that subclient.
+    This class extends the ExchangeSubclient base class to support discovery, association,
+    backup, and restore operations specifically for user mailboxes, databases, Active Directory groups,
+    and Office 365 groups. It offers a comprehensive interface for configuring policies, managing
+    associations, performing mailbox searches, and handling backup and restore tasks.
 
+    Key Features:
+        - Initialization and configuration of user mailbox subclients
+        - Policy and association management for mailboxes, databases, AD groups, and O365 groups
+        - Discovery of users, databases, AD groups, and O365 groups
+        - Search and browse capabilities for mailboxes and users
+        - Backup operations for mailboxes and generic items
+        - Restore operations including in-place restore and recovery point creation
+        - Enable/disable associations and auto-discover features
+        - Support for EWS (Exchange Web Services)
+        - Refresh and update subclient state
+
+    Properties:
+        - discover_users: Provides discovered user mailboxes
+        - discover_databases: Provides discovered databases
+        - discover_adgroups: Provides discovered AD groups
+        - users: Returns associated users
+        - databases: Returns associated databases
+        - adgroups: Returns associated AD groups
+        - o365groups: Returns associated Office 365 groups
+
+    #ai-gen-doc
     """
 
-    def __init__(self, backupset_object, subclient_name, subclient_id=None):
-        """Initialize the Instance object for the given UserMailbox Subclient.
+    def __init__(self, backupset_object: object, subclient_name: str, subclient_id: int = None) -> None:
+        """Initialize a UsermailboxSubclient instance for the specified UserMailbox subclient.
 
-            Args:
-                backupset_object    (object)    --  instance of the backupset class
+        Args:
+            backupset_object: Instance of the backupset class associated with this subclient.
+            subclient_name: Name of the UserMailbox subclient.
+            subclient_id: Optional; ID of the subclient. If not provided, it will be determined automatically.
 
-                subclient_name      (str)       --  subclient name
+        Example:
+            >>> backupset = Backupset(commcell_object, 'Exchange', 'UserMailbox')
+            >>> subclient = UsermailboxSubclient(backupset, 'MailboxSubclient1')
+            >>> print(f"Subclient created: {subclient}")
 
-                subclient_id        (int)       --  subclient id
-
+        #ai-gen-doc
         """
         super(UsermailboxSubclient, self).__init__(
             backupset_object, subclient_name, subclient_id)
@@ -133,18 +162,33 @@ class UsermailboxSubclient(ExchangeSubclient):
 
         self.refresh()
 
-    def _policy_json(self, configuration_policy, policy_type):
-        """Creates policy Json based on configuration_policy name
-        and policy_type
+    def _policy_json(self, configuration_policy: Union[str, object], policy_type: int) -> dict[
+        str, int | dict[str, int] | dict[str, dict[str, int]] | dict[str, int | Any]]:
+        """Generate a policy JSON structure based on the configuration policy and type.
 
-            Args:
-                configuration_policy (str/object)  --  configuration policy name or
-                object of congiguration policy class
-                policy_type   (int)                --  configuration policy type
+        This method creates a JSON payload suitable for sending to the POST Subclient API,
+        using either the name of a configuration policy or an instance of a configuration policy class,
+        along with the specified policy type.
 
-            Returns:
-                list - list of the appropriate JSON for an agent to send to
-                       the POST Subclient API
+        Args:
+            configuration_policy: The configuration policy, specified either as a string (policy name)
+                or as an object representing the configuration policy.
+            policy_type: The type of configuration policy as an integer.
+
+        Returns:
+            A list containing the JSON structure appropriate for the agent to send to the POST Subclient API.
+
+        Example:
+            >>> subclient = UsermailboxSubclient()
+            >>> # Using policy name
+            >>> json_payload = subclient._policy_json("DefaultPolicy", 1)
+            >>> print(json_payload)
+            >>> # Using policy object
+            >>> policy_obj = ConfigurationPolicy("CustomPolicy")
+            >>> json_payload = subclient._policy_json(policy_obj, 2)
+            >>> print(json_payload)
+
+        #ai-gen-doc
         """
 
         from ...policies.configuration_policies import ConfigurationPolicy
@@ -174,24 +218,36 @@ class UsermailboxSubclient(ExchangeSubclient):
 
         return policy_json
 
-    def _association_json(self, subclient_content, is_o365group=False):
-        """Constructs association json to create assocaition in UserMailbox Subclient.
+    def _association_json(self, subclient_content: dict, is_o365group: bool = False) -> dict:
+        """Construct the association JSON for creating an association in a UserMailbox Subclient.
 
-            Args:
-                subclient_content (dict)  --  dict of the Users to add to the subclient
-                                             (dict of only policies in case of Office 365 groups)
-                subclient_content = {
-
-                        'archive_policy' : "CIPLAN Archiving policy",
-
-                        'cleanup_policy' : 'CIPLAN Clean-up policy',
-
+        Args:
+            subclient_content: Dictionary containing the users or policies to add to the subclient.
+                For regular user mailboxes, this should include user and policy information.
+                For Office 365 groups, this should include only policy information.
+                Example:
+                    {
+                        'archive_policy': "CIPLAN Archiving policy",
+                        'cleanup_policy': 'CIPLAN Clean-up policy',
                         'retention_policy': 'CIPLAN Retention policy'
                     }
+            is_o365group: If True, indicates the association is for an Office 365 group. Defaults to False.
 
+        Returns:
+            Dictionary representing the association JSON request to be passed to the API.
 
-            Returns:
-                dict -- Association JSON request to pass to the API
+        Example:
+            >>> subclient = UsermailboxSubclient()
+            >>> content = {
+            ...     'archive_policy': "CIPLAN Archiving policy",
+            ...     'cleanup_policy': 'CIPLAN Clean-up policy',
+            ...     'retention_policy': 'CIPLAN Retention policy'
+            ... }
+            >>> association_json = subclient._association_json(content)
+            >>> print(association_json)
+            # Output will be a dictionary formatted for the API association request
+
+        #ai-gen-doc
         """
         policy_types = {
             "archive_policy": 1,
@@ -226,15 +282,27 @@ class UsermailboxSubclient(ExchangeSubclient):
 
         return associations_json
 
-    def _association_json_with_plan(self, plan_details):
-        """Constructs association json with plan to create association in UserMailbox Subclient.
-        
-            Args: plan_details = {
-                    'plan_name': Plan Name,
-                    'plan_id': int or None (Optional)
-                    }
-                 Returns:
-                    dict -- Association JSON request to pass to the API
+    def _association_json_with_plan(self, plan_details: Dict[str, Any]) -> dict:
+        """Construct the association JSON payload with plan details for UserMailbox Subclient.
+
+        This method prepares a dictionary representing the association request,
+        which can be used to associate a UserMailbox Subclient with a specific plan.
+
+        Args:
+            plan_details: A dictionary containing plan information.
+                Expected keys:
+                    - 'plan_name' (str): The name of the plan.
+                    - 'plan_id' (Optional[int]): The ID of the plan, or None if not specified.
+
+        Returns:
+            dict: The association JSON request payload to be sent to the API.
+
+        Example:
+            >>> plan_info = {'plan_name': 'ExchangePlan', 'plan_id': 1234}
+            >>> assoc_json = subclient._association_json_with_plan(plan_info)
+            >>> print(assoc_json)
+            {'plan': {'planName': 'ExchangePlan', 'planId': 1234}}
+        #ai-gen-doc
         """
 
         try:
@@ -261,14 +329,24 @@ class UsermailboxSubclient(ExchangeSubclient):
         }
         return association_json
 
-    def _association_mailboxes_json(self, mailbox_alias_names):
-        """
-            Args:
-                mailbox_alias_names(list): alias names of the mailboxes to backup
-                    Example:
-                        ['aj', 'tkumar']
-            Returns:
-                mailboxes_json(list): Required details of mailboxes to backup
+    def _association_mailboxes_json(self, mailbox_alias_names: list) -> list:
+        """Generate the JSON structure for associating mailboxes by alias names.
+
+        Args:
+            mailbox_alias_names: A list of mailbox alias names to be included for backup.
+                Example:
+                    ['aj', 'tkumar']
+
+        Returns:
+            A list containing the required details of the mailboxes to be backed up, formatted as JSON-compatible dictionaries.
+
+        Example:
+            >>> mailbox_aliases = ['aj', 'tkumar']
+            >>> mailboxes_json = subclient._association_mailboxes_json(mailbox_aliases)
+            >>> print(mailboxes_json)
+            [{'aliasName': 'aj'}, {'aliasName': 'tkumar'}]
+
+        #ai-gen-doc
         """
         mailboxes_json = []
         mailbox_alias_names = set(mailbox_alias_names)
@@ -294,17 +372,26 @@ class UsermailboxSubclient(ExchangeSubclient):
                 mailboxes_json.append(mailbox_info)
         return mailboxes_json
 
-    def _task_json_for_backup(self, mailbox_alias_names, **kwargs):
-        """
-        Args:
-            mailbox_alias_names(list): alias names of the mailboxes to backup
-                Sample Values
-                    ['aj', 'tkumar']
+    def _task_json_for_backup(self, mailbox_alias_names: list, **kwargs: dict) -> dict:
+        """Generate the task JSON required for backing up specified mailboxes.
 
-             **kwargs (dict) : Additional parameters
-                items_selection_option (str) : Item Selection Option (Example: "7" for selecting backed up recently entities)
+        Args:
+            mailbox_alias_names: List of alias names for the mailboxes to be backed up.
+                Example:
+                    ['aj', 'tkumar']
+            **kwargs: Additional parameters for the backup task.
+                items_selection_option (str): Item Selection Option (e.g., "7" for selecting recently backed up entities).
+
         Returns:
-            task_json(dict): Task json required to pass to the API
+            dict: The task JSON dictionary to be passed to the backup API.
+
+        Example:
+            >>> mailbox_aliases = ['aj', 'tkumar']
+            >>> task_json = subclient._task_json_for_backup(mailbox_aliases, items_selection_option="7")
+            >>> print(task_json)
+            # The returned dictionary can be used as the payload for the backup API.
+
+        #ai-gen-doc
         """
         common_backup_options = None
         items_selection_option = kwargs.get('items_selection_option', '')
@@ -331,24 +418,29 @@ class UsermailboxSubclient(ExchangeSubclient):
             task_json['taskInfo']['subTasks'][0]['options']['dataOpt'] = data_options
         return task_json
 
-    def _set_association_request(self, associations_json):
-        """
-            Runs the emailAssociation POST API to set association
+    def _set_association_request(self, associations_json: dict) -> tuple[str, str]:
+        """Send a POST request to the emailAssociation API to set mailbox associations.
 
-            Args:
-                associations_json    (dict)  -- request json sent as payload
+        Args:
+            associations_json: Dictionary containing the request payload for the association.
 
-            Returns:
-                (str, str):
-                    str  -  error code received in the response
+        Returns:
+            A tuple containing:
+                - error code received in the response (str)
+                - error message received (str)
 
-                    str  -  error message received
+        Raises:
+            SDKException: If the response is empty or the request is not successful.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Example:
+            >>> associations = {
+            ...     "mailboxList": ["user1@example.com", "user2@example.com"],
+            ...     "operationType": 1
+            ... }
+            >>> error_code, error_message = subclient._set_association_request(associations)
+            >>> print(f"Error code: {error_code}, Message: {error_message}")
 
-                    if response is not success
+        #ai-gen-doc
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', self._SET_EMAIL_POLICY_ASSOCIATIONS, associations_json
@@ -371,23 +463,34 @@ class UsermailboxSubclient(ExchangeSubclient):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _update_association_request(self, associations_json):
-        """Runs the EmailAssocaition PUT API to update association
+    def _update_association_request(self, associations_json: dict) -> tuple[str, str]:
+        """Update mailbox associations using the EmailAssociation PUT API.
 
-            Args:
-                associations_json  (dict)  -- request json sent as payload
+        This method sends a PUT request to update mailbox associations with the provided JSON payload.
+        It returns the error code and error message from the API response.
 
-            Returns:
-                (str, str):
-                    str  -  error code received in the response
+        Args:
+            associations_json: Dictionary containing the request payload for updating associations.
 
-                    str  -  error message received
+        Returns:
+            A tuple containing:
+                str: The error code received in the response.
+                str: The error message received.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException: If the response is empty or the API call is not successful.
 
-                    if response is not success
+        Example:
+            >>> payload = {
+            ...     "associations": [
+            ...         {"mailboxName": "user1@example.com", "action": "add"},
+            ...         {"mailboxName": "user2@example.com", "action": "remove"}
+            ...     ]
+            ... }
+            >>> error_code, error_message = subclient._update_association_request(payload)
+            >>> print(f"Error code: {error_code}, Message: {error_message}")
+
+        #ai-gen-doc
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'PUT', self._SET_EMAIL_POLICY_ASSOCIATIONS, associations_json
@@ -410,17 +513,23 @@ class UsermailboxSubclient(ExchangeSubclient):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _get_discover_users(self, use_without_refresh_url=False, retry_attempts=0):
-        """Gets the discovered users from the Subclient .
+    def _get_discover_users(self, use_without_refresh_url: bool = False, retry_attempts: int = 0) -> list:
+        """Retrieve the list of discovered users associated with the subclient.
 
-            Args:
-                use_without_refresh_url (boolean)   -   discovery without refresh cache
+        Args:
+            use_without_refresh_url: If True, performs discovery without refreshing the cache.
+            retry_attempts: Number of retry attempts for the discovery operation.
 
-                retry_attempts(int)                 - retry for discovery
+        Returns:
+            list: A list of discovered users associated with the subclient.
 
-            Returns:
-                list    -   list of discovered users associated with the subclient
+        Example:
+            >>> users = subclient._get_discover_users()
+            >>> print(f"Discovered users: {users}")
+            >>> # To perform discovery without refreshing cache and with retries:
+            >>> users = subclient._get_discover_users(use_without_refresh_url=True, retry_attempts=2)
 
+        #ai-gen-doc
         """
         self._DISCOVERY = self._commcell_object._services['EMAIL_DISCOVERY'] % (
             int(self._backupset_object.backupset_id), 'User'
@@ -439,7 +548,7 @@ class UsermailboxSubclient(ExchangeSubclient):
                 _error_code = discover_content.get('resp', {}).get('errorCode', 0)
                 if _error_code == 469762468 or _error_code == 469762470:
                     # if discover_content.get('resp', {}).get('errorCode', 0) == 469762468:
-                    time.sleep(10)  # the results might take some time depending on domains
+                    time.sleep(60)  # the results might take some time depending on domains
                     if retry_attempts > 10:
                         raise SDKException('Subclient', '102', 'Failed to perform discovery.')
 
@@ -457,13 +566,23 @@ class UsermailboxSubclient(ExchangeSubclient):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _search_user(self, user, retry_attempts=0):
-        """Searches for the user in the discovered users list .
-            Args:
-                user (str)              -   alias name/smtp address of the user to search for
-            Returns:
-                list    -   list of discovered users matching the search
+    def _search_user(self, user: str, retry_attempts: int = 0) -> list:
+        """Search for a user in the discovered users list.
 
+        Args:
+            user: The alias name or SMTP address of the user to search for.
+            retry_attempts: The number of retry attempts to perform if the search fails. Defaults to 0.
+
+        Returns:
+            A list of discovered users matching the search criteria.
+
+        Example:
+            >>> subclient = UsermailboxSubclient()
+            >>> matching_users = subclient._search_user('john.doe@example.com')
+            >>> print(matching_users)
+            ['john.doe@example.com', 'jdoe@example.com']
+
+        #ai-gen-doc
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request('GET', f"{self._SEARCH}&search={user}")
 
@@ -486,12 +605,17 @@ class UsermailboxSubclient(ExchangeSubclient):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _get_discover_database(self):
-        """Gets the discovered databases from the Subclient .
+    def _get_discover_database(self) -> list:
+        """Retrieve the list of discovered databases associated with the subclient.
 
-            Returns:
-                list    -   list of discovered databases associated with the subclient
+        Returns:
+            list: A list containing the names or identifiers of databases discovered for this subclient.
 
+        Example:
+            >>> databases = subclient._get_discover_database()
+            >>> print(f"Discovered databases: {databases}")
+
+        #ai-gen-doc
         """
         self._DISCOVERY = self._commcell_object._services['EMAIL_DISCOVERY'] % (
             int(self._backupset_object.backupset_id), 'Database'
@@ -510,12 +634,17 @@ class UsermailboxSubclient(ExchangeSubclient):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _get_discover_adgroups(self):
-        """Gets the discovered adgroups from the Subclient .
+    def _get_discover_adgroups(self) -> list:
+        """Retrieve the list of discovered Active Directory groups associated with the subclient.
 
-            Returns:
-                list    -   list of discovered adgroups associated with the subclient
+        Returns:
+            list: A list containing the discovered AD groups for this subclient.
 
+        Example:
+            >>> adgroups = subclient._get_discover_adgroups()
+            >>> print(f"Discovered AD groups: {adgroups}")
+
+        #ai-gen-doc
         """
         self._DISCOVERY = self._commcell_object._services['EMAIL_DISCOVERY'] % (
             int(self._backupset_object.backupset_id), 'AD Group'
@@ -535,12 +664,18 @@ class UsermailboxSubclient(ExchangeSubclient):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _get_user_assocaitions(self):
-        """Gets the appropriate users associations from the Subclient.
+    def _get_user_assocaitions(self) -> tuple[
+        list[dict[str | Any, str | None | Any]], list[dict[str | Any, str | None | Any]]]:
+        """Retrieve the list of users and groups associated with the subclient.
 
-            Returns:
-                list    -   list of users and groups associated with the subclient
+        Returns:
+            list: A list containing the users and groups that are currently associated with this subclient.
 
+        Example:
+            >>> associations = subclient._get_user_assocaitions()
+            >>> print(f"Associated users/groups: {associations}")
+
+        #ai-gen-doc
         """
         users = []
         groups = []
@@ -559,9 +694,6 @@ class UsermailboxSubclient(ExchangeSubclient):
                 children = subclient_content['associations']
 
                 for child in children:
-                    archive_policy = None
-                    cleanup_policy = None
-                    retention_policy = None
                     plan_name = None
                     plan_id = None
                     display_name = str(child['userMailBoxInfo']['displayName'])
@@ -574,14 +706,7 @@ class UsermailboxSubclient(ExchangeSubclient):
                     mailbox_type = int(child['userMailBoxInfo']['msExchRecipientTypeDetails'])
                     exchange_version = int(child['userMailBoxInfo']['exchangeVersion'])
                     last_archive_job_ran_time = child['userMailBoxInfo']['lastArchiveJobRanTime']
-                    if 'emailPolicies' in child['policies']:
-                        for policy in child['policies']['emailPolicies']:
-                            if policy['detail'].get('emailPolicy', {}).get('emailPolicyType') == 1:
-                                archive_policy = str(policy['policyEntity']['policyName'])
-                            elif policy['detail'].get('emailPolicy', {}).get('emailPolicyType') == 2:
-                                cleanup_policy = str(policy['policyEntity']['policyName'])
-                            elif policy['detail'].get('emailPolicy', {}).get('emailPolicyType') == 3:
-                                retention_policy = str(policy['policyEntity']['policyName'])
+
                     if 'plan' in child:
                         plan_name = child.get('plan').get('planName')
                         plan_id = child.get('plan').get('planId')
@@ -594,9 +719,6 @@ class UsermailboxSubclient(ExchangeSubclient):
                         'exchange_server': exchange_server,
                         'user_guid': user_guid,
                         'is_auto_discover_user': is_auto_discover_user,
-                        'archive_policy': archive_policy,
-                        'cleanup_policy': cleanup_policy,
-                        'retention_policy': retention_policy,
                         'plan_name': plan_name,
                         'plan_id': plan_id,
                         'mailbox_type': mailbox_type,
@@ -610,12 +732,17 @@ class UsermailboxSubclient(ExchangeSubclient):
 
         return users, groups
 
-    def _get_database_associations(self):
-        """Gets the appropriate database association from the Subclient.
+    def _get_database_associations(self) -> list:
+        """Retrieve the list of databases associated with this subclient.
 
-            Returns:
-                list    -   list of database associated with the subclient
+        Returns:
+            list: A list containing the names or identifiers of databases associated with the subclient.
 
+        Example:
+            >>> associations = subclient._get_database_associations()
+            >>> print(f"Databases associated with subclient: {associations}")
+
+        #ai-gen-doc
         """
         databases = []
 
@@ -661,12 +788,17 @@ class UsermailboxSubclient(ExchangeSubclient):
 
         return databases
 
-    def _get_adgroup_assocaitions(self):
-        """Gets the appropriate adgroup assocaitions from the Subclient.
+    def _get_adgroup_assocaitions(self) -> list:
+        """Retrieve the list of Active Directory groups associated with this subclient.
 
-            Returns:
-                list    -   list of adgroups associated with the subclient
+        Returns:
+            list: A list containing the names or identifiers of AD groups linked to the subclient.
 
+        Example:
+            >>> adgroups = subclient._get_adgroup_assocaitions()
+            >>> print(f"Associated AD groups: {adgroups}")
+
+        #ai-gen-doc
         """
         adgroups = []
 
@@ -684,52 +816,62 @@ class UsermailboxSubclient(ExchangeSubclient):
                 children = subclient_content['associations']
 
                 for child in children:
-                    archive_policy = None
-                    cleanup_policy = None
-                    retention_policy = None
+                    planName = None
+                    planId = None
                     adgroup_name = str(child['adGroupsInfo']['adGroupName'])
                     is_auto_discover_user = str(child['additionalOptions']['enableAutoDiscovery'])
 
-                    for policy in child['policies']['emailPolicies']:
-                        if policy['detail']['emailPolicy']['emailPolicyType'] == 1:
-                            archive_policy = str(policy['policyEntity']['policyName'])
-                        elif policy['detail']['emailPolicy']['emailPolicyType'] == 2:
-                            cleanup_policy = str(policy['policyEntity']['policyName'])
-                        elif policy['detail']['emailPolicy']['emailPolicyType'] == 3:
-                            retention_policy = str(policy['policyEntity']['policyName'])
+                    if 'plan' in child:
+                        planName = child['plan']['planName']
+                        planId = child['plan']['planId']
+                    else:
+                        raise Exception('Plan details are not available')
 
                     temp_dict = {
                         'adgroup_name': adgroup_name,
                         'is_auto_discover_user': is_auto_discover_user,
-                        'archive_policy': archive_policy,
-                        'cleanup_policy': cleanup_policy,
-                        'retention_policy': retention_policy
+                        'planName': planName,
+                        'planId': planId
                     }
 
                     adgroups.append(temp_dict)
 
         return adgroups
 
-    def _backup_generic_items_json(self, subclient_content):
-        """
-            Create the JSON for Backing Up the Generic Items of any Exchange Online Client
+    def _backup_generic_items_json(self, subclient_content: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Generate the JSON payload for backing up generic items in an Exchange Online client.
 
-            Args:
-                subclient_content   (list)  List having dictionary of items to be backed up
+        Args:
+            subclient_content: A list of dictionaries, each specifying an item to be backed up.
+                Each dictionary should contain:
+                    - "associationName": The name of the item or group (e.g., "All Public Folders").
+                    - "associationType": The type identifier for the association (e.g., 12).
 
-                subclient_content = [
-                    {
-                    "associationName" : "All Public Folders",
-                    "associationType":12
-                    },
-                    {
-                    "associationName" : "All Users",
-                    "associationType":12
-                    }
-                ]
+                Example:
+                    subclient_content = [
+                        {
+                            "associationName": "All Public Folders",
+                            "associationType": 12
+                        },
+                        {
+                            "associationName": "All Users",
+                            "associationType": 12
+                        }
+                    ]
 
-            Returns:
-                The JSON to create a backup task
+        Returns:
+            A dictionary representing the JSON payload required to create a backup task for the specified items.
+
+        Example:
+            >>> subclient_content = [
+            ...     {"associationName": "All Public Folders", "associationType": 12},
+            ...     {"associationName": "All Users", "associationType": 12}
+            ... ]
+            >>> backup_json = usermailbox_subclient._backup_generic_items_json(subclient_content)
+            >>> print(backup_json)
+            >>> # The returned dictionary can be used to initiate a backup task
+
+        #ai-gen-doc
         """
 
         task_dict = {
@@ -765,66 +907,165 @@ class UsermailboxSubclient(ExchangeSubclient):
         return task_dict
 
     @property
-    def discover_users(self):
-        """"Returns the list of discovered users for the UserMailbox subclient."""
+    def discover_users(self) -> list:
+        """Get the list of discovered users for the UserMailbox subclient.
+
+        Returns:
+            list: A list containing the discovered user mailboxes associated with this subclient.
+
+        Example:
+            >>> subclient = UsermailboxSubclient()
+            >>> users = subclient.discover_users
+            >>> print(f"Discovered users: {users}")
+            >>> # The returned list contains user mailbox identifiers or details
+
+        #ai-gen-doc
+        """
         return self._discover_users
 
     @property
-    def discover_databases(self):
-        """Returns the list of discovered databases for the UserMailbox subclient."""
+    def discover_databases(self) -> List[Dict[str, Any]]:
+        """Get the list of discovered databases for the UserMailbox subclient.
+
+        Returns:
+            List of dictionaries, each containing details about a discovered database.
+
+        Example:
+            >>> subclient = UsermailboxSubclient(commcell_object, subclient_name)
+            >>> databases = subclient.discover_databases  # Use dot notation for property
+            >>> print(f"Discovered {len(databases)} databases")
+            >>> # Access details of the first database
+            >>> if databases:
+            >>>     first_db = databases[0]
+            >>>     print(f"First database details: {first_db}")
+
+        #ai-gen-doc
+        """
         return self._discover_databases
 
     @property
-    def discover_adgroups(self):
-        """Returns the list of discovered AD groups for the UserMailbox subclient."""
+    def discover_adgroups(self) -> list:
+        """Get the list of discovered Active Directory (AD) groups for the UserMailbox subclient.
+
+        Returns:
+            list: A list containing the names or identifiers of discovered AD groups associated with this UserMailbox subclient.
+
+        Example:
+            >>> subclient = UsermailboxSubclient()
+            >>> ad_groups = subclient.discover_adgroups
+            >>> print(f"Discovered AD groups: {ad_groups}")
+            >>> # Use the returned list to process or display AD group information
+
+        #ai-gen-doc
+        """
         return self._discover_adgroups
 
     @property
-    def users(self):
-        """Returns the list of users associated with UserMailbox subclient."""
+    def users(self) -> list:
+        """Get the list of users associated with the UserMailbox subclient.
+
+        Returns:
+            list: A list containing the users linked to this UserMailbox subclient.
+
+        Example:
+            >>> subclient = UsermailboxSubclient()
+            >>> user_list = subclient.users
+            >>> print(f"Number of users: {len(user_list)}")
+            >>> for user in user_list:
+            >>>     print(user)
+        #ai-gen-doc
+        """
         return self._users
 
     @property
-    def databases(self):
-        """Returns the list of databases associated with the UserMailbox subclient."""
+    def databases(self) -> List[str]:
+        """Get the list of databases associated with the UserMailbox subclient.
+
+        Returns:
+            List of database names as strings that are linked to this UserMailbox subclient.
+
+        Example:
+            >>> subclient = UsermailboxSubclient()
+            >>> db_list = subclient.databases  # Use dot notation for property access
+            >>> print(f"Databases: {db_list}")
+            >>> # Output might be: Databases: ['DB1', 'DB2', 'DB3']
+
+        #ai-gen-doc
+        """
         return self._databases
 
     @property
-    def adgroups(self):
-        """Returns the list of AD groups associated with the UserMailbox subclient."""
+    def adgroups(self) -> List[str]:
+        """Get the list of Active Directory (AD) groups associated with the UserMailbox subclient.
+
+        Returns:
+            List of AD group names as strings that are linked to this UserMailbox subclient.
+
+        Example:
+            >>> subclient = UsermailboxSubclient()
+            >>> ad_group_list = subclient.adgroups  # Use dot notation for property access
+            >>> print(f"Associated AD groups: {ad_group_list}")
+
+        #ai-gen-doc
+        """
         return self._adgroups
 
     @property
-    def o365groups(self):
-        """Returns the list of discovered O365 groups for the UserMailbox subclient."""
+    def o365groups(self) -> list:
+        """Get the list of discovered O365 groups for the UserMailbox subclient.
+
+        Returns:
+            list: A list containing the discovered O365 groups associated with this UserMailbox subclient.
+
+        Example:
+            >>> subclient = UsermailboxSubclient()
+            >>> groups = subclient.o365groups
+            >>> print(f"Discovered O365 groups: {groups}")
+
+        #ai-gen-doc
+        """
         return self._o365groups
 
-    def set_user_assocaition(self, subclient_content, use_policies=True):
-        """Create User assocaition for UserMailboxSubclient.
+    def set_user_assocaition(self, subclient_content: dict, use_policies: bool = True) -> None:
+        """Create user association for the UserMailboxSubclient.
 
-            Args:
-                subclient_content   (dict)  --  dict of the Users to add to the subclient
+        This method associates users with the UserMailboxSubclient, allowing you to specify either policy-based
+        or plan-based associations depending on the value of `use_policies`.
 
-                    subclient_content = {
+        Args:
+            subclient_content: Dictionary containing user and policy/plan information. The structure should be:
+                {
+                    'mailboxNames': List of mailbox user names to add (e.g., ["AutoCi2"]),
+                    # If use_policies is True:
+                    'archive_policy': Name of the archiving policy (str),
+                    'cleanup_policy': Name of the clean-up policy (str),
+                    'retention_policy': Name of the retention policy (str),
+                    # If use_policies is False:
+                    'plan_name': Name of the Exchange plan (str),
+                    'plan_id': Optional plan ID (int or None)
+                }
+            use_policies: If True, associates users using policies; if False, uses plan-based association. Defaults to True.
 
-                        'mailboxNames' : ["AutoCi2"],,
+        Example:
+            >>> subclient = UsermailboxSubclient()
+            >>> # Using policies
+            >>> content = {
+            ...     'mailboxNames': ['user1', 'user2'],
+            ...     'archive_policy': 'ArchivePolicy1',
+            ...     'cleanup_policy': 'CleanupPolicy1',
+            ...     'retention_policy': 'RetentionPolicy1'
+            ... }
+            >>> subclient.set_user_assocaition(content, use_policies=True)
+            >>>
+            >>> # Using plan
+            >>> content = {
+            ...     'mailboxNames': ['user3'],
+            ...     'plan_name': 'ExchangePlanA',
+            ...     'plan_id': 123
+            ... }
+            >>> subclient.set_user_assocaition(content, use_policies=False)
 
-                        -- if use_policies is True --
-
-                        'archive_policy' : "CIPLAN Archiving policy",
-
-                        'cleanup_policy' : 'CIPLAN Clean-up policy',
-
-                        'retention_policy': 'CIPLAN Retention policy'
-
-                        -- if use_policies is False --
-
-                        'plan_name': 'Exchange Plan Name',
-
-                        'plan_id': int or None (Optional)
-                        --
-                    }
-
+        #ai-gen-doc
         """
         users = []
 
@@ -853,6 +1094,7 @@ class UsermailboxSubclient(ExchangeSubclient):
                             "associated": False,
                             'databaseName': mb_item['databaseName'],
                             "exchangeVersion": mb_item['exchangeVersion'],
+                            "licensingStatus": mb_item['licensingStatus'],
                             # "msExchRecipientTypeDetails": mb_item['msExchRecipientTypeDetails'],
                             'user': {
                                 '_type_': 13,
@@ -884,32 +1126,44 @@ class UsermailboxSubclient(ExchangeSubclient):
         _association_json_["emailAssociation"]["emailDiscoverinfo"] = discover_info
         self._set_association_request(_association_json_)
 
-    def set_pst_association(self, subclient_content):
-        """Create PST assocaition for UserMailboxSubclient.
+    def set_pst_association(self, subclient_content: dict) -> None:
+        """Create a PST association for the UserMailboxSubclient.
 
-            Args:
-                subclient_content   (dict)  --  dict of the pst to add to the subclient
+        This method associates PST (Personal Storage Table) files with the UserMailboxSubclient
+        by specifying the PST ingestion task details, folder locations, file system content, and
+        owner management options.
 
-                    subclient_content = {
-
-                        'pstTaskName' : "Task Name for PST",
-
-                        'folders' : ['list of folders'] //If pst ingestion by folder location,
-                        'fsContent': Dictionary of client, backupset, subclient
-                        Ex: {'client1':{'backupset1':[subclient1], 'backupset2':None},
-                            'client2': None}
-                        This would add subclient1, all subclients under backupset2 and
-                        all backupsets under client2 to the association
-
-                        'pstOwnerManagement' : {
-
-                            'defaultOwner': "default owner if no owner is determined",
-
-                            'pstDestFolder': "ingest psts under this folder",
-
-                            'usePSTNameToCreateChild': Boolean
-                        }
+        Args:
+            subclient_content: A dictionary containing the PST association details. The expected structure is:
+                {
+                    'pstTaskName': str,  # Name for the PST ingestion task
+                    'folders': List[str],  # List of folder paths for PST ingestion (optional)
+                    'fsContent': dict,  # Mapping of client, backupset, and subclient associations
+                    'pstOwnerManagement': {
+                        'defaultOwner': str,  # Default owner if no owner is determined
+                        'pstDestFolder': str,  # Destination folder for ingested PSTs
+                        'usePSTNameToCreateChild': bool  # Whether to use PST name to create child folders
                     }
+                }
+
+        Example:
+            >>> subclient_content = {
+            ...     'pstTaskName': 'PST Ingestion Task',
+            ...     'folders': ['/pst_files/folder1', '/pst_files/folder2'],
+            ...     'fsContent': {
+            ...         'client1': {'backupset1': ['subclient1'], 'backupset2': None},
+            ...         'client2': None
+            ...     },
+            ...     'pstOwnerManagement': {
+            ...         'defaultOwner': 'user@example.com',
+            ...         'pstDestFolder': '/ingested_psts',
+            ...         'usePSTNameToCreateChild': True
+            ...     }
+            ... }
+            >>> subclient.set_pst_association(subclient_content)
+            >>> print("PST association created successfully.")
+
+        #ai-gen-doc
         """
         if not isinstance(subclient_content, dict):
             raise SDKException('Subclient', '101')
@@ -968,14 +1222,31 @@ class UsermailboxSubclient(ExchangeSubclient):
         except KeyError as err:
             raise SDKException('Subclient', '102', '{} not given in content'.format(err))
 
-    def set_fs_association_for_pst(self, association):
-        """Helper method to create pst association for PST Ingestion by FS
-            Args:
-                association(dict) -- Dictionary of client, backupset, subclient
-                                    Ex: {'client1':{'backupset1':[subclient1], 'backupset2':None},
-                                        'client2': None}
-                                    This would add subclient1, all subclients under backupset2 and
-                                    all backupsets under client2 to the association
+    def set_fs_association_for_pst(self, association: dict) -> list[
+        dict[str, int | Any] | dict[str, int | str | Any] | dict[str, int | Any]]:
+        """Create a PST association for PST Ingestion by File System (FS).
+
+        This helper method sets up associations between clients, backupsets, and subclients
+        for PST ingestion. The `association` dictionary should map client names to either:
+          - a dictionary of backupset names to lists of subclient names (or None for all subclients),
+          - or None to include all backupsets and subclients under the client.
+
+        Example:
+            >>> association = {
+            ...     'client1': {
+            ...         'backupset1': ['subclient1'],
+            ...         'backupset2': None
+            ...     },
+            ...     'client2': None
+            ... }
+            >>> subclient.set_fs_association_for_pst(association)
+            >>> # This will associate 'subclient1' under 'backupset1', all subclients under 'backupset2',
+            >>> # and all backupsets/subclients under 'client2' for PST ingestion.
+
+        Args:
+            association: Dictionary specifying the client, backupset, and subclient associations for PST ingestion.
+
+        #ai-gen-doc
         """
         assoc_list = []
         client_dict, backupset_dict, sub_dict = dict(), dict(), dict()
@@ -1024,33 +1295,50 @@ class UsermailboxSubclient(ExchangeSubclient):
                 assoc_list.append(client_dict)
         return assoc_list
 
-    def set_database_assocaition(self, subclient_content, use_policies=True):
-        """Create Database assocaition for UserMailboxSubclient.
+    def set_database_assocaition(self, subclient_content: dict, use_policies: bool = True) -> None:
+        """Create a database association for the UserMailboxSubclient.
 
-            Args:
-                subclient_content   (dict)  --  dict of the databases to add to the subclient
+        This method associates databases with the UserMailboxSubclient using either policy-based
+        or plan-based configuration, depending on the provided parameters.
 
-                    For policy -
-                    subclient_content = {
-
-                        'databaseNames' : ["Name of dbs as list"],
-
-                        'is_auto_discover_user' : True,
-
-                        'archive_policy' : "CIPLAN Archiving policy",
-
-                        'cleanup_policy' : 'CIPLAN Clean-up policy',
-
-                        'retention_policy': 'CIPLAN Retention policy'
+        Args:
+            subclient_content: Dictionary specifying the databases and association details.
+                For policy-based association:
+                    {
+                        'databaseNames': [list of database names as strings],
+                        'is_auto_discover_user': True,
+                        'archive_policy': "Archiving policy name",
+                        'cleanup_policy': "Clean-up policy name",
+                        'retention_policy': "Retention policy name"
                     }
+                For plan-based association:
+                    {
+                        'is_auto_discover_user': True,
+                        'plan_name': "Name of the plan",
+                        'plan_id': (optional) ID of the plan as string or int
+                    }
+            use_policies: If True, uses policy-based association; if False, uses plan-based association.
 
-                    For Plan -
-                    subclient_content = { 'is_auto_discover_user': True,
-                    "plan_name": Name of plan, "plan_id"(optional) -- id of plan}
+        Example:
+            >>> # Policy-based association
+            >>> content = {
+            ...     'databaseNames': ['DB1', 'DB2'],
+            ...     'is_auto_discover_user': True,
+            ...     'archive_policy': 'CIPLAN Archiving policy',
+            ...     'cleanup_policy': 'CIPLAN Clean-up policy',
+            ...     'retention_policy': 'CIPLAN Retention policy'
+            ... }
+            >>> subclient.set_database_assocaition(content, use_policies=True)
 
-                use_policies(bool)  -- if we need to use policy or plan
-                
-                
+            >>> # Plan-based association
+            >>> content = {
+            ...     'is_auto_discover_user': True,
+            ...     'plan_name': 'Exchange Plan',
+            ...     'plan_id': 12345
+            ... }
+            >>> subclient.set_database_assocaition(content, use_policies=False)
+
+        #ai-gen-doc
         """
         databases = []
 
@@ -1093,31 +1381,46 @@ class UsermailboxSubclient(ExchangeSubclient):
         _association_json_["emailAssociation"]["emailDiscoverinfo"] = discover_info
         self._set_association_request(_association_json_)
 
-    def set_adgroup_associations(self, subclient_content, use_policies=True):
-        """Create Ad groups assocaition for UserMailboxSubclient.
+    def set_adgroup_associations(self, subclient_content: dict, use_policies: bool = True) -> None:
+        """Associate Active Directory (AD) groups with the UserMailboxSubclient.
 
-            Args:
-                subclient_content   (dict)  --  dict of the adgroups to add to the subclient
+        This method creates associations between AD groups and the UserMailboxSubclient,
+        allowing you to manage mailbox content based on group membership. The association
+        can be configured to use policies or plans, depending on the `use_policies` flag.
 
-                    subclient_content = {
+        Args:
+            subclient_content: Dictionary containing AD group association details.
+                When `use_policies` is True, the dictionary should include:
+                    - 'adGroupNames': List of AD group names to associate.
+                    - 'is_auto_discover_user': Boolean indicating if auto-discovery is enabled.
+                    - 'archive_policy': Name of the archiving policy.
+                    - 'cleanup_policy': Name of the clean-up policy.
+                    - 'retention_policy': Name of the retention policy.
+                When `use_policies` is False, the dictionary should include:
+                    - 'plan_name': Name of the Exchange plan.
+                    - 'is_auto_discover_user': Boolean indicating if auto-discovery is enabled.
+                    - 'plan_id': Integer plan ID or None (optional).
+            use_policies: If True, use policy-based association. If False, use plan-based association. Defaults to True.
 
-                        'adGroupNames' : ["List of adGroups"],
+        Example:
+            >>> subclient = UsermailboxSubclient()
+            >>> adgroup_content = {
+            ...     'adGroupNames': ['HR_Group', 'Finance_Group'],
+            ...     'is_auto_discover_user': True,
+            ...     'archive_policy': 'Default Archive',
+            ...     'cleanup_policy': 'Default Cleanup',
+            ...     'retention_policy': 'Default Retention'
+            ... }
+            >>> subclient.set_adgroup_associations(adgroup_content)
+            >>> # For plan-based association:
+            >>> plan_content = {
+            ...     'plan_name': 'Exchange_Plan_01',
+            ...     'is_auto_discover_user': True,
+            ...     'plan_id': 1234
+            ... }
+            >>> subclient.set_adgroup_associations(plan_content, use_policies=False)
 
-                        'is_auto_discover_user' : True,
-
-                        'archive_policy' : "Archiving policy",
-
-                        'cleanup_policy' : 'Clean-up policy',
-
-                        'retention_policy': 'Retention policy',
-                    }
-                        -- if use_policies is False --
-
-                        'plan_name': 'Exchange Plan Name',
-                        'is_auto_discover_user' : True,
-                        'plan_id': int or None (Optional)
-                        --
-
+        #ai-gen-doc
         """
         adgroups = []
 
@@ -1159,19 +1462,44 @@ class UsermailboxSubclient(ExchangeSubclient):
         }})
         self._set_association_request(_assocaition_json_)
 
-    def set_o365group_asscoiations(self, subclient_content):
-        """Create O365 Group association for UserMailboxSubclient.
-            Args:
-                subclient_content   (dict)  --  dict of the policies to associate
+    def set_o365group_asscoiations(self, subclient_content: dict, use_policies: bool = True) -> None:
+        """Create O365 Group associations for the UserMailboxSubclient.
 
+        Associates the specified archive, cleanup, and retention policies with the O365 Group
+        for this UserMailboxSubclient.
+
+        Args:
+            subclient_content: Dictionary containing the policies to associate. The expected keys are:
+                - 'archive_policy': Name of the archiving policy (str).
+                - 'cleanup_policy': Name of the clean-up policy (str).
+                - 'retention_policy': Name of the retention policy (str).
+
+                Example:
                     subclient_content = {
-
-                        'archive_policy' : "CIPLAN Archiving policy",
-
-                        'cleanup_policy' : 'CIPLAN Clean-up policy',
-
-                        'retention_policy': 'CIPLAN Retention policy'
+                        'archive_policy': "CIPLAN Archiving policy",
+                        'cleanup_policy': "CIPLAN Clean-up policy",
+                        'retention_policy': "CIPLAN Retention policy"
                     }
+            use_policies: If True, use policy-based association. If False, use plan-based association. Defaults to True.
+
+        Example:
+            >>> subclient_content = {
+                    'is_auto_discover_user': True,
+            ...     'archive_policy': "CIPLAN Archiving policy",
+            ...     'cleanup_policy': "CIPLAN Clean-up policy",
+            ...     'retention_policy': "CIPLAN Retention policy"
+            ... }
+            >>> subclient.set_adgroup_associations(subclient_content)
+
+            >>> # For plan-based association:
+            >>> plan_content = {
+            ...     'plan_name': 'Exchange_Plan_01',
+            ...     'is_auto_discover_user': True,
+            ...     'plan_id': 1234
+            ... }
+            >>> subclient.set_adgroup_associations(plan_content, use_policies=False)
+
+        #ai-gen-doc
         """
         discover_info = {
             "discoverByType": 11,
@@ -1182,29 +1510,54 @@ class UsermailboxSubclient(ExchangeSubclient):
                 }
             ]
         }
-        _assocaition_json_ = self._association_json(subclient_content, True)
+        if use_policies:
+            _assocaition_json_ = self._association_json(subclient_content)
+        else:
+            _assocaition_json_ = self._association_json_with_plan(subclient_content)
         _assocaition_json_["emailAssociation"]["emailDiscoverinfo"] = discover_info
+        _assocaition_json_["emailAssociation"].update({"advanceOptions": {
+            "enableAutoDiscovery": subclient_content.get("is_auto_discover_user", True)
+        }})
         self._set_association_request(_assocaition_json_)
 
-    def delete_user_assocaition(self, subclient_content, use_policies=True):
-        """delete User assocaition for UserMailboxSubclient.
-            Args:
-                subclient_content   (dict)  --  dict of the Users to delete from subclient
-                    subclient_content = {
-                        'mailboxNames' : ["list of mailboxes alias name"],
-                        -- if use_policies is True --
-                        'archive_policy' : "CIPLAN Archiving policy",
+    def delete_user_assocaition(self, subclient_content: dict, use_policies: bool = True) -> None:
+        """Delete user associations from a UserMailboxSubclient.
 
-                        'cleanup_policy' : 'CIPLAN Clean-up policy',
+        This method removes specified user mailboxes from the subclient, either by using policies or a plan,
+        depending on the value of `use_policies`.
 
-                        'retention_policy': 'CIPLAN Retention policy'
-                        --
-                        -- if use_policies is False --
-                        'plan_name': Plan Name,
-                        'plan_id': int or None (Optional)
-                        --
+        Args:
+            subclient_content: Dictionary specifying the users and associated policy or plan information.
+                Example structure:
+                    {
+                        'mailboxNames': ["user1@domain.com", "user2@domain.com"],
+                        # If use_policies is True:
+                        'archive_policy': "CIPLAN Archiving policy",
+                        'cleanup_policy': "CIPLAN Clean-up policy",
+                        'retention_policy': "CIPLAN Retention policy"
+                        # If use_policies is False:
+                        'plan_name': "Plan Name",
+                        'plan_id': 123  # Optional
                     }
-                use_policies (bool) -- If True uses policies else uses Plan
+            use_policies: If True, uses policy-based association; if False, uses plan-based association.
+
+        Example:
+            >>> subclient_content = {
+            ...     'mailboxNames': ["alice@company.com", "bob@company.com"],
+            ...     'archive_policy': "Default Archive Policy",
+            ...     'cleanup_policy': "Default Cleanup Policy",
+            ...     'retention_policy': "Default Retention Policy"
+            ... }
+            >>> subclient.delete_user_assocaition(subclient_content, use_policies=True)
+
+            >>> subclient_content = {
+            ...     'mailboxNames': ["carol@company.com"],
+            ...     'plan_name': "UserMailboxPlan",
+            ...     'plan_id': 456
+            ... }
+            >>> subclient.delete_user_assocaition(subclient_content, use_policies=False)
+
+        #ai-gen-doc
         """
         users = []
 
@@ -1255,23 +1608,32 @@ class UsermailboxSubclient(ExchangeSubclient):
         _association_json_["emailAssociation"]["emailDiscoverinfo"] = discover_info
         self._update_association_request(_association_json_)
 
-    def delete_o365group_association(self, subclient_content):
-        """delete O365 group association for UserMailboxSubclient.
+    def delete_o365group_association(self, subclient_content: dict) -> None:
+        """Delete the association of O365 groups from a UserMailboxSubclient.
 
-            Args:
-                subclient_content   (dict)  --  dict of the Users to delete from subclient
+        Removes specified users and their associated policies from the subclient.
 
-                    subclient_content = {
-
-                        'mailboxNames' : ["AutoCi2"],
-
-                        'archive_policy' : "CIPLAN Archiving policy",
-
-                        'cleanup_policy' : 'CIPLAN Clean-up policy',
-
-                        'retention_policy': 'CIPLAN Retention policy'
+        Args:
+            subclient_content: Dictionary containing details of the users and policies to remove from the subclient.
+                Example format:
+                    {
+                        'mailboxNames': ["AutoCi2"],
+                        'archive_policy': "CIPLAN Archiving policy",
+                        'cleanup_policy': "CIPLAN Clean-up policy",
+                        'retention_policy': "CIPLAN Retention policy"
                     }
 
+        Example:
+            >>> subclient_content = {
+            ...     'mailboxNames': ["AutoCi2"],
+            ...     'archive_policy': "CIPLAN Archiving policy",
+            ...     'cleanup_policy': "CIPLAN Clean-up policy",
+            ...     'retention_policy': "CIPLAN Retention policy"
+            ... }
+            >>> subclient.delete_o365group_association(subclient_content)
+            >>> print("O365 group association deleted successfully.")
+
+        #ai-gen-doc
         """
         groups = []
         try:
@@ -1305,29 +1667,48 @@ class UsermailboxSubclient(ExchangeSubclient):
         _assocaition_json_["emailAssociation"]["emailDiscoverinfo"] = discover_info
         self._update_association_request(_assocaition_json_)
 
-    def delete_database_assocaition(self, subclient_content, use_policies=True):
-        """Deletes Database assocaition for UserMailboxSubclient.
+    def delete_database_assocaition(self, subclient_content: dict, use_policies: bool = True) -> None:
+        """Delete database associations for a UserMailboxSubclient.
 
-            Args:
-                subclient_content   (dict)  --  dict of the databases to delete from subclient
+        This method removes specified database associations from the subclient, either using policies or plans,
+        based on the provided parameters.
 
-                    For policy -
-                    subclient_content = {
-
-                        'databaseNames' : ["List of names of db"],
-
-                        'archive_policy' : "Archiving policy",
-
-                        'cleanup_policy' : 'Clean-up policy',
-
-                        'retention_policy': 'Retention policy'
+        Args:
+            subclient_content: Dictionary specifying the databases and associated policies or plans to delete.
+                For policy-based deletion:
+                    {
+                        'databaseNames': [list of database names as strings],
+                        'archive_policy': 'Archiving policy name',
+                        'cleanup_policy': 'Clean-up policy name',
+                        'retention_policy': 'Retention policy name'
                     }
+                For plan-based deletion:
+                    {
+                        'is_auto_discover_user': True,
+                        'plan_name': 'Name of the plan',
+                        'plan_id': 'Optional plan ID'
+                    }
+            use_policies: If True, uses policy-based deletion; if False, uses plan-based deletion.
 
-                    For Plan -
-                    subclient_content = { 'is_auto_discover_user' : True,
-                    "plan_name": Name of plan, "plan_id"(optional) -- id of plan}
+        Example:
+            >>> # Delete databases using policy
+            >>> subclient_content = {
+            ...     'databaseNames': ['DB1', 'DB2'],
+            ...     'archive_policy': 'ArchivePolicy1',
+            ...     'cleanup_policy': 'CleanupPolicy1',
+            ...     'retention_policy': 'RetentionPolicy1'
+            ... }
+            >>> subclient.delete_database_assocaition(subclient_content, use_policies=True)
+            >>>
+            >>> # Delete databases using plan
+            >>> subclient_content = {
+            ...     'is_auto_discover_user': True,
+            ...     'plan_name': 'MailboxPlanA',
+            ...     'plan_id': '12345'
+            ... }
+            >>> subclient.delete_database_assocaition(subclient_content, use_policies=False)
 
-                use_policies(bool)  -- if we need to use policy or plan
+        #ai-gen-doc
         """
         databases = []
 
@@ -1370,32 +1751,49 @@ class UsermailboxSubclient(ExchangeSubclient):
         _association_json_["emailAssociation"]["emailDiscoverinfo"] = discover_info
         self._update_association_request(_association_json_)
 
-    def delete_adgroup_assocaition(self, subclient_content, use_policies=True):
-        """Deletes Ad groups assocaition for UserMailboxSubclient.
+    def delete_adgroup_assocaition(self, subclient_content: dict, use_policies: bool = True) -> None:
+        """Delete Active Directory (AD) group associations from a UserMailboxSubclient.
 
-            Args:
-                subclient_content   (dict)  --  dict of the adgroups to delete from subclient
+        This method removes specified AD groups from the subclient's content, either using policies or plans
+        based on the provided parameters.
 
-                    subclient_content = {
-
-                        'adGroupNames' : ["List of names of adgroups],
-
-                        'is_auto_discover_user' : True,
-
-                        'archive_policy' : "CIPLAN Archiving policy",
-
-                        'cleanup_policy' : 'CIPLAN Clean-up policy',
-
-                        'retention_policy': 'CIPLAN Retention policy',
+        Args:
+            subclient_content: Dictionary specifying the AD groups and related policy or plan information to delete.
+                Example structure for policy-based deletion:
+                    {
+                        'adGroupNames': ["ADGroup1", "ADGroup2"],
+                        'is_auto_discover_user': True,
+                        'archive_policy': "CIPLAN Archiving policy",
+                        'cleanup_policy': "CIPLAN Clean-up policy",
+                        'retention_policy': "CIPLAN Retention policy"
                     }
-                    For plan:
-                        'is_auto_discover_user' : True,
+                Example structure for plan-based deletion:
+                    {
+                        'is_auto_discover_user': True,
+                        'plan_name': "Exchange Plan Name",
+                        'plan_id': 123  # Optional, can be int or None
+                    }
+            use_policies: If True, use policy-based deletion; if False, use plan-based deletion.
 
-                        'plan_name': 'Exchange Plan Name',
+        Example:
+            >>> subclient_content = {
+            ...     'adGroupNames': ["FinanceGroup", "HRGroup"],
+            ...     'is_auto_discover_user': True,
+            ...     'archive_policy': "Finance Archive Policy",
+            ...     'cleanup_policy': "Finance Cleanup Policy",
+            ...     'retention_policy': "Finance Retention Policy"
+            ... }
+            >>> subclient.delete_adgroup_assocaition(subclient_content)
+            >>>
+            >>> # For plan-based deletion:
+            >>> plan_content = {
+            ...     'is_auto_discover_user': True,
+            ...     'plan_name': "Exchange Plan",
+            ...     'plan_id': 456
+            ... }
+            >>> subclient.delete_adgroup_assocaition(plan_content, use_policies=False)
 
-                        'plan_id': int or None (Optional)
-
-                use_policies(bool)  -- if we need to use policy or plan
+        #ai-gen-doc
         """
         adgroups = []
 
@@ -1437,31 +1835,48 @@ class UsermailboxSubclient(ExchangeSubclient):
         _assocaition_json_["emailAssociation"]["emailDiscoverinfo"] = discover_info
         self._set_association_request(_assocaition_json_)
 
-    def enable_allusers_associations(self, subclient_content, use_policies=True):
-        """Enable all users assocaition for UserMailboxSubclient.
+    def enable_allusers_associations(self, subclient_content: dict, use_policies: bool = True) -> None:
+        """Enable all users association for the UserMailboxSubclient.
 
-            Args:
-                subclient_content   (dict)  --  dict of the policies which needs to be
-                assigned to all user assocaitions
-                    For policy
-                    subclient_content = {
+        This method assigns specified policies or plans to all user associations within the subclient.
+        The `subclient_content` parameter should be a dictionary specifying either policy details or plan details.
 
-                        'is_auto_discover_user' : True
-
-                        'archive_policy' : "CIPLAN Archiving policy",
-
-                        'cleanup_policy' : 'CIPLAN Clean-up policy',
-
-                        'retention_policy': 'CIPLAN Retention policy',
+        Args:
+            subclient_content: Dictionary containing the configuration for user associations.
+                For policy-based association:
+                    {
+                        'is_auto_discover_user': True,
+                        'archive_policy': "CIPLAN Archiving policy",
+                        'cleanup_policy': "CIPLAN Clean-up policy",
+                        'retention_policy': "CIPLAN Retention policy"
                     }
-    
-                    For Plan -
-                    subclient_content = { 'is_auto_discover_user' : True,
-                    "plan_name": Name of plan, "plan_id"(optional) -- id of plan
+                For plan-based association:
+                    {
+                        'is_auto_discover_user': True,
+                        'plan_name': "Name of plan",
+                        'plan_id': "Optional plan ID"
                     }
+            use_policies: If True, use policy-based association; if False, use plan-based association.
 
-                use_policies(bool)  -- if we need to use policy or plan
+        Example:
+            >>> subclient = UsermailboxSubclient()
+            >>> # Using policies
+            >>> policy_content = {
+            ...     'is_auto_discover_user': True,
+            ...     'archive_policy': "CIPLAN Archiving policy",
+            ...     'cleanup_policy': "CIPLAN Clean-up policy",
+            ...     'retention_policy': "CIPLAN Retention policy"
+            ... }
+            >>> subclient.enable_allusers_associations(policy_content, use_policies=True)
+            >>>
+            >>> # Using a plan
+            >>> plan_content = {
+            ...     'is_auto_discover_user': True,
+            ...     'plan_name': "UserMailbox Plan"
+            ... }
+            >>> subclient.enable_allusers_associations(plan_content, use_policies=False)
 
+        #ai-gen-doc
         """
 
         if not isinstance(subclient_content, dict):
@@ -1484,10 +1899,27 @@ class UsermailboxSubclient(ExchangeSubclient):
         _association_json_["emailAssociation"]["emailDiscoverinfo"] = discover_info
         self._set_association_request(_association_json_)
 
-    def disable_allusers_associations(self, use_policies=True, plan_details=None):
-        """Disables alluser assocaition for UserMailboxSubclient.
-            use_policies (bool) -- If we need to use plan(False) or policy(True)
-            plan_details(dict) -- { "plan_name": Name of plan, "plan_id"(optional) -- id of plan}
+    def disable_allusers_associations(self, use_policies: bool = True, plan_details: Optional[Dict[str, Any]] = None) -> None:
+        """Disable all-user associations for the UserMailboxSubclient.
+
+        This method disables the association of all users with the UserMailboxSubclient.
+        You can choose to use either policies or plans for the operation.
+
+        Args:
+            use_policies: If True, disables associations using policies. If False, uses plans.
+            plan_details: Optional dictionary containing plan information.
+                Example: {"plan_name": "BackupPlan", "plan_id": 123}
+
+        Example:
+            >>> subclient = UsermailboxSubclient()
+            >>> # Disable all-user associations using policies
+            >>> subclient.disable_allusers_associations(use_policies=True)
+            >>>
+            >>> # Disable all-user associations using a specific plan
+            >>> plan_info = {"plan_name": "ExchangeBackup", "plan_id": 456}
+            >>> subclient.disable_allusers_associations(use_policies=False, plan_details=plan_info)
+
+        #ai-gen-doc
         """
         subclient_content = {
             'is_auto_discover_user': True
@@ -1512,20 +1944,27 @@ class UsermailboxSubclient(ExchangeSubclient):
         _association_json_['emailAssociation']['advanceOptions'] = {"enableAutoDiscovery": True}
         self._set_association_request(_association_json_)
 
-    def enable_auto_discover_association(self, association_name, plan_name):
-        """Enable all users assocaition for UserMailboxSubclient.
+    def enable_auto_discover_association(self, association_name: str, plan_name: str) -> None:
+        """Enable auto-discover association for all users in the UserMailboxSubclient.
 
-                    Args:
-                        association_name  (str)  --  Type of auto discover association
-                            Valid Values:
-                                "All Users"
-                                "All O365 Mailboxes"
-                                "All Public Folders"
+        This method configures the subclient to automatically associate users or groups
+        based on the specified association type and plan.
 
-                        plan_name  (str)  --  Name of the plan to associate with users/groups
+        Args:
+            association_name: The type of auto-discover association to enable.
+                Valid values include:
+                    - "All Users"
+                    - "All O365 Mailboxes"
+                    - "All Public Folders"
+            plan_name: The name of the plan to associate with the discovered users or groups.
 
+        Example:
+            >>> subclient = UsermailboxSubclient()
+            >>> subclient.enable_auto_discover_association("All Users", "DefaultPlan")
+            >>> print("Auto-discover association enabled for all users with DefaultPlan.")
 
-                """
+        #ai-gen-doc
+        """
         plan = self._commcell_object.plans.get(plan_name)
 
         association_dict = {"All Users": 8,
@@ -1556,35 +1995,52 @@ class UsermailboxSubclient(ExchangeSubclient):
         }
         self._set_association_request(_association_json)
 
-    def delete_auto_discover_association(self, association_name, subclient_content, use_policies=True):
-        """
-            Delete all users association for UserMailboxSubclient.
+    def delete_auto_discover_association(self, association_name: str, subclient_content: dict, use_policies: bool = True) -> None:
+        """Delete all user associations for the UserMailboxSubclient based on auto discover association type.
 
-                    Args:
-                        association_name  (str)  --  Type of auto discover association
-                            Valid Values:
-                                "All Users"
-                                "All O365 Mailboxes"
-                                "All Public Folders"
+        This method removes associations for users or groups from the UserMailboxSubclient, using either policies or plans
+        depending on the value of `use_policies`. The `subclient_content` dictionary should contain relevant information
+        about the users/groups and associated policies or plans.
 
-                        use_policies (bool) -- If we need to use plan(False) or policy(True)
+        Args:
+            association_name: The type of auto discover association to delete.
+                Valid values:
+                    - "All Users"
+                    - "All O365 Mailboxes"
+                    - "All Public Folders"
+            subclient_content: Dictionary containing information about users/groups and their associated policies or plans.
+                If use_policies is True:
+                    {
+                        "is_auto_discover_user": bool,
+                        "archive_policy": object,
+                        "cleanup_policy": object,
+                        "retention_policy": object
+                    }
+                If use_policies is False:
+                    {
+                        "is_auto_discover_user": bool,
+                        "plan_name": str,
+                        "plan_id": Optional[str]
+                    }
+            use_policies: If True, uses policy objects for association; if False, uses plan information.
 
-                        subclient_content (dict) - containing the information of users/groups
+        Example:
+            >>> subclient_content = {
+            ...     "is_auto_discover_user": True,
+            ...     "archive_policy": archive_policy_obj,
+            ...     "cleanup_policy": cleanup_policy_obj,
+            ...     "retention_policy": retention_policy_obj
+            ... }
+            >>> subclient.delete_auto_discover_association("All Users", subclient_content, use_policies=True)
+            >>>
+            >>> subclient_content = {
+            ...     "is_auto_discover_user": True,
+            ...     "plan_name": "ExchangePlan",
+            ...     "plan_id": "12345"
+            ... }
+            >>> subclient.delete_auto_discover_association("All O365 Mailboxes", subclient_content, use_policies=False)
 
-                            if use_policies is True
-                                subclient_content={
-                                    "is_auto_dicover_user" (bool): True
-                                    "archive_policy" (obj): Archive Policy object
-                                    "cleanup_policy" (obj): Cleanup Policy Object
-                                    "retention_policy" (obj): Retention Policy Object
-                                }
-
-                            if use_policies is False
-                                subclient_content={
-                                    "is_auto_discover_user" (bool): True,
-                                    "plan_name" (str): Name of the exchange plan,
-                                    "plan_id": Id of the plan(optional)
-                                }
+        #ai-gen-doc
         """
         if not (isinstance(subclient_content, dict)):
             raise SDKException("Subclient", "101")
@@ -1617,21 +2073,42 @@ class UsermailboxSubclient(ExchangeSubclient):
         _association_json_["emailAssociation"]["emailDiscoverinfo"] = discover_info
         self._set_association_request(_association_json_)
 
-    def enable_ews_support(self, service_url):
-        """This function provides support for EWS protocol to backup on-prem mailboxes
-            Args:
-                service_url (string) -- EWS Connection URL for your exchange server
-            Returns: None
+    def enable_ews_support(self, service_url: str) -> None:
+        """Enable EWS (Exchange Web Services) protocol support for backing up on-premises mailboxes.
+
+        Args:
+            service_url: The EWS connection URL for your Exchange server.
+
+        Example:
+            >>> subclient = UsermailboxSubclient()
+            >>> subclient.enable_ews_support("https://exchange.example.com/EWS/Exchange.asmx")
+            >>> print("EWS support enabled for the subclient.")
+
+        #ai-gen-doc
         """
         self.agentproperties = self._agent_object.properties
         self.agentproperties["onePassProperties"]["onePassProp"]["ewsDetails"]["bUseEWS"] = True
         self.agentproperties["onePassProperties"]["onePassProp"]["ewsDetails"]["ewsConnectionUrl"] = service_url
         self._agent_object.update_properties(self.agentproperties)
 
-    def browse_mailboxes(self, retry_attempts=0):
-        """
-        This function returns the mailboxes available for OOP restore
-        return: dictionary containing mailbox info
+    def browse_mailboxes(self, retry_attempts: int = 0) -> dict:
+        """Retrieve the mailboxes available for Out-of-Place (OOP) restore.
+
+        Args:
+            retry_attempts: Number of times to retry the mailbox retrieval in case of failure. Defaults to 0.
+
+        Returns:
+            dict: A dictionary containing information about the available mailboxes for OOP restore.
+
+        Example:
+            >>> subclient = UsermailboxSubclient()
+            >>> mailboxes = subclient.browse_mailboxes(retry_attempts=2)
+            >>> print(f"Number of mailboxes found: {len(mailboxes)}")
+            >>> # Access mailbox details
+            >>> for mailbox_id, mailbox_info in mailboxes.items():
+            ...     print(f"Mailbox ID: {mailbox_id}, Info: {mailbox_info}")
+
+        #ai-gen-doc
         """
         BROWSE_MAILBOXES = self._commcell_object._services['EMAIL_DISCOVERY_WITHOUT_REFRESH'] % (
             int(self._backupset_object.backupset_id), 'User'
@@ -1655,25 +2132,39 @@ class UsermailboxSubclient(ExchangeSubclient):
             response_string = self.commcell._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def backup_generic_items(self, subclient_content):
-        """
-            Backups the Generic Items for any Exchange Online Client
-            GGeneric Items:
-                All Public Folders/ All O365 Group ailboxes/ All Users
+    def backup_generic_items(self, subclient_content: list[dict]) -> None:
+        """Backup generic items for an Exchange Online client.
 
-            Args:
-                subclient_content   (list)  List having dictionary of items to be backed up
+        This method initiates a backup of generic items such as all public folders, all O365 group mailboxes, or all users
+        for the specified Exchange Online client. The items to be backed up are specified in the `subclient_content` list,
+        where each item is a dictionary describing the association name and type.
 
-                subclient_content = [
-                    {
-                    "associationName" : "All Public Folders",
-                    "associationType":12
-                    },
-                    {
-                    "associationName" : "All Users",
-                    "associationType":12
-                    }
-                ]
+        Args:
+            subclient_content: A list of dictionaries, each specifying an item to be backed up. Each dictionary should have:
+                - "associationName": The name of the association (e.g., "All Public Folders", "All Users").
+                - "associationType": The type of association as an integer.
+
+                Example:
+                    [
+                        {
+                            "associationName": "All Public Folders",
+                            "associationType": 12
+                        },
+                        {
+                            "associationName": "All Users",
+                            "associationType": 12
+                        }
+                    ]
+
+        Example:
+            >>> subclient_content = [
+            ...     {"associationName": "All Public Folders", "associationType": 12},
+            ...     {"associationName": "All Users", "associationType": 12}
+            ... ]
+            >>> subclient.backup_generic_items(subclient_content)
+            >>> print("Backup of generic items initiated successfully.")
+
+        #ai-gen-doc
         """
         task_dict = self._backup_generic_items_json(subclient_content=subclient_content)
 
@@ -1683,17 +2174,25 @@ class UsermailboxSubclient(ExchangeSubclient):
 
         return self._process_backup_response(flag, response)
 
-    def backup_mailboxes(self, mailbox_alias_names=None, **kwargs):
-        """
-        Backup specific mailboxes.
+    def backup_mailboxes(self, mailbox_alias_names: Optional[list] = None, **kwargs: dict) -> 'Job':
+        """Initiate a backup job for specific mailboxes by their alias names.
+
         Args:
-            mailbox_alias_names(list): alias names of all the mailboxes to backup
-                Sample Values:
+            mailbox_alias_names: Optional list of alias names for the mailboxes to back up.
+                Example:
                     ['aj', 'tkumar']
-             **kwargs (dict) : Additional parameters
-                    items_selection_option (str) : Item Selection Option (Example: "7" for selecting backed up recently entities)
+            **kwargs: Additional keyword arguments for backup customization.
+                items_selection_option (str): Item Selection Option (e.g., "7" for selecting recently backed up entities).
+
         Returns:
-            job(Job): instance of job class for the backup job
+            Job: An instance of the Job class representing the initiated backup job.
+
+        Example:
+            >>> subclient = UsermailboxSubclient()
+            >>> job = subclient.backup_mailboxes(mailbox_alias_names=['aj', 'tkumar'], items_selection_option="7")
+            >>> print(f"Backup job started with ID: {job.job_id}")
+
+        #ai-gen-doc
         """
         task_json = self._task_json_for_backup(mailbox_alias_names, **kwargs)
         create_task = self._services['CREATE_TASK']
@@ -1702,30 +2201,45 @@ class UsermailboxSubclient(ExchangeSubclient):
         )
         return self._process_backup_response(flag, response)
 
-    def create_recovery_point(self, mailbox_prop, job=None, job_id=None):
-        """
-            Method to create a recovery point
+    def create_recovery_point(self, mailbox_prop: Dict[str, Any], job: Optional['Job'] = None, job_id: Optional[int] = None) -> Dict[str, Any]:
+        """Create a recovery point for a specified mailbox.
 
-            Arguments:
-                mailbox_prop        (dict)--    Dictionary of mailbox properties for which the Recovery point is to be created
-                Sample:
+        This method initiates the creation of a recovery point for a mailbox using the provided mailbox properties.
+        You must specify either a backup job object or a backup job ID to associate the recovery point with a specific backup job.
+
+        Args:
+            mailbox_prop: Dictionary containing mailbox properties required for recovery point creation.
+                Example:
+                    {
+                        'mailbox_smtp': 'user@example.com',
+                        'mailbox_guid': '1234-5678-90ab-cdef',
+                        'index_server': 'IndexServer01'
+                    }
+            job: Optional; Job object representing the backup job to associate with the recovery point.
+            job_id: Optional; Integer ID of the backup job to associate with the recovery point.
+
+        Returns:
+            Dictionary containing the response details of the recovery point creation.
+            Example format:
                 {
-                    'mailbox_smtp' : name of the mailbox for which recovery point is to be created
-                    'mailbox_guid': GUID of the mailbox
-                    'index_server': Name of the index server to be used to create index on
+                    'recovery_point_id': 12345,
+                    'recovery_point_job_id': 67890
                 }
-                job                 (object)--  Backup Job to which restore point has to be created
-                job_id              (int)--     Backup Job ID to which restore point is to be created
 
-                Either pass the job object or the job_id
+        Example:
+            >>> mailbox_props = {
+            ...     'mailbox_smtp': 'user@example.com',
+            ...     'mailbox_guid': '1234-5678-90ab-cdef',
+            ...     'index_server': 'IndexServer01'
+            ... }
+            >>> # Using job object
+            >>> result = subclient.create_recovery_point(mailbox_props, job=backup_job)
+            >>> print(result)
+            >>> # Using job ID
+            >>> result = subclient.create_recovery_point(mailbox_props, job_id=67890)
+            >>> print(result)
 
-            Returns:
-                res_dict            (dict)--    Dictionary of Response
-                Format:
-                {
-                    'rercovery_point_id' : ID of the recovery point created,
-                    'recovery_point_job_id': Job ID for recovery point creation JOB
-                }
+        #ai-gen-doc
         """
 
         if (job == None and job_id == None):
@@ -1816,8 +2330,19 @@ class UsermailboxSubclient(ExchangeSubclient):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def refresh(self):
-        """Refresh the User Mailbox Subclient."""
+    def refresh(self) -> None:
+        """Reload the User Mailbox Subclient information from the server.
+
+        This method refreshes the state of the UsermailboxSubclient instance, ensuring that
+        any changes made on the server are reflected in the local object.
+
+        Example:
+            >>> subclient = UsermailboxSubclient()
+            >>> subclient.refresh()
+            >>> print("Subclient information refreshed successfully")
+
+        #ai-gen-doc
+        """
         self._get_subclient_properties()
         self._discover_users = self._get_discover_users()
         self._discover_databases = self._get_discover_database()
@@ -1826,27 +2351,28 @@ class UsermailboxSubclient(ExchangeSubclient):
         self._databases = self._get_database_associations()
         self._adgroups = self._get_adgroup_assocaitions()
 
-    def restore_in_place_syntex(self, **kwargs):
-        """Runs an in-place restore job on the specified Syntex Exchange pseudo client
+    def restore_in_place_syntex(self, **kwargs: dict) -> 'Job':
+        """Run an in-place restore job on the specified Syntex Exchange pseudo client.
 
-             Kwargs:
+        This method initiates an in-place restore operation for the given mailboxes or folders
+        on a Syntex Exchange pseudo client. The paths to restore should be provided as a list
+        using the 'paths' keyword argument.
 
-                 paths (list)  --  list of paths of mailboxes/folders to restore
+        Keyword Args:
+            paths (list): List of mailbox or folder paths to restore.
 
-             Returns:
+        Returns:
+            Job: The Job object representing the initiated restore job.
 
-                Job object
+        Raises:
+            SDKException: If 'paths' is not a list, if the job fails to initialize, or if the response is empty.
 
-            Raises:
+        Example:
+            >>> paths_to_restore = ['/Mailbox1/Inbox', '/Mailbox2/Sent Items']
+            >>> job = subclient.restore_in_place_syntex(paths=paths_to_restore)
+            >>> print(f"Restore job started with ID: {job.job_id}")
 
-                SDKException:
-
-                    if paths is not a list
-
-                    if failed to initialize job
-
-                    if response is empty
-
+        #ai-gen-doc
         """
         paths = kwargs.get('paths', [])
         paths = self._filter_paths(paths)
@@ -1901,14 +2427,22 @@ class UsermailboxSubclient(ExchangeSubclient):
         return self._process_restore_response(request_json)
 
     @staticmethod
-    def _find_mailbox_query_params(query_params=None):
-        """
-            Generates the query params for find mailbox request
-                Args:
-                    query_params   (dict)   -- Dict of key value pair
-                        Default (None)
-                Returns:
-                    json for find malilbox query
+    def _find_mailbox_query_params(query_params: Optional[dict] = None) -> list[dict[str, Any] | dict[str, Any]]:
+        """Generate the query parameters for a find mailbox request.
+
+        Args:
+            query_params: Optional dictionary containing key-value pairs to include in the query.
+                If None, default parameters will be used.
+
+        Returns:
+            A dictionary representing the JSON query parameters for the find mailbox request.
+
+        Example:
+            >>> params = UsermailboxSubclient._find_mailbox_query_params({'mailboxName': 'john.doe'})
+            >>> print(params)
+            {'mailboxName': 'john.doe'}
+
+        #ai-gen-doc
         """
         final_params = []
         default_params = ExchangeConstants.FIND_MBX_QUERY_DEFAULT_PARAMS
@@ -1922,14 +2456,23 @@ class UsermailboxSubclient(ExchangeSubclient):
         return final_params
 
     @staticmethod
-    def _find_mailbox_facets(facets=None):
-        """
-            Generates the facet requests for find mailbox request
-                Args:
-                    facets   (list)   -- List of strings containing facets
-                        Default (None)
-                Returns:
-                    json for find malilbox facets query
+    def _find_mailbox_facets(facets: Optional[List[str]] = None) -> list[dict[str, str | Any] | dict[str, Any]]:
+        """Generate facet requests for a mailbox search query.
+
+        Args:
+            facets: Optional list of strings specifying the mailbox facets to include in the query.
+                If None, no facets are included.
+
+        Returns:
+            Dictionary representing the JSON structure for the mailbox facets query.
+
+        Example:
+            >>> facets = ['Sender', 'Recipient', 'Date']
+            >>> query_json = UsermailboxSubclient._find_mailbox_facets(facets)
+            >>> print(query_json)
+            >>> # Output will be a dictionary suitable for use in a mailbox search request
+
+        #ai-gen-doc
         """
         final_params = []
         default_facet = ExchangeConstants.FIND_MBX_DEFAULT_FACET
@@ -1942,15 +2485,23 @@ class UsermailboxSubclient(ExchangeSubclient):
             final_params.append({"name": facet})
         return final_params
 
-    def find_mailbox(self, mailbox_smtp, **kwargs):
-        """
-        Performs the find operation for a mailbox in browse
-            Args:
-                mailbox_smtp    (str) -- SMTP address of the mailbox to find
+    def find_mailbox(self, mailbox_smtp: str, **kwargs: dict) -> dict:
+        """Perform a find operation to locate a mailbox by its SMTP address.
 
-                kwargs                -- Optional key word args
-            Returns:
-                    response json for find mailbox
+        Args:
+            mailbox_smtp: The SMTP address of the mailbox to search for.
+            **kwargs: Optional keyword arguments to customize the find operation.
+
+        Returns:
+            A dictionary containing the response JSON for the find mailbox operation.
+
+        Example:
+            >>> subclient = UsermailboxSubclient()
+            >>> result = subclient.find_mailbox('user@example.com')
+            >>> print(result)
+            {'mailbox': {'smtp': 'user@example.com', 'status': 'found', ...}}
+
+        #ai-gen-doc
         """
 
         data = ExchangeConstants.FIND_MAILBOX_REQUEST_DATA
@@ -1982,3 +2533,89 @@ class UsermailboxSubclient(ExchangeSubclient):
         else:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
+
+    def _get_live_update_job_json(self) -> dict:
+        """Create JSON structure for a live update job task.
+
+        Returns:
+            dict: A dictionary containing the task JSON structure for triggering a live update job.
+
+        Example:
+            >>> subclient = UsermailboxSubclient()
+            >>> task_json = subclient._get_live_update_job_json()
+            >>> print(task_json)
+        """
+        task_json = {
+            "taskInfo": {
+                "taskOperation": 1,
+                "associations": [
+                    {
+                        "subclientId": int(self.subclient_id),
+                        "entityType": 7,
+                        "_SubclType_": 0,
+                        "_type_": 7
+                    }
+                ],
+                "task": {
+                    "isEZOperation": False,
+                    "description": "",
+                    "ownerId": 1,
+                    "runUserId": 1,
+                    "taskType": 1,
+                    "ownerName": "",
+                    "alertName": "",
+                    "sequenceNumber": 0,
+                    "isEditing": False,
+                    "GUID": "",
+                    "isFromCommNetBrowserRootNode": False,
+                    "initiatedFrom": 3,
+                    "policyType": 0,
+                    "associatedObjects": 0,
+                    "taskName": ""
+                },
+                "subTasks": [
+                    {
+                        "subTaskOperation": 1,
+                        "subTask": {
+                            "subTaskOrder": 0,
+                            "subTaskType": 2,
+                            "flags": 0,
+                            "operationType": 5027,
+                            "subTaskId": 1
+                        }
+                    }
+                ]
+            }
+        }
+        return task_json
+
+    def live_update_job(self) -> None:
+        """Trigger a live update job for the UserMailbox subclient.
+
+         This method initiates a live update job to refresh and synchronize the subclient's
+         mailbox content with the latest changes from the Exchange server.
+
+         Raises:
+             SDKException: If the response status code is not 200 or if the API request fails.
+
+         Example:
+             >>> subclient = UsermailboxSubclient()
+             >>> subclient.live_update_job()
+             >>> print("Live update job triggered successfully.")
+
+
+        #ai-gen-doc
+        """
+        task_json = self._get_live_update_job_json()
+        create_task = self._services['CREATE_TASK']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', create_task, task_json)
+        if flag:
+            if not response.status_code == 200:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException(
+                'Response',
+                '101',
+                self._update_response_(
+                    response.text))

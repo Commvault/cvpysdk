@@ -43,20 +43,43 @@ AlibabaCloudInstance:
 
 from ..vsinstance import VirtualServerInstance
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ...agent import Agent
+
 
 class AlibabaCloudInstance(VirtualServerInstance):
-    """Class for representing an Alibaba cloud instance of the Virtual Server agent."""
+    """
+    Represents an Alibaba Cloud instance managed by the Virtual Server agent.
 
-    def __init__(self, agent, instance_name, instance_id=None):
-        """Initialize the Instance object for the given Virtual Server instance.
+    This class encapsulates the properties and behaviors specific to an Alibaba Cloud
+    virtual server instance. It provides mechanisms to initialize the instance with
+    relevant identifiers, retrieve instance properties in both object and JSON formats,
+    and access key attributes such as server host name, server name, and instance username.
+
+    Key Features:
+        - Initialization with agent, instance name, and instance ID
+        - Retrieval of instance properties as objects and JSON
+        - Access to server host name, server name, and instance username via properties
+
+    #ai-gen-doc
+    """
+
+    def __init__(self, agent: 'Agent', instance_name: str, instance_id: str = None) -> None:
+        """Initialize an AlibabaCloudInstance object for a specific Virtual Server instance.
 
         Args:
-            agent               (object)    --  the instance of the agent class
+            agent: The agent object associated with this instance.
+            instance_name: The name of the Alibaba Cloud virtual server instance.
+            instance_id: The unique identifier for the instance. If not provided, it can be set later.
 
-            instance_name       (str)       --  the name of the instance
+        Example:
+            >>> agent = Agent(client_object, "Virtual Server")
+            >>> instance = AlibabaCloudInstance(agent, "MyECSInstance", '12345')
+            >>> print(f"Instance name: {instance.instance_name}")
+            >>> # The instance is now initialized and ready for further operations
 
-            instance_id         (int)       --  the instance id
-
+        #ai-gen-doc
         """
         self._vendor_id = 18
         self._server_name = []
@@ -64,14 +87,21 @@ class AlibabaCloudInstance(VirtualServerInstance):
         self._username = None
         super(AlibabaCloudInstance, self).__init__(agent, instance_name, instance_id)
 
-    def _get_instance_properties(self):
-        """
-        Get the properties of this instance
+    def _get_instance_properties(self) -> None:
+        """Retrieve and update the properties of this Alibaba Cloud instance.
 
-        Raise:
-            SDK Exception:
-                if response is not empty
-                if response is not success
+        This method fetches the latest properties for the current instance from the Alibaba Cloud service
+        and updates the instance's internal state accordingly.
+
+        Raises:
+            SDKException: If the response is not empty or if the response indicates a failure.
+
+        Example:
+            >>> instance = AlibabaCloudInstance()
+            >>> instance._get_instance_properties()
+            >>> # The instance properties are now updated with the latest values
+
+        #ai-gen-doc
         """
 
         super(AlibabaCloudInstance, self)._get_instance_properties()
@@ -79,20 +109,25 @@ class AlibabaCloudInstance(VirtualServerInstance):
             self._server_host_name = [self._virtualserverinstance['vmwareVendor'][
                 'virtualCenter']['domainName']]
 
-            self._username = self._virtualserverinstance['vmwareVendor'][
-                'virtualCenter']['userName']
+            self._username = (
+                self._virtualserverinstance
+                .get('vmwareVendor', {})
+                .get('virtualCenter', {})
+                .get('userName', None)
+            )
 
         for _each_client in self._asscociatedclients['memberServers']:
             client = _each_client['client']
             if 'clientName' in client.keys():
                 self._server_name.append(str(client['clientName']))
 
-    def _get_instance_properties_json(self):
-        """get the all instance related properties of this subclient.
+    def _get_instance_properties_json(self) -> dict:
+        """Retrieve all instance-related properties for this subclient as a dictionary.
 
-          Returns:
-               instance_json    (dict)  --  all instance properties put inside a dict
+        Returns:
+            dict: A dictionary containing all properties associated with this Alibaba Cloud instance subclient.
 
+        #ai-gen-doc
         """
         instance_json = {
             "instanceProperties":{
@@ -110,29 +145,47 @@ class AlibabaCloudInstance(VirtualServerInstance):
         return instance_json
 
     @property
-    def server_host_name(self):
-        """return the Alibaba Cloud endpoint
+    def server_host_name(self) -> list:
+        """Get the hostname of the Alibaba Cloud server endpoint.
 
         Returns:
-            _server_host_name   (str)   --  the hostname of the Alibaba cloud server
+            The hostname of the Alibaba Cloud server as a list.
+
+        Example:
+            >>> instance = AlibabaCloudInstance()
+            >>> endpoint = instance.server_host_name  # Use dot notation for property access
+
+        #ai-gen-doc
         """
         return self._server_host_name
 
     @property
-    def server_name(self):
-        """
-        returns the list of all associated clients with the instance
+    def server_name(self) -> list:
+        """Get the name of the server associated with this AlibabaCloudInstance.
 
         Returns:
-            _server_name    (str)   --  the list of all proxies associated to the instance
+            The list of server names
+
+        Example:
+            >>> instance = AlibabaCloudInstance()
+            >>> name = instance.server_name  # Use dot notation for property access
+
+        #ai-gen-doc
         """
         return self._server_name
 
     @property
-    def instance_username(self):
-        """returns the username of the instance
+    def instance_username(self) -> str:
+        """Get the username associated with the Alibaba Cloud instance.
 
         Returns:
-            _username   (str)   --  the user name of the Alibaba cloud endpoint
+            The username of the Alibaba Cloud endpoint as a string.
+
+        Example:
+            >>> instance = AlibabaCloudInstance()
+            >>> username = instance.instance_username
+            >>> print(f"Instance username: {username}")
+
+        #ai-gen-doc
         """
         return self._username

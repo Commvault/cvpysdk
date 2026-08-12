@@ -99,20 +99,45 @@ Network:
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
+from typing import Any, Dict
+
 from .exception import SDKException
 
-
 class Network(object):
-    """Class for performing network related operations on a client or client group"""
+    """
+    Class for performing network related operations on a client or client group.
 
-    def __init__(self, class_object):
-        """Initialize the Network class object
+    This class provides a comprehensive interface for managing and configuring
+    network settings for individual clients or groups of clients. It exposes
+    various properties and methods to control network behavior, security, and
+    connectivity options.
 
-            Args:
-                class_object (object)  --  instance of the client/client group class
+    Key Features:
+        - Retrieve network properties and advanced configuration details
+        - Configure network settings such as SSL enforcement, lockdown mode, and proxy usage
+        - Manage tunnel connection parameters including port and initialization timing
+        - Set trivial and roaming client configurations
+        - Bind open ports and manage additional ports for network communication
+        - Control incoming connections and outgoing routes
+        - Adjust keep-alive intervals for network sessions
+        - Apply TPPM (Third-Party Policy Management) settings
+        - Flexible property-based interface for dynamic network configuration
 
+    #ai-gen-doc
+    """
 
+    def __init__(self, class_object: object) -> None:
+        """Initialize a Network class object with a client or client group instance.
 
+        Args:
+            class_object: An instance of the client or client group class to associate with the Network object.
+
+        Example:
+            >>> client = Client('client_name')
+            >>> network = Network(client)
+            >>> # The Network object is now initialized with the specified client
+
+        #ai-gen-doc
         """
         from .client import Client
         from .clientgroup import ClientGroup
@@ -172,10 +197,22 @@ class Network(object):
 
         self._get_network_properties()
 
-    def _get_network_properties(self):
-        """Get all the existing network properties on a client/client group and retain each of them
+    def _get_network_properties(self) -> Dict[str, Any]:
+        """Retrieve all existing network properties for a client or client group.
 
+        This method gathers and returns the network properties associated with the current client or client group,
+        allowing you to inspect or process network configuration details.
 
+        Returns:
+            A dictionary containing the network properties, where keys are property names and values are their corresponding settings.
+
+        Example:
+            >>> network = Network()
+            >>> properties = network._get_network_properties()
+            >>> print(properties)
+            {'ip_address': '192.168.1.10', 'subnet': '255.255.255.0', ...}
+
+        #ai-gen-doc
         """
         if self.flag == "CLIENT":
             network_prop = self._client_object._properties['clientProps']
@@ -232,188 +269,347 @@ class Network(object):
                     'firewallOptions']['tppm'])
 
     @property
-    def configure_network_settings(self):
-        """Gets the value for configure firewall settings
+    def configure_network_settings(self) -> bool:
+        """Get the current value indicating whether firewall settings are configured.
 
-        :return:
-            boolean - configureFirewallSettings
+        Returns:
+            bool: True if firewall settings are configured, False otherwise.
+
+        Example:
+            >>> network = Network()
+            >>> is_configured = network.configure_network_settings
+            >>> print(f"Firewall settings configured: {is_configured}")
+
+        #ai-gen-doc
         """
         return self._config_network_settings
 
     @configure_network_settings.setter
-    def configure_network_settings(self, val):
-        """Sets the value for configureFirewallSettings with the parameter provided
+    def configure_network_settings(self, val: bool) -> None:
+        """Set the value for configuring firewall settings on the network.
 
+        Args:
+            val: Boolean value indicating whether to enable (True) or disable (False) firewall settings.
 
+        Example:
+            >>> network = Network()
+            >>> network.configure_network_settings = True  # Enable firewall settings
+            >>> network.configure_network_settings = False  # Disable firewall settings
+
+        #ai-gen-doc
         """
         self._config_network_settings = val
         self._advanced_network_config()
 
     @property
-    def trivial_config(self):
-        """Gets the value for isTrivialConfig
+    def trivial_config(self) -> bool:
+        """Get the value indicating whether the network configuration is trivial.
 
-        :return:
-            boolean - isTrivialConfig
+        Returns:
+            bool: True if the network configuration is considered trivial, False otherwise.
+
+        Example:
+            >>> network = Network()
+            >>> is_trivial = network.trivial_config  # Use dot notation for property access
+            >>> print(f"Is network configuration trivial? {is_trivial}")
+
+        #ai-gen-doc
         """
         return self._is_trivial_config
 
     @trivial_config.setter
-    def trivial_config(self, val):
-        """Sets the value for isTrivialConfig with the parameter provided
+    def trivial_config(self, val: bool) -> None:
+        """Set the value for the isTrivialConfig property.
 
+        Args:
+            val: Boolean value to set for isTrivialConfig.
 
+        Example:
+            >>> network = Network()
+            >>> network.trivial_config = True  # Enable trivial configuration
+            >>> network.trivial_config = False  # Disable trivial configuration
+
+        #ai-gen-doc
         """
         self._is_trivial_config = val
         self.enable_network_settings = True
 
     @property
-    def roaming_client(self):
-        """Gets the value for isRoamingClient
+    def roaming_client(self) -> bool:
+        """Get the roaming client status for the network.
 
-        :return:
-            boolen - isRoamingClient
+        Returns:
+            bool: True if the network is configured as a roaming client, False otherwise.
+
+        Example:
+            >>> network = Network()
+            >>> is_roaming = network.roaming_client
+            >>> print(f"Roaming client enabled: {is_roaming}")
+
+        #ai-gen-doc
         """
         return self._is_roaming_client
 
     @roaming_client.setter
-    def roaming_client(self, val):
-        """Sets the value for isRoamingClient with the parameter provided
+    def roaming_client(self, val: bool) -> None:
+        """Set the roaming client status for the network.
 
+        Args:
+            val: A boolean value indicating whether the client should be set as a roaming client (True) or not (False).
+
+        Example:
+            >>> network = Network()
+            >>> network.roaming_client = True  # Enable roaming client
+            >>> network.roaming_client = False  # Disable roaming client
+
+        #ai-gen-doc
         """
         self._is_roaming_client = val
         self.configure_network_settings = True
 
     @property
-    def tunnel_connection_port(self):
-        """Gets the value for tunnel port on the client/client group
+    def tunnel_connection_port(self) -> int:
+        """Get the tunnel connection port value for the client or client group.
 
-        :return:
-            int - tunnelConnectionPort
+        Returns:
+            The tunnel connection port as an integer.
+
+        Example:
+            >>> network = Network()
+            >>> port = network.tunnel_connection_port
+            >>> print(f"Tunnel connection port: {port}")
+
+        #ai-gen-doc
         """
         return self._tunnel_connection_port
 
     @tunnel_connection_port.setter
-    def tunnel_connection_port(self, val):
-        """Sets the value for tunnelConnectionPort with the parameter provided
+    def tunnel_connection_port(self, val: int) -> None:
+        """Set the value for the tunnel connection port.
 
+        Args:
+            val: The port number to be used for the tunnel connection.
+
+        Example:
+            >>> network = Network()
+            >>> network.tunnel_connection_port = 8080  # Set the tunnel connection port to 8080
+
+        #ai-gen-doc
         """
         self._tunnel_connection_port = val
         self.configure_network_settings = True
 
     @property
-    def force_ssl(self):
-        """Gets the value for forceSSL
+    def force_ssl(self) -> bool:
+        """Get the current value of the forceSSL setting for the network.
 
-        :return:
-            boolean - forceSSL
+        Returns:
+            bool: True if SSL is enforced for network communication, False otherwise.
+
+        Example:
+            >>> network = Network()
+            >>> is_ssl_forced = network.force_ssl
+            >>> print(f"SSL enforced: {is_ssl_forced}")
+
+        #ai-gen-doc
         """
         return self._force_ssl
 
     @force_ssl.setter
-    def force_ssl(self, val):
-        """Sets the value for forceSSL with the parameter provided
+    def force_ssl(self, val: bool) -> None:
+        """Set the forceSSL property for the network.
 
+        Args:
+            val: Boolean value indicating whether to force SSL (True) or not (False).
 
+        Example:
+            >>> network = Network()
+            >>> network.force_ssl = True  # Enable SSL enforcement
+            >>> network.force_ssl = False  # Disable SSL enforcement
+
+        #ai-gen-doc
         """
         self._force_ssl = val
         self.configure_network_settings = True
 
     @property
-    def tunnel_init_seconds(self):
-        """Gets the tunnel init seconds
+    def tunnel_init_seconds(self) -> int:
+        """Get the number of seconds used for tunnel initialization.
 
-        :return:
-            int - tunnelInitSeconds
+        Returns:
+            The tunnel initialization time in seconds as an integer.
+
+        Example:
+            >>> network = Network()
+            >>> init_time = network.tunnel_init_seconds
+            >>> print(f"Tunnel initialization time: {init_time} seconds")
+
+        #ai-gen-doc
         """
         return self._tunnel_init_seconds
 
     @tunnel_init_seconds.setter
-    def tunnel_init_seconds(self, val):
-        """Sets the tunnelInitSeconds with the parameter provided
+    def tunnel_init_seconds(self, val: int) -> None:
+        """Set the tunnel initialization timeout in seconds.
 
+        Args:
+            val: The number of seconds to set for tunnel initialization.
 
+        Example:
+            >>> network = Network()
+            >>> network.tunnel_init_seconds = 30  # Set tunnel initialization to 30 seconds
+
+        #ai-gen-doc
         """
         self._tunnel_init_seconds = val
         self.configure_network_settings = True
 
     @property
-    def lockdown(self):
-        """Gets the value for lockdown
+    def lockdown(self) -> bool:
+        """Get the current lockdown status of the network.
 
-        :return:
-            boolean - lockdown
+        Returns:
+            True if the network is in lockdown mode, False otherwise.
+
+        Example:
+            >>> network = Network()
+            >>> is_locked_down = network.lockdown  # Use dot notation for property access
+            >>> print(f"Network lockdown status: {is_locked_down}")
+            >>> # Output: Network lockdown status: True or False
+
+        #ai-gen-doc
         """
         return self._lockdown
 
     @lockdown.setter
-    def lockdown(self, val):
-        """Sets the lockdown with the parameter provided
+    def lockdown(self, val: bool) -> None:
+        """Set the network lockdown state.
 
+        Args:
+            val: A boolean value indicating whether to enable (True) or disable (False) network lockdown.
 
+        Example:
+            >>> network = Network()
+            >>> network.lockdown = True  # Enable network lockdown
+            >>> network.lockdown = False  # Disable network lockdown
+
+        #ai-gen-doc
         """
         self._lockdown = val
         self.configure_network_settings = True
 
     @property
-    def bind_open_ports(self):
-        """Gets the value for bindOpenports only
+    def bind_open_ports(self) -> bool:
+        """Get the value indicating whether only open ports are bound.
 
-        :return:
-            boolean - bindOpenPortsOnly
+        Returns:
+            bool: True if only open ports are bound; False otherwise.
+
+        Example:
+            >>> network = Network()
+            >>> is_bind_open = network.bind_open_ports
+            >>> print(f"Bind only open ports: {is_bind_open}")
+
+        #ai-gen-doc
         """
         return self._bind_open_ports_only
 
     @bind_open_ports.setter
-    def bind_open_ports(self, val):
-        """Sets bindopenportsonly with the parameter provided
+    def bind_open_ports(self, val: bool) -> None:
+        """Set the 'bindopenportsonly' property to control whether only open ports are bound.
 
+        Args:
+            val: A boolean value indicating whether to bind only open ports (True) or not (False).
 
+        Example:
+            >>> network = Network()
+            >>> network.bind_open_ports = True  # Enable binding only to open ports
+            >>> network.bind_open_ports = False  # Disable the restriction
+
+        #ai-gen-doc
         """
         self._bind_open_ports_only = val
         self.configure_network_settings = True
 
     @property
-    def proxy(self):
-        """Gets the value for isDMZ
+    def proxy(self) -> bool:
+        """Get the value indicating whether the network is configured as a DMZ proxy.
 
-        :return:
-            boolean - isDMZ
+        Returns:
+            bool: True if the network is a DMZ proxy, False otherwise.
+
+        Example:
+            >>> network = Network()
+            >>> is_dmz = network.proxy  # Use dot notation for property access
+            >>> print(f"Is DMZ proxy: {is_dmz}")
+
+        #ai-gen-doc
         """
         return self._is_dmz
 
     @proxy.setter
-    def proxy(self, val):
-        """Sets the value for isDMZ with the parameter provided
+    def proxy(self, val: bool) -> None:
+        """Set the value for the isDMZ property using the provided parameter.
 
+        Args:
+            val: Boolean value to set the isDMZ property. Set to True if the network is a DMZ proxy, otherwise False.
 
+        Example:
+            >>> network = Network()
+            >>> network.proxy = True  # Sets the network as a DMZ proxy
+            >>> network.proxy = False  # Unsets the DMZ proxy status
+
+        #ai-gen-doc
         """
         self._is_dmz = val
         self.configure_network_settings = True
 
     @property
-    def keep_alive_seconds(self):
-        """Gets the value set for keep alive
+    def keep_alive_seconds(self) -> int:
+        """Get the configured keep-alive interval in seconds for the network.
 
-        :return:
-            int - keepAliveSeconds
+        Returns:
+            The keep-alive interval in seconds as an integer.
+
+        Example:
+            >>> network = Network()
+            >>> interval = network.keep_alive_seconds
+            >>> print(f"Keep-alive interval: {interval} seconds")
+
+        #ai-gen-doc
         """
         return self._keep_alive_seconds
 
     @keep_alive_seconds.setter
-    def keep_alive_seconds(self, val):
-        """Sets the value for keep alive seconds with the parameter provided
+    def keep_alive_seconds(self, val: int) -> None:
+        """Set the keep-alive interval in seconds for the network connection.
 
+        Args:
+            val: The number of seconds to use for the keep-alive interval.
+
+        Example:
+            >>> network = Network()
+            >>> network.keep_alive_seconds = 120  # Set keep-alive to 120 seconds
+
+        #ai-gen-doc
         """
         self._keep_alive_seconds = val
         self.configure_network_settings = True
 
     @property
-    def incoming_connections(self):
-        """Gets all the incoming connections on a client
+    def incoming_connections(self) -> list:
+        """Retrieve all incoming network connections on the client.
 
-        :return:
-            list - incoming connections
+        Returns:
+            list: A list containing information about each incoming connection.
+
+        Example:
+            >>> network = Network()
+            >>> connections = network.incoming_connections
+            >>> print(f"Number of incoming connections: {len(connections)}")
+            >>> # Each item in 'connections' represents an incoming connection
+
+        #ai-gen-doc
         """
 
         for incoming_connection in self._restriction_to:
@@ -423,33 +619,32 @@ class Network(object):
 
         return self._restriction_to
 
-    def set_incoming_connections(self, incoming_connections):
-        """Sets the incoming connections on a client/client group with the list of values provided
+    def set_incoming_connections(self, incoming_connections: list[dict]) -> None:
+        """Set the incoming connections for a client or client group.
 
-         Args:
-                incoming_connections(list)  -- list of incoming connections should be
-                a list of dict containing incoming connection type, entity name and entity type.
-                [{'state':val,'entity':val,'isClient':val}]
+        This method configures the allowed incoming connection states for specified entities,
+        such as clients or client groups, using a list of dictionaries. Each dictionary should
+        specify the connection state, the entity name, and whether the entity is a client.
 
-            Example:
-            [
-                {
-                'state': 'RESTRICTED',
-                'entity': 'centOS',
-                'isClient' : True
-                },
-
-                {
-                'state': 'BLOCKED',
-                'entity':  'Edge Clients',
-                'isClient' : False
-                }
-            ]
+        Args:
+            incoming_connections: A list of dictionaries, each containing:
+                - 'state' (str): The connection state, e.g., 'RESTRICTED' or 'BLOCKED'.
+                - 'entity' (str): The name of the client or client group.
+                - 'isClient' (bool): True if the entity is a client, False if it is a client group.
 
         Raises:
-                SDKException:
-                    if the required key is missing in the input value passed
+            SDKException: If a required key is missing in any of the input dictionaries.
 
+        Example:
+            >>> network = Network()
+            >>> incoming = [
+            ...     {'state': 'RESTRICTED', 'entity': 'centOS', 'isClient': True},
+            ...     {'state': 'BLOCKED', 'entity': 'Edge Clients', 'isClient': False}
+            ... ]
+            >>> network.set_incoming_connections(incoming)
+            >>> print("Incoming connections updated successfully.")
+
+        #ai-gen-doc
         """
         try:
 
@@ -478,38 +673,51 @@ class Network(object):
             raise SDKException('Client', '102', '{} not given in content'.format(err))
 
     @property
-    def additional_ports(self):
-        """Gets the additional ports
+    def additional_ports(self) -> list:
+        """Get the list of additional network ports configured for this Network.
 
-        :return:
-            list - ports
+        Returns:
+            list: A list of additional port numbers.
+
+        Example:
+            >>> network = Network()
+            >>> ports = network.additional_ports
+            >>> print(f"Additional ports: {ports}")
+
+        #ai-gen-doc
         """
         return self._port_range
 
-    def set_additional_ports(self, ports, tunnel_port=8403):
-        """Sets additional incoming ports and tunnel port with the values provided as parameter
+    def set_additional_ports(self, ports: list[dict], tunnel_port: int = 8403) -> None:
+        """Set additional incoming ports and the tunnel port for the network.
 
-            Args:
-                tunnel_port (int) -- value to be set for tunnel port
-                ports(list)  -- list of ports should be a list of dict containing
-                start port and end port
-                [{'startPort':val,'endPort':val}]
+        This method configures additional incoming port ranges and sets the tunnel port
+        to the specified value. The `ports` parameter should be a list of dictionaries,
+        each containing 'startPort' and 'endPort' keys to define port ranges.
 
-            Example:
-            [
-                {
-                'startPort': 1024,
-                'endPort': 1030
-                },
-                {
-                'startPort': 2000,
-                'endPort':4000
-                }
-            ]
+        Args:
+            ports: A list of dictionaries specifying port ranges. Each dictionary must have
+                'startPort' and 'endPort' integer keys.
+                Example:
+                    [
+                        {'startPort': 1024, 'endPort': 1030},
+                        {'startPort': 2000, 'endPort': 4000}
+                    ]
+            tunnel_port: The tunnel port to set (default is 8403).
 
-            Raises:
-                SDKException:
-                    if the required key is missing in the input value passed
+        Raises:
+            SDKException: If any required key is missing in the input dictionaries.
+
+        Example:
+            >>> network = Network()
+            >>> port_ranges = [
+            ...     {'startPort': 1024, 'endPort': 1030},
+            ...     {'startPort': 2000, 'endPort': 4000}
+            ... ]
+            >>> network.set_additional_ports(port_ranges, tunnel_port=8500)
+            >>> # The network is now configured with the specified port ranges and tunnel port
+
+        #ai-gen-doc
         """
         try:
             self._tunnel_connection_port = tunnel_port
@@ -527,12 +735,18 @@ class Network(object):
             raise SDKException('Client', '102', '{} not given in content'.format(err))
 
     @property
-    def outgoing_routes(self):
-        """Gets the list of all outgoing routes
+    def outgoing_routes(self) -> list:
+        """Retrieve the list of all outgoing network routes.
 
-            :return:
-                list - outgoing routes
+        Returns:
+            list: A list containing all outgoing routes configured for the network.
 
+        Example:
+            >>> network = Network()
+            >>> routes = network.outgoing_routes
+            >>> print(f"Outgoing routes: {routes}")
+
+        #ai-gen-doc
         """
 
         for outgoing_route in self._network_outgoing_routes:
@@ -548,79 +762,78 @@ class Network(object):
 
         return self._network_outgoing_routes
 
-    def set_outgoing_routes(self, outgoing_routes):
-        """Sets outgoing routes on the client with the list of values provided as parameter
+    def set_outgoing_routes(self, outgoing_routes: list[dict]) -> None:
+        """Set outgoing routes on the client using the provided list of route definitions.
 
-            Args:
-                outgoing_routes(list)  -- list of outgoing routes should be a list of dict
-                containing route type, entity name, entity type, streams, gateway host,
-                gateway port, tunnel connection protocol and remote proxy based on route type.
+        Each outgoing route should be specified as a dictionary with required keys depending on the route type.
+        Supported route types are 'DIRECT', 'VIA_GATEWAY', and 'VIA_PROXY'. The structure of each dictionary
+        varies based on the route type, as described below.
 
-                For routeType: DIRECT
-                [{'routeType':'DIRECT',
-                'remoteEntity':val ,
-                'streams':val,
-                'isClient':val,
-                'forceAllDataTraffic': True,
-                'connectionProtocol' : 0}]
+        Args:
+            outgoing_routes: A list of dictionaries, each representing an outgoing route configuration.
+                - For routeType 'DIRECT':
+                    {
+                        'routeType': 'DIRECT',
+                        'remoteEntity': <str>,
+                        'streams': <int>,
+                        'isClient': <bool>,
+                        'forceAllDataTraffic': <bool>,
+                        'connectionProtocol': <int>  # 0: HTTP, 1: HTTPS, 2: HTTPS_AuthOnly, 3: RAW_PROTOCOL
+                    }
+                - For routeType 'VIA_GATEWAY':
+                    {
+                        'routeType': 'VIA_GATEWAY',
+                        'remoteEntity': <str>,
+                        'streams': <int>,
+                        'gatewayPort': <int>,
+                        'gatewayHost': <str>,
+                        'isClient': <bool>,
+                        'forceAllDataTraffic': <bool>,
+                        'connectionProtocol': <int>
+                    }
+                - For routeType 'VIA_PROXY':
+                    {
+                        'routeType': 'VIA_PROXY',
+                        'remoteEntity': <str>,
+                        'remoteProxy': <str>,
+                        'isClient': <bool>
+                    }
 
-                For routeType: VIA_GATEWAY
-                [{'routeType':'VIA_GATEWAY',
-                'remoteEntity':val,
-                'streams':val,
-                'gatewayPort':val,
-                'gatewayHost': val,
-                'isClient':val,
-                'forceAllDataTraffic': False,
-                'connectionProtocol' : 3}]
+        Raises:
+            SDKException: If an invalid routeType is provided or if required keys are missing in any route dictionary.
 
-                For routeType: VIA_PROXY
-                [{'routeType':'VIA_PROXY',
-                'remoteEntity':val,
-                'remoteProxy':val,
-                'isClient':val}]
+        Example:
+            >>> routes = [
+            ...     {
+            ...         'routeType': 'DIRECT',
+            ...         'remoteEntity': 'Testcs',
+            ...         'streams': 1,
+            ...         'isClient': True,
+            ...         'forceAllDataTraffic': True,
+            ...         'connectionProtocol': 0
+            ...     },
+            ...     {
+            ...         'routeType': 'VIA_GATEWAY',
+            ...         'remoteEntity': 'centOS',
+            ...         'streams': 2,
+            ...         'gatewayPort': 443,
+            ...         'gatewayHost': '1.2.3.4',
+            ...         'isClient': True,
+            ...         'forceAllDataTraffic': False,
+            ...         'connectionProtocol': 1
+            ...     },
+            ...     {
+            ...         'routeType': 'VIA_PROXY',
+            ...         'remoteEntity': 'Laptop Clients',
+            ...         'remoteProxy': 'TemplateRHEL65_4',
+            ...         'isClient': False
+            ...     }
+            ... ]
+            >>> network = Network()
+            >>> network.set_outgoing_routes(routes)
+            >>> print("Outgoing routes set successfully.")
 
-
-                Valid values for connectionProtocol:
-                0: 'HTTP',
-                1: 'HTTPS',
-                2: 'HTTPS_AuthOnly',
-                3: 'RAW_PROTOCOL'
-
-            Example:
-            [
-                {
-                'routeType': 'DIRECT',
-                'remoteEntity':'Testcs' ,
-                'streams': 1,
-                'isClient': True,
-                'forceAllDataTraffic' : True
-                'connectionProtocol' : 0
-                },
-                {
-                'routeType': 'VIA_GATEWAY',
-                'remoteEntity': 'centOS',
-                'streams': 2,
-                'gatewayPort': 443,
-                'gatewayHost': '1.2.3.4',
-                'isClient': True,
-                'forceAllDataTraffic' :False
-                'connectionProtocol' : 1
-                },
-                {
-                'routeType': 'VIA_PROXY',
-                'remoteEntity': 'Laptop Clients',
-                'remoteProxy': 'TemplateRHEL65_4',
-                'isClient': False
-                }
-            ]
-
-            Raises:
-                SDKException:
-                    if routeType is invalid in the input value passed
-
-                    if the required key is missing in the input value passed
-
+        #ai-gen-doc
         """
 
         try:
@@ -690,11 +903,18 @@ class Network(object):
             raise SDKException('Client', '102', '{} not given in content'.format(err))
 
     @property
-    def tppm_settings(self):
-        """Gets the list of tppm settings on a client
+    def tppm_settings(self) -> list:
+        """Retrieve the list of TPPM (Third Party Patch Management) settings configured on the client.
 
-        :return:
-            list - tppm settings
+        Returns:
+            list: A list containing the TPPM settings for the client.
+
+        Example:
+            >>> network = Network()
+            >>> settings = network.tppm_settings
+            >>> print(f"TPPM settings: {settings}")
+
+        #ai-gen-doc
         """
 
         for tppm_setting in self._tppm_settings:
@@ -703,44 +923,53 @@ class Network(object):
 
         return self._tppm_settings
 
-    def set_tppm_settings(self, tppm_settings):
-        """Sets tppm on the client with the list of values provided as parameter
+    def set_tppm_settings(self, tppm_settings: list[dict]) -> None:
+        """Set TPPM (Third Party Proxy Management) settings on the client.
 
+        This method configures TPPM settings for the client using the provided list of settings.
+        Each setting should be a dictionary containing the TPPM type, port number, and proxy entity.
 
-            Note:  This is supported only on client level
+        Note:
+            This operation is supported only at the client level.
 
-            Args:
-                tppm_settings(list)  -- list of tppm settings should be a list of dict containing
-                tppm type, port number and proxy entity
-                [{'tppmType':val, 'portNumber':val, 'proxyEntity':val}]
+        Args:
+            tppm_settings: A list of dictionaries, each specifying a TPPM configuration.
+                Each dictionary must contain the following keys:
+                    - 'tppmType': The type of TPPM. Valid values are:
+                        1. 'WEB_SERVER_FOR_IIS_SERVER'
+                        2. 'COMMSERVE'
+                        3. 'REPORTS'
+                        4. 'CUSTOM_REPORT_ENGINE'
+                    - 'portNumber': The port number to use (int).
+                    - 'proxyEntity': The proxy entity name (str).
 
-                Valid values for tppmType:
-                1. WEB_SERVER_FOR_IIS_SERVER
-                2. COMMSERVE
-                3. REPORTS
-                4. CUSTOM_REPORT_ENGINE
+                Example:
+                    [
+                        {
+                            'tppmType': 'WEB_SERVER_FOR_IIS_SERVER',
+                            'portNumber': 9999,
+                            'proxyEntity': 'shezavm3'
+                        },
+                        {
+                            'tppmType': 'REPORTS',
+                            'portNumber': 8888,
+                            'proxyEntity': 'shezavm11'
+                        }
+                    ]
 
-            Example:
-            [
-                {
-                'tppmType': 'WEB_SERVER_FOR_IIS_SERVER',
-                'portNumber':9999,
-                'proxyEntity' : 'shezavm3'
-                },
+        Raises:
+            SDKException: If an invalid 'tppmType' is provided or if any required key is missing in a setting.
 
-                {
-                'tppmType': 'REPORTS',
-                'portNumber':8888,
-                'proxyEntity' : 'shezavm11'
-                }
-            ]
+        Example:
+            >>> tppm_settings = [
+            ...     {'tppmType': 'COMMSERVE', 'portNumber': 8080, 'proxyEntity': 'proxy1'},
+            ...     {'tppmType': 'REPORTS', 'portNumber': 9090, 'proxyEntity': 'proxy2'}
+            ... ]
+            >>> network = Network()
+            >>> network.set_tppm_settings(tppm_settings)
+            >>> print("TPPM settings applied successfully.")
 
-            Raises:
-                SDKException:
-                    if tppmType is invalid in the input value passed
-
-                    if the required key is missing in the input value passed
-
+        #ai-gen-doc
         """
 
         try:
@@ -770,19 +999,22 @@ class Network(object):
         except KeyError as err:
             raise SDKException('Client', '102', '{} not given in content'.format(err))
 
-    def _advanced_network_config(self):
+    def _advanced_network_config(self) -> None:
+        """Configure advanced network properties for the client or client group.
 
-        """Sets network properties on the client/client group with all the network properties
+        This method sets all relevant network properties on the associated client or client group.
+        It is typically used to apply advanced network configurations as required.
 
+        Raises:
+            SDKException: If the request was not successful, if invalid input was provided,
+                or if an empty response was received.
 
-            Raises:
-                SDKException:
-                    if  request was not successful
+        Example:
+            >>> network = Network()
+            >>> network._advanced_network_config()
+            >>> print("Advanced network configuration applied successfully.")
 
-                    if  invalid input was provided in the request
-
-                    if empty response was received
-
+        #ai-gen-doc
         """
 
         if self.flag == "CLIENT":

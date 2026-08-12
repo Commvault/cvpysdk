@@ -53,12 +53,49 @@ To add a new Backupset for Cloud Apps agent, please follow these steps:
 from __future__ import unicode_literals
 
 from ..backupset import Backupset
-
+from typing import Any, Optional
 
 class CloudAppsBackupset(Backupset):
-    """Class for representing a Backupset of the Cloud Apps agent."""
+    """
+    Represents a backup set for the Cloud Apps agent.
 
-    def __new__(cls, instance_object, backupset_name, backupset_id=None):
+    This class is designed to encapsulate the properties and behaviors associated
+    with a backup set specific to cloud applications. It provides mechanisms for
+    instantiating backup set objects with relevant details such as the associated
+    instance, backup set name, and backup set ID.
+
+    Key Features:
+        - Creation of Cloud Apps backup set instances
+        - Association with a specific instance object
+        - Identification via backup set name and ID
+
+    #ai-gen-doc
+    """
+
+    def __new__(cls, instance_object: Any, backupset_name: str, backupset_id: Optional[str] = None) -> Any:
+        """Create a new CloudAppsBackupset or its specialized subclass based on the instance type.
+
+        This method dynamically selects the appropriate backupset class (such as SalesforceBackupset)
+        depending on the cloud application instance type found in the provided instance_object.
+
+        Args:
+            instance_object: The object representing the cloud application instance, containing properties
+                used to determine the backupset type.
+            backupset_name: The name of the backupset as a string.
+            backupset_id: Optional identifier for the backupset.
+
+        Returns:
+            An instance of the appropriate backupset class, such as SalesforceBackupset, or CloudAppsBackupset
+            if no specialized type matches.
+
+        Example:
+            >>> # Assuming instance_object is initialized and contains the required properties
+            >>> backupset = CloudAppsBackupset(instance_object, "Salesforce_Backupset")
+            >>> print(type(backupset))
+            >>> # The returned object will be of the correct backupset subclass based on instance type
+
+        #ai-gen-doc
+        """
 
         from .cloudapps.salesforce_backupset import SalesforceBackupset
 

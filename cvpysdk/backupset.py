@@ -138,33 +138,59 @@ Backupset instance Attributes
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
+import copy
 import threading
 import time
-import copy
-
 from base64 import b64encode
+from typing import Any, Dict, List, Optional, Union, TYPE_CHECKING
 
-from .subclient import Subclients
-from .schedules import Schedules
 from .exception import SDKException
+from .schedules import Schedules
+from .subclient import Subclients
 
+if TYPE_CHECKING:
+    from .client import Client
+    from .plan import Plan
 
 class Backupsets(object):
-    """Class for getting all the backupsets associated with a client."""
+    """
+    Manages and interacts with backupsets associated with a client.
 
-    def __init__(self, class_object):
-        """Initialize object of the Backupsets class.
+    The Backupsets class provides a comprehensive interface for handling backupsets,
+    including retrieval, addition, deletion, and management of various backupset types.
+    It supports operations for different backupset categories such as archivesets,
+    SharePoint clients, and Salesforce backupsets. The class also offers utility methods
+    for refreshing backupset data, checking for the existence of specific backupsets,
+    and accessing default and all backupsets via properties.
 
-            Args:
-                class_object    (object)    --  instance of the Agent / Instance class
+    Key Features:
+        - Retrieve all backupsets associated with a client
+        - Add new backupsets, archivesets, SharePoint, and Salesforce backupsets
+        - Delete existing backupsets
+        - Check for the existence of a backupset by name
+        - Access all backupsets and the default backupset via properties
+        - Refresh backupset information
+        - Support for indexing, length, and string representation
+        - Internal processing of backupset addition responses
 
-            Returns:
-                object  -   instance of the Backupsets class
+    #ai-gen-doc
+    """
 
-            Raises:
-                SDKException:
-                    if class object is not an instance of the Agent / Instance class
+    def __init__(self, class_object: object) -> None:
+        """Initialize an instance of the Backupsets class.
 
+        Args:
+            class_object: An instance of the Agent or Instance class required to initialize Backupsets.
+
+        Raises:
+            SDKException: If class_object is not an instance of the Agent or Instance class.
+
+        Example:
+            >>> agent = Agent(commcell_object, "File System")
+            >>> backupsets = Backupsets(agent)
+            >>> print(type(backupsets))
+            <class 'Backupsets'>
+        #ai-gen-doc
         """
         from .agent import Agent
         from .instance import Instance
@@ -192,7 +218,7 @@ class Backupsets(object):
             self._BACKUPSETS += '&applicationId=' + self._agent_object.agent_id
 
         if self._instance_object:
-            self._BACKUPSETS += '&instanceId=' + self._instance_object.instance_id
+            self._BACKUPSETS += '&instanceId=' + str(self._instance_object.instance_id)
 
         if self._agent_object.agent_name in ['cloud apps', 'sql server', 'sap hana']:
             self._BACKUPSETS += '&excludeHidden=0'
@@ -201,11 +227,21 @@ class Backupsets(object):
         self._default_backup_set = None
         self.refresh()
 
-    def __str__(self):
-        """Representation string consisting of all backupsets of the agent of a client.
+    def __str__(self) -> str:
+        """Return a string representation of all backupsets for the agent of a client.
 
-            Returns:
-                str - string of all the backupsets of an agent of a client
+        This method provides a human-readable summary listing all backupsets associated 
+        with the agent of a client.
+
+        Returns:
+            A string containing the names or details of all backupsets for the agent.
+
+        Example:
+            >>> backupsets = Backupsets(commcell_object, agent_name, client_name)
+            >>> print(str(backupsets))
+            >>> # Output: "Backupset1, Backupset2, Backupset3"
+
+        #ai-gen-doc
         """
         representation_string = '{:^5}\t{:^20}\t{:^20}\t{:^20}\t{:^20}\n\n'.format(
             'S. No.', 'Backupset', 'Instance', 'Agent', 'Client'
@@ -223,30 +259,67 @@ class Backupsets(object):
 
         return representation_string.strip()
 
-    def __repr__(self):
-        """Representation string for the instance of the Backupsets class."""
+    def __repr__(self) -> str:
+        """Return the string representation of the Backupsets instance.
+
+        This method provides a developer-friendly string that represents the Backupsets object,
+        typically used for debugging and logging purposes.
+
+        Returns:
+            A string representation of the Backupsets instance.
+
+        Example:
+            >>> backupsets = Backupsets(commcell_object)
+            >>> print(repr(backupsets))
+            <Backupsets object at 0x7f8c2b1e2d30>
+        #ai-gen-doc
+        """
         return "Backupsets class instance for Agent: '{0}'".format(self._agent_object.agent_name)
 
-    def __len__(self):
-        """Returns the number of the backupsets for the selected Agent."""
+    def __len__(self) -> int:
+        """Get the number of backupsets associated with the selected Agent.
+
+        Returns:
+            The total count of backupsets as an integer.
+
+        Example:
+            >>> backupsets = Backupsets(agent_object)
+            >>> count = len(backupsets)
+            >>> print(f"Number of backupsets: {count}")
+
+        #ai-gen-doc
+        """
         return len(self.all_backupsets)
 
-    def __getitem__(self, value):
-        """Returns the name of the backupset for the given backupset ID or
-            the details of the backupset for given backupset Name.
+    def __getitem__(self, value: 'Union[str, int]') -> 'Union[str, dict]':
+        """Retrieve backupset information by name or ID.
 
-            Args:
-                value   (str / int)     --  Name or ID of the backupset
+        If a backupset ID (int) is provided, returns the name of the corresponding backupset.
+        If a backupset name (str) is provided, returns a dictionary containing the details of the backupset.
 
-            Returns:
-                str     -   name of the backupset, if the backupset id was given
+        Args:
+            value: The name (str) or ID (int) of the backupset to retrieve.
 
-                dict    -   dict of details of the backupset, if backupset name was given
+        Returns:
+            str: The name of the backupset if an ID was provided.
+            dict: The details of the backupset if a name was provided.
 
-            Raises:
-                IndexError:
-                    no backupset exists with the given Name / Id
+        Raises:
+            IndexError: If no backupset exists with the given name or ID.
 
+        Example:
+            >>> backupsets = Backupsets()
+            >>> # Retrieve backupset details by name
+            >>> details = backupsets['DailyBackup']
+            >>> print(details)
+            {'backupsetId': 123, 'name': 'DailyBackup', ...}
+
+            >>> # Retrieve backupset name by ID
+            >>> name = backupsets[123]
+            >>> print(name)
+            'DailyBackup'
+
+        #ai-gen-doc
         """
         value = str(value)
 
@@ -260,27 +333,36 @@ class Backupsets(object):
             except IndexError:
                 raise IndexError('No backupset exists with the given Name / Id')
 
-    def _get_backupsets(self):
-        """Gets all the backupsets associated to the agent specified by agent_object.
+    def _get_backupsets(self) -> Dict[str, Dict[str, Any]]:
+        """Retrieve all backupsets associated with the specified agent.
 
-            Returns:
-                dict - consists of all backupsets of the agent
-                    {
-                         "backupset1_name": {
-                             "id": backupset1_id,
-                             "instance": instance
-                         },
-                         "backupset2_name": {
-                             "id": backupset2_id,
-                             "instance": instance
-                         }
+        Returns:
+            Dictionary mapping backupset names to their details. Each entry contains:
+                - 'id': The unique identifier of the backupset.
+                - 'instance': The instance associated with the backupset.
+
+            Example structure:
+                {
+                    "backupset1_name": {
+                        "id": backupset1_id,
+                        "instance": instance
+                    },
+                    "backupset2_name": {
+                        "id": backupset2_id,
+                        "instance": instance
                     }
+                }
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException: If the response is empty or not successful.
 
-                    if response is not success
+        Example:
+            >>> backupsets = Backupsets(agent_object)
+            >>> all_backupsets = backupsets._get_backupsets()
+            >>> for name, details in all_backupsets.items():
+            ...     print(f"Backupset: {name}, ID: {details['id']}, Instance: {details['instance']}")
+
+        #ai-gen-doc
         """
         flag, response = self._cvpysdk_object.make_request('GET', self._BACKUPSETS)
 
@@ -333,62 +415,81 @@ class Backupsets(object):
             raise SDKException('Response', '101', self._update_response_(response.text))
 
     @property
-    def all_backupsets(self):
-        """Returns the dict of backupsets for the Agent / Instance of the selected Client
+    def all_backupsets(self) -> Dict[str, Dict[str, Any]]:
+        """Get a dictionary of all backupsets for the Agent or Instance of the selected Client.
 
-            dict - consists of all backupsets
-                    {
-                         "backupset1_name": {
-                             "id": backupset1_id,
-                             "instance": instance
-                         },
-                         "backupset2_name": {
-                             "id": backupset2_id,
-                             "instance": instance
-                         }
-                    }
+        The returned dictionary maps backupset names to their details, including the backupset ID and instance information.
+
+        Returns:
+            Dict[str, Dict[str, Any]]: A dictionary where each key is a backupset name, and the value is a dictionary with keys:
+                - 'id': The unique identifier of the backupset.
+                - 'instance': The instance associated with the backupset.
+
+        Example:
+            >>> backupsets = Backupsets(client_object)
+            >>> all_sets = backupsets.all_backupsets  # Use dot notation for property access
+            >>> for name, details in all_sets.items():
+            ...     print(f"Backupset: {name}, ID: {details['id']}, Instance: {details['instance']}")
+
+        #ai-gen-doc
         """
         return self._backupsets
 
-    def has_backupset(self, backupset_name):
-        """Checks if a backupset exists for the agent with the input backupset name.
+    def has_backupset(self, backupset_name: str) -> bool:
+        """Check if a backupset with the specified name exists for the agent.
 
-            Args:
-                backupset_name (str)  --  name of the backupset
+        Args:
+            backupset_name: The name of the backupset to check for existence.
 
-            Returns:
-                bool - boolean output whether the backupset exists for the agent or not
+        Returns:
+            True if the backupset exists for the agent, False otherwise.
 
-            Raises:
-                SDKException:
-                    if type of the backupset name argument is not string
+        Raises:
+            SDKException: If the type of the backupset_name argument is not a string.
+
+        Example:
+            >>> backupsets = Backupsets(agent_object)
+            >>> exists = backupsets.has_backupset("DailyBackup")
+            >>> print(f"Backupset exists: {exists}")
+            # Output: Backupset exists: True
+
+        #ai-gen-doc
         """
         if not isinstance(backupset_name, str):
             raise SDKException('Backupset', '101')
 
         return self._backupsets and backupset_name.lower() in self._backupsets
 
-    def _process_add_response(self, backupset_name, request_json):
-        """Runs the Backupset Add API with the request JSON provided,
-            and returns the contents after parsing the response.
+    def _process_add_response(self, backupset_name: str, request_json: dict) -> tuple:
+        """Execute the Backupset Add API with the provided request JSON and parse the response.
 
-            Args:
-                backupset_name   (str)  --   backupset name
-                request_json    (dict)  --  JSON request to run for the API
+        This method sends a request to add a backupset using the specified name and request JSON,
+        then processes the API response to determine success or failure, along with any error codes
+        and messages.
 
-            Returns:
-                (bool, str, str):
-                    bool -  flag specifies whether success / failure
+        Args:
+            backupset_name: The name of the backupset to be added.
+            request_json: The JSON payload to be sent in the API request.
 
-                    str  -  error code received in the response
+        Returns:
+            A tuple containing:
+                bool: True if the operation was successful, False otherwise.
+                str: The error code returned by the API, if any.
+                str: The error message returned by the API, if any.
 
-                    str  -  error message received
+        Raises:
+            SDKException: If the API response is empty or indicates a failure.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Example:
+            >>> backupsets = Backupsets()
+            >>> result = backupsets._process_add_response("MyBackupset", {"backupsetProperties": {...}})
+            >>> success, error_code, error_message = result
+            >>> if success:
+            ...     print("Backupset added successfully.")
+            ... else:
+            ...     print(f"Failed to add backupset: {error_code} - {error_message}")
 
-                    if response is not success
+        #ai-gen-doc
         """
         flag, response = self._cvpysdk_object.make_request('POST', self._services['ADD_BACKUPSET'], request_json)
 
@@ -417,41 +518,33 @@ class Backupsets(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def add(self, backupset_name, on_demand_backupset=False, **kwargs):
-        """Adds a new backup set to the agent.
+    def add(self, backupset_name: str, on_demand_backupset: bool = False, **kwargs: dict) -> 'Backupset':
+        """Add a new backup set to the agent.
 
-            Args:
-                backupset_name      (str)   --  name of the new backupset to add
+        Args:
+            backupset_name: The name of the new backup set to add.
+            on_demand_backupset: If True, creates an on-demand backup set; otherwise, creates a standard backup set. Defaults to False.
+            **kwargs: Optional keyword arguments to further configure the backup set:
+                - storage_policy (str): Name of the storage policy to associate with the backup set.
+                - plan_name (str): Name of the plan to associate with the backup set.
+                - is_nas_turbo_backupset (bool): Set to True for NAS-based clients.
 
-                on_demand_backupset (bool)  --  flag to specify whether the backupset to be added
-                is a simple backupset or an on-demand backupset
+        Returns:
+            Backupset: An instance of the Backupset class representing the newly created backup set.
 
-                    default: False
+        Raises:
+            SDKException: If the backup set name is not a string, if creation fails, if the response is empty or unsuccessful, or if a backup set with the same name already exists.
 
-                **kwargs    --  dict of keyword arguments as follows:
+        Example:
+            >>> backupsets = Backupsets(agent_object)
+            >>> new_backupset = backupsets.add(
+            ...     backupset_name="WeeklyBackup",
+            ...     storage_policy="DefaultPolicy",
+            ...     plan_name="GoldPlan"
+            ... )
+            >>> print(f"Created backup set: {new_backupset}")
 
-                    storage_policy  (str)   --  name of the storage policy to associate to the
-                    backupset
-
-                    plan_name       (str)   -- name of the plan to associate to the backupset
-
-                    is_nas_turbo_backupset  (bool)    --  True for NAS based client.
-
-
-            Returns:
-                object - instance of the Backupset class, if created successfully
-
-            Raises:
-                SDKException:
-                    if type of the backupset name argument is not string
-
-                    if failed to create a backupset
-
-                    if response is empty
-
-                    if response is not success
-
-                    if backupset with same name already exists
+        #ai-gen-doc
         """
         if not (isinstance(backupset_name, str) and isinstance(on_demand_backupset, bool)):
             raise SDKException('Backupset', '101')
@@ -554,33 +647,33 @@ request_json['backupSetInfo'].update({
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def add_archiveset(self, archiveset_name, is_nas_turbo_backupset=False):
-        """ 
-        Adds a new archiveset to the agent. It is just a backupset but is mainly used for archive only items
+    def add_archiveset(self, archiveset_name: str, is_nas_turbo_backupset: bool = False) -> 'Backupset':
+        """Add a new archiveset to the agent.
+
+        An archiveset is a specialized backupset primarily used for archiving-only items. 
+        This method creates a new archiveset with the specified name. For NAS-based clients, 
+        set `is_nas_turbo_backupset` to True.
 
         Args:
-            archiveset_name     (str) -- name of new archiveset to add
+            archiveset_name: The name of the new archiveset to add.
+            is_nas_turbo_backupset: Set to True if the archiveset is for a NAS-based client. Defaults to False.
 
-            is_nas_turbo_backupset  (bool) -- True for NAS based client.
-                default -   False
-            
         Returns:
-        object - instance of the Backupset class, if created successfully
+            Backupset: An instance of the Backupset class representing the newly created archiveset.
 
         Raises:
-            SDKException:
-                if type of the archiveset name argument is not string
+            SDKException: If the archiveset name is not a string, if creation fails, 
+                if the response is empty or unsuccessful, or if an archiveset with the same name already exists.
 
-                if failed to create a archiveset
+        Example:
+            >>> backupsets = Backupsets(agent_object)
+            >>> new_archiveset = backupsets.add_archiveset("ArchiveSet2024")
+            >>> print(f"Created archiveset: {new_archiveset}")
+            >>> # For NAS-based client
+            >>> nas_archiveset = backupsets.add_archiveset("NAS_Archive", is_nas_turbo_backupset=True)
 
-                if response is empty
-
-                if response is not success
-
-                if archiveset with same name already exists
-                
-
-        """        
+        #ai-gen-doc
+        """
         if not (isinstance(archiveset_name, str)):
             raise SDKException('Backupset', '101')
         else:
@@ -676,58 +769,59 @@ request_json['backupSetInfo'].update({
 
     def add_v1_sharepoint_client(
             self,
-            backupset_name,
-            server_plan,
-            client_name,
-            **kwargs):
-        """
-        for sharepoint v1 client creation is a backupset
-        Adds a new Office 365 V1 Share Point Pseudo Client to the Commcell.
+            backupset_name: str,
+            server_plan: str,
+            client_name: str,
+            **kwargs: str
+        ) -> None:
+        """Add a new Office 365 V1 SharePoint Pseudo Client to the Commcell.
 
-                Args:
-                    backupset_name                 (str)   --  name of the new Sharepoint Pseudo Client
+        This method creates a SharePoint V1 pseudo client, which is represented as a backupset,
+        and associates it with the specified server plan and access node. Additional configuration
+        parameters for Azure and SharePoint Online can be provided as keyword arguments.
 
-                    server_plan                 (str)   --  server_plan to associate with the client
+        Args:
+            backupset_name: Name of the new SharePoint Pseudo Client (backupset).
+            server_plan: Name of the server plan to associate with the client.
+            client_name: Name of the access node for which the pseudo client will be created.
 
-                    client_name                 (str) -- the access node for which Pseudo Client will be created
+        Keyword Args:
+            tenant_url: URL of the SharePoint tenant.
+            azure_username: Username of the Azure app.
+            azure_secret: Secret key of the Azure app.
+            user_username: Username of the SharePoint admin.
+            user_password: Password of the SharePoint admin.
+            azure_app_id: Azure app ID for SharePoint Online.
+            azure_app_key_id: App key for SharePoint Online.
+            azure_directory_id: Azure directory ID for SharePoint Online.
 
+        Returns:
+            Client: An instance of the Client class representing the newly created SharePoint pseudo client.
 
-                Kwargs :
+        Raises:
+            SDKException: If a client with the given name already exists,
+                if the index server or server plan is not found,
+                if the client creation fails,
+                or if the response is empty or unsuccessful.
 
-                    tenant_url                  (str)   --  url of sharepoint tenant
+        Example:
+            >>> backupsets = Backupsets(commcell_object)
+            >>> client = backupsets.add_v1_sharepoint_client(
+            ...     backupset_name="SharePointBackupset",
+            ...     server_plan="SharePointPlan",
+            ...     client_name="AccessNode01",
+            ...     tenant_url="https://tenant.sharepoint.com",
+            ...     azure_username="azureuser@domain.com",
+            ...     azure_secret="secretkey",
+            ...     user_username="spadmin@domain.com",
+            ...     user_password="adminpassword",
+            ...     azure_app_id="app-id-123",
+            ...     azure_app_key_id="app-key-456",
+            ...     azure_directory_id="directory-id-789"
+            ... )
+            >>> print(f"Created SharePoint client: {client}")
 
-                    azure_username              (str)   --  username of azure app
-
-                    azure_secret                (str)   --  secret key of azure app
-
-                    user_username        (str)   --  username of Sharepoint admin
-
-                    user_password           (str)  -- password of Sharepoint admin
-
-                    azure_app_id            (str)       --  azure app id for sharepoint online
-
-                    azure_app_key_id        (str)       --  app key for sharepoint online
-
-                    azure_directory_id    (str)   --  azure directory id for sharepoint online
-
-
-                Returns:
-                    object  -   instance of the Client class for this new client
-
-                Raises:
-                    SDKException:
-                        if client with given name already exists
-
-                        if index_server is not found
-
-                        if server_plan is not found
-
-                        if failed to add the client
-
-                        if response is empty
-
-                        if response is not success
-
+        #ai-gen-doc
         """
         if self.has_backupset(backupset_name):
             raise SDKException(
@@ -787,50 +881,71 @@ request_json['backupSetInfo'].update({
 
     def add_salesforce_backupset(
             self,
-            salesforce_options,
-            db_options=None, **kwargs):
-        """Adds a new Salesforce Backupset to the Commcell.
+            salesforce_options: dict,
+            db_options: dict = None,
+            **kwargs: dict
+        ) -> None:
+        """Add a new Salesforce Backupset to the Commcell.
 
-            Args:
+        This method creates a new Salesforce backupset using the provided Salesforce credentials and optional database configuration.
+        Additional keyword arguments can be supplied to further customize the backupset creation.
 
-                salesforce_options         (dict)       --  salesforce options
-                                                            {
-                                                                "salesforce_user_name": 'salesforce login user',
-                                                                "salesforce_user_password": 'salesforce user password',
-                                                                "salesforce_user_token": 'salesforce user token'
-                                                            }
+        Args:
+            salesforce_options: Dictionary containing Salesforce credentials and options. Example:
+                {
+                    "salesforce_user_name": "salesforce_user",
+                    "salesforce_user_password": "password",
+                    "salesforce_user_token": "user_token"
+                }
+            db_options: Optional dictionary for configuring the sync database. Example:
+                {
+                    "db_enabled": True,
+                    "db_type": "SQLSERVER",
+                    "db_host_name": "db.example.com",
+                    "db_instance": "instance1",
+                    "db_name": "salesforce_db",
+                    "db_port": 1433,
+                    "db_user_name": "db_user",
+                    "db_user_password": "db_password"
+                }
+            **kwargs: Additional keyword arguments for backupset configuration, such as:
+                - download_cache_path (str): Path for download cache.
+                - mutual_auth_path (str): Path to mutual authentication certificate.
+                - storage_policy (str): Name of the storage policy.
+                - streams (int): Number of data streams.
 
-                db_options                 (dict)       --  database options to configure sync db
-                                                            {
-                                                                "db_enabled": 'True or False',
-                                                                "db_type": 'SQLSERVER or POSTGRESQL',
-                                                                "db_host_name": 'database hostname',
-                                                                "db_instance": 'database instance name',
-                                                                "db_name": 'database name',
-                                                                "db_port": 'port of the database',
-                                                                "db_user_name": 'database user name',
-                                                                "db_user_password": 'database user password'
-                                                            }
+        Returns:
+            Backupset: An instance of the Backupset class representing the newly created Salesforce backupset.
 
-                **kwargs                   (dict)       --     dict of keyword arguments as follows
+        Raises:
+            SDKException: If a backupset with the given name already exists, if the backupset creation fails,
+                if the response is empty, or if the response indicates failure.
 
-                                                            download_cache_path     (str)   -- download cache path
-                                                            mutual_auth_path        (str)   -- mutual auth cert path
-                                                            storage_policy          (str)   -- storage policy
-                                                            streams                 (int)   -- number of streams
+        Example:
+            >>> salesforce_opts = {
+            ...     "salesforce_user_name": "user@company.com",
+            ...     "salesforce_user_password": "mypassword",
+            ...     "salesforce_user_token": "mytoken"
+            ... }
+            >>> db_opts = {
+            ...     "db_enabled": True,
+            ...     "db_type": "SQLSERVER",
+            ...     "db_host_name": "dbhost",
+            ...     "db_instance": "instance1",
+            ...     "db_name": "sf_db",
+            ...     "db_port": 1433,
+            ...     "db_user_name": "dbuser",
+            ...     "db_user_password": "dbpass"
+            ... }
+            >>> backupset = backupsets.add_salesforce_backupset(
+            ...     salesforce_options=salesforce_opts,
+            ...     db_options=db_opts,
+            ...     storage_policy="SalesforcePolicy",
+            ...     streams=4
+            ... )
+            >>> print(f"Created backupset: {backupset}")
 
-            Returns:
-                object  -   instance of the Backupset class for this new backupset
-
-            Raises:
-                SDKException:
-                    if backupset with given name already exists
-
-                    if failed to add the backupset
-
-                    if response is empty
-
-                    if response is not success
+        #ai-gen-doc
         """
 
         if db_options is None:
@@ -892,20 +1007,25 @@ request_json['backupSetInfo'].update({
 
         self._process_add_response(salesforce_options.get('salesforce_user_name'), request_json)
 
-    def get(self, backupset_name):
-        """Returns a backupset object of the specified backupset name.
+    def get(self, backupset_name: str) -> 'Backupset':
+        """Retrieve a Backupset object by its name.
 
-            Args:
-                backupset_name (str)  --  name of the backupset
+        Args:
+            backupset_name: The name of the backupset to retrieve.
 
-            Returns:
-                object - instance of the Backupset class for the given backupset name
+        Returns:
+            Backupset: An instance of the Backupset class corresponding to the specified name.
 
-            Raises:
-                SDKException:
-                    if type of the backupset name argument is not string
+        Raises:
+            SDKException: If the backupset_name is not a string, or if no backupset exists with the given name.
 
-                    if no backupset exists with the given name
+        Example:
+            >>> backupsets = Backupsets(commcell_object, client_name, agent_name)
+            >>> backupset = backupsets.get('DailyBackupSet')
+            >>> print(f"Retrieved backupset: {backupset}")
+            >>> # The returned Backupset object can be used for further backup operations
+
+        #ai-gen-doc
         """
         if not isinstance(backupset_name, str):
             raise SDKException('Backupset', '101')
@@ -927,23 +1047,22 @@ request_json['backupSetInfo'].update({
                 'Backupset', '102', 'No backupset exists with name: "{0}"'.format(backupset_name)
             )
 
-    def delete(self, backupset_name):
-        """Deletes the backup set from the agent.
+    def delete(self, backupset_name: str) -> None:
+        """Delete a backup set from the agent by its name.
 
-            Args:
-                backupset_name (str)  --  name of the backupset
+        Args:
+            backupset_name: The name of the backup set to be deleted.
 
-            Raises:
-                SDKException:
-                    if type of the backupset name argument is not string
+        Raises:
+            SDKException: If the backup set name is not a string, if the deletion fails,
+                if the response is empty or not successful, or if no backup set exists with the given name.
 
-                    if failed to delete the backupset
+        Example:
+            >>> backupsets = Backupsets(agent_object)
+            >>> backupsets.delete("DailyBackupSet")
+            >>> print("Backup set deleted successfully.")
 
-                    if response is empty
-
-                    if response is not success
-
-                    if no backupset exists with the given name
+        #ai-gen-doc
         """
         if not isinstance(backupset_name, str):
             raise SDKException('Backupset', '101')
@@ -994,21 +1113,91 @@ request_json['backupSetInfo'].update({
                 'Backupset', '102', 'No backupset exists with name: "{0}"'.format(backupset_name)
             )
 
-    def refresh(self):
-        """Refresh the backupsets associated with the Agent / Instance."""
+    def refresh(self) -> None:
+        """Reload the backupsets associated with the Agent or Instance.
+
+        This method refreshes the internal cache of backupsets, ensuring that any changes 
+        made on the Commcell are reflected in the current object. Use this method to 
+        update the backupset information after adding, removing, or modifying backupsets.
+
+        Example:
+            >>> backupsets = Backupsets(agent_object)
+            >>> backupsets.refresh()  # Refreshes the list of backupsets
+            >>> print("Backupsets refreshed successfully")
+
+        #ai-gen-doc
+        """
         self._backupsets = self._get_backupsets()
 
     @property
-    def default_backup_set(self):
-        """Returns the name of the default backup set for the selected Client and Agent."""
+    def default_backup_set(self) -> str:
+        """Get the name of the default backup set for the selected Client and Agent.
+
+        Returns:
+            The name of the default backup set as a string.
+
+        Example:
+            >>> backupsets = Backupsets(client_object)
+            >>> default_set = backupsets.default_backup_set  # Use dot notation for property access
+            >>> print(f"Default backup set: {default_set}")
+
+        #ai-gen-doc
+        """
         return self._default_backup_set
 
 
 class Backupset(object):
-    """Class for performing backupset operations for a specific backupset."""
+    """
+    Class for managing and performing operations on a specific backupset.
 
-    def __new__(cls, instance_object, backupset_name, backupset_id=None):
-        """Class composition for CV backupsets"""
+    The Backupset class provides a comprehensive interface for handling backupset-related
+    operations within a backup management system. It allows users to interact with backupsets,
+    retrieve and update their properties, perform backup and browse operations, manage backupset
+    configurations, and handle data deletion and media listing.
+
+    Key Features:
+        - Creation and initialization of backupset objects
+        - Dynamic attribute access and representation
+        - Retrieval of backupset ID and properties
+        - Execution of backup operations for specified subclients
+        - Processing and updating backupset properties and responses
+        - Time conversion utilities for backupset operations
+        - Setting default values and updating backupset configurations
+        - Preparation and processing of browse options and responses
+        - Browsing all versions and specific data within the backupset
+        - Updating backupset properties via dictionary input
+        - Access to backupset metadata via properties (name, ID, description, plan, GUID, etc.)
+        - Setting backupset as default and managing on-demand backupsets
+        - Performing backup, browse, find, and data deletion operations
+        - Listing associated media and refreshing backupset state
+        - Counting backed up files for specified paths
+
+    This class is intended for use in environments where backupset management and data protection
+    are critical, providing a robust set of methods for interacting with backupset entities.
+
+    #ai-gen-doc
+    """
+
+    def __new__(cls, instance_object: object, backupset_name: str, backupset_id: str = None) -> 'Backupset':
+        """Create and return a new Backupset instance.
+
+        This method is responsible for creating a new instance of the Backupset class,
+        associating it with the specified instance object, backupset name, and optional backupset ID.
+
+        Args:
+            instance_object: The instance object to which the backupset belongs.
+            backupset_name: The name of the backupset to be created.
+            backupset_id: Optional; the unique identifier for the backupset.
+
+        Returns:
+            Backupset: A new instance of the Backupset class.
+
+        Example:
+            >>> backupset = Backupset(instance_object, "DailyBackup", "12345")
+            >>> print(f"Created backupset: {backupset}")
+
+        #ai-gen-doc
+        """
         from .backupsets.fsbackupset import FSBackupset
         from .backupsets.nasbackupset import NASBackupset
         from .backupsets.hanabackupset import HANABackupset
@@ -1042,19 +1231,20 @@ class Backupset(object):
         else:
             return object.__new__(cls)
 
-    def __init__(self, instance_object, backupset_name, backupset_id=None):
-        """Initialise the backupset object.
+    def __init__(self, instance_object: object, backupset_name: str, backupset_id: str = None) -> None:
+        """Initialize a Backupset object.
 
-            Args:
-                instance_object     (object)  --  instance of the Instance class
+        Args:
+            instance_object: An instance of the Instance class to which this backupset belongs.
+            backupset_name: The name of the backupset.
+            backupset_id: The unique identifier for the backupset. If not provided, it will be determined automatically.
 
-                backupset_name      (str)     --  name of the backupset
+        Example:
+            >>> instance = Instance(commcell_object, "FileSystem")
+            >>> backupset = Backupset(instance, "defaultBackupSet")
+            >>> print(f"Backupset created: {backupset}")
 
-                backupset_id        (str)     --  id of the backupset
-                    default: None
-
-            Returns:
-                object - instance of the Backupset class
+        #ai-gen-doc
         """
         self._instance_object = instance_object
         self._agent_object = self._instance_object._agent_object
@@ -1128,7 +1318,6 @@ class Backupset(object):
             'vm_disk_browse': False,
             'filters': [],
             'job_id': 0,
-            'commcell_id': self._commcell_object.commcell_id,
             'include_aged_data': False,
             'include_meta_data':False,
             'include_hidden': False,
@@ -1144,8 +1333,25 @@ class Backupset(object):
             '_custom_queries': False
         }
 
-    def __getattr__(self, attribute):
-        """Returns the persistent attributes"""
+    def __getattr__(self, attribute: str) -> object:
+        """Retrieve the value of a persistent attribute for the Backupset instance.
+
+        This method is called when an attribute lookup does not find the attribute in the usual places.
+        It allows access to persistent attributes that may not be explicitly defined in the class.
+
+        Args:
+            attribute: The name of the attribute to retrieve.
+
+        Returns:
+            The value of the requested persistent attribute.
+
+        Example:
+            >>> backupset = Backupset()
+            >>> value = backupset.some_persistent_attribute
+            >>> print(f"Attribute value: {value}")
+
+        #ai-gen-doc
+        """
         if attribute in self._restore_methods:
             return getattr(self._instance_object, attribute)
         elif attribute in self._restore_options_json:
@@ -1153,8 +1359,21 @@ class Backupset(object):
 
         return super(Backupset, self).__getattribute__(attribute)
 
-    def __repr__(self):
-        """String representation of the instance of this class."""
+    def __repr__(self) -> str:
+        """Return a string representation of the Backupset instance.
+
+        This method provides a developer-friendly string that identifies the Backupset object,
+        which can be useful for debugging and logging purposes.
+
+        Returns:
+            A string representing the Backupset instance.
+
+        Example:
+            >>> backupset = Backupset()
+            >>> print(repr(backupset))
+            <Backupset object at 0x7f8c2e4b2d30>
+        #ai-gen-doc
+        """
         representation_string = ('Backupset class instance for Backupset: "{0}" '
                                  'for Instance: "{1}" of Agent: "{2}"')
         return representation_string.format(
@@ -1163,23 +1382,36 @@ class Backupset(object):
             self._agent_object.agent_name
         )
 
-    def _get_backupset_id(self):
-        """Gets the backupset id associated with this backupset.
+    def _get_backupset_id(self) -> str:
+        """Retrieve the unique identifier (ID) associated with this backupset.
 
-            Returns:
-                str - id associated with this backupset
+        Returns:
+            The backupset ID as a string.
+
+        Example:
+            >>> backupset = Backupset()
+            >>> backupset_id = backupset._get_backupset_id()
+            >>> print(f"Backupset ID: {backupset_id}")
+
+        #ai-gen-doc
         """
         backupsets = Backupsets(self._instance_object)
         return backupsets.get(self.backupset_name).backupset_id
 
-    def _get_backupset_properties(self):
-        """Gets the properties of this backupset.
+    def _get_backupset_properties(self) -> None:
+        """Retrieve and update the properties of this backupset from the Commcell.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        This method fetches the latest properties for the backupset and updates the internal state accordingly.
 
-                    if response is not success
+        Raises:
+            SDKException: If the response from the Commcell is empty or indicates a failure.
+
+        Example:
+            >>> backupset = Backupset(commcell_object, client_name, instance_name, backupset_name)
+            >>> backupset._get_backupset_properties()
+            >>> # The backupset object now has updated properties
+
+        #ai-gen-doc
         """
         flag, response = self._cvpysdk_object.make_request('GET', self._BACKUPSET)
 
@@ -1212,29 +1444,28 @@ class Backupset(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def _run_backup(self, subclient_name, return_list, **kwargs):
-        """Triggers backup job for the given subclient, and appends its Job object to the list.
-            Backup job is started only when backup activity is enabled and storage policy is set for it.
+    def _run_backup(self, subclient_name: str, return_list: list, **kwargs: dict) -> None:
+        """Trigger a backup job for the specified subclient and append its Job object to the provided list.
 
-            The SDKException class instance is appended to the list,
-            if any exception is raised while running the backup job for the Subclient.
+        This method initiates a backup job for the given subclient if backup activity is enabled and a storage policy is set.
+        The resulting Job object (or an SDKException instance if an error occurs) is appended to the `return_list`.
+        Additional keyword arguments are passed to the subclient's `backup()` method, allowing customization of the backup operation.
 
-            Args:
-                subclient_name (str)   --  name of the subclient to trigger the backup for
+        Args:
+            subclient_name: The name of the subclient for which to trigger the backup.
+            return_list: The list to which the resulting Job object or SDKException will be appended.
+            **kwargs: Additional arguments to pass to the subclient's `backup()` method, such as:
+                - backup_level (str): The type of backup to run (e.g., 'Full', 'Incremental').
+                - advanced_options (dict): Advanced backup options to include in the request.
 
-                return_list    (list)  --  list to append the job object to
+        Example:
+            >>> jobs = []
+            >>> backupset._run_backup('default', jobs, backup_level='Full')
+            >>> for job in jobs:
+            ...     print(job)
+            >>> # jobs will contain Job objects for successful backups or SDKException instances for failures
 
-            Kwargs:
-                All arguments used by subclient.backup() can be used here. Commonly used arguments are
-
-                backup_level   (str)   --  The type of backup to run
-
-                advanced_options   (dict)  --  advanced backup options to be included while
-                                    making the request
-
-            Returns:
-                None
-
+        #ai-gen-doc
         """
         try:
             subclient = self.subclients.get(subclient_name)
@@ -1245,26 +1476,34 @@ class Backupset(object):
         except SDKException as excp:
             return_list.append(excp)
 
-    def _process_update_reponse(self, request_json):
-        """Runs the Backupset update API with the request JSON provided,
-            and returns the contents after parsing the response.
+    def _process_update_reponse(self, request_json: dict) -> tuple[bool, str, str]:
+        """Execute the Backupset update API using the provided request JSON and parse the response.
 
-            Args:
-                request_json    (dict)  --  JSON request to run for the API
+        This method sends the given JSON request to the Backupset update API, processes the response,
+        and returns a tuple containing the success status, error code, and error message.
 
-            Returns:
-                (bool, str, str):
-                    bool -  flag specifies whether success / failure
+        Args:
+            request_json: Dictionary containing the JSON request payload for the Backupset update API.
 
-                    str  -  error code received in the response
+        Returns:
+            A tuple containing:
+                bool: True if the update was successful, False otherwise.
+                str: Error code received from the API response.
+                str: Error message received from the API response.
 
-                    str  -  error message received
+        Raises:
+            SDKException: If the API response is empty or indicates a failure.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Example:
+            >>> backupset = Backupset()
+            >>> request_payload = {"backupsetName": "DailyBackup", "description": "Updated backupset"}
+            >>> success, error_code, error_message = backupset._process_update_reponse(request_payload)
+            >>> if success:
+            ...     print("Backupset updated successfully.")
+            ... else:
+            ...     print(f"Update failed: {error_code} - {error_message}")
 
-                    if response is not success
+        #ai-gen-doc
         """
         flag, response = self._cvpysdk_object.make_request('POST', self._BACKUPSET, request_json)
 
@@ -1291,29 +1530,32 @@ class Backupset(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def _update(self, backupset_name, backupset_description, default_backupset):
-        """Updates the properties of the backupset.
+    def _update(self, backupset_name: str, backupset_description: str, default_backupset: bool) -> tuple[bool, str, str]:
+        """Update the properties of the backupset.
 
-            Args:
-                backupset_name        (str)   --  new name of the backupset
+        Args:
+            backupset_name: The new name to assign to the backupset.
+            backupset_description: The description to set for the backupset.
+            default_backupset: Whether to set this backupset as the default.
 
-                backupset_description (str)   --  description of the backupset
+        Returns:
+            A tuple containing:
+                bool: True if the update was successful, False otherwise.
+                str: Error code received in the response, if any.
+                str: Error message received, if any.
 
-                default_backupset     (bool)  --  default backupset property
+        Raises:
+            SDKException: If the response is empty or indicates failure.
 
-            Returns:
-                (bool, str, str):
-                    bool -  flag specifies whether success / failure
+        Example:
+            >>> result = backupset._update("NewBackupsetName", "Updated description", True)
+            >>> success, error_code, error_message = result
+            >>> if success:
+            ...     print("Backupset updated successfully.")
+            ... else:
+            ...     print(f"Update failed: {error_code} - {error_message}")
 
-                    str  -  error code received in the response
-
-                    str  -  error message received
-
-            Raises:
-                SDKException:
-                    if response is empty
-
-                    if response is not success
+        #ai-gen-doc
         """
 
         request_json = {
@@ -1340,19 +1582,31 @@ class Backupset(object):
         return self._process_update_reponse(request_json)
 
     @staticmethod
-    def _get_epoch_time(timestamp):
-        """Returns the Epoch time given the input time is in format %Y-%m-%d %H:%M:%S.
+    def _get_epoch_time(timestamp: Union[int, str]) -> int:
+        """Convert a timestamp to its corresponding epoch time.
 
-            Args:
-                timestamp   (int / str)     --  value should either be the Epoch time or, the
-                                                    Timestamp of the format %Y-%m-%d %H:%M:%S
+        The input can be either an epoch time (int) or a string timestamp in the format '%Y-%m-%d %H:%M:%S'.
+        If a string is provided, it will be parsed and converted to epoch time.
 
-            Returns:
-                int - epoch time converted from the input timestamp
+        Args:
+            timestamp: The timestamp to convert. Can be an integer representing epoch time,
+                or a string in the format '%Y-%m-%d %H:%M:%S'.
 
-            Raises:
-                SDKException:
-                    if the input timestamp is not of correct format
+        Returns:
+            The epoch time as an integer.
+
+        Raises:
+            SDKException: If the input timestamp is not in the correct format.
+
+        Example:
+            >>> epoch = Backupset._get_epoch_time(1688123456)
+            >>> print(epoch)
+            1688123456
+            >>> epoch = Backupset._get_epoch_time('2023-06-30 12:30:56')
+            >>> print(epoch)
+            1688123456
+
+        #ai-gen-doc
         """
         if str(timestamp) == '0':
             return 0
@@ -1367,20 +1621,26 @@ class Backupset(object):
             except Exception:
                 raise SDKException('Subclient', '106')
 
-    def _set_defaults(self, final_dict, defaults_dict):
-        """Iterates over the defaults_dict, and adds the default value to the final_dict,
-            for the key which is not present in the final dict.
+    def _set_defaults(self, final_dict: dict, defaults_dict: dict) -> None:
+        """Recursively set default values in a dictionary.
 
-            Recursively sets default values on the final_dict dictionary.
+        Iterates over the `defaults_dict` and adds any missing keys and their default values 
+        to the `final_dict`. If a value in `defaults_dict` is itself a dictionary, this method 
+        will recursively set defaults for nested dictionaries as well.
 
-            Args:
-                final_dict      (dict)  --  the dictionary to be set with defaults, and to be used
-                                                to generate the Browse / Find JSON
+        Args:
+            final_dict: The dictionary to update with default values. This dictionary will be 
+                modified in place and is typically used to generate the Browse/Find JSON.
+            defaults_dict: The dictionary containing default key-value pairs to apply.
 
-                defaults_dict   (dict)  --  the dictionary with default values
+        Example:
+            >>> final = {'a': 1}
+            >>> defaults = {'a': 0, 'b': 2, 'c': {'d': 4}}
+            >>> backupset._set_defaults(final, defaults)
+            >>> print(final)
+            {'a': 1, 'b': 2, 'c': {'d': 4}}
 
-            Returns:
-                None
+        #ai-gen-doc
         """
         for key in defaults_dict:
             if key not in final_dict:
@@ -1389,26 +1649,49 @@ class Backupset(object):
             if isinstance(defaults_dict[key], dict):
                 self._set_defaults(final_dict[key], defaults_dict[key])
 
-    def _prepare_browse_options(self, options):
-        """Prepares the options for the Browse/find operation.
+    def _prepare_browse_options(self, options: dict) -> dict:
+        """Prepare and set default values for browse or find operation options.
 
-            Args:
-                options     (dict)  --  a dictionary of browse options
+        This method takes a dictionary of browse options and ensures that all required
+        default options are set for a browse or find operation within the backupset.
 
-            Returns:
-                dict - The browse options with all the default options set
+        Args:
+            options: A dictionary containing user-specified browse options.
+
+        Returns:
+            A dictionary with all necessary browse options, including defaults where not provided.
+
+        Example:
+            >>> browse_options = {"path": "/data", "show_deleted": True}
+            >>> prepared_options = backupset._prepare_browse_options(browse_options)
+            >>> print(prepared_options)
+            {'path': '/data', 'show_deleted': True, 'other_default_option': 'value'}
+
+        #ai-gen-doc
         """
         self._set_defaults(options, self._default_browse_options)
         return options
 
-    def _prepare_browse_json(self, options):
-        """Prepares the JSON object for the browse request.
+    def _prepare_browse_json(self, options: dict) -> dict:
+        """Prepare the JSON object required for a browse request.
 
-            Args:
-                options     (dict)  --  the browse options dictionary
+        Args:
+            options: A dictionary containing browse options and parameters.
 
-            Returns:
-                dict - A JSON object for the browse response
+        Returns:
+            A dictionary representing the JSON object to be used in the browse response.
+
+        Example:
+            >>> browse_options = {
+            ...     "path": "/data",
+            ...     "show_deleted": True,
+            ...     "time_range": {"from": "2023-01-01", "to": "2023-01-31"}
+            ... }
+            >>> browse_json = backupset._prepare_browse_json(browse_options)
+            >>> print(browse_json)
+            {'path': '/data', 'show_deleted': True, 'time_range': {'from': '2023-01-01', 'to': '2023-01-31'}}
+
+        #ai-gen-doc
         """
         operation_types = {
             'browse': 0,
@@ -1515,10 +1798,85 @@ class Backupset(object):
         if options['job_id'] != 0:
             request_json['advOptions']['advConfig'] = {
                 'browseAdvancedConfigBrowseByJob': {
-                    'commcellId': options['commcell_id'],
                     'jobId': options['job_id']
                 }
             }
+
+
+        if options.get('threatAnalysisRequest',False):
+            request_json['options']['showMaliciousFiles'] = True
+            request_json['options']['includeMetadata'] = True
+            request_json['advOptions']['stubAsData'] = True
+            request_json['advOptions']['advConfig'] = {
+                'threatAnalysisRequest': True
+            }
+            request_json['queries'] = [
+        {
+            "type": 0,
+            "queryId": "threatsList",
+            "dataParam":
+            {
+                "sortParam":
+                {
+                    "ascending": True,
+                    "sortBy":
+                    [
+                        38,
+                        0
+                    ]
+                },
+                "paging":
+                {
+                    "firstNode": 0,
+                    "pageSize": int(options['page_size']),
+                    "skipNode": int(options['skip_node'])
+                }
+            },
+            "isFacet": 1,
+            "fileOrFolder": 0,
+            "whereClause":
+            [
+                {
+                    "connector": 0,
+                    "criteria":
+                    {
+                        "field": 38,
+                        "dataOperator": 9,
+                        "values":
+                        [
+                            "file"
+                        ]
+                    }
+                }
+            ]
+        },
+        {
+            "type": 1,
+            "queryId": "threatsListCount",
+            "aggrParam":
+            {
+                "field": 0,
+                "aggrType": 4
+            },
+            "isFacet": 1,
+            "fileOrFolder": 0,
+            "whereClause":
+            [
+                {
+                    "connector": 0,
+                    "criteria":
+                    {
+                        "field": 38,
+                        "dataOperator": 9,
+                        "values":
+                        [
+                            "file"
+                        ]
+                    }
+                }
+            ]
+        }
+    ]
 
         if options['include_aged_data']:
             request_json['options']['includeAgedData'] = True
@@ -1563,27 +1921,34 @@ class Backupset(object):
 
         return request_json
 
-    def _process_browse_all_versions_response(self, result_set, options):
-        """Retrieves the items from browse response.
+    def _process_browse_all_versions_response(self, result_set: list[dict], options: dict) -> dict:
+        """Process the browse response to retrieve all versions of specified items.
+
+        This method extracts items and their version information from the browse response
+        returned by the server, using the provided options to filter or modify the results.
 
         Args:
-            result_set  (list of dict)  --  browse response dict obtained from server
-            options     (dict)          --  The browse options dictionary
-											{
-												"show_deleted": True,
-											}
+            result_set: A list of dictionaries representing the browse response obtained from the server.
+            options: A dictionary of browse options, such as {"show_deleted": True}.
 
         Returns:
-            dict - Dictionary of the specified file with list of all the file versions and
-                    additional metadata retrieved from browse
+            A dictionary containing the specified file(s) with a list of all file versions and
+            additional metadata retrieved from the browse operation.
 
         Raises:
-            SDKException:
-                if failed to browse/search for content
+            SDKException: If the browse/search operation fails, the response is empty, or the response indicates failure.
 
-                if response is empty
+        Example:
+            >>> result_set = [
+            ...     {"name": "file1.txt", "version": 1, "metadata": {...}},
+            ...     {"name": "file1.txt", "version": 2, "metadata": {...}}
+            ... ]
+            >>> options = {"show_deleted": True}
+            >>> versions_info = backupset._process_browse_all_versions_response(result_set, options)
+            >>> print(versions_info)
+            {'file1.txt': [{'version': 1, ...}, {'version': 2, ...}]}
 
-                if response is not success
+        #ai-gen-doc
         """
         path = None
         versions_list = []
@@ -1646,28 +2011,28 @@ class Backupset(object):
 
         return all_versions_dict
 
-    def _process_browse_response(self, flag, response, options):
-        """Retrieves the items from browse response.
+    def _process_browse_response(self, flag: bool, response: dict, options: dict) -> tuple[list, dict]:
+        """Process the browse response and extract file or folder paths and associated metadata.
 
         Args:
-            flag        (bool)  --  boolean, whether the response was success or not
-
-            response    (dict)  --  JSON response received for the request from the Server
-
-            options     (dict)  --  The browse options dictionary
+            flag: Indicates whether the response from the server was successful.
+            response: The JSON response dictionary received from the server for the browse request.
+            options: Dictionary containing browse options used in the request.
 
         Returns:
-            list - List of only the file / folder paths from the browse response
-
-            dict - Dictionary of all the paths with additional metadata retrieved from browse
+            A tuple containing:
+                - A list of file or folder paths extracted from the browse response.
+                - A dictionary mapping each path to its associated metadata retrieved from the browse.
 
         Raises:
-            SDKException:
-                if failed to browse/search for content
+            SDKException: If the browse/search operation fails, the response is empty, or the response indicates failure.
 
-                if response is empty
+        Example:
+            >>> paths, metadata = backupset._process_browse_response(True, browse_response, browse_options)
+            >>> print("Paths:", paths)
+            >>> print("Metadata for first path:", metadata.get(paths[0], {}))
 
-                if response is not success
+        #ai-gen-doc
         """
 
         operation_types = {
@@ -1779,6 +2144,9 @@ class Backupset(object):
                         'deleted': deleted
                     }
 
+                    if "threatAnalysisRequest" in options and options["threatAnalysisRequest"] and 'flags' in result:
+                        paths_dict[path]['threatAnalysisData'] = result["flags"]
+
                     paths.append(path)
 
                 return paths, paths_dict
@@ -1787,18 +2155,32 @@ class Backupset(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def _do_browse(self, options=None, retry=10):
-        """Performs a browse operation with the given options.
+    def _do_browse(self, options: Optional[Dict[str, Any]] = None, retry: int = 10) -> Union[List[str], Dict[str, Any]]:
+        """Perform a browse operation on the backupset with the specified options.
+
+        This method initiates a browse request using the provided options and returns either a list of file/folder paths 
+        or a dictionary containing paths with additional metadata, depending on the browse response.
 
         Args:
-            options     (dict)  --  dictionary of browse options
-
-            retry       (int)   --  Number of times to retry for browse
+            options: Optional dictionary specifying browse options such as filters, path, or other parameters.
+            retry: Number of times to retry the browse operation in case of failure. Default is 10.
 
         Returns:
-            list - List of only the file, folder paths from the browse response
+            A list of file and folder paths if the browse response contains only paths.
+            A dictionary mapping paths to their metadata if the browse response includes additional information.
 
-            dict - Dictionary of all the paths with additional metadata retrieved from browse
+        Example:
+            >>> backupset = Backupset()
+            >>> # Browse for all files in a specific folder
+            >>> browse_options = {'path': '/home/user/documents'}
+            >>> result = backupset._do_browse(browse_options)
+            >>> if isinstance(result, list):
+            >>>     print("File/Folder paths:", result)
+            >>> elif isinstance(result, dict):
+            >>>     for path, metadata in result.items():
+            >>>         print(f"Path: {path}, Metadata: {metadata}")
+
+        #ai-gen-doc
         """
         if options is None:
             options = {}
@@ -1818,26 +2200,26 @@ class Backupset(object):
             attempt += 1
         return self._process_browse_response(flag, response, options)
 
-    def update_properties(self, properties_dict):
-        """Updates the backupset properties
+    def update_properties(self, properties_dict: dict) -> None:
+        """Update the properties of the backupset.
 
-            Args:
-                properties_dict (dict)  --  Backupset property dict which is to be updated
+        This method updates the backupset's properties using the provided dictionary.
+        To modify properties safely, use `self.properties` to obtain a deep copy of the current properties,
+        make the necessary changes, and then pass the updated dictionary to this method.
 
-            Returns:
-                None
+        Args:
+            properties_dict: Dictionary containing the backupset properties to update.
 
-            Raises:
-                SDKException:
-                    if failed to add
+        Raises:
+            SDKException: If the update fails, the response is empty, or the response code is not as expected.
 
-                    if response is empty
+        Example:
+            >>> backupset = Backupset()
+            >>> props = backupset.properties  # Get a deep copy of current properties
+            >>> props['backupType'] = 'Full'  # Modify the desired property
+            >>> backupset.update_properties(props)  # Update the backupset with new properties
 
-                    if response code is not as expected
-
-        **Note** self.properties can be used to get a deep copy of all the properties, modify the properties which you
-        need to change and use the update_properties method to set the properties
-
+        #ai-gen-doc
         """
         request_json = {
             "backupsetProperties": {},
@@ -1863,43 +2245,140 @@ class Backupset(object):
                 'Failed to update backupset property\nError: "{0}"'.format(error_string))
 
     @property
-    def properties(self):
-        """Returns the backupset properties"""
+    def properties(self) -> dict:
+        """Get the properties of the backupset.
+
+        Returns:
+            dict: A dictionary containing the properties and configuration details of the backupset.
+
+        Example:
+            >>> backupset = Backupset()
+            >>> props = backupset.properties
+            >>> print(props)
+            >>> # Output will be a dictionary with backupset configuration details
+
+        #ai-gen-doc
+        """
         return copy.deepcopy(self._properties)
 
     @property
-    def name(self):
-        """Returns the Backupset display name"""
+    def name(self) -> str:
+        """Get the display name of the backupset.
+
+        Returns:
+            The display name of the backupset as a string.
+
+        Example:
+            >>> backupset = Backupset()
+            >>> display_name = backupset.name  # Use dot notation for property access
+            >>> print(f"Backupset name: {display_name}")
+
+        #ai-gen-doc
+        """
         return self._properties["backupSetEntity"]["backupsetName"]
 
     @property
-    def backupset_id(self):
-        """Treats the backupset id as a read-only attribute."""
+    def backupset_id(self) -> str:
+        """Get the unique identifier of the backupset as a read-only property.
+
+        Returns:
+            The backupset ID as a string.
+
+        Example:
+            >>> backupset = Backupset(commcell_object, client_name, instance_name, backupset_name)
+            >>> backupset_id = backupset.backupset_id  # Access the backupset ID property
+            >>> print(f"Backupset ID: {backupset_id}")
+
+        #ai-gen-doc
+        """
         return self._backupset_id
 
     @property
-    def backupset_name(self):
-        """Treats the backupset name as a property of the Backupset class."""
+    def backupset_name(self) -> str:
+        """Get the name of the backupset associated with this Backupset instance.
+
+        Returns:
+            The name of the backupset as a string.
+
+        Example:
+            >>> backupset = Backupset()
+            >>> name = backupset.backupset_name  # Access the backupset name property
+            >>> print(f"Backupset name: {name}")
+
+        #ai-gen-doc
+        """
         return self._backupset_name
 
     @property
-    def description(self):
-        """Treats the backupset description as a property of the Backupset class."""
+    def description(self) -> str:
+        """Get the description of the backupset.
+
+        Returns:
+            The description string associated with this backupset.
+
+        Example:
+            >>> backupset = Backupset(commcell_object, client_name, instance_name, backupset_name)
+            >>> desc = backupset.description  # Access the description property
+            >>> print(f"Backupset description: {desc}")
+
+        #ai-gen-doc
+        """
         return self._description
 
     @property
-    def is_default_backupset(self):
-        """Treats the is default backupset as a read-only attribute."""
+    def is_default_backupset(self) -> bool:
+        """Indicate whether this backupset is the default backupset.
+
+        Returns:
+            True if this backupset is the default backupset, False otherwise.
+
+        Example:
+            >>> backupset = Backupset()
+            >>> if backupset.is_default_backupset:
+            ...     print("This is the default backupset.")
+            ... else:
+            ...     print("This is not the default backupset.")
+
+        #ai-gen-doc
+        """
         return self._is_default
 
     @property
-    def is_on_demand_backupset(self):
-        """Treats the is on demand backupset as a read-only attribute."""
+    def is_on_demand_backupset(self) -> bool:
+        """Indicate whether this backupset is an on-demand backupset.
+
+        This property provides a read-only boolean value that specifies if the backupset
+        is configured as an on-demand backupset.
+
+        Returns:
+            True if the backupset is on-demand; False otherwise.
+
+        Example:
+            >>> backupset = Backupset()
+            >>> if backupset.is_on_demand_backupset:
+            ...     print("This is an on-demand backupset.")
+            ... else:
+            ...     print("This is a regular backupset.")
+
+        #ai-gen-doc
+        """
         return self._is_on_demand_backupset
 
     @property
-    def plan(self):
-        """Treats the backupset plan as a property of the Backupset class."""
+    def plan(self) -> 'Plan':
+        """Get the plan associated with this Backupset as a property.
+
+        Returns:
+            Plan: The plan object linked to the current Backupset.
+
+        Example:
+            >>> backupset = Backupset(commcell_object, client_name, instance_name, backupset_name)
+            >>> plan = backupset.plan  # Access the plan property
+            >>> print(f"Plan name: {plan.name}")
+            >>> # The returned Plan object can be used for further plan management
+
+        #ai-gen-doc
+        """
         if self._plan_obj is not None:
             return self._plan_obj
         elif self._plan_name is not None:
@@ -1909,8 +2388,21 @@ class Backupset(object):
             return None
 
     @property
-    def guid(self):
-        """Treats the backupset GUID as a property of the Backupset class."""
+    def guid(self) -> str:
+        """Get the GUID (Globally Unique Identifier) of the backupset.
+
+        This property provides access to the unique identifier associated with the backupset instance.
+
+        Returns:
+            The backupset GUID as a string.
+
+        Example:
+            >>> backupset = Backupset(commcell_object, client_name, instance_name, backupset_name)
+            >>> guid = backupset.guid  # Use dot notation to access the property
+            >>> print(f"Backupset GUID: {guid}")
+
+        #ai-gen-doc
+        """
         if self._properties.get('backupSetEntity'):
             if self._properties['backupSetEntity'].get('backupsetGUID'):
                 return self._properties['backupSetEntity']['backupsetGUID']
@@ -1918,14 +2410,21 @@ class Backupset(object):
         raise SDKException('Backupset', '102', 'Backupset entity not found')
 
     @backupset_name.setter
-    def backupset_name(self, value):
-        """Sets the name of the backupset as the value provided as input.
+    def backupset_name(self, value: str) -> None:
+        """Set the name of the backupset to the specified value.
 
-            Raises:
-                SDKException:
-                    if failed to update the backupset name
+        Args:
+            value: The new name to assign to the backupset. Must be a string.
 
-                    if type of value input is not string
+        Raises:
+            SDKException: If the backupset name could not be updated, or if the provided value is not a string.
+
+        Example:
+            >>> backupset = Backupset()
+            >>> backupset.backupset_name = "NewBackupsetName"  # Use assignment to set the backupset name
+            >>> print("Backupset name updated successfully")
+
+        #ai-gen-doc
         """
         if isinstance(value, str):
             output = self._update(
@@ -1942,16 +2441,22 @@ class Backupset(object):
         raise SDKException('Backupset', '102', 'Backupset name should be a string value')
 
     @description.setter
-    def description(self, value):
-        """Sets the description of the backupset as the value provided as input.
+    def description(self, value: str) -> None:
+        """Set the description of the backupset to the specified value.
 
-            Raises:
-                SDKException:
-                    if failed to update the backupset description
+        Args:
+            value: The new description to assign to the backupset. Must be a string.
 
-                    if type of value input is not string
+        Raises:
+            SDKException: If the description update fails, if the input value is not a string,
+                or if the description cannot be modified for this backupset.
 
-                    if description cannot be modified for this backupset
+        Example:
+            >>> backupset = Backupset(commcell_object, client_name, instance_name, backupset_name)
+            >>> backupset.description = "Monthly full backup for critical data"
+            >>> # The backupset description is now updated to the provided string
+
+        #ai-gen-doc
         """
         if self.description is not None:
             if isinstance(value, str):
@@ -1974,26 +2479,27 @@ class Backupset(object):
         raise SDKException('Backupset', '102', 'Description cannot be modified')
 
     @plan.setter
-    def plan(self, value):
-        """Associates the plan to the backupset
+    def plan(self, value: 'Union[object, str, None]') -> None:
+        """Associate or remove a plan from the backupset.
 
-            Args:
-                value   (object)    --  the Plan object which is to be associated
-                                        with the backupset
+        This setter allows you to associate a plan with the backupset by providing either a Plan object,
+        the name of the plan as a string, or remove the association by setting the value to None.
 
-                value   (str)       --  name of the plan which is to be associated
-                                        with the backupset
+        Args:
+            value: The plan to associate with the backupset. This can be:
+                - A Plan object to associate with the backupset.
+                - A string representing the name of the plan to associate.
+                - None to remove any existing plan association.
 
-                value   (None)      --  set value to None to remove plan associations
+        Raises:
+            SDKException: If the specified plan does not exist, the association fails, or the plan is not eligible.
 
-            Raises:
-                SDKException:
+        Example:
+            >>> backupset.plan = plan_obj  # Associate using a Plan object
+            >>> backupset.plan = "GoldPlan"  # Associate using the plan name
+            >>> backupset.plan = None  # Remove any plan association
 
-                    if plan does not exist
-
-                    if plan association fails
-
-                    if plan is not eligible to be associated
+        #ai-gen-doc
         """
         from .plan import Plan
         if isinstance(value, Plan):
@@ -2056,13 +2562,22 @@ class Backupset(object):
                 'Plan not eligible to be associated with the backupset'
             )
 
-    def set_default_backupset(self):
-        """Sets the backupset represented by this Backupset class instance as the default backupset
-            if it is not the default backupset.
+    def set_default_backupset(self) -> None:
+        """Set this backupset as the default backupset if it is not already set.
 
-            Raises:
-                SDKException:
-                    if failed to set this as the default backupset
+        This method updates the default backupset for the associated client/application
+        to the backupset represented by this instance. If the operation fails, an
+        SDKException is raised.
+
+        Raises:
+            SDKException: If the backupset could not be set as the default.
+
+        Example:
+            >>> backupset = Backupset(client_object, 'UserBackupset')
+            >>> backupset.set_default_backupset()
+            >>> print("Backupset is now set as default.")
+
+        #ai-gen-doc
         """
         if self.is_default_backupset is False:
             output = self._update(
@@ -2077,26 +2592,32 @@ class Backupset(object):
             o_str = 'Failed to set this as the Default Backup Set\nError: "{0}"'
             raise SDKException('Backupset', '102', o_str.format(output[2]))
 
-    def backup(self, **kwargs):
-        """Runs backup job for all subclients in this backupset.
+    def backup(self, **kwargs: dict) -> list:
+        """Run backup jobs for all subclients in this backupset.
 
-            kwargs:
-                Please refer subclient.backup() for all the supported arguments. Commonly used arguments are,
+        This method initiates backup jobs for each subclient associated with the backupset.
+        You can specify various backup options using keyword arguments, which are passed
+        to each subclient's backup operation.
 
-                backup_level        (str)   --  level of backup the user wish to run
-                        Full / Incremental / Differential / Synthetic_full
-                    default: Incremental
+        Commonly used keyword arguments include:
+            - backup_level (str): The level of backup to perform. Options are
+              'Full', 'Incremental', 'Differential', or 'Synthetic_full'.
+              Default is 'Incremental'.
+            - advanced_options (dict): Advanced backup options to include in the request.
+            - common_backup_options (dict): Advanced job options to include in the request.
 
-                advanced_options   (dict)  --  advanced backup options to be included while
-                                                    making the request
+        For a complete list of supported arguments, refer to the documentation for `subclient.backup()`.
 
-                common_backup_options      (dict)  --  advanced job options to be included while
-                                                        making request
+        Returns:
+            list: A list of job objects representing the backup jobs started for each subclient in the backupset.
 
-            Returns:
-                list    -   list consisting of the job objects for the backup jobs started for
-                the subclients in the backupset
+        Example:
+            >>> backupset = Backupset()
+            >>> jobs = backupset.backup(backup_level='Full')
+            >>> print(f"Started {len(jobs)} backup jobs for the backupset")
+            >>> # Each item in 'jobs' is a job object for a subclient backup
 
+        #ai-gen-doc
         """
         return_list = []
         thread_list = []
@@ -2114,49 +2635,50 @@ class Backupset(object):
 
         return return_list
 
-    def browse(self, *args, **kwargs):
-        """Browses the content of the Backupset.
+    def browse(self, *args: Any, **kwargs: Any) -> tuple[list, dict]:
+        """Browse the content of the Backupset.
 
-            Args:
-                Dictionary of browse options:
-                    Example:
+        This method allows you to browse files and folders within the backupset, 
+        supporting both positional and keyword arguments for browse options.
 
-                        browse({
-                            'path': 'c:\\hello',
+        You can specify browse options either as a dictionary or as keyword arguments.
+        Common options include:
+            - path: The path to browse (e.g., 'c:\\hello')
+            - show_deleted: Whether to include deleted items (bool)
+            - from_time: Start time for the browse window (str, format 'YYYY-MM-DD HH:MM:SS')
+            - to_time: End time for the browse window (str, format 'YYYY-MM-DD HH:MM:SS')
 
-                            'show_deleted': True,
+        For a full list of supported options, refer to the 
+        `default_browse_options` documentation:
+        https://github.com/CommvaultEngg/cvpysdk/blob/master/cvpysdk/backupset.py#L565
 
-                            'from_time': '2014-04-20 12:00:00',
+        Returns:
+            tuple[list, dict]: 
+                - A list of file and folder paths from the browse response.
+                - A dictionary containing all paths with additional metadata from the browse operation.
 
-                            'to_time': '2016-04-21 12:00:00'
-                        })
+        Example:
+            >>> # Using a dictionary of browse options
+            >>> file_list, metadata = backupset.browse({
+            ...     'path': 'c:\\hello',
+            ...     'show_deleted': True,
+            ...     'from_time': '2014-04-20 12:00:00',
+            ...     'to_time': '2016-04-21 12:00:00'
+            ... })
+            >>> print(file_list)
+            >>> print(metadata)
+            >>>
+            >>> # Using keyword arguments
+            >>> file_list, metadata = backupset.browse(
+            ...     path='c:\\hello',
+            ...     show_deleted=True,
+            ...     from_time='2014-04-20 12:00:00',
+            ...     to_time='2016-04-21 12:00:00'
+            ... )
+            >>> print(file_list)
+            >>> print(metadata)
 
-            Kwargs:
-                Keyword argument of browse options:
-                    Example:
-
-                        browse(
-                            path='c:\\hello',
-
-                            show_deleted=True,
-
-                            from_time='2014-04-20 12:00:00',
-
-                            to_time='2016-04-21 12:00:00'
-                        )
-
-            Returns:
-                (list, dict)
-                    list    -   List of only the file, folder paths from the browse response
-
-                    dict    -   Dictionary of all the paths with additional metadata retrieved
-                    from browse operation
-
-
-            Refer `default_browse_options`_ for all the supported options.
-
-            .. _default_browse_options: https://github.com/CommvaultEngg/cvpysdk/blob/master/cvpysdk/backupset.py#L565
-
+        #ai-gen-doc
         """
         if args and isinstance(args[0], dict):
             options = args[0]
@@ -2167,59 +2689,51 @@ class Backupset(object):
 
         return self._do_browse(options)
 
-    def find(self, *args, **kwargs):
-        """Searches a file/folder in the backed up content of the backupset,
-            and returns all the files matching the filters given.
+    def find(self, *args: Any, **kwargs: Any) -> tuple[list, dict]:
+        """Search for files or folders in the backed up content of the backupset matching specified filters.
 
-            Args:
-                Dictionary of browse options:
-                    Example:
+        This method allows you to search for files and folders within the backupset using various filter options.
+        You can provide search criteria either as a single dictionary of options or as keyword arguments.
 
-                        find({
-                            'file_name': '*.txt',
+        Supported filter options include:
+            - file_name (str): Pattern to match file names (e.g., '*.txt').
+            - show_deleted (bool): Whether to include deleted files in the results.
+            - from_time (str): Start time for the search range (format: 'YYYY-MM-DD HH:MM:SS').
+            - to_time (str): End time for the search range (format: 'YYYY-MM-DD HH:MM:SS').
+            - file_size_gt (int): Find files with size greater than the specified value (in bytes).
+            - file_size_lt (int): Find files with size less than the specified value (in bytes).
+            - file_size_et (int): Find files with size equal to the specified value (in bytes).
 
-                            'show_deleted': True,
+        For a complete list of supported options, refer to the
+        `default_browse_options`_ documentation.
 
-                            'from_time': '2014-04-20 12:00:00',
+        Returns:
+            tuple[list, dict]: 
+                - A list of file and folder paths matching the search criteria.
+                - A dictionary containing all matched paths with additional metadata from the browse operation.
 
-                            'to_time': '2016-04-31 12:00:00'
-                        })
+        Example:
+            >>> # Using a dictionary of options
+            >>> results, metadata = backupset.find({
+            ...     'file_name': '*.txt',
+            ...     'show_deleted': True,
+            ...     'from_time': '2022-01-01 00:00:00',
+            ...     'to_time': '2022-12-31 23:59:59'
+            ... })
+            >>> print(f"Found {len(results)} .txt files")
 
-            Kwargs:
-                Keyword argument of browse options:
-                    Example:
+            >>> # Using keyword arguments
+            >>> results, metadata = backupset.find(
+            ...     file_name='report_*.csv',
+            ...     file_size_gt=1024,
+            ...     show_deleted=False
+            ... )
+            >>> for path in results:
+            ...     print(path)
 
-                        find(
-                            file_name='*.txt',
+        .. _default_browse_options: https://github.com/CommvaultEngg/cvpysdk/blob/master/cvpysdk/backupset.py#L565
 
-                            show_deleted=True,
-
-                            'from_time': '2014-04-20 12:00:00',
-
-                            to_time='2016-04-31 12:00:00'
-                        )
-
-            Returns:
-                (list, dict)
-                    list    -   List of only the file, folder paths from the browse response
-
-                    dict    -   Dictionary of all the paths with additional metadata retrieved
-                    from browse operation
-
-
-            Refer `default_browse_options`_ for all the supported options.
-
-            Additional options supported:
-                file_name       (str)   --  Find files with name
-
-                file_size_gt    (int)   --  Find files with size greater than size
-
-                file_size_lt    (int)   --  Find files with size lesser than size
-
-                file_size_et    (int)   --  Find files with size equal to size
-
-            .. _default_browse_options: https://github.com/CommvaultEngg/cvpysdk/blob/master/cvpysdk/backupset.py#L565
-
+        #ai-gen-doc
         """
         if args and isinstance(args[0], dict):
             options = args[0]
@@ -2249,21 +2763,24 @@ class Backupset(object):
 
         return self._do_browse(options)
 
-    def delete_data(self, paths):
-        """Deletes items for the backupset in the Index and makes them unavailable for
-        browsing and recovery
+    def delete_data(self, paths: Union[str, List[str]]) -> None:
+        """Delete specified items from the backupset index, making them unavailable for browsing and recovery.
 
-            Args:
-                paths       (str/list)      --      The list of paths or single path to delete
-                from the backupset
+        Args:
+            paths: A single path as a string, or a list of paths, specifying the items to delete from the backupset.
 
-            Returns:
-                None        --      If delete request is sent successfully
+        Raises:
+            Exception: If the delete data request cannot be prepared, the response is invalid, or the request fails.
 
-            Raises:
-                Exception, if unable to prepare, response is invalid or send the
-                delete data request
+        Example:
+            >>> backupset = Backupset()
+            >>> # Delete a single file from the backupset
+            >>> backupset.delete_data('/data/old_file.txt')
+            >>> # Delete multiple directories from the backupset
+            >>> backupset.delete_data(['/data/dir1', '/data/dir2'])
+            >>> print("Delete request sent successfully.")
 
+        #ai-gen-doc
         """
 
         options = {
@@ -2277,46 +2794,55 @@ class Backupset(object):
         if files:
             raise SDKException('Backupset', '102', 'Delete data operation gave unexpected results')
 
-    def list_media(self, *args, **kwargs):
-        """List media required to browse and restore backed up data from the backupset
+    def list_media(self, *args: Any, **kwargs: Any) -> Union[List[Any], Dict[str, Any]]:
+        """List media required to browse and restore backed up data from the backupset.
 
-            Args:
-                Dictionary of options:
-                    Example:
+        This method retrieves the list of media required for browsing and restoring data from the backupset,
+        based on the provided options. Options can be supplied either as a dictionary or as keyword arguments.
 
-                        list_media({
-                            'path': 'c:\\hello',
-                            'show_deleted': True,
-                            'from_time': '2020-04-20 12:00:00',
-                            'to_time': '2021-04-19 12:00:00'
-                        })
+        Args:
+            *args: Optional positional arguments. Typically, a single dictionary containing browse options.
+            **kwargs: Optional keyword arguments specifying browse options directly.
 
-            Kwargs:
-                Keyword argument of options:
-                    Example:
+        Supported options include (but are not limited to):
+            - path (str): Path to the data to browse.
+            - show_deleted (bool): Whether to include deleted items.
+            - from_time (str): Start time for the browse operation (format: 'YYYY-MM-DD HH:MM:SS').
+            - to_time (str): End time for the browse operation (format: 'YYYY-MM-DD HH:MM:SS').
 
-                        list_media(
-                            path='c:\\hello',
-                            show_deleted=True,
-                            from_time='2020-04-20 12:00:00',
-                            to_time='2021-04-19 12:00:00'
-                        )
+        Note:
+            Refer to the `_default_browse_options` attribute for all supported options.
 
-            Note:
-                Refer `_default_browse_options` for all the supported options.
+        Returns:
+            Union[List[Any], Dict[str, Any]]:
+                - List of all media required for the given options.
+                - Dictionary containing the total size of the media.
 
-            Returns:
-                (List, Dict) -
-                    List - List of all the media required for the given options
+        Raises:
+            SDKException: If the media listing fails or the response is not successful.
 
-                    Dict - Total size of the media
+        Example:
+            >>> # Using a dictionary of options
+            >>> media_list, media_size = backupset.list_media({
+            ...     'path': 'c:\\hello',
+            ...     'show_deleted': True,
+            ...     'from_time': '2020-04-20 12:00:00',
+            ...     'to_time': '2021-04-19 12:00:00'
+            ... })
+            >>> print(f"Media required: {media_list}")
+            >>> print(f"Total media size: {media_size}")
 
-            Raises:
-                SDKException:
-                    if failed to list media for content
+            >>> # Using keyword arguments
+            >>> media_list, media_size = backupset.list_media(
+            ...     path='c:\\hello',
+            ...     show_deleted=True,
+            ...     from_time='2020-04-20 12:00:00',
+            ...     to_time='2021-04-19 12:00:00'
+            ... )
+            >>> print(f"Media required: {media_list}")
+            >>> print(f"Total media size: {media_size}")
 
-                    if response is not success
-
+        #ai-gen-doc
         """
 
         if args and isinstance(args[0], dict):
@@ -2340,32 +2866,47 @@ class Backupset(object):
         else:
             raise SDKException('Backupset', '102', 'List media operation gave unexpected results')
 
-    def refresh(self):
-        """Refresh the properties of the Backupset."""
+    def refresh(self) -> None:
+        """Reload the properties of the Backupset to reflect the latest state.
+
+        This method refreshes the Backupset's properties, ensuring that any changes 
+        made externally or in the Commcell are updated in the current object instance.
+
+        Example:
+            >>> backupset = Backupset(commcell_object, client_name, instance_name, backupset_name)
+            >>> backupset.refresh()
+            >>> print("Backupset properties refreshed successfully")
+
+        #ai-gen-doc
+        """
         self._get_backupset_properties()
 
         self.subclients = Subclients(self)
         self.schedules = Schedules(self)
 
-    def backed_up_files_count(self, path="\\**\\*"):
-        """Returns the count of the total number of files present in the backed up data
-         of all the subclients of the given backupset and given path.
+    def backed_up_files_count(self, path: str = "\\**\\*") -> int:
+        """Get the total number of files backed up in all subclients of this backupset for a given path.
 
-                Args:
+        Args:
+            path: The folder path to search for backed up files. Supports wildcards.
+                Default is "\\**\\*", which searches all files in all folders.
 
-                    path        (str)       --  Folder path to find no of backed up files
-                                                    (Default: \\**\\*)
+        Returns:
+            The number of files backed up in the specified path across all subclients.
 
-                Returns:
+        Raises:
+            Exception: If the browse response is not proper or an error occurs during the count.
 
-                    int --  No of backed up files count in given path
+        Example:
+            >>> backupset = Backupset()
+            >>> count = backupset.backed_up_files_count()
+            >>> print(f"Total backed up files: {count}")
+            >>> # To count files in a specific folder:
+            >>> count = backupset.backed_up_files_count('C:\\Users\\Documents\\*')
+            >>> print(f"Files in Documents: {count}")
 
-                Raises:
-
-                    Exception:
-
-                        if browse response is not proper
-         """
+        #ai-gen-doc
+        """
         options_dic = {"operation": "find", "opType": 1, "path": path,
                        "_custom_queries": [{"type": "AGGREGATE", "queryId": "2",
                                             "aggrParam": {"aggrType": "COUNT"}, "whereClause": [{

@@ -49,23 +49,40 @@ from ...client import Client
 
 
 class ContentStoreMailboxSubclient(ExchangeSubclient):
-    """Derived class from ExchangeSubclient Base class.
+    """
+    Specialized subclient class for managing Content Store Mailbox operations within Exchange environments.
 
-        This represents a contentstoremailbox subclient,
-        and can perform discover and restore operations on only that subclient.
+    This class extends the ExchangeSubclient base class to provide targeted functionality for
+    content store mailbox subclients. It enables discovery, association management, and restoration
+    operations specific to content store mailboxes. The class is designed to interact with backup sets,
+    manage mailbox associations, and refresh subclient data as needed.
 
+    Key Features:
+        - Initialization with backup set, subclient name, and subclient ID
+        - Retrieval of content store associations
+        - Generation of client dictionaries for mailbox management
+        - Identification and management of content store servers from client lists
+        - Property access to content store mailboxes
+        - Setting content store associations with support for policy usage
+        - Refreshing subclient data to ensure up-to-date information
+
+    #ai-gen-doc
     """
 
-    def __init__(self, backupset_object, subclient_name, subclient_id=None):
-        """Initialize the Instance object for the given ContentStoreMailbox Subclient.
+    def __init__(self, backupset_object: object, subclient_name: str, subclient_id: int = None) -> None:
+        """Initialize a ContentStoreMailboxSubclient instance.
 
-            Args:
-                backupset_object    (object)    --  instance of the backupset class
+        Args:
+            backupset_object: Instance of the backupset class associated with this subclient.
+            subclient_name: The name of the ContentStoreMailbox subclient.
+            subclient_id: Optional; the unique identifier for the subclient. If not provided, it will be determined automatically.
 
-                subclient_name      (str)       --  subclient name
+        Example:
+            >>> backupset = Backupset(commcell_object, 'ExchangeBackupset')
+            >>> subclient = ContentStoreMailboxSubclient(backupset, 'MailboxSubclient1')
+            >>> print(f"Subclient created: {subclient}")
 
-                subclient_id        (int)       --  subclient id
-
+        #ai-gen-doc
         """
         super(
             ContentStoreMailboxSubclient,
@@ -78,12 +95,18 @@ class ContentStoreMailboxSubclient(ExchangeSubclient):
 
         self.refresh()
 
-    def _get_content_store_assocaitions(self):
-        """Gets the appropriate content store associations from the Subclient.
+    def _get_content_store_assocaitions(self) -> list:
+        """Retrieve the list of content store mailboxes associated with the subclient.
 
-            Returns:
-                list    -   list of content store mailbox associated with the subclient
+        Returns:
+            list: A list containing the content store mailboxes associated with this subclient.
 
+        Example:
+            >>> subclient = ContentStoreMailboxSubclient()
+            >>> associations = subclient._get_content_store_assocaitions()
+            >>> print(f"Associated mailboxes: {associations}")
+
+        #ai-gen-doc
         """
         users = []
 
@@ -128,14 +151,25 @@ class ContentStoreMailboxSubclient(ExchangeSubclient):
         return users
 
     @staticmethod
-    def _get_client_dict(client_object):
-        """Returns the client dict for the client object to be appended to member server.
+    def _get_client_dict(client_object: object) -> dict:
+        """Generate a dictionary representation for a given client object.
 
-            Args:
-                client_object   (object)    --  instance of the Client class
+        This static method creates a dictionary for the provided client object,
+        which can be used to associate the client with a member server.
 
-            Returns:
-                dict    -   dictionary for a single client to be associated
+        Args:
+            client_object: An instance of the Client class to be converted into a dictionary.
+
+        Returns:
+            dict: A dictionary containing information about the specified client.
+
+        Example:
+            >>> client = Client('client_name')
+            >>> client_dict = ContentStoreMailboxSubclient._get_client_dict(client)
+            >>> print(client_dict)
+            {'clientName': 'client_name', ...}
+
+        #ai-gen-doc
         """
         client_dict = {
             "clientName": client_object.client_name,
@@ -144,18 +178,25 @@ class ContentStoreMailboxSubclient(ExchangeSubclient):
 
         return client_dict
 
-    def _content_store_servers(self, clients_list):
-        """Returns the proxy clients to be associated .
+    def _content_store_servers(self, clients_list: list) -> list:
+        """Return the list of proxy clients (member servers) to be associated.
 
-            Args:
-                clients_list (list)    --  list of the clients to associated
+        Args:
+            clients_list: List of client names or client objects to be associated as proxy clients.
 
-            Returns:
-                list - list consisting of all member servers to be associated
+        Returns:
+            List containing all member servers to be associated as proxy clients.
 
-            Raises:
-                SDKException:
-                    if type of clients list argument is not list
+        Raises:
+            SDKException: If the provided clients_list argument is not of type list.
+
+        Example:
+            >>> subclient = ContentStoreMailboxSubclient()
+            >>> servers = subclient._content_store_servers(['ClientA', 'ClientB'])
+            >>> print(servers)
+            ['ClientA', 'ClientB']
+
+        #ai-gen-doc
         """
         if not isinstance(clients_list, list):
             raise SDKException('Subclient', '101')
@@ -190,36 +231,63 @@ class ContentStoreMailboxSubclient(ExchangeSubclient):
         return content_store_servers
 
     @property
-    def content_store_mailboxes(self):
-        """"Returns the list of discovered users for the UserMailbox subclient."""
+    def content_store_mailboxes(self) -> list:
+        """Get the list of discovered users for the UserMailbox subclient.
+
+        Returns:
+            list: A list containing the discovered user mailboxes associated with this subclient.
+
+        Example:
+            >>> subclient = ContentStoreMailboxSubclient()
+            >>> users = subclient.content_store_mailboxes
+            >>> print(f"Discovered users: {users}")
+
+        #ai-gen-doc
+        """
         return self._content_store_mailboxes
 
-    def set_contentstore_assocaition(self, subclient_content, use_policies=True):
-        """Create User assocaition for UserMailboxSubclient.
+    def set_contentstore_assocaition(self, subclient_content: dict, use_policies: bool = True) -> None:
+        """Associate users with a UserMailboxSubclient using either policies or a plan.
 
-            Args:
-                subclient_content   (dict)  --  dict of the Users to add to the subclient
+        This method creates associations for user mailboxes in a ContentStoreMailboxSubclient.
+        The association can be configured using either archiving, cleanup, and retention policies,
+        or by specifying a plan, depending on the value of `use_policies`.
 
-                    subclient_content = {
+        Args:
+            subclient_content: Dictionary containing user and association details. The structure should be:
+                {
+                    'mailboxNames': List of mailbox aliases (list of str),
+                    'contentStoreClients': List of Content Store client names (list of str),
+                    # If use_policies is True:
+                    'archive_policy': Name of the archiving policy (str),
+                    'cleanup_policy': Name of the cleanup policy (str),
+                    'retention_policy': Name of the retention policy (str),
+                    # If use_policies is False:
+                    'plan_name': Name of the plan (str),
+                    'plan_id': Optional plan ID (int or None)
+                }
+            use_policies: If True, uses the specified policies for association. If False, uses the specified plan.
 
-                        'mailboxNames' : ["List of mailbox alias"],,
+        Example:
+            >>> subclient_content = {
+            ...     'mailboxNames': ['user1@domain.com', 'user2@domain.com'],
+            ...     'contentStoreClients': ['CSClient1'],
+            ...     'archive_policy': 'ArchivePolicy1',
+            ...     'cleanup_policy': 'CleanupPolicy1',
+            ...     'retention_policy': 'RetentionPolicy1'
+            ... }
+            >>> subclient.set_contentstore_assocaition(subclient_content, use_policies=True)
+            >>>
+            >>> # Using a plan instead of policies
+            >>> subclient_content = {
+            ...     'mailboxNames': ['user3@domain.com'],
+            ...     'contentStoreClients': ['CSClient2'],
+            ...     'plan_name': 'MailboxPlanA',
+            ...     'plan_id': 123
+            ... }
+            >>> subclient.set_contentstore_assocaition(subclient_content, use_policies=False)
 
-                        'contentStoreClients' : [List of Content Store clients],
-
-                        -- if use_policies is True --
-                        'archive_policy' : "CIPLAN Archiving policy",
-
-                        'cleanup_policy' : 'CIPLAN Clean-up policy',
-
-                        'retention_policy': 'CIPLAN Retention policy'
-
-                        -- if use_policies is False --
-                        'plan_name': Plan Name,
-                        'plan_id': int or None (Optional)
-                    }
-
-                use_policies (bool) -- If True uses policies else uses Plan
-
+        #ai-gen-doc
         """
         users = []
 
@@ -356,7 +424,18 @@ class ContentStoreMailboxSubclient(ExchangeSubclient):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def refresh(self):
-        """Refresh the User Mailbox Subclient."""
+    def refresh(self) -> None:
+        """Reload the state of the User Mailbox Subclient.
+
+        This method refreshes the internal data and state of the User Mailbox Subclient,
+        ensuring that any changes made externally are reflected in the current instance.
+
+        Example:
+            >>> subclient = ContentStoreMailboxSubclient()
+            >>> subclient.refresh()
+            >>> print("Subclient state refreshed successfully")
+
+        #ai-gen-doc
+        """
         self._get_subclient_properties()
         self._content_store_mailboxes = self._get_content_store_assocaitions()

@@ -42,6 +42,26 @@ Projects:
 
      delete()                           --  deletes project from the SDG
 
+    sensitive_files_count()             --  Get the count of sensitive files
+
+    total_files_count()                 --  Get the total count of files
+
+    total_one_drive_files()             --  Get the total count of OneDrive files
+
+    total_exchange_files()              --  Get the total count of Exchange files
+
+    sensitive_one_drive_files()         --  Get the count of sensitive OneDrive files
+
+    sensitive_exchange_files()          --  Get the count of sensitive Exchange files
+
+    get_top_entities()                  --  Retrieve the top five entities sorted based on frequency
+
+    get_entity_sensitivity_counts()     --  Get the count of entities by sensitivity level (critical, high, moderate, none)
+
+    get_entity_distribution()           --  Gets the entity distribution statistics for the Exchange and OneDrive applications.
+
+    get_extracted_solr_query()          --  Construct a Solr query string for the given entity values
+
 Project:
 
      __init__()                         --  initialise object of the Project class
@@ -87,7 +107,9 @@ Project Attributes
     **sensitive_files_count**   --  returns the total sensitive files count
 
 """
+import copy
 
+from .constants import RequestConstants
 from ..schedules import Schedules
 
 from ..activateapps.constants import EdiscoveryConstants
@@ -115,7 +137,9 @@ class Projects():
         self._cvpysdk_object = commcell_object._cvpysdk_object
         self._services = commcell_object._services
         self._sdg_projects = None
+        self._entity_manger = self._commcell_object.activate.entity_manager()
         self._ediscovery_clients_obj = EdiscoveryClients(self._commcell_object, self)
+        self._ediscovery_client_ops = EdiscoveryClientOperations(self._commcell_object, self)
         self.refresh()
 
     def _response_not_success(self, response):
@@ -261,6 +285,189 @@ class Projects():
             raise SDKException('SensitiveDataGovernance', '103')
         project_id = self._sdg_projects[project_name.lower()]['eDiscoveryClient']['clientId']
         return Project(commcell_object=self._commcell_object, project_name=project_name, project_id=project_id)
+
+    def search(self, criteria=None, attr_list=None, params=None):
+        """Does search on all the projects and returns document details
+
+            Args:
+
+                criteria        (str)      --  containing criteria for query
+                                                    (Default : None - returns all docs)
+
+                                                    Example :
+
+                                                        Size:[10 TO 1024]
+                                                        FileName:09_23*
+
+                attr_list       (set)      --  Column names to be returned in results.
+                                                     Acts as 'fl' in query
+
+                params          (dict)     --  Any other params which needs to be passed
+                                                   Example : { "start" : "0" }
+
+            Returns:
+
+                int,list(dict),dict    --  Containing document count, document details & facet details(if any)
+
+            Raises:
+
+                SDKException:
+
+                        if failed to perform search
+
+        """
+        return self._ediscovery_client_ops.search(criteria=criteria, attr_list=attr_list, params=params)
+
+    def sensitive_files_count(self, app_type=EdiscoveryConstants.APP_TYPE_ALL):
+        """
+        Retrieve the count of sensitive files for a given application type.
+
+        Args:
+            app_type (int, optional): Application type to filter by. Defaults to EdiscoveryConstants.APP_TYPE_ALL.
+                Supported values:
+                    - EdiscoveryConstants.APP_TYPE_ALL (0): All applications
+                    - EdiscoveryConstants.APP_TYPE_ONEDRIVE (200118): OneDrive
+                    - EdiscoveryConstants.APP_TYPE_EXCHANGE (137): Exchange
+
+        Returns:
+            int: Count of sensitive files for the specified application type.
+        """
+        count, _, _ = self.search(criteria=EdiscoveryConstants.APP_TYPE_SENSITIVE_DICT[app_type],
+                                  params=RequestConstants.REQUEST_ZERO_ROWS)
+        return count
+
+    def total_files_count(self, app_type=EdiscoveryConstants.APP_TYPE_ALL):
+        """
+        Retrieve the total count of files for a given application type.
+
+        Args:
+            app_type (int, optional): Application type to filter by. Defaults to EdiscoveryConstants.APP_TYPE_ALL.
+                Supported values:
+                    - EdiscoveryConstants.APP_TYPE_ALL (0): All applications
+                    - EdiscoveryConstants.APP_TYPE_ONEDRIVE (200118): OneDrive
+                    - EdiscoveryConstants.APP_TYPE_EXCHANGE (137): Exchange
+
+        Returns:
+            int: Total number of files for the specified application type.
+        """
+        count, _, _ = self.search(criteria=EdiscoveryConstants.APP_TYPE_TOTAL_DICT[app_type],
+                                  params=RequestConstants.REQUEST_ZERO_ROWS)
+        return count
+
+    @property
+    def total_one_drive_files(self):
+        """
+        Get the total count of OneDrive files.
+
+        Returns:
+            int: The total number of OneDrive files.
+        """
+        count = self.total_files_count(EdiscoveryConstants.APP_TYPE_ONEDRIVE)
+        return count
+
+    @property
+    def total_exchange_files(self):
+        """
+        Get the total count of Exchange files.
+
+        Returns:
+            int: The total number of Exchange files.
+        """
+        count = self.total_files_count(EdiscoveryConstants.APP_TYPE_EXCHANGE)
+        return count
+
+    @property
+    def sensitive_one_drive_files(self):
+        """
+        Get the count of sensitive OneDrive files.
+
+        Returns:
+            int: The number of sensitive OneDrive files.
+        """
+        count = self.sensitive_files_count(EdiscoveryConstants.APP_TYPE_ONEDRIVE)
+        return count
+
+    @property
+    def sensitive_exchange_files(self):
+        """
+        Get the count of sensitive Exchange files.
+
+        Returns:
+            int: The number of sensitive Exchange files.
+        """
+        count = self.sensitive_files_count(EdiscoveryConstants.APP_TYPE_EXCHANGE)
+        return count
+
+    def get_top_entities(self, count=5):
+        """
+        Retrieve the top five entities sorted based on frequency.
+        Args:
+            count(int):     Number of entities to be returned
+        Returns:
+            dict: Statistics or data for the top five entities.
+        """
+        request_top_entities_facet = copy.deepcopy(RequestConstants.REQUEST_TOP_ENTITIES_FACET)
+        request_top_entities_facet["json.facet"] = request_top_entities_facet["json.facet"] % count
+        _, _, stats = self.search(criteria=EdiscoveryConstants.CRITERIA_ALL_DOCS,
+                                  params=request_top_entities_facet)
+        return stats
+
+    def get_entity_distribution(self):
+        """
+        Gets the entity distribution statistics for the Exchange and OneDrive applications.
+        Returns:
+            dict: Statistics or data for the entity distribution.
+        """
+        request_entity_dist_facet = copy.deepcopy(RequestConstants.REQUEST_ENTITY_DISTRIBUTION_FACET)
+        _, _, stats = self.search(criteria=EdiscoveryConstants.CRITERIA_ALL_DOCS,
+                                  params=request_entity_dist_facet)
+        return stats
+
+    def get_entity_sensitivity_counts(self):
+        """
+        Get the count of entities by sensitivity level (critical, high, moderate, none).
+
+        Returns:
+            tuple: (critical_count, high_count, moderate_count, none_count)
+        """
+        critical, high, moderate = self._entity_manger.get_entity_by_sensitivity()
+        critical_count, _, _ = self.search(criteria=self.get_extracted_solr_query(critical),
+                                           params=RequestConstants.REQUEST_ZERO_ROWS)
+        high_count, _, _ = self.search(
+            criteria=f"{self.get_extracted_solr_query(high)} AND {self.get_extracted_solr_query(critical, True)}",
+            params=RequestConstants.REQUEST_ZERO_ROWS)
+        moderate_count, _, _ = self.search(
+            criteria=f"{self.get_extracted_solr_query(moderate)} AND {self.get_extracted_solr_query(critical + high, True)}",
+            params=RequestConstants.REQUEST_ZERO_ROWS)
+        none_count, _, _ = self.search(
+            criteria=f"{EdiscoveryConstants.CRITERIA_ALL_DOCS} AND {self.get_extracted_solr_query(critical + high + moderate, True)}",
+            params=RequestConstants.REQUEST_ZERO_ROWS)
+        return critical_count, high_count, moderate_count, none_count
+
+    def get_extracted_solr_query(self, values, is_negation=False):
+        """
+        Construct a Solr query string for the given entity values.
+
+        Args:
+            values (list): List of entity names to include in the query.
+            is_negation (bool, optional): If True, negates the query. Defaults to False.
+
+        Returns:
+            str: The constructed Solr query string.
+
+        Raises:
+            SDKException: If values is not a list.
+        """
+        if not isinstance(values, list):
+            raise SDKException('SensitiveDataGovernance', '101',
+                               "Values must be a list")
+        if not values:
+            return ""
+
+        append_str = ""
+        if is_negation:
+            append_str = "-"
+        return f"{append_str}(entities_extracted:" + " OR entities_extracted:".join(values) + ")"
 
 
 class Project():

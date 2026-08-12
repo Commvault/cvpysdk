@@ -46,17 +46,40 @@ from ..cainstance import CloudAppsInstance
 
 
 class GoogleSpannerInstance(CloudAppsInstance):
-    """Class for representing an Instance of the Google Cloud Spanner instance type."""
+    """
+    Represents an instance of the Google Cloud Spanner service.
 
-    def _get_instance_properties(self):
-        """Gets the properties of this instance.
+    This class provides an interface for managing and interacting with a Google Cloud Spanner instance.
+    It exposes properties to access key attributes such as the instance type, Spanner instance ID,
+    proxy client, staging path, and project ID. Internal methods allow retrieval of instance-specific
+    properties for further configuration or inspection.
 
-            Raises:
-                SDKException:
-                    if response is empty
+    Key Features:
+        - Access to the type of Spanner instance via `instance_type`
+        - Retrieve the unique Spanner instance ID with `spanner_instance_id`
+        - Obtain the proxy client for communication with the Spanner instance using `proxy_client`
+        - Access the staging path for temporary data or operations via `staging_path`
+        - Retrieve the associated Google Cloud project ID with `project_id`
+        - Internal method for fetching instance properties
 
-                    if response is not success
+    #ai-gen-doc
+    """
 
+    def _get_instance_properties(self) -> None:
+        """Retrieve and update the properties of the current Google Spanner instance.
+
+        This method fetches the latest properties for the instance and updates the internal state.
+        It raises an SDKException if the response from the server is empty or unsuccessful.
+
+        Raises:
+            SDKException: If the response is empty or not successful.
+
+        Example:
+            >>> instance = GoogleSpannerInstance(commcell_object, instance_name)
+            >>> instance._get_instance_properties()
+            >>> # The instance properties are now updated internally
+
+        #ai-gen-doc
         """
         super(GoogleSpannerInstance, self)._get_instance_properties()
         self._ca_instance_type = None
@@ -95,50 +118,81 @@ class GoogleSpannerInstance(CloudAppsInstance):
                     'cloudSpannerInstance', {}).get('projectId')
 
     @property
-    def instance_type(self):
-        """
-            Returns:
+    def instance_type(self) -> int:
+        """Get the instance type of the CloudAppsInstance.
 
-                 int:   CloudAppsInstance instance type
+        Returns:
+            int: The instance type identifier for the CloudAppsInstance.
 
+        Example:
+            >>> spanner_instance = GoogleSpannerInstance()
+            >>> inst_type = spanner_instance.instance_type
+            >>> print(f"Instance type: {inst_type}")
+
+        #ai-gen-doc
         """
         return self._ca_instance_type
 
     @property
-    def spanner_instance_id(self):
-        """
-            Returns:
+    def spanner_instance_id(self) -> str:
+        """Get the Google service account instance ID for this Spanner instance.
 
-                 str:   Google service account instance id
+        Returns:
+            The instance ID as a string.
 
+        Example:
+            >>> spanner_instance = GoogleSpannerInstance()
+            >>> instance_id = spanner_instance.spanner_instance_id
+            >>> print(f"Spanner Instance ID: {instance_id}")
+
+        #ai-gen-doc
         """
         return self._google_instance_id
 
     @property
-    def proxy_client(self):
-        """
-            Returns the proxy client name to this instance
+    def proxy_client(self) -> str:
+        """Get the proxy client name associated with this Google Spanner instance.
 
-                str:    Client name of proxy associated to cloud account
+        Returns:
+            str: The name of the proxy client linked to the cloud account for this instance.
 
+        Example:
+            >>> instance = GoogleSpannerInstance()
+            >>> proxy_name = instance.proxy_client
+            >>> print(f"Proxy client name: {proxy_name}")
+
+        #ai-gen-doc
         """
         return self._proxy_client
 
     @property
-    def staging_path(self):
-        """
-            Returns the instance staging path
+    def staging_path(self) -> str:
+        """Get the Cloud Spanner instance staging path.
 
-                str:    Cloud spanner staging path of instance
+        Returns:
+            The staging path for the Cloud Spanner instance as a string.
 
+        Example:
+            >>> instance = GoogleSpannerInstance()
+            >>> path = instance.staging_path  # Use dot notation for property access
+            >>> print(f"Staging path: {path}")
+
+        #ai-gen-doc
         """
         return self._staging_path
 
     @property
-    def project_id(self):
-        """
-            Returns the cloud project id
+    def project_id(self) -> str:
+        """Get the Google Cloud Spanner project ID associated with this instance.
 
-                str:    Cloud spanner project id
+        Returns:
+            The project ID as a string.
+
+        Example:
+            >>> instance = GoogleSpannerInstance()
+            >>> project_id = instance.project_id  # Use dot notation for property access
+            >>> print(f"Cloud Spanner project ID: {project_id}")
+
+        #ai-gen-doc
         """
         return self._project_id

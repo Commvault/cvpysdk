@@ -154,6 +154,10 @@ ClientGroup:
 
     refresh_clients()               -- force refreshes clients in a client group
 
+    add_http_proxy()                -- adds http proxy settings to client group
+
+    remove_http_proxy()             -- removes http proxy settings from client group
+
 ClientGroup Attributes
 -----------------------
 
@@ -186,24 +190,55 @@ from __future__ import unicode_literals
 
 import time
 import copy
+from typing import Dict, List, Optional, Union
 
+from .additional_settings import AdditionalSettings
 from .exception import SDKException
 from .network import Network
 from .network_throttle import NetworkThrottle
 from .deployment.install import Install
+from .job import Job
 
 
 class ClientGroups(object):
-    """Class for representing all the clientgroups associated with a Commcell."""
+    """
+    Manages all client groups associated with a Commcell.
 
-    def __init__(self, commcell_object):
-        """Initialize object of the ClientGroups class.
+    The ClientGroups class provides a comprehensive interface for interacting with client groups
+    within a Commcell environment. It supports operations such as adding, retrieving, deleting,
+    and refreshing client groups, as well as advanced management features like smart rule creation
+    and merging, client validation, and caching mechanisms.
 
-            Args:
-                commcell_object (object)  --  instance of the Commcell class
+    Key Features:
+        - Add new client groups with specified clients
+        - Retrieve client group details by name
+        - Delete existing client groups
+        - Refresh the client group list from the Commcell
+        - Access all client groups and cached client groups via properties
+        - Check for the existence of a client group by name
+        - Create and merge smart rules for dynamic client group management
+        - Validate clients and manage filtering, sorting, and query parameters
+        - Internal utilities for scope and parameter management
 
-            Returns:
-                object - instance of the ClientGroups class
+    This class is intended to be used as part of the Commcell management suite, providing
+    efficient and flexible client group operations.
+
+    #ai-gen-doc
+    """
+
+    def __init__(self, commcell_object: object) -> None:
+        """Initialize a new instance of the ClientGroups class.
+
+        Args:
+            commcell_object: An instance of the Commcell class representing the active Commcell connection.
+
+        Example:
+            >>> from cvpysdk.commcell import Commcell
+            >>> commcell = Commcell('commcell_host', 'username', 'password')
+            >>> client_groups = ClientGroups(commcell)
+            >>> print("ClientGroups object created successfully")
+
+        #ai-gen-doc
         """
         self._commcell_object = commcell_object
         self._CLIENTGROUPS = self._commcell_object._services['CLIENTGROUPS']
@@ -214,11 +249,20 @@ class ClientGroups(object):
         self.filter_query_count = 0
         self.refresh()
 
-    def __str__(self):
-        """Representation string consisting of all clientgroups of the Commcell.
+    def __str__(self) -> str:
+        """Return a string representation of all client groups in the Commcell.
 
-            Returns:
-                str - string of all the clientgroups for a commcell
+        This method provides a human-readable summary of all client groups managed by the Commcell,
+        typically listing their names or key details in a single string.
+
+        Returns:
+            A string containing information about all client groups in the Commcell.
+
+        Example:
+            >>> client_groups = ClientGroups(commcell_object)
+            >>> print(str(client_groups))
+            ClientGroup1, ClientGroup2, ClientGroup3
+        #ai-gen-doc
         """
         representation_string = "{:^5}\t{:^50}\n\n".format('S. No.', 'ClientGroup')
 
@@ -228,34 +272,67 @@ class ClientGroups(object):
 
         return representation_string.strip()
 
-    def __repr__(self):
-        """Representation string for the instance of the ClientGroups class.
+    def __repr__(self) -> str:
+        """Return a string representation of the ClientGroups instance.
 
-            Returns:
-                str - string of all the client groups associated with the commcell
+        This method provides a human-readable summary of all client groups 
+        associated with the Commcell, which is useful for debugging and logging.
+
+        Returns:
+            A string listing all client groups associated with the Commcell.
+
+        Example:
+            >>> client_groups = ClientGroups(commcell_object)
+            >>> print(repr(client_groups))
+            >>> # Output: "<ClientGroups: [Group1, Group2, Group3]>"
+
+        #ai-gen-doc
         """
         return "ClientGroups class instance for Commcell"
 
-    def __len__(self):
-        """Returns the number of the client groups associated to the Commcell."""
+    def __len__(self) -> int:
+        """Return the number of client groups associated with the Commcell.
+
+        Returns:
+            The total count of client groups as an integer.
+
+        Example:
+            >>> client_groups = ClientGroups(commcell_object)
+            >>> num_groups = len(client_groups)
+            >>> print(f"Total client groups: {num_groups}")
+        #ai-gen-doc
+        """
         return len(self.all_clientgroups)
 
-    def __getitem__(self, value):
-        """Returns the name of the client group for the given client group ID or
-            the details of the client group for given client group Name.
+    def __getitem__(self, value: Union[str, int]) -> Union[str, dict]:
+        """Retrieve client group information by name or ID.
 
-            Args:
-                value   (str / int)     --  Name or ID of the client group
+        If a client group ID (int) is provided, returns the name of the client group.
+        If a client group name (str) is provided, returns a dictionary with details of the client group.
 
-            Returns:
-                str     -   name of the client group, if the client group id was given
+        Args:
+            value: The name (str) or ID (int) of the client group to retrieve.
 
-                dict    -   dict of details of the client group, if client group name was given
+        Returns:
+            str: The name of the client group if an ID was provided.
+            dict: A dictionary containing details of the client group if a name was provided.
 
-            Raises:
-                IndexError:
-                    no client group exists with the given Name / Id
+        Raises:
+            IndexError: If no client group exists with the given name or ID.
 
+        Example:
+            >>> client_groups = ClientGroups(commcell_object)
+            >>> # Get client group details by name
+            >>> group_details = client_groups["Finance"]
+            >>> print(group_details)
+            {'clientGroupId': 5, 'clientGroupName': 'Finance', ...}
+
+            >>> # Get client group name by ID
+            >>> group_name = client_groups[5]
+            >>> print(group_name)
+            'Finance'
+
+        #ai-gen-doc
         """
         value = str(value)
 
@@ -269,24 +346,34 @@ class ClientGroups(object):
             except IndexError:
                 raise IndexError('No client group exists with the given Name / Id')
 
-    def _get_clientgroups(self, full_response: bool = False):
-        """Gets all the clientgroups associated with the commcell
+    def _get_clientgroups(self, full_response: bool = False) -> dict:
+        """Retrieve all client groups associated with the Commcell.
 
-            Args:
-                full_response(bool) --  flag to return complete response
+        Args:
+            full_response: If True, returns the complete response from the Commcell API. 
+                If False, returns a simplified dictionary mapping client group names to their IDs.
 
-            Returns:
-                dict - consists of all clientgroups of the commcell
-                    {
-                         "clientgroup1_name": clientgroup1_id,
-                         "clientgroup2_name": clientgroup2_id,
-                    }
+        Returns:
+            dict: A dictionary containing all client groups of the Commcell. 
+            The keys are client group names, and the values are their corresponding IDs.
+            Example:
+                {
+                    "clientgroup1_name": clientgroup1_id,
+                    "clientgroup2_name": clientgroup2_id,
+                }
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException: If the response is empty or if the response indicates a failure.
 
-                    if response is not success
+        Example:
+            >>> client_groups = client_groups_obj._get_clientgroups()
+            >>> print(client_groups)
+            {'Finance_Group': 101, 'IT_Group': 102}
+            >>> # To get the full response:
+            >>> full_resp = client_groups_obj._get_clientgroups(full_response=True)
+            >>> print(full_resp)
+
+        #ai-gen-doc
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'GET', self._CLIENTGROUPS
@@ -330,18 +417,26 @@ class ClientGroups(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _valid_clients(self, clients_list):
-        """Returns only the valid clients specified in the input clients list
+    def _valid_clients(self, clients_list: list) -> list:
+        """Filter and return only the valid clients from the provided clients list.
 
-            Args:
-                clients_list (list)    --  list of the clients to add to the client group
+        Args:
+            clients_list: List of client names or client objects to be added to the client group.
 
-            Returns:
-                list - list consisting of the names of all valid clients in the input clients list
+        Returns:
+            A list containing the names of all valid clients found in the input clients_list.
 
-            Raises:
-                SDKException:
-                    if type of clients list argument is not list
+        Raises:
+            SDKException: If the clients_list argument is not of type list.
+
+        Example:
+            >>> client_groups = ClientGroups(commcell_object)
+            >>> input_clients = ['client1', 'client2', 'invalid_client']
+            >>> valid_clients = client_groups._valid_clients(input_clients)
+            >>> print(valid_clients)
+            ['client1', 'client2']
+
+        #ai-gen-doc
         """
         if not isinstance(clients_list, list):
             raise SDKException('ClientGroup', '101')
@@ -357,15 +452,22 @@ class ClientGroups(object):
 
         return clients
 
-    def _get_fl_parameters(self, fl: list = None) -> str:
-        """
-        Returns the fl parameters to be passed in the mongodb caching api call
+    def _get_fl_parameters(self, fl: Optional[list] = None) -> str:
+        """Generate the 'fl' parameter string for use in MongoDB caching API calls.
 
         Args:
-            fl    (list)  --   list of columns to be passed in API request
+            fl: Optional list of column names to include in the API request. If None, a default set of columns may be used.
 
         Returns:
-            fl_parameters(str) -- fl parameter string
+            A string representing the 'fl' parameter to be passed in the MongoDB caching API call.
+
+        Example:
+            >>> client_groups = ClientGroups()
+            >>> fl_param = client_groups._get_fl_parameters(['name', 'status', 'id'])
+            >>> print(fl_param)
+            name,status,id
+
+        #ai-gen-doc
         """
         self.valid_columns = {
             'name': 'name',
@@ -387,17 +489,27 @@ class ClientGroups(object):
 
         return fl_parameters
 
-    def _get_sort_parameters(self, sort: list = None) -> str:
-        """
-        Returns the sort parameters to be passed in the mongodb caching api call
+    def _get_sort_parameters(self, sort: Optional[list] = None) -> str:
+        """Generate the sort parameter string for use in MongoDB caching API calls.
 
         Args:
-            sort  (list)  --   contains the name of the column on which sorting will be performed and type of sort
-                                valid sor type -- 1 for ascending and -1 for descending
-                                e.g. sort = ['name','1']
+            sort: Optional list containing the column name and sort order.
+                The list should have two elements:
+                    - The first element is the column name to sort by (str).
+                    - The second element is the sort type: 1 for ascending, -1 for descending (int or str).
+                Example: ['name', '1']
 
         Returns:
-            sort_parameters(str) -- sort parameter string
+            A string representing the sort parameters to be used in the API call.
+
+        Example:
+            >>> client_groups = ClientGroups()
+            >>> sort_param = client_groups._get_sort_parameters(['name', '1'])
+            >>> print(sort_param)
+            "name:1"
+            >>> # This string can be passed to the MongoDB caching API for sorting results
+
+        #ai-gen-doc
         """
         sort_type = str(sort[1])
         col = sort[0]
@@ -407,15 +519,24 @@ class ClientGroups(object):
             raise SDKException('ClientGroup', '102', 'Invalid column name passed')
         return sort_parameter
 
-    def _get_fq_parameters(self, fq: list = None) -> str:
-        """
-        Returns the fq parameters based on the fq list passed
+    def _get_fq_parameters(self, fq: Optional[list] = None) -> str:
+        """Generate the FQ (filter query) parameter string from the provided list.
+
         Args:
-             fq     (list) --   contains the columnName, condition and value
-                    e.g. fq = [['name','contains', 'test'],['association','eq', 'Manual']]
+            fq: Optional list of filter conditions, where each element is a list containing
+                [columnName, condition, value]. For example:
+                [['name', 'contains', 'test'], ['association', 'eq', 'Manual']]
 
         Returns:
-            fq_parameters(str) -- fq parameter string
+            A string representing the FQ parameters suitable for use in API queries.
+
+        Example:
+            >>> fq_list = [['name', 'contains', 'test'], ['association', 'eq', 'Manual']]
+            >>> fq_param = client_groups._get_fq_parameters(fq_list)
+            >>> print(fq_param)
+            # Output might be: "name:contains:test;association:eq:Manual"
+
+        #ai-gen-doc
         """
         conditions = {"contains", "notContain", "eq", "neq"}
         params = [
@@ -439,26 +560,37 @@ class ClientGroups(object):
 
         return "".join(params)
 
-    def get_client_groups_cache(self, hard: bool = False, **kwargs) -> dict:
-        """
-        Gets all the client groups present in CommcellEntityCache DB.
+    def get_client_groups_cache(self, hard: bool = False, **kwargs: dict) -> dict:
+        """Retrieve all client groups from the CommcellEntityCache database.
+
+        This method fetches client group information from the CommcellEntityCache DB, with options to customize
+        the returned data using various filters and parameters.
 
         Args:
-            hard  (bool)        --   Flag to perform hard refresh on client groups cache.
-            **kwargs (dict):
-                - fl (list)     --   List of columns to return in response (default: None).
-                - sort (list)   --   Contains the name of the column on which sorting will be performed and type of sort.
-                                           Valid sort type: 1 for ascending and -1 for descending
-                                           e.g. sort = ['columnName', '1'] (default: None).
-                - limit (list)  --   Contains the start and limit parameter value.
-                                            Default ['0', '100'].
-                - search (str)  --   Contains the string to search in the commcell entity cache (default: None).
-                - fq (list)     --   Contains the columnName, condition and value.
-                                            e.g. fq = [['name', 'contains', 'test'],
-                                             ['association', 'eq', 'Manual']] (default: None).
+            hard: If True, performs a hard refresh on the client groups cache to ensure the latest data is retrieved.
+            **kwargs: Optional keyword arguments to refine the query:
+                - fl (list): List of column names to include in the response (default: None).
+                - sort (list): Specifies sorting as ['columnName', '1'] for ascending or ['columnName', '-1'] for descending (default: None).
+                - limit (list): Specifies the start and limit for pagination, e.g., ['0', '100'] (default: ['0', '100']).
+                - search (str): String to search within the commcell entity cache (default: None).
+                - fq (list): List of filters, each as [columnName, condition, value], e.g., [['name', 'contains', 'test']] (default: None).
 
         Returns:
-            dict: Dictionary of all the properties present in response.
+            dict: A dictionary containing the properties and details of all client groups matching the query.
+
+        Example:
+            >>> client_groups = ClientGroups(commcell_object)
+            >>> # Retrieve all client groups with default settings
+            >>> groups = client_groups.get_client_groups_cache()
+            >>> print(groups)
+            >>> # Retrieve client groups with specific columns and a search filter
+            >>> groups_filtered = client_groups.get_client_groups_cache(
+            ...     fl=['name', 'description'],
+            ...     search='production'
+            ... )
+            >>> print(groups_filtered)
+
+        #ai-gen-doc
         """
         # computing params
         fl_parameters = self._get_fl_parameters(kwargs.get('fl', None))
@@ -489,9 +621,10 @@ class ClientGroups(object):
 
         client_group_cache = {}
         if response.json() and 'groups' in response.json():
-            self.filter_query_count = response.json().get('filterQueryCount',0)
+            self.filter_query_count = response.json().get('filterQueryCount', 0)
             for group in response.json()['groups']:
                 name = group.get('name')
+                company_name = None
                 client_group_config = {
                     'name': name,
                     'id': group.get('Id'),
@@ -499,64 +632,93 @@ class ClientGroups(object):
                 }
                 if 'clientGroup' in group:
                     if 'companyName' in group.get('clientGroup', {}).get('entityInfo', {}):
-                        client_group_config['companyName'] = group.get('clientGroup', {}).get('entityInfo', {}).get(
-                            'companyName')
+                        company_name = group.get('clientGroup', {}).get('entityInfo', {}).get('companyName')
+                        client_group_config['companyName'] = company_name
                     if 'tags' in group.get('clientGroup', {}):
                         client_group_config['tags'] = group.get('clientGroup', {}).get('tags')
-                client_group_cache[name] = client_group_config
+
+                # Ensure unique key
+                unique_name = name
+                if name in client_group_cache and company_name:
+                    unique_name = f"{name}_{company_name}"
+
+                client_group_cache[unique_name] = client_group_config
 
             return client_group_cache
         else:
             raise SDKException('Response', '102')
 
     @property
-    def all_clientgroups(self):
-        """Returns dict of all the clientgroups associated with this commcell
+    def all_clientgroups(self) -> Dict[str, int]:
+        """Get a dictionary of all client groups associated with this Commcell.
 
-            dict - consists of all clientgroups of the commcell
+        Returns:
+            Dict[str, int]: A dictionary mapping client group names to their corresponding IDs.
+                Example format:
                     {
-                         "clientgroup1_name": clientgroup1_id,
-                         "clientgroup2_name": clientgroup2_id,
+                        "clientgroup1_name": 123,
+                        "clientgroup2_name": 456,
                     }
+
+        Example:
+            >>> client_groups = client_groups_obj.all_clientgroups
+            >>> print(client_groups)
+            {'Finance_Group': 101, 'HR_Group': 102}
+            >>> # Access a specific client group ID
+            >>> finance_id = client_groups['Finance_Group']
+            >>> print(f"Finance group ID: {finance_id}")
+
+        #ai-gen-doc
         """
         return self._clientgroups
 
     @property
     def all_clientgroups_cache(self) -> dict:
-        """Returns dict of all the client groups and their info present in CommcellEntityCache in mongoDB
+        """Get a dictionary of all client groups and their information from the CommcellEntityCache in MongoDB.
 
-            dict - consists of all client groups of the in the CommcellEntityCache
-                    {
-                         "clientgroup1_name": {
-                                "id": clientgroup1_id,
-                                "association": clientgroup1 association type,
-                                "company": clientgroup1 company
-                                "tags": clientgroup1 tags
-                                },
-                         "clientgroup2_name": {
-                                "id": clientgroup2_id,
-                                "association": clientgroup2 association type,
-                                "company": clientgroup2 company
-                                "tags": clientgroup2 tags
-                                }
-                    }
+        The returned dictionary contains the names of all client groups as keys, with each value being a dictionary
+        of details for that client group, including its ID, association type, company, and tags.
+
+        Returns:
+            dict: A dictionary where each key is a client group name and the value is a dictionary with the following structure:
+                {
+                    "id": <clientgroup_id>,
+                    "association": <association_type>,
+                    "company": <company_name>,
+                    "tags": <tags>
+                }
+
+        Example:
+            >>> client_groups = ClientGroups(commcell_object)
+            >>> all_groups = client_groups.all_clientgroups_cache
+            >>> for group_name, group_info in all_groups.items():
+            ...     print(f"Group: {group_name}, ID: {group_info['id']}, Company: {group_info['company']}")
+
+        #ai-gen-doc
         """
         if not self._clientgroups_cache:
             self._clientgroups_cache = self.get_client_groups_cache()
         return self._clientgroups_cache
 
-    def has_clientgroup(self, clientgroup_name):
-        """Checks if a client group exists in the commcell with the input client group name.
+    def has_clientgroup(self, clientgroup_name: str) -> bool:
+        """Check if a client group with the specified name exists in the Commcell.
 
-            Args:
-                clientgroup_name (str)  --  name of the client group
+        Args:
+            clientgroup_name: The name of the client group to check for existence.
 
-            Returns:
-                bool - boolean output whether the client group exists in the commcell or not
+        Returns:
+            True if the client group exists in the Commcell, False otherwise.
 
-            Raises:
-                SDKException:
-                    if type of the client group name argument is not string
+        Raises:
+            SDKException: If the type of the clientgroup_name argument is not a string.
+
+        Example:
+            >>> client_groups = ClientGroups(commcell_object)
+            >>> exists = client_groups.has_clientgroup("DatabaseAdmins")
+            >>> print(f"Client group exists: {exists}")
+            # Output: Client group exists: True
+
+        #ai-gen-doc
         """
         if not isinstance(clientgroup_name, str):
             raise SDKException('ClientGroup', '101')
@@ -564,32 +726,46 @@ class ClientGroups(object):
         return self._clientgroups and clientgroup_name.lower() in self._clientgroups
 
     def create_smart_rule(self,
-                          filter_rule='OS Type',
-                          filter_condition='equal to',
-                          filter_value='Windows',
-                          value='1'):
-        """Create/Prepare rules required for smart client group creation based on input parameters
+                          filter_rule: str = 'OS Type',
+                          filter_condition: str = 'equal to',
+                          filter_value: str = 'Windows',
+                          value: str = '1') -> dict:
+        """Create a smart rule dictionary for client group creation based on specified filter parameters.
 
-            Args:
-                filter_rule (str)      --  Rule selection to match specific criterion
+        This method prepares a rule definition used for smart client group creation, allowing you to specify
+        the rule type, condition, value, and additional parameters. The returned dictionary can be used
+        when creating or updating smart client groups.
 
-                filter_condition (str) --  Filter value between selections in rule
+        Args:
+            filter_rule: The rule selection criterion (e.g., 'OS Type').
+            filter_condition: The filter condition to apply (e.g., 'equal to').
+            filter_value: The value to match for the rule criterion (e.g., 'Windows').
+            value: The value required to create the rule (typically a string representation of a number).
 
-                filter_value(str)     --   Value of rule criterion
-
-                value(str)            --   value required to create rule
-
-            Returns:
-                    dict    -   consists of single rule based on inputs
+        Returns:
+            dict: A dictionary representing the smart rule, structured as:
                 {
                     "rule": {
                         "filterID": 100,
-                        "secValue": 'Windows',
+                        "secValue": "Windows",
                         "propID": 8,
                         "propType": 4,
-                        "value": '1'
+                        "value": "1"
                     }
                 }
+
+        Example:
+            >>> client_groups = ClientGroups(commcell_object)
+            >>> rule = client_groups.create_smart_rule(
+            ...     filter_rule='OS Type',
+            ...     filter_condition='equal to',
+            ...     filter_value='Windows',
+            ...     value='1'
+            ... )
+            >>> print(rule)
+            {'rule': {'filterID': 100, 'secValue': 'Windows', 'propID': 8, 'propType': 4, 'value': '1'}}
+
+        #ai-gen-doc
         """
 
         filter_dict = {
@@ -767,20 +943,29 @@ class ClientGroups(object):
 
         return rule_mk
 
-    def merge_smart_rules(self, rule_list, op_value='all', scg_op='all'):
-        """Merge multiple rules into (SCG) rule to create smart client group.
+    def merge_smart_rules(self, rule_list: list, op_value: str = 'all', scg_op: str = 'all') -> dict:
+        """Merge multiple smart rules into a single rule group for creating a smart client group.
 
-            Args:
-                rule_list (list)  --  List of smart rules to be added in rule group
+        Args:
+            rule_list: List of smart rule dictionaries to be merged into a rule group.
+            op_value: Logical condition to apply between individual smart rules within the group.
+                Valid values include 'all', 'any', or 'not any'. Default is 'all'.
+            scg_op: Logical condition to apply between smart rule groups at the group level.
+                Valid values include 'all', 'any', or 'not any'. Default is 'all'.
 
-                op_value (str)--     condition to apply between smart rules
-                ex: all, any,not any
+        Returns:
+            A dictionary representing the merged smart client group rule, suitable for use in smart client group creation.
 
-                scg_op (str)--       condition to apply between smart rule groups (@group level)
+        Example:
+            >>> rules = [
+            ...     {"type": "OS", "value": "Windows"},
+            ...     {"type": "Location", "value": "DataCenter1"}
+            ... ]
+            >>> merged_rule = client_groups.merge_smart_rules(rules, op_value='all', scg_op='any')
+            >>> print(merged_rule)
+            {'op': 'any', 'rules': [{'op': 'all', 'rules': [{'type': 'OS', 'value': 'Windows'}, {'type': 'Location', 'value': 'DataCenter1'}]}]}
 
-            Returns:
-               scg_rule (dict)    -   Rule group to create smart client group
-
+        #ai-gen-doc
         """
 
         op_dict = {
@@ -807,24 +992,41 @@ class ClientGroups(object):
         scg_rule["rules"].append(rules_dict)
         return scg_rule
 
-    def _create_scope_dict(self, client_scope, value=None):
-        """Creates required dictionary for given client scope
+    def _create_scope_dict(self, client_scope: str, value: str = None) -> dict:
+        """Create a dictionary representing the client scope for a smart client group.
 
-            Args:
-                value (string)  --  Value to be selected for the client scope dropdown
-                client_scope (string) -- Value of the client scope
+        This method constructs a dictionary with the necessary data for the specified client scope,
+        which is used when configuring smart client groups.
 
-            Accepted Values (client_scope) --
-                Clients in this Commcell
-                Clients of Companies
-                Clients of User
-                Clients of User Groups
+        Args:
+            client_scope: The type of client scope to use. Accepted values include:
+                - "Clients in this Commcell"
+                - "Clients of Companies"
+                - "Clients of User"
+                - "Clients of User Groups"
+            value: The value to select for the client scope dropdown. This is required for all
+                client scopes except "Clients in this Commcell", where the value is automatically
+                set to the CommServe name.
 
-            Returns:
-                dictionary - Client Scope data required for the smart client group
+        Returns:
+            dict: A dictionary containing the client scope data required for the smart client group.
 
-            NOTE : Value is not required for client scope = "Clients in this Commcell"
-            For this, value is automatically set to the Commserve Name
+        Example:
+            >>> client_groups = ClientGroups()
+            >>> scope_dict = client_groups._create_scope_dict("Clients of Companies", value="CompanyA")
+            >>> print(scope_dict)
+            {'clientScope': 'Clients of Companies', 'value': 'CompanyA'}
+
+            >>> # For "Clients in this Commcell", value is set automatically
+            >>> scope_dict = client_groups._create_scope_dict("Clients in this Commcell")
+            >>> print(scope_dict)
+            {'clientScope': 'Clients in this Commcell', 'value': 'CommServeName'}
+
+        Note:
+            The 'value' parameter is not required when client_scope is "Clients in this Commcell".
+            In this case, the value is automatically set to the CommServe name.
+
+        #ai-gen-doc
         """
         scgscope = {
             "entity": {}
@@ -851,53 +1053,45 @@ class ClientGroups(object):
             }
         return scgscope
 
-    def add(self, clientgroup_name, clients=[], **kwargs):
-        """Adds a new Client Group to the Commcell.
+    def add(self, clientgroup_name: str, clients: list = [], **kwargs) -> 'ClientGroup':
+        """Add a new Client Group to the Commcell.
 
-            Args:
-                clientgroup_name        (str)        --  name of the new client group to add
+        Creates a new client group with the specified name and adds the provided clients to it.
+        Additional configuration options can be set using keyword arguments.
 
-                clients                 (str/list)   --  ',' separated string of client names,
-                                                             or a list of clients,
-                                                             to be added under client group
-                                                            default: []
+        Args:
+            clientgroup_name: The name of the new client group to add.
+            clients: A list of client names or a comma-separated string of client names to be added to the group.
+                Defaults to an empty list.
+            **kwargs: Optional keyword arguments for additional configuration. Supported keys include:
+                - clientgroup_description (str): Description of the client group. Default is "".
+                - enable_backup (bool): Enable or disable backup. Default is True.
+                - enable_restore (bool): Enable or disable restore. Default is True.
+                - enable_data_aging (bool): Enable or disable data aging. Default is True.
+                - scg_rule (dict): Rule required to create a smart client group.
+                - client_scope (str): Client scope for the Smart Client Group.
+                - client_scope_value (str): Client scope value for a particular scope.
 
-                ** kwargs               (dict)       -- Key value pairs for supported arguments
+        Returns:
+            ClientGroup: An instance of the created ClientGroup.
 
-                Supported:
+        Raises:
+            SDKException: If the client group name or description is not a string,
+                if the clients argument is not a list or string,
+                if the response is empty or unsuccessful,
+                or if a client group with the given name already exists.
 
-                    clientgroup_description (str)        --  description of the client group
-                                                                default: ""
+        Example:
+            >>> client_groups = ClientGroups(commcell_object)
+            >>> new_group = client_groups.add(
+            ...     clientgroup_name="FinanceDept",
+            ...     clients=["client1", "client2"],
+            ...     clientgroup_description="Finance department servers",
+            ...     enable_backup=True
+            ... )
+            >>> print(f"Created client group: {new_group}")
 
-                    enable_backup           (bool)       --  enable or disable backup
-                                                                default: True
-
-                    enable_restore          (bool)       --  enable or disable restore
-                                                                default: True
-
-                    enable_data_aging       (bool)       --  enable or disable data aging
-                                                                default: True
-                    scg_rule                (dict)       --  scg_rule required to create smart
-                                                                client group
-
-                    client_scope            (str)        --  Client scope for the Smart Client Group
-
-                    client_scope_value      (str)        --  Client scope value for a particular scope
-
-            Returns:
-                object - instance of the ClientGroup class created by this method
-
-            Raises:
-                SDKException:
-                    if type of client group name and description is not of type string
-
-                    if clients argument is not of type list / string
-
-                    if response is empty
-
-                    if response is not success
-
-                    if client group already exists with the given name
+        #ai-gen-doc
         """
         if not (isinstance(clientgroup_name, str) and
                 isinstance(kwargs.get('clientgroup_description', ''), str)):
@@ -1003,20 +1197,24 @@ class ClientGroups(object):
                 'ClientGroup', '102', 'Client Group "{0}" already exists.'.format(clientgroup_name)
             )
 
-    def get(self, clientgroup_name):
-        """Returns a client group object of the specified client group name.
+    def get(self, clientgroup_name: str) -> 'ClientGroup':
+        """Retrieve a ClientGroup object by its name.
 
-            Args:
-                clientgroup_name (str)  --  name of the client group
+        Args:
+            clientgroup_name: The name of the client group to retrieve.
 
-            Returns:
-                object - instance of the ClientGroup class for the given clientgroup name
+        Returns:
+            ClientGroup: An instance of the ClientGroup class corresponding to the specified name.
 
-            Raises:
-                SDKException:
-                    if type of the client group name argument is not string
+        Raises:
+            SDKException: If the client group name is not a string or if no client group exists with the given name.
 
-                    if no client group exists with the given name
+        Example:
+            >>> client_groups = ClientGroups(commcell_object)
+            >>> group = client_groups.get("Finance_Group")
+            >>> print(f"Retrieved client group: {group}")
+
+        #ai-gen-doc
         """
         if not isinstance(clientgroup_name, str):
             raise SDKException('ClientGroup', '101')
@@ -1034,21 +1232,24 @@ class ClientGroups(object):
                 'No ClientGroup exists with name: {0}'.format(clientgroup_name)
             )
 
-    def delete(self, clientgroup_name):
-        """Deletes the clientgroup from the commcell.
+    def delete(self, clientgroup_name: str) -> None:
+        """Delete a client group from the Commcell.
 
-            Args:
-                clientgroup_name (str)  --  name of the clientgroup
+        Removes the specified client group by name from the Commcell environment.
 
-            Raises:
-                SDKException:
-                    if type of the clientgroup name argument is not string
+        Args:
+            clientgroup_name: The name of the client group to delete.
 
-                    if response is empty
+        Raises:
+            SDKException: If the client group name is not a string, if the response is empty,
+                if the deletion fails, or if no client group exists with the given name.
 
-                    if failed to delete the client group
+        Example:
+            >>> client_groups = ClientGroups(commcell_object)
+            >>> client_groups.delete("TestClientGroup")
+            >>> print("Client group deleted successfully.")
 
-                    if no clientgroup exists with the given name
+        #ai-gen-doc
         """
 
         if not isinstance(clientgroup_name, str):
@@ -1094,14 +1295,23 @@ class ClientGroups(object):
                     'No ClientGroup exists with name: "{0}"'.format(clientgroup_name)
                 )
 
-    def refresh(self, **kwargs):
-        """
-        Refresh the list of client groups on this commcell.
+    def refresh(self, **kwargs: dict) -> None:
+        """Refresh the list of client groups on this Commcell.
 
-            Args:
-                **kwargs (dict):
-                    mongodb (bool)  -- Flag to fetch client groups cache from MongoDB (default: False).
-                    hard (bool)     -- Flag to hard refresh MongoDB cache for this entity (default: False).
+        This method updates the internal cache of client groups, optionally using MongoDB as the data source
+        or performing a hard refresh of the cache.
+
+        Keyword Args:
+            mongodb (bool, optional): If True, fetch the client groups cache from MongoDB. Defaults to False.
+            hard (bool, optional): If True, perform a hard refresh of the MongoDB cache for this entity. Defaults to False.
+
+        Example:
+            >>> client_groups = ClientGroups(commcell_object)
+            >>> client_groups.refresh()  # Standard refresh
+            >>> client_groups.refresh(mongodb=True)  # Refresh using MongoDB cache
+            >>> client_groups.refresh(hard=True)  # Perform a hard refresh
+
+        #ai-gen-doc
         """
         mongodb = kwargs.get('mongodb', False)
         hard = kwargs.get('hard', False)
@@ -1111,30 +1321,75 @@ class ClientGroups(object):
             self._clientgroups_cache = self.get_client_groups_cache(hard=hard)
 
     @property
-    def all_client_groups_prop(self)->list[dict]:
-        """
-        Returns complete GET API response
+    def all_client_groups_prop(self) -> list[dict]:
+        """Get the complete GET API response for all client groups.
+
+        Returns:
+            list[dict]: A list of dictionaries containing the full API response data for all client groups.
+
+        Example:
+            >>> client_groups = ClientGroups(commcell_object)
+            >>> all_groups = client_groups.all_client_groups_prop
+            >>> print(f"Total client groups: {len(all_groups)}")
+            >>> # Access details of the first client group
+            >>> if all_groups:
+            >>>     print(all_groups[0])
+
+        #ai-gen-doc
         """
         self._all_client_groups_prop = self._get_clientgroups(full_response=True).get("groups",[])
         return self._all_client_groups_prop
 
 
 class ClientGroup(object):
-    """Class for performing operations for a specific ClientGroup."""
+    """
+    Manages operations and properties for a specific ClientGroup within a CommCell environment.
 
-    def __init__(self, commcell_object, clientgroup_name, clientgroup_id=None):
-        """Initialise the ClientGroup class instance.
+    The ClientGroup class provides a comprehensive interface for managing client groups, including
+    configuration, client association, backup and restore operations, data aging, network settings,
+    and additional settings. It allows for dynamic updates to group properties, client membership,
+    and operational controls such as enabling/disabling backup, restore, and data aging features.
+    The class also supports advanced features like auto-discovery, company association changes,
+    network configuration pushes, and software maintenance tasks.
 
-            Args:
-                commcell_object     (object)   --  instance of the Commcell class
+    Key Features:
+        - Initialization and representation of client group objects
+        - Retrieval and management of client group properties and IDs
+        - Dynamic update of client group name, description, and associated clients
+        - Add, remove, or overwrite clients in the group
+        - Enable/disable backup, restore, and data aging operations (immediate or scheduled)
+        - Manage network settings and throttling for the client group
+        - Push network configurations, service packs, and hotfixes to clients
+        - Repair client software with authentication and reboot options
+        - Update client group properties and additional settings
+        - Enable/disable auto-discovery for client group membership
+        - Refresh client group and associated clients' information
+        - Change the company association of the client group
+        - Access to various properties such as name, ID, description, associated clients,
+          backup/restore/data aging status, smart group status, company name, network settings,
+          client group filters, and additional settings
 
-                clientgroup_name    (str)      --  name of the clientgroup
+    This class is intended for use in environments where centralized management of client groups
+    is required, providing robust methods for configuration, maintenance, and operational control.
 
-                clientgroup_id      (str)      --  id of the clientgroup
-                    default: None
+    #ai-gen-doc
+    """
 
-            Returns:
-                object - instance of the ClientGroup class
+    def __init__(self, commcell_object: object, clientgroup_name: str, clientgroup_id: str = None) -> None:
+        """Initialize a ClientGroup instance.
+
+        Args:
+            commcell_object: An instance of the Commcell class representing the connected Commcell environment.
+            clientgroup_name: The name of the client group to manage.
+            clientgroup_id: Optional; the unique identifier of the client group. If not provided, it may be determined automatically.
+
+        Example:
+            >>> commcell = Commcell('commcell_host', 'username', 'password')
+            >>> client_group = ClientGroup(commcell, 'Finance_Group')
+            >>> # Optionally, specify the client group ID
+            >>> client_group_with_id = ClientGroup(commcell, 'Finance_Group', clientgroup_id='12345')
+
+        #ai-gen-doc
         """
         self._commcell_object = commcell_object
 
@@ -1160,38 +1415,60 @@ class ClientGroup(object):
         self._is_data_aging_enabled = None
         self._is_smart_client_group = None
         self._company_name = None
+        self._additional_settings = None
 
         self.refresh()
 
-    def __repr__(self):
-        """String representation of the instance of this class.
+    def __repr__(self) -> str:
+        """Return a string representation of the ClientGroup instance.
 
-            Returns:
-                str - string containing the details of this ClientGroup
+        This method provides a human-readable string that describes the current ClientGroup object,
+        which is useful for debugging and logging purposes.
+
+        Returns:
+            A string containing details about this ClientGroup instance.
+
+        Example:
+            >>> group = ClientGroup(...)
+            >>> print(repr(group))
+            >>> # Output: <ClientGroup name='MyGroup' id=123>
+
+        #ai-gen-doc
         """
         representation_string = 'ClientGroup class instance for ClientGroup: "{0}"'
         return representation_string.format(self.clientgroup_name)
 
-    def _get_clientgroup_id(self):
-        """Gets the clientgroup id associated with this clientgroup.
+    def _get_clientgroup_id(self) -> str:
+        """Retrieve the unique identifier (ID) associated with this client group.
 
-            Returns:
-                str - id associated with this clientgroup
+        Returns:
+            The client group ID as a string.
+
+        Example:
+            >>> client_group = ClientGroup(commcell_object, 'MyClientGroup')
+            >>> group_id = client_group._get_clientgroup_id()
+            >>> print(f"Client group ID: {group_id}")
+
+        #ai-gen-doc
         """
         clientgroups = ClientGroups(self._commcell_object)
         return clientgroups.get(self.clientgroup_name).clientgroup_id
 
-    def _get_clientgroup_properties(self):
-        """Gets the clientgroup properties of this clientgroup.
+    def _get_clientgroup_properties(self) -> dict:
+        """Retrieve the properties of the current client group.
 
-            Returns:
-                dict - dictionary consisting of the properties of this clientgroup
+        Returns:
+            dict: A dictionary containing the properties of this client group.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException: If the response is empty or if the response indicates a failure.
 
-                    if response is not success
+        Example:
+            >>> properties = client_group._get_clientgroup_properties()
+            >>> print(properties)
+            >>> # Output will be a dictionary with client group details
+
+        #ai-gen-doc
         """
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -1207,8 +1484,19 @@ class ClientGroup(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _initialize_clientgroup_properties(self):
-        """Initializes the common properties for the clientgroup."""
+    def _initialize_clientgroup_properties(self) -> None:
+        """Initialize the common properties for the client group.
+
+        This method sets up the default or required properties for the client group instance.
+        It is typically called internally during the creation or refresh of a client group object.
+
+        Example:
+            >>> client_group = ClientGroup(commcell_object, 'MyClientGroup')
+            >>> client_group._initialize_clientgroup_properties()
+            >>> # The client group properties are now initialized and ready for use
+
+        #ai-gen-doc
+        """
         clientgroup_props = self._get_clientgroup_properties()
         self._properties = clientgroup_props
 
@@ -1249,23 +1537,32 @@ class ClientGroup(object):
 
         self._company_name = clientgroup_props.get('securityAssociations', {}).get('tagWithCompany', {}).get('providerDomainName')
 
-    def _request_json_(self, option, enable=True, enable_time=None, **kwargs):
-        """Returns the JSON request to pass to the API as per the options selected by the user.
+    def _request_json_(self, option: str, enable: bool = True, enable_time: str = None, **kwargs: dict) -> dict:
+        """Generate the JSON request payload for the API based on the selected operation option.
 
-            Args:
-                option (str)  --  string option for which to run the API for
-                    e.g.; Backup / Restore / Data Aging
+        Args:
+            option: The operation for which to generate the API request (e.g., "Backup", "Restore", "Data Aging").
+            enable: Whether to enable the specified option in the request. Defaults to True.
+            enable_time: Optional time (as a string) to schedule the operation. If None, the operation is immediate.
+            **kwargs: Additional keyword arguments for the request. Common keys include:
+                - timezone (str): The timezone to use for the operation. Use the TIMEZONES dict from constants.py.
+                  For Linux CommServer, provide time in GMT timezone.
 
-                **kwargs (dict)  -- dict of keyword arguments as follows
+        Returns:
+            dict: The JSON request dictionary to be sent to the API.
 
-                    timezone    (str)   -- timezone to be used of the operation
+        Example:
+            >>> # Generate a backup request in GMT timezone
+            >>> request = client_group._request_json_(
+            ...     option="Backup",
+            ...     enable=True,
+            ...     enable_time="2023-06-01T10:00:00",
+            ...     timezone="GMT"
+            ... )
+            >>> print(request)
+            {'operation': 'Backup', 'enable': True, 'enableTime': '2023-06-01T10:00:00', 'timezone': 'GMT'}
 
-                        **Note** make use of TIMEZONES dict in constants.py to pass timezone
-
-                        **Note** In case of linux CommServer provide time in GMT timezone
-
-            Returns:
-                dict - JSON request to pass to the API
+        #ai-gen-doc
         """
         options_dict = {
             "Backup": 1,
@@ -1314,24 +1611,29 @@ class ClientGroup(object):
         else:
             return request_json1
 
-    def _process_update_request(self, request_json):
-        """Runs the Clientgroup update API
+    def _process_update_request(self, request_json: dict) -> tuple[str, str]:
+        """Execute the ClientGroup update API request.
 
-            Args:
-                request_json    (dict)  -- request json sent as payload
+        Sends the provided request JSON as a payload to update the client group, and returns
+        the error code and error message from the API response.
 
-            Returns:
-                (str, str):
-                    str  -  error code received in the response
+        Args:
+            request_json: Dictionary containing the request payload for the update operation.
 
-                    str  -  error message received in the response
+        Returns:
+            A tuple containing:
+                - error_code (str): The error code received in the response.
+                - error_message (str): The error message received in the response.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException: If the response is empty or the update operation is not successful.
 
-                    if response is not success
+        Example:
+            >>> request_payload = {"clientGroupId": 123, "newName": "UpdatedGroup"}
+            >>> error_code, error_message = client_group._process_update_request(request_payload)
+            >>> print(f"Error code: {error_code}, Message: {error_message}")
 
+        #ai-gen-doc
         """
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._CLIENTGROUP, request_json
@@ -1354,31 +1656,38 @@ class ClientGroup(object):
 
     def _update(
             self,
-            clientgroup_name,
-            clientgroup_description,
-            associated_clients=None,
-            operation_type="NONE"):
-        """Update the clientgroup properties of this clientgroup.
+            clientgroup_name: str,
+            clientgroup_description: str,
+            associated_clients: 'Optional[Union[str, List[str]]]' = None,
+            operation_type: str = "NONE"
+        ) -> None:
+        """Update the properties of this client group.
 
-            Args:
-                clientgroup_name        (str)       --  new name of the clientgroup
+        This method updates the client group with a new name, description, and optionally modifies
+        the associated clients based on the specified operation type.
 
-                clientgroup_description (str)       --  description for the clientgroup
+        Args:
+            clientgroup_name: The new name to assign to the client group.
+            clientgroup_description: The description for the client group.
+            associated_clients: A comma-separated string of client names or a list of client names
+                to be added, removed, or overwritten in the client group. If None, no client association changes are made.
+            operation_type: The operation to perform on associated clients. Valid values are:
+                "NONE", "OVERWRITE", "ADD", "DELETE", "CLEAR". Default is "NONE".
 
-                associated_clients      (str/list)  --  ',' separated string of client names,
-                                                            or a list of clients,
-                                                            to be added/removed under client group
-                    default: None
+        Raises:
+            SDKException: If the update response is empty or not successful.
 
-                operation_type          (str)       --  associated clients operation type
-                        Valid values: NONE, OVERWRITE, ADD, DELETE, CLEAR
-                    default: NONE
+        Example:
+            >>> client_group = ClientGroup()
+            >>> client_group._update(
+            ...     clientgroup_name="NewGroupName",
+            ...     clientgroup_description="Updated description",
+            ...     associated_clients=["client1", "client2"],
+            ...     operation_type="ADD"
+            ... )
+            >>> print("Client group updated successfully.")
 
-            Raises:
-                SDKException:
-                    if response is empty
-
-                    if response is not success
+        #ai-gen-doc
         """
         clients_list = []
 
@@ -1428,28 +1737,28 @@ class ClientGroup(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _add_or_remove_clients(self, clients, operation_type):
-        """Adds/Removes clients to/from the ClientGroup.
+    def _add_or_remove_clients(self, clients: Union[str, list], operation_type: str) -> None:
+        """Add or remove clients to or from the ClientGroup.
+
+        This method allows you to add, overwrite, or delete clients in the client group by specifying
+        the operation type and the clients to be affected. The clients parameter can be either a 
+        comma-separated string of client names or a list of client names.
 
         Args:
-                clients         (str/list)   --  ',' separated string of client names,
-                                                     or a list of clients,
-                                                     to be added under client group
+            clients: A comma-separated string or a list of client names to be added, overwritten, or removed.
+            operation_type: The type of operation to perform. Valid values are 'ADD', 'OVERWRITE', or 'DELETE'.
 
-                operation_type  (bool)       --  type of operation to run for the request
-                    ADD / OVERWRITE / DELETE
+        Raises:
+            SDKException: If clients is not a string or list, if no valid clients are found, or if the operation fails.
 
-            Raises:
-                SDKException:
-                    if clients is not of type string / list
+        Example:
+            >>> client_group = ClientGroup()
+            >>> # Add clients using a list
+            >>> client_group._add_or_remove_clients(['client1', 'client2'], 'ADD')
+            >>> # Remove clients using a comma-separated string
+            >>> client_group._add_or_remove_clients('client3,client4', 'DELETE')
 
-                    if no valid clients are found
-
-                    if failed to add clients to ClientGroup
-
-                                    OR
-
-                    if failed to remove clients from the ClientGroup
+        #ai-gen-doc
         """
         if isinstance(clients, (str, list)):
             clientgroups_object = ClientGroups(self._commcell_object)
@@ -1491,79 +1800,247 @@ class ClientGroup(object):
             )
 
     @property
-    def properties(self):
-        """Returns the client group properties"""
+    def properties(self) -> dict:
+        """Get the properties of the client group.
+
+        Returns:
+            dict: A dictionary containing the properties and configuration details of the client group.
+
+        Example:
+            >>> client_group = ClientGroup(commcell_object, 'MyClientGroup')
+            >>> group_props = client_group.properties
+            >>> print(group_props)
+            {'clientGroupId': 123, 'clientGroupName': 'MyClientGroup', ...}
+
+        #ai-gen-doc
+        """
         return copy.deepcopy(self._properties)
 
     @property
-    def name(self):
-        """Returns the client group display name"""
+    def name(self) -> str:
+        """Get the display name of the client group.
+
+        Returns:
+            The display name of the client group as a string.
+
+        Example:
+            >>> client_group = ClientGroup(commcell_object, group_id)
+            >>> group_name = client_group.name  # Use dot notation for property access
+            >>> print(f"Client group name: {group_name}")
+
+        #ai-gen-doc
+        """
         return self._properties['clientGroup']['clientGroupName']
 
     @property
-    def clientgroup_id(self):
-        """Treats the clientgroup id as a read-only attribute."""
+    def clientgroup_id(self) -> int:
+        """Get the unique identifier (ID) of the client group.
+
+        This property provides read-only access to the client group's ID.
+
+        Returns:
+            int: The unique ID of the client group.
+
+        Example:
+            >>> client_group = ClientGroup(commcell_object, 'MyClientGroup')
+            >>> group_id = client_group.clientgroup_id
+            >>> print(f"Client group ID: {group_id}")
+
+        #ai-gen-doc
+        """
         return self._clientgroup_id
 
     @property
-    def clientgroup_name(self):
-        """Treats the clientgroup name as a read-only attribute."""
+    def clientgroup_name(self) -> str:
+        """Get the name of the client group as a read-only property.
+
+        Returns:
+            The name of the client group as a string.
+
+        Example:
+            >>> client_group = ClientGroup(commcell_object, 'WebServers')
+            >>> name = client_group.clientgroup_name  # Access the client group name
+            >>> print(f"Client group name: {name}")
+
+        #ai-gen-doc
+        """
         return self._clientgroup_name
 
     @property
-    def description(self):
-        """Treats the clientgroup description as a read-only attribute."""
+    def description(self) -> str:
+        """Get the description of the client group as a read-only property.
+
+        Returns:
+            The description of the client group as a string.
+
+        Example:
+            >>> client_group = ClientGroup(commcell_object, 'MyClientGroup')
+            >>> desc = client_group.description  # Access the description property
+            >>> print(f"Client group description: {desc}")
+
+        #ai-gen-doc
+        """
         return self._description
 
     @property
-    def associated_clients(self):
-        """Treats the clients associated to the ClientGroup as a read-only attribute."""
+    def associated_clients(self) -> List[str]:
+        """Get the list of clients associated with this ClientGroup as a read-only property.
+
+        Returns:
+            List of client names that are members of the ClientGroup.
+
+        Example:
+            >>> client_group = ClientGroup(commcell_object, 'Finance_Group')
+            >>> clients = client_group.associated_clients  # Access as a property
+            >>> for client in clients:
+            ...     print(f"Client name: {client}")
+
+        #ai-gen-doc
+        """
         return self._associated_clients
 
     @property
-    def is_backup_enabled(self):
-        """Treats the clientgroup backup attribute as a property of the ClientGroup class."""
+    def is_backup_enabled(self) -> bool:
+        """Indicate whether backup is enabled for this client group.
+
+        Returns:
+            True if backup is enabled for the client group, False otherwise.
+
+        Example:
+            >>> client_group = ClientGroup(commcell_object, 'MyClientGroup')
+            >>> if client_group.is_backup_enabled:
+            ...     print("Backup is enabled for this client group.")
+            ... else:
+            ...     print("Backup is not enabled for this client group.")
+
+        #ai-gen-doc
+        """
         return self._is_backup_enabled
 
     @property
-    def is_restore_enabled(self):
-        """Treats the clientgroup restore attribute as a propetry of the ClientGroup class."""
+    def is_restore_enabled(self) -> bool:
+        """Indicate whether restore operations are enabled for this client group.
+
+        Returns:
+            True if restore is enabled for the client group, False otherwise.
+
+        Example:
+            >>> client_group = ClientGroup(commcell_object, 'MyClientGroup')
+            >>> if client_group.is_restore_enabled:
+            ...     print("Restore is enabled for this client group.")
+            ... else:
+            ...     print("Restore is not enabled for this client group.")
+
+        #ai-gen-doc
+        """
         return self._is_restore_enabled
 
     @property
-    def is_data_aging_enabled(self):
-        """Treats the clientgroup data aging attribute as a property of the ClientGroup class."""
+    def is_data_aging_enabled(self) -> bool:
+        """Indicate whether data aging is enabled for this client group.
+
+        Returns:
+            bool: True if data aging is enabled for the client group, False otherwise.
+
+        Example:
+            >>> client_group = ClientGroup(commcell_object, 'MyClientGroup')
+            >>> if client_group.is_data_aging_enabled:
+            ...     print("Data aging is enabled for this client group.")
+            ... else:
+            ...     print("Data aging is not enabled for this client group.")
+
+        #ai-gen-doc
+        """
         return self._is_data_aging_enabled
 
     @property
-    def is_smart_client_group(self):
-        """Returns boolean indicating whether client group is smart client group"""
+    def is_smart_client_group(self) -> bool:
+        """Check if the client group is a smart client group.
+
+        Returns:
+            True if the client group is a smart client group, False otherwise.
+
+        Example:
+            >>> client_group = ClientGroup(commcell_object, 'MyClientGroup')
+            >>> if client_group.is_smart_client_group:
+            ...     print("This is a smart client group.")
+            ... else:
+            ...     print("This is a regular client group.")
+
+        #ai-gen-doc
+        """
         return self._is_smart_client_group
-    
+
     @property
-    def company_name(self):
-        """Returns company name to which client group belongs to"""
+    def company_name(self) -> str:
+        """Get the name of the company to which this client group belongs.
+
+        Returns:
+            The company name as a string.
+
+        Example:
+            >>> client_group = ClientGroup(commcell_object, 'MyClientGroup')
+            >>> company = client_group.company_name
+            >>> print(f"Client group belongs to company: {company}")
+
+        #ai-gen-doc
+        """
         return self._company_name
     
     @property
-    def network(self):
-        """Returns the object of Network class."""
+    def network(self) -> 'Network':
+        """Get the Network object associated with this ClientGroup.
+
+        Returns:
+            Network: An instance of the Network class for managing network-related configurations of the client group.
+
+        Example:
+            >>> client_group = ClientGroup(commcell_object, 'MyClientGroup')
+            >>> network_obj = client_group.network  # Access the Network property
+            >>> print(f"Network object: {network_obj}")
+
+        #ai-gen-doc
+        """
         if self._networkprop is None:
             self._networkprop = Network(self)
 
         return self._networkprop
 
     @property
-    def network_throttle(self):
-        """Returns the object of NetworkThrottle class"""
+    def network_throttle(self) -> 'NetworkThrottle':
+        """Get the NetworkThrottle object associated with this ClientGroup.
+
+        Returns:
+            NetworkThrottle: An instance for managing network throttling settings for the client group.
+
+        Example:
+            >>> client_group = ClientGroup(commcell_object, 'MyClientGroup')
+            >>> throttle = client_group.network_throttle  # Access the NetworkThrottle property
+            >>> print(f"Network throttle object: {throttle}")
+            >>> # Use the returned NetworkThrottle object to configure throttling as needed
+
+        #ai-gen-doc
+        """
         if self._network_throttle is None:
             self._network_throttle = NetworkThrottle(self)
 
         return self._network_throttle
 
     @property
-    def client_group_filter(self):
-        """Returns the client group filters"""
+    def client_group_filter(self) -> dict:
+        """Get the filters associated with this client group.
+
+        Returns:
+            dict: A dictionary containing the client group filters.
+
+        Example:
+            >>> client_group = ClientGroup(commcell_object, 'MyClientGroup')
+            >>> filters = client_group.client_group_filter
+            >>> print(filters)
+            >>> # Output: {'filterType': 'OS', 'filterValue': 'Windows'}
+
+        #ai-gen-doc
+        """
         client_group_filters = {}
 
         os_type_map = {
@@ -1578,13 +2055,37 @@ class ClientGroup(object):
         return client_group_filters
 
     @property
-    def is_auto_discover_enabled(self):
-        """Returns boolen for clientgroup autodiscover attribute whether property is enabled or not."""
+    def is_auto_discover_enabled(self) -> bool:
+        """Check if auto-discover is enabled for the client group.
+
+        Returns:
+            True if the auto-discover property is enabled for this client group, False otherwise.
+
+        Example:
+            >>> client_group = ClientGroup(commcell_object, 'MyClientGroup')
+            >>> if client_group.is_auto_discover_enabled:
+            ...     print("Auto-discover is enabled for this client group.")
+            ... else:
+            ...     print("Auto-discover is not enabled.")
+
+        #ai-gen-doc
+        """
         return self._properties.get('enableAutoDiscovery', False)
 
     @client_group_filter.setter
-    def client_group_filter(self, filters):
-        """""Sets the specified server group filters"""
+    def client_group_filter(self, filters: dict) -> None:
+        """Set the server group filters for the client group.
+
+        Args:
+            filters: A dictionary specifying the filters to apply to the client group.
+
+        Example:
+            >>> group = ClientGroup()
+            >>> group.client_group_filter = {"os_type": "Windows", "location": "DataCenter1"}
+            >>> # The client group will now use the specified filters
+
+        #ai-gen-doc
+        """
         request_json = {}
         request_json['clientGroupDetail'] = self._properties
         filters_root = request_json['clientGroupDetail']['globalFiltersInfo']['globalFiltersInfoList']
@@ -1606,12 +2107,21 @@ class ClientGroup(object):
         self._process_update_request(request_json)
         self.refresh()
 
-    def enable_backup(self):
-        """Enable Backup for this ClientGroup.
+    def enable_backup(self) -> None:
+        """Enable backup operations for this ClientGroup.
 
-            Raises:
-                SDKException:
-                    if failed to enable backup
+        This method activates backup functionality for the client group, allowing 
+        backup jobs to be performed on all clients within the group.
+
+        Raises:
+            SDKException: If the backup enable operation fails.
+
+        Example:
+            >>> client_group = ClientGroup(commcell_object, 'Finance_Group')
+            >>> client_group.enable_backup()
+            >>> print("Backup enabled for the client group.")
+
+        #ai-gen-doc
         """
         request_json = self._request_json_('Backup')
 
@@ -1628,26 +2138,33 @@ class ClientGroup(object):
 
             raise SDKException('ClientGroup', '102', o_str)
 
-    def enable_backup_at_time(self, enable_time, **kwargs):
-        """Disables Backup if not already disabled, and enables at the time specified.
+    def enable_backup_at_time(self, enable_time: str, **kwargs: dict) -> None:
+        """Schedule backup enablement at a specified UTC time for the client group.
 
-            Args:
-                enable_time (str)  --  UTC time to enable the backup at, in 24 Hour format
-                    format: YYYY-MM-DD HH:mm:ss
+        This method disables backup if it is not already disabled, and then schedules 
+        backup to be enabled at the specified UTC time. The time must be provided in 
+        24-hour format: 'YYYY-MM-DD HH:mm:ss'. An optional timezone can be specified 
+        using the 'timezone' keyword argument.
 
-                **kwargs (dict)  -- dict of keyword arguments as follows
+        Args:
+            enable_time: The UTC time to enable backup, in 'YYYY-MM-DD HH:mm:ss' format.
+            **kwargs: Optional keyword arguments.
+                - timezone (str): The timezone to use for the operation. Refer to the TIMEZONES 
+                  dictionary in constants.py for valid values.
 
-                    timezone    (str)   -- timezone to be used of the operation
+        Raises:
+            SDKException: If the provided time is earlier than the current time, 
+                if the time format is incorrect, or if enabling backup fails.
 
-                        **Note** make use of TIMEZONES dict in constants.py to pass timezone
+        Example:
+            >>> client_group = ClientGroup(commcell_object, 'MyClientGroup')
+            >>> client_group.enable_backup_at_time(
+            ...     '2024-07-01 22:00:00',
+            ...     timezone='Asia/Kolkata'
+            ... )
+            >>> print("Backup will be enabled at the specified time.")
 
-            Raises:
-                SDKException:
-                    if time value entered is less than the current time
-
-                    if time value entered is not of correct format
-
-                    if failed to enable backup
+        #ai-gen-doc
         """
         try:
             time_tuple = time.strptime(enable_time, "%Y-%m-%d %H:%M:%S")
@@ -1670,12 +2187,21 @@ class ClientGroup(object):
 
             raise SDKException('ClientGroup', '102', o_str)
 
-    def disable_backup(self):
-        """Disables Backup for this ClientGroup.
+    def disable_backup(self) -> None:
+        """Disable backup operations for this ClientGroup.
 
-            Raises:
-                SDKException:
-                    if failed to disable backup
+        This method disables all backup activities associated with the current ClientGroup instance.
+        If the operation fails, an SDKException is raised.
+
+        Raises:
+            SDKException: If the backup could not be disabled for the ClientGroup.
+
+        Example:
+            >>> client_group = ClientGroup(commcell_object, 'Finance_Group')
+            >>> client_group.disable_backup()
+            >>> print("Backup disabled for the client group.")
+
+        #ai-gen-doc
         """
         request_json = self._request_json_('Backup', False)
 
@@ -1692,12 +2218,21 @@ class ClientGroup(object):
 
             raise SDKException('ClientGroup', '102', o_str)
 
-    def enable_restore(self):
-        """Enable Restore for this ClientGroup.
+    def enable_restore(self) -> None:
+        """Enable restore functionality for this ClientGroup.
 
-            Raises:
-                SDKException:
-                    if failed to enable restore
+        This method activates the restore capability for the current ClientGroup instance.
+        If the operation fails, an SDKException is raised.
+
+        Raises:
+            SDKException: If the restore enable operation fails.
+
+        Example:
+            >>> client_group = ClientGroup(commcell_object, 'MyClientGroup')
+            >>> client_group.enable_restore()
+            >>> print("Restore enabled for the client group.")
+
+        #ai-gen-doc
         """
         request_json = self._request_json_('Restore')
 
@@ -1714,26 +2249,30 @@ class ClientGroup(object):
 
             raise SDKException('ClientGroup', '102', o_str)
 
-    def enable_restore_at_time(self, enable_time, **kwargs):
-        """Disables restore if not already disabled, and enables at the time specified.
+    def enable_restore_at_time(self, enable_time: str, **kwargs: dict) -> None:
+        """Schedule restore enablement at a specified UTC time for the client group.
 
-            Args:
-                enable_time (str)  --  UTC time to enable the backup at, in 24 Hour format
-                    format: YYYY-MM-DD HH:mm:ss
+        This method disables restore access if it is not already disabled, and then schedules
+        restore access to be enabled at the specified UTC time. The time must be provided in
+        24-hour format: 'YYYY-MM-DD HH:mm:ss'. An optional timezone can be specified using the
+        'timezone' keyword argument.
 
-                **kwargs (dict)  -- dict of keyword arguments as follows
+        Args:
+            enable_time: The UTC time at which to enable restore access, in 'YYYY-MM-DD HH:mm:ss' format.
+            **kwargs: Optional keyword arguments.
+                - timezone (str): The timezone to use for the operation. Refer to the TIMEZONES
+                  dictionary in constants.py for valid values.
 
-                    timezone    (str)   -- timezone to be used of the operation
+        Raises:
+            SDKException: If the provided time is earlier than the current time, if the time format
+                is incorrect, or if enabling restore fails.
 
-                        **Note** make use of TIMEZONES dict in constants.py to pass timezone
+        Example:
+            >>> client_group = ClientGroup(commcell_object, 'MyClientGroup')
+            >>> # Schedule restore enablement for 2024-07-01 15:00:00 UTC
+            >>> client_group.enable_restore_at_time('2024-07-01 15:00:00', timezone='America/New_York')
 
-            Raises:
-                SDKException:
-                    if time value entered is less than the current time
-
-                    if time value entered is not of correct format
-
-                    if failed to enable Restore
+        #ai-gen-doc
         """
         try:
             time_tuple = time.strptime(enable_time, "%Y-%m-%d %H:%M:%S")
@@ -1756,12 +2295,21 @@ class ClientGroup(object):
 
             raise SDKException('ClientGroup', '102', o_str)
 
-    def disable_restore(self):
-        """Disables Restore for this ClientGroup.
+    def disable_restore(self) -> None:
+        """Disable restore operations for this ClientGroup.
 
-            Raises:
-                SDKException:
-                    if failed to disable restore
+        This method disables the ability to perform restore operations for all clients within the client group.
+        If the operation fails, an SDKException is raised.
+
+        Raises:
+            SDKException: If the restore disable operation fails.
+
+        Example:
+            >>> client_group = ClientGroup(commcell_object, 'Finance_Group')
+            >>> client_group.disable_restore()
+            >>> print("Restore operations have been disabled for the client group.")
+
+        #ai-gen-doc
         """
         request_json = self._request_json_('Restore', False)
 
@@ -1778,12 +2326,21 @@ class ClientGroup(object):
 
             raise SDKException('ClientGroup', '102', o_str)
 
-    def enable_data_aging(self):
+    def enable_data_aging(self) -> None:
         """Enable Data Aging for this ClientGroup.
 
-            Raises:
-                SDKException:
-                    if failed to enable data aging
+        This method enables the Data Aging feature for the current ClientGroup instance.
+        Data Aging is used to remove aged or obsolete data based on retention policies.
+
+        Raises:
+            SDKException: If enabling data aging fails.
+
+        Example:
+            >>> client_group = ClientGroup(commcell_object, 'MyClientGroup')
+            >>> client_group.enable_data_aging()
+            >>> print("Data Aging enabled for the client group.")
+
+        #ai-gen-doc
         """
         request_json = self._request_json_('Data Aging')
 
@@ -1800,26 +2357,28 @@ class ClientGroup(object):
 
             raise SDKException('ClientGroup', '102', o_str)
 
-    def enable_data_aging_at_time(self, enable_time, **kwargs):
-        """Disables Data Aging if not already disabled, and enables at the time specified.
+    def enable_data_aging_at_time(self, enable_time: str, **kwargs: dict) -> None:
+        """Schedule Data Aging to be enabled at a specified UTC time.
 
-            Args:
-                enable_time (str)  --  UTC time to enable the backup at, in 24 Hour format
-                    format: YYYY-MM-DD HH:mm:ss
+        This method disables Data Aging if it is currently enabled, and then schedules it to be enabled 
+        at the provided UTC time. The time must be specified in 24-hour format as 'YYYY-MM-DD HH:mm:ss'.
 
-                **kwargs (dict)  -- dict of keyword arguments as follows
+        Args:
+            enable_time: The UTC time at which to enable Data Aging, in the format 'YYYY-MM-DD HH:mm:ss'.
+            **kwargs: Optional keyword arguments.
+                - timezone (str): The timezone to use for the operation. 
+                  Refer to the TIMEZONES dictionary in constants.py for valid values.
 
-                    timezone    (str)   -- timezone to be used of the operation
+        Raises:
+            SDKException: If the provided time is earlier than the current time, 
+                if the time format is incorrect, or if enabling Data Aging fails.
 
-                        **Note** make use of TIMEZONES dict in constants.py to pass timezone
+        Example:
+            >>> group = ClientGroup()
+            >>> group.enable_data_aging_at_time('2024-07-01 23:00:00', timezone='America/New_York')
+            >>> print("Data Aging will be enabled at the specified time.")
 
-            Raises:
-                SDKException:
-                    if time value entered is less than the current time
-
-                    if time value entered is not of correct format
-
-                    if failed to enable Data Aging
+        #ai-gen-doc
         """
         try:
             time_tuple = time.strptime(enable_time, "%Y-%m-%d %H:%M:%S")
@@ -1842,12 +2401,21 @@ class ClientGroup(object):
 
             raise SDKException('ClientGroup', '102', o_str)
 
-    def disable_data_aging(self):
-        """Disables Data Aging for this ClientGroup.
+    def disable_data_aging(self) -> None:
+        """Disable Data Aging for this ClientGroup.
 
-            Raises:
-                SDKException:
-                    if failed to disable data aging
+        This method disables the Data Aging feature for the current ClientGroup instance.
+        Data Aging is a process that removes aged data based on retention rules.
+
+        Raises:
+            SDKException: If the operation to disable data aging fails.
+
+        Example:
+            >>> client_group = ClientGroup(commcell_object, 'MyClientGroup')
+            >>> client_group.disable_data_aging()
+            >>> print("Data Aging has been disabled for the client group.")
+
+        #ai-gen-doc
         """
         request_json = self._request_json_('Data Aging', False)
 
@@ -1865,8 +2433,19 @@ class ClientGroup(object):
             raise SDKException('ClientGroup', '102', o_str)
 
     @clientgroup_name.setter
-    def clientgroup_name(self, value):
-        """Sets the name of the clientgroup as the value provided as input."""
+    def clientgroup_name(self, value: str) -> None:
+        """Set the name of the client group.
+
+        Args:
+            value: The new name to assign to the client group.
+
+        Example:
+            >>> client_group = ClientGroup(commcell_object, 'OldName')
+            >>> client_group.clientgroup_name = 'NewGroupName'  # Use assignment for property setter
+            >>> # The client group name is now updated to 'NewGroupName'
+
+        #ai-gen-doc
+        """
         if isinstance(value, str):
             output = self._update(
                 clientgroup_name=value,
@@ -1885,8 +2464,19 @@ class ClientGroup(object):
             )
 
     @description.setter
-    def description(self, value):
-        """Sets the description of the clientgroup as the value provided in input."""
+    def description(self, value: str) -> None:
+        """Set the description of the client group.
+
+        Args:
+            value: The new description to assign to the client group.
+
+        Example:
+            >>> client_group = ClientGroup(commcell_object, 'MyClientGroup')
+            >>> client_group.description = "This group contains all production servers."
+            >>> # The client group's description is now updated
+
+        #ai-gen-doc
+        """
         if isinstance(value, str):
             output = self._update(
                 clientgroup_name=self.name,
@@ -1904,55 +2494,77 @@ class ClientGroup(object):
                 'ClientGroup', '102', 'Clientgroup description should be a string value'
             )
 
-    def add_clients(self, clients, overwrite=False):
-        """Adds clients to the ClientGroup.
+    def add_clients(self, clients: Union[str, List[str]], overwrite: bool = False) -> None:
+        """Add clients to the ClientGroup.
+
+        This method adds one or more clients to the client group. The clients can be specified
+        as a comma-separated string of client names or as a list of client names. If the
+        `overwrite` flag is set to True, any existing clients in the group will be removed
+        before adding the new clients.
 
         Args:
-                clients     (str/list)  --  ',' separated string of client names,
-                                                or a list of clients,
-                                                to be added under client group
+            clients: A comma-separated string of client names or a list of client names to add to the group.
+            overwrite: If True, removes all existing clients from the group before adding the new clients.
+                Defaults to False.
 
-                overwrite   (bool)      --  if set to true will remove old clients,
-                                                and add new clients
-                    default: False
+        Raises:
+            SDKException: If `clients` is not a string or list, if no valid clients are found,
+                or if the operation fails to add clients to the client group.
 
-            Raises:
-                SDKException:
-                    if clients is not of type string / list
+        Example:
+            >>> client_group = ClientGroup()
+            >>> # Add a single client by name
+            >>> client_group.add_clients('client1')
+            >>> # Add multiple clients using a comma-separated string
+            >>> client_group.add_clients('client1,client2,client3')
+            >>> # Add multiple clients using a list
+            >>> client_group.add_clients(['client1', 'client2'])
+            >>> # Overwrite existing clients with a new list
+            >>> client_group.add_clients(['client4', 'client5'], overwrite=True)
 
-                    if no valid clients are found
-
-                    if failed to add clients to client group
+        #ai-gen-doc
         """
         if overwrite is True:
             return self._add_or_remove_clients(clients, 'OVERWRITE')
         else:
             return self._add_or_remove_clients(clients, 'ADD')
 
-    def remove_clients(self, clients):
-        """Deletes clients from the ClientGroup.
+    def remove_clients(self, clients: Union[str, list]) -> None:
+        """Remove one or more clients from the ClientGroup.
 
-            Args:
-                clients     (str/list)  --  ',' separated string of client names,
-                                                or a list of clients,
-                                                to be removed from the client group
+        Args:
+            clients: A comma-separated string of client names or a list of client names to be removed from the client group.
 
-            Raises:
-                SDKException:
-                    if clients is not of type string / list
+        Raises:
+            SDKException: If 'clients' is not a string or list, if no valid clients are found, or if removal fails.
 
-                    if no valid clients are found
+        Example:
+            >>> client_group = ClientGroup()
+            >>> # Remove clients using a comma-separated string
+            >>> client_group.remove_clients("client1,client2")
+            >>> # Remove clients using a list
+            >>> client_group.remove_clients(["client3", "client4"])
+            >>> print("Clients removed from the group successfully.")
 
-                    if failed to remove clients from client group
+        #ai-gen-doc
         """
         return self._add_or_remove_clients(clients, 'DELETE')
 
-    def remove_all_clients(self):
-        """Clears the associated clients from client group
+    def remove_all_clients(self) -> None:
+        """Remove all clients associated with this client group.
 
-            Raises:
-                SDKException:
-                    if failed to remove all clients from client group
+        This method clears all clients from the client group. If the operation fails,
+        an SDKException is raised.
+
+        Raises:
+            SDKException: If the method fails to remove all clients from the client group.
+
+        Example:
+            >>> client_group = ClientGroup(commcell_object, 'MyClientGroup')
+            >>> client_group.remove_all_clients()
+            >>> print("All clients have been removed from the client group.")
+
+        #ai-gen-doc
         """
         output = self._update(
             clientgroup_name=self.name,
@@ -1967,16 +2579,21 @@ class ClientGroup(object):
             o_str = 'Failed to remove clients from the ClientGroup\nError: "{0}"'
             raise SDKException('ClientGroup', '102', o_str.format(output[2]))
 
-    def push_network_config(self):
-        """Performs a push network configuration on the client group
+    def push_network_config(self) -> None:
+        """Push the network configuration to all clients in the client group.
 
-                Raises:
-                SDKException:
-                    if input data is invalid
+        This method initiates a network configuration push operation for the entire client group.
+        It is typically used to update network settings across multiple clients managed by the group.
 
-                    if response is empty
+        Raises:
+            SDKException: If the input data is invalid, the response is empty, or the response indicates failure.
 
-                    if response is not success
+        Example:
+            >>> client_group = ClientGroup(commcell_object, 'MyClientGroup')
+            >>> client_group.push_network_config()
+            >>> print("Network configuration push initiated for the client group.")
+
+        #ai-gen-doc
         """
 
         xml_execute_command = """
@@ -2017,36 +2634,37 @@ class ClientGroup(object):
 
     def push_servicepack_and_hotfix(
             self,
-            reboot_client=False,
-            run_db_maintenance=True):
-        """triggers installation of service pack and hotfixes
+            reboot_client: bool = False,
+            run_db_maintenance: bool = True
+        ) -> 'Job':
+        """Trigger the installation of service packs and hotfixes on all clients in the group.
+
+        This method initiates a job to push the latest service pack and hotfix updates to all clients 
+        within the client group. You can optionally specify whether to reboot the clients after installation 
+        and whether to run database maintenance as part of the process.
 
         Args:
-            reboot_client (bool)            -- boolean to specify whether to reboot the client
-            or not
-
-                default: False
-
-            run_db_maintenance (bool)      -- boolean to specify whether to run db
-            maintenance not
-
-                default: True
+            reboot_client: If True, the client machines will be rebooted after the installation.
+                Defaults to False.
+            run_db_maintenance: If True, database maintenance will be performed during the update.
+                Defaults to True.
 
         Returns:
-            object - instance of the Job class for this download job
+            Job: An instance of the Job class representing the download and installation job.
 
         Raises:
-                SDKException:
-                    if Download job failed
+            SDKException: If the download job fails, the response is empty, the response is not successful,
+                or if another download job is already running.
 
-                    if response is empty
+        Note:
+            This method cannot be used for revision upgrades; it is intended only for service pack and hotfix installations.
 
-                    if response is not success
+        Example:
+            >>> client_group = ClientGroup(commcell_object, 'WebServers')
+            >>> job = client_group.push_servicepack_and_hotfix(reboot_client=True, run_db_maintenance=False)
+            >>> print(f"Job ID: {job.job_id}")
 
-                    if another download job is already running
-
-        **NOTE:** push_serivcepack_and_hotfixes cannot be used for revision upgrades
-
+        #ai-gen-doc
         """
         install = Install(self._commcell_object)
         return install.push_servicepack_and_hotfix(
@@ -2056,36 +2674,33 @@ class ClientGroup(object):
 
     def repair_software(
             self,
-            username=None,
-            password=None,
-            reboot_client=False):
-        """triggers Repair software on the client group
+            username: str = None,
+            password: str = None,
+            reboot_client: bool = False
+        ) -> 'Job':
+        """Trigger a repair of the software on all clients in the client group.
+
+        This method initiates a repair operation for the software installed on the client group.
+        Optionally, you can provide credentials for the target machines and specify whether the
+        clients should be rebooted after the repair.
 
         Args:
-             username    (str)               -- username of the machine to re-install features on
-
-                default : None
-
-            password    (str)               -- base64 encoded password
-
-                default : None
-
-            reboot_client (bool)            -- boolean to specify whether to reboot the
-                                                client_group or not
-
-                default: False
+            username: The username to use for re-installing features on the client machines. If not provided, the default credentials are used.
+            password: The base64-encoded password corresponding to the username. If not provided, the default credentials are used.
+            reboot_client: Whether to reboot the clients in the group after the repair operation. Defaults to False.
 
         Returns:
-            object - instance of the Job class for this download job
+            Job: An instance of the Job class representing the repair job.
 
         Raises:
-                SDKException:
-                if install job failed
+            SDKException: If the install job fails, the response is empty, or the response indicates failure.
 
-                if response is empty
+        Example:
+            >>> client_group = ClientGroup(commcell_object, 'WebServers')
+            >>> job = client_group.repair_software(username='admin', password='cGFzc3dvcmQ=', reboot_client=True)
+            >>> print(f"Repair job started with Job ID: {job.job_id}")
 
-                if response is not success
-
+        #ai-gen-doc
         """
         install = Install(self._commcell_object)
         return install.repair_software(
@@ -2095,26 +2710,28 @@ class ClientGroup(object):
             reboot_client=reboot_client
         )
 
-    def update_properties(self, properties_dict):
-        """Updates the client group properties
+    def update_properties(self, properties_dict: dict) -> None:
+        """Update the properties of the client group.
 
-            Args:
-                properties_dict (dict)  --  client group property dict which is to be updated
+        This method updates the client group properties using the provided dictionary.
+        You can obtain a deep copy of the current properties using `self.properties`,
+        modify the desired fields, and then pass the updated dictionary to this method.
 
-            Returns:
-                None
+        Args:
+            properties_dict: A dictionary containing the client group properties to update.
 
-            Raises:
-                SDKException:
-                    if failed to add
+        Raises:
+            SDKException: If the update fails, the response is empty, or the response code is not as expected.
 
-                    if response is empty
+        Example:
+            >>> # Get a deep copy of current properties
+            >>> props = client_group.properties
+            >>> # Modify a property
+            >>> props['clientGroup']['description'] = "Updated description"
+            >>> # Update the client group with new properties
+            >>> client_group.update_properties(props)
 
-                    if response code is not as expected
-
-        **Note** self.properties can be used to get a deep copy of all the properties, modify the properties which you
-        need to change and use the update_properties method to set the properties
-
+        #ai-gen-doc
         """
         request_json = {
             "clientGroupOperationType": 2,
@@ -2135,37 +2752,45 @@ class ClientGroup(object):
 
     def add_additional_setting(
             self,
-            category=None,
-            key_name=None,
-            data_type=None,
-            value=None,
-            comment=None,
-            enabled=1):
-        """Adds registry key to the client group property
+            category: str = None,
+            key_name: str = None,
+            data_type: str = None,
+            value: str = None,
+            comment: str = None,
+            enabled: int = 1
+        ) -> None:
+        """Add an additional registry key setting to the client group property.
 
-            Args:
-                category        (str)           -- Category of registry key
+        This method allows you to add a custom registry key (additional setting) to the client group,
+        which can be used to configure advanced or custom behaviors for all clients in the group.
 
-                key_name        (str)           -- Name of the registry key
+        Args:
+            category: The category under which the registry key will be added.
+            key_name: The name of the registry key to add.
+            data_type: The data type of the registry key. Accepted values are:
+                'BOOLEAN', 'INTEGER', 'STRING', 'MULTISTRING', 'ENCRYPTED'.
+            value: The value to assign to the registry key.
+            comment: Optional comment describing the additional setting.
+            enabled: Set to 1 to enable the additional setting, or 0 to disable it. Default is 1.
 
-                data_type       (str)           -- Data type of registry key
+        Raises:
+            SDKException: If the additional setting could not be added, if the response is empty,
+                or if the response code is not as expected.
 
-                    Accepted Values: BOOLEAN, INTEGER, STRING, MULTISTRING, ENCRYPTED
+        Example:
+            >>> client_group = ClientGroup(commcell_object, 'MyClientGroup')
+            >>> client_group.add_additional_setting(
+            ...     category='Network',
+            ...     key_name='EnableCustomPort',
+            ...     data_type='BOOLEAN',
+            ...     value='True',
+            ...     comment='Enable custom port for all clients in group',
+            ...     enabled=1
+            ... )
+            >>> print("Additional setting added successfully.")
 
-                value           (str)           -- Value of registry key
-
-                comment         (str)           -- Comment to be added for the additional setting
-
-                enabled         (int)           -- To enable the additional setting
-                                                    default: 1
-
-            Raises:
-                SDKException:
-                    if failed to add
-
-                    if response is empty
-
-                    if response code is not as expected"""
+        #ai-gen-doc
+        """
 
         properties_dict = {
             "registryKeys": [{"deleted": 0,
@@ -2183,22 +2808,28 @@ class ClientGroup(object):
 
     def delete_additional_setting(
             self,
-            category=None,
-            key_name=None):
-        """Delete registry key from the client group property
+            category: str = None,
+            key_name: str = None
+        ) -> None:
+        """Delete a registry key from the client group property.
 
-            Args:
-                category        (str)           -- Category of registry key
+        This method removes a specified registry key from the client group's additional settings,
+        based on the provided category and key name.
 
-                key_name        (str)           -- Name of the registry key
+        Args:
+            category: The category under which the registry key is stored.
+            key_name: The name of the registry key to delete.
 
-            Raises:
-                SDKException:
-                    if failed to add
+        Raises:
+            SDKException: If the deletion fails, the response is empty, or the response code is not as expected.
 
-                    if response is empty
+        Example:
+            >>> client_group = ClientGroup(commcell_object, 'MyClientGroup')
+            >>> client_group.delete_additional_setting(category='Network', key_name='EnableIPv6')
+            >>> print("Registry key deleted successfully.")
 
-                    if response code is not as expected"""
+        #ai-gen-doc
+        """
 
         properties_dict = {
             "registryKeys": [{"deleted": 1,
@@ -2208,12 +2839,20 @@ class ClientGroup(object):
 
         self.update_properties(properties_dict)
 
-    def enable_auto_discover(self):
-        """Enables autodiscover at ClientGroup level..
+    def enable_auto_discover(self) -> None:
+        """Enable autodiscover functionality at the ClientGroup level.
 
-            Raises:
-                SDKException:
-                    if failed to enable_auto_discover
+        This method activates the autodiscover feature for the client group, allowing automatic detection and addition of clients as per the group configuration.
+
+        Raises:
+            SDKException: If enabling autodiscover fails.
+
+        Example:
+            >>> client_group = ClientGroup(commcell_object, 'MyClientGroup')
+            >>> client_group.enable_auto_discover()
+            >>> print("Autodiscover enabled for the client group.")
+
+        #ai-gen-doc
         """
         request_json = {
             "clientGroupOperationType": 2,
@@ -2233,12 +2872,21 @@ class ClientGroup(object):
 
             raise SDKException('ClientGroup', '102', o_str)
 
-    def disable_auto_discover(self):
-        """Disables autodiscover at ClientGroup level..
+    def disable_auto_discover(self) -> None:
+        """Disable autodiscover functionality at the ClientGroup level.
 
-            Raises:
-                SDKException:
-                    if failed to disable_auto_discover
+        This method turns off the autodiscover feature for the current ClientGroup instance.
+        If the operation fails, an SDKException is raised.
+
+        Raises:
+            SDKException: If the autodiscover feature could not be disabled.
+
+        Example:
+            >>> client_group = ClientGroup(commcell_object, 'MyClientGroup')
+            >>> client_group.disable_auto_discover()
+            >>> print("Autodiscover has been disabled for the client group.")
+
+        #ai-gen-doc
         """
         request_json = {
             "clientGroupOperationType": 2,
@@ -2258,14 +2906,37 @@ class ClientGroup(object):
 
             raise SDKException('ClientGroup', '102', o_str)
 
-    def refresh(self):
-        """Refresh the properties of the ClientGroup."""
+    def refresh(self) -> None:
+        """Reload the properties of the ClientGroup to reflect the latest state.
+
+        This method updates the ClientGroup instance with the most current information,
+        ensuring that any changes made externally are reflected in the object.
+
+        Example:
+            >>> client_group = ClientGroup(commcell_object, 'MyClientGroup')
+            >>> client_group.refresh()
+            >>> print("ClientGroup properties refreshed successfully")
+
+        #ai-gen-doc
+        """
         self._initialize_clientgroup_properties()
         self._networkprop = Network(self)
         self._network_throttle = None
+        self._additional_settings = None
 
-    def refresh_clients(self):
-        """Refreshes the clients of a client group"""
+    def refresh_clients(self) -> None:
+        """Reload the list of clients associated with this client group.
+
+        This method refreshes the internal client list, ensuring that any changes 
+        to the group membership are reflected in the current object.
+
+        Example:
+            >>> client_group = ClientGroup(commcell_object, 'Finance_Group')
+            >>> client_group.refresh_clients()
+            >>> print("Client group members refreshed successfully")
+
+        #ai-gen-doc
+        """
         refresh_client_api = self._services['SERVERGROUPS_V4'] + f"/{self._clientgroup_id}/Refresh"
 
         flag, response = self._cvpysdk_object.make_request("PUT", refresh_client_api)
@@ -2286,24 +2957,29 @@ class ClientGroup(object):
 
         self.refresh()
 
-    def change_company(self, target_company_name):
-        """
-        Changes Company for client group and its belonging clients
+    def change_company(self, target_company_name: str) -> None:
+        """Change the company association for the client group and all its clients.
+
+        This method migrates the client group and all clients belonging to it to the specified target company.
 
         Args:
-            target_company_name (str)  --  Company name to which clientgroup and its clients to be migrated
+            target_company_name: The name of the company to which the client group and its clients will be migrated.
 
         Raises:
-            SDKException:
-                if response is empty
+            SDKException: If the response from the operation is empty or indicates failure.
 
-                if response is not success
+        Example:
+            >>> client_group = ClientGroup(commcell_object, 'Finance_Group')
+            >>> client_group.change_company('NewCompanyName')
+            >>> print("Client group and its clients have been migrated to the new company.")
+
+        #ai-gen-doc
         """
         if target_company_name.lower() == 'commcell':
             company_id = 0
         else:
             company_id = int(self._commcell_object.organizations.get(target_company_name).organization_id)
-    
+
         request_json = {
             "entities": [
                 {
@@ -2313,7 +2989,7 @@ class ClientGroup(object):
                 }
             ]
         }
-        
+
         req_url = self._services['ORGANIZATION_ASSOCIATION'] % company_id
         flag, response = self._cvpysdk_object.make_request('PUT', req_url, request_json)
 
@@ -2327,3 +3003,221 @@ class ClientGroup(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
         self.refresh()
+
+    def add_http_proxy(self, use_client_os_proxy_settings=False, proxy_server="", proxy_port=0,
+                       use_authentication=False, use_with_network_topology=False,
+                       proxy_credential_name=None, proxy_credential_id=None, proxy_bypass_list="") -> None:
+        """Add an HTTP proxy configuration to the client group
+
+        Args:
+            use_client_os_proxy_settings (bool): Use the client OS proxy settings.
+
+            proxy_server (str): The proxy server address.
+
+            proxy_port (int): The proxy server port.
+
+            use_authentication (bool): Use authentication for the proxy.
+
+            use_with_network_topology (bool): Use the proxy with network topology.
+
+            proxy_credential_name (str): The name of the proxy credential.
+
+            proxy_credential_id (int): The ID of the proxy credential.
+
+            proxy_bypass_list (str): Comma-separated list of addresses to bypass the proxy.
+
+        """
+
+        proxy_type = "GLOBAL" if use_client_os_proxy_settings else "EXPLICIT"
+
+        if proxy_type == "EXPLICIT":
+            if not proxy_server or not isinstance(proxy_server, str):
+                raise SDKException( 'ClientGroup', 102,
+                    "proxy_server is required and must be a non-empty string when using EXPLICIT proxy."
+                )
+            if not isinstance(proxy_port, int) or not (1 <= proxy_port <= 65535):
+                raise SDKException( 'ClientGroup', 102,
+                    "proxy_port must be an integer between 1 and 65535 when using EXPLICIT proxy."
+                )
+
+        request_json = {
+            "entity": {
+                "clientGroupId": int(self.clientgroup_id)
+            },
+            "httpProxy": {
+                "server": proxy_server,
+                "port": proxy_port,
+                "useForNetworkRoutes": use_with_network_topology,
+                "proxyBypassList": proxy_bypass_list,
+                "configureHTTPProxy": True,
+                "useAuthentication": use_authentication,
+                "proxyType": proxy_type
+            }
+        }
+
+        if proxy_credential_id and proxy_credential_name:
+            request_json["httpProxy"]["credentials"] = {
+                "credentialId": proxy_credential_id,
+                "credentialName": proxy_credential_name
+            }
+        else:
+            request_json["httpProxy"]["selectedCredential"] = None
+
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._services['HTTP_PROXY'], request_json
+        )
+
+        if flag:
+            if response.json():
+                error_code = -1
+                error_message ="Failed to add HTTP proxy configuration to the client group."
+                if 'errorCode' in response.json():
+                        error_code = response.json()['errorCode']
+                if error_code != 0:
+                    raise SDKException('ClientGroup', '102', error_message)
+
+            else:
+                raise SDKException('Response', '102')
+
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+    def remove_http_proxy(self) -> None:
+        """Remove the HTTP proxy configuration from the client group."""
+
+        request_json = {
+            "entity": {
+                "clientGroupId": int(self.clientgroup_id)
+            },
+            "httpProxy": {
+                "configureHTTPProxy": False
+            }
+        }
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', self._services['HTTP_PROXY'], request_json
+        )
+
+        if flag:
+            if response.json():
+                error_code = -1
+                error_message = "Failed to remove HTTP proxy configuration to the client group."
+                if 'errorCode' in response.json():
+                    error_code = response.json()['errorCode']
+                if error_code != 0:
+                    raise SDKException('ClientGroup', '102', error_message)
+
+            else:
+                raise SDKException('Response', '102')
+
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+        
+    @property
+    def additional_settings(self) -> dict:
+        """Get the additional settings associated with this client group.
+
+        Returns:
+            dict: A dictionary containing additional configuration settings for the client group.
+
+        Example:
+            >>> client_group = ClientGroup(commcell_object, 'MyClientGroup')
+            >>> settings = client_group.additional_settings
+            >>> print(settings)
+            {'setting1': 'value1', 'setting2': 'value2'}
+
+        #ai-gen-doc
+        """
+        if self._additional_settings is None:
+            self._additional_settings = AdditionalSettings(self)
+        return self._additional_settings
+
+    def get_power_management(self) -> dict:
+        """Retrieve the current cloud VM power management configuration for this client group.
+
+        Returns:
+            dict: The ``powerManagementInfo`` dictionary from the API response, containing
+            fields such as ``isPowerManagementEnabled``, ``isPowerMgmtAllowed``,
+            ``isPowerMgmtSupported``, ``isPowerMgmtAllowedCheck``, and
+            ``selectedCloudController``.
+
+        Raises:
+            SDKException: If the response is empty or the request fails.
+
+        Example:
+            >>> client_group = ClientGroup(commcell_object, 'MyClientGroup')
+            >>> info = client_group.get_power_management()
+            >>> print(info)
+            {'isPowerManagementEnabled': True, 'isPowerMgmtAllowed': True, ...}
+        """
+        get_url = self._services['CLIENTGROUP_CLOUD_POWER_MGMT_GET'] % self.clientgroup_id
+        flag, response = self._cvpysdk_object.make_request('GET', get_url)
+
+        if not flag:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        if not response.json():
+            raise SDKException('Response', '102')
+
+        return response.json().get('powerManagementInfo', {})
+
+    def set_power_management(self, cloud_controller_client: str, enable: bool = False) -> None:
+        """Enable or disable cloud VM power management for this client group.
+
+        Calls :meth:`get_power_management` to fetch the current ``isPowerMgmtAllowed``,
+        ``isPowerMgmtSupported``, and ``isPowerMgmtAllowedCheck`` values, then issues
+        a PUT request updating only ``isPowerManagementEnabled``.
+
+        Args:
+            cloud_controller_client: Name of the cloud controller client (hypervisor) to
+                associate with power management.
+            enable: ``True`` to enable power management, ``False`` to disable it.
+                Defaults to ``False``.
+
+        Raises:
+            SDKException: If the client does not exist, or if the GET/PUT request fails.
+
+        Example:
+            >>> client_group = ClientGroup(commcell_object, 'MyClientGroup')
+            >>> # Enable power management
+            >>> client_group.set_power_management('TestGroup-Target-Hypervisor', enable=True)
+            >>> # Disable power management
+            >>> client_group.set_power_management('TestGroup-Target-Hypervisor', enable=False)
+        """
+        cloud_client = self._commcell_object.clients.get(cloud_controller_client)
+        cloud_client_id = int(cloud_client.client_id)
+
+        power_info = self.get_power_management()
+
+        request_json = {
+            "cgId": int(self.clientgroup_id),
+            "powerManagementInfo": {
+                "isPowerManagementEnabled": enable,
+                "isPowerMgmtAllowed": power_info.get('isPowerMgmtAllowed', True),
+                "isPowerMgmtSupported": power_info.get('isPowerMgmtSupported', True),
+                "isPowerMgmtAllowedCheck": power_info.get('isPowerMgmtAllowedCheck', True),
+                "selectedCloudController": {
+                    "clientId": cloud_client_id,
+                    "clientName": cloud_controller_client
+                }
+            }
+        }
+
+        put_url = self._services['CLIENTGROUP_CLOUD_POWER_MGMT']
+        flag, response = self._cvpysdk_object.make_request('PUT', put_url, request_json)
+
+        if flag:
+            if response.json():
+                error_code = response.json().get('errorCode', 0)
+                if error_code != 0:
+                    error_message = response.json().get('errorMessage', 'Failed to update power management.')
+                    raise SDKException('ClientGroup', '102', error_message)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)

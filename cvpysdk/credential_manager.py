@@ -45,18 +45,33 @@ Credentials:
 
     get_security_associations() --  Returns the security association dictionary for a given user or user group
 
+    add_database_creds()        --  Creates database credential on this commcell for a given DATABASE type
+
     add_db2_database_creds      --  Creates DB2 credential on this commcell
 
     add_postgres_database_creds --  Creates PostgreSQL credential on this commcell
 
+    add_informix_database_creds --  Creates Informix credential on this commcell
+
     add_mysql_database_creds    --  Creates MySQL credential on this commcell
+
+    add_oracle_database_creds   --  Creates Oracle credential on this commcell
+
+    add_sybase_database_creds   --  Creates Sybase credential on this commcell
+    add_oracle_catalog_creds    --  Creates Oracle Recovery Catalog credential on this commcell
 
     add_azure_cloud_creds()     --  Creates azure access key based credential on this commcell
 
-    add_azure_cosmosdb_creds()  --  Creates credential for azure cosmos db using azure application
-	                                id and application secret key 
+    add_azure_app_registration_creds()  --  Creates credential for azure using azure application
+	                                id and application secret key
 
     add_aws_s3_creds()          --  Creates aws s3 credential
+
+    add_aws_creds()  -- Creates AWS credentials on this commcell based on the credential type
+
+    add_bigdata_creds()         --  Creates bigdata credential on this commcell for a given database type
+
+    add_atlas_creds()           --  Creates Credential for MongoDB Atlas
 
 Credential:
     __init__()                  --  initiaizes the credential class object
@@ -83,40 +98,92 @@ Credential:
 
     _update_credential_props()  -- Updates credential account properties
 
+    update_azure_app_credential() -- Update the Azure application registration credential with new values.
 
 """
-
+import json
 from base64 import b64encode
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
+
+if TYPE_CHECKING:
+    from .commcell import Commcell
 from .security.usergroup import UserGroups
 from .exception import SDKException
 from .constants import Credential_Type
 
 
 class Credentials(object):
-    """Class for maintaining all the configured credential on this commcell"""
+    """
+    Manages and maintains all configured credentials within a Commcell environment.
 
-    def __init__(self, commcell_object):
-        """Initializes the credentials class object for this commcell
+    The Credentials class provides a comprehensive interface for handling various types of credentials,
+    including database, cloud, storage array, and big data credentials. It allows for secure storage,
+    retrieval, addition, deletion, and management of credentials, ensuring streamlined access control
+    and security association management for different services and resources in the Commcell.
 
-            Args:
-                commcell_object (object)  --  instance of the Commcell class
+    Key Features:
+        - Retrieve all configured credentials via the `all_credentials` property
+        - Check for the existence of a specific credential
+        - Get details of a credential by name
+        - Add new credentials for various record types and services (databases, storage arrays, cloud providers, big data)
+        - Refresh the credentials list to sync with the latest configuration
+        - Delete credentials by name
+        - Manage security associations for credential owners
+        - Specialized methods for adding credentials for:
+            - Storage arrays
+            - Multiple database types (DB2, Postgres, Informix, MySQL, Oracle, Oracle Catalog)
+            - Azure cloud and app registrations
+            - AWS S3 and AWS general credentials
+            - Big data platforms
 
-            Returns:
-                object - instance of the Clients class
+    This class is intended to be used as a central credential management utility within the Commcell,
+    providing secure and efficient operations for credential lifecycle management.
+
+    #ai-gen-doc
+    """
+
+    def __init__(self, commcell_object: 'Commcell') -> None:
+        """Initialize the Credentials object for a given Commcell instance.
+
+        Args:
+            commcell_object: Instance of the Commcell class representing the connected Commcell.
+
+        Example:
+            >>> from cvpysdk.commcell import Commcell
+            >>> commcell = Commcell(command_center_hostname, username, password)
+            >>> credentials = Credentials(commcell)
+            >>> # The credentials object is now initialized and ready for use
+
+        #ai-gen-doc
         """
         self._commcell_object = commcell_object
         self._services = commcell_object._services
         self._credentials = self._get_credentials()
+        self._vaults = self._get_credential_vaults()
         self.record_type = {
             'windows': 1,
             'linux': 2
         }
 
-    def __str__(self):
-        """Representation string consisting of all Credentials of the commcell.
+    def __str__(self) -> str:
+        """Return a formatted string representation of all credentials configured on the Commcell.
 
-            Returns:
-                str - string of all the Credentials configured on the commcell
+        The output lists each credential with its serial number in a tabular format.
+
+        Returns:
+            A string containing all credentials configured on the Commcell, formatted for display.
+
+        Example:
+            >>> credentials = Credentials(commcell_object)
+            >>> print(str(credentials))
+            >>> # Output:
+            >>> # S. No.        Credentials
+            >>> #
+            >>> #   1           admin
+            >>> #   2           backup_user
+            >>> #   3           restore_user
+
+        #ai-gen-doc
         """
         representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'Credentials')
 
@@ -126,15 +193,43 @@ class Credentials(object):
 
         return representation_string.strip()
 
-    def __repr__(self):
-        """Representation string for the instance of the Credentials class."""
+    def __repr__(self) -> str:
+        """Return a string representation of the Credentials class instance.
+
+        This method provides a human-readable description of the Credentials object,
+        typically used for debugging and logging purposes.
+
+        Returns:
+            String describing the Credentials class instance.
+
+        Example:
+            >>> creds = Credentials(...)
+            >>> print(repr(creds))
+            Credentials class instance for Commcell
+
+        #ai-gen-doc
+        """
         return "Credentials class instance for Commcell"
 
-    def _get_credentials(self):
-        """Returns the Credentials configured on this commcell
+    def _get_credentials(self) -> Dict[str, int]:
+        """Retrieve the credentials configured on this Commcell.
+
+        This method fetches all credentials from the Commcell and returns a dictionary
+        mapping credential names (in lowercase) to their corresponding credential IDs.
+
+        Returns:
+            Dictionary where keys are credential names (str) and values are credential IDs (int).
 
         Raises:
-            Exception if response is not success
+            Exception: If the response from the Commcell is not successful.
+
+        Example:
+            >>> credentials = Credentials(commcell_object)
+            >>> creds_dict = credentials._get_credentials()
+            >>> print(creds_dict)
+            >>> # Output: {'admin': 101, 'backupuser': 102}
+
+        #ai-gen-doc
         """
         get_all_credential_service = self._services['ALL_CREDENTIALS']
 
@@ -156,39 +251,154 @@ class Credentials(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+
+    def _get_credential_vaults(self) -> Dict[str, int]:
+        """Retrieve the credential vaults configured on this Commcell.
+
+        This method fetches all credential vaults from the Commcell and returns a dictionary
+        mapping vault names (in lowercase) to their corresponding vault IDs.
+
+        Returns:
+            Dictionary where keys are vault names (str) and values are vault IDs (int).
+
+        Raises:
+            Exception: If the response from the Commcell is not successful.
+
+        Example:
+            >>> credentials = Credentials(commcell_object)
+            >>> vaults_dict = credentials._get_credential_vaults()
+            >>> print(vaults_dict)
+            >>> # Output: {'azure': 101, 'delinea': 102}
+
+        #ai-gen-doc
+        """
+        get_all_credential_service = self._services['ALL_CREDENTIAL_VAULTS']
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'GET', get_all_credential_service
+        )
+
+        if flag:
+            credentials_dict = {}
+            if response.json() and 'credentialManager' in response.json():
+
+                for credential in response.json()['credentialManager']:
+                    temp_id = credential['id']
+                    temp_name = credential['name'].lower()
+                    credentials_dict[temp_name] = temp_id
+
+            return credentials_dict
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
     @property
-    def all_credentials(self):
-        """"Returns all the Credentials present in the commcell"""
+    def all_credentials(self) -> Dict[str, int]:
+        """Get all credentials present in the Commcell.
+
+        Returns:
+            List of dictionaries, each containing details of a credential.
+
+        Example:
+            >>> credentials = Credentials(commcell_object)
+            >>> all_creds = credentials.all_credentials  # Use dot notation for property access
+            >>> print(f"Total credentials found: {len(all_creds)}")
+            >>> # Access details of the first credential
+            >>> if all_creds:
+            >>>     print(f"First credential details: {all_creds}")
+
+        #ai-gen-doc
+        """
         return self._credentials
 
-    def has_credential(self, credential_name):
-        """Checks if any Credentials with specified name exists on this commcell
+    @property
+    def all_credential_vaults(self) -> Dict[str, int]:
+        """Get all vaults present in the Commcell.
 
-            Args:
-                credential_name         (str)     --    name of the Credential which has to be
-                                                        checked if exists
+        Returns:
+            List of dictionaries, each containing details of a vault.
 
-            Retruns:
-                Bool- True if specified Credential is present on the commcell else false
+        Example:
+            >>> credentials = Credentials(commcell_object)
+            >>> all_vaults= credentials.all_credential_vaults  # Use dot notation for property access
+            >>> print(f"Total vaults found: {len(all_vaults)}")
+            >>> # Access details of the first credential
+            >>> if all_vaults:
+            >>>     print(f"First vault details: {all_vaults}")
 
-            Raises:
-                SDKException:
-                    if data type of input is invalid
+        #ai-gen-doc
+        """
+        return self._vaults
+
+    def has_credential(self, credential_name: str) -> bool:
+        """Check if a credential with the specified name exists on this Commcell.
+
+        Args:
+            credential_name: The name of the credential to check for existence.
+
+        Returns:
+            True if the specified credential is present on the Commcell, False otherwise.
+
+        Raises:
+            SDKException: If the data type of the input is invalid.
+
+        Example:
+            >>> credentials = Credentials(commcell_object)
+            >>> exists = credentials.has_credential("BackupAdmin")
+            >>> print(f"Credential exists: {exists}")
+            >>> # Output: Credential exists: True or False
+
+        #ai-gen-doc
         """
         if not isinstance(credential_name, str):
             raise SDKException('Credentials', '101')
 
         return self._credentials and credential_name.lower() in self._credentials
 
-    def get(self, credential_name):
-        """Returns the Credential object for the specified Credential name
+    def has_credential_vault(self, vault_name: str) -> bool:
+        """Check if a vault with the specified name exists on this Commcell.
 
-            Args:
-                credential_name  (str)    --  name of the Credential for which the object has to
-                                              be created
-            Raises:
-                SDKException:
-                    if Credential doesn't exist with specified name
+        Args:
+            vault_name: The name of the vault to check for existence.
+
+        Returns:
+            True if the specified vault is present on the Commcell, False otherwise.
+
+        Raises:
+            SDKException: If the data type of the input is invalid.
+
+        Example:
+            >>> credentials = Credentials(commcell_object)
+            >>> exists = credentials.has_credential_vault("BackupAdmin")
+            >>> print(f"Vaults exists: {exists}")
+            >>> # Output: Vault exists: True or False
+
+        #ai-gen-doc
+        """
+        if not isinstance(vault_name, str):
+            raise SDKException('Credentials', '101')
+
+        return self._vaults and vault_name.lower() in self._vaults
+
+    def get(self, credential_name: str) -> 'Credential':
+        """Retrieve the Credential object for the specified credential name.
+
+        Args:
+            credential_name: Name of the credential for which the object should be returned.
+
+        Returns:
+            Credential: The Credential object corresponding to the given name.
+
+        Raises:
+            SDKException: If a credential with the specified name does not exist.
+
+        Example:
+            >>> credentials = Credentials(commcell_object)
+            >>> credential = credentials.get("MyCredential")
+            >>> print(f"Credential object: {credential}")
+            >>> # The returned Credential object can be used for further operations
+
+        #ai-gen-doc
         """
         if not self.has_credential(credential_name):
             raise SDKException(
@@ -199,29 +409,33 @@ class Credentials(object):
         return Credential(self._commcell_object, credential_name, self._credentials[
             credential_name.lower()])
 
-    def add(self, record_type, credential_name, user_name, user_password, description=None):
-        """Creates credential account on this commcell
+    def add(self, record_type: str, credential_name: str, user_name: str, user_password: str,
+            description: Optional[str] = None) -> None:
+        """Create a new credential account on the Commcell.
 
-            Args:
-                record_type     (str)   -- type of credential record to be created (windows/linux)
+        Args:
+            record_type: Type of credential record to be created (e.g., "windows" or "linux").
+            credential_name: Name to assign to the credential account.
+            user_name: Username to associate with this credential account.
+            user_password: Password for the user.
+            description: Optional description for the credential account.
 
-                credential_name (str)   --  name to be given to credential account
+        Raises:
+            SDKException: If the credential account already exists, if input formats are invalid,
+                or if the Commcell response is unsuccessful.
 
-                user_name       (str)   --  name of the user to be associated to this credential
-                                            account
+        Example:
+            >>> credentials = Credentials(commcell_object)
+            >>> credentials.add(
+            ...     record_type="windows",
+            ...     credential_name="BackupAdmin",
+            ...     user_name="adminuser",
+            ...     user_password="securepassword123",
+            ...     description="Credential for backup operations"
+            ... )
+            >>> # The credential account 'BackupAdmin' is now created on the Commcell.
 
-                user_password   (str)   --  password for user
-
-                description     (str)   --  description for credential account
-
-            Raises:
-                SDKException:
-                    if credential account is already present on the commcell
-
-                    if string format are not proper
-
-                    if response is not successful
-
+        #ai-gen-doc
         """
 
         if not (isinstance(credential_name, str) and isinstance(user_name, str)):
@@ -229,7 +443,7 @@ class Credentials(object):
 
         if self.has_credential(credential_name):
             raise SDKException(
-                'Credential', '102', "User {0} already exists on this commcell.".format(
+                'Credential', '102', "Credential {0} already exists on this commcell.".format(
                     credential_name)
             )
         password = b64encode(user_password.encode()).decode()
@@ -267,27 +481,42 @@ class Credentials(object):
             raise SDKException('Response', '101', response_string)
         self.refresh()
 
-    def refresh(self):
-        """Refresh the list of credential records on this commcell."""
+    def refresh(self) -> None:
+        """Reload the list of credential records from the Commcell.
+
+        This method updates the internal credential cache to ensure that
+        the latest credential records are available for use.
+
+        Example:
+            >>> credentials = Credentials(commcell_object)
+            >>> credentials.refresh()  # Refreshes the credential records
+            >>> print("Credential records updated successfully")
+
+        #ai-gen-doc
+        """
         self._credentials = self._get_credentials()
 
-    def delete(self, credential_name):
-        """Deletes the credential object for specified credential name
+    def delete(self, credential_name: str) -> None:
+        """Delete the credential object for the specified credential name.
 
-            Args:
-                credential_name (str) --  name of the credential for which the object has to be
-                                          deleted
+        Removes the credential associated with the given name from the Commcell.
+        If the credential does not exist or the deletion fails, an SDKException is raised.
 
-            Raises:
-                SDKException:
-                    if credential doesn't exist
+        Args:
+            credential_name: Name of the credential to be deleted.
 
-                    if response is empty
+        Raises:
+            SDKException: If the credential does not exist, the response is empty, or the deletion is unsuccessful.
 
-                    if response is not success
+        Example:
+            >>> credentials = Credentials(commcell_object)
+            >>> credentials.delete("MyCredential")
+            >>> print("Credential deleted successfully")
+            # If the credential does not exist, an SDKException will be raised.
 
+        #ai-gen-doc
         """
-        if not self.has_credential(credential_name):
+        if not (self.has_credential(credential_name) or self.has_credential_vault(credential_name)):
             raise SDKException(
                 'Credential', '102', "credential {0} doesn't exists on this commcell.".format(
                     credential_name)
@@ -320,16 +549,26 @@ class Credentials(object):
             raise SDKException('Response', '101', response_string)
         self.refresh()
 
-    def get_security_associations(self, owner, is_user=False):
-        """
-        Returns the security association dictionary for a given user or user group
+    def get_security_associations(self, owner: str, is_user: bool = False) -> Dict[str, Any]:
+        """Retrieve the security association dictionary for a specified user or user group.
+
         Args:
-            owner(str)          -   Owner of the user or user group
-            is_user(bool)       -   True if the owner is a user
-                                    False if the owner is a user group
+            owner: The name of the user or user group for which to retrieve security associations.
+            is_user: Set to True if the owner is a user; set to False if the owner is a user group.
 
         Returns:
-            dict containing the security association
+            Dictionary containing the security association details for the specified user or user group.
+
+        Example:
+            >>> credentials = Credentials(commcell_object)
+            >>> # For a user
+            >>> user_assoc = credentials.get_security_associations('john.doe', is_user=True)
+            >>> print(user_assoc)
+            >>> # For a user group
+            >>> group_assoc = credentials.get_security_associations('BackupAdmins', is_user=False)
+            >>> print(group_assoc)
+
+        #ai-gen-doc
         """
         if is_user is True:
             userOrGroupInfo = {
@@ -365,36 +604,46 @@ class Credentials(object):
         }
         return security_association
 
-    def add_db2_database_creds(self, credential_name, username, password, description=None):
-        """Creates db2 credential on this commcell
-            Args:
+    def add_storage_array_creds(self, credential_name: str, username: str, password: str,
+                                description: Optional[str] = None) -> 'Credential':
+        """Create a new storage array credential on the Commcell.
 
-                credential_name (str)   --  name to be given to credential account
+        Args:
+            credential_name: Name to assign to the credential account.
+            username: Username for the storage array credential.
+            password: Password for the credential account.
+            description: Optional description for the credential.
 
-                username  (str)         --  name of the db2 credential
+        Returns:
+            Credential: An instance representing the newly created storage array credential.
 
-                password   (str)        --  password for the credential
+        Raises:
+            SDKException: If a credential with the given name already exists on the Commcell,
+                or if the response from the server is not successful.
 
-                description (str)       --  description of the credential
+        Example:
+            >>> creds = Credentials(commcell_object)
+            >>> new_cred = creds.add_storage_array_creds(
+            ...     credential_name="ArrayBackupUser",
+            ...     username="backupuser",
+            ...     password="securepassword123",
+            ...     description="Credential for array backups"
+            ... )
+            >>> print(f"Created credential: {new_cred}")
 
-            Raises:
-                SDKException:
-                    if credential account is already present on the commcell
-
-                    if response is not successful
+        #ai-gen-doc
         """
         if self.has_credential(credential_name):
             raise SDKException(
                 'Credential', '102', "Credential {0} already exists on this commcell.".format(
                     credential_name)
             )
-        password = b64encode(password.encode()).decode()
+        encoded_password = b64encode(password.encode()).decode()
         create_credential = {
-            "accountType": "DATABASE_ACCOUNT",
-            "databaseCredentialType": "DB2",
+            "accountType": "STORAGE_ARRAY_ACCOUNT",
             "name": credential_name,
-            "username": username,
-            "password": password,
+            "userAccount": username,
+            "password": encoded_password,
             "description": description
         }
 
@@ -413,24 +662,51 @@ class Credentials(object):
         self.refresh()
         return Credential(self._commcell_object, credential_name, id)
 
-    def add_postgres_database_creds(self, credential_name, username, password, description=None):
-        """Creates PostgreSQL credential on this commcell
-            Args:
+    def add_database_creds(
+            self,
+            database_type: str,
+            credential_name: str,
+            username: str,
+            password: str,
+            description: Optional[str] = None,
+            service_name: Optional[str] = None
+    ) -> 'Credential':
+        """Create a new database credential on the Commcell for the specified database type.
 
-                credential_name (str)   --  name to be given to credential account
+        Args:
+            database_type: Type of database credential to be created.
+                Accepted values: "MYSQL", "INFORMIX", "POSTGRESQL", "DB2", "ORACLE", "ORACLE_CATALOG_ACCOUNT",
+                 "SQL_SERVER_ACCOUNT","SYBASE".
+            credential_name: Name to assign to the credential account.
+            username: Database username for authentication.
+            password: Database password for authentication.
+            description: Optional description of the credential.
+            service_name: Optional service name for Oracle databases.
 
-                username  (str)         --  PostgreSQL username
+        Returns:
+            Credential: An instance representing the newly created database credential.
 
-                password   (str)        --  PostgreSQL password
+        Raises:
+            SDKException: If the credential account already exists on the Commcell or if the response is not successful.
 
-                description (str)       --  description of the credential
+        Example:
+            >>> creds = Credentials(commcell_object)
+            >>> db_cred = creds.add_database_creds(
+            ...     database_type="MYSQL",
+            ...     credential_name="MySQLAdmin",
+            ...     username="admin",
+            ...     password="securepass",
+            ...     description="MySQL admin credentials"
+            ... )
+            >>> print(f"Created credential: {db_cred}")
 
-            Raises:
-                SDKException:
-                    if credential account is already present on the commcell
-
-                    if response is not successful
+        #ai-gen-doc
         """
+        if database_type not in ["MYSQL", "INFORMIX", "POSTGRESQL", "DB2", "ORACLE", "ORACLE_CATALOG_ACCOUNT",
+                                 "SQL_SERVER_ACCOUNT","SYBASE"]:
+            raise SDKException(
+                'Credential', '102', "Invalid database Type provided."
+            )
         if self.has_credential(credential_name):
             raise SDKException(
                 'Credential', '102', "Credential {0} already exists on this commcell.".format(
@@ -439,12 +715,15 @@ class Credentials(object):
         password = b64encode(password.encode()).decode()
         create_credential = {
             "accountType": "DATABASE_ACCOUNT",
-            "databaseCredentialType": "POSTGRESQL",
+            "databaseCredentialType": database_type,
             "name": credential_name,
             "username": username,
             "password": password,
             "description": description
         }
+
+        if database_type in ["ORACLE", "ORACLE_CATALOG_ACCOUNT"]:
+            create_credential["serviceName"] = service_name
 
         request = self._services['ADD_CREDENTIALS']
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -461,85 +740,231 @@ class Credentials(object):
         self.refresh()
         return Credential(self._commcell_object, credential_name, id)
 
-    def add_mysql_database_creds(self, credential_name, username, password, description=None):
-        """Creates MySQL credential on this commcell
-            Args:
+    def add_db2_database_creds(self, credential_name: str, username: str, password: str,
+                               description: Optional[str] = None) -> None:
+        """Create a DB2 database credential on the Commcell.
 
-                credential_name (str)   --  name to be given to credential account
+        Args:
+            credential_name: Name to assign to the credential account.
+            username: Username for the DB2 credential.
+            password: Password for the DB2 credential.
+            description: Optional description for the credential.
 
-                username  (str)         --  MySQL username
+        Raises:
+            SDKException: If the credential account already exists on the Commcell or if the response is not successful.
 
-                password   (str)        --  MySQL password
+        Example:
+            >>> creds = Credentials()
+            >>> creds.add_db2_database_creds(
+            ...     credential_name="db2_admin",
+            ...     username="admin_user",
+            ...     password="secure_password",
+            ...     description="DB2 admin credentials"
+            ... )
+            >>> print("DB2 credential added successfully")
 
-                description (str)       --  description of the credential
-
-            Raises:
-                SDKException:
-                    if credential account is already present on the commcell
-
-                    if response is not successful
+        #ai-gen-doc
         """
-        if self.has_credential(credential_name):
-            raise SDKException(
-                'Credential', '102', "Credential {0} already exists on this commcell.".format(
-                    credential_name)
-            )
-        password = b64encode(password.encode()).decode()
-        create_credential = {
-            "accountType": "DATABASE_ACCOUNT",
-            "databaseCredentialType": "MYSQL",
-            "name": credential_name,
-            "username": username,
-            "password": password,
-            "description": description
-        }
+        self.add_database_creds("DB2", credential_name, username, password, description)
 
-        request = self._services['ADD_CREDENTIALS']
-        flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'POST', request, create_credential
-        )
-        if flag:
-            if response.json():
-                id = response.json()['id']
-            else:
-                raise SDKException('Response', '102')
-        else:
-            response_string = self._commcell_object._update_response_(response.text)
-            raise SDKException('Response', '101', response_string)
-        self.refresh()
-        return Credential(self._commcell_object, credential_name, id)
+    def add_postgres_database_creds(self, credential_name: str, username: str, password: str,
+                                    description: Optional[str] = None) -> None:
+        """Create a PostgreSQL credential on the Commcell.
 
-    def add_azure_cloud_creds(self, credential_name, account_name, access_key_id, **kwargs):
-        """Creates azure access key based credential on this commcell
+        Args:
+            credential_name: Name to assign to the credential account.
+            username: PostgreSQL username for authentication.
+            password: PostgreSQL password for authentication.
+            description: Optional description of the credential.
 
-            Args:
+        Raises:
+            SDKException: If the credential account already exists on the Commcell or if the response is not successful.
 
-                credential_name (str)   --  name to be given to credential account
+        Example:
+            >>> creds = Credentials()
+            >>> creds.add_postgres_database_creds(
+            ...     credential_name="pg_admin",
+            ...     username="admin",
+            ...     password="securepass123",
+            ...     description="PostgreSQL admin credentials"
+            ... )
+            >>> print("PostgreSQL credential added successfully")
+        #ai-gen-doc
+        """
+        self.add_database_creds("POSTGRESQL", credential_name, username, password, description)
 
-                account_name  (str)     --  name of the azure storage account
+    def add_informix_database_creds(self, credential_name: str, username: str, password: str,
+                                    description: Optional[str] = None) -> None:
+        """Create an Informix database credential on the Commcell.
 
-                access_key_id   (str)   --  access key for azure storage
+        Args:
+            credential_name: Name to assign to the credential account.
+            username: Informix username and domain name (e.g., "domain\\username").
+            password: Password for the Informix account.
+            description: Optional description for the credential.
 
-                ** kwargs(dict)         --  Key value pairs for supported arguments
+        Raises:
+            SDKException: If the credential account already exists on the Commcell or if the response is not successful.
 
+        Example:
+            >>> creds = Credentials()
+            >>> creds.add_informix_database_creds(
+            ...     credential_name="InformixAdmin",
+            ...     username="domain\\informixuser",
+            ...     password="securepassword",
+            ...     description="Informix admin credentials for reporting"
+            ... )
+            >>> print("Informix credential added successfully")
+        #ai-gen-doc
+        """
+        self.add_database_creds("INFORMIX", credential_name, username, password, description)
+
+    def add_mysql_database_creds(self, credential_name: str, username: str, password: str,
+                                 description: Optional[str] = None) -> None:
+        """Create a MySQL credential on the Commcell.
+
+        Args:
+            credential_name: Name to assign to the MySQL credential account.
+            username: MySQL username for authentication.
+            password: MySQL password for authentication.
+            description: Optional description for the credential account.
+
+        Raises:
+            SDKException: If the credential account already exists on the Commcell or if the response is not successful.
+
+        Example:
+            >>> creds = Credentials(commcell_object)
+            >>> creds.add_mysql_database_creds(
+            ...     credential_name="MySQLAdmin",
+            ...     username="admin",
+            ...     password="securepassword",
+            ...     description="Credential for MySQL backups"
+            ... )
+            >>> print("MySQL credential added successfully")
+
+        #ai-gen-doc
+        """
+        self.add_database_creds("MYSQL", credential_name, username, password, description)
+
+    def add_oracle_database_creds(self, credential_name: str, username: str, password: str, service_name: str,
+                                  description: Optional[str] = None):
+        """Create Oracle database credentials on the Commcell.
+
+        Args:
+            credential_name: Name to assign to the Oracle credential account.
+            username: Oracle database username.
+            password: Oracle database password.
+            service_name: Service name of the Oracle database.
+            description: Optional description for the credential.
+
+        Raises:
+            SDKException: If the credential account already exists on the Commcell or if the response is not successful.
+
+        Example:
+            >>> creds = Credentials()
+            >>> creds.add_oracle_database_creds(
+            ...     credential_name="OracleProdCreds",
+            ...     username="dbadmin",
+            ...     password="securepass123",
+            ...     service_name="ORCLPROD",
+            ...     description="Production Oracle DB credentials"
+            ... )
+            >>> print("Oracle credentials added successfully")
+
+        #ai-gen-doc
+        """
+        return self.add_database_creds("ORACLE", credential_name, username, password, description, service_name)
+
+    def add_oracle_catalog_creds(self, credential_name: str, username: str, password: str, service_name: str,
+                                 description: Optional[str] = None):
+        """Create Oracle Recovery Catalog credentials on the Commcell.
+
+        This method adds a new Oracle Recovery Catalog credential account, which can be used for database operations requiring authentication.
+
+        Args:
+            credential_name: Name to assign to the credential account.
+            username: Oracle database username.
+            password: Oracle database password.
+            service_name: Service name of the Oracle database.
+            description: Optional description for the credential account.
+
+        Raises:
+            SDKException: If the credential account already exists on the Commcell or if the response is not successful.
+
+        Example:
+            >>> creds = Credentials(commcell_object)
+            >>> creds.add_oracle_catalog_creds(
+            ...     credential_name="OracleCatalogUser",
+            ...     username="oracle_user",
+            ...     password="secure_password",
+            ...     service_name="ORCLDB",
+            ...     description="Recovery catalog credentials for Oracle DB"
+            ... )
+        #ai-gen-doc
+        """
+        return self.add_database_creds("ORACLE_CATALOG_ACCOUNT", credential_name, username, password, description,
+                                       service_name)
+    def add_sybase_database_creds(self, credential_name, username, password, description=None):
+        """Create Sybase database credentials on the Commcell.
+
+        Args:
+            credential_name: Name to assign to the Sybase credential account.
+            username: Sybase database username.
+            password: Sybase database password.
+            description: Optional description for the credential.
+
+        Raises:
+            SDKException: If the credential account already exists on the Commcell or if the response is not successful.
+
+        Example:
+            >>> creds = Credentials()
+            >>> creds.add_sybase_database_creds(
+            ...     credential_name="SybaseProdCreds",
+            ...     username="dbadmin",
+            ...     password="securepass123",
+            ...     description="Production Sybase DB credentials"
+            ... )
+            >>> print("Sybase credentials added successfully")
+
+        #ai-gen-doc
+        """
+        return self.add_database_creds("SYBASE", credential_name, username, password, description)
+
+
+    def add_azure_cloud_creds(self, credential_name: str, account_name: str, access_key_id: str, **kwargs: Any) -> None:
+        """Create an Azure access key-based credential on this Commcell.
+
+        This method adds a new credential for an Azure storage account using the provided access key.
+        Additional supported arguments can be passed via kwargs, such as a description.
+
+        Args:
+            credential_name: Name to assign to the credential account.
+            account_name: Name of the Azure storage account.
+            access_key_id: Access key for the Azure storage account.
+            **kwargs: Additional key-value pairs for supported arguments.
                 Supported argument values:
-                    description(str)            -   description of the credentials
+                    description (str): Description of the credentials.
 
-            Raises:
-                SDKException:
-                    if arguments type is incorrect
+        Raises:
+            SDKException: If argument types are incorrect, the credential account already exists,
+                string formats are improper, or the response is not successful.
 
-                    if credential account is already present on the commcell
+        Example:
+            >>> creds = Credentials(commcell_object)
+            >>> creds.add_azure_cloud_creds(
+            ...     credential_name="AzureBlobCred",
+            ...     account_name="myazurestorage",
+            ...     access_key_id="my-access-key",
+            ...     description="Credential for Azure Blob Storage"
+            ... )
+            >>> # The Azure credential is now added to the Commcell
 
-                    if string format are not proper
-
-                    if response is not successful
-
+        #ai-gen-doc
         """
         description = kwargs.get("description", "")
 
-        if not (isinstance(access_key_id, str)  and isinstance(account_name, str)
-                 and isinstance(credential_name, str)):
+        if not (isinstance(access_key_id, str) and isinstance(account_name, str)
+                and isinstance(credential_name, str)):
             raise SDKException("Credential", "101")
 
         if self.has_credential(credential_name):
@@ -559,6 +984,7 @@ class Credentials(object):
                 }
             }
         }
+
         create_credential_account = {
             "credentialRecordInfo": [
                 {
@@ -595,47 +1021,65 @@ class Credentials(object):
             raise SDKException('Response', '101', response_string)
         self.refresh()
 
-    def add_azure_cosmosdb_creds(
+    def add_azure_app_registration_creds(
             self,
-            credential_name,
-            tenant_id,
-            application_id,
-            application_secret,
-            description=""):
-        """Creates azure application id and application secret key based credential on this commcell
+            credential_name: str,
+            tenant_id: str,
+            application_id: str,
+            application_secret: str,
+            description: str = "",
+            **kwargs: Any
+    ) -> None:
+        """Create Azure application registration credentials on the Commcell.
 
-            Args:
+        This method adds a credential account using Azure application ID and secret key.
+        Optionally, certificate-based authentication can be configured for SharePoint by
+        providing certificate path and password via keyword arguments.
 
-                credential_name (str)   --  name to be given to credential account
+        Args:
+            credential_name: Name to assign to the credential account.
+            tenant_id: Azure tenant ID as a string.
+            application_id: Azure application ID as a string.
+            application_secret: Azure application secret key as a string.
+            description: Optional description for the credentials.
+            **kwargs: Additional parameters for certificate-based authentication.
+                cert_path: Certificate path for SharePoint authentication.
+                cert_password: Certificate password for SharePoint authentication.
 
-                tenant_id  (str)     --    name of tenant id
+        Raises:
+            SDKException: If argument types are incorrect, credential account already exists,
+                or the response from Commcell is unsuccessful.
 
-                application_id   (str)   --  application id
-
-                application_secret  (str)  - application secet
-
-                description(str)            -   description of the credentials
-
-            Raises:
-                SDKException:
-                    if arguments type is incorrect
-
-                    if credential account is already present on the commcell
-
-                    if response is not successful
-
+        Example:
+            >>> credentials = Credentials(commcell_object)
+            >>> credentials.add_azure_app_registration_creds(
+            ...     credential_name="AzureAppCreds",
+            ...     tenant_id="your-tenant-id",
+            ...     application_id="your-app-id",
+            ...     application_secret="your-app-secret",
+            ...     description="Azure app registration for backup"
+            ... )
+            >>> # For certificate-based authentication:
+            >>> credentials.add_azure_app_registration_creds(
+            ...     credential_name="AzureCertCreds",
+            ...     tenant_id="your-tenant-id",
+            ...     application_id="your-app-id",
+            ...     application_secret="your-app-secret",
+            ...     cert_path=b"certificate-bytes",
+            ...     cert_password="cert-password"
+            ... )
+        #ai-gen-doc
         """
-
         if not (
-            isinstance(
-                application_id,
-                str) and isinstance(
-                tenant_id,
-                str) and isinstance(
-                credential_name,
-                str) and isinstance(
-                    application_secret,
-                str)):
+                isinstance(
+                    application_id,
+                    str) and isinstance(
+            tenant_id,
+            str) and isinstance(
+            credential_name,
+            str) and isinstance(
+            application_secret,
+            str)):
             raise SDKException("Credential", "101")
 
         if self.has_credential(credential_name):
@@ -657,7 +1101,8 @@ class Credentials(object):
                                 "resourceManagerEndpoint": "https://management.azure.com/",
                                 "storageEndpoint": "blob.core.windows.net"},
                             "environment": "AzureCloud",
-                            "tenantId": tenant_id}},
+                            "tenantId": tenant_id}
+                    },
                     "createAs": {},
                     "credentialRecord": {
                         "credentialName": credential_name},
@@ -669,6 +1114,29 @@ class Credentials(object):
                     "securityAssociations": {
                         "associations": [],
                         "associationsOperationType": 1}}]}
+
+        if kwargs.get("cert_path", None) and kwargs.get("cert_password", None):
+            cert_string = b64encode(kwargs.get("cert_path")).decode()
+            cert_string = b64encode(cert_string.encode()).decode()
+
+            cert_password = b64encode(kwargs.get("cert_password").encode()).decode()
+
+            azure_cred_info = {
+                "authType": "AZURE_OAUTH_SHARED_SECRET_CERTIFICATE",
+                "applicationId": application_id,
+                "certificateP12": cert_string,
+                "certPassword": cert_password,
+                "tenantId": tenant_id,
+                "environment": "AzureCloud",
+                "endpoints": {
+                    "activeDirectoryEndpoint": "https://login.microsoftonline.com/",
+                    "resourceManagerEndpoint": "https://management.azure.com/",
+                    "storageEndpoint": "blob.core.windows.net"
+                }
+            }
+            create_credential_account["credentialRecordInfo"][0]["additionalInformation"][
+                "azureCredInfo"] = azure_cred_info
+            create_credential_account["credentialRecordInfo"][0]["recordType"] = "AZUREACCOUNT_SECRET_CERTIFICATE"
 
         request = self._services['CREDENTIAL']
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -689,42 +1157,103 @@ class Credentials(object):
             raise SDKException('Response', '101', response_string)
         self.refresh()
 
-    def add_aws_s3_creds(
-            self,
-            credential_name,
-            access_key_id,
-            secret_access_key,
-            description=None):
-        """Creates aws s3 access key based credential on this commcell
-
+    def add_k8s_credentials(self, api_endpoint, ca_certificate, description, name, service_account, service_token):
+        """Creates k8s credential on this commcell
             Args:
 
-                credential_name (str)   --  name to be given to credential account
+                api_endpoint (str)   --  API endpoint of the k8s cluster
 
-                access_key_id   (str)   --  access key id for aws S3 bucket
+                ca_certificate  (str)     --  CA certificate of the k8s cluster
 
-                secrete_access_key (str) -- secrete access key for aws s3 bucket
+                description (str)       --  description of the credential
 
-                description(str)         -- description of the credentials
+                name (str)       --  name to be given to credential account
+
+                service_account (str)       --  service account name
+
+                service_token (str)       --  service account token
 
             Raises:
                 SDKException:
-                    if arguments type is incorrect
-
                     if credential account is already present on the commcell
 
                     if response is not successful
+        """
+        if self.has_credential(name):
+            raise SDKException(
+                'Credential', '102', "Credential {0} already exists on this commcell.".format(
+                    name)
+            )
+        encoded_token = b64encode(service_token.encode()).decode()
+        create_credential = {
+            "accountType": "KUBERNETES_SERVICE_ACCOUNT",
+            "name": name,
+            "description": description,
+            "apiEndpoint": api_endpoint,
+            "caCertificate": ca_certificate,
+            "serviceAccount": service_account,
+            "serviceToken": encoded_token
+        }
 
+        request = self._services['ADD_CREDENTIALS']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', request, create_credential
+        )
+        if flag:
+            if response.json():
+                id = response.json()['id']
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+        self.refresh()
+        return Credential(self._commcell_object, name, id)
+
+    def add_aws_s3_creds(
+            self,
+            credential_name: str,
+            access_key_id: str,
+            secret_access_key: str,
+            description: Optional[str] = None
+    ) -> None:
+        """Create an AWS S3 access key-based credential on this Commcell.
+
+        This method adds a new credential account for AWS S3 access, using the provided access key ID and secret access key.
+        The credential can be used for operations requiring authenticated access to AWS S3 buckets.
+
+        Args:
+            credential_name: Name to assign to the credential account.
+            access_key_id: AWS S3 access key ID.
+            secret_access_key: AWS S3 secret access key.
+            description: Optional description for the credential account.
+
+        Raises:
+            SDKException: If argument types are incorrect.
+            SDKException: If a credential account with the given name already exists on the Commcell.
+            SDKException: If the response from the Commcell is not successful.
+
+        Example:
+            >>> creds = Credentials(commcell_object)
+            >>> creds.add_aws_s3_creds(
+            ...     credential_name="MyS3Credential",
+            ...     access_key_id="AKIAIOSFODNN7EXAMPLE",
+            ...     secret_access_key="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+            ...     description="AWS S3 credential for backup operations"
+            ... )
+            >>> print("AWS S3 credential added successfully.")
+
+        #ai-gen-doc
         """
 
         if not (
-            isinstance(
-                access_key_id,
-                str) and isinstance(
-                secret_access_key,
-                str) and isinstance(
-                credential_name,
-                str)):
+                isinstance(
+                    access_key_id,
+                    str) and isinstance(
+            secret_access_key,
+            str) and isinstance(
+            credential_name,
+            str)):
             raise SDKException("Credential", "101")
 
         if self.has_credential(credential_name):
@@ -774,22 +1303,348 @@ class Credentials(object):
             raise SDKException('Response', '101', response_string)
         self.refresh()
 
+    def add_aws_creds(self, credential_name: str, creds_type: str, **kwargs: Any) -> None:
+        """Create AWS credentials on the Commcell based on the specified credential type.
+
+        This method adds a new AWS credential account to the Commcell. The required parameters
+        depend on the credential type specified.
+
+        Args:
+            credential_name: Name to assign to the credential account.
+            creds_type: Type of AWS credential to create. Supported values:
+                - 'AWS_ACCESS_KEY': Requires 'access_key' and 'secret' in kwargs. 'description' is optional.
+                - 'AWS_STS_IAM_ROLE': Requires 'role_arn' in kwargs. 'external_id' and 'description' are optional.
+            **kwargs: Additional parameters required for the specific credential type.
+
+        Raises:
+            SDKException: If arguments are invalid, the credential already exists, or the response is unsuccessful.
+
+        Example:
+            >>> # Add AWS Access Key credentials
+            >>> creds = Credentials()
+            >>> creds.add_aws_creds(
+            ...     credential_name="MyAWSAccessKey",
+            ...     creds_type="AWS_ACCESS_KEY",
+            ...     access_key="AKIA...",
+            ...     secret="mySecretKey",
+            ...     description="Backup AWS S3 credentials"
+            ... )
+            >>>
+            >>> # Add AWS STS IAM Role credentials
+            >>> creds.add_aws_creds(
+            ...     credential_name="MyIAMRole",
+            ...     creds_type="AWS_STS_IAM_ROLE",
+            ...     role_arn="arn:aws:iam::123456789012:role/MyRole",
+            ...     external_id="optional-external-id",
+            ...     description="IAM role for cross-account access"
+            ... )
+        #ai-gen-doc
+        """
+        if not isinstance(credential_name, str) or not isinstance(creds_type, str):
+            raise SDKException("Credential", "101", "Invalid argument types provided.")
+
+        if self.has_credential(credential_name):
+            raise SDKException(
+                'Credential', '102', f"Credential {credential_name} already exists on this commcell."
+            )
+
+        if creds_type == 'AWS_ACCESS_KEY':
+            access_key = kwargs.get('access_key')
+            secret = kwargs.get('secret')
+            description = kwargs.get('description', "")
+            if not access_key or not secret or not (isinstance(access_key, str) and isinstance(secret, str)):
+                raise SDKException("Credential", "102", "Invalid AWS access key or secret.")
+            encoded_secret = b64encode(secret.encode('utf-8')).decode('utf-8')
+            create_credential_account = {
+                "accountType": "CLOUD_ACCOUNT",
+                "vendorType": "AMAZON",
+                "authType": "AMAZON_S3",
+                "name": credential_name,
+                "accessKeyId": access_key,
+                "secretAccessKey": encoded_secret,
+                "description": description
+            }
+
+        elif creds_type == 'AWS_STS_IAM_ROLE':
+            role_arn = kwargs.get('role_arn')
+            external_id = kwargs.get('external_id', "")
+            description = kwargs.get('description', "")
+            if not role_arn or not isinstance(role_arn, str):
+                raise SDKException("Credential", "102", "Invalid IAM role ARN.")
+            create_credential_account = {
+                "accountType": "CLOUD_ACCOUNT",
+                "vendorType": "AMAZON",
+                "authType": "AMAZON_STS_IAM_ROLE",
+                "name": credential_name,
+                "externalId": external_id,
+                "roleArn": role_arn,
+                "description": description,
+                "password": ""
+            }
+
+        else:
+            raise SDKException("Credential", "102", f"Unsupported credential type: {creds_type}")
+
+        request = self._services['ADD_CREDENTIALS']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', request, create_credential_account
+        )
+
+        if flag:
+            if response.json():
+                response_json = response.json().get('error', {})
+                error_code = response_json.get('errorCode', 0)
+                error_message = response_json.get('errorMessage', '')
+                if error_code != 0:
+                    raise SDKException('Response', '102', error_message)
+            else:
+                raise SDKException('Response', '102', "Empty response received.")
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        self.refresh()
+
+    def add_bigdata_creds(self, database_type: str, credential_name: str, username: str, password: str,
+                          description: Optional[str] = None, **kwargs: Any) -> 'Credential':
+        """Create a big data credential for a specified database type on this Commcell.
+
+        This method adds a credential for supported big data database types such as Cassandra, CockroachDB, or MongoDB.
+        Additional parameters may be required for certain database types and can be provided via kwargs.
+
+        Args:
+            database_type: Type of database credential to be created.
+                Accepted values: "CASSANDRA_ACCOUNT", "CASSANDRA_JMX_ACCOUNT", "CASSANDRA_TRUSTSTORE_ACCOUNT",
+                "CASSANDRA_KEYSTORE_ACCOUNT", "COCKROACHDB_ACCOUNT", "MONGODB_ACCOUNT", "MONGODB_SSL_OPTIONS",
+                "COUCHBASE_ACCOUNT","YUGABYTE_ACCOUNT".
+            credential_name: Name to assign to the credential account.
+            username: Username for the credential.
+            password: Password for the credential.
+            description: Optional description of the credential.
+            **kwargs: Additional parameters required for specific credential types (e.g., sslClientCertFile, sslCAFile, sslPEMKeyFile).
+
+        Returns:
+            Credential: An instance representing the newly created credential.
+
+        Raises:
+            SDKException: If the credential account already exists or if the response is not successful.
+
+        Example:
+            >>> # Create a Cassandra credential
+            >>> cred = credentials.add_bigdata_creds(
+            ...     database_type="CASSANDRA_ACCOUNT",
+            ...     credential_name="CassandraCred01",
+            ...     username="cassandra_user",
+            ...     password="secure_password",
+            ...     description="Cassandra DB credential"
+            ... )
+            >>> print(f"Credential created: {cred}")
+
+            >>> # Create a CockroachDB credential with SSL options
+            >>> cred = credentials.add_bigdata_creds(
+            ...     database_type="COCKROACHDB_ACCOUNT",
+            ...     credential_name="CockroachCred01",
+            ...     username="roach_user",
+            ...     password="secure_password",
+            ...     description="CockroachDB credential",
+            ...     sslClientCertFile="/path/client.crt",
+            ...     sslCAFile="/path/ca.crt",
+            ...     sslPEMKeyFile="/path/client.key"
+            ... )
+            >>> print(f"Credential created: {cred}")
+
+        #ai-gen-doc
+        """
+        valid_types = {
+            "CASSANDRA_ACCOUNT", "CASSANDRA_JMX_ACCOUNT", "CASSANDRA_TRUSTSTORE_ACCOUNT",
+            "CASSANDRA_KEYSTORE_ACCOUNT", "COCKROACHDB_ACCOUNT", "MONGODB_ACCOUNT", "MONGODB_SSL_OPTIONS",
+            "COUCHBASE_ACCOUNT", "YUGABYTE_ACCOUNT"
+        }
+
+        if database_type not in valid_types:
+            raise SDKException(
+                'Credential', '102', "Invalid database Type provided."
+            )
+        if self.has_credential(credential_name):
+            raise SDKException(
+                'Credential', '102', "Credential {0} already exists on this commcell.".format(
+                    credential_name)
+            )
+        password = b64encode(password.encode()).decode()
+
+        if database_type == "COCKROACHDB_ACCOUNT":
+            sslClientCertFile = kwargs.get('sslClientCertFile', "")
+            sslCAFile = kwargs.get('sslCAFile', "")
+            sslPEMKeyFile = kwargs.get('sslPEMKeyFile', "")
+            create_credential = {
+                "accountType": "BIG_DATA_APPS_ACCOUNT",
+                "databaseCredentialType": database_type,
+                "name": credential_name,
+                "sslClientCertFile": sslClientCertFile,
+                "sslCAFile": sslCAFile,
+                "sslPEMKeyFile": sslPEMKeyFile,
+                "password": password,
+                "description": description
+            }
+        elif database_type == "MONGODB_ACCOUNT":
+            create_credential = {
+                "name": credential_name,
+                "description": "Credential manager created by MongoDB Automation",
+                "accountType": "BIG_DATA_APPS_ACCOUNT",
+                "databaseCredentialType": database_type,
+                "userName": username,
+                "password": password
+            }
+        elif database_type == "MONGODB_SSL_OPTIONS":
+            sslClientCertFile = kwargs.get('sslClientCertFile', "")
+            sslCAFile = kwargs.get('sslCAFile', "")
+            sslPEMKeyFile = kwargs.get('sslPEMKeyFile', "")
+            create_credential = {
+                "accountType": "BIG_DATA_APPS_ACCOUNT",
+                "databaseCredentialType": database_type,
+                "name": credential_name,
+                "sslCAFile": sslCAFile,
+                "sslPEMKeyFile": sslPEMKeyFile,
+                "username": username,
+                "password": password,
+                "description": description
+            }
+        elif database_type == "COUCHBASE_ACCOUNT":
+            create_credential = {
+                "accountType": "BIG_DATA_APPS_ACCOUNT",
+                "databaseCredentialType": database_type,
+                "name": credential_name,
+                "userName": username,
+                "password": password,
+                "description": description
+            }
+        elif database_type == "YUGABYTE_ACCOUNT":
+            create_credential = {
+                "accountType": "BIG_DATA_APPS_ACCOUNT",
+                "databaseCredentialType": database_type,
+                "name": credential_name,
+                "password": password,
+                "description": description
+            }
+        else:
+            # CASSANDRA credential integrated.
+            # Integration of other Big Data credentials pending.
+            create_credential = {
+                "accountType": "BIG_DATA_APPS_ACCOUNT",
+                "databaseCredentialType": database_type,
+                "name": credential_name,
+                "username": username,
+                "password": password,
+                "description": description
+            }
+
+        request = self._services['ADD_CREDENTIALS']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', request, create_credential
+        )
+        if flag:
+            if response.json():
+                id = response.json()['id']
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+        self.refresh()
+        return Credential(self._commcell_object, credential_name, id)
+
+    def add_atlas_creds(self, credential_name: str, **kwargs: Any) -> None:
+
+        """Create Atlas  credentials on the Commcell
+        This method adds a new MongoDB Atlas credential  to the Commcell
+
+        Args:
+            credential_name: Name to assign to the credential account.
+            **kwargs: Additional parameters required for the specific credential type.
+        Raises:
+            SDKException: If arguments are invalid, the credential already exists, or the response is unsuccessful.
+        Example:
+            >>> # Add AWS Access Key credentials
+            >>> creds = Credentials()
+            >>> creds.add_atlas_creds(
+            ...     credential_name="MyAccessKey",
+            ...     access_key="AKIA...",
+            ...     secret="mySecretKey",
+            ...     description="Atlas credentials"
+            ... )
+        #ai-gen-doc
+        """
+        access_key = kwargs.get('access_key')
+        secret = kwargs.get('secret')
+        description = kwargs.get('description', "")
+        encoded_secret = b64encode(secret.encode('utf-8')).decode('utf-8')
+        if not secret or not isinstance(secret, str):
+            raise SDKException("Credential", "102", "Invalid or missing secret key.")
+
+        create_credential = {
+            "accountType": "CLOUD_ACCOUNT",
+            "vendorType": "MONGODB_ATLAS_ACCESS_KEY",
+            "name": credential_name,
+            "accessKeyId": access_key,
+            "secretAccessKey": encoded_secret,
+            "description": description
+        }
+
+        request = self._services['ADD_CREDENTIALS']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', request, create_credential
+        )
+
+        if flag:
+            if response.json():
+                response_json = response.json().get('error', {})
+                error_code = response_json.get('errorCode', 0)
+                error_message = response_json.get('errorMessage', '')
+                if error_code != 0:
+                    raise SDKException('Response', '102', error_message)
+            else:
+                raise SDKException('Response', '102', "Empty response received.")
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+
+        self.refresh()
 
 
 class Credential(object):
-    """"Class for representing a particular Credential record on this commcell"""
+    """
+    Class for representing and managing a Credential record within a Commcell environment.
 
-    def __init__(self, commcell_object, credential_name, credential_id=None):
-        """Initialize the Credential class object for specified Credential
+    This class encapsulates the properties and operations associated with a specific credential,
+    including its identification, description, security properties, user information, and record type.
+    It provides methods for retrieving, updating, and refreshing credential details, as well as
+    managing security and user credentials.
 
-            Args:
-                commcell_object         (object)    --  instance of the Commcell class
+    Key Features:
+        - Initialize credential objects with name and ID
+        - Retrieve credential properties such as name, ID, description, security properties, user name, and record type
+        - Update credential security settings and user credentials
+        - Refresh credential information from the Commcell
+        - Internal methods for fetching and updating credential properties
 
-                credential_name         (str)       --  name of the Credential
+    #ai-gen-doc
+    """
 
-                credential_id           (str)       --  id of the credential
-                    default: None
+    def __init__(self, commcell_object: 'Commcell', credential_name: str, credential_id: Optional[str] = None) -> None:
+        """Initialize a Credential object for the specified credential.
 
+        Args:
+            commcell_object: Instance of the Commcell class representing the Commcell connection.
+            credential_name: Name of the credential as a string.
+            credential_id: Optional credential ID as a string. If not provided, the ID will be determined automatically.
+
+        Example:
+            >>> commcell = Commcell(command_center_hostname, username, password)
+            >>> credential = Credential(commcell, "MyCredential")
+            >>> # To specify a credential ID explicitly
+            >>> credential = Credential(commcell, "MyCredential", credential_id="12345")
+
+        #ai-gen-doc
         """
         self._commcell_object = commcell_object
         self._services = commcell_object._services
@@ -812,32 +1667,69 @@ class Credential(object):
         }
         self._get_credential_properties()
 
-    def __repr__(self):
-        """String representation of the instance of this class."""
+    def __repr__(self) -> str:
+        """Return a string representation of the Credential instance.
+
+        Returns:
+            A string describing the Credential object, including its credential name.
+
+        Example:
+            >>> credential = Credential(...)
+            >>> print(repr(credential))
+            Credential class instance for Credential: "MyCredential"
+        #ai-gen-doc
+        """
         representation_string = 'Credential class instance for Credential: "{0}"'
         return representation_string.format(self.credential_name)
 
-    def _get_credential_id(self, name):
-        """Gets the Credential id associated with this Credential.
+    def _get_credential_id(self, name: str) -> str:
+        """Retrieve the credential ID associated with the specified credential name.
 
-            Args:
-                name    (str)   --  credential account name
+        Args:
+            name: The credential account name as a string.
 
-            Returns:
-                str - id associated with this Credential
+        Returns:
+            The credential ID corresponding to the provided name.
+
+        Example:
+            >>> credential = Credential(commcell_object)
+            >>> credential_id = credential._get_credential_id("MyAccount")
+            >>> print(f"Credential ID: {credential_id}")
+
+        #ai-gen-doc
         """
         creds = Credentials(self._commcell_object)
         return creds.get(credential_name=name)._credential_id
 
     @property
-    def credential_name(self):
-        """Returns the name of the credential record"""
+    def credential_name(self) -> str:
+        """Get the name of the credential record.
+
+        Returns:
+            The credential name as a string.
+
+        Example:
+            >>> credential = Credential(...)
+            >>> name = credential.credential_name  # Use dot notation for property access
+            >>> print(f"Credential name: {name}")
+
+        #ai-gen-doc
+        """
         return self._credential_name
 
     @credential_name.setter
-    def credential_name(self, val):
-        """Sets the value for credential record with the parameter provided
+    def credential_name(self, val: str) -> None:
+        """Set the name of the credential record.
 
+        Args:
+            val: The new name to assign to the credential record as a string.
+
+        Example:
+            >>> credential = Credential(...)
+            >>> credential.credential_name = "MyDatabaseCredential"  # Use assignment for property setter
+            >>> # The credential name is now updated to "MyDatabaseCredential"
+
+        #ai-gen-doc
         """
         props_dict = {
             "credentialRecord": {
@@ -848,35 +1740,92 @@ class Credential(object):
         self._update_credential_props(properties_dict=props_dict)
 
     @property
-    def credential_id(self):
-        """Returns the Credential id of this commcell Credential record"""
+    def credential_id(self) -> int:
+        """Get the unique identifier for this Commcell credential record.
+
+        Returns:
+            The credential ID as an integer.
+
+        Example:
+            >>> credential = Credential(...)
+            >>> cred_id = credential.credential_id  # Use dot notation for property access
+            >>> print(f"Credential ID: {cred_id}")
+        #ai-gen-doc
+        """
         return self._credential_id
 
     @property
-    def credential_description(self):
-        """Returns the Credential_desccription of this commcell Credential reord"""
+    def credential_description(self) -> Optional[str]:
+        """Get the description of this Commcell credential record.
+
+        Returns:
+            The credential description as a string, or None if not set.
+
+        Example:
+            >>> credential = Credential(...)
+            >>> description = credential.credential_description  # Use dot notation for property access
+            >>> print(f"Credential description: {description}")
+        #ai-gen-doc
+        """
         return self._credential_properties.get('description')
 
     @credential_description.setter
-    def credential_description(self, value):
-        """Sets the description for this commcell Credential record"""
+    def credential_description(self, value: str) -> None:
+        """Set the description for this Commcell Credential record.
+
+        Args:
+            value: The description to assign to the credential as a string.
+
+        Example:
+            >>> credential = Credential(...)
+            >>> credential.credential_description = "Service account for backup operations"
+            >>> # The credential description is now updated
+
+        #ai-gen-doc
+        """
         props_dict = {
             "description": value
         }
         self._update_credential_props(props_dict)
 
     @property
-    def credential_security_properties(self):
-        """Returns the Credential's security association"""
+    def credential_security_properties(self) -> Any:
+        """Get the security association properties for this Credential.
+
+        Returns:
+            The security association details associated with the Credential. The type may vary depending on implementation.
+
+        Example:
+            >>> credential = Credential(...)
+            >>> security_props = credential.credential_security_properties  # Use dot notation for property access
+            >>> print(f"Security properties: {security_props}")
+            >>> # The returned value contains security association information for the credential
+
+        #ai-gen-doc
+        """
         return self._credential_security_assoc
 
-    def update_securtiy(self, name, is_user=True):
-        """Updates the security association for this commcell Credential record
+    def update_securtiy(self, name: str, is_user: bool = True) -> Any:
+        """Update the security association for this Commcell Credential record.
+
+        This method updates the security association for the credential, associating it with either a user or a user group.
 
         Args:
-            name    (str)   -- User or UserGroupName
-            is_user (bool)  -- Set False for UserGroup
+            name: The name of the user or user group to associate with the credential.
+            is_user: Set to True to associate with a user, or False to associate with a user group.
 
+        Returns:
+            The result of the credential property update operation.
+
+        Example:
+            >>> credential = Credential(...)
+            >>> # Associate with a user
+            >>> result = credential.update_securtiy("john.doe", is_user=True)
+            >>> print(result)
+            >>> # Associate with a user group
+            >>> result = credential.update_securtiy("BackupAdmins", is_user=False)
+            >>> print(result)
+        #ai-gen-doc
         """
 
         props_dict = {
@@ -903,17 +1852,33 @@ class Credential(object):
         return self._update_credential_props(props_dict)
 
     @property
-    def credential_user_name(self):
-        """Returns the Credential name of this commcell Credential record"""
+    def credential_user_name(self) -> str:
+        """Get the user name associated with this Commcell credential record.
+
+        Returns:
+            The credential user name as a string.
+
+        Example:
+            >>> credential = Credential(...)
+            >>> user_name = credential.credential_user_name  # Use dot notation for property access
+            >>> print(f"Credential user name: {user_name}")
+        #ai-gen-doc
+        """
         return self._credential_user_name
 
-    def update_user_credential(self, uname, upassword):
-        """Sets the value for credential user name and password with the parameters provided
-            Args:
-                uname   (str)   --  new user name
+    def update_user_credential(self, uname: str, upassword: str) -> None:
+        """Update the credential with a new user name and password.
 
-                upassword(str)  --  new password for user
+        Args:
+            uname: The new user name as a string.
+            upassword: The new password for the user as a string.
 
+        Example:
+            >>> credential = Credential()
+            >>> credential.update_user_credential('new_user', 'secure_password123')
+            >>> # The credential is now updated with the new user name and password
+
+        #ai-gen-doc
         """
         creds_dict = {
             "record": {
@@ -924,12 +1889,33 @@ class Credential(object):
         self._update_credential_props(properties_dict=creds_dict)
 
     @property
-    def credential_record_type(self):
-        """Returns the Credential name of this commcell Credential record"""
+    def credential_record_type(self) -> str:
+        """Get the credential record type name for this Commcell credential.
+
+        Returns:
+            The name of the credential record type as a string.
+
+        Example:
+            >>> credential = Credential(...)
+            >>> record_type = credential.credential_record_type  # Use dot notation for property access
+            >>> print(f"Credential record type: {record_type}")
+
+        #ai-gen-doc
+        """
         return self._record_types[self._record_type]
 
-    def refresh(self):
-        """Refresh the properties of the Credentials."""
+    def refresh(self) -> None:
+        """Reload the properties of the Credential object.
+
+        This method updates the Credential instance with the latest property values,
+        ensuring that any changes made externally are reflected in the object.
+
+        Example:
+            >>> credential = Credential(...)
+            >>> credential.refresh()  # Refreshes credential properties from the source
+            >>> print("Credential properties updated successfully")
+        #ai-gen-doc
+        """
         self._get_credential_properties()
 
     def _get_credential_properties(self) -> None:
@@ -984,25 +1970,42 @@ class Credential(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _update_credential_props(self, properties_dict):
-        """Updates the properties of this credential
+    def _update_credential_props(self, properties_dict: Dict[str, Any]) -> None:
+        """Update the properties of this credential using the provided dictionary.
 
-            Args:
-                properties_dict (dict)  --  credential property dict which is to be updated
-                    e.g.: {
-                            "description": "My description"
-                        }
+        Args:
+            properties_dict: Dictionary containing credential properties to update.
+                Example:
+                    {
+                        "description": "My description",
+                        "record": {
+                            "userName": "admin",
+                            "password": "secret"
+                        },
+                        "credentialRecord": {
+                            "credentialName": "MyCredential"
+                        },
+                        "securityAssociations": {...}
+                    }
 
-            Returns:
-                credential Properties update dict
+        Raises:
+            SDKException: If the credential does not exist, the response is empty, or the update is unsuccessful.
 
-            Raises:
-                SDKException:
-                    if credential doesn't exist
-
-                    if response is empty
-
-                    if response is not success
+        Example:
+            >>> properties = {
+            ...     "description": "Updated credential description",
+            ...     "record": {
+            ...         "userName": "new_user",
+            ...         "password": "new_password"
+            ...     },
+            ...     "credentialRecord": {
+            ...         "credentialName": "UpdatedCredential"
+            ...     }
+            ... }
+            >>> credential = Credential(...)
+            >>> credential._update_credential_props(properties)
+            >>> print("Credential properties updated successfully")
+        #ai-gen-doc
         """
         if "record" in properties_dict:
             self._credential_user_name = properties_dict['record']['userName']
@@ -1027,6 +2030,60 @@ class Credential(object):
             request_json['credentialRecordInfo'][0].update(securityAssociations=properties_dict['securityAssociations'])
 
         request = self._services['CREDENTIAL']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'PUT', request, request_json
+        )
+
+        if not flag:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+        self.refresh()
+
+    def update_azure_app_credential(self, app_secret, credential_name=None, app_id=None, tenant_id=None, description=None):
+        """Update the Azure application registration credential with new values.
+
+        This method updates the Azure application registration credential properties such as application secret, application ID, tenant ID, and description.
+
+        Args:
+            app_secret: The new application secret key as a string.
+            app_id: The new Azure application ID as a string (optional).
+            tenant_id: The new Azure tenant ID as a string (optional).
+            description: The new description for the credential (optional).
+
+        Raises:
+            SDKException: If the update operation fails or if the response is unsuccessful.
+
+        Example:
+            >>> credential = Credential(...)
+            >>> credential.update_azure_app_credential(
+            ...     app_secret="new_app_secret",
+            ...     app_id="new_app_id",
+            ...     tenant_id="new_tenant_id",
+            ...     description="Updated Azure app registration credential"
+            ... )
+            >>> print("Azure application registration credential updated successfully")
+        #ai-gen-doc
+        """
+        encoded_app_secret = b64encode(app_secret.encode()).decode()
+        request_json = {
+                          "accountType": "CLOUD_ACCOUNT",
+                          "vendorType": "MICROSOFT_AZURE_TYPE",
+                          "authType": "AZUREACCOUNT",
+                          "name": self._credential_name,
+                          "applicationId": app_id if app_id else self._credential_properties.get('applicationId'),
+                          "tenantId": tenant_id if tenant_id else self._credential_properties.get('tenantId'),
+                          "applicationSecret": encoded_app_secret,
+                          "description": description if description else self._credential_properties.get('description'),
+                          "environment": "AzureCloud",
+                          "id": self.credential_id,
+                          "newName": credential_name if credential_name else self._credential_name,
+                          "endpoints": {
+                            "activeDirectory": "https://login.microsoftonline.com/",
+                            "storage": "blob.core.windows.net",
+                            "resourceManager": "https://management.azure.com/"
+                          }
+                        }
+        request = self._services['V5_CREDENTIAL'] % (self._credential_id)
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'PUT', request, request_json
         )

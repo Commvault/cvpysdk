@@ -23,7 +23,21 @@ ExchangeConstants  -   Maintains constants for MS Exchange subclient.
 from enum import Enum
 
 class ExchangeConstants:
-    """Class to maintain all the Exchange subclient related constants."""
+    """
+    Container for Exchange subclient-related constants.
+
+    This class serves as a centralized location for storing and accessing
+    constant values used throughout Exchange subclient operations. It is
+    designed to improve maintainability and consistency by grouping all
+    relevant constants in one place.
+
+    Key Features:
+        - Centralized management of Exchange subclient constants
+        - Improves code readability and maintainability
+        - Facilitates easy updates to constant values
+
+    #ai-gen-doc
+    """
 
     SEAARCH_PROCESSING_INFO = {
         "resultOffset": 0,
@@ -259,7 +273,21 @@ class ExchangeConstants:
     }
 
 class JobOptionKeys(Enum):
-    """Enum to specify job option keys"""
+    """
+    Enumeration for specifying job option keys.
+
+    This Enum class is used to define a set of constant keys that represent
+    various job options within a system or application. It provides a
+    type-safe way to refer to specific job configuration options, improving
+    code readability and reducing the risk of errors due to string literals.
+
+    Key Features:
+        - Defines constant keys for job options
+        - Ensures type safety and consistency in job configuration
+        - Enhances code clarity and maintainability
+
+    #ai-gen-doc
+    """
     RESTORE_DESTINATION = "Restore destination"
     DESTINATION = "Destination"
     IF_MESSAGE_EXISTS = "If the message exists"
@@ -276,9 +304,26 @@ class JobOptionKeys(Enum):
     IS_JOURNAL_REPORT = "isJournalReport"
     PST_FILE_PATH = "pstFilePath"
     TARGET_MAILBOX = "stubRehydration"
+    STUB_REHYDRATION_SMALL = "stubRehydration"
+    EXCH_STUB_REHYDRATION = "exchangeStubRehydrate"
+    EXCH_STUB_REHYDRATION_OPTION = "exchangeStubRehydrationOption"
 
 class JobOptionValues(Enum):
-    """Enum to specify job option values"""
+    """
+    Enumeration for specifying job option values.
+
+    This class defines a set of constant values representing different
+    options that can be used to configure or control job-related behavior
+    within an application. It inherits from Python's Enum, ensuring type
+    safety and clarity when working with predefined job options.
+
+    Key Features:
+        - Provides a clear and type-safe way to represent job option values
+        - Facilitates configuration and control of job-related settings
+        - Inherits all standard Enum capabilities
+
+    #ai-gen-doc
+    """
     SKIP = "Skip"
     DISABLED = "Disabled"
     ENABLED = "Enabled"
@@ -289,11 +334,23 @@ class JobOptionValues(Enum):
     ORIGINAL_LOCATION = "Original Location"
 
 class JobOptionIntegers(Enum):
-    """Enum to specify job option integers"""
+    """
+    Enumeration for specifying job option integer values.
+
+    This enum class is used to define a set of named integer constants
+    that represent various job options within an application or system.
+    It provides a type-safe way to work with predefined integer options,
+    improving code readability and maintainability.
+
+    Key Features:
+        - Defines named integer constants for job options
+        - Ensures type safety and clarity when handling job option values
+        - Facilitates consistent usage of job option integers across the codebase
+
+    #ai-gen-doc
+    """
     EXCHANGE_RESTORE_CHOICE = 1
     EXCHANGE_RESTORE_DRIVE = 1
     RECOVER_STUBS = 0
     STUB_REPORTING = 1
     UPDATE_RECALL_LINK = 2
-
-

@@ -56,7 +56,8 @@ class SQLServerSubclient(DatabaseSubclient):
         """
         super(DatabaseSubclient, self)._get_subclient_properties()
 
-        self._mssql_subclient_prop = self._subclient_properties.get('mssqlSubClientProp', {})
+        # Keep the python attribute and the backing JSON dict in sync
+        self._mssql_subclient_prop = self._subclient_properties.setdefault('mssqlSubClientProp', {})
         self._content = self._subclient_properties.get('content', {})
         self._is_file_group_subclient = self._mssql_subclient_prop.get('sqlSubclientType', False) == 2
 
@@ -373,9 +374,7 @@ class SQLServerSubclient(DatabaseSubclient):
                     False if block level is not enabled
 
         """
-        return bool(
-            self._subclient_properties.get(
-                'mssqlSubClientProp', {}).get('useBlockLevelBackupWithOptimizedRecovery', False))
+        return bool(self._mssql_subclient_prop.get('blockLevelBackup', 0))
 
     @blocklevel_backup_option.setter
     def blocklevel_backup_option(self, value):
@@ -391,4 +390,4 @@ class SQLServerSubclient(DatabaseSubclient):
             'Please use Commcell Console to update the subclient.'
             raise SDKException('Subclient', '102', err_message)
 
-        self._set_subclient_properties("_mssql_subclient_prop['useBlockLevelBackupWithOptimizedRecovery']", value)
+        self._set_subclient_properties("_mssql_subclient_prop['blockLevelBackup']", int(value))

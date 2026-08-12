@@ -38,45 +38,83 @@ from __future__ import unicode_literals
 from ..backupset import Backupset
 from ..exception import SDKException
 from ..schedules import Schedule, Schedules
-
+from typing import Any, Optional, List, Dict
 
 class PostgresBackupset(Backupset):
-    """Derived class from Backupset Base class, representing a postgres backupset,
-        and to perform operations on that backupset."""
+    """
+    Represents a PostgreSQL backup set, extending the Backupset base class.
 
-    def __init__(self, instance_object, backupset_name, backupset_id=None):
-        """
-        Constructor for the class
+    This class provides specialized operations for managing PostgreSQL backup sets,
+    including configuration and execution of live sync operations, as well as
+    comprehensive restore capabilities for PostgreSQL servers.
+
+    Key Features:
+        - Initialization of PostgreSQL backup set instances
+        - Configuration of live sync operations using JSON requests
+        - Execution of live sync to synchronize data between source and destination clients/instances
+        - Restoration of PostgreSQL servers with support for various options such as:
+            - Database selection
+            - Time-based restores
+            - Cloning environments and options
+            - Media agent specification
+            - Table-level and volume-level restores
+            - Stream management
+            - Redirection and restore-to-disk capabilities
+            - Staging and destination path configuration
+            - Revert operations
+
+    This class is intended for use in environments requiring advanced backup and restore
+    management for PostgreSQL databases, providing flexibility and control over backupset operations.
+
+    #ai-gen-doc
+    """
+
+    def __init__(self, instance_object: Any, backupset_name: str, backupset_id: Optional[str] = None) -> None:
+        """Initialize a PostgresBackupset instance.
 
         Args:
-            instance_object   (obj)     -- instance object
+            instance_object: The instance object associated with the backupset.
+            backupset_name: Name of the backupset as a string.
+            backupset_id: Optional ID of the backupset as a string.
 
-            backupset_name    (str)     -- name of the backupset
+        Example:
+            >>> instance = Instance(...)
+            >>> backupset = PostgresBackupset(instance, "DailyBackup", backupset_id="12345")
+            >>> print(f"Backupset created: {backupset}")
 
-            backupset_id      (str)     -- id of the backupset
-
+        #ai-gen-doc
         """
         super(PostgresBackupset, self).__init__(
             instance_object, backupset_name, backupset_id)
         self._LIVE_SYNC = self._commcell_object._services['LIVE_SYNC']
 
-    def configure_live_sync(self, request_json):
-        """Runs the Task API with the request JSON provided to create live sync configuration,
-            and returns the contents after parsing the response.
+    def configure_live_sync(self, request_json: Dict[str, Any]) -> 'Schedule':
+        """Configure live sync for the Postgres backupset using the provided request JSON.
 
-            Args:
-                request_json    (dict)  --  JSON request to run for the API
+        This method sends a POST request to the Task API to create a live sync configuration.
+        Upon successful creation, it returns an instance of the Schedule class corresponding
+        to the created task.
 
-            Returns:
-                object - instance of the Schedule class
+        Args:
+            request_json: Dictionary containing the JSON request payload for the API.
 
-            Raises:
-                SDKException:
-                    if live sync configuration fails
+        Returns:
+            Schedule: Instance representing the created live sync schedule.
 
-                    if response is empty
+        Raises:
+            SDKException: If live sync configuration fails, the response is empty, or the response indicates failure.
 
-                    if response is not success
+        Example:
+            >>> request_json = {
+            ...     "taskInfo": {
+            ...         "task": {"taskType": 1, "initiatedFrom": 2},
+            ...         "subTasks": [{"subTask": {"subTaskType": 2, "operationType": 402}}]
+            ...     }
+            ... }
+            >>> backupset = PostgresBackupset(...)
+            >>> schedule = backupset.configure_live_sync(request_json)
+            >>> print(f"Live sync schedule created: {schedule}")
+        #ai-gen-doc
         """
         flag, response = self._cvpysdk_object.make_request('POST', self._LIVE_SYNC, request_json)
 
@@ -100,24 +138,34 @@ class PostgresBackupset(Backupset):
 
     def run_live_sync(
             self,
-            dest_client_name,
-            dest_instance_name,
-            baseline_job):
-        """runs live sync replication operation
+            dest_client_name: str,
+            dest_instance_name: str,
+            baseline_job: Any
+        ) -> 'Schedule':
+        """Run a live sync replication operation for a PostgreSQL backupset.
 
-            Args:
+        This method initiates a live sync replication from the current backupset to a specified
+        destination client and instance, using a baseline backup job as the reference.
 
-                dest_client_name        (str)   --  destination client name where files are to be
-                restored
+        Args:
+            dest_client_name: Name of the destination client where files will be restored.
+            dest_instance_name: Name of the destination PostgreSQL instance on the destination client.
+            baseline_job: Baseline backup job object containing job details.
 
-                dest_instance_name      (str)   --  destination postgres instance name of
-                destination client
+        Returns:
+            Schedule: An instance of the Schedule class representing the configured live sync operation.
 
-                baseline_job            (obj)   --  baseline backup job object
+        Example:
+            >>> baseline_job = BackupJob(...)  # Initialize with appropriate parameters
+            >>> backupset = PostgresBackupset(...)
+            >>> schedule = backupset.run_live_sync(
+            ...     dest_client_name="dbserver02",
+            ...     dest_instance_name="PostgresInstance2",
+            ...     baseline_job=baseline_job
+            ... )
+            >>> print(f"Live sync scheduled: {schedule}")
 
-            Returns:
-                object - instance of the Schedule class
-
+        #ai-gen-doc
         """
         instance_object = self._instance_object
         instance_object._restore_association = self._properties["backupSetEntity"]
@@ -150,120 +198,94 @@ class PostgresBackupset(Backupset):
 
     def restore_postgres_server(
             self,
-            database_list=None,
-            dest_client_name=None,
-            dest_instance_name=None,
-            copy_precedence=None,
-            from_time=None,
-            to_time=None,
-            clone_env=False,
-            clone_options=None,
-            media_agent=None,
-            table_level_restore=False,
-            staging_path=None,
-            no_of_streams=None,
-            volume_level_restore=False,
-            redirect_enabled=False,
-            redirect_path=None,
-            restore_to_disk=False,
-            restore_to_disk_job=None,
-            destination_path=None,
-            revert=False):
-        """
-        Method to restore the Postgres server
+            database_list: Optional[List[str]] = None,
+            dest_client_name: Optional[str] = None,
+            dest_instance_name: Optional[str] = None,
+            copy_precedence: Optional[int] = None,
+            from_time: Optional[str] = None,
+            to_time: Optional[str] = None,
+            clone_env: bool = False,
+            clone_options: Optional[Dict[str, Any]] = None,
+            media_agent: Optional[str] = None,
+            table_level_restore: bool = False,
+            staging_path: Optional[str] = None,
+            no_of_streams: Optional[int] = None,
+            volume_level_restore: bool = False,
+            redirect_enabled: bool = False,
+            redirect_path: Optional[str] = None,
+            restore_to_disk: bool = False,
+            restore_to_disk_job: Optional[List[int]] = None,
+            destination_path: Optional[str] = None,
+            revert: bool = False
+        ) -> Any:
+        """Restore the Postgres server with various restore options.
 
-            Args:
+        This method initiates a restore operation for the Postgres server, supporting advanced options
+        such as cloning, table-level restore, volume-level restore, redirect restore, and restore to disk.
 
-                database_list               (List) -- List of databases
+        Args:
+            database_list: Optional list of database names to restore. If None and backupset is file system based, defaults to ['/data'].
+            dest_client_name: Optional destination client name for the restore. If None, uses the instance's client name.
+            dest_instance_name: Optional destination instance name for the restore. If None, uses the instance's name.
+            copy_precedence: Optional copy precedence associated with storage.
+            from_time: Optional string specifying the start time for restore (format: 'YYYY-MM-DD HH:MM:SS').
+            to_time: Optional string specifying the end time for restore (format: 'YYYY-MM-DD HH:MM:SS').
+            clone_env: Boolean indicating whether to clone the database environment.
+            clone_options: Optional dictionary of clone restore options. Example:
+                {
+                    "stagingLocaion": "/gk_snap",
+                    "forceCleanup": True,
+                    "port": "5595",
+                    "libDirectory": "/opt/PostgreSQL/9.6/lib",
+                    "isInstanceSelected": True,
+                    "reservationPeriodS": 3600,
+                    "user": "postgres",
+                    "binaryDirectory": "/opt/PostgreSQL/9.6/bin"
+                }
+            media_agent: Optional media agent name to use for restore.
+            table_level_restore: Boolean indicating if the restore operation is table-level.
+            staging_path: Optional staging path location for table-level restore.
+            no_of_streams: Optional number of streams to use for volume-level restore.
+            volume_level_restore: Boolean flag for volume-level restore.
+            redirect_enabled: Boolean indicating if redirect restore is enabled.
+            redirect_path: Optional path for redirect restore.
+            restore_to_disk: Boolean flag to restore to disk.
+            restore_to_disk_job: Optional list of backup job IDs to restore to disk.
+            destination_path: Optional destination path for restore.
+            revert: Boolean indicating whether to perform a hardware revert during restore.
 
-                dest_client_name            (str)  -- Destination Client name
+        Returns:
+            Job object containing restore details.
 
-                dest_instance_name          (str)  -- Destination Instance name
+        Example:
+            >>> backupset = PostgresBackupset(...)
+            >>> job = backupset.restore_postgres_server(
+            ...     database_list=['db1', 'db2'],
+            ...     dest_client_name='DestinationClient',
+            ...     dest_instance_name='DestinationInstance',
+            ...     from_time='2023-01-01 00:00:00',
+            ...     to_time='2023-01-31 23:59:59',
+            ...     clone_env=True,
+            ...     clone_options={
+            ...         "stagingLocaion": "/gk_snap",
+            ...         "forceCleanup": True,
+            ...         "port": "5595",
+            ...         "libDirectory": "/opt/PostgreSQL/9.6/lib",
+            ...         "isInstanceSelected": True,
+            ...         "reservationPeriodS": 3600,
+            ...         "user": "postgres",
+            ...         "binaryDirectory": "/opt/PostgreSQL/9.6/bin"
+            ...     },
+            ...     media_agent='MediaAgent01',
+            ...     table_level_restore=False,
+            ...     volume_level_restore=True,
+            ...     no_of_streams=4,
+            ...     restore_to_disk=False,
+            ...     destination_path='/restore/location'
+            ... )
+            >>> print(f"Restore job started: {job}")
 
-                copy_precedence             (int)  -- Copy precedence associted with storage
-
-                from_time               (str)   --  time to retore the contents after
-                    format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                to_time                 (str)   --  time to retore the contents before
-                    format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                clone_env                   (bool)  --  boolean to specify whether the database
-                should be cloned or not
-
-                    default: False
-
-                clone_options               (dict)  --  clone restore options passed in a dict
-
-                    default: None
-
-                    Accepted format: {
-                                        "stagingLocaion": "/gk_snap",
-                                        "forceCleanup": True,
-                                        "port": "5595",
-                                        "libDirectory": "/opt/PostgreSQL/9.6/lib",
-                                        "isInstanceSelected": True,
-                                        "reservationPeriodS": 3600,
-                                        "user": "postgres",
-                                        "binaryDirectory": "/opt/PostgreSQL/9.6/bin"
-
-                                     }
-
-                media_agent             (str)   --  media agent name
-
-                    default: None
-
-                table_level_restore     (bool)  --  boolean to specify if the restore operation
-                is table level
-
-                    default: False
-
-                staging_path            (str)   --  staging path location for table level restore
-
-                    default: None
-
-                no_of_streams           (int)   --  number of streams to be used by
-                volume level restore
-
-                    default: None
-
-                volume_level_restore    (bool)  --  volume level restore flag
-
-                    default: False
-
-                redirect_enabled         (bool)  --  boolean to specify if redirect restore is
-                enabled
-
-                    default: False
-
-                redirect_path           (str)   --  Path specified in advanced restore options
-                in order to perform redirect restore
-
-                    default: None
-
-                restore_to_disk         (bool)  --  restore to disk flag
-
-                    default: False
-
-                restore_to_disk_job     (list)   --  list of backup job ids to restore to disk
-
-                    default: None
-
-                destination_path        (str)   --  destination path for restore
-
-                    default: None
-
-                revert                 (bool)  --  boolean to specify whether to do a
-                                                   hardware revert in restore
-                    default: False
-
-            Returns:
-                object -- Job containing restore details
-
+        #ai-gen-doc
         """
         instance_object = self._instance_object
         if dest_client_name is None:

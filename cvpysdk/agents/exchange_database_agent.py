@@ -44,31 +44,45 @@ Attributes
 
 from __future__ import unicode_literals
 
+from typing import Any, Optional, List, Tuple, Dict
+
 from ..agent import Agent
 from ..subclient import Subclients
 
-
 class ExchangeDatabaseAgent(Agent):
-    """Derived class from the Agent Base class,
-        to perform operations specific to an Exchange Database Agent."""
+    """
+    Specialized agent class for managing Exchange Database operations.
 
-    def __init__(self, client_object, agent_name, agent_id=None):
-        """Initialize the instance of the Agent class.
+    This class extends the Agent base class to provide functionality specific
+    to Exchange Database management, including backup, browsing, searching,
+    and refreshing database information. It is initialized with client-specific
+    details and maintains access to subclients for granular control.
 
-            Args:
-                client_object   (object)    --  instance of the Client class
+    Key Features:
+        - Initialization with client object, agent name, and agent ID
+        - Property access to subclients for database management
+        - Backup operations for Exchange databases
+        - Browsing of database contents
+        - Search functionality within the database
+        - Refreshing of agent and database state
 
-                agent_name      (str)       --  name of the agent
+    #ai-gen-doc
+    """
 
-                    (File System, Virtual Server, etc.)
+    def __init__(self, client_object: Any, agent_name: str, agent_id: Optional[str] = None) -> None:
+        """Initialize an ExchangeDatabaseAgent instance for a specific client and agent.
 
-                agent_id        (str)       --  id of the agent
+        Args:
+            client_object: Instance of the Client class representing the target client.
+            agent_name: Name of the agent (e.g., "File System", "Virtual Server").
+            agent_id: Optional string specifying the agent's unique identifier.
 
-                    default: None
+        Example:
+            >>> client = Client(...)
+            >>> agent = ExchangeDatabaseAgent(client, "Exchange Database", agent_id="12345")
+            >>> # The agent object is now initialized and ready for further operations
 
-            Returns:
-                object  -   instance of the Agent class
-
+        #ai-gen-doc
         """
         super(ExchangeDatabaseAgent, self).__init__(client_object, agent_name, agent_id)
 
@@ -89,131 +103,166 @@ class ExchangeDatabaseAgent(Agent):
         self._subclients = None
 
     @property
-    def subclients(self):
-        """Returns the instance of the Subclients class representing the list of Subclients
-        installed / configured on the Client for the selected Agent.
+    def subclients(self) -> 'Subclients':
+        """Get the Subclients instance for the Exchange Database Agent.
+
+        This property provides access to the Subclients object, which represents
+        the list of subclients installed or configured on the client for the selected agent.
+
+        Returns:
+            Subclients: An instance for managing and accessing subclient information.
+
+        Example:
+            >>> agent = ExchangeDatabaseAgent(...)
+            >>> subclients = agent.subclients  # Use dot notation for property access
+            >>> print(f"Total subclients: {len(subclients)}")
+            >>> # The returned Subclients object can be used to manage subclients
+
+        #ai-gen-doc
         """
         if self._subclients is None:
             self._subclients = Subclients(self)
 
         return self._subclients
 
-    def backup(self):
-        """Runs Incremental backup job for all subclients belonging to the Exchange Database Agent.
+    def backup(self) -> List[Any]:
+        """Run backup jobs for all subclients in the Exchange Database Agent.
 
-            Runs Full Backup job for a subclient, if no job had been ran earlier for it.
+        This method initiates an incremental backup for each subclient associated with the agent.
+        If a subclient has not previously had a backup job run, a full backup will be performed instead.
 
-            Returns:
-                list    -   list consisting of the job objects for the backup jobs started for
-                the subclients in the agent
+        Returns:
+            List of job objects representing the backup jobs started for each subclient.
 
+        Example:
+            >>> agent = ExchangeDatabaseAgent(...)
+            >>> jobs = agent.backup()
+            >>> print(f"Started {len(jobs)} backup jobs")
+            >>> # Each item in 'jobs' is a job object for a subclient backup
+
+        #ai-gen-doc
         """
         return self._backupset_object.backup()
 
-    def browse(self, *args, **kwargs):
-        """Browses the content of the Exchange Database Agent.
+    def browse(self, *args: Any, **kwargs: Any) -> Tuple[List[str], Dict[str, Any]]:
+        """Browse the content of the Exchange Database Agent.
 
-            Args:
-                Dictionary of browse options:
-                    Example:
+        This method allows you to retrieve file and folder paths, along with associated metadata,
+        from the Exchange Database Agent using flexible browse options. Options can be provided
+        either as a dictionary or as keyword arguments.
 
-                        browse({
-                            'path': 'c:\\\\hello',
+        Args:
+            *args: Optional positional arguments, typically a dictionary of browse options.
+                Example:
+                    >>> agent.browse({
+                    ...     'path': 'c:\\hello',
+                    ...     'show_deleted': True,
+                    ...     'from_time': '2014-04-20 12:00:00',
+                    ...     'to_time': '2016-04-21 12:00:00'
+                    ... })
 
-                            'show_deleted': True,
+            **kwargs: Optional keyword arguments for browse options.
+                Example:
+                    >>> agent.browse(
+                    ...     path='c:\\hello',
+                    ...     show_deleted=True,
+                    ...     from_time='2014-04-20 12:00:00',
+                    ...     to_time='2016-04-21 12:00:00'
+                    ... )
 
-                            'from_time': '2014-04-20 12:00:00',
+        Returns:
+            A tuple containing:
+                - List of file and folder paths from the browse response.
+                - Dictionary with all paths and additional metadata retrieved from the browse operation.
 
-                            'to_time': '2016-04-21 12:00:00'
-                        })
+        Example:
+            >>> # Using a dictionary of options
+            >>> paths, metadata = agent.browse({
+            ...     'path': 'c:\\hello',
+            ...     'show_deleted': True
+            ... })
+            >>> print(paths)
+            >>> print(metadata)
 
-            Kwargs:
-                Keyword argument of browse options:
-                    Example:
+            >>> # Using keyword arguments
+            >>> paths, metadata = agent.browse(path='c:\\hello', show_deleted=True)
+            >>> print(paths)
+            >>> print(metadata)
 
-                        browse(
-                            path='c:\\hello',
+        Refer to the default browse options for all supported parameters:
+        https://github.com/CommvaultEngg/cvpysdk/blob/master/cvpysdk/backupset.py#L565
 
-                            show_deleted=True,
-
-                            from_time='2014-04-20 12:00:00',
-
-                            to_time='2016-04-21 12:00:00'
-                        )
-
-            Returns:
-                (list, dict)
-                    list    -   List of only the file, folder paths from the browse response
-
-                    dict    -   Dictionary of all the paths with additional metadata retrieved
-                    from browse operation
-
-
-            Refer `default_browse_options`_ for all the supported options.
-
-            .. _default_browse_options: https://github.com/CommvaultEngg/cvpysdk/blob/master/cvpysdk/backupset.py#L565
-
+        #ai-gen-doc
         """
         return self._instance_object.browse(*args, **kwargs)
 
-    def find(self, *args, **kwargs):
-        """Searches a file/folder in the backed up content of the agent,
-            and returns all the files matching the filters given.
+    def find(self, *args: Any, **kwargs: Any) -> Tuple[List[str], Dict[str, Any]]:
+        """Search for files or folders in the backed-up content of the Exchange Database agent.
 
-            Args:
-                Dictionary of browse options:
-                    Example:
+        This method allows you to search for files and folders using various filters and options.
+        You can provide search criteria either as a dictionary of browse options or as keyword arguments.
 
-                        find({
-                            'file_name': '*.txt',
+        Args:
+            *args: Optional positional arguments, typically a dictionary of browse options.
+                Example:
+                    >>> agent.find({
+                    ...     'file_name': '*.txt',
+                    ...     'show_deleted': True,
+                    ...     'from_time': '2014-04-20 12:00:00',
+                    ...     'to_time': '2016-04-31 12:00:00'
+                    ... })
 
-                            'show_deleted': True,
+            **kwargs: Optional keyword arguments for browse options.
+                Example:
+                    >>> agent.find(
+                    ...     file_name='*.txt',
+                    ...     show_deleted=True,
+                    ...     from_time='2014-04-20 12:00:00',
+                    ...     to_time='2016-04-31 12:00:00'
+                    ... )
 
-                            'from_time': '2014-04-20 12:00:00',
+        Returns:
+            Tuple containing:
+                - List of file and folder paths matching the search criteria.
+                - Dictionary with additional metadata for each path retrieved from the browse operation.
 
-                            'to_time': '2016-04-31 12:00:00'
-                        })
+        Example:
+            >>> # Search for all .txt files, including deleted ones, within a date range
+            >>> file_list, metadata = agent.find(
+            ...     file_name='*.txt',
+            ...     show_deleted=True,
+            ...     from_time='2014-04-20 12:00:00',
+            ...     to_time='2016-04-31 12:00:00'
+            ... )
+            >>> print(f"Found files: {file_list}")
+            >>> print(f"Metadata: {metadata}")
 
-            Kwargs:
-                Keyword argument of browse options:
-                    Example:
+        Refer to the default browse options documentation for all supported filters:
+        https://github.com/CommvaultEngg/cvpysdk/blob/master/cvpysdk/backupset.py#L565
 
-                        find(
-                            file_name='*.txt',
+        Additional supported options include:
+            - file_name (str): Find files by name pattern.
+            - file_size_gt (int): Find files larger than the specified size.
+            - file_size_lt (int): Find files smaller than the specified size.
+            - file_size_et (int): Find files equal to the specified size.
 
-                            show_deleted=True,
-
-                            'from_time': '2014-04-20 12:00:00',
-
-                            to_time='2016-04-31 12:00:00'
-                        )
-
-            Returns:
-                (list, dict)
-                    list    -   List of only the file, folder paths from the browse response
-
-                    dict    -   Dictionary of all the paths with additional metadata retrieved
-                    from browse operation
-
-
-            Refer `default_browse_options`_ for all the supported options.
-
-            Additional options supported:
-                file_name       (str)   --  Find files with name
-
-                file_size_gt    (int)   --  Find files with size greater than size
-
-                file_size_lt    (int)   --  Find files with size lesser than size
-
-                file_size_et    (int)   --  Find files with size equal to size
-
-            .. _default_browse_options: https://github.com/CommvaultEngg/cvpysdk/blob/master/cvpysdk/backupset.py#L565
-
+        #ai-gen-doc
         """
         return self._instance_object.find(*args, **kwargs)
 
-    def refresh(self):
-        """Refresh the properties of the Agent."""
+    def refresh(self) -> None:
+        """Reload the properties of the ExchangeDatabaseAgent.
+
+        This method refreshes the agent's state and clears cached subclient information,
+        ensuring that subsequent accesses retrieve the latest data.
+
+        Example:
+            >>> agent = ExchangeDatabaseAgent(...)
+            >>> agent.refresh()  # Refresh agent properties and subclient cache
+            >>> print("Agent properties refreshed successfully")
+
+        #ai-gen-doc
+        """
         super(ExchangeDatabaseAgent, self).refresh()
 
         self._subclients = None

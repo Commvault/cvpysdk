@@ -52,15 +52,32 @@ Attributes:
     ***associated_plans***          --  associated plan of the given region
 
 """
+from typing import TYPE_CHECKING
 from .exception import SDKException
+
+if TYPE_CHECKING:
+    from .commcell import Commcell
 
 
 class Regions:
     """
-    Class for representing all the Regions created in the commcell
+    Class for representing all the Regions created in the commcell.
+
+    Attributes:
+        _commcell_object (Commcell): Instance of the Commcell class.
+        _cvpysdk_object (CVPySDK): Instance of the CVPySDK class.
+        _update_response_ (method): Method to update the response.
+        _regions_api (str): API endpoint for regions.
+        _EDIT_REGION (str): API endpoint for editing a region.
+        _GET_REGION (str): API endpoint for getting a region.
+        _CALCULATE_REGION (str): API endpoint for calculating a region.
+        _regions (dict): Dictionary of regions.
+
+    Usage:
+        regions = Regions(commcell_object)
     """
-    def __init__(self, commcell_object):
-        """Initialises the object of Regions class"""
+    def __init__(self, commcell_object: 'Commcell') -> None:
+        """Initialises the object of Regions class."""
         self._commcell_object = commcell_object
         self._cvpysdk_object = commcell_object._cvpysdk_object
         self._update_response_ = commcell_object._update_response_
@@ -71,8 +88,18 @@ class Regions:
         self._regions = None
         self.refresh()
 
-    def _get_regions(self):
-        """Gets all the regions created in commcell"""
+    def _get_regions(self) -> dict:
+        """
+        Gets all the regions created in commcell.
+
+        Returns:
+            dict: Dictionary of regions with region name as key and region id as value.
+
+        Raises:
+            SDKException:
+                - If response is not success.
+                - If response json is empty.
+        """
         flag, response = self._cvpysdk_object.make_request('GET', self._regions_api)
         if flag:
             regions = {}
@@ -107,43 +134,48 @@ class Regions:
         response_string = self._update_response_(response.text)
         raise SDKException('Response', '101', response_string)
 
-    def refresh(self):
-        """Refresh the list of Regions associated to commcell"""
+    def refresh(self) -> None:
+        """Refresh the list of Regions associated to commcell."""
         self._regions = self._get_regions()
 
-    def has_region(self, name):
+    def has_region(self, name: str) -> bool:
         """Checks if the given Region exists in the Commcell.
 
-            Args:
-                name    (str)   --  name of the Region
+        Args:
+            name (str): name of the Region
 
-            Returns:
-                bool    -   boolean output whether the Region exists in the commcell or not
+        Returns:
+            bool: boolean output whether the Region exists in the commcell or not
 
-            Raises:
-                SDKException:
-                    if type of the Region name argument is not string
+        Raises:
+            SDKException:
+                if type of the Region name argument is not string
 
+        Usage:
+            regions.has_region('region_name')
         """
         if not isinstance(name, str):
             raise SDKException('Region', '103')
 
         return self._regions and (name.lower() in self._regions)
 
-    def get(self, name):
+    def get(self, name: str) -> 'Region':
         """
-        Returns the instance of Region class for the given Region name
+        Returns the instance of Region class for the given Region name.
+
         Args:
-            name    (str)   --  name of the Region
+            name (str): name of the Region
 
         Returns:
-            object  -- Instance of Region class for the given Region name
+            object: Instance of Region class for the given Region name
 
         Raises:
             SDKException:
                 - If the Region name argument is not a string
-
                 - If No Region found in commcell with the given region name
+
+        Usage:
+            region = regions.get('region_name')
         """
         if not isinstance(name, str):
             raise SDKException('Region', '102', "Invalid input received")
@@ -153,24 +185,30 @@ class Regions:
 
         return Region(self._commcell_object, name, self._regions[name.lower()])
 
-    def set_region(self, entity_type, entity_id, entity_region_type, region_id):
+    def set_region(self, entity_type: str, entity_id: int, entity_region_type: str, region_id: int) -> None:
         """
-        Associate a region to an entity
+        Associate a region to an entity.
+
         Args:
-            entity_type         (str)   :   Type of the entity
-                                            (eg:    COMMCELL,
-                                                    COMPANY,
-                                                    CLIENT,
-                                                    CLIENT_GROUP,
-                                                    MEDIAAGENT,
-                                                    STORAGE_POOL, etc
-                                            )
-            entity_id           (int/str):   unique id of the entity
+            entity_type         (str): Type of the entity
+                                        (eg:    COMMCELL,
+                                                COMPANY,
+                                                CLIENT,
+                                                CLIENT_GROUP,
+                                                MEDIAAGENT,
+                                                STORAGE_POOL, etc
+                                        )
+            entity_id           (int): unique id of the entity
+            entity_region_type  (str): Type of the region
+                                        (WORKLOAD or BACKUP)
+            region_id           (int): ID of the region from app_regions
 
-            entity_region_type  (str)   :   Type of the region
-                                            (WORKLOAD or BACKUP)
+        Raises:
+            SDKException:
+                - If the API returns an error.
 
-            region_id           (int)   :   ID of the region from app_regions
+        Usage:
+            regions.set_region('CLIENT', 123, 'WORKLOAD', 456)
         """
         if isinstance(region_id,str):
             region_id = int(region_id)
@@ -205,24 +243,32 @@ class Regions:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def get_region(self, entity_type, entity_id, entity_region_type):
+    def get_region(self, entity_type: str, entity_id: int, entity_region_type: str) -> int:
         """
-        Gets the Region associated to an Entity
+        Gets the Region associated to an Entity.
+
         Args:
-            entity_type         (str)   :   Type of the entity
-                                            (eg:    COMMCELL,
-                                                    COMPANY,
+            entity_type         (str): Type of the entity
+                                        (eg:    COMMCELL,
+                                                COMPANY,
+                                                CLIENT,
+                                                CLIENT_GROUP,
+                                                MEDIAAGENT,
+                                                STORAGE_POOL, etc
+                                        )
+            entity_id           (int): unique id of the entity
+            entity_region_type  (str): Type of the region
+                                        (WORKLOAD or BACKUP)
 
+        Returns:
+            int: The region ID associated with the entity. Returns 0 if no region is associated.
 
-                                                    CLIENT,
-                                                    CLIENT_GROUP,
-                                                    MEDIAAGENT,
-                                                    STORAGE_POOL, etc
-                                            )
-            entity_id           (int)   :   unique id of the entity
+        Raises:
+            SDKException:
+                - If the API returns an error.
 
-            entity_region_type  (str)   :   Type of the region
-                                            (WORKLOAD or BACKUP)
+        Usage:
+            region_id = regions.get_region('CLIENT', 123, 'WORKLOAD')
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'GET', self._GET_REGION % (entity_type, entity_id, entity_region_type)
@@ -246,23 +292,33 @@ class Regions:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def calculate_region(self, entity_type, entity_id, entity_region_type):
+    def calculate_region(self, entity_type: str, entity_id: int, entity_region_type: str) -> int:
         """
-                Calculates the Region to be associated to an Entity
-                Args:
-                    entity_type         (str)   :   Type of the entity
-                                                    (eg:    COMMCELL,
-                                                            COMPANY,
-                                                            CLIENT,
-                                                            CLIENT_GROUP,
-                                                            MEDIAAGENT,
-                                                            STORAGE_POOL, etc
-                                                    )
-                    entity_id           (int)   :   unique id of the entity
+        Calculates the Region to be associated to an Entity.
 
-                    entity_region_type  (str)   :   Type of the region
-                                                    (WORKLOAD or BACKUP)
-                """
+        Args:
+            entity_type         (str): Type of the entity
+                                        (eg:    COMMCELL,
+                                                COMPANY,
+                                                CLIENT,
+                                                CLIENT_GROUP,
+                                                MEDIAAGENT,
+                                                STORAGE_POOL, etc
+                                        )
+            entity_id           (int): unique id of the entity
+            entity_region_type  (str): Type of the region
+                                        (WORKLOAD or BACKUP)
+
+        Returns:
+            int: The calculated region ID.
+
+        Raises:
+            SDKException:
+                - If the API returns an error.
+
+        Usage:
+            region_id = regions.calculate_region('CLIENT', 123, 'WORKLOAD')
+        """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'GET', self._CALCULATE_REGION % (entity_type, entity_id, entity_region_type)
         )
@@ -283,35 +339,37 @@ class Regions:
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def add(self, region_name: str, region_type: str, locations: list) -> object:
+    def add(self, region_name: str, region_type: str, locations: list) -> 'Region':
         """
-        Method to add a region
+        Method to add a region.
 
-            Args:
-                region_name    (str)      --      name of the region
-                region_type    (str)      --      type of region
-                locations      (list)     --      list of dictionaries containing details of a location
-                    e.g. locations = [{"city":"city1",
-                                        "state":"stateOfCity1",
-                                        "country":"countryOfCity1",
-                                        "latitude":"latitudeOfCity1",
-                                        "longitude":"longitudeOfCity1"},
-                                        {"city":"city2",
-                                        "state":"stateOfCity2",
-                                        "country":"countryOfCity2",
-                                        "latitude":"latitudeOfCity2",
-                                        "longitude":"longitudeOfCity2"}]]
+        Args:
+            region_name (str): name of the region
+            region_type (str): type of region
+            locations   (list): list of dictionaries containing details of a location
+                                e.g. locations = [{"city":"city1",
+                                                    "state":"stateOfCity1",
+                                                    "country":"countryOfCity1",
+                                                    "latitude":"latitudeOfCity1",
+                                                    "longitude":"longitudeOfCity1"},
+                                                    {"city":"city2",
+                                                    "state":"stateOfCity2",
+                                                    "country":"countryOfCity2",
+                                                    "latitude":"latitudeOfCity2",
+                                                    "longitude":"longitudeOfCity2"}]
 
-            Returns:
-                object  --   instance of the region class created by this method
+        Returns:
+            object: instance of the region class created by this method
 
-            Raises:
-                SDKException:
-                    if input parameters are incorrect
+        Raises:
+            SDKException:
+                - if input parameters are incorrect
+                - if Plan already exists
+                - if invalid region type is passed
 
-                    if Plan already exists
-
-                    if invalid region type is passed
+        Usage:
+            locations = [{"city":"city1", "state":"stateOfCity1", "country":"countryOfCity1", "latitude":"latitudeOfCity1", "longitude":"longitudeOfCity1"}]
+            region = regions.add('region_name', 'USER_CREATED', locations)
         """
         valid_region_types = ['USER_CREATED', 'OCI', 'AWS', 'AZURE', 'GCP']
 
@@ -353,24 +411,20 @@ class Regions:
 
     def delete(self, region_name: str) -> None:
         """
-        Method to delete regions
+        Method to delete regions.
 
-            Args:
-                region_name    (str)   --  name of the region
+        Args:
+            region_name (str): name of the region
 
-            Returns:
-                None    --  if the region is removed successfully
+        Raises:
+            SDKException:
+                - if type of the Region name argument is not string
+                - if no region exists with the given name
+                - if response is empty
+                - if failed to delete the region
 
-            Raises:
-                SDKException:
-                    if type of the Region name argument is not string
-
-                    if no region exists with the given name
-
-                    if response is empty
-
-                    if failed to delete the region
-
+        Usage:
+            regions.delete('region_name')
         """
         if not isinstance(region_name, str):
             raise SDKException('Region', '101')
@@ -400,14 +454,32 @@ class Regions:
                 raise SDKException('Region', '102', f'Failed to delete region. Error: {error_message}')
 
     @property
-    def all_regions(self):
-        """Returns dict consisting of all regions details such as id"""
+    def all_regions(self) -> dict:
+        """Returns dict consisting of all regions details such as id."""
         return self._regions
 
-
 class Region:
-    """ Class for performing operations on a given Region """
-    def __init__(self, commcell_object, region_name, region_id=None):
+    """ Class for performing operations on a given Region
+
+    Attributes:
+        _commcell_object (object): Instance of the Commcell class.
+        _region_name (str): Name of the region.
+        _cvpysdk_object (object): Instance of the cvpysdk class.
+        _update_response_ (method): Method to update the response.
+        _region_id (str): ID of the region.
+        _region_api (str): API endpoint for the region.
+        _region_type (str): Type of the region.
+        _locations (list): List of locations associated with the region.
+        _associated_servers_count (int): Count of servers associated with the region.
+        _associated_servers (list): List of servers associated with the region.
+        _associated_plans_count (int): Count of plans associated with the region.
+        _associated_plans (list): List of plans associated with the region.
+        _region_properties (dict): Properties of the region.
+
+    Usage:
+        region = Region(commcell_object, 'Region1')
+    """
+    def __init__(self, commcell_object: 'Commcell', region_name: str, region_id: int = None) -> None:
         """ Initialise the Region class instance.
             Args:
                 commcell_object     (object)    --  instance of the Commcell class
@@ -432,7 +504,7 @@ class Region:
         else:
             self._region_id = self._get_region_id()
 
-        self._region_api = self._commcell_object._services['REGION']%(self._region_id)
+        self._region_api = self._commcell_object._services['REGION'] % (self._region_id)
         self._region_type = None
         self._locations = []
         self._associated_servers_count = None
@@ -442,12 +514,16 @@ class Region:
         self.refresh()
         self._region_properties = None
 
-    def _get_region_id(self):
-        """ Returns the ID of the Region """
+    def _get_region_id(self) -> str:
+        """ Returns the ID of the Region
+
+        Returns:
+            str: ID of the region
+        """
         regions = Regions(self._commcell_object)
         return regions.get(self._region_name).region_id
 
-    def _get_region_properties(self):
+    def _get_region_properties(self) -> None:
         """Gets the properties of this region"""
         flag, response = self._commcell_object._cvpysdk_object.make_request('GET', self._region_api)
 
@@ -555,6 +631,6 @@ class Region:
         """
         return self._associated_plans
 
-    def refresh(self):
+    def refresh(self) -> None:
         """Refresh the properties of the regions."""
-        self._region_properties = self._get_region_properties()
+        self._get_region_properties() # Refresh the region properties

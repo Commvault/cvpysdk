@@ -30,63 +30,73 @@ from __future__ import unicode_literals
 
 from ...subclient import Subclient
 from ...exception import SDKException
-
+from ...job import Job
 
 class LNSubclient(Subclient):
-    """Derived class from Subclient Base class, representing an LN subclient,
-        and to perform operations on that subclient."""
+    """
+    LNSubclient is a specialized subclass of the Subclient base class, designed to manage
+    and perform operations specific to LN subclients within a backup and restore framework.
+
+    This class provides methods for executing backup operations and restoring data either
+    in place or to alternate locations. It supports granular control over backup levels,
+    incremental backups, scheduling, and restoration parameters such as overwrite options,
+    access control lists (ACLs), and time-based data selection.
+
+    Key Features:
+        - In-place restoration of data with options for overwriting and ACL restoration
+        - Out-of-place restoration to different clients or destinations
+        - Flexible backup operations supporting full, incremental, and scheduled backups
+        - Time-based data selection for restore operations
+        - Integration with copy precedence for restore and backup management
+
+    #ai-gen-doc
+    """
 
     def restore_in_place(
             self,
-            paths,
-            overwrite=True,
-            restore_data_and_acl=True,
-            copy_precedence=None,
-            from_time=None,
-            to_time=None,
-            **kwargs):
-        """Restores the files/folders specified in the input paths list to the same location.
+            paths: list,
+            overwrite: bool = True,
+            restore_data_and_acl: bool = True,
+            copy_precedence: int = None,
+            from_time: str = None,
+            to_time: str = None,
+            **kwargs
+        ) -> 'Job':
+        """Restore files or folders to their original location within the same client.
 
-            Args:
-                paths                   (list)  --  list of full paths of files/folders to restore
+        This method initiates an in-place restore operation for the specified files or folders.
+        The restore can optionally overwrite existing files and restore both data and ACLs.
+        You can also specify a storage policy copy precedence and a time range for the restore.
 
-                overwrite               (bool)  --  unconditional overwrite files during restore
+        Args:
+            paths: List of full file or folder paths to restore.
+            overwrite: If True, existing files at the destination will be overwritten. Default is True.
+            restore_data_and_acl: If True, both data and ACLs are restored. Default is True.
+            copy_precedence: Optional; storage policy copy precedence to use for the restore.
+            from_time: Optional; restore contents modified after this time (format: 'YYYY-MM-DD HH:MM:SS').
+            to_time: Optional; restore contents modified before this time (format: 'YYYY-MM-DD HH:MM:SS').
+            **kwargs: Additional keyword arguments for advanced restore options.
 
-                    default: True
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                restore_data_and_acl    (bool)  --  restore data and ACL files
+        Raises:
+            SDKException: If 'paths' is not a list, if the job fails to initialize, 
+                or if the restore response is empty or unsuccessful.
 
-                    default: True
+        Example:
+            >>> subclient = LNSubclient()
+            >>> restore_job = subclient.restore_in_place(
+            ...     paths=['/user/docs/report.docx', '/user/photos/'],
+            ...     overwrite=True,
+            ...     restore_data_and_acl=True,
+            ...     copy_precedence=2,
+            ...     from_time='2023-01-01 00:00:00',
+            ...     to_time='2023-12-31 23:59:59'
+            ... )
+            >>> print(f"Restore job started with ID: {restore_job.job_id}")
 
-                copy_precedence         (int)   --  copy precedence value of storage policy copy
-
-                    default: None
-
-                from_time           (str)       --  time to retore the contents after
-
-                        format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                to_time           (str)         --  time to retore the contents before
-
-                        format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-            Returns:
-                object  -   instance of the Job class for this restore job
-
-            Raises:
-                SDKException:
-                    if paths is not a list
-
-                    if failed to initialize job
-
-                    if response is empty
-
-                    if response is not success
-
+        #ai-gen-doc
         """
         if not (isinstance(paths, list) and
                 isinstance(overwrite, bool) and
@@ -120,67 +130,51 @@ class LNSubclient(Subclient):
 
     def restore_out_of_place(
             self,
-            client,
-            destination_path,
-            paths,
-            overwrite=True,
-            restore_data_and_acl=True,
-            copy_precedence=None,
-            from_time=None,
-            to_time=None,
-            **kwargs):
-        """Restores the files/folders specified in the input paths list to the input client,
-            at the specified destionation location.
+            client: object,
+            destination_path: str,
+            paths: list,
+            overwrite: bool = True,
+            restore_data_and_acl: bool = True,
+            copy_precedence: int = None,
+            from_time: str = None,
+            to_time: str = None,
+            **kwargs
+        ) -> 'Job':
+        """Restore files or folders to a different client and location.
 
-            Args:
-                client                (str/object) --  either the name of the client or
-                the instance of the Client
+        This method restores the specified files or folders from backup to a given destination path
+        on the specified client. The restore can be performed with options to overwrite existing files,
+        restore data and ACLs, specify copy precedence, and filter by time range.
 
-                destination_path      (str)        --  full path of the restore location on client
+        Args:
+            client: The target client for restore. Can be a client name (str) or a Client object.
+            destination_path: The full path on the destination client where data will be restored.
+            paths: List of full file or folder paths to restore.
+            overwrite: If True, existing files at the destination will be overwritten. Default is True.
+            restore_data_and_acl: If True, both data and ACLs will be restored. Default is True.
+            copy_precedence: Optional; copy precedence value for the storage policy copy.
+            from_time: Optional; restore contents modified after this time (format: 'YYYY-MM-DD HH:MM:SS').
+            to_time: Optional; restore contents modified before this time (format: 'YYYY-MM-DD HH:MM:SS').
+            **kwargs: Additional keyword arguments for advanced restore options.
 
-                paths                 (list)       --  list of full paths of
-                files/folders to restore
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                overwrite             (bool)       --  unconditional overwrite files during restore
+        Raises:
+            SDKException: If input parameters are invalid or if the restore job fails to initialize.
 
-                    default: True
+        Example:
+            >>> # Restore files to a different client and location
+            >>> job = subclient.restore_out_of_place(
+            ...     client='TargetClient',
+            ...     destination_path='/restore/location',
+            ...     paths=['/data/file1.txt', '/data/folder2'],
+            ...     overwrite=True,
+            ...     restore_data_and_acl=True
+            ... )
+            >>> print(f"Restore job started with ID: {job.job_id}")
 
-                restore_data_and_acl  (bool)       --  restore data and ACL files
-
-                    default: True
-
-                copy_precedence         (int)   --  copy precedence value of storage policy copy
-
-                    default: None
-
-                from_time           (str)       --  time to retore the contents after
-
-                        format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                to_time           (str)         --  time to retore the contents before
-
-                        format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-            Returns:
-                object - instance of the Job class for this restore job
-
-            Raises:
-                SDKException:
-                    if client is not a string or Client instance
-
-                    if destination_path is not a string
-
-                    if paths is not a list
-
-                    if failed to initialize job
-
-                    if response is empty
-
-                    if response is not success
+        #ai-gen-doc
         """
 
         if not (isinstance(paths, list) and
@@ -216,37 +210,43 @@ class LNSubclient(Subclient):
         return self._process_restore_response(request_json)
 
     def backup(self,
-               backup_level="Incremental",
-               incremental_backup=False,
-               incremental_level='BEFORE_SYNTH',
-               schedule_pattern=None):
+               backup_level: str = "Incremental",
+               incremental_backup: bool = False,
+               incremental_level: str = 'BEFORE_SYNTH',
+               schedule_pattern: dict = None) -> dict:
+        """Generate the JSON request for a backup operation with the specified options.
 
-        """Returns the JSON request to pass to the API as per the options selected by the user.
+        This method constructs and returns a JSON request payload to be used with the API,
+        based on the backup options provided by the user.
 
-                    Args:
-                        backup_level        (str)   --  level of backup the user wish to run
+        Args:
+            backup_level: The level of backup to perform. Supported values are:
+                "Full", "Incremental", "Differential", "Synthetic_full".
+                Defaults to "Incremental".
+            incremental_backup: Whether to run an incremental backup as part of a synthetic full backup.
+                Only applicable when backup_level is "Synthetic_full". Defaults to False.
+            incremental_level: Specifies when to run the incremental backup relative to the synthetic full.
+                Supported values are "BEFORE_SYNTH" or "AFTER_SYNTH".
+                Only applicable when backup_level is "Synthetic_full". Defaults to "BEFORE_SYNTH".
+            schedule_pattern: A dictionary specifying scheduling options for the backup task.
+                Refer to the documentation for `schedules.schedulePattern.createSchedule()` for details
+                on the expected format.
 
-                            Full / Incremental / Differential / Synthetic_full
+        Returns:
+            dict: The JSON request payload to be passed to the API for initiating the backup.
 
-                        incremental_backup  (bool)  --  run incremental backup
+        Example:
+            >>> subclient = LNSubclient()
+            >>> backup_request = subclient.backup(
+            ...     backup_level="Synthetic_full",
+            ...     incremental_backup=True,
+            ...     incremental_level="AFTER_SYNTH",
+            ...     schedule_pattern={"pattern": "Daily"}
+            ... )
+            >>> print(backup_request)
+            # The returned dictionary can be used to trigger a backup via the API.
 
-                            only applicable in case of Synthetic_full backup
-
-                        incremental_level   (str)   --  run incremental backup before/after
-                        synthetic full
-
-                            BEFORE_SYNTH / AFTER_SYNTH
-
-                            only applicable in case of Synthetic_full backup
-
-                        schedule_pattern (dict) -- scheduling options to be included for the task
-
-                            Please refer schedules.schedulePattern.createSchedule()
-                                                                    doc for the types of Jsons
-
-                    Returns:
-                        dict    -   JSON request to pass to the API
-
+        #ai-gen-doc
         """
 
         if schedule_pattern:

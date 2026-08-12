@@ -18,7 +18,8 @@
 
 """Main file for performing operations on entity manager app under Activate.
 
-'Classifiers', 'Classifier', 'Tags' , 'TagSet', 'Tag', 'EntityManagerTypes' , `ActivateEntities`, and `ActivateEntity` are 8 classes defined in this file.
+'Classifiers', 'Classifier', 'Tags' , 'TagSet', 'Tag', 'EntityManagerTypes' , `ActivateEntities`, `ActivateEntity`,
+`YaraRules`, `YaraRule`, `HashFeeds`, and `HashFeed` are 12 classes defined in this file.
 
 ActivateEntities:   Class for representing all the regex entities in the commcell.
 
@@ -35,6 +36,14 @@ Tag:  Class to represent tag inside a TagSet
 Classifiers:    Class to represent Classifiers entities in the commcell
 
 Classifier:     Class to represent a single classifier entity in the commcell
+
+YaraRules:      Class for representing all the Yara rules in the commcell.
+
+YaraRule:       Class for representing a single Yara rule in the commcell.
+
+HashFeeds:      Class for representing all the Hash feeds in the commcell.
+
+HashFeed:       Class for representing a single Hash feed in the commcell.
 
 Tags:
 
@@ -151,7 +160,11 @@ ActivateEntities:
 
     delete()                            --  deletes the regex entity in the commcell for given entity name
 
-    _process_entity_containers()        -- returns the container details for the entity
+    _process_entity_containers()        --  returns the container details for the entity
+
+    get_entity_by_sensitivity()         --  Retrieve entities categorized by their sensitivity type from the API.
+
+    _get_entities_by_sensitivity()      --  Categorize entities by their sensitivity type, handling all possible cases and input errors.
 
 ActivateEntity:
 
@@ -216,6 +229,8 @@ Classifiers:
     add()                               --  adds the classifier in the commcell
 
     delete()                            --  deletes the classifier in the commcell
+
+    add_arlie_classifier()              --  Creates new Arlie classifier with given name in the commcell
 
 
 
@@ -283,14 +298,136 @@ Classifier Attributes
 
     **sample_details**          --  returns dict containing model sample count details used for this classifier training
 
+    **categories**             --  returns list of categories associated with this classifier
+
+    **provider**               --  returns the provider type for this classifier
+
+
+YaraRules:
+
+    __init__(commcell_object)           --  initialise object of the YaraRules class
+
+    _response_not_success()             --  parses through the exception response, and raises SDKException
+
+    refresh()                           --  refresh the yara rules associated with the commcell
+
+    get()                               --  Returns an instance of YaraRule class for the given yara rule name
+
+    get_yara_rule_ids()                 --  Returns a list of yara rule ids for the given yara rule name list
+
+    get_properties()                    --  Returns the properties for the given yara rule name
+
+    _get_all_yara_rules()               --  Returns dict consisting all yara rules associated with commcell
+
+    _get_yara_rule_from_collections()   --  gets all the yara rule details from collection response
+
+    has_yara_rule()                     --  Checks whether given yara rule exists in commcell or not
+
+    _process_yara_containers()          --  returns the container details for the yara rule
+
+    add()                               --  Creates new YARA rule in the commcell
+
+    delete()                            --  Deletes the YARA rule in the commcell
+
+
+YaraRule:
+
+    __init__(
+        commcell_object,
+        yara_rule_name,
+        yara_rule_id=None)              --  initialize an object of YaraRule Class with the given yara rule
+                                                name and id
+
+    _response_not_success()             --  parses through the exception response, and raises SDKException
+
+    refresh()                           --  refresh the properties of the yara rule
+
+    _get_yara_rule_id()                 --  Gets yara rule id for the given yara rule name
+
+    _get_yara_rule_properties()         --  Gets all the details of associated yara rule
+
+
+YaraRule Attributes
+-----------------
+
+    **yara_rule_id**        --  returns the id of the yara rule
+
+    **yara_rule_name**      --  returns the name of the yara rule
+
+    **display_name**        --  returns the display name of the yara rule
+
+    **category_name**       --  returns the category name of the yara rule
+
+    **is_enabled**          --  returns the enabled flag of the yara rule    
+
+    **entity_type**         --  returns the type of entity (5-Yara Rule)
+    
+    **created_time**        --  returns the created time of the yara rule    
+
+HashFeeds:
+
+    __init__(commcell_object)           --  initialise object of the HashFeeds class
+
+    _response_not_success()             --  parses through the exception response, and raises SDKException
+
+    refresh()                           --  refresh the hash feeds associated with the commcell
+
+    get()                               --  Returns an instance of HashFeed class for the given hash feed name
+
+    get_hash_feed_ids()                 --  Returns a list of hash feed ids for the given hash feed name list
+
+    get_properties()                    --  Returns the properties for the given hash feed name
+
+    _get_all_hash_feeds()               --  Returns dict consisting all hash feeds associated with commcell
+
+    _get_hash_feed_from_collections()   --  gets all the hash feed details from collection response
+
+    has_hash_feed()                     --  Checks whether given hash feed exists in commcell or not
+
+    add()                               --  Creates new hash feed in the commcell
+
+    delete()                            --  Deletes the hash feed in the commcell
+
+HashFeed:
+
+    __init__(   
+        commcell_object,
+        hash_feed_name,
+        hash_feed_id=None)              --  initialize an object of HashFeed Class with the given hash feed
+                                                name and id
+
+    _response_not_success()             --  parses through the exception response, and raises SDKException
+
+    refresh()                           --  refresh the properties of the hash feed
+
+    _get_hash_feed_id()                 --  Gets hash feed id for the given hash feed name
+
+    _get_hash_feed_properties()         --  Gets all the details of associated hash feed
+
+HashFeed Attributes:
+
+    **hash_feed_id**        --  returns the id of the hash feed
+
+    **hash_feed_name**      --  returns the name of the hash feed
+
+    **display_name**        --  returns the display name of the hash feed
+
+    **category_name**       --  returns the category name of the hash feed
+
+    **is_enabled**          --  returns the enabled flag of the hash feed
+
+    **entity_type**         --  returns the type of entity (6-Hash Feed)
+
+
 """
+import base64
 import copy
 import os
 import time
 from enum import Enum
 
 from ..exception import SDKException
-from .constants import ActivateEntityConstants, ClassifierConstants, TrainingStatus
+from .constants import ActivateEntityConstants, ClassifierConstants, TrainingStatus, Providers
 from .constants import TagConstants
 
 
@@ -299,6 +436,8 @@ class EntityManagerTypes(Enum):
     ENTITIES = "Entities"
     CLASSIFIERS = "Classifiers"
     TAGS = "Tags"
+    YARA_RULES = "YaraRules"
+    HASH_FEEDS = "HashFeeds"
 
 
 class ActivateEntities(object):
@@ -324,6 +463,7 @@ class ActivateEntities(object):
         self._api_get_containers = self._services['ACTIVATE_ENTITY_CONTAINER']
         self._api_create_regex_entity = self._api_get_all_regex_entities
         self._api_delete_regex_entity = self._services['ACTIVATE_ENTITY']
+        self._api_entity_sensitivity = self._services['ENTITY_BY_SENSITIVITY']
         self.refresh()
 
     def add(self, entity_name, entity_regex, entity_keywords, entity_flag, is_derived=False, parent_entity=None):
@@ -334,7 +474,7 @@ class ActivateEntities(object):
 
                         entity_regex (str)     --  Regex for the entity
 
-                        entity_keywords (str)  --  Keywords for the entity
+                        entity_keywords (str)  --  Keywords for the entity [For derived entity, pass this as None in case if you don't wish to add any keywords
 
                         entity_flag (int)      --  Sensitivity flag value for entity
                                                         5-Highly sensitive
@@ -361,19 +501,31 @@ class ActivateEntities(object):
 
                                 if input data type is not valid
                 """
-        if not isinstance(entity_name, str) or not isinstance(entity_regex, str) \
-                or not isinstance(entity_keywords, str):
-            raise SDKException('ActivateEntity', '101')
+        if is_derived:
+            if not isinstance(entity_name, str):
+                raise SDKException('ActivateEntity', '101')
+            if not isinstance(entity_regex, str) \
+                    and not isinstance(entity_keywords, str):
+                raise SDKException('ActivateEntity', '101')
+            if not entity_keywords:
+                entity_keywords = ''
+        else:
+            if not isinstance(entity_name, str) or not isinstance(entity_regex, str) \
+                    or not isinstance(entity_keywords, str):
+                raise SDKException('ActivateEntity', '101')
         if entity_flag not in [1, 3, 5]:
             raise SDKException('ActivateEntity', '102', 'Unsupported entity flag value')
         request_json = ActivateEntityConstants.REQUEST_JSON
-        request_json['regularExpression'] = "{\"entity_key\":\"" + \
-            entity_name + "\",\"entity_regex\":\"" + entity_regex + "\"}"
+        if not is_derived:
+            request_json['regularExpression'] = "{\"entity_key\":\"" + \
+                entity_name + "\",\"entity_regex\":\"" + entity_regex + "\"}"
+            request_json['entityXML']['keywords'] = entity_keywords
         request_json['flags'] = entity_flag
         request_json['entityName'] = entity_name
-        request_json['entityXML']['keywords'] = entity_keywords
         if is_derived:
-            request_json['regularExpression'] = "{\"entity_key\":\"" + entity_name + "\"}"
+            request_json['entityXML']['userDefinedKeywords'] = entity_keywords
+            request_json['regularExpression'] = "{\"entity_key\":\"" + entity_name + \
+                "\",\"entity_regex\":{\"entity_custom_derived_regex\":\"" + entity_regex + "\"}}"
             request_json['entityType'] = 3
             if isinstance(parent_entity, int):
                 request_json['parentEntityId'] = parent_entity
@@ -456,6 +608,23 @@ class ActivateEntities(object):
 
         """
         return self._regex_entities[entity_name]
+
+    def get_entity_by_sensitivity(self):
+        """
+        Retrieve entities categorized by their sensitivity type from the API.
+
+        Returns:
+            tuple: Three lists containing entities of critical, high, and moderate sensitivity, respectively.
+
+        Raises:
+            SDKException: If the API response does not contain the expected data.
+        """
+        flag, response = self._cvpysdk_object.make_request('GET', self._api_entity_sensitivity)
+        if flag:
+            if response.json() and 'sensitiveEntities' in response.json():
+                return self._get_entities_by_sensitivity(response.json())
+            raise SDKException('ActivateEntity', '108')
+        self._response_not_success(response)
 
     def _get_all_activate_entities(self):
         """Gets the list of all regex entities associated with this commcell.
@@ -557,6 +726,81 @@ class ActivateEntities(object):
                         output['container'] = country['container']
                         return output
         return output
+
+    def _get_entities_by_sensitivity(self, entities_response):
+        """
+        Categorize entities by their sensitivity type, handling all possible cases and input errors.
+
+        Args:
+            entities_response (dict): A dictionary expected to contain a "sensitiveEntities" key,
+                which should be a list of dicts. Each dict should have:
+                    - "sensitivityType" (int): 1 (critical), 2 (high), or 3 (moderate)
+                    - "entities" (str): Comma-separated entity names
+
+        Returns:
+            tuple: Three lists containing entities of critical, high, and moderate sensitivity, respectively.
+                (critical_entities, high_entities, moderate_entities)
+
+        Raises:
+            SDKException:
+                If entities_response is not a dict, or if "sensitiveEntities" is not a list,
+                or if any item is not a dict, or if "entities" is not a string.
+                If "sensitiveEntities" is missing, or if required keys are missing in any item.
+                If "entities" cannot be parsed as a comma-separated string.
+
+        """
+        entity_critical = []
+        entity_high = []
+        entity_moderate = []
+
+        # Defensive: Check input type
+        if not isinstance(entities_response, dict):
+            raise SDKException('ActivateEntity', '101',
+                               "entities_response must be a dict")
+
+        sensitive_entities = entities_response.get("sensitiveEntities")
+        if sensitive_entities is None:
+            raise SDKException('ActivateEntity', '102',
+                               "'sensitiveEntities' key missing in entities_response")
+        if not isinstance(sensitive_entities, list):
+            raise SDKException('ActivateEntity', '101',
+                               "'sensitiveEntities' must be a list")
+
+        for idx, item in enumerate(sensitive_entities):
+            if not isinstance(item, dict):
+                raise SDKException('ActivateEntity', '101',
+                                   f"Item at index {idx} in 'sensitiveEntities' is not a dict")
+
+            if "sensitivityType" not in item:
+                raise SDKException('ActivateEntity', '102',
+                             f"'sensitivityType' key missing in item at index {idx}")
+            if "entities" not in item:
+                raise SDKException('ActivateEntity', '102',
+                             f"'entities' key missing in item at index {idx}")
+
+            sensitivity_type = item["sensitivityType"]
+            entities_str = item["entities"]
+
+            if not isinstance(entities_str, str):
+                raise SDKException('ActivateEntity', '101',
+                                   f"'entities' value at index {idx} must be a string")
+            try:
+                entities = [e.strip() for e in entities_str.split(",") if e.strip()]
+            except Exception as e:
+                raise SDKException('ActivateEntity', '102',
+                                   f"Error parsing 'entities' at index {idx}: {e}")
+
+            if sensitivity_type == 1:
+                entity_critical.extend(entities)
+            elif sensitivity_type == 2:
+                entity_high.extend(entities)
+            elif sensitivity_type == 3:
+                entity_moderate.extend(entities)
+            else:
+                # Unknown sensitivity type, do nothing
+                continue
+
+        return entity_critical, entity_high, entity_moderate
 
     def _get_regex_entity_from_collections(self, collections):
         """Extracts all the regex entities, and their details from the list of collections given,
@@ -1840,6 +2084,56 @@ class Classifiers(object):
             raise SDKException('Classifier', '105')
         self._response_not_success(response)
 
+    def add_arlie_classifier(self, classifier_name, categories):
+        """Creates new Arlie classifier with given name in the commcell
+
+                Args:
+
+                    classifier_name     (str)       --      Name of the classifier
+
+                    categories          (list)     --      List of categories for the classifier
+
+                Returns:
+
+                    object      --  returns object of Classifier class
+
+                Raises:
+
+                    SDKException:
+
+                        if input data type is not valid
+
+                        if response is empty or not success
+
+                        if failed to create classifier
+
+        """
+
+        if not isinstance(classifier_name, str):
+            raise SDKException('Classifier', '101')
+        if not isinstance(categories, list):
+            raise SDKException('Classifier', '101')
+        request_json = copy.deepcopy(ClassifierConstants.CREATE_ARLIE_REQUEST_JSON)
+        request_json['entityName'] = request_json['displayName'] = request_json['entityKey'] = classifier_name
+        # convert categories into comma separated string
+        categories = ','.join(categories)
+        request_json['entityXML']['classifierDetails']['categories'] = categories
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._api_create_classifier, request_json
+        )
+
+        if flag:
+            if response.json() and 'entityDetails' in response.json() and 'err' not in response.json():
+                entity_id = response.json()['entityDetails'][0]['entityId']
+                self.refresh()
+                classifier_obj = Classifier(
+                    commcell_object=self._commcell_object,
+                    classifier_name=classifier_name,
+                    entity_id=entity_id)
+                return classifier_obj
+            raise SDKException('Classifier', '104')
+        self._response_not_success(response)
+
     def add(self, classifier_name, content_analyzer, description="Created from CvPySDK", training_zip_data_file=None):
         """Creates new classifier with given name in the commcell
 
@@ -2051,6 +2345,8 @@ class Classifier(object):
         self._sync_ca_client_id = []
         self._last_training_time = None
         self._training_accuracy = None
+        self._categories = None
+        self._provider = None
         self._training_status = TrainingStatus.NOT_APPLICABLE.value
         self._sample_details = {}
         self._api_upload = self._services['CA_UPLOAD_FILE']
@@ -2340,7 +2636,7 @@ class Classifier(object):
             raise SDKException('Classifier', '109')
         self._response_not_success(response)
 
-    def modify(self, classifier_new_name=None, description="Modified from CvPySDK", enabled=True):
+    def modify(self, classifier_new_name=None, description="Modified from CvPySDK", enabled=True, categories=None):
         """Modifies the classifier entity
 
                 Args:
@@ -2351,6 +2647,8 @@ class Classifier(object):
 
                     enabled                     (bool)      --  flag to denote whether classifier is enabled or disabled
 
+                    categories                  (list)      --  List of user defined categories for Arlie classifier
+
                 Returns:
 
                     None
@@ -2360,6 +2658,7 @@ class Classifier(object):
                     SDKException:
 
                             if failed to modify the classifier
+                            if categories is given for non Arlie based classifier
 
         """
         flag, response = self._cvpysdk_obj.make_request(
@@ -2372,6 +2671,12 @@ class Classifier(object):
                     self._classifier_name = classifier_new_name
                 if description:
                     request['description'] = description
+                if categories:
+                    # check if the classifier is arlie based classifier
+                    if self.provider is not Providers.ARLIE_CLASSIFIER.value:
+                        raise SDKException('Classifier', '102',
+                                           "Given classifier is not an Arlie based classifier")
+                    request['entityXML']['classifierDetails']['categories'] = ','.join(categories)
                 if enabled:
                     request['enabled'] = True
                 else:
@@ -2495,6 +2800,10 @@ class Classifier(object):
                 sync_ca = self._entity_xml['classifierDetails']['syncedContentAnalyzers'].get('contentAnalyzerList', [])
                 for content_analyzer in sync_ca:
                     self._sync_ca_client_id.append(content_analyzer['clientId'])
+            if 'categories' in self._entity_xml['classifierDetails']:
+                self._categories = self._entity_xml['classifierDetails']['categories']
+            if 'provider' in self._entity_xml['classifierDetails']:
+                self._provider = self._entity_xml['classifierDetails']['provider']
         return regex_entity_dict
 
     @property
@@ -2562,6 +2871,960 @@ class Classifier(object):
         """Returns dict containing model sample count details used for this classifier training"""
         return self._sample_details
 
+    @property
+    def categories(self):
+        """Returns the list of categories for arlie based classifier"""
+        return self._categories
+    # Create a function to set categories
+    @categories.setter
+    def categories(self, categories):
+        """Sets the categories for arlie based classifier
+            Args:
+                categories       (list)       --  list of categories
+            Raises:
+                SDKException:
+                        if input data type is not valid
+        """
+        if not isinstance(categories, list):
+            raise SDKException('Classifier', '101')
+        self.modify(categories=categories)
+
+    @property
+    def provider(self):
+        """Returns the provider type for this classifier"""
+        return self._provider
+
     def refresh(self):
         """Refresh the classifier details for associated object"""
         self._get_entity_properties()
+
+
+class YaraRules(object):
+    """Class for representing all the Yara rules in the commcell."""
+
+    def __init__(self, commcell_object):
+        """Initializes an instance of the YaraRules class.
+
+            Args:
+                commcell_object     (object)    --  instance of the commcell class
+
+            Returns:
+                object  -   instance of the YaraRules class
+
+        """
+        self._commcell_object = commcell_object
+        self._update_response_ = commcell_object._update_response_
+        self._cvpysdk_object = commcell_object._cvpysdk_object
+        self._services = commcell_object._services
+        self._yara_rules = None
+        self._yara_containers = None
+        self._api_get_containers = self._services['ACTIVATE_ENTITY_CONTAINER']
+        self._api_get_all_yara_rules = self._services['ACTIVATE_ENTITIES']
+        self._api_yara_entity = self._services['ACTIVATE_ENTITY']
+        self.refresh()
+
+    def _response_not_success(self, response):
+        """Helper function to raise an exception when reponse status is not 200 (OK).
+
+            Args:
+                response    (object)    --  response class object,
+
+                received upon running an API request, using the `requests` python package
+
+        """
+        raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def _get_all_yara_rules(self):
+        """Gets the list of all yara rules associated with this commcell.
+
+            Returns:
+                dict    -   dictionary consisting of dictionaries, where each dictionary stores the
+                                details of a single yara rule
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        """
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', self._api_get_containers
+        )
+        if flag:
+            if response.json() and 'containerTypesList' in response.json():
+                # Filter containers to only include those with containerType == 9520
+                self._yara_containers = [
+                    container for container in response.json()['containerTypesList']
+                    if container.get('containerType') == 9520
+                ]
+            else:
+                raise SDKException('YaraRule', '107')
+        else:
+            self._response_not_success(response)
+
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', self._api_get_all_yara_rules
+        )
+
+        if flag:
+            if response.json() and 'entityDetails' in response.json():
+                return self._get_yara_rule_from_collections(response.json())
+            raise SDKException('YaraRule', '103')
+        self._response_not_success(response)
+
+    @staticmethod
+    def _get_yara_rule_from_collections(collections):
+        """Extracts all the yara rules, and their details from the list of collections given,
+            and returns the dictionary of all yara rules.
+
+            Args:
+                collections     (dict)  --  dict containing entity details
+
+            Returns:
+                dict    -   dictionary consisting of dictionaries, where each dictionary stores the
+                                details of a single yara rule
+
+        """
+        _yara_rule = {}
+        for yara_entity in collections['entityDetails']:
+            # Only include entities that are of type 5 (Yara rules)
+            if yara_entity.get('entityType', 0) != 5:
+                continue
+
+            yara_rule_dict = {}
+            yara_rule_dict['displayName'] = yara_entity.get('displayName', "")
+            yara_rule_dict['entityKey'] = yara_entity.get('entityKey', "")
+            yara_rule_dict['categoryName'] = yara_entity.get('categoryName', "")            
+            yara_rule_dict['entityId'] = yara_entity.get('entityId', 0)
+            yara_rule_dict['flags'] = yara_entity.get('flags', 0)
+            yara_rule_dict['entityType'] = yara_entity.get('entityType', 0)
+            yara_rule_dict['enabled'] = yara_entity.get('enabled', False)
+            yara_rule_dict['createdTime'] = yara_entity.get('createdTime', 0)
+            _yara_rule[yara_entity['entityName'].lower()] = yara_rule_dict
+
+        return _yara_rule
+
+    def _process_yara_containers(self, yara_rule_name, container_name):
+        """Returns container details for given yara rule name & container name
+
+            Args:
+
+                yara_rule_name      (str)       --  Yara rule name
+
+                container_name      (str)       --  Container name
+
+            Returns:
+
+                dict    --  Container details of yara rule
+        """
+        output = {}
+        for dept in self._yara_containers:
+            # Only process Yara container
+            if dept['container']['containerName'].lower() != 'yara':
+                continue
+
+            items_list = dept['tagSetsAndItems']
+            for category in items_list:
+                tags_list = category.get('tags', [])
+                for tag in tags_list:
+                    if yara_rule_name.lower() == tag['entityDetail']['entityName'].lower() and \
+                            container_name.lower() == category['container']['containerName'].lower():
+                        output['tags'] = [tag]
+                        output['container'] = category['container']
+                        return output
+        return output
+
+    def refresh(self):
+        """Refresh the yara rules associated with the commcell."""
+        self._yara_rules = self._get_all_yara_rules()
+
+    def get_properties(self, yara_rule_name):
+        """Returns properties of the specified yara rule name.
+
+            Args:
+                yara_rule_name (str)  --  name of the yara rule
+
+            Returns:
+                dict -  properties for the given yara rule name
+
+        """
+        if not self.has_yara_rule(yara_rule_name):
+            raise SDKException('YaraRule', '108')
+        return self._yara_rules[yara_rule_name.lower()]
+
+    def get(self, yara_rule_name):
+        """Returns a YaraRule object for the given yara rule name.
+
+            Args:
+                yara_rule_name (str)  --  name of the yara rule
+
+            Returns:
+
+                obj                 -- Object of YaraRule class
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+                    if yara_rule_name is not of type string
+
+        """
+        if not isinstance(yara_rule_name, str):
+            raise SDKException('YaraRule', '101')
+
+        if self.has_yara_rule(yara_rule_name):
+            yara_rule_id = self._yara_rules[yara_rule_name.lower()]['entityId']
+            return YaraRule(self._commcell_object, yara_rule_name, yara_rule_id)
+        raise SDKException('YaraRule', '102', "Unable to get YaraRule class object")
+
+    def has_yara_rule(self, yara_rule_name):
+        """Checks if a yara rule exists in the commcell with the input name.
+
+            Args:
+                yara_rule_name (str)  --  name of the yara rule
+
+            Returns:
+                bool - boolean output whether the yara rule exists in the commcell or not
+
+            Raises:
+                SDKException:
+                    if type of the yara rule name argument is not string
+
+        """
+        if not isinstance(yara_rule_name, str):
+            raise SDKException('YaraRule', '101')
+
+        return self._yara_rules and yara_rule_name.lower() in map(str.lower, self._yara_rules)
+
+    def get_yara_rule_ids(self, yara_rule_names):
+        """Returns a list of yara rule ids for the given yara rule name list.
+
+            Args:
+                yara_rule_names (list)  --  names of the yara rules
+
+            Returns:
+
+                list                -- yara rule ids for the given yara rule names
+
+        """
+        if not isinstance(yara_rule_names, list):
+            raise SDKException('YaraRule', '101')
+        yara_rule_ids = []
+        for yara_rule in yara_rule_names:
+            if yara_rule in self._yara_rules:
+                yara_rule_ids.append(self._yara_rules[yara_rule]['entityId'])
+            else:
+                raise SDKException(
+                    'YaraRule', '102', f"Unable to find yara rule id for given yara rule name: {yara_rule}")
+        return yara_rule_ids
+
+    def add(self, rule_name, rule_string, display_name=None, description="", enabled=True):
+        """Adds a new YARA rule to the commcell.
+
+            Args:
+                rule_name (str)         --  name of the YARA rule
+
+                rule_string (str)       --  YARA rule content (can be plain text or base64 encoded)
+
+                display_name (str)      --  display name for the YARA rule
+                                                default: None (will use rule_name)
+
+                description (str)       --  description for the YARA rule
+                                                default: empty string
+
+                enabled (bool)          --  whether the rule is enabled
+                                                default: True
+
+            Returns:
+
+                obj                 -- Object of YaraRule class
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+                    if unable to add YARA rule in commcell
+
+                    if input data type is not valid
+
+        """
+        if not isinstance(rule_name, str):
+            raise SDKException('YaraRule', '101')
+
+        if not isinstance(rule_string, str):
+            raise SDKException('YaraRule', '101')
+
+        # Use rule_name as display_name if not provided
+        if display_name is None:
+            display_name = rule_name
+
+        # Check if rule_string is already base64 encoded, otherwise encode it
+        try:
+            # Try to decode - if it works, it's likely already base64 encoded
+            base64.b64decode(rule_string, validate=True)
+            encoded_rule_string = rule_string
+        except (TypeError, ValueError):
+            # Not valid base64, so encode it
+            encoded_rule_string = base64.b64encode(rule_string.encode('utf-8')).decode('utf-8')
+
+        # Create request using the YARA_RULE_REQUEST_JSON template
+        request_json = copy.deepcopy(ActivateEntityConstants.YARA_RULE_REQUEST_JSON)
+        request_json['entityName'] = rule_name
+        request_json['displayName'] = display_name
+        request_json['description'] = description
+        request_json['enabled'] = enabled
+        request_json['yaraRulesDetails']['yaraRulesString'] = encoded_rule_string
+
+        # Use the same API endpoint as regex entities
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._api_get_all_yara_rules, request_json
+        )
+
+        if flag:
+            if response.json() and 'entityDetails' in response.json() and 'err' not in response.json():
+                self.refresh()
+                entity_id = response.json()['entityDetails'][0]['entityId']
+                return YaraRule(self._commcell_object, rule_name, entity_id)
+            raise SDKException('YaraRule', '104')
+        self._response_not_success(response)
+
+    def delete(self, yara_rule_name):
+        """Deletes the specified YARA rule name from the commcell.
+
+            Args:
+                yara_rule_name (str)    --  name of the YARA rule
+
+            Returns:
+                None
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+                    if unable to delete YARA rule in commcell
+
+                    if unable to find YARA rule name in the commcell
+
+                    if data type of yara_rule_name is invalid
+
+        """
+        if not isinstance(yara_rule_name, str):
+            raise SDKException('YaraRule', '101')
+
+        if not self.has_yara_rule(yara_rule_name):
+            raise SDKException('YaraRule', '108')
+
+        # Get the yara rule ID by matching the name (case-insensitive)
+        yara_rule_id = None
+        for rule_name, rule_dict in self._yara_rules.items():
+            if rule_name.lower() == yara_rule_name.lower():
+                yara_rule_id = rule_dict['entityId']
+                break
+
+        flag, response = self._cvpysdk_object.make_request(
+            'DELETE', self._api_yara_entity % yara_rule_id
+        )
+
+        if flag:
+            if response.json() and 'errorCode' in response.json() and response.json()['errorCode'] == 0:
+                self.refresh()
+                return
+            raise SDKException('YaraRule', '105')
+        self._response_not_success(response)
+
+
+class YaraRule(object):
+    """Class for representing a single Yara rule in the commcell."""
+
+    def __init__(self, commcell_object, yara_rule_name, yara_rule_id=None):
+        """Initialize an object of YaraRule Class with the given yara rule name and id.
+
+            Args:
+                commcell_object     (object)    --  instance of the commcell class
+
+                yara_rule_name      (str)       --  name of the yara rule
+
+                yara_rule_id        (int)       --  id of the yara rule
+                                                        default: None
+
+            Returns:
+                object  -   instance of the YaraRule class
+
+        """
+        self._commcell_object = commcell_object
+        self._update_response_ = commcell_object._update_response_
+        self._cvpysdk_obj = self._commcell_object._cvpysdk_object
+        self._services = commcell_object._services
+        self._yara_rule_name = yara_rule_name
+        self._yara_rule_id = yara_rule_id
+        self._display_name = None
+        self._category_name = None
+        self._is_enabled = None
+        self._entity_key = None
+        self._entity_type = None
+        self._entity_xml = None
+        self._created_time = None        
+        self._api_yara_entity = self._services['ACTIVATE_ENTITY']
+        
+        if yara_rule_id is None:
+            self._yara_rule_id = self._get_yara_rule_id(yara_rule_name)
+        
+        self.refresh()
+
+    def _response_not_success(self, response):
+        """Helper function to raise an exception when reponse status is not 200 (OK).
+
+            Args:
+                response    (object)    --  response class object,
+
+                received upon running an API request, using the `requests` python package
+
+        """
+        raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def _get_yara_rule_id(self, yara_rule_name):
+        """Gets yara rule id for the given yara rule name.
+
+            Args:
+
+                yara_rule_name (str)  -- Name of the yara rule
+
+            Returns:
+
+                int                -- id of the yara rule
+
+        """
+        return self._commcell_object.activate.entity_manager(
+            entity_type=EntityManagerTypes.YARA_RULES).get(yara_rule_name).yara_rule_id
+
+    def _get_yara_rule_properties(self):
+        """Gets all the details of associated yara rule.
+
+            Args:
+
+                None
+
+            Returns:
+
+                dict    --  properties of the yara rule
+
+        """
+        yara_rule_dict = self._commcell_object.activate.entity_manager(
+            entity_type=EntityManagerTypes.YARA_RULES).get_properties(self._yara_rule_name)
+        
+        self._display_name = yara_rule_dict.get('displayName', "")
+        self._category_name = yara_rule_dict.get('categoryName', "")
+        self._yara_rule_id = yara_rule_dict.get('entityId', 0)
+        self._is_enabled = yara_rule_dict.get('enabled', False)
+        self._entity_key = yara_rule_dict.get('entityKey', "")
+        self._entity_type = yara_rule_dict.get('entityType', 0)
+        self._entity_xml = yara_rule_dict.get('entityXML', "")
+        self._created_time = yara_rule_dict.get('createdTime', 0)
+        
+        return yara_rule_dict
+
+    @property
+    def yara_rule_id(self):
+        """Returns the id of the yara rule."""
+        return self._yara_rule_id
+
+    @property
+    def yara_rule_name(self):
+        """Returns the name of the yara rule."""
+        return self._yara_rule_name
+
+    @property
+    def display_name(self):
+        """Returns the display name of the yara rule."""
+        return self._display_name
+
+    @property
+    def category_name(self):
+        """Returns the category name of the yara rule."""
+        return self._category_name
+
+    @property
+    def is_enabled(self):
+        """Returns the enabled status of the yara rule."""
+        return self._is_enabled   
+
+    @property
+    def entity_type(self):
+        """Returns the entity type of the yara rule."""
+        return self._entity_type   
+
+    @property
+    def created_time(self):
+        """Returns the created time of the yara rule."""
+        return self._created_time
+
+    def refresh(self):
+        """Refresh the yara rule details for associated object."""
+        self._get_yara_rule_properties()
+
+
+class HashFeeds(object):
+    """Class for representing all the Hash feeds in the commcell."""
+
+    def __init__(self, commcell_object):
+        """Initializes an instance of the HashFeeds class.
+
+            Args:
+                commcell_object     (object)    --  instance of the commcell class
+
+            Returns:
+                object  -   instance of the HashFeeds class
+
+        """
+        self._commcell_object = commcell_object
+        self._update_response_ = commcell_object._update_response_
+        self._cvpysdk_object = commcell_object._cvpysdk_object
+        self._services = commcell_object._services
+        self._hash_feeds = None
+        self._hash_containers = None
+        self._api_get_containers = self._services['ACTIVATE_ENTITY_CONTAINER']
+        self._api_get_all_hash_feeds = self._services['ACTIVATE_ENTITIES']
+        self._api_hash_entity = self._services['ACTIVATE_ENTITY']
+        self.refresh()
+
+    def _response_not_success(self, response):
+        """Helper function to raise an exception when reponse status is not 200 (OK).
+
+            Args:
+                response    (object)    --  response class object,
+
+                received upon running an API request, using the `requests` python package
+
+        """
+        raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def _get_all_hash_feeds(self):
+        """Gets the list of all hash feeds associated with this commcell.
+
+            Returns:
+                dict    -   dictionary consisting of dictionaries, where each dictionary stores the
+                                details of a single hash feed
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+        """
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', self._api_get_containers
+        )
+        if flag:
+            if response.json() and 'containerTypesList' in response.json():
+                # Filter containers to only include those with containerType == 9520
+                self._hash_containers = [
+                    container for container in response.json()['containerTypesList']
+                    if container.get('containerType') == 9520
+                ]
+            else:
+                raise SDKException('HashFeed', '107')
+        else:
+            self._response_not_success(response)
+
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', self._api_get_all_hash_feeds
+        )
+
+        if flag:
+            if response.json() and 'entityDetails' in response.json():
+                return self._get_hash_feed_from_collections(response.json())
+            raise SDKException('HashFeed', '103')
+        self._response_not_success(response)
+
+    @staticmethod
+    def _get_hash_feed_from_collections(collections):
+        """Extracts all the hash feeds, and their details from the list of collections given,
+            and returns the dictionary of all hash feeds.
+
+            Args:
+                collections     (dict)  --  dict containing entity details
+
+            Returns:
+                dict    -   dictionary consisting of dictionaries, where each dictionary stores the
+                                details of a single hash feed
+
+        """
+        _hash_feed = {}
+        for hash_entity in collections['entityDetails']:
+            # Only include entities that are of type 6 (Hash feeds)
+            if hash_entity.get('entityType', 0) != 6:
+                continue
+
+            hash_feed_dict = {}
+            hash_feed_dict['displayName'] = hash_entity.get('displayName', "")
+            hash_feed_dict['entityKey'] = hash_entity.get('entityKey', "")
+            hash_feed_dict['categoryName'] = hash_entity.get('categoryName', "")   
+            hash_feed_dict['entityId'] = hash_entity.get('entityId', 0)
+            hash_feed_dict['flags'] = hash_entity.get('flags', 0)
+            hash_feed_dict['entityType'] = hash_entity.get('entityType', 0)
+            hash_feed_dict['enabled'] = hash_entity.get('enabled', False)
+            hash_feed_dict['createdTime'] = hash_entity.get('createdTime', 0)
+            _hash_feed[hash_entity['entityName'].lower()] = hash_feed_dict
+
+        return _hash_feed
+
+    def refresh(self):
+        """Refresh the hash feeds associated with the commcell."""
+        self._hash_feeds = self._get_all_hash_feeds()
+
+    def get_properties(self, hash_feed_name):
+        """Returns properties of the specified hash feed name.
+
+            Args:
+                hash_feed_name (str)  --  name of the hash feed
+
+            Returns:
+                dict -  properties for the given hash feed name
+
+        """
+        if not self.has_hash_feed(hash_feed_name):
+            raise SDKException('HashFeed', '108')
+        return self._hash_feeds[hash_feed_name.lower()]
+
+    def get(self, hash_feed_name):
+        """Returns a HashFeed object for the given hash feed name.
+
+            Args:
+                hash_feed_name (str)  --  name of the hash feed
+
+            Returns:
+
+                obj                 -- Object of HashFeed class
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+                    if hash_feed_name is not of type string
+
+        """
+        if not isinstance(hash_feed_name, str):
+            raise SDKException('HashFeed', '101')
+
+        if self.has_hash_feed(hash_feed_name):
+            hash_feed_id = self._hash_feeds[hash_feed_name.lower()]['entityId']
+            return HashFeed(self._commcell_object, hash_feed_name, hash_feed_id)
+        raise SDKException('HashFeed', '102', "Unable to get HashFeed class object")
+
+    def has_hash_feed(self, hash_feed_name):
+        """Checks if a hash feed exists in the commcell with the input name.
+
+            Args:
+                hash_feed_name (str)  --  name of the hash feed
+
+            Returns:
+                bool - boolean output whether the hash feed exists in the commcell or not
+
+            Raises:
+                SDKException:
+                    if type of the hash feed name argument is not string
+
+        """
+        if not isinstance(hash_feed_name, str):
+            raise SDKException('HashFeed', '101')
+
+        return self._hash_feeds and hash_feed_name.lower() in map(str.lower, self._hash_feeds)
+
+    def get_hash_feed_ids(self, hash_feed_names):
+        """Returns a list of hash feed ids for the given hash feed name list.
+
+            Args:
+                hash_feed_names (list)  --  names of the hash feeds
+
+            Returns:
+
+                list                -- hash feed ids for the given hash feed names
+
+        """
+        if not isinstance(hash_feed_names, list):
+            raise SDKException('HashFeed', '101')
+        hash_feed_ids = []
+        for hash_feed in hash_feed_names:
+            if hash_feed in self._hash_feeds:
+                hash_feed_ids.append(self._hash_feeds[hash_feed]['entityId'])
+            else:
+                raise SDKException(
+                    'HashFeed', '102', f"Unable to find hash feed id for given hash feed name: {hash_feed}")
+        return hash_feed_ids
+
+    def add(self, hash_feed_name, hash_list, hash_type="SHA256", enabled=True, description=""):
+        """Adds a new Hash Feed (IoC) to the commcell.
+
+            Args:
+                hash_feed_name (str)        --  name of the hash feed
+
+                hash_list (list)            --  list of dictionaries containing hash details
+
+                                                Each dictionary must contain:
+                                                - fileHash (str)     : the hash value
+                                                - malwareName (str)  : name of the malware
+                                                - enabled (bool)     : whether this hash is enabled
+
+                                                Optional:
+                                                - hashType (str)     : type of hash (currently only SHA256 supported)
+
+                hash_type (str)             --  type of hash (default: "SHA256")
+                                                currently only SHA256 is supported
+
+                enabled (bool)              --  whether the hash feed is enabled
+                                                default: True
+
+                description (str)           --  description for the hash feed
+                                                default: empty string
+
+            Returns:
+
+                obj                 -- Object of HashFeed class
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+                    if unable to add hash feed in commcell
+
+                    if input data type is not valid
+
+                    if hash_type is not SHA256
+
+        """
+        if not isinstance(hash_feed_name, str):
+            raise SDKException('HashFeed', '101')
+
+        if not isinstance(hash_list, list) or len(hash_list) == 0:
+            raise SDKException('HashFeed', '101')
+
+        if hash_type.upper() != "SHA256":
+            raise SDKException('HashFeed', '102', "Only SHA256 hash type is currently supported")
+
+        # Validate hash list structure
+        for hash_entry in hash_list:
+            if not isinstance(hash_entry, dict):
+                raise SDKException('HashFeed', '101')
+            if 'fileHash' not in hash_entry or 'malwareName' not in hash_entry:
+                raise SDKException('HashFeed', '102', "Each hash entry must contain 'fileHash' and 'malwareName'")
+
+        # Create request using the HASH_FEED_REQUEST_JSON template
+        request_json = copy.deepcopy(ActivateEntityConstants.HASH_FEED_REQUEST_JSON)
+        request_json['entityName'] = hash_feed_name
+        request_json['displayName'] = hash_feed_name
+        request_json['description'] = description
+        request_json['enabled'] = enabled
+
+        # Build iOCFileHashDetails array
+        ioc_file_hash_details = []
+        for hash_entry in hash_list:
+            ioc_hash = {
+                "fileHash": hash_entry['fileHash'],
+                "malwareName": hash_entry['malwareName'],
+                "hashType": hash_type.upper(),
+                "enabled": hash_entry.get('enabled', True)
+            }
+            ioc_file_hash_details.append(ioc_hash)
+
+        request_json['entityXML']['threatIOCDetails']['iOCFileHashDetails'] = ioc_file_hash_details
+
+        # Use the same API endpoint as other entities
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._api_get_all_hash_feeds, request_json
+        )
+
+        if flag:
+            if response.json() and 'entityDetails' in response.json() and 'err' not in response.json():
+                self.refresh()
+                entity_id = response.json()['entityDetails'][0]['entityId']
+                return HashFeed(self._commcell_object, hash_feed_name, entity_id)
+            raise SDKException('HashFeed', '104')
+        self._response_not_success(response)
+
+    def delete(self, hash_feed_name):
+        """Deletes the specified hash feed name from the commcell.
+
+            Args:
+                hash_feed_name (str)    --  name of the hash feed
+
+            Returns:
+                None
+
+            Raises:
+                SDKException:
+                    if response is empty
+
+                    if response is not success
+
+                    if unable to delete hash feed in commcell
+
+                    if unable to find hash feed name in the commcell
+
+                    if data type of hash_feed_name is invalid
+
+        """
+        if not isinstance(hash_feed_name, str):
+            raise SDKException('HashFeed', '101')
+
+        if not self.has_hash_feed(hash_feed_name):
+            raise SDKException('HashFeed', '108')
+
+        # Get the hash feed ID by matching the name (case-insensitive)
+        hash_feed_id = None
+        for feed_name, feed_dict in self._hash_feeds.items():
+            if feed_name.lower() == hash_feed_name.lower():
+                hash_feed_id = feed_dict['entityId']
+                break
+
+        flag, response = self._cvpysdk_object.make_request(
+            'DELETE', self._api_hash_entity % hash_feed_id
+        )
+
+        if flag:
+            if response.json() and 'errorCode' in response.json() and response.json()['errorCode'] == 0:
+                self.refresh()
+                return
+            raise SDKException('HashFeed', '105')
+        self._response_not_success(response)
+
+
+class HashFeed(object):
+    """Class for representing a single Hash feed in the commcell."""
+
+    def __init__(self, commcell_object, hash_feed_name, hash_feed_id=None):
+        """Initialize an object of HashFeed Class with the given hash feed name and id.
+
+            Args:
+                commcell_object     (object)    --  instance of the commcell class
+
+                hash_feed_name      (str)       --  name of the hash feed
+
+                hash_feed_id        (int)       --  id of the hash feed
+                                                        default: None
+
+            Returns:
+                object  -   instance of the HashFeed class
+
+        """
+        self._commcell_object = commcell_object
+        self._update_response_ = commcell_object._update_response_
+        self._cvpysdk_obj = self._commcell_object._cvpysdk_object
+        self._services = commcell_object._services
+        self._hash_feed_name = hash_feed_name
+        self._hash_feed_id = hash_feed_id
+        self._display_name = None
+        self._category_name = None
+        self._is_enabled = None
+        self._entity_key = None
+        self._entity_type = None
+        self._entity_xml = None
+        self._created_time = None        
+        self._api_hash_entity = self._services['ACTIVATE_ENTITY']
+        
+        if hash_feed_id is None:
+            self._hash_feed_id = self._get_hash_feed_id(hash_feed_name)
+        
+        self.refresh()
+
+    def _response_not_success(self, response):
+        """Helper function to raise an exception when reponse status is not 200 (OK).
+
+            Args:
+                response    (object)    --  response class object,
+
+                received upon running an API request, using the `requests` python package
+
+        """
+        raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def _get_hash_feed_id(self, hash_feed_name):
+        """Gets hash feed id for the given hash feed name.
+
+            Args:
+
+                hash_feed_name (str)  -- Name of the hash feed
+
+            Returns:
+
+                int                -- id of the hash feed
+
+        """
+        return self._commcell_object.activate.entity_manager(
+            entity_type=EntityManagerTypes.HASH_FEEDS).get(hash_feed_name).hash_feed_id
+
+    def _get_hash_feed_properties(self):
+        """Gets all the details of associated hash feed.
+
+            Args:
+
+                None
+
+            Returns:
+
+                dict    --  properties of the hash feed
+
+        """
+        hash_feed_dict = self._commcell_object.activate.entity_manager(
+            entity_type=EntityManagerTypes.HASH_FEEDS).get_properties(self._hash_feed_name)
+        
+        self._display_name = hash_feed_dict.get('displayName', "")
+        self._category_name = hash_feed_dict.get('categoryName', "")
+        self._hash_feed_id = hash_feed_dict.get('entityId', 0)
+        self._is_enabled = hash_feed_dict.get('enabled', False)
+        self._entity_key = hash_feed_dict.get('entityKey', "")
+        self._entity_type = hash_feed_dict.get('entityType', 0)
+        self._entity_xml = hash_feed_dict.get('entityXML', "")
+        self._created_time = hash_feed_dict.get('createdTime', 0)
+        
+        return hash_feed_dict
+
+    @property
+    def hash_feed_id(self):
+        """Returns the id of the hash feed."""
+        return self._hash_feed_id
+
+    @property
+    def hash_feed_name(self):
+        """Returns the name of the hash feed."""
+        return self._hash_feed_name
+
+    @property
+    def display_name(self):
+        """Returns the display name of the hash feed."""
+        return self._display_name
+
+    @property
+    def category_name(self):
+        """Returns the category name of the hash feed."""
+        return self._category_name
+
+    @property
+    def is_enabled(self):
+        """Returns the enabled status of the hash feed."""
+        return self._is_enabled   
+
+    @property
+    def entity_type(self):
+        """Returns the entity type of the hash feed."""
+        return self._entity_type   
+
+    @property
+    def created_time(self):
+        """Returns the created time of the hash feed."""
+        return self._created_time
+
+    def refresh(self):
+        """Refresh the hash feed details for associated object."""
+        self._get_hash_feed_properties()

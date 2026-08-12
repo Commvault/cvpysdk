@@ -254,9 +254,7 @@ class FailoverGroups:
         failover_groups = {}
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET', (self._services['FAILOVER_GROUPS']
-                    if self._commcell_object.commserv_version > 30
-                    else self._services['DR_GROUPS']))
+            'GET', self._services['FAILOVER_GROUPS'])
         if flag:
             if 'vApp' in response.json():
                 for failover_group in response.json().get('vApp', []):
@@ -353,11 +351,7 @@ class FailoverGroup:
                     if response is not success
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
-            'GET',
-            (self._services['GET_FAILOVER_GROUP']
-             if self._commcell_object.commserv_version > 30
-             else self._services['GET_DR_GROUP']) % str(self.failover_group_id)
-        )
+            'GET', self._services['GET_FAILOVER_GROUP'] % str(self.failover_group_id))
         if flag:
             if 'vApp' in response.json():
                 return response.json().get('vApp', [{}])[0]

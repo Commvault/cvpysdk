@@ -443,6 +443,9 @@ class VirtualServerSubclient(Subclient):
                         temp['value'] = item['display_name']
                         temp['displayName'] = item['display_name']
                         temp['name'] = "Notes"
+                    if item['type'] == VSAObjects.Tag:
+                        temp['name'] = item['name']
+                        temp['displayName'] = item['name']
                     if (item['type'] ==
                             VSAObjects.VMPowerState and
                             item['state'] == 'true'):
@@ -1009,6 +1012,16 @@ class VirtualServerSubclient(Subclient):
                 "destinationNetwork": _destnetwork if _destnetwork else network_card_dict['name']
             }
 
+            # setting nics for Proxmox instance
+            if value.get('destination_instance').lower() == HypervisorType.PROXMOX.value.lower():
+                nics["networkName"] = network_card_dict['name']
+                nics["name"] = ''
+
+            # setting nics for Nutanix Prism central instance
+            if self._instance_object.instance_name == HypervisorType.NUTANIX_PRISM_CENTRAL.value.lower():
+                if vm_nics_list:
+                        nics["networkName"] = vm_nics_list[0].get("sourceNetwork")
+
             # setting nics for azureRM instance
             if value.get('destination_instance').lower() == HypervisorType.AZURE_V2.value.lower():
                 if value.get('subnet_id'):
@@ -1080,7 +1093,10 @@ class VirtualServerSubclient(Subclient):
             "registerWithFailoverCluster": value.get("add_to_failover", False),
             "userPassword": {"userName": vcenter_userpwd or "admin"},
             "redirectWritesToDatastore": value.get("redirectWritesToDatastore") or "",
-            "delayMigrationMinutes": value.get("delayMigrationMinutes") or 0
+            "delayMigrationMinutes": value.get("delayMigrationMinutes") or 0,
+            "skipDiskOverride": value.get("skip_disk_override", False),
+            "restoreEmptyForFilteredDisks": value.get("restore_empty_for_filtered_disks", False)
+
         }
         if value['in_place']:
             json_disklevel_option_restore["dataStore"] = {}
@@ -1533,7 +1549,8 @@ class VirtualServerSubclient(Subclient):
             to_date=0,
             copy_precedence=0,
             vm_files_browse=False,
-            media_agent=""):
+            media_agent="",
+            *args, **kwargs):
         """Gets the content of the backup for this subclient
                 at the path specified in the time range specified.
 
@@ -1602,7 +1619,7 @@ class VirtualServerSubclient(Subclient):
             show_deleted=show_deleted_files, restore_index=restore_index,
             vm_disk_browse=vm_disk_browse,
             from_time=from_date, to_time=to_date, copy_precedence=copy_precedence,
-            path=vm_path, vs_file_browse=vm_files_browse, media_agent=media_agent)
+            path=vm_path, vs_file_browse=vm_files_browse, media_agent=media_agent, *args, **kwargs)
         if not vm_ids:
             for key, val in browse_content[1].items():
                 vm_ids[val['snap_display_name']] = val['name']
@@ -1690,7 +1707,8 @@ class VirtualServerSubclient(Subclient):
             from_date=0,
             to_date=0,
             copy_precedence=0,
-            media_agent=""):
+            media_agent="",
+            *args, **kwargs):
         """Browses the Files and Folders inside a Virtual Machine in the time
            range specified.
 
@@ -1750,7 +1768,7 @@ class VirtualServerSubclient(Subclient):
         """
         return self.browse_in_time(
             vm_path, show_deleted_files, restore_index, False, from_date, to_date, copy_precedence,
-            vm_files_browse=True, media_agent=media_agent)
+            vm_files_browse=True, media_agent=media_agent, *args, **kwargs)
 
     def _check_folder_in_browse(
             self,
@@ -1759,7 +1777,8 @@ class VirtualServerSubclient(Subclient):
             from_date,
             to_date,
             copy_precedence,
-            media_agent):
+            media_agent,
+            *args, **kwargs):
         """
         Check if the particular folder is present in browse of the subclient
         in particular VM
@@ -1803,7 +1822,7 @@ class VirtualServerSubclient(Subclient):
 
         _browse_files, _browse_files_dict = self.guest_files_browse(
             _source_path, from_date=from_date, to_date=to_date,
-            copy_precedence=copy_precedence, media_agent=media_agent)
+            copy_precedence=copy_precedence, media_agent=media_agent, *args, **kwargs)
 
         for _path in _browse_files_dict:
             _browse_folder_name = _path.split("\\")[-1]
@@ -1889,7 +1908,9 @@ class VirtualServerSubclient(Subclient):
                     from_date,
                     to_date,
                     copy_precedence,
-                    media_agent=browse_ma
+                    media_agent=browse_ma,
+                    subclient_id = kwargs.get('subclient_id', self._subclient_id)
+
                 )
             else:
                 # Converting native path to VM path
@@ -2856,7 +2877,7 @@ class VirtualServerSubclient(Subclient):
             Args:
                 backup_level            (str)   --  level of backup the user wish to run
                                                     Full / Incremental / Differential /
-                                                    Synthetic_full
+                                                    Synthetic_full / Snapshot
 
                 incremental_backup      (bool)  --  run incremental backup
                                                     only applicable in case of Synthetic_full backup
@@ -2895,8 +2916,18 @@ class VirtualServerSubclient(Subclient):
 
         backup_level = backup_level.lower()
         if backup_level not in ['full', 'incremental',
-                                'differential', 'synthetic_full']:
+                                'differential', 'synthetic_full', 'snapshot']:
             raise SDKException('Subclient', '103')
+
+        if backup_level == 'snapshot':
+            vm_backup_service = self._commcell_object._services['SUBCLIENT_BACKUP'] % (self._subclient_id, 'FULL')
+
+            vm_backup_service += '&runSnapShotBackup=true'
+            flag, response = self._commcell_object._cvpysdk_object.make_request(
+                'POST', vm_backup_service
+            )
+
+            return self._process_backup_response(flag, response)
 
         if advanced_options or schedule_pattern:
             request_json = self._backup_json(

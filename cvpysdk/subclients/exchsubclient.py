@@ -45,6 +45,10 @@ ExchangeSubclient:
 
     _get_ad_group_backup_backupoptions_json -- Gets the backup option json for ad group backup
 
+    _get_live_update_job_json -- Method to create xml for live update job
+
+    live_update_job -- Method to run live update job
+
 
 """
 
@@ -348,8 +352,8 @@ class ExchangeSubclient(Subclient):
         new_link = value.get('new_recall_link', None)
 
         base = {
-            JobOptionKeys.STUB_REHYDRATION.value: True,
-            JobOptionKeys.STUB_REHYDRATION_OPTION.value: stub_rehydration_option
+            JobOptionKeys.EXCH_STUB_REHYDRATION.value: True,
+            JobOptionKeys.EXCH_STUB_REHYDRATION_OPTION.value: stub_rehydration_option
         }
 
         additional_options = {}
@@ -376,7 +380,7 @@ class ExchangeSubclient(Subclient):
             JobOptionKeys.IS_JOURNAL_REPORT.value: value.get("journal_report", False),
             JobOptionKeys.PST_FILE_PATH.value: "",
             JobOptionKeys.TARGET_MAILBOX.value: value.get("target_mailbox", None),
-            JobOptionKeys.STUB_REHYDRATION.value: base
+            JobOptionKeys.STUB_REHYDRATION_SMALL.value: base
         }
 
         return self._json_exchange_options
@@ -458,6 +462,22 @@ class ExchangeSubclient(Subclient):
             "pstSize": value.get("pst_size", 2048)
         }
 
+    def _json_msg_restore_exchange_restore_option(self, value):
+        """Setter for  the Exchange Mailbox MSG restore option in restore json
+            Args:
+                value   (dict)  --  restore option need to be included
+        """
+
+        if not isinstance(value, dict):
+            raise SDKException('Subclient', '101')
+
+        self._exchange_msg_option_restore_json = {
+            "exchangeRestoreChoice": 3,
+            "exchangeRestoreDrive": 1,
+            "isJournalReport": value.get("journal_report", False),
+            "diskFilePath": value.get("destination_path")
+        }
+
     @property
     def _json_content_indexing_subtasks(self):
         """Getter for the contentindexing subtask in restore JSON.
@@ -509,6 +529,51 @@ class ExchangeSubclient(Subclient):
         request_json['taskInfo']['subTasks'][0][
             'options']['restoreOptions'][
                 'exchangeOption'] = self._exchange_pst_option_restore_json
+
+        request_json["taskInfo"]["subTasks"][0]["options"][
+            "restoreOptions"]["browseOption"]['backupset'] = self._exchange_backupset_json
+
+        return request_json
+
+    def _prepare_msg_restore_json(self, _msg_restore_option=None):
+        """
+        Prepare MSG restore Json with all getters
+
+        Args:
+            _msg_restore_option - dictionary with all PST restore options
+
+            value:
+                paths                   (list)  --  list of paths of mailboxes/folders to restore
+
+                destination_client              --  client where the mailboxes needs to be restored
+                destination_path                --  MSG path where the mailboxes needs to be
+                                                    restored
+                unconditional_overwrite (bool)  --  unconditional overwrite files during restore
+                    default: True
+                journal_report          (bool)  --  Journal report is true for journal and
+                                                    contentStore Mailbox
+                    default: False
+
+        returns:
+            request_json   -- complete json for performing PST Restore options
+        """
+
+        if _msg_restore_option is None:
+            _msg_restore_option = {}
+
+        paths = self._filter_paths(_msg_restore_option['paths'])
+        self._json_msg_restore_exchange_restore_option(_msg_restore_option)
+        self._json_backupset()
+
+        _msg_restore_option['paths'] = paths
+
+        # set the setters
+        self._instance_object._restore_association = self._subClientEntity
+        request_json = self._restore_json(restore_option=_msg_restore_option)
+
+        request_json['taskInfo']['subTasks'][0][
+            'options']['restoreOptions'][
+                'exchangeOption'] = self._exchange_msg_option_restore_json
 
         request_json["taskInfo"]["subTasks"][0]["options"][
             "restoreOptions"]["browseOption"]['backupset'] = self._exchange_backupset_json
@@ -879,6 +944,51 @@ class ExchangeSubclient(Subclient):
         restore_option['destination_path'] = pst_path
 
         request_json = self._prepare_pst_restore_json(restore_option)
+        return self._process_restore_response(request_json)
+
+    def msg_restore(
+            self,
+            paths,
+            destination_client,
+            msg_path,
+            overwrite=True,
+            journal_report=False):
+        """Restores the Mailbox/Emails specified in the input paths list to the MSG PATH location.
+
+            Args:
+                paths                   (list)  --  list of paths of mailboxes/folders to restore
+
+                overwrite               (bool)  --  unconditional overwrite files during restore
+                    default: True
+                journal_report          (bool)  --  Journal report is true for journal and
+                                                    contentStore Mailbox
+                    default: False
+
+            Returns:
+                object - instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+                    if paths is not a list
+
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if response is not success
+
+        """
+
+        restore_option = {}
+        if paths == []:
+            raise SDKException('Subclient', '104')
+        restore_option['journal_report'] = journal_report
+        restore_option['unconditional_overwrite'] = overwrite
+        restore_option['paths'] = paths
+        restore_option['client'] = destination_client
+        restore_option['destination_path'] = msg_path
+
+        request_json = self._prepare_msg_restore_json(restore_option)
         return self._process_restore_response(request_json)
 
     def pst_ingestion(self):
@@ -1434,3 +1544,71 @@ class ExchangeSubclient(Subclient):
             'POST', create_task, task_json
         )
         return self._process_backup_response(flag, response)
+
+    def _get_live_update_job_json(self):
+        """
+        Method to create xml for live update job
+        Returns:
+            task_xml(str)   -   xml as a string to trigger live update job
+        """
+        task_json = {
+            "taskInfo": {
+                "taskOperation": 1,
+                "associations": [
+                    {
+                        "subclientId": int(self.subclient_id),
+                        "entityType": 7,
+                        "_SubclType_": 0,
+                        "_type_": 7
+                    }
+                ],
+                "task": {
+                    "isEZOperation": False,
+                    "description": "",
+                    "ownerId": 1,
+                    "runUserId": 1,
+                    "taskType": 1,
+                    "ownerName": "",
+                    "alertName": "",
+                    "sequenceNumber": 0,
+                    "isEditing": False,
+                    "GUID": "",
+                    "isFromCommNetBrowserRootNode": False,
+                    "initiatedFrom": 3,
+                    "policyType": 0,
+                    "associatedObjects": 0,
+                    "taskName": ""
+                },
+                "subTasks": [
+                    {
+                        "subTaskOperation": 1,
+                        "subTask": {
+                            "subTaskOrder": 0,
+                            "subTaskType": 2,
+                            "flags": 0,
+                            "operationType": 5027,
+                            "subTaskId": 1
+                        }
+                    }
+                ]
+            }
+        }
+        return task_json
+
+    def live_update_job(self):
+        """
+        Method to run live update job
+        """
+        task_json = self._get_live_update_job_json()
+        create_task = self._services['CREATE_TASK']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', create_task, task_json)
+        if flag:
+            if not response.status_code == 200:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException(
+                'Response',
+                '101',
+                self._update_response_(
+                    response.text))

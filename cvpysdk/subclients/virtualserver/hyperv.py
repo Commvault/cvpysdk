@@ -93,7 +93,8 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
                      copy_precedence=0,
                      convert_to=None,
                      media_agent=None,
-                     snap_proxy=None):
+                     snap_proxy=None,
+                     unconditional_overwrite=False):
         """Restores the disk specified in the input paths list to the same location
 
             Args:
@@ -120,7 +121,9 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
                                                     restores from snap
                     default :proxy in instance or subclient
 
-
+                unconditional_overwrite (bool)  -- specifies whether to overwrite existing 
+                                                    files unconditionally during restore
+                    default: False
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -192,7 +195,8 @@ class HyperVVirtualServerSubclient(VirtualServerSubclient):
             destination_path=destination_path,
             paths=_src_item_list,
             media_agent=media_agent,
-            snap_proxy=snap_proxy
+            snap_proxy=snap_proxy,
+            unconditional_overwrite=unconditional_overwrite
         )
 
         request_json = self._prepare_disk_restore_json(_disk_restore_option)

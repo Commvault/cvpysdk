@@ -33,28 +33,50 @@ JournalMailboxSubclient:
 
 from __future__ import unicode_literals
 
+from typing import List
+
 from ...exception import SDKException
 from ..exchsubclient import ExchangeSubclient
 import time
 
 class JournalMailboxSubclient(ExchangeSubclient):
-    """Derived class from ExchangeSubclient Base class.
+    """
+    Specialized subclient class for managing Journal Mailbox operations in Exchange environments.
 
-        This represents a JournalMailbox subclient,
-        and can perform discover and restore operations on only that subclient.
+    This class extends the ExchangeSubclient base class to provide functionality specific to
+    Journal Mailbox subclients. It enables discovery, association, and restoration operations
+    for journal users, as well as management of user associations and PST associations.
 
+    Key Features:
+        - Initialization with backup set, subclient name, and subclient ID
+        - Discovery of journal users with support for refresh and retry mechanisms
+        - Retrieval and management of journal user associations
+        - Setting associations using JSON payloads and plan details
+        - Properties for accessing discovered journal users and current journal users
+        - Methods to set journal user and PST associations, optionally using policies
+        - Refresh capability to update subclient state
+
+    Intended Usage:
+        Use this class to automate and manage Journal Mailbox subclient operations, including
+        user discovery, association management, and restoration tasks within an Exchange backup set.
+
+    #ai-gen-doc
     """
 
-    def __init__(self, backupset_object, subclient_name, subclient_id=None):
-        """Initialize the Instance object for the given JournalMailbox Subclient.
+    def __init__(self, backupset_object: object, subclient_name: str, subclient_id: int = None) -> None:
+        """Initialize a JournalMailboxSubclient instance.
 
-            Args:
-                backupset_object    (object)    --  instance of the backupset class
+        Args:
+            backupset_object: Instance of the backupset class associated with this subclient.
+            subclient_name: Name of the JournalMailbox subclient.
+            subclient_id: Optional; unique identifier for the subclient. If not provided, it will be determined automatically.
 
-                subclient_name      (str)       --  subclient name
+        Example:
+            >>> backupset = Backupset(commcell_object, 'Exchange', 'BackupSet1')
+            >>> subclient = JournalMailboxSubclient(backupset, 'JournalSubclient01', subclient_id=123)
+            >>> print(f"Subclient '{subclient_name}' initialized successfully.")
 
-                subclient_id        (int)       --  subclient id
-
+        #ai-gen-doc
         """
         super(JournalMailboxSubclient, self).__init__(
             backupset_object, subclient_name, subclient_id)
@@ -67,18 +89,21 @@ class JournalMailboxSubclient(ExchangeSubclient):
 
         self.refresh()
 
-    def _get_discover_journal_users(self, use_without_refresh_url=False, retry_attempts=0):
-        """Gets the discovered users from the Subclient .
+    def _get_discover_journal_users(self, use_without_refresh_url: bool = False, retry_attempts: int = 0) -> list:
+        """Retrieve the list of discovered users associated with the journal mailbox subclient.
 
-            Args:
-                use_without_refresh_url (boolean)   -   discovery without refresh cache
+        Args:
+            use_without_refresh_url: If True, performs discovery without refreshing the cache.
+            retry_attempts: Number of retry attempts for the discovery operation.
 
-                retry_attempts(int)                 - retry for discovery
+        Returns:
+            list: A list of discovered users associated with the subclient.
 
+        Example:
+            >>> users = subclient._get_discover_journal_users(use_without_refresh_url=True, retry_attempts=2)
+            >>> print(f"Discovered users: {users}")
 
-            Returns:
-                list    -   list of discovered users associated with the subclient
-
+        #ai-gen-doc
         """
         self._DISCOVERY = self._commcell_object._services['EMAIL_DISCOVERY'] % (
             int(self._backupset_object.backupset_id), 'Journal Mailbox')
@@ -93,8 +118,9 @@ class JournalMailboxSubclient(ExchangeSubclient):
         if flag:
             if response and response.json():
                 discover_content = response.json()
-                if discover_content.get('resp', {}).get('errorCode', 0) == 469762468:
-                    time.sleep(10) # the results might take some time depending on domains
+                _error_code = discover_content.get('resp', {}).get('errorCode', 0)
+                if _error_code == 469762468 or _error_code == 469762470:
+                    time.sleep(60) # the results might take some time depending on domains
                     if retry_attempts > 10:
                         raise SDKException('Subclient', '102', 'Failed to perform discovery.')
 
@@ -114,12 +140,19 @@ class JournalMailboxSubclient(ExchangeSubclient):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _get_journal_user_assocaitions(self):
-        """Gets the appropriate journal users associations from the Subclient.
+    def _get_journal_user_assocaitions(self) -> List[str]:
+        """Retrieve the list of journal user associations for this Subclient.
 
-            Returns:
-                list    -   list of users associated with the subclient
+        Returns:
+            List of user names (as strings) associated with the subclient for journaling purposes.
 
+        Example:
+            >>> subclient = JournalMailboxSubclient()
+            >>> user_list = subclient._get_journal_user_assocaitions()
+            >>> print(f"Associated users: {user_list}")
+            >>> # Output might be: ['user1@example.com', 'user2@example.com']
+
+        #ai-gen-doc
         """
         users = []
         self._EMAIL_POLICY_ASSOCIATIONS = self._commcell_object._services[
@@ -170,23 +203,29 @@ class JournalMailboxSubclient(ExchangeSubclient):
 
         return users
 
-    def _set_association_request(self, associations_json):
-        """Runs the emailAssociation as API to set association
+    def _set_association_request(self, associations_json: dict) -> tuple[str, str]:
+        """Send an email association request using the provided JSON payload.
 
-            Args:
-                associations_json    (dict)  -- request json sent as payload
+        This method runs the emailAssociation API to set associations for the JournalMailboxSubclient.
+        It returns the error code and error message received in the response.
 
-            Returns:
-                (str, str):
-                    str  -  error code received in the response
+        Args:
+            associations_json: Dictionary containing the request payload for the association API.
 
-                    str  -  error message received
+        Returns:
+            A tuple containing:
+                str: The error code received in the response.
+                str: The error message received in the response.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Raises:
+            SDKException: If the response is empty or not successful.
 
-                    if response is not success
+        Example:
+            >>> payload = {"mailboxIds": [123, 456], "associationType": "user"}
+            >>> error_code, error_message = subclient._set_association_request(payload)
+            >>> print(f"Error code: {error_code}, Message: {error_message}")
+
+        #ai-gen-doc
         """
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'POST', self._SET_EMAIL_POLICY_ASSOCIATIONS, associations_json
@@ -210,33 +249,69 @@ class JournalMailboxSubclient(ExchangeSubclient):
             raise SDKException('Response', '101', response_string)
 
     @property
-    def discover_journal_users(self):
-        """"Returns the list of discovered journal users for the JournalMailbox subclient."""
+    def discover_journal_users(self) -> list:
+        """Get the list of discovered journal users for the JournalMailbox subclient.
+
+        Returns:
+            list: A list containing the discovered journal users associated with this JournalMailbox subclient.
+
+        Example:
+            >>> subclient = JournalMailboxSubclient()
+            >>> users = subclient.discover_journal_users  # Use dot notation for property access
+            >>> print(f"Discovered users: {users}")
+
+        #ai-gen-doc
+        """
         return self._discover_journal_users
 
     @property
-    def journal_users(self):
-        """Returns the list of journal users associated with JournalMailbox subclient."""
+    def journal_users(self) -> List[str]:
+        """Get the list of journal users associated with the JournalMailbox subclient.
+
+        Returns:
+            List of strings representing the email addresses or usernames of journal users.
+
+        Example:
+            >>> subclient = JournalMailboxSubclient()
+            >>> users = subclient.journal_users  # Use dot notation for property access
+            >>> print(f"Journal users: {users}")
+            >>> # Output might be: ['user1@example.com', 'user2@example.com']
+
+        #ai-gen-doc
+        """
         return self._journal_users
 
-    def _association_json(self, subclient_content):
-        """Constructs association json to create assocaition in UserMailbox Subclient.
+    def _association_json(self, subclient_content: dict) -> dict:
+        """Construct the association JSON payload for creating an association in a UserMailbox Subclient.
 
-            Args:
-                subclient_content (dict)  --  dict of the Users to add to the subclient
-                                             (dict of only policies in case of office 365 groups)
-                subclient_content = {
+        This method generates a dictionary representing the association configuration,
+        typically including archiving, cleanup, and retention policies for the subclient.
+        The input should be a dictionary specifying the relevant policies or users.
 
-                        'archive_policy' : "CIPLAN Archiving policy",
-
-                        'cleanup_policy' : 'CIPLAN Clean-up policy',
-
-                        'retention_policy': 'CIPLAN Retention policy'
+        Args:
+            subclient_content: Dictionary containing the users or policies to associate with the subclient.
+                For example:
+                    {
+                        'archive_policy': "CIPLAN Archiving policy",
+                        'cleanup_policy': "CIPLAN Clean-up policy",
+                        'retention_policy': "CIPLAN Retention policy"
                     }
 
+        Returns:
+            Dictionary representing the association JSON request to be passed to the API.
 
-            Returns:
-                dict -- Association JSON request to pass to the API
+        Example:
+            >>> subclient = JournalMailboxSubclient()
+            >>> content = {
+            ...     'archive_policy': "CIPLAN Archiving policy",
+            ...     'cleanup_policy': "CIPLAN Clean-up policy",
+            ...     'retention_policy': "CIPLAN Retention policy"
+            ... }
+            >>> association_json = subclient._association_json(content)
+            >>> print(association_json)
+            # Output will be a dictionary suitable for the API request
+
+        #ai-gen-doc
         """
         if not isinstance(subclient_content, dict):
             raise SDKException('Subclient', '101')
@@ -339,15 +414,24 @@ class JournalMailboxSubclient(ExchangeSubclient):
 
         return associations_json
 
-    def _association_json_with_plan(self, plan_details):
-        """Constructs association json with plan to create association in UserMailbox Subclient.
+    def _association_json_with_plan(self, plan_details: dict) -> dict:
+        """Construct the association JSON payload using the provided plan details for creating an association in a UserMailbox Subclient.
 
-            Args: plan_details = {
-                    'plan_name': Plan Name,
-                    'plan_id': int or None (Optional)
-                    }
-                 Returns:
-                    dict -- Association JSON request to pass to the API
+        Args:
+            plan_details: A dictionary containing plan information. Expected keys:
+                - 'plan_name' (str): The name of the plan.
+                - 'plan_id' (Optional[int]): The ID of the plan, or None if not specified.
+
+        Returns:
+            dict: The association JSON request payload to be sent to the API.
+
+        Example:
+            >>> plan_info = {'plan_name': 'ExchangePlan', 'plan_id': 1234}
+            >>> assoc_json = subclient._association_json_with_plan(plan_info)
+            >>> print(assoc_json)
+            # Output will be a dictionary formatted for the API association request
+
+        #ai-gen-doc
         """
 
         try:
@@ -374,32 +458,42 @@ class JournalMailboxSubclient(ExchangeSubclient):
         }
         return association_json
 
-    def set_journal_user_assocaition(self, subclient_content, use_policies=True):
-        """Create Journal assocaition for JournalMailboxSubclient.
+    def set_journal_user_assocaition(self, subclient_content: dict, use_policies: bool = True) -> None:
+        """Create a journal association for the JournalMailboxSubclient.
 
-            Args:
-                subclient_content   (dict)  --  dict of the Users to add to the subclient
+        This method associates users or mailboxes with the JournalMailboxSubclient, using either policies or plans
+        based on the `use_policies` flag. The association details are provided in the `subclient_content` dictionary.
 
-                    subclient_content = {
+        Args:
+            subclient_content: Dictionary containing details of the users or mailboxes to associate. The expected keys are:
+                - 'mailboxNames': List of mailbox names to add (e.g., ["AutoCi2"]).
+                - 'archive_policy': Name of the archive policy to use.
+                - 'cleanup_policy': Name of the cleanup policy to use.
+                - 'retention_policy': Name of the retention policy to use.
+                - If `use_policies` is False, also include:
+                    - 'plan_name': Name of the Exchange plan.
+                    - 'plan_id': Integer plan ID or None (optional).
+            use_policies: If True, use policies for association; if False, use plans.
+                Defaults to True.
 
-                        'mailboxNames' : ["AutoCi2"],
+        Example:
+            >>> subclient_content = {
+            ...     'mailboxNames': ['user1@example.com', 'user2@example.com'],
+            ...     'archive_policy': 'Corporate Archive Policy',
+            ...     'cleanup_policy': 'Corporate Cleanup Policy',
+            ...     'retention_policy': 'Corporate Retention Policy'
+            ... }
+            >>> subclient.set_journal_user_assocaition(subclient_content)
+            >>>
+            >>> # Using plans instead of policies
+            >>> subclient_content = {
+            ...     'mailboxNames': ['user3@example.com'],
+            ...     'plan_name': 'Exchange Plan Name',
+            ...     'plan_id': 12345
+            ... }
+            >>> subclient.set_journal_user_assocaition(subclient_content, use_policies=False)
 
-                        'archive_policy' : "CIPLAN Archiving policy",
-
-                        'cleanup_policy' : 'CIPLAN Clean-up policy',
-
-                        'retention_policy': 'CIPLAN Retention policy',
-
-                        -- if use_policies is False --
-
-                        'plan_name': 'Exchange Plan Name',
-
-                        'plan_id': int or None (Optional)
-                    }
-
-                user_policies   (bool)  --  Use policies or plans for association
-                    Default: True
-
+        #ai-gen-doc
         """
         users = []
 
@@ -440,28 +534,38 @@ class JournalMailboxSubclient(ExchangeSubclient):
             _association_json_["emailAssociation"]["emailDiscoverinfo"] = {"discoverByType":5, "mailBoxes" : users}
         self._set_association_request(_association_json_)
 
-    def set_pst_assocaition(self, subclient_content):
-        """Create PST assocaition for JournalMailboxSubclient.
+    def set_pst_assocaition(self, subclient_content: dict) -> None:
+        """Create a PST association for the JournalMailboxSubclient.
 
-            Args:
-                subclient_content   (dict)  --  dict of the pst to add to the subclient
+        This method associates a PST (Personal Storage Table) with the JournalMailboxSubclient
+        by specifying the PST task name, folders to include, and owner management options.
 
-                    subclient_content = {
+        Args:
+            subclient_content: Dictionary containing PST association details. The expected format is:
+                {
+                    'pstTaskName': str,  # Name for the PST task
+                    'folders': list,     # List of folder names to include
+                    'pstOwnerManagement': {
+                        'defaultOwner': str,            # Default owner if no owner is determined
+                        'pstDestFolder': str,           # Destination folder for ingested PSTs
+                        'usePSTNameToCreateChild': bool # Whether to use PST name to create a child folder
+                    }
+                }
 
-                            'pstTaskName' : "Task Name for PST",
+        Example:
+            >>> subclient_content = {
+            ...     'pstTaskName': "Import PST Task",
+            ...     'folders': ["Inbox", "Sent Items"],
+            ...     'pstOwnerManagement': {
+            ...         'defaultOwner': "user@example.com",
+            ...         'pstDestFolder': "ImportedPSTs",
+            ...         'usePSTNameToCreateChild': True
+            ...     }
+            ... }
+            >>> subclient.set_pst_assocaition(subclient_content)
+            >>> print("PST association created successfully.")
 
-                            'folders' : ['list of folders'],
-
-                            'pstOwnerManagement' : {
-
-                                'defaultOwner': "default owner if no owner is determined",
-
-                                'pstDestFolder': "ingest psts under this folder",
-
-                                'usePSTNameToCreateChild': Boolean
-                            }
-                        }
-
+        #ai-gen-doc
         """
         if not isinstance(subclient_content, dict):
             raise SDKException('Subclient', '101')
@@ -515,8 +619,18 @@ class JournalMailboxSubclient(ExchangeSubclient):
         except Exception as excp:
             raise excp
 
-    def refresh(self):
-        """Refresh the Journal Mailbox Subclient."""
+    def refresh(self) -> None:
+        """Reload the Journal Mailbox Subclient information.
+
+        This method refreshes the internal state of the JournalMailboxSubclient instance,
+        ensuring that any changes made externally are reflected in the object.
+
+        Example:
+            >>> subclient = JournalMailboxSubclient()
+            >>> subclient.refresh()  # Updates the subclient's information from the source
+            >>> print("Subclient refreshed successfully")
+        #ai-gen-doc
+        """
         self._get_subclient_properties()
         self._discover_journal_users = self._get_discover_journal_users()
         self._journal_users = self._get_journal_user_assocaitions()

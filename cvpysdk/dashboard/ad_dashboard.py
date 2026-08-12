@@ -59,17 +59,40 @@ from cvpysdk.exception import SDKException
 
 class AdDashboard(object):
     """
-    Class for AD Dashboard Details
+    AD Dashboard management class for monitoring and retrieving Active Directory details.
+
+    This class provides an interface to access and manage various aspects of the AD Dashboard,
+    including dashboard details, application details, configuration status, domain and tenant information,
+    backup health, data distribution, and application panel data. It is designed to work with a CommCell
+    object for integration with the underlying infrastructure.
+
+    Key Features:
+        - Retrieve AD dashboard details
+        - Access AD applications details
+        - Check if the dashboard is configured
+        - Get domains and tenants information
+        - Monitor backup health status
+        - Analyze data distribution across AD entities
+        - View application panel information
+        - Properties for easy access to configuration, domains/tenants, backup health, data distribution, and application panel
+
+    #ai-gen-doc
     """
 
-    def __init__(self,commcell_object):
-        """Initialize object of the Clients class.
+    def __init__(self, commcell_object: object) -> None:
+        """Initialize an instance of the AdDashboard class.
 
-            Args:
-                commcell_object (object)  --  instance of the Commcell class
+        Args:
+            commcell_object: An instance of the Commcell class used to establish a connection 
+                and interact with the Commcell environment.
 
-            Returns:
-                object - instance of the Clients class
+        Example:
+            >>> from cvpysdk.commcell import Commcell
+            >>> commcell = Commcell('commcell_host', 'username', 'password')
+            >>> ad_dashboard = AdDashboard(commcell)
+            >>> print("AdDashboard instance created successfully")
+
+        #ai-gen-doc
         """
         self._commcell_object = commcell_object
         self._cvpysdk_object = commcell_object._cvpysdk_object
@@ -79,15 +102,25 @@ class AdDashboard(object):
         self.apps_response = None
         self.apps_totalentities = None
 
-    def get_ad_dashboard_details(self):
-        """
-        REST API call to get AD Dashboard details in the commcell
+    def get_ad_dashboard_details(self) -> dict:
+        """Retrieve Active Directory (AD) Dashboard details from the Commcell via REST API.
+
+        This method makes a REST API call to fetch the AD Dashboard details associated with the Commcell.
+        It raises an SDKException if the response is empty or if the API call is unsuccessful.
+
+        Returns:
+            dict: A dictionary containing the AD Dashboard details.
+
         Raises:
-            SDKException:
+            SDKException: If the API response is empty or indicates a failure.
 
-                if response is empty
+        Example:
+            >>> ad_dashboard = AdDashboard(commcell_object)
+            >>> details = ad_dashboard.get_ad_dashboard_details()
+            >>> print(details)
+            >>> # The 'details' dictionary contains information about the AD Dashboard
 
-                if response is not success
+        #ai-gen-doc
         """
         configured = self._services['ADDASHBOARD'] + '?slaNumberOfDays=1'
         flag, response = self._cvpysdk_object.make_request(method='GET', url=configured)
@@ -98,15 +131,27 @@ class AdDashboard(object):
         else:
             raise SDKException('Response', '102', self._commcell_object._update_response_(response.text))
 
-    def get_ad_apps_details(self):
-        """
-        REST API call to get AD APP Listing details in the commcell
+    def get_ad_apps_details(self) -> dict:
+        """Retrieve the Active Directory (AD) application listing details from the Commcell.
+
+        This method performs a REST API call to fetch details about all AD applications configured
+        in the Commcell environment.
+
+        Returns:
+            dict: A dictionary containing details of the AD applications.
+
         Raises:
-            SDKException:
+            SDKException: If the API response is empty or indicates a failure.
 
-                if response is empty
+        Example:
+            >>> ad_dashboard = AdDashboard()
+            >>> ad_apps = ad_dashboard.get_ad_apps_details()
+            >>> print(f"Number of AD applications: {len(ad_apps)}")
+            >>> # Access details of a specific AD application
+            >>> for app_id, app_info in ad_apps.items():
+            ...     print(f"App ID: {app_id}, Name: {app_info.get('name')}")
 
-                if response is not success
+        #ai-gen-doc
         """
         configured = self._services['ADAPPS']
         flag, response = self._cvpysdk_object.make_request(method='GET', url=configured)
@@ -118,11 +163,22 @@ class AdDashboard(object):
         else:
             raise SDKException('Response', '102', self._commcell_object._update_response_(response.text))
 
-    def _configured(self):
-        """
-        Function check both AD and Azure AD are configured
+    def _configured(self) -> dict:
+        """Check if both Active Directory (AD) and Azure AD are configured.
+
+        This method verifies the configuration status of both AD and Azure AD by retrieving
+        their configuration values from the Dashboard API and Apps Listing API.
+
         Returns:
-            configure_dict    --  Configuration value of AD and Azure AD from Dashboard API and Apps Listing API as dict
+            dict: A dictionary containing the configuration values of AD and Azure AD.
+
+        Example:
+            >>> dashboard = AdDashboard()
+            >>> config_status = dashboard._configured()
+            >>> print(config_status)
+            {'AD': True, 'AzureAD': False}
+
+        #ai-gen-doc
         """
         configure_dict = {"adconfigure": self.dashboard_response.get('agentSummary', [{}])[0].get('isConfigured', None),
                           "aadconfigure": self.dashboard_response.get('agentSummary', [{}])[1].get('isConfigured',None),
@@ -143,19 +199,39 @@ class AdDashboard(object):
         return configure_dict
 
     @property
-    def is_configured(self):
-        """
+    def is_configured(self) -> dict:
+        """Get the configuration values of AD and Azure AD from the Dashboard API and Apps Listing API.
+
         Returns:
-            configure_dict    --  Configuration value of AD and Azure AD from Dashboard API and Apps Listing API as dict
+            dict: A dictionary containing the configuration status and details for Active Directory (AD) and Azure AD.
+
+        Example:
+            >>> dashboard = AdDashboard()
+            >>> config = dashboard.is_configured
+            >>> print(config)
+            {'AD': {'configured': True}, 'AzureAD': {'configured': False}}
+
+        #ai-gen-doc
         """
         configure_dict=self._configured()
         return configure_dict
 
-    def _get_domains_and_tenants(self):
-        """
-        Function to get number of domains and tenants
+    def _get_domains_and_tenants(self) -> dict:
+        """Retrieve the number of domain controllers and tenants.
+
+        This method fetches information from the Dashboard API and Apps Listing API,
+        returning a dictionary containing the counts of domain controllers and tenants.
+
         Returns:
-            domains_and_tenants_dict    --  Number of domain controllers and tenants from Dashboard API and Apps Listing API as dict
+            dict: A dictionary with the number of domain controllers and tenants.
+
+        Example:
+            >>> ad_dashboard = AdDashboard()
+            >>> result = ad_dashboard._get_domains_and_tenants()
+            >>> print(result)
+            {'domain_controllers': 5, 'tenants': 3}
+
+        #ai-gen-doc
         """
         domains_and_tenants_dict = {
             "total_entities": self.dashboard_response.get('solutionSummary', {}).get('slaSummary', {}).get(
@@ -179,18 +255,35 @@ class AdDashboard(object):
         return domains_and_tenants_dict
 
     @property
-    def domains_and_tenants(self):
-        """
+    def domains_and_tenants(self) -> dict:
+        """Get the number of domain controllers and tenants from the Dashboard API and Apps Listing API.
+
         Returns:
-            domains_and_tenants_dict    --  Number of domain controllers and tenants from Dashboard API and Apps Listing API as dict
+            dict: A dictionary containing the count of domain controllers and tenants as retrieved from the Dashboard API and Apps Listing API.
+
+        Example:
+            >>> ad_dashboard = AdDashboard()
+            >>> result = ad_dashboard.domains_and_tenants
+            >>> print(result)
+            {'domain_controllers': 5, 'tenants': 3}
+
+        #ai-gen-doc
         """
         return self._get_domains_and_tenants()
 
-    def _get_backup_health(self):
-        """
-        Function to get backup health panel details
+    def _get_backup_health(self) -> dict:
+        """Retrieve the backup health panel details.
+
         Returns:
-            backup_health_dict    --  Backup health panel details as dict
+            dict: A dictionary containing details about the backup health panel.
+
+        Example:
+            >>> dashboard = AdDashboard()
+            >>> health_info = dashboard._get_backup_health()
+            >>> print(health_info)
+            >>> # Output will be a dictionary with backup health metrics
+
+        #ai-gen-doc
         """
         backup_health_dict = {
             "recently_backedup": self.dashboard_response.get('solutionSummary', {}).get('slaSummary', {}).get(
@@ -238,19 +331,36 @@ class AdDashboard(object):
         return backup_health_dict
 
     @property
-    def backup_health(self):
-        """
+    def backup_health(self) -> dict:
+        """Get the backup health panel details as a dictionary.
+
         Returns:
-            backup_health_dict    --  Backup health panel details as dict
+            dict: A dictionary containing details about the backup health panel.
+
+        Example:
+            >>> dashboard = AdDashboard()
+            >>> health_info = dashboard.backup_health
+            >>> print(health_info)
+            >>> # Output will be a dictionary with backup health details
+
+        #ai-gen-doc
         """
         return self._get_backup_health()
 
 
-    def _get_data_distribution(self):
-        """
-        Function to get data distribution panel details
+    def _get_data_distribution(self) -> dict:
+        """Retrieve the data distribution panel details.
+
         Returns:
-            data_distribution_dict    --  Data distribution details data as dict
+            dict: A dictionary containing data distribution details for the dashboard.
+
+        Example:
+            >>> dashboard = AdDashboard()
+            >>> data_distribution = dashboard._get_data_distribution()
+            >>> print(data_distribution)
+            >>> # Output will be a dictionary with data distribution information
+
+        #ai-gen-doc
         """
         data_distribution_dict = {"backup_size": round((((self.dashboard_response.get('agentSummary', [{}])[0].get('applicationSize', 0) +
                                                           self.dashboard_response.get('agentSummary', [{}])[1].get('applicationSize',0))
@@ -273,18 +383,35 @@ class AdDashboard(object):
         return data_distribution_dict
 
     @property
-    def data_distribution(self):
-        """
+    def data_distribution(self) -> dict:
+        """Get the data distribution details as a dictionary.
+
         Returns:
-            data_distribution_dict    --  Data distribution details data as dict
+            dict: A dictionary containing data distribution details.
+
+        Example:
+            >>> dashboard = AdDashboard()
+            >>> distribution = dashboard.data_distribution
+            >>> print(distribution)
+            {'region1': 120, 'region2': 340, 'region3': 210}
+
+        #ai-gen-doc
         """
         return self._get_data_distribution()
 
-    def _get_application_panel(self):
-        """
-        Function to get application panel details
+    def _get_application_panel(self) -> dict:
+        """Retrieve the application panel details for the dashboard.
+
         Returns:
-            application_panel_dict    --  Application panel details as dict
+            dict: A dictionary containing the details of the application panel.
+
+        Example:
+            >>> dashboard = AdDashboard()
+            >>> panel_details = dashboard._get_application_panel()
+            >>> print(panel_details)
+            >>> # Output will be a dictionary with application panel information
+
+        #ai-gen-doc
         """
         application_panel_dict = {
             "aad_tenant": self.dashboard_response.get('agentSummary', [{}])[1].get('slaSummary', {}).get('totalEntities'),
@@ -354,9 +481,18 @@ class AdDashboard(object):
         return application_panel_dict
 
     @property
-    def application_panel(self):
-        """
+    def application_panel(self) -> dict:
+        """Get the application panel details as a dictionary.
+
         Returns:
-            application_panel_dict    --  Application panel details as dict
+            dict: A dictionary containing details of the application panel.
+
+        Example:
+            >>> dashboard = AdDashboard()
+            >>> panel_details = dashboard.application_panel
+            >>> print(panel_details)
+            >>> # Output will be a dictionary with application panel information
+
+        #ai-gen-doc
         """
         return self._get_application_panel()

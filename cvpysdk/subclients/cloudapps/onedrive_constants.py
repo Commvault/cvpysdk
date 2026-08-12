@@ -22,6 +22,20 @@ OneDriveConstants  -   Maintains constants for OneDrive subclient.
 
 """
 class OneDriveConstants:
-    """Class to maintain all the OneDrive subclient related constants."""
+    """
+    Container for OneDrive subclient-related constants.
+
+    This class serves as a centralized location for storing and accessing
+    constant values used throughout OneDrive subclient operations. It is
+    designed to improve maintainability and consistency by grouping all
+    relevant constants in a single place.
+
+    Key Features:
+        - Centralized management of OneDrive subclient constants
+        - Improves code readability and maintainability
+        - Facilitates easy updates to constant values
+
+    #ai-gen-doc
+    """
     INDEX_APP_TYPE = 200118
     INSTANCE = 'OneDrive'

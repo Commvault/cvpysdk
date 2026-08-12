@@ -78,84 +78,89 @@ from ..exception import SDKException
 from ..job import Job
 from ..schedules import Schedules
 import socket
+from typing import List, Optional, Dict, Any, Union, Tuple
 
 class FSBackupset(Backupset):
-    """Derived class from Backupset Base class, representing a fs backupset,
-        and to perform operations on that backupset."""
+    """
+    Represents a file system (FS) backupset, derived from the Backupset base class.
+
+    This class provides comprehensive management and operational capabilities for file system backupsets,
+    including restore operations, version management, replication, and advanced configuration options.
+    It is designed to facilitate both in-place and out-of-place restores, support for BMR (Bare Metal Restore),
+    Azure-specific advanced restore options, and granular control over index server and pruning settings.
+
+    Key Features:
+        - In-place and out-of-place restore operations with advanced options
+        - Find and manage all backup versions
+        - Bare Metal Restore (BMR) support with administrative, virtual server, firewall, and AIX-specific options
+        - Azure advanced restore and configuration options
+        - Response file generation and login detail retrieval
+        - Index server management and pruning configuration (type, days, cycles)
+        - Replica copy creation and granular replica copy management
+        - Replication pair creation and deletion for FSBLR and granular scenarios
+        - Mount path GUID and browse volume GUID retrieval
+        - Recovery point management for clients and subclients
+
+    This class is intended for use in environments requiring robust file system backupset management,
+    advanced restore capabilities, and flexible replication and recovery options.
+
+    #ai-gen-doc
+    """
 
     def restore_in_place(
             self,
-            paths,
-            overwrite=True,
-            restore_data_and_acl=True,
-            copy_precedence=None,
-            from_time=None,
-            to_time=None,
-            fs_options=None,
-            restore_jobs=None,
-            advanced_options=None
-    ):
-        """Restores the files/folders specified in the input paths list to the same location.
+            paths: List[str],
+            overwrite: bool = True,
+            restore_data_and_acl: bool = True,
+            copy_precedence: Optional[int] = None,
+            from_time: Optional[str] = None,
+            to_time: Optional[str] = None,
+            fs_options: Optional[Dict[str, Any]] = None,
+            restore_jobs: Optional[List[Any]] = None,
+            advanced_options: Optional[Dict[str, Any]] = None
+        ):
+        """Restore files or folders in-place to their original locations.
 
-            Args:
-                paths                   (list)  --  list of full paths of files/folders to restore
+        This method restores the specified files or folders to their original locations on the client.
+        You can customize the restore operation using various options such as overwrite behavior,
+        restoring ACLs, copy precedence, time filters, advanced file system options, and job-specific settings.
 
-                overwrite               (bool)  --  unconditional overwrite files during restore
-                    default: True
+        Args:
+            paths: List of full file or folder paths to restore.
+            overwrite: If True, unconditionally overwrite existing files during restore. Default is True.
+            restore_data_and_acl: If True, restore both data and ACLs. Default is True.
+            copy_precedence: Optional copy precedence value for the storage policy copy.
+            from_time: Optional string specifying the start time for restore (format: 'YYYY-MM-DD HH:MM:SS').
+            to_time: Optional string specifying the end time for restore (format: 'YYYY-MM-DD HH:MM:SS').
+            fs_options: Optional dictionary of advanced file system restore options.
+                Supported keys include:
+                    - all_versions (bool): Restore all versions of the specified file.
+                    - versions (List[int]): List of version numbers to restore.
+                    - validate_only (bool): Validate data backed up for restore.
+                    - no_of_streams (int): Number of streams to use for restore.
+            restore_jobs: Optional list of job IDs for index-free restore.
+            advanced_options: Optional dictionary of advanced restore options.
+                Supported keys include:
+                    - job_description (str): Description for the restore job.
+                    - timezone (str): Timezone to use for restore (refer to TIMEZONES in constants.py).
 
-                restore_data_and_acl    (bool)  --  restore data and ACL files
-                    default: True
+        Returns:
+            Job: Instance of the Job class representing the restore job.
 
-                copy_precedence         (int)   --  copy precedence value of storage policy copy
-                    default: None
+        Raises:
+            SDKException: If 'paths' is not a list, if job initialization fails, or if the restore response is empty or unsuccessful.
 
-                from_time           (str)       --  time to retore the contents after
-                        format: YYYY-MM-DD HH:MM:SS
+        Example:
+            >>> backupset = FSBackupset(...)
+            >>> restore_job = backupset.restore_in_place(
+            ...     paths=['/data/file1.txt', '/data/folder2'],
+            ...     overwrite=True,
+            ...     fs_options={'all_versions': True, 'no_of_streams': 2},
+            ...     advanced_options={'job_description': 'Restore critical files', 'timezone': 'UTC'}
+            ... )
+            >>> print(f"Restore job started: {restore_job}")
 
-                    default: None
-
-                to_time           (str)         --  time to retore the contents before
-                        format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                fs_options      (dict)          -- dictionary that includes all advanced options
-
-                    options:
-
-                        all_versions        : if set to True restores all the versions of the
-                                                specified file
-
-                        versions            : list of version numbers to be backed up
-
-                        validate_only       : To validate data backed up for restore
-
-                        no_of_streams   (int)       -- Number of streams to be used for restore
-
-                restore_jobs    (list)          --  list of jobs to be restored if the job is index free restore
-
-                advanced_options    (dict)  -- Advanced restore options
-
-                    Options:
-
-                        job_description (str)   --  Restore job description
-
-                        timezone        (str)   --  Timezone to be used for restore
-
-                            **Note** make use of TIMEZONES dict in constants.py to pass timezone
-
-            Returns:
-                object - instance of the Job class for this restore job
-
-            Raises:
-                SDKException:
-                    if paths is not a list
-
-                    if failed to initialize job
-
-                    if response is empty
-
-                    if response is not success
+        #ai-gen-doc
         """
         self._instance_object._restore_association = self._backupset_association
 
@@ -178,99 +183,71 @@ class FSBackupset(Backupset):
 
     def restore_out_of_place(
             self,
-            client,
-            destination_path,
-            paths,
-            overwrite=True,
-            restore_data_and_acl=True,
-            copy_precedence=None,
-            from_time=None,
-            to_time=None,
-            fs_options=None,
-            restore_jobs=None,
-            advanced_options=None
-    ):
-        """Restores the files/folders specified in the input paths list to the input client,
-            at the specified destionation location.
+            client: Union[str, 'Client'],
+            destination_path: str,
+            paths: List[str],
+            overwrite: bool = True,
+            restore_data_and_acl: bool = True,
+            copy_precedence: Optional[int] = None,
+            from_time: Optional[str] = None,
+            to_time: Optional[str] = None,
+            fs_options: Optional[Dict[str, Any]] = None,
+            restore_jobs: Optional[List[Any]] = None,
+            advanced_options: Optional[Dict[str, Any]] = None
+        ):
+        """Restore files or folders out-of-place to a specified client and destination path.
 
-            Args:
-                client                (str/object) --  either the name of the client or
-                                                           the instance of the Client
+        This method restores the files and folders listed in `paths` to the given `client` at the
+        specified `destination_path`. Advanced restore options can be provided via `fs_options` and
+        `advanced_options`.
 
-                destination_path      (str)        --  full path of the restore location on client
+        Args:
+            client: Either the name of the client as a string or an instance of the Client class.
+            destination_path: Full path to the restore location on the target client.
+            paths: List of full file or folder paths to restore.
+            overwrite: If True, files at the destination will be overwritten unconditionally.
+            restore_data_and_acl: If True, both data and ACL files will be restored.
+            copy_precedence: Optional copy precedence value for the storage policy copy.
+            from_time: Optional start time for restore (format: 'YYYY-MM-DD HH:MM:SS').
+            to_time: Optional end time for restore (format: 'YYYY-MM-DD HH:MM:SS').
+            fs_options: Optional dictionary of advanced file system restore options.
+                Example options:
+                    - preserve_level: Level of folder structure to preserve.
+                    - proxy_client: Proxy client to use for restore.
+                    - impersonate_user: User to impersonate during restore.
+                    - impersonate_password: Base64-encoded password for impersonation.
+                    - all_versions: If True, restores all versions of specified files.
+                    - versions: List of version numbers to restore.
+                    - validate_only: If True, validates data for restore without actual restore.
+                    - no_of_streams: Number of streams to use for restore.
+            restore_jobs: Optional list of job IDs for index-free restore.
+            advanced_options: Optional dictionary of advanced restore options.
+                Example options:
+                    - job_description: Description for the restore job.
+                    - timezone: Timezone to use for restore (refer to TIMEZONES dict in constants.py).
 
-                paths                 (list)       --  list of full paths of
-                                                           files/folders to restore
+        Returns:
+            Instance of the Job class representing the restore job.
 
-                overwrite             (bool)       --  unconditional overwrite files during restore
-                    default: True
+        Raises:
+            SDKException: If input parameters are invalid or restore initialization fails.
 
-                restore_data_and_acl  (bool)       --  restore data and ACL files
-                    default: True
+        Example:
+            >>> # Restore files to a different client and location
+            >>> paths_to_restore = ['/data/file1.txt', '/data/folder2']
+            >>> fs_options = {'preserve_level': 2, 'all_versions': True}
+            >>> advanced_options = {'job_description': 'Restore for audit', 'timezone': 'UTC'}
+            >>> job = backupset.restore_out_of_place(
+            ...     client='TargetClient01',
+            ...     destination_path='/restore/location',
+            ...     paths=paths_to_restore,
+            ...     overwrite=True,
+            ...     fs_options=fs_options,
+            ...     advanced_options=advanced_options
+            ... )
+            >>> print(f"Restore job started: {job}")
 
-                copy_precedence         (int)      --  copy precedence value of storage policy copy
-                    default: None
-
-                from_time           (str)          --  time to retore the contents after
-                        format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                to_time           (str)            --  time to retore the contents before
-                        format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                fs_options      (dict)             -- dictionary that includes all advanced options
-
-                    options:
-
-                        preserve_level      : preserve level option to set in restore
-
-                        proxy_client        : proxy that needed to be used for restore
-
-                        impersonate_user    : Impersonate user options for restore
-
-                        impersonate_password: Impersonate password option for restore
-                                                in base64 encoded form
-
-                        all_versions        : if set to True restores all the versions of the
-                                                specified file
-
-                        versions            : list of version numbers to be backed up
-
-                        validate_only       : To validate data backed up for restore
-
-                        no_of_streams   (int)       -- Number of streams to be used for restore
-
-                restore_jobs    (list)          --  list of jobs to be restored if the job is index free restore
-
-                advanced_options    (dict)  -- Advanced restore options
-
-                    Options:
-
-                        job_description (str)   --  Restore job description
-
-                        timezone        (str)   --  Timezone to be used for restore
-
-                            **Note** make use of TIMEZONES dict in constants.py to pass timezone
-
-            Returns:
-                object - instance of the Job class for this restore job
-
-            Raises:
-                SDKException:
-                    if client is not a string or Client instance
-
-                    if destination_path is not a string
-
-                    if paths is not a list
-
-                    if failed to initialize job
-
-                    if response is empty
-
-                    if response is not success
+        #ai-gen-doc
         """
         self._instance_object._restore_association = self._backupset_association
 
@@ -299,35 +276,45 @@ class FSBackupset(Backupset):
             advanced_options=advanced_options
         )
 
-    def find_all_versions(self, *args, **kwargs):
-        """Searches the content of a Subclient, and returns all versions available for the content.
+    def find_all_versions(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        """Search the content of a Subclient and retrieve all available versions for the specified content.
 
-            Args:
-                Dictionary of browse options:
-                    Example:
-                        find_all_versions({
-                            'path': 'c:\\hello',
-                            'show_deleted': True,
-                            'from_time': '2014-04-20 12:00:00',
-                            'to_time': '2016-04-31 12:00:00'
-                        })
+        This method allows you to search for all versions of a file or folder within a subclient. 
+        You can specify browse options either as a single dictionary argument or as keyword arguments.
+        Supported options include 'path', 'show_deleted', 'from_time', 'to_time', and others as defined in self._default_browse_options.
 
-                    (OR)
-
-                Keyword argument of browse options:
-                    Example:
-                        find_all_versions(
-                            path='c:\\hello.txt',
-                            show_deleted=True,
-                            to_time='2016-04-31 12:00:00'
-                        )
-
-                Refer self._default_browse_options for all the supported options
+        Args:
+            *args: Optional positional argument containing a dictionary of browse options.
+            **kwargs: Optional keyword arguments specifying browse options directly.
+                Common options:
+                    - path (str): Path to the file or folder to search.
+                    - show_deleted (bool): Whether to include deleted items.
+                    - from_time (str): Start time for version search (format: 'YYYY-MM-DD HH:MM:SS').
+                    - to_time (str): End time for version search (format: 'YYYY-MM-DD HH:MM:SS').
+                Refer to self._default_browse_options for all supported options.
 
         Returns:
-            dict    -   dictionary of the specified file with list of all the file versions and
-                            additional metadata retrieved from browse
+            Dictionary containing the specified file or folder with a list of all available versions and additional metadata.
 
+        Example:
+            >>> # Using a dictionary of browse options
+            >>> versions = backupset.find_all_versions({
+            ...     'path': 'c:\\hello',
+            ...     'show_deleted': True,
+            ...     'from_time': '2014-04-20 12:00:00',
+            ...     'to_time': '2016-04-31 12:00:00'
+            ... })
+            >>> print(versions)
+            >>> 
+            >>> # Using keyword arguments
+            >>> versions = backupset.find_all_versions(
+            ...     path='c:\\hello.txt',
+            ...     show_deleted=True,
+            ...     to_time='2016-04-31 12:00:00'
+            ... )
+            >>> print(versions)
+
+        #ai-gen-doc
         """
         if args and isinstance(args[0], dict):
             options = args[0]
@@ -338,16 +325,29 @@ class FSBackupset(Backupset):
 
         return self._do_browse(options)
 
-    def _restore_bmr_admin_json(self, ipconfig, hwconfig):
-        """"setter for the BMR options required  for 1-touch restore
+    def _restore_bmr_admin_json(self, ipconfig: Dict[str, Any], hwconfig: Dict[str, Any]) -> Dict[str, Any]:
+        """Generate the JSON structure required for BMR (Bare Metal Restore) 1-Touch restore.
+
+        This method constructs and returns the JSON payload containing BMR options, 
+        using the provided IP configuration and hardware configuration details. 
+        The resulting JSON can be used for 1-Touch restore operations.
 
         Args:
-            ipconfig    (dict)  -- The IP Configuration details obtained form response file.
+            ipconfig: Dictionary containing IP configuration details obtained from the response file.
+            hwconfig: Dictionary containing hardware configuration details obtained from the response file.
 
-            hwconfig    (dict)  -- The hardware configuration details obtained form response file.
+        Returns:
+            Dictionary representing the JSON structure required for BMR restore.
 
-        Returns :
-                    returns the JSON required for BMR
+        Example:
+            >>> ipconfig = {'ip': '192.168.1.100', 'subnet': '255.255.255.0'}
+            >>> hwconfig = {'cpu': 'Intel Xeon', 'ram': '16GB'}
+            >>> fs_backupset = FSBackupset(...)
+            >>> bmr_json = fs_backupset._restore_bmr_admin_json(ipconfig, hwconfig)
+            >>> print(bmr_json)
+            # The returned dictionary can be used for BMR 1-Touch restore operations
+
+        #ai-gen-doc
         """
         bmr_restore_vmprov_json = {
             "vmProvisioningOption": {
@@ -389,7 +389,7 @@ class FSBackupset(Backupset):
                                         {
                                             "platformCfgBlob": "", "win_passPhrase": "",
                                             "win_licenceKey": "", "type": 1,
-                                            "goToMiniSetUp": 0, "Win_DomainCreds":
+                                            "goToMiniSetUp": 1, "Win_DomainCreds":
                                             {
                                                 "isClientInDomain": True, "DomainCreds":
                                                 {
@@ -467,13 +467,19 @@ class FSBackupset(Backupset):
         }
         return bmr_restore_vmprov_json
 
-    def _restore_bmr_virtualserveropts_json(self):
-        """Get the JSON for virtual server options
+    def _restore_bmr_virtualserveropts_json(self) -> Dict[str, Any]:
+        """Generate the JSON structure for virtual server options used in Virtualize Me restores.
 
+        Returns:
+            Dictionary containing the virtual server options JSON required for BMR (Bare Metal Restore) operations.
 
-        Returns :
-                    The virtualserver options JSON required for Virtualize Me restores
+        Example:
+            >>> fs_backupset = FSBackupset(...)
+            >>> options_json = fs_backupset._restore_bmr_virtualserveropts_json()
+            >>> print(options_json)
+            >>> # The returned dictionary can be used to configure Virtualize Me restore requests
 
+        #ai-gen-doc
         """
         bmr_restore_json = {
             "diskLevelVMRestoreOption": {
@@ -484,19 +490,24 @@ class FSBackupset(Backupset):
         }
         return bmr_restore_json
 
-    def _restore_bmr_firewallopts_json(self, hostname, direction, port):
-        """Get the JSON for firewall configuration options
+    def _restore_bmr_firewallopts_json(self, hostname: str, direction: int, port: int) -> Dict[str, Any]:
+        """Generate the JSON structure for BMR firewall configuration options.
 
         Args:
-            hostname    (String)   -- The hostname of the machine.
+            hostname: The hostname of the machine for which firewall options are being configured.
+            direction: The direction of the connection (as an integer).
+            port: The port number used for communication.
 
-            direction   (Integer)  -- The direction of the connection.
+        Returns:
+            Dictionary containing the firewall configuration options required for Virtualize Me restores.
 
-            port        (Integer)  -- The port at which the machine will communicate.
+        Example:
+            >>> fs_backupset = FSBackupset(...)
+            >>> firewall_json = fs_backupset._restore_bmr_firewallopts_json('server01', 1, 8080)
+            >>> print(firewall_json)
+            {'direction': 1, 'connectionInfoList': [{'hostname': 'server01', 'port': 8080}]}
 
-        Returns :
-                    The firewall configuration options JSON required for Virtualize Me restores
-
+        #ai-gen-doc
         """
         bmr_firewall_restore_json = {
             "direction": direction,
@@ -509,13 +520,22 @@ class FSBackupset(Backupset):
         }
         return bmr_firewall_restore_json
 
-    def _azure_advancedrestoreopts_json(self):
-        """Get the JSON for Advanced restore options for azure
+    def _azure_advancedrestoreopts_json(self) -> List[Dict[str, Any]]:
+        """Generate the JSON structure for advanced Azure restore options.
 
+        This method returns the default advanced restore options required for "Virtualize Me" restores to Azure.
+        The returned JSON includes VM size and security group configuration.
 
-        Returns :
-                    The Advanced restore options JSON required for Virtualize Me to Azure restores
+        Returns:
+            List of dictionaries representing the advanced restore options for Azure restores.
 
+        Example:
+            >>> fs_backupset = FSBackupset(...)
+            >>> azure_opts = fs_backupset._azure_advancedrestoreopts_json()
+            >>> print(azure_opts)
+            [{'vmSize': '', 'securityGroups': [{'groupName': '--Auto Select--', 'groupId': ''}]}]
+
+        #ai-gen-doc
         """
         azure_adv_rest_opts_json = [
             {
@@ -530,13 +550,23 @@ class FSBackupset(Backupset):
         ]
         return azure_adv_rest_opts_json
 
-    def _azure_advancedopts_json(self):
-        """Get the JSON for Advanced restore options for azure
+    def _azure_advancedopts_json(self) -> Dict[str, Any]:
+        """Generate the advanced restore options JSON for Azure restores.
 
+        This method constructs and returns the JSON structure required for 
+        advanced restore operations when using the "Virtualize Me" feature to restore to Azure.
 
-        Returns :
-                    The Advanced restore options JSON required for Virtualize Me to Azure restores
+        Returns:
+            Dictionary containing the advanced restore options for Azure, 
+            including network card and subnet configuration.
 
+        Example:
+            >>> fs_backupset = FSBackupset(...)
+            >>> azure_options = fs_backupset._azure_advancedopts_json()
+            >>> print(azure_options)
+            >>> # Use the returned JSON for Virtualize Me to Azure restore operations
+
+        #ai-gen-doc
         """
         azure_adv_opts_json = {
             "networkCards": [
@@ -555,12 +585,28 @@ class FSBackupset(Backupset):
         return azure_adv_opts_json
 
 
-    def _get_responsefile(self):
-        """Get the response file for the backupset
+    def _get_responsefile(self) -> Tuple[Dict[str, Any], Dict[str, Any], str, str, str]:
+        """Retrieve the response file details for the backupset.
 
-        Returns :
-            (dict, dict) - The hardware and IP configuration details from the response file obtained
+        This method obtains hardware configuration, IP configuration, and credential details 
+        from the response file associated with the backupset.
 
+        Returns:
+            A tuple containing:
+                - hwconfig (dict): Hardware configuration details.
+                - ipconfig (dict): IP configuration details for the client.
+                - cs_user (str): User name for CommServe credentials.
+                - cs_pwd (str): Password for CommServe credentials.
+                - cs_token (str): Token extracted from the CommServe password.
+
+        Example:
+            >>> hwconfig, ipconfig, cs_user, cs_pwd, cs_token = backupset._get_responsefile()
+            >>> print("Hardware config:", hwconfig)
+            >>> print("IP config:", ipconfig)
+            >>> print("CommServe user:", cs_user)
+            >>> print("CommServe password:", cs_pwd)
+            >>> print("CommServe token:", cs_token)
+        #ai-gen-doc
         """
         request = {
             "CVGui_GetResponseFilesReq": {
@@ -592,52 +638,79 @@ class FSBackupset(Backupset):
         cs_token = response['responseFile']['csinfo']['creds']['password'][5:]
         return hwconfig, ipconfig,cs_user,cs_pwd,cs_token
 
-    def run_bmr_restore(self, **restore_options):
-        """
-        Calling the create task API with the final restore JSON
+    def run_bmr_restore(self, **restore_options: Any):
+        """Run a Bare Metal Recovery (BMR) restore task using the provided options.
 
-        Args :
-                IsoPath                 (String)    : The location of ISO in the datastore
+        This method initiates a BMR restore by constructing and submitting a restore task
+        with the specified parameters. The restore can be performed for VMware, Hyper-V, Azure,
+        or Azure Stack environments, depending on the options provided.
 
-                CommServIP              (String)    : The IP of the CS
+        Common restore options include:
+            IsoPath: The location of the ISO file in the datastore.
+            CommServIP: The IP address of the CommServe server.
+            CommServHostname: The hostname of the CommServe server.
+            CommServUsername: The username for the Commcell.
+            CommServPassword: The password for the Commcell.
+            Datastore: The ESX datastore where the VM is provisioned.
+            VcenterServerName: The vCenter server to use.
+            ClientHostname: The hostname of the client being virtualized.
+            VmName: The name to assign to the provisioned VM.
+            VirtualizationClient: The VMware virtualization client name.
+            EsxServer: The ESX server name.
+            NetworkLabel: The network label to assign to the VM.
+            HyperVHost: The Hyper-V host name.
+            GuestUser: The username for the guest OS.
+            GuestPassword: The password for the guest OS.
+            CloneClientName: The name of the clone client.
+            OsType: The operating system type (e.g., 'UNIX').
+            UseDhcp: Whether to use DHCP for network configuration.
+            FirewallClientGroup: The firewall client group name.
+            FirewallHostname: The firewall hostname.
+            FirewallDirection: The firewall direction.
+            FirewallPort: The firewall port.
+            CreatePublicIP: Whether to create a public IP (Azure only).
+            ResourceGroup: The Azure resource group name.
+            StorageAccount: The Azure storage account name.
+            ManagementURL: The Azure Stack management URL.
 
-                CommServHostname        (String)    : The hostname of he CS
+        Args:
+            **restore_options: Arbitrary keyword arguments specifying restore parameters.
+                See above for commonly used options.
 
-                CommServUsername        (String)    : The username for the Comcell
+        Returns:
+            The task object representing the submitted restore job.
 
-                CommServPassword        (String)    : The password for the comcell
+        Example:
+            >>> backupset = FSBackupset(...)
+            >>> task = backupset.run_bmr_restore(
+            ...     IsoPath="/datastore/iso/bmr.iso",
+            ...     CommServIP="192.168.1.10",
+            ...     CommServHostname="commserv01",
+            ...     CommServUsername="admin",
+            ...     CommServPassword="password",
+            ...     Datastore="VM_Datastore",
+            ...     VcenterServerName="vcenter01",
+            ...     ClientHostname="client01",
+            ...     VmName="RestoredVM",
+            ...     VirtualizationClient="vmware_client",
+            ...     EsxServer="esx01",
+            ...     NetworkLabel="VM Network",
+            ...     HyperVHost="hyperv01",
+            ...     GuestUser="guestuser",
+            ...     GuestPassword="guestpass",
+            ...     CloneClientName="clone01",
+            ...     OsType="UNIX",
+            ...     UseDhcp=True
+            ... )
+            >>> print(f"Restore task submitted: {task}")
 
-                Datastore               (String)    : The ESX store in which the VM is provisioned
-
-                VcenterServerName       (String)    : The Vcenter to be used
-
-                ClientHostName          (String)    : The hostname of the client being virtualized.
-
-                VmName                  (String)    : The name with which the VM is provisioned.
-
-                VirtualizationClient    (String)    : The vmware virualization client
-
-                EsxServer               (String)    : The ESX server name
-
-               NetworkLabel             (String)    : The network label to be assigned to the VM.
-
-               HyperVHost               (String)    : The Hyper-V host
-
-               GuestUser                (String)    : The Username of the guest OS
-
-               GuestPassword            (String)    : The Password of the guest OS
-
-               CloneClientName          (String)    : The clone client name
-
-        Returns :
-                    returns the task object
-
+        #ai-gen-doc
         """
         client_name = self._agent_object._client_object.client_name
 
         self._instance_object._restore_association = self._backupset_association
 
-        hwconfig, ipconfig, cs_username, cs_password = self._get_responsefile()
+        hwconfig, ipconfig, cs_username, cs_password, cs_token = self._get_responsefile()
         response_json = self._restore_json(paths=[''])
 
         restore_json_system_state = self._restore_bmr_admin_json(ipconfig, hwconfig)
@@ -659,6 +732,8 @@ class FSBackupset(Backupset):
         instances_list = virtual_agent_object.instances._instances
         instance_id = int(list(instances_list.values())[0])
         instance_name = list(instances_list.keys())[0]
+
+        restore_json_system_state["vmProvisioningOption"]["virtualMachineOption"][0]["oneTouchResponse"]["clients"][0]["backupSet"] = response_json["taskInfo"]["associations"][0]
 
         response_json['taskInfo']['subTasks'][0]['options'][
             'adminOpts'] = restore_json_system_state
@@ -838,12 +913,27 @@ class FSBackupset(Backupset):
 
         return self._process_restore_response(response_json)
 
-    def _get_cs_login_details(self):
-        """Get the cs login information.
+    def _get_cs_login_details(self) -> Tuple[str, str, str, str, str, str]:
+        """Retrieve CommServe login details for the current backupset.
 
-        Returns :
-            (dict, dict) - CS login details
+        This method gathers essential CommServe authentication and connection information,
+        including CommServe name, hostname, IP address, username, password, and token.
 
+        Returns:
+            Tuple containing:
+                - CommServe name (str)
+                - CommServe hostname (str)
+                - CommServe IP address (str)
+                - CommServe username (str)
+                - CommServe password/token (str)
+                - CommServe authentication token (str)
+
+        Example:
+            >>> cs_details = backupset._get_cs_login_details()
+            >>> cs_name, cs_hostname, cs_ip, cs_user, cs_pwd, cs_token = cs_details
+            >>> print(f"CommServe Hostname: {cs_hostname}, User: {cs_user}")
+
+        #ai-gen-doc
         """
         request = {
             "CVGui_GetResponseFilesReq": {
@@ -876,12 +966,25 @@ class FSBackupset(Backupset):
 
         return cs_name, cs_hostname, cs_ip_address, cs_user, cs_pwd, cs_token
 
-    def _restore_aix_1touch_admin_json(self):
-        """"setter for the BMR options required  for 1-touch restore
+    def _restore_aix_1touch_admin_json(self) -> Dict[str, Any]:
+        """Generate the JSON configuration required for AIX 1-Touch BMR restore.
 
-                Returns :
-                            returns the JSON required for BMR
-                """
+        This method constructs and returns a dictionary containing all necessary 
+        options and parameters for performing a 1-Touch restore on AIX systems. 
+        The returned JSON includes settings for volume groups, client reboot, 
+        network configuration, hardware configuration, and other BMR-specific options.
+
+        Returns:
+            Dictionary containing the BMR options and configuration required for AIX 1-Touch restore.
+
+        Example:
+            >>> fs_backupset = FSBackupset(...)
+            >>> bmr_json = fs_backupset._restore_aix_1touch_admin_json()
+            >>> print(bmr_json)
+            >>> # Use the returned JSON for initiating a 1-Touch restore operation
+
+        #ai-gen-doc
+        """
 
         bmr_restore_aix1touch_json = {
 
@@ -1002,39 +1105,57 @@ class FSBackupset(Backupset):
         }
         return bmr_restore_aix1touch_json
 
-    def run_bmr_aix_restore(self, **restore_options):
+    def run_bmr_aix_restore(self, **restore_options: Any):
+        """Run a Bare Metal Recovery (BMR) restore for an AIX system using provided options.
+
+        This method initiates a BMR restore operation for an AIX client by constructing the required restore JSON 
+        and calling the create task API. The restore options should be provided as keyword arguments to customize 
+        the restore process, such as network configuration, clone settings, and Commcell credentials.
+
+        Common restore options include:
+            - clone_client_name (str): Name of the clone machine.
+            - clone_client_hostname (str): Hostname of the clone machine.
+            - dns_suffix (str): DNS suffix for the client.
+            - dns_ip (int): IP address of the DNS server.
+            - clone_ip_address (int): IP address for the clone machine.
+            - clone_machine_netmask (int): Netmask for the clone machine.
+            - clone_machine_gateway (int): Gateway IP for the clone machine.
+            - automaticClientReboot (bool): Whether to automatically reboot the client after restore.
+            - clone (bool): Whether clone is enabled.
+            - CS_Username (str): Username for the Commcell.
+            - CS_Password (str): Password for the Commcell.
+            - onetouch_server (str): Name of the OneTouch server.
+            - onetouch_server_directory (str): Directory path on the OneTouch server.
+            - restoreFromBackupBeforeDate (bool): Restore from backup before a specific date.
+            - onetouch_backup_jobid (int): Job ID of the backup to restore from.
+            - run_FS_restore (bool): Whether to skip restore if files exist.
+
+        Returns:
+            The task object representing the restore operation.
+
+        Example:
+            >>> backupset = FSBackupset(...)
+            >>> task = backupset.run_bmr_aix_restore(
+            ...     clone_client_name="AIXClone01",
+            ...     clone_client_hostname="aixclone01.example.com",
+            ...     dns_suffix="example.com",
+            ...     dns_ip=192168110,
+            ...     clone_ip_address=192168120,
+            ...     clone_machine_netmask=2552552550,
+            ...     clone_machine_gateway=19216811,
+            ...     automaticClientReboot=True,
+            ...     clone=True,
+            ...     CS_Username="admin",
+            ...     CS_Password="password",
+            ...     onetouch_server="OneTouchServer01",
+            ...     onetouch_server_directory="/restore/dir",
+            ...     restoreFromBackupBeforeDate=True,
+            ...     onetouch_backup_jobid=123456
+            ... )
+            >>> print(f"Restore task created: {task}")
+
+        #ai-gen-doc
         """
-                Calling the create task API with the final restore JSON
-
-                Args :
-
-
-                        Clone Clinet Name  (String)     : Clone machine name
-
-                        Clone Hostname  (String)        :Clone machine host name
-
-                        DNS Suffix      (String)        :Dns suffix name
-
-                        DNS IP  (Integer)                :Ip of Dns Address
-
-                        Clone IP    (Integer)            :Clone Machine IP
-
-                        Clone Netmask (Integer)          :Clone Machine NetMask
-
-                        Clone Gateway (Integer)          :Clone Machine Gateway
-
-                        Auto Reboot   (Boolean)          :Client machine Auto reboot(True or False)
-
-                        Clone          (Boolean)         :Is Clone enabled(True or False)
-
-                        CS_Username   (String)    : The username for the Comcell
-
-                        CS_Password   (String)     : The password for the comcell
-
-                Returns :
-                            returns the task object
-
-                """
         self._instance_object._restore_association = self._backupset_association
         request_json = self._restore_json(paths=[''])
         restore_json_aix_system_state = self._restore_aix_1touch_admin_json()
@@ -1137,8 +1258,22 @@ class FSBackupset(Backupset):
         return self._process_restore_response(request_json)
 
     @property
-    def index_server(self):
-        """Returns the index server client set for the backupset"""
+    def index_server(self) -> Optional['Client']:
+        """Get the index server client configured for this backupset.
+
+        Returns:
+            Client instance representing the index server if set, otherwise None.
+
+        Example:
+            >>> backupset = FSBackupset(commcell_object, ...)
+            >>> index_server_client = backupset.index_server  # Use dot notation for property
+            >>> if index_server_client:
+            ...     print(f"Index server client name: {index_server_client.client_name}")
+            ... else:
+            ...     print("No index server client is configured for this backupset.")
+
+        #ai-gen-doc
+        """
 
         client_name = None
 
@@ -1152,18 +1287,26 @@ class FSBackupset(Backupset):
         return None
 
     @index_server.setter
-    def index_server(self, value):
-        """Sets index server client for the backupset. Property value should be a client object
+    def index_server(self, value: 'Client') -> None:
+        """Set the index server client for the backupset.
 
-            Args:
-                value   (object)    --  The cvpysdk client object of the index server client
+        This property setter assigns a Client object as the index server for the backupset.
+        The provided client must be a qualified index server client.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        Args:
+            value: Client object representing the index server to assign.
 
-                    if response is not success
+        Raises:
+            SDKException: If the provided client is not a valid Client object,
+                or if the client is not a qualified index server.
 
+        Example:
+            >>> index_server_client = Client(...)
+            >>> backupset = FSBackupset(...)
+            >>> backupset.index_server = index_server_client  # Use assignment for property setters
+            >>> # The index server for the backupset is now set
+
+        #ai-gen-doc
         """
 
         if not isinstance(value, Client):
@@ -1203,32 +1346,84 @@ class FSBackupset(Backupset):
         self._process_update_reponse(request_json)
 
     @property
-    def index_pruning_type(self):
-        """Returns index pruning type for the backupset"""
+    def index_pruning_type(self) -> str:
+        """Get the index pruning type configured for this backupset.
+
+        Returns:
+            The index pruning type as a string.
+
+        Example:
+            >>> backupset = FSBackupset(...)
+            >>> pruning_type = backupset.index_pruning_type  # Use dot notation for properties
+            >>> print(f"Index pruning type: {pruning_type}")
+
+        #ai-gen-doc
+        """
         return self._properties["indexSettings"]["indexPruningType"]
 
     @property
-    def index_pruning_days_retention(self):
-        """Returns number of days to be maintained in index by index pruning for the backupset"""
+    def index_pruning_days_retention(self) -> int:
+        """Get the number of days for which index data is retained by index pruning for this backupset.
+
+        Returns:
+            The number of days index data is maintained before pruning, as an integer.
+
+        Example:
+            >>> backupset = FSBackupset(...)
+            >>> retention_days = backupset.index_pruning_days_retention  # Use dot notation for property
+            >>> print(f"Index pruning retention: {retention_days} days")
+            >>> # This value determines how long index data is kept before being pruned
+
+        #ai-gen-doc
+        """
 
         return self._properties["indexSettings"]["indexRetDays"]
 
     @property
-    def index_pruning_cycles_retention(self):
-        """Returns number of cycles to be maintained in index by index pruning for the backupset"""
+    def index_pruning_cycles_retention(self) -> int:
+        """Get the number of index pruning cycles retained for this backupset.
+
+        This property returns the configured number of cycles that are maintained in the index 
+        by index pruning for the backupset. Index pruning helps manage storage and performance 
+        by retaining only a specified number of index cycles.
+
+        Returns:
+            The number of index pruning cycles retained as an integer.
+
+        Example:
+            >>> backupset = FSBackupset(...)
+            >>> cycles_retained = backupset.index_pruning_cycles_retention  # Use dot notation for property
+            >>> print(f"Index pruning cycles retained: {cycles_retained}")
+            >>> # This value indicates how many index cycles are kept for the backupset
+
+        #ai-gen-doc
+        """
 
         return self._properties["indexSettings"]["indexRetCycles"]
 
     @index_pruning_type.setter
-    def index_pruning_type(self, value):
-        """Updates the pruning type for the backupset when backupset level indexing is enabled.
-        Can be days based pruning or cycles based pruning.
-        Days based pruning will set index retention on the basis of days,
-        cycles based pruning will set index retention on basis of cycles.
+    def index_pruning_type(self, value: str) -> None:
+        """Set the index pruning type for the backupset when backupset-level indexing is enabled.
+
+        This property setter allows you to configure index retention based on either days, cycles, or infinite retention.
+        Supported values are:
+            - "days_based": Sets index retention based on the number of days.
+            - "cycles_based": Sets index retention based on the number of cycles.
+            - "infinite": Disables pruning, retaining indexes indefinitely.
 
         Args:
-            value    (str)  --  "days_based" or "cycles_based"
+            value: Pruning type as a string. Must be one of "days_based", "cycles_based", or "infinite".
 
+        Raises:
+            SDKException: If an invalid pruning type is provided.
+
+        Example:
+            >>> backupset = FSBackupset(...)
+            >>> backupset.index_pruning_type = "days_based"    # Set retention by days
+            >>> backupset.index_pruning_type = "cycles_based"  # Set retention by cycles
+            >>> backupset.index_pruning_type = "infinite"      # Disable pruning
+
+        #ai-gen-doc
         """
 
         if value.lower() == "cycles_based":
@@ -1259,8 +1454,25 @@ class FSBackupset(Backupset):
         self._process_update_reponse(request_json)
 
     @index_pruning_days_retention.setter
-    def index_pruning_days_retention(self, value):
-        """Sets index pruning days value at backupset level for days-based index pruning"""
+    def index_pruning_days_retention(self, value: int) -> None:
+        """Set the index pruning retention period in days for the backupset.
+
+        This property setter configures the number of days to retain index data at the backupset level,
+        enabling days-based index pruning. The value must be an integer greater than or equal to 2.
+
+        Args:
+            value: Number of days to retain index data. Must be at least 2.
+
+        Raises:
+            SDKException: If the provided value is less than 2 or not an integer.
+
+        Example:
+            >>> backupset = FSBackupset(...)
+            >>> backupset.index_pruning_days_retention = 7  # Set retention to 7 days
+            >>> # Index pruning will now retain data for 7 days
+
+        #ai-gen-doc
+        """
 
         if isinstance(value, int) and value >= 2:
             request_json = {
@@ -1280,8 +1492,24 @@ class FSBackupset(Backupset):
             raise SDKException('Backupset', '105')
 
     @index_pruning_cycles_retention.setter
-    def index_pruning_cycles_retention(self, value):
-        """Sets index pruning cycles value at backupset level for cycles-based index pruning"""
+    def index_pruning_cycles_retention(self, value: int) -> None:
+        """Set the index pruning cycles retention value for cycles-based index pruning at the backupset level.
+
+        The value must be an integer greater than or equal to 2. This property controls how many index cycles are retained for the backupset.
+
+        Args:
+            value: Number of index cycles to retain (must be >= 2).
+
+        Raises:
+            SDKException: If the value is not an integer or is less than 2.
+
+        Example:
+            >>> backupset = FSBackupset(...)
+            >>> backupset.index_pruning_cycles_retention = 5  # Sets retention to 5 cycles
+            >>> # If value is less than 2, an SDKException will be raised
+
+        #ai-gen-doc
+        """
 
         if isinstance(value, int) and value >= 2:
             request_json = {
@@ -1301,27 +1529,51 @@ class FSBackupset(Backupset):
             raise SDKException('Backupset', '105')
 
 
-    def create_replica_copy(self, srcclientid, destclientid, scid, blrid,
-                            srcguid, dstguid, **replication_options):
+    def create_replica_copy(
+        self,
+        srcclientid: int,
+        destclientid: int,
+        scid: int,
+        blrid: int,
+        srcguid: str,
+        dstguid: str,
+        **replication_options: Any
+    ):
+        """Create a live block-level replication replica copy.
 
-        """"setter for live  blklvl Replication replica copy...
+        This method initiates a replica copy operation between a source and destination client
+        using block-level replication. Additional replication options can be provided as keyword arguments.
 
         Args:
-            srcclientid   (int)  --  Source client id.
+            srcclientid: Source client ID as an integer.
+            destclientid: Destination client ID as an integer.
+            scid: Replication subclient ID as an integer.
+            blrid: Block-level replication pair ID as an integer.
+            srcguid: Browse GUID of the source volume as a string.
+            dstguid: Browse GUID of the destination volume as a string.
+            **replication_options: Additional replication options such as 'srcvol' (source volume path)
+                and 'RestorePath' (destination restore path).
 
-            destclientid    (dict)  -- Destintion client id .
+        Returns:
+            Job or Schedules object representing the initiated replica copy operation.
 
-            scid           (int) --  Replication Subclient id
+        Raises:
+            SDKException: If the replica copy operation fails or returns an error response.
 
-            blrid           (int) -- Blr pair id
-
-            srcguid         (str) -- Browse guid of source
-
-            dstguid          (str) -- Browse guid of destination volume
-
-            **replication_options (dict) -- object instance
-
-
+        Example:
+            >>> fs_backupset = FSBackupset(...)
+            >>> job = fs_backupset.create_replica_copy(
+            ...     srcclientid=101,
+            ...     destclientid=202,
+            ...     scid=301,
+            ...     blrid=401,
+            ...     srcguid="SRC-GUID-123",
+            ...     dstguid="DST-GUID-456",
+            ...     srcvol="/mnt/source",
+            ...     RestorePath="/mnt/destination"
+            ... )
+            >>> print(f"Replica copy job started: {job}")
+        #ai-gen-doc
         """
         srcvol = replication_options.get('srcvol')
         restorepath = replication_options.get('RestorePath')
@@ -1410,21 +1662,47 @@ class FSBackupset(Backupset):
             raise SDKException('Response', '101', self._update_response_(response.text))
 
 
-    def delete_replication_pair(self, blrid):
-        """"Delete replication pair
+    def delete_replication_pair(self, blrid: int) -> None:
+        """Delete a block-level replication pair by its ID.
+
         Args:
-            blrid   (int)  --  blocklevel replication id.
+            blrid: The block-level replication ID to delete.
+
+        Raises:
+            SDKException: If the deletion request fails or the response is invalid.
+
+        Example:
+            >>> backupset = FSBackupset(...)
+            >>> backupset.delete_replication_pair(12345)
+            >>> print("Replication pair deleted successfully")
+
+        #ai-gen-doc
         """
         flag, response = self._cvpysdk_object.make_request('DELETE', self._services['DELETE_BLR_PAIR']%blrid)
 
         if response.status_code != 200 and flag == False:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def get_mount_path_guid(self, volume):
-        """
-        Gets the mount points for the BLR pairs
+    def get_mount_path_guid(self, volume: str) -> str:
+        """Retrieve the GUID for the specified mount path volume.
+
+        This method searches through the available mount points and returns the GUID
+        associated with the given volume name (e.g., "E:"). If the volume is not found,
+        an empty string is returned.
+
         Args:
-            volume (str): volume name eg: "E:"
+            volume: The name of the volume to search for (e.g., "E:").
+
+        Returns:
+            The GUID string corresponding to the specified volume, or an empty string if not found.
+
+        Example:
+            >>> backupset = FSBackupset(...)
+            >>> guid = backupset.get_mount_path_guid("E:")
+            >>> print(f"Mount path GUID for E:: {guid}")
+            >>> # If the volume does not exist, guid will be an empty string
+
+        #ai-gen-doc
         """
         volume_list = self.get_browse_volume_guid()
         for mount_path in volume_list['mountPathInfo']:
@@ -1432,16 +1710,29 @@ class FSBackupset(Backupset):
                 return mount_path['guid']
         return ''
 
-    def get_recovery_points(self, client_id, subclient_id):
-        """ Get all recovery points for the BLR pair from the associated RPStore.
-        These recovery points are those to which BLR pairs can failover/permanent mount to
+    def get_recovery_points(self, client_id: int, subclient_id: int) -> List[Dict[str, Any]]:
+        """Retrieve all recovery points for the BLR pair from the associated RPStore.
+
+        These recovery points represent the points to which BLR pairs can failover or be permanently mounted.
+
         Args:
-            client_id       (int): The ID of the source client machine
-            subclient_id    (int): The ID of the subclient associated with the BLR pair
+            client_id: The ID of the source client machine as an integer.
+            subclient_id: The ID of the subclient associated with the BLR pair as an integer.
 
         Returns:
-            List of dictionary of recovery points in the format: {'timestamp': 12323, 'dataChangedSize': 1200,
-            'sequenceNumber': 898}
+            A list of dictionaries, each representing a recovery point with keys:
+                - 'timestamp': The recovery point timestamp.
+                - 'dataChangedSize': The size of data changed at this point.
+                - 'sequenceNumber': The sequence number of the recovery point.
+
+        Example:
+            >>> fs_backupset = FSBackupset(...)
+            >>> recovery_points = fs_backupset.get_recovery_points(101, 202)
+            >>> for rp in recovery_points:
+            ...     print(f"Timestamp: {rp['timestamp']}, Data Changed: {rp['dataChangedSize']}, Sequence: {rp['sequenceNumber']}")
+            >>> # Use the returned recovery points for failover or permanent mount operations
+
+        #ai-gen-doc
         """
         client_name = [key for key, value in self._commcell_object.clients.all_clients.items()
                        if value['id'] == client_id]
@@ -1457,35 +1748,60 @@ class FSBackupset(Backupset):
         return response.json()['vmScale']['restorePoints']
 
 
-    def create_fsblr_replication_pair(self, srcclientid, destclientid, srcguid, destguid,
-                                      rpstoreid=None, replicationtype=None, **replication_options):
-        """"
-        Create FSBLR continuous replication pair
+    def create_fsblr_replication_pair(
+        self,
+        srcclientid: int,
+        destclientid: int,
+        srcguid: str,
+        destguid: str,
+        rpstoreid: Optional[str] = None,
+        replicationtype: Optional[int] = None,
+        **replication_options: Any
+    ) -> None:
+        """Create a FSBLR continuous replication pair between source and destination clients.
+
+        This method sets up a continuous replication pair for file system block-level replication (FSBLR)
+        between the specified source and destination clients and volumes. Additional replication options
+        can be provided via keyword arguments to customize the replication behavior.
+
         Args:
-            srcclientid   (int)  --  Source client id
+            srcclientid: Source client ID as an integer.
+            destclientid: Destination client ID as an integer.
+            srcguid: GUID of the source volume as a string.
+            destguid: GUID of the destination volume as a string.
+            rpstoreid: Optional RP store ID for replication as a string.
+            replicationtype: Optional replication pair type (1 for live, 4 for granular pairs).
+            **replication_options: Additional replication options such as:
+                - srcvol (str): Source volume name.
+                - destvol (str): Destination volume name.
+                - srcclient (str): Source client name.
+                - destclient (str): Destination client name.
+                - rpstore (int): RPStore ID.
+                - ccrp (str): Crash consistent recovery point interval in minutes.
+                - acrp (str): App consistent recovery point interval in minutes.
 
-            destclientid   (dict)  -- Destintion client id
+        Raises:
+            SDKException: If the replication pair creation fails or the response contains an error.
 
-            srcguid        (str) -- Browse guid of source volume
-
-            dstguid        (str) -- Browse guid of destination volume
-
-            rpstoreid      (str) -- Rp store id for replication
-
-            replicationtype (int) -- Replication pair  type to create (1 for live, 4 for granular pairs)
-
-            **replication_options (dict) --
-            {
-                srcvol          (str): Source volume name
-                destvol         (str): Destination volume name
-                srcclient       (str): Source volume name
-                srcclient       (str): Destination volume name
-                rpstore         (int): RPStore ID,
-                ccrp            (str): Time in minutes for crash consistent recovery point
-                arcp            (str): Time in minutes for app consistent recovery point
-            }
-
-
+        Example:
+            >>> fs_backupset = FSBackupset(...)
+            >>> fs_backupset.create_fsblr_replication_pair(
+            ...     srcclientid=101,
+            ...     destclientid=202,
+            ...     srcguid="SRC-GUID-123",
+            ...     destguid="DEST-GUID-456",
+            ...     rpstoreid="RPSTORE-789",
+            ...     replicationtype=4,
+            ...     srcvol="C:\\",
+            ...     destvol="D:\\",
+            ...     srcclient="SourceClient",
+            ...     destclient="DestinationClient",
+            ...     rpstore=789,
+            ...     ccrp="120",
+            ...     acrp="180"
+            ... )
+            >>> print("FSBLR replication pair created successfully")
+        #ai-gen-doc
         """
         srcvol = replication_options.get('srcvol')
         destvol = replication_options.get('destvol')
@@ -1539,30 +1855,58 @@ class FSBackupset(Backupset):
 
 
 
-    def create_granular_replica_copy(self, srcclientid, destclientid, scid, blrid, srcguid, dstguid, restoreguid,
-                                     **replication_options):
-        """"setter for granular blklvl Replication replica copy...
+    def create_granular_replica_copy(
+        self,
+        srcclientid: int,
+        destclientid: int,
+        scid: int,
+        blrid: int,
+        srcguid: str,
+        dstguid: str,
+        restoreguid: str,
+        **replication_options: Any
+    ):
+        """Create a granular block-level replication replica copy.
+
+        This method initiates a granular replica copy operation between source and destination clients
+        using block-level replication. It allows specifying various replication options such as
+        timestamp, source volume, and restore path.
 
         Args:
-            srcclientid   (int)  --  Source client id.
+            srcclientid: Source client ID as an integer.
+            destclientid: Destination client ID as an integer.
+            scid: Replication subclient ID as an integer.
+            blrid: Block-level replication pair ID as an integer.
+            srcguid: Source volume GUID as a string.
+            dstguid: Destination replication GUID as a string.
+            restoreguid: Restore point store GUID as a string.
+            **replication_options: Additional replication options such as:
+                - timestamp (int): Replication point timestamp.
+                - srcvol (str): Source volume path.
+                - RestorePath (str): Path to restore the replica copy.
 
-            destclientid    (dict)  -- Destintion client id .
+        Returns:
+            Job or Schedules: Returns a Job object if a job is created, or a Schedules object if a scheduled task is created.
 
-            scid           (int) --  Replication Subclient id
+        Raises:
+            SDKException: If the restore job fails or the response is invalid.
 
-            blrid           (int) -- Blr pair id
-
-            srcguid         (str) -- source volume guid
-
-            dstguid         (str) -- Destination relication guid
-
-            restoreguid     (str) -- RP store guid
-
-            timestamp        (int) -- Replication point timestamp
-
-            **replication_options (dict) -- object instance
-
-
+        Example:
+            >>> fs_backupset = FSBackupset(...)
+            >>> job = fs_backupset.create_granular_replica_copy(
+            ...     srcclientid=101,
+            ...     destclientid=202,
+            ...     scid=301,
+            ...     blrid=401,
+            ...     srcguid="SRC-GUID-123",
+            ...     dstguid="DST-GUID-456",
+            ...     restoreguid="RESTORE-GUID-789",
+            ...     timestamp=1650000000,
+            ...     srcvol="/mnt/source",
+            ...     RestorePath="/mnt/restore"
+            ... )
+            >>> print(f"Replica copy job created: {job}")
+        #ai-gen-doc
         """
 
         replicapoints = self.get_recovery_points(destclientid, scid)
@@ -1667,12 +2011,26 @@ class FSBackupset(Backupset):
             raise SDKException('Response', '101', self._update_response_(response.text))
 
 
-    def get_browse_volume_guid(self):
+    def get_browse_volume_guid(self) -> Dict[str, Any]:
+        """Retrieve the volume GUIDs and their properties for the associated client.
 
-        """"to get browse volume guids for client
-            Returns:
-                vguids (json) : Returns volume guids and properties
+        This method sends a request to the Commcell to obtain the browse volume GUIDs for the client
+        linked to this FSBackupset instance. The returned data includes GUIDs and related properties
+        in a dictionary format.
 
+        Returns:
+            Dictionary containing volume GUIDs and their properties.
+
+        Raises:
+            SDKException: If the response from the Commcell is invalid or contains an error code.
+
+        Example:
+            >>> fs_backupset = FSBackupset(...)
+            >>> volume_guids = fs_backupset.get_browse_volume_guid()
+            >>> print(volume_guids)
+            >>> # Access specific GUIDs and their properties as needed
+
+        #ai-gen-doc
         """
         client_id= self._client_object.client_id
         flag, response = self._cvpysdk_object.make_request('GET', self._services['BROWSE_MOUNT_POINTS']

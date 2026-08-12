@@ -70,31 +70,62 @@ SalesforceSubclient:
 from __future__ import unicode_literals
 
 from base64 import b64encode
+from typing import Any, Dict, List, Optional
 
 from ..casubclient import CloudAppsSubclient
 
-from ...client import Client
 from ...agent import Agent
-from ...instance import Instance
 from ...backupsets.cloudapps.salesforce_backupset import SalesforceBackupset
+from ...client import Client
 from ...exception import SDKException
+from ...instance import Instance
 
 
 class SalesforceSubclient(CloudAppsSubclient):
-    """Derived class from CloudAppsSubclient Base class, representing a Salesforce subclient,
-        and to perform operations on that subclient."""
+    """
+    SalesforceSubclient provides specialized management and restore operations for Salesforce data
+    within the CloudAppsSubclient framework.
 
-    def __init__(self, backupset_object, subclient_name, subclient_id=None):
-        """
-        Constructor for the class
+    This class enables users to interact with Salesforce subclients, retrieve and manage their properties,
+    and perform advanced restore operations to various destinations including file systems, databases,
+    and Salesforce instances. It offers granular control over the inclusion of files, metadata, and archived/deleted items,
+    as well as utilities for browsing and validating objects for restore.
+
+    Key Features:
+        - Initialization and configuration of Salesforce subclient instances
+        - Retrieval of subclient properties and their JSON representations
+        - Properties for accessing objects, files, metadata, and archived/deleted items
+        - Enable/disable management for files, metadata, and archived/deleted items
+        - Object validation within browse data for restore operations
+        - Preparation of restore options and destination configurations for Salesforce
+        - Restore capabilities:
+            - Restore to file system
+            - Restore to database
+            - Restore to Salesforce from database or media
+            - Metadata restore to Salesforce
+        - Internal utilities for preparing restore JSON payloads
+
+    This class is intended for use in environments where Salesforce data protection and recovery
+    are managed through the CloudAppsSubclient infrastructure.
+
+    #ai-gen-doc
+    """
+
+    def __init__(self, backupset_object: object, subclient_name: str, subclient_id: str = None) -> None:
+        """Initialize a SalesforceSubclient instance.
 
         Args:
-            backupset_object  (object)  -- instance of the Backupset class
+            backupset_object: Instance of the Backupset class associated with this subclient.
+            subclient_name: Name of the Salesforce subclient.
+            subclient_id: Optional; unique identifier for the subclient. If not provided, a new subclient may be created.
 
-            subclient_name    (str)     -- name of the subclient
+        Example:
+            >>> backupset = Backupset(commcell_object, 'SalesforceBackupset')
+            >>> subclient = SalesforceSubclient(backupset, 'DailySalesforceSubclient')
+            >>> # Optionally, specify an existing subclient ID
+            >>> subclient_with_id = SalesforceSubclient(backupset, 'ExistingSubclient', subclient_id='12345')
 
-            subclient_id      (str)     -- id of the subclient
-
+        #ai-gen-doc
         """
         self.cloud_apps_subclient_prop = {}
         self._files = None
@@ -104,15 +135,21 @@ class SalesforceSubclient(CloudAppsSubclient):
         super(SalesforceSubclient, self).__init__(
             backupset_object, subclient_name, subclient_id)
 
-    def _get_subclient_properties(self):
-        """Gets the properties of this subclient.
+    def _get_subclient_properties(self) -> None:
+        """Retrieve and update the properties of this Salesforce subclient.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        This method fetches the latest properties for the subclient from the backend service
+        and updates the internal state accordingly.
 
-                    if response is not success
+        Raises:
+            SDKException: If the response from the backend is empty or indicates a failure.
 
+        Example:
+            >>> subclient = SalesforceSubclient()
+            >>> subclient._get_subclient_properties()
+            >>> print("Subclient properties refreshed successfully")
+
+        #ai-gen-doc
         """
         super(SalesforceSubclient, self)._get_subclient_properties()
 
@@ -125,12 +162,19 @@ class SalesforceSubclient(CloudAppsSubclient):
                 self._metadata = sfsubclient.get('backupSFMetadata')
                 self._archived_deleted = sfsubclient.get('backupArchivedandDeletedRecs')
 
-    def _get_subclient_properties_json(self):
-        """get the all subclient related properties of this subclient.
+    def _get_subclient_properties_json(self) -> dict:
+        """Retrieve all properties related to this Salesforce subclient.
 
-           Returns:
-                dict - all subclient properties put inside a dict
+        Returns:
+            dict: A dictionary containing all subclient properties.
 
+        Example:
+            >>> subclient = SalesforceSubclient()
+            >>> properties = subclient._get_subclient_properties_json()
+            >>> print(properties)
+            {'property1': 'value1', 'property2': 'value2', ...}
+
+        #ai-gen-doc
         """
         subclient_json = {
             "subClientProperties": {
@@ -145,84 +189,190 @@ class SalesforceSubclient(CloudAppsSubclient):
         return subclient_json
 
     @property
-    def objects(self):
-        """getter for salesforce files option"""
+    def objects(self) -> dict:
+        """Get the Salesforce files option for this subclient.
+
+        Returns:
+            dict: A dictionary containing the Salesforce files option details for the subclient.
+
+        Example:
+            >>> subclient = SalesforceSubclient()
+            >>> files_option = subclient.objects
+            >>> print(files_option)
+            {'option1': 'value1', 'option2': 'value2'}
+
+        #ai-gen-doc
+        """
         return self._objects
 
     @property
-    def files(self):
-        """getter for salesforce files option"""
+    def files(self) -> dict:
+        """Get the Salesforce files option settings for this subclient.
+
+        Returns:
+            dict: A dictionary containing the Salesforce files option configuration.
+
+        Example:
+            >>> subclient = SalesforceSubclient()
+            >>> files_option = subclient.files
+            >>> print(files_option)
+            {'include_files': True, 'max_file_size': 1048576}
+
+        #ai-gen-doc
+        """
         return self._files
 
     @property
-    def metadata(self):
-        """getter for salesforce metadata option """
+    def metadata(self) -> dict:
+        """Get the Salesforce metadata options for this subclient.
+
+        Returns:
+            dict: A dictionary containing the Salesforce metadata configuration options.
+
+        Example:
+            >>> subclient = SalesforceSubclient()
+            >>> metadata_options = subclient.metadata  # Use dot notation for property access
+            >>> print(metadata_options)
+            >>> # Output might include metadata settings such as object types, fields, etc.
+
+        #ai-gen-doc
+        """
         return self._metadata
 
     @property
-    def archived_deleted(self):
-        """getter for salesfoce backup archived and deleted data"""
+    def archived_deleted(self) -> Any:
+        """Get the archived and deleted Salesforce backup data for this subclient.
+
+        Returns:
+            The archived and deleted data associated with the Salesforce backup. The exact type depends on the implementation.
+
+        Example:
+            >>> subclient = SalesforceSubclient()
+            >>> archived_data = subclient.archived_deleted
+            >>> print(archived_data)
+            >>> # Use the returned data for further processing or analysis
+
+        #ai-gen-doc
+        """
         return self._archived_data
 
-    def enable_files(self):
-        """
-        Enables files option on subclient content
+    def enable_files(self) -> None:
+        """Enable the files option on the subclient content.
+
+        This method activates the files option for the Salesforce subclient, allowing file-level operations on the subclient's content.
+
+        Example:
+            >>> subclient = SalesforceSubclient()
+            >>> subclient.enable_files()
+            >>> print("Files option enabled for the subclient.")
+
+        #ai-gen-doc
         """
         if not self.files:
             self._set_subclient_properties("_subclient_properties['cloudAppsSubClientProp']\
                                            ['salesforceSubclient']['backupFileObjects']", True)
 
-    def enable_metadata(self):
-        """
-        Enables metadata option on subclient content
+    def enable_metadata(self) -> None:
+        """Enable the metadata option for the subclient content.
+
+        This method activates the metadata option on the subclient, allowing metadata to be included
+        in backup operations for Salesforce data.
+
+        Example:
+            >>> subclient = SalesforceSubclient()
+            >>> subclient.enable_metadata()
+            >>> print("Metadata option enabled for the subclient.")
+
+        #ai-gen-doc
         """
         if not self.metadata:
             self._set_subclient_properties("_subclient_properties['cloudAppsSubClientProp']\
                                            ['salesforceSubclient']['backupSFMetadata']", True)
 
-    def enable_archived_deleted(self):
-        """
-        Enables backup archived deleted option on subclient content
+    def enable_archived_deleted(self) -> None:
+        """Enable the backup of archived and deleted items on the subclient content.
+
+        This method configures the subclient to include archived and deleted Salesforce data in backup operations.
+
+        Example:
+            >>> subclient = SalesforceSubclient()
+            >>> subclient.enable_archived_deleted()
+            >>> print("Archived and deleted items backup enabled for subclient.")
+        #ai-gen-doc
         """
         if self.archived_deleted:
             self._set_subclient_properties("_subclient_properties['cloudAppsSubClientProp']\
                                            ['salesforceSubclient']['backupArchivedandDeletedRecs']", False)
 
-    def disable_files(self):
-        """
-        Disables files option on subclient content
+    def disable_files(self) -> None:
+        """Disable the files option on the subclient content.
+
+        This method disables the files option for the current Salesforce subclient,
+        preventing files from being included in the subclient's content.
+
+        Example:
+            >>> subclient = SalesforceSubclient()
+            >>> subclient.disable_files()
+            >>> print("Files option disabled for the subclient.")
+        #ai-gen-doc
         """
         if self.files:
             self._set_subclient_properties("_subclient_properties['cloudAppsSubClientProp']\
                                            ['salesforceSubclient']['backupFileObjects']", False)
 
-    def disable_metadata(self):
-        """
-        Enables metadata option on subclient content
+    def disable_metadata(self) -> None:
+        """Disable the metadata option on the subclient content.
+
+        This method disables the metadata option for the Salesforce subclient,
+        preventing metadata from being included in backup operations.
+
+        Example:
+            >>> subclient = SalesforceSubclient()
+            >>> subclient.disable_metadata()
+            >>> print("Metadata option disabled for the subclient.")
+        #ai-gen-doc
         """
         if self.metadata:
             self._set_subclient_properties("_subclient_properties['cloudAppsSubClientProp']\
                                            ['salesforceSubclient']['backupSFMetadata']", False)
 
-    def disable_archived_deleted(self):
-        """
-        Disables backup archived and deleted option on subclient content
+    def disable_archived_deleted(self) -> None:
+        """Disable the backup of archived and deleted records for the subclient content.
+
+        This method turns off the option to include archived and deleted records in the backup
+        for the Salesforce subclient. Use this when you want to exclude such records from future backups.
+
+        Example:
+            >>> subclient = SalesforceSubclient()
+            >>> subclient.disable_archived_deleted()
+            >>> print("Archived and deleted records will no longer be backed up.")
+        #ai-gen-doc
         """
         if not self.archived_deleted:
             self._set_subclient_properties("_subclient_properties['cloudAppsSubClientProp']\
                                            ['salesforceSubclient']['backupArchivedandDeletedRecs']", True)
 
-    def check_object_in_browse(self, object_to_restore, browse_data):
-        """Check if the particular object is present in browse of the subclient
+    def check_object_in_browse(self, object_to_restore: str, browse_data: list) -> None:
+        """Check if a specific object is present in the subclient's browse data.
 
-            Args:
-                object_to_restore     (str)   --  folder path whioch has to be restored
+        This method verifies whether the specified object (such as a folder or file path)
+        exists within the provided browse data list for the subclient. If the object is
+        not found, an SDKException is raised.
 
-                browse_data           (str)   --  list of objects from browse response
+        Args:
+            object_to_restore: The path of the object (e.g., folder or file) to check for in the browse data.
+            browse_data: List of objects returned from the subclient's browse response.
 
-            Raises:
-                SDKException:
-                    if object is not present in browse result
+        Raises:
+            SDKException: If the specified object is not present in the browse result.
+
+        Example:
+            >>> subclient = SalesforceSubclient()
+            >>> browse_result = subclient.browse()
+            >>> subclient.check_object_in_browse('Accounts', browse_result)
+            >>> # If 'Accounts' is not present, an SDKException will be raised.
+
+        #ai-gen-doc
         """
         source_item = None
 
@@ -243,11 +393,27 @@ class SalesforceSubclient(CloudAppsSubclient):
 
         return restore_object_name
 
-    def _restore_salesforce_options_json(self, value):
-        """setter for the salesforce restore  options in restore json
-            Raises:
-                SDKException:
-                    if input value is not dictionary
+    def _restore_salesforce_options_json(self, value: dict) -> None:
+        """Set the Salesforce restore options in the restore JSON configuration.
+
+        This method assigns the provided dictionary of Salesforce restore options to the internal restore JSON structure.
+        The input must be a dictionary; otherwise, an SDKException will be raised.
+
+        Args:
+            value: A dictionary containing Salesforce restore options to be set.
+
+        Raises:
+            SDKException: If the input value is not a dictionary.
+
+        Example:
+            >>> options = {
+            ...     "restoreType": "Full",
+            ...     "includeAttachments": True
+            ... }
+            >>> subclient._restore_salesforce_options_json(options)
+            >>> # The Salesforce restore options are now set in the restore JSON
+
+        #ai-gen-doc
         """
 
         if not isinstance(value, dict):
@@ -280,11 +446,26 @@ class SalesforceSubclient(CloudAppsSubclient):
             }
         }
 
-    def _restore_salesforce_destination_json(self, value):
-        """setter for  the salesforce destination restore option in restore JSON
-            Raises:
-                SDKException:
-                    if input value is not dictionary
+    def _restore_salesforce_destination_json(self, value: dict) -> None:
+        """Set the Salesforce destination restore options in the restore JSON.
+
+        This method updates the restore JSON with the provided Salesforce destination options.
+
+        Args:
+            value: A dictionary containing Salesforce destination restore options.
+
+        Raises:
+            SDKException: If the input value is not a dictionary.
+
+        Example:
+            >>> options = {
+            ...     "destinationOrg": "TargetOrg",
+            ...     "restoreType": "Full"
+            ... }
+            >>> subclient._restore_salesforce_destination_json(options)
+            >>> # The restore JSON is now updated with the specified destination options
+
+        #ai-gen-doc
         """
 
         if not isinstance(value, dict):
@@ -310,65 +491,58 @@ class SalesforceSubclient(CloudAppsSubclient):
 
     def restore_to_file_system(
             self,
-            objects_to_restore=None,
-            destination_client=None,
-            sf_options=None):
-        """perform restore to file system to the provided path
+            objects_to_restore: Optional[List[str]] = None,
+            destination_client: Optional[str] = None,
+            sf_options: Optional[Dict[str, Any]] = None
+    ) -> Any:
+        """Perform a restore of Salesforce data to the file system at the specified path.
+
+        This method restores selected Salesforce objects to a staging path on the specified destination client.
+        If no destination client is provided, the source backup client is used by default. Additional restore
+        options can be specified using the `sf_options` dictionary.
 
         Args:
-            objects_to_restore  (str)   --  list of objects to restore
+            objects_to_restore: Optional list of Salesforce object names to restore. If not provided, all available objects may be restored.
+            destination_client: Optional name of the destination client where the Cloud Connector package exists. If not specified, the source backup client is used.
+            sf_options: Optional dictionary of restore options. Supported keys include:
+                - destination_path (str): Staging path for restored Salesforce data. Defaults to the download cache path from the source if not specified.
+                - dependent_level (int): Level of child objects to restore. 0 = no children, 1 = immediate children, -1 = all children. Default is 0.
+                - streams (int): Number of streams to use for restore. Default is 2.
+                - copy_precedence (int): Copy number to use for restore. Default is 0.
+                - from_time (str): Restore contents after this date (format: dd/MM/YYYY). Defaults to 01/01/1970 if not specified.
+                - to_time (str): Restore contents before this date (format: dd/MM/YYYY). Defaults to the latest if not specified.
+                - show_deleted_files (bool): Whether to include deleted files in the restore. Default is True.
 
-            destination_client  (str)   --  destination client name where cloud connector
-                                                package exists if this value not provided,
-                                                it will automatically use source backup client
+        Returns:
+            The result of the restore operation. The return type may vary depending on the implementation.
 
-            sf_options          (dict)
+        Raises:
+            SDKException: If any of the following conditions occur:
+                - The 'from_time' value is incorrect.
+                - The 'to_time' value is incorrect.
+                - 'to_time' is earlier than 'from_time'.
+                - Failed to browse content.
+                - The response is empty or not successful.
+                - The destination client does not exist on the Commcell.
 
-                destination_path    (str)   :   staging path for salesforce restore data.
-                                                    if this value is not provided, uses download
-                                                    cache path from source
+        Example:
+            >>> subclient = SalesforceSubclient()
+            >>> restore_options = {
+            ...     "destination_path": "/tmp/sf_restore",
+            ...     "dependent_level": 1,
+            ...     "streams": 4,
+            ...     "from_time": "01/01/2023",
+            ...     "to_time": "31/01/2023",
+            ...     "show_deleted_files": False
+            ... }
+            >>> result = subclient.restore_to_file_system(
+            ...     objects_to_restore=["Account", "Contact"],
+            ...     destination_client="client01",
+            ...     sf_options=restore_options
+            ... )
+            >>> print("Restore result:", result)
 
-                dependent_level     (int)   :   restore children based on selected level.
-                                                    0   -   no Children
-                                                    1   -   immediate children
-                                                    -1  -   All children
-                    default: 0
-
-                streams             (int)   :   no of streams to use for restore
-                    default: 2
-
-                copy_precedence     (int)   :   copy number to use for restore
-                    default: 0
-
-                from_time           (str)   :   date to get the contents after
-                                                    format: dd/MM/YYYY
-                                                    gets content from 01/01/1970 if not specified
-                    default: 0
-
-                to_time             (str)   :   date to get the contents before
-                                                    format: dd/MM/YYYY
-                                                    gets content till latest if not specified
-                    default: 0
-
-                show_deleted_files  (bool)  :   include deleted files in the content or not
-                    default: True
-
-         Raises:
-                SDKException:
-                    if from time value is incorrect
-
-                    if to time value is incorrect
-
-                    if to time is less than from time
-
-                    if failed to browse content
-
-                    if response is empty
-
-                    if response is not success
-
-                    if destination client does not exist on commcell
-
+        #ai-gen-doc
         """
 
         file_restore_option = {}
@@ -434,92 +608,66 @@ class SalesforceSubclient(CloudAppsSubclient):
 
     def restore_to_database(
             self,
-            objects_to_restore=None,
-            destination_client=None,
-            sf_options=None):
-        """perform Restore to  Database
+            objects_to_restore: Optional[List[str]] = None,
+            destination_client: Optional[str] = None,
+            sf_options: Optional[Dict[str, Any]] = None
+    ) -> None:
+        """Perform a Salesforce restore operation to a database.
+
+        This method restores specified Salesforce objects to a target database using the provided options.
+        The destination client must have the Cloud Connector package installed. If not specified, the source
+        backup client is used by default. Database connection and restore options are provided via the
+        `sf_options` dictionary.
 
         Args:
-            objects_to_restore  (str)   --  list of objects to restore
-
-            destination_client  (str)   --  destination clientname where cloud connector package
-                                                exists. if this value not provided, it will
-                                                automatically use source backup client
-
-            sf_options          (dict)
-
-                destination_path    (str)   :   staging path for salesforce restore data.
-                                                    if this value is not provided, it will
-                                                    automatically use download cache path
-                                                    from source
-
-                db_type             (str)   :   database type. if database details does not
-                                                    provided, it will use syncdb database
-                                                    for restore
-                    default: SQLSERVER
-
-                db_host_name             (str)   :   database hostname (ex:dbhost.company.com)
-
-                db_instance         (str)   :   database instance name
-                                                    (provide if applicable for that database type)
-
-                db_name             (str)   :   database database name
-                                                    (it is where data will be imported)
-
-                db_port             (str)   :   database connection port
-                    default: 1433
-
-                db_user_name        (str)   :   database username
-                                                    (it should have read/write permissions on db)
-
-                db_user_password    (str)   :   database user password
-
-                overrirde_table     (bool)  :   overrides the tables on  database
-                    default: True
-
-                dependent_level     (int)   :   restore dependent object based on selected level.
-                                                    0   -   no Children
-                                                    1   -   immediate children
-                                                   -1   -   All children
-                    default: 0
-
-                streams             (int)   :   no of streams to use for restore
-                    default: 2
-
-                copy_precedence     (int)   :   copy number to use for restore
-                    default: 0
-
-                from_date           (str)   :   date to get the contents after
-                                                    format: dd/MM/YYYY
-                                                    gets contents from 01/01/1970 if not specified
-                    default: 0
-
-                to_date             (str)   :   date to get the contents before
-                                                    format: dd/MM/YYYY
-                                                    gets contents till current day if not specified
-                    default: 0
-
-                show_deleted_files  (bool)  :   include deleted files in the content or not
-                    default: True
+            objects_to_restore: Optional list of Salesforce object names to restore. If not provided, all available objects may be restored.
+            destination_client: Optional name of the destination client where the Cloud Connector package exists. If not provided, the source backup client is used.
+            sf_options: Optional dictionary of Salesforce restore options, which may include:
+                - destination_path (str): Staging path for Salesforce restore data. Defaults to the source's download cache path if not specified.
+                - db_type (str): Database type (e.g., "SQLSERVER"). Defaults to "SQLSERVER".
+                - db_host_name (str): Database hostname (e.g., "dbhost.company.com").
+                - db_instance (str): Database instance name (if applicable).
+                - db_name (str): Name of the target database for import.
+                - db_port (str): Database connection port. Defaults to "1433".
+                - db_user_name (str): Database username with read/write permissions.
+                - db_user_password (str): Database user password.
+                - overrirde_table (bool): Whether to override tables in the database. Defaults to True.
+                - dependent_level (int): Level of dependent object restore (0: no children, 1: immediate children, -1: all children). Defaults to 0.
+                - streams (int): Number of streams to use for restore. Defaults to 2.
+                - copy_precedence (int): Copy number to use for restore. Defaults to 0.
+                - from_date (str): Restore contents after this date (format: "dd/MM/YYYY"). Defaults to "01/01/1970" if not specified.
+                - to_date (str): Restore contents before this date (format: "dd/MM/YYYY"). Defaults to current day if not specified.
+                - show_deleted_files (bool): Whether to include deleted files in the restore. Defaults to True.
 
         Raises:
-            SDKException:
-                if from time value is incorrect
+            SDKException: If any of the following conditions occur:
+                - The from_date value is incorrect.
+                - The to_date value is incorrect.
+                - The to_date is earlier than from_date.
+                - Failed to browse content.
+                - The response is empty or not successful.
+                - The destination client does not exist on the Commcell.
+                - Not all required database details are provided.
 
-                if to time value is incorrect
+        Example:
+            >>> sf_subclient = SalesforceSubclient()
+            >>> restore_options = {
+            ...     "db_type": "SQLSERVER",
+            ...     "db_host_name": "dbhost.company.com",
+            ...     "db_name": "SalesforceRestoreDB",
+            ...     "db_user_name": "dbadmin",
+            ...     "db_user_password": "password123",
+            ...     "overrirde_table": True,
+            ...     "streams": 4
+            ... }
+            >>> sf_subclient.restore_to_database(
+            ...     objects_to_restore=["Account", "Contact"],
+            ...     destination_client="Client01",
+            ...     sf_options=restore_options
+            ... )
+            >>> print("Restore to database initiated successfully.")
 
-                if to time is less than from time
-
-                if failed to browse content
-
-                if response is empty
-
-                if response is not success
-
-                if destination client does not exist on commcell
-
-                if all the database details not provided
-
+        #ai-gen-doc
         """
         file_restore_option = {}
 
@@ -603,102 +751,75 @@ class SalesforceSubclient(CloudAppsSubclient):
 
     def restore_to_salesforce_from_database(
             self,
-            objects_to_restore=None,
-            destination_client=None,
-            destination_instance=None,
-            destination_backupset=None,
-            sf_options=None):
-        """perform Restore to Salesforce from Database
+            objects_to_restore: Optional[List[str]] = None,
+            destination_client: Optional[str] = None,
+            destination_instance: Optional[str] = None,
+            destination_backupset: Optional[str] = None,
+            sf_options: Optional[Dict[str, Any]] = None
+    ) -> None:
+        """Perform a restore operation to Salesforce from a database backup.
+
+        This method restores specified Salesforce objects from a database backup to a Salesforce environment.
+        You can specify the objects to restore, the destination client, instance, and backupset, as well as
+        various Salesforce and database options via the `sf_options` dictionary.
 
         Args:
-            objects_to_restore      (str)   --  list of objects to restore
-
-            destination_client      (str)   --  destination pseudo client name.
-                                                    if this value not provided, it will
-                                                    automatically select source client
-
-            destination_instance    (str)   --  destination instance name.
-                                                    if this value not provided, it will
-                                                    automatically select source instance name
-
-            destination_backupset   (str)   --  destination backupset name.
-                                                    if this value not provided, it will
-                                                    automatically select source backupset
-            sf_options              (dict)
-
-                destination_path    (str)   :   staging path for salesforce restore data
-
-                db_type             (str)   :   database type. if database details does not
-                                                    provided, it will use syncdb database
-                                                    for restore
-                    default: SQLSERVER
-
-                db_host_name             (str)   :   database hostname (ex:dbhost.company.com)
-
-                db_instance         (str)   :   database instance name
-                                                    (provide if applicable for that database type)
-
-                db_name             (str)   :   database database name
-                                                    (it is where data will be imported)
-
-                db_port             (str)   :   database connection port
-                    default: 1433
-
-                db_user_name        (str)   :   database username
-                                                    (read/write permissions needed on db)
-
-                db_user_password    (str)   :   database user password
-
-                overrirde_table     (bool)  :   overrides the tables on  database
-                    default: True
-
-                dependent_level     (int)   :   restore children based on selected level.
-                                                    0   -   no Children
-                                                    1   -   immediate children
-                                                    -1  -   All children
-                    default: 0
-
-                streams             (int)   :   no of streams to use for restore
-                    default: 2
-
-                copy_precedence     (int)   :   copy number to use for restore
-                    default: 0
-
-                from_time           (str)   :   date to get the contents after
-                                                    format: dd/MM/YYYY
-                                                    gets contents from 01/01/1970 if not specified
-                    default: None
-
-                to_time             (str)   :   date to get the contents before
-                                                    format: dd/MM/YYYY
-                                                    gets contents till current day if not specified
-                    default: None
-
-                show_deleted_files  (bool)  :   include deleted files in the content or not
-                    default: True
+            objects_to_restore: Optional list of Salesforce object names to restore. If not provided, all available objects may be restored.
+            destination_client: Optional name of the destination pseudo client. If not specified, the source client is used.
+            destination_instance: Optional name of the destination instance. If not specified, the source instance is used.
+            destination_backupset: Optional name of the destination backupset. If not specified, the source backupset is used.
+            sf_options: Optional dictionary of Salesforce and database restore options. Supported keys include:
+                - destination_path (str): Staging path for Salesforce restore data.
+                - db_type (str): Database type (default: "SQLSERVER").
+                - db_host_name (str): Database hostname (e.g., "dbhost.company.com").
+                - db_instance (str): Database instance name (if applicable).
+                - db_name (str): Database name where data will be imported.
+                - db_port (str): Database connection port (default: "1433").
+                - db_user_name (str): Database username (requires read/write permissions).
+                - db_user_password (str): Database user password.
+                - overrirde_table (bool): Whether to override tables in the database (default: True).
+                - dependent_level (int): Restore children based on selected level (0: none, 1: immediate, -1: all; default: 0).
+                - streams (int): Number of streams to use for restore (default: 2).
+                - copy_precedence (int): Copy number to use for restore (default: 0).
+                - from_time (str): Restore contents after this date ("dd/MM/YYYY"; default: None).
+                - to_time (str): Restore contents before this date ("dd/MM/YYYY"; default: None).
+                - show_deleted_files (bool): Include deleted files in the restore (default: True).
 
         Raises:
-            SDKException:
-                if from date value is incorrect
+            SDKException: If any of the following conditions occur:
+                - The from date value is incorrect.
+                - The to date value is incorrect.
+                - The to date is earlier than the from date.
+                - Failed to browse content.
+                - The response is empty or not successful.
+                - The destination client, instance, or backupset does not exist.
+                - SyncDB is not enabled and database details are not provided.
 
-                if to date value is incorrect
+        Example:
+            >>> sf_subclient = SalesforceSubclient()
+            >>> sf_subclient.restore_to_salesforce_from_database(
+            ...     objects_to_restore=['Account', 'Contact'],
+            ...     destination_client='SalesforceClient01',
+            ...     destination_instance='SF_Instance1',
+            ...     destination_backupset='SF_Backupset1',
+            ...     sf_options={
+            ...         'destination_path': '/tmp/sf_restore',
+            ...         'db_type': 'SQLSERVER',
+            ...         'db_host_name': 'dbhost.company.com',
+            ...         'db_name': 'salesforce_db',
+            ...         'db_user_name': 'dbuser',
+            ...         'db_user_password': 'password',
+            ...         'overrirde_table': True,
+            ...         'dependent_level': 1,
+            ...         'streams': 4,
+            ...         'from_time': '01/01/2023',
+            ...         'to_time': '31/01/2023',
+            ...         'show_deleted_files': False
+            ...     }
+            ... )
+            >>> print("Restore to Salesforce from database initiated successfully.")
 
-                if to date is less than from date
-
-                if failed to browse content
-
-                if response is empty
-
-                if response is not success
-
-                if destination client does not exist
-
-                if destination instance does not exist
-
-                if destination backupset does not exist
-
-                if syncdb is not enabled and user not provided the database details
-
+        #ai-gen-doc
         """
         file_restore_option = {}
 
@@ -832,102 +953,76 @@ class SalesforceSubclient(CloudAppsSubclient):
 
     def restore_to_salesforce_from_media(
             self,
-            objects_to_restore=None,
-            destination_client=None,
-            destination_instance=None,
-            destination_backupset=None,
-            sf_options=None):
-        """perform Restore to Salesforce from Media.
+            objects_to_restore: Optional[str] = None,
+            destination_client: Optional[str] = None,
+            destination_instance: Optional[str] = None,
+            destination_backupset: Optional[str] = None,
+            sf_options: Optional[dict] = None
+    ) -> None:
+        """Perform a restore operation to Salesforce from media.
+
+        This method restores specified Salesforce objects from backup media to a Salesforce environment.
+        You can specify the destination client, instance, and backupset, or allow the system to use the source values by default.
+        Additional Salesforce restore options can be provided via the `sf_options` dictionary.
 
         Args:
-            objects_to_restore      (str)   --  list of objects to restore
-
-            destination_client      (str)   --  destination pseudo client name.
-                                                    if this value not provided, it will
-                                                    automatically select source client
-
-            destination_instance    (str)   --  destination instance name.
-                                                    if this value not provided, it will
-                                                    automatically select source instance name
-
-            destination_backupset   (str)   --  destination backupset name.
-                                                    if this value not provided, it will
-                                                    automatically select source backupset
-            sf_options              (dict)
-
-                destination_path    (str)   :   staging path for salesforce restore data
-
-                db_type             (str)   :   database type. if database details does not
-                                                    provided, it will use syncdb database
-                                                    for restore
-                default: SQLSERVER
-
-                db_host_name             (str)   :   database hostname (ex:dbhost.company.com)
-
-                db_instance         (str)   :   database instance name
-                                                    (provide if applicable for that database type)
-
-                db_name             (str)   :   database database name
-                                                    (it is where data will be imported)
-
-                db_port             (str)   :   database connection port
-                    default: 1433
-
-                db_user_name        (str)   :   database username
-                                                    (read/write permissions needed on db)
-
-                db_user_password    (str)   :   database user password
-
-                overrirde_table     (bool)  :   overrides the tables on  database
-                    default: True
-
-                dependent_level     (int)   :   restore children based on selected level.
-                                                    0   -   no Children
-                                                    1   -   immediate children
-                                                    -1  -   All children
-                    default: 0
-
-                streams             (int)   :   no of streams to use for restore
-                    default: 2
-
-                copy_precedence     (int)   :   copy number to use for restore
-                    default: 0
-
-                from_time           (str)   :   date to get the contents after
-                                                    format: dd/MM/YYYY
-                                                    gets contents from 01/01/1970 if not specified
-                    default: None
-
-                to_time             (str)   :   date to get the contents before
-                                                    format: dd/MM/YYYY
-                                                    gets contents till current day if not specified
-                    default: None
-
-                show_deleted_files  (bool)  :   include deleted files in the content or not
-                    default: True
+            objects_to_restore: A string representing the list of Salesforce objects to restore.
+            destination_client: The name of the destination pseudo client. If not provided, the source client is used.
+            destination_instance: The name of the destination instance. If not provided, the source instance is used.
+            destination_backupset: The name of the destination backupset. If not provided, the source backupset is used.
+            sf_options: A dictionary of Salesforce restore options, which may include:
+                - destination_path (str): Staging path for Salesforce restore data.
+                - db_type (str): Database type (default: 'SQLSERVER').
+                - db_host_name (str): Database hostname (e.g., 'dbhost.company.com').
+                - db_instance (str): Database instance name.
+                - db_name (str): Database name for data import.
+                - db_port (str): Database connection port (default: '1433').
+                - db_user_name (str): Database username (requires read/write permissions).
+                - db_user_password (str): Database user password.
+                - overrirde_table (bool): Whether to override tables in the database (default: True).
+                - dependent_level (int): Restore children based on level (0: none, 1: immediate, -1: all; default: 0).
+                - streams (int): Number of streams to use for restore (default: 2).
+                - copy_precedence (int): Copy number to use for restore (default: 0).
+                - from_time (str): Restore contents after this date (format: 'dd/MM/YYYY'; default: None).
+                - to_time (str): Restore contents before this date (format: 'dd/MM/YYYY'; default: None).
+                - show_deleted_files (bool): Include deleted files in the restore (default: True).
 
         Raises:
-                SDKException:
-                    if from date value is incorrect
+            SDKException: If any of the following conditions occur:
+                - The 'from_time' value is incorrect.
+                - The 'to_time' value is incorrect.
+                - The 'to_time' is earlier than 'from_time'.
+                - Failed to browse content.
+                - The response is empty or not successful.
+                - The destination client, instance, or backupset does not exist.
+                - Staging database details are not provided.
 
-                    if to date value is incorrect
+        Example:
+            >>> sf_subclient = SalesforceSubclient()
+            >>> sf_subclient.restore_to_salesforce_from_media(
+            ...     objects_to_restore="Account,Contact",
+            ...     destination_client="SalesforceClient01",
+            ...     destination_instance="SalesforceInstance01",
+            ...     destination_backupset="SalesforceBackupset01",
+            ...     sf_options={
+            ...         "destination_path": "/tmp/sf_restore",
+            ...         "db_type": "SQLSERVER",
+            ...         "db_host_name": "dbhost.company.com",
+            ...         "db_name": "salesforce_db",
+            ...         "db_user_name": "dbuser",
+            ...         "db_user_password": "password",
+            ...         "overrirde_table": True,
+            ...         "dependent_level": 0,
+            ...         "streams": 2,
+            ...         "copy_precedence": 0,
+            ...         "from_time": "01/01/2023",
+            ...         "to_time": "31/12/2023",
+            ...         "show_deleted_files": True
+            ...     }
+            ... )
+            >>> print("Restore to Salesforce from media initiated successfully.")
 
-                    if to date is less than from date
-
-                    if failed to browse content
-
-                    if response is empty
-
-                    if response is not success
-
-                    if destination client does not exist
-
-                    if destination instance does not exist
-
-                    if destination backupset does not exist
-
-                    if user does not provide staging database details
-
+        #ai-gen-doc
         """
 
         file_restore_option = {}
@@ -1037,70 +1132,56 @@ class SalesforceSubclient(CloudAppsSubclient):
 
     def metadata_restore_to_salesforce(
             self,
-            metadata_list=None,
-            destination_client=None,
-            destination_instance=None,
-            destination_backupset=None,
-            **sf_options):
-        """perform Restore to Salesforce from Media.
+            metadata_list: Optional[list] = None,
+            destination_client: Optional[str] = None,
+            destination_instance: Optional[str] = None,
+            destination_backupset: Optional[str] = None,
+            **sf_options: object
+    ) -> None:
+        """Perform a metadata restore to Salesforce from backup media.
+
+        This method restores specified Salesforce metadata components from backup media to a Salesforce environment.
+        You can specify the destination client, instance, and backupset, or allow the system to use the source values.
+        Additional Salesforce restore options can be provided as keyword arguments.
 
         Args:
-            metadata_list           (list)  --  List of metadata components to restore like "folder/component.type"
-
-            destination_client      (str)   --  destination pseudo client name.
-                                                    if this value not provided, it will
-                                                    automatically select source client
-
-            destination_instance    (str)   --  destination instance name.
-                                                    if this value not provided, it will
-                                                    automatically select source instance name
-
-            destination_backupset   (str)   --  destination backupset name.
-                                                    if this value not provided, it will
-                                                    automatically select source backupset
-            sf_options:
-
-                destination_path    (str)   :   staging path for salesforce restore data
-
-                streams             (int)   :   no of streams to use for restore
-                    default: 2
-
-                copy_precedence     (int)   :   copy number to use for restore
-                    default: 0
-
-                from_time           (str)   :   date to get the contents after
-                                                    format: dd/MM/YYYY
-                                                    gets contents from 01/01/1970 if not specified
-                    default: None
-
-                to_time             (str)   :   date to get the contents before
-                                                    format: dd/MM/YYYY
-                                                    gets contents till current day if not specified
-                    default: None
-
-                show_deleted_files  (bool)  :   include deleted files in the content or not
-                    default: True
+            metadata_list: Optional list of metadata component paths to restore (e.g., ["folder/component.type"]).
+            destination_client: Optional name of the destination pseudo client. If not provided, the source client is used.
+            destination_instance: Optional name of the destination instance. If not provided, the source instance is used.
+            destination_backupset: Optional name of the destination backupset. If not provided, the source backupset is used.
+            **sf_options: Additional Salesforce restore options, such as:
+                - destination_path (str): Staging path for Salesforce restore data.
+                - streams (int): Number of streams to use for restore (default: 2).
+                - copy_precedence (int): Copy number to use for restore (default: 0).
+                - from_time (str): Restore contents after this date (format: dd/MM/YYYY, default: 01/01/1970).
+                - to_time (str): Restore contents before this date (format: dd/MM/YYYY, default: current day).
+                - show_deleted_files (bool): Whether to include deleted files in the restore (default: True).
 
         Raises:
-                SDKException:
-                    if from date value is incorrect
+            SDKException: If any of the following conditions occur:
+                - The from date value is incorrect.
+                - The to date value is incorrect.
+                - The to date is earlier than the from date.
+                - Failed to browse content.
+                - The response is empty or not successful.
+                - The destination client, instance, or backupset does not exist.
 
-                    if to date value is incorrect
+        Example:
+            >>> subclient = SalesforceSubclient()
+            >>> subclient.metadata_restore_to_salesforce(
+            ...     metadata_list=["src/Account.object", "src/Contact.object"],
+            ...     destination_client="SalesforceClient01",
+            ...     destination_instance="InstanceA",
+            ...     destination_backupset="Backupset1",
+            ...     destination_path="/tmp/sf_restore",
+            ...     streams=4,
+            ...     from_time="01/01/2023",
+            ...     to_time="31/01/2023",
+            ...     show_deleted_files=False
+            ... )
+            >>> print("Metadata restore initiated successfully.")
 
-                    if to date is less than from date
-
-                    if failed to browse content
-
-                    if response is empty
-
-                    if response is not success
-
-                    if destination client does not exist
-
-                    if destination instance does not exist
-
-                    if destination backupset does not exist
-
+        #ai-gen-doc
         """
 
         file_restore_option = {}
@@ -1174,8 +1255,30 @@ class SalesforceSubclient(CloudAppsSubclient):
 
         return self._process_restore_response(request_json)
 
-    def _prepare_salesforce_restore_json(self, file_restore_option):
-        """prepares the  salesforce restore json from getters."""
+    def _prepare_salesforce_restore_json(self, file_restore_option: dict) -> dict:
+        """Prepare the Salesforce restore JSON payload using the provided file restore options.
+
+        This method constructs a JSON dictionary required for initiating a Salesforce restore operation,
+        based on the options specified in the `file_restore_option` parameter.
+
+        Args:
+            file_restore_option: A dictionary containing options and parameters for the Salesforce file restore.
+
+        Returns:
+            A dictionary representing the Salesforce restore JSON payload.
+
+        Example:
+            >>> restore_options = {
+            ...     "object_name": "Account",
+            ...     "restore_type": "Full",
+            ...     "target_org": "TargetOrgName"
+            ... }
+            >>> payload = subclient._prepare_salesforce_restore_json(restore_options)
+            >>> print(payload)
+            {'object_name': 'Account', 'restore_type': 'Full', 'target_org': 'TargetOrgName'}
+
+        #ai-gen-doc
+        """
         self._restore_fileoption_json(file_restore_option)
         self._restore_salesforce_options_json(file_restore_option)
         self._restore_browse_option_json(file_restore_option)

@@ -269,9 +269,7 @@ class FsoServers():
 
                     country_code        (str)       --  Country code (ISO 3166 2-letter code)
 
-                    user_name           (str)       --  User name who has access to UNC path
-
-                    password            (str)       --  base64 encoded password to access unc path
+                    credential_name     (name)       --  Credential name for unc crawl path access
 
                     enable_monitoring   (str)       --  specifies whether to enable file monitoring or not for this
 

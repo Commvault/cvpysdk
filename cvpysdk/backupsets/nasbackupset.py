@@ -38,14 +38,37 @@ from ..exception import SDKException
 
 
 class NASBackupset(FSBackupset):
-    """Derived class from Backupset Base class, representing a **NAS / NDMP** backupset,
-        and to perform operations on that backupset.
+    """
+    Represents a NAS/NDMP backupset, derived from the Backupset base class.
 
+    This class provides specialized functionality for managing NAS (Network Attached Storage)
+    and NDMP (Network Data Management Protocol) backupsets. It enables users to perform
+    operations specific to NAS backupsets, including retrieving backupset properties and
+    managing image backupset settings.
+
+    Key Features:
+        - Retrieve NAS/NDMP backupset properties
+        - Check if the backupset is configured as an image backupset
+        - Set the backupset as an image backupset
+
+    #ai-gen-doc
     """
 
-    def _get_backupset_properties(self):
-        """Derived class from Backupset Base class, representing a nas backupset,
-            and to perform operations on that backupset."""
+    def _get_backupset_properties(self) -> None:
+        """Retrieve and set NAS backupset-specific properties.
+
+        This method overrides the base class implementation to extract NAS-specific
+        backupset properties, such as determining if the backupset is configured for
+        NetApp image backup. It updates internal state based on the backupset's configuration.
+
+        Example:
+            >>> nas_backupset = NASBackupset(...)
+            >>> nas_backupset._get_backupset_properties()
+            >>> print(nas_backupset._is_image_backupset)
+            >>> # The _is_image_backupset attribute will reflect whether NetApp image backup is enabled
+
+        #ai-gen-doc
+        """
         super(NASBackupset, self)._get_backupset_properties()
 
         self._is_image_backupset = False
@@ -57,18 +80,38 @@ class NASBackupset(FSBackupset):
                 )
 
     @property
-    def is_image_backupset(self):
-        """Treats is_image_backupset as a read-only property"""
+    def is_image_backupset(self) -> bool:
+        """Indicate whether this NAS backupset is configured as an image backupset.
+
+        Returns:
+            True if the backupset is an image backupset, False otherwise.
+
+        Example:
+            >>> backupset = NASBackupset(...)
+            >>> if backupset.is_image_backupset:
+            ...     print("This is an image backupset.")
+            ... else:
+            ...     print("This is a file-level backupset.")
+
+        #ai-gen-doc
+        """
         return self._is_image_backupset
 
-    def set_image_backupset(self):
-        """Sets the backupset represented by this Backupset class instance as the image backupset
-            if it is not the image backupset.
+    def set_image_backupset(self) -> None:
+        """Set this backupset as the image backupset if it is not already configured as such.
 
-            Raises:
-                SDKException:
-                    if failed to set this as the image backupset
+        This method updates the backupset properties to enable image backup functionality.
+        If the backupset is already set as an image backupset, no action is taken.
 
+        Raises:
+            SDKException: If the operation fails to set this backupset as the image backupset.
+
+        Example:
+            >>> backupset = NASBackupset(...)
+            >>> backupset.set_image_backupset()
+            >>> print("Backupset is now configured for image backup.")
+
+        #ai-gen-doc
         """
         if self.is_image_backupset is False:
             request_json = {

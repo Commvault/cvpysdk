@@ -27,57 +27,74 @@ AzureResoureceManagerInstance: Derived class from VirtualServer
 
     __init__(self, agent,_name,iid)   	 -- 	initialize object of azure RM
                                             Instance object associated with the
-                                            VirtualServer Instance		
+                                            VirtualServer Instance
 
     _get_instance_properties()     --  VirtualServer Instance class method
                                         overwritten to get azure RM
                                         Specific instance properties as well
 
-	_get_instance_properties_json()			--  get the all instance related
-														properties of this subclient.
+    _get_instance_properties_json()			--  get the all instance related
+                                                        properties of this subclient.
 
 """
 
 from ..vsinstance import VirtualServerInstance
-from ...exception import SDKException
-from ...instance import Instance
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ...agent import Agent
+
 
 class AzureRMInstance(VirtualServerInstance):
+    """
+    Represents an Azure Resource Manager (ARM) instance associated with a VirtualServerInstance.
 
-    '''
-    AzureResoureceManagerInstance:
+    This class provides functionality to manage and interact with Azure Resource Manager instances,
+    including retrieving instance and application properties, updating Azure credentials, and accessing
+    server-related information. It is designed to be initialized with agent information, instance name,
+    and instance ID, and extends the capabilities of the VirtualServerInstance base class.
 
-	__init__(agent_object,instance_name,instance_id)    --  initialize object
-    of azure resource manager Instance object associated with
-		the VirtualServer Instance
-    '''
+    Key Features:
+        - Initialization with agent, instance name, and instance ID
+        - Retrieval of instance properties and their JSON representation
+        - Access to application-specific properties
+        - Update and management of Azure credentials, including support for managed identities
+        - Properties to access server name and server host name
 
-    def __init__(self, agent, name, iid):
-        """Initialize the Instance object for the given Virtual Server instance.
+    #ai-gen-doc
+    """
 
-            Args:
-                class_object (agent_object,instance_name,instance_id)  --  instance of the
-                                                                                Agent class,
-                                                                                instance name,
-                                                                                instance id
+    def __init__(self, agent: 'Agent', name: str, iid: str) -> None:
+        """Initialize an AzureRMInstance object for the specified Virtual Server instance.
 
+        Args:
+            agent: Instance of the Agent class representing the associated agent.
+            name: The name of the virtual server instance.
+            iid: The unique identifier (ID) of the virtual server instance.
+
+        Example:
+            >>> agent = Agent(client_object, "VirtualServer")
+            >>> instance = AzureRMInstance(agent, "MyAzureInstance", '101')
+            >>> print(f"Instance created: {instance}")
+
+        #ai-gen-doc
         """
-
 
         super(VirtualServerInstance, self).__init__(agent, name, iid)
         self._vendor_id = 7
         self._subscription_id = None
 
+    def _get_instance_properties(self) -> None:
+        """Retrieve and update the properties of this AzureRMInstance.
 
+        This method fetches the latest properties for the current AzureRMInstance object
+        from the backend service and updates the instance accordingly.
 
-    def  _get_instance_properties(self):
-        """
-        Get the properties of this instance
+        Raises:
+            SDKException: If the response is not empty or the response indicates failure.
 
-        Raise:
-            SDK Exception:
-                if response is not empty
-                if response is not success
+        #ai-gen-doc
         """
 
         super(AzureRMInstance, self)._get_instance_properties()
@@ -85,25 +102,24 @@ class AzureRMInstance(VirtualServerInstance):
         if 'virtualServerInstance' in self._properties:
             if self._properties["virtualServerInstance"]["associatedClients"].get("memberServers"):
                 _member_servers = self._properties["virtualServerInstance"] \
-                                                ["associatedClients"]["memberServers"]
+                    ["associatedClients"]["memberServers"]
             else:
-                _member_servers=[]
+                _member_servers = []
             for _each_client in _member_servers:
                 client = _each_client['client']
                 if 'clientName' in client.keys():
                     self._server_name.append(str(client['clientName']))
-        # waiting for praveen form
 
+    def _get_instance_properties_json(self) -> dict:
+        """Retrieve all instance-related properties for this subclient.
 
-    def _get_instance_properties_json(self):
-        """get the all instance related properties of this subclient.
+        Returns:
+            dict: A dictionary containing all properties associated with the current instance.
 
-          Returns:
-               dict - all instance properties put inside a dict
-
+        #ai-gen-doc
         """
         instance_json = {
-            "instanceProperties":{
+            "instanceProperties": {
                 "isDeleted": False,
                 "instance": self._instance,
                 "instanceActivityControl": self._instanceActivityControl,
@@ -111,31 +127,42 @@ class AzureRMInstance(VirtualServerInstance):
                     "vsInstanceType": self._virtualserverinstance['vsInstanceType'],
                     "associatedClients": self._virtualserverinstance['associatedClients'],
                     "vmwareVendor": {}
-                    }
-                       }
-               }
+                }
+            }
+        }
         return instance_json
 
-    def _get_application_properties(self):
-        """
-            Get the properties of this instance
+    def _get_application_properties(self) -> None:
+        """Retrieve the properties of the current AzureRMInstance.
 
-            Raise:
-                SDK Exception:
-                    if response is not empty
-                    if response is not success
+        This method fetches and returns the application properties associated with this instance.
+        If the response is empty or unsuccessful, an SDK Exception is raised.
+
+        Returns:
+            dict: A dictionary containing the application properties for this instance.
+
+        Raises:
+            SDKException: If the response is empty or the request is not successful.
+
+        #ai-gen-doc
         """
         super(AzureRMInstance, self)._get_application_properties()
         if 'azureResourceManager' in self._application_properties:
             self._subscription_id = self._application_properties['azureResourceManager']['subscriptionId']
 
-    def _update_azure_credentials(self, credential_id, credential_name=None, usemanaged_identity=False):
-        """
-        To update the credentials in azure hypervisor
+    def _update_azure_credentials(self, credential_id: int, credential_name: str = None,
+                                  usemanaged_identity: bool = False) -> None:
+        """Update the Azure credentials for the hypervisor instance.
+
+        This method updates the credentials used by the Azure hypervisor, allowing you to specify a new credential ID,
+        an optional credential name, and whether to use a managed identity.
+
         Args:
-                credential_id (int)  --  Credential ID to update in hypervisor
-                credential_name(str) -- Credential name to update in hypervisor
-                usemanaged_identity( bool) -- to use managed identity
+            credential_id: The ID of the credential to update in the hypervisor.
+            credential_name: Optional name of the credential to update in the hypervisor.
+            usemanaged_identity: If True, configures the hypervisor to use a managed identity instead of explicit credentials.
+
+        #ai-gen-doc
         """
 
         self._get_application_properties()
@@ -148,20 +175,39 @@ class AzureRMInstance(VirtualServerInstance):
                 "name": credential_name
             },
             "subscriptionId": self._subscription_id,
-         "useManagedIdentity": usemanaged_identity
+            "useManagedIdentity": usemanaged_identity
         }
 
         super(AzureRMInstance, self)._update_hypervisor_credentials(self._credential_json)
 
-
     @property
-    def server_name(self):
-        """getter for the domain name in the Hyper-V json"""
+    def server_name(self) -> list:
+        """Get the server (domain) name from the Hyper-V JSON configuration.
+
+        Returns:
+            The domain name as a string extracted from the Hyper-V JSON.
+
+        Example:
+            >>> instance = AzureRMInstance()
+            >>> domain = instance.server_name
+            >>> print(f"Server domain name: {domain}")
+
+        #ai-gen-doc
+        """
         return self._server_name
 
     @property
-    def server_host_name(self):
-        """getter for the domain name in the vmware vendor json"""
+    def server_host_name(self) -> list:
+        """Get the domain name (server host name) from the VMware vendor JSON.
+
+        Returns:
+            The server host name as a string.
+
+        Example:
+            >>> instance = AzureRMInstance()
+            >>> host_name = instance.server_host_name
+            >>> print(f"Server host name: {host_name}")
+
+        #ai-gen-doc
+        """
         return self._server_name
-    #return self._server_name
-    # TODO will change with Praveen Form(jmalik)

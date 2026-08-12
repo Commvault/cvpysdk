@@ -28,44 +28,83 @@ AmazonInstance:
 
 """
 
-from ..vsinstance import VirtualServerInstance
 from ...exception import SDKException
-from ...instance import Instance
+from ..vsinstance import VirtualServerInstance
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ...agent import Agent
 
 
 class AmazonInstance(VirtualServerInstance):
-    def __init__(self, agent, name, iid):
+    """
+    Represents an Amazon virtual server instance within a cloud management framework.
+
+    This class extends the VirtualServerInstance to provide specialized handling
+    for Amazon-based virtual server instances. It manages instance properties,
+    initialization, and provides access to server-specific information such as
+    server name and host name.
+
+    Key Features:
+        - Initialization of Amazon instance with agent, name, and instance ID
+        - Retrieval of instance properties in both object and JSON formats
+        - Access to server name and host name via properties
+        - Initialization of tenant-specific instance properties
+
+    #ai-gen-doc
+    """
+    def __init__(self, agent: 'Agent', name: str, iid: str) -> None:
+        """Initialize an AmazonInstance object with the specified agent, name, and instance ID.
+
+        Args:
+            agent: The agent object associated with this Amazon instance.
+            name: The name of the Amazon instance.
+            iid: The unique instance ID for the Amazon instance.
+
+        Example:
+            >>> agent = Agent()  # Replace with actual agent object
+            >>> instance = AmazonInstance(agent, "MyInstance", "i-1234567890abcdef0")
+            >>> print(instance)
+
+        #ai-gen-doc
+        """
         self._vendor_id = 4
         self._server_name = []
         super(AmazonInstance, self).__init__(agent, name, iid)
 
-    def _get_instance_properties(self):
-        """
-        Get the properties of this instance
+    def _get_instance_properties(self) -> None:
+        """Retrieve and update the properties of this AmazonInstance object.
 
-        Raise:
-            SDK Exception:
-                if response is not empty
-                if response is not success
+        This method fetches the latest properties for the current AmazonInstance from the backend
+        and updates the instance's internal state accordingly.
+
+        Raises:
+            SDKException: If the response is not empty or if the response indicates a failure.
+
+        #ai-gen-doc
         """
 
         super(AmazonInstance, self)._get_instance_properties()
         self._server_name = []
         self._initialize_tenant_instance_properties()
         if 'virtualServerInstance' in self._properties:
-            _member_servers = self._properties["virtualServerInstance"] \
-                ["associatedClients"]["memberServers"]
+            if self._properties["virtualServerInstance"]["associatedClients"].get("memberServers"):
+                _member_servers = self._properties["virtualServerInstance"] \
+                    ["associatedClients"]["memberServers"]
+            else:
+                _member_servers = []
             for _each_client in _member_servers:
                 client = _each_client['client']
                 if 'clientName' in client.keys():
                     self._server_name.append(str(client['clientName']))
 
-    def _get_instance_properties_json(self):
-        """get the all instance related properties of this subclient.
+    def _get_instance_properties_json(self) -> dict:
+        """Retrieve all instance-related properties for this subclient.
 
-           Returns:
-                dict - all instance properties put inside a dict
+        Returns:
+            dict: A dictionary containing all properties associated with the current instance.
 
+        #ai-gen-doc
         """
         instance_json = {
             "instanceProperties": {
@@ -83,18 +122,42 @@ class AmazonInstance(VirtualServerInstance):
         return instance_json
 
     @property
-    def server_name(self):
-        """getter for the domain name in the AWS vendor json"""
+    def server_name(self) -> list:
+        """Get the domain name of the server from the AWS vendor JSON.
+
+        Returns:
+            The domain names of the server as a list.
+
+        Example:
+            >>> amazon_instance = AmazonInstance()
+            >>> domain = amazon_instance.server_name  # Access the server name property
+            >>> print(f"Server domain name: {domain}")
+
+        #ai-gen-doc
+        """
         return self._server_name
 
     @property
-    def server_host_name(self):
-        """getter for the domain name in the AWS vendor json"""
+    def server_host_name(self) -> list:
+        """Get the domain name (server host name) from the AWS vendor JSON.
+
+        Returns:
+            The domain name or server host name as a string.
+
+        Example:
+            >>> amazon_instance = AmazonInstance()
+            >>> host_name = amazon_instance.server_host_name  # Use dot notation for property access
+
+        #ai-gen-doc
+        """
         return self._server_name
 
-    def _initialize_tenant_instance_properties(self):
-        """"
-        Initializes the properties if the client is Tenant
+    def _initialize_tenant_instance_properties(self) -> None:
+        """Initialize tenant-specific instance properties for the AmazonInstance client.
+
+        This method sets up the necessary properties if the current client is identified as a tenant.
+
+        #ai-gen-doc
         """
         if 'virtualServerInstance' in self._properties.keys():
             if 'enableAdminAccount' in self._properties['virtualServerInstance']['amazonInstanceInfo']:

@@ -43,20 +43,43 @@ VMwareInstance:
 
 from ..vsinstance import VirtualServerInstance
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ...agent import Agent
+
 
 class VMwareInstance(VirtualServerInstance):
-    """Class for representing VMWare instance of the Virtual Server agent."""
+    """
+    Represents a VMware instance managed by the Virtual Server agent.
 
-    def __init__(self, agent_object, instance_name, instance_id=None):
-        """Initialize the Instance object for the given Virtual Server instance.
+    This class encapsulates the properties and behaviors specific to a VMware
+    virtual server instance, providing mechanisms to retrieve and manage
+    instance properties and metadata. It is designed to interface with the
+    broader Virtual Server agent framework, allowing for seamless integration
+    and management of VMware environments.
 
-            Args:
-                agent_object    (object)    --  instance of the Agent class
+    Key Features:
+        - Initialization with agent object, instance name, and instance ID
+        - Retrieval of instance properties and their JSON representation
+        - Access to server host name, username, and server name via properties
 
-                instance_name   (str)       --  instance name
+    #ai-gen-doc
+    """
 
-                instance_id     (int)       --  instance id
+    def __init__(self, agent_object: 'Agent', instance_name: str, instance_id: str = None) -> None:
+        """Initialize a VMwareInstance object for the specified Virtual Server instance.
 
+        Args:
+            agent_object: An instance of the Agent class representing the associated agent.
+            instance_name: The name of the virtual server instance.
+            instance_id: Optional; the unique identifier for the instance. If not provided, it may be determined automatically.
+
+        Example:
+            >>> agent = Agent(client_object, 'Virtual Server')
+            >>> vmware_instance = VMwareInstance(agent, 'VM_Instance_01', '123')
+            >>> # The VMwareInstance object is now initialized and ready for use
+
+        #ai-gen-doc
         """
         self._vendor_id = 1
         self._vmwarvendor = None
@@ -64,15 +87,16 @@ class VMwareInstance(VirtualServerInstance):
         self._server_host_name = []
         super(VMwareInstance, self).__init__(agent_object, instance_name, instance_id)
 
-    def _get_instance_properties(self):
-        """Gets the properties of this instance.
+    def _get_instance_properties(self) -> None:
+        """Retrieve and update the properties of this VMware instance.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        This method fetches the current configuration and properties for the VMware instance
+        and updates the internal state accordingly.
 
-                    if response is not success
+        Raises:
+            SDKException: If the response from the server is empty or indicates a failure.
 
+        #ai-gen-doc
         """
         super(VMwareInstance, self)._get_instance_properties()
 
@@ -83,12 +107,13 @@ class VMwareInstance(VirtualServerInstance):
 
             self._server_host_name.append(self._vmwarvendor["domainName"])
 
-    def _get_instance_properties_json(self):
-        """get the all instance related properties of this subclient.
+    def _get_instance_properties_json(self) -> dict:
+        """Retrieve all instance-related properties for this subclient as a dictionary.
 
-           Returns:
-                dict - all instance properties put inside a dict
+        Returns:
+            dict: A dictionary containing all properties associated with this VMware instance.
 
+        #ai-gen-doc
         """
         instance_json = {
             "instanceProperties": {
@@ -106,16 +131,49 @@ class VMwareInstance(VirtualServerInstance):
         return instance_json
 
     @property
-    def server_host_name(self):
-        """getter for the domain name in the vmware vendor json"""
+    def server_host_name(self) -> list:
+        """Get the domain name (server host name) from the VMware vendor JSON.
+
+        Returns:
+            The domain name or server host name as a list.
+
+        Example:
+            >>> vmware_instance = VMwareInstance()
+            >>> host_name = vmware_instance.server_host_name
+            >>> print(f"VMware server host name: {host_name}")
+
+        #ai-gen-doc
+        """
         return self._server_host_name
 
     @property
-    def _user_name(self):
-        """getter for the username from the vmware vendor json"""
-        return self._vmwarvendor.get("userName", "")
+    def _user_name(self) -> str:
+        """Get the username from the VMware vendor JSON configuration.
+
+        Returns:
+            The username string extracted from the VMware vendor JSON.
+
+        Example:
+            >>> instance = VMwareInstance()
+            >>> username = instance._user_name
+            >>> print(f"VMware username: {username}")
+
+        #ai-gen-doc
+        """
+        return self._vmwarvendor.get('userName') or self._credential.get('userName', '')
 
     @property
-    def server_name(self):
-        """getter for the domain name in the vmware vendor json"""
+    def server_name(self) -> list:
+        """Get the domain name from the VMware vendor JSON.
+
+        Returns:
+            The domain name associated with this VMware instance as a list.
+
+        Example:
+            >>> vmware_instance = VMwareInstance()
+            >>> domain = vmware_instance.server_name
+            >>> print(f"VMware domain name: {domain}")
+
+        #ai-gen-doc
+        """
         return self._server_name

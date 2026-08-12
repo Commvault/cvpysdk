@@ -33,6 +33,14 @@ DisasterRecovery:
 
     _process_drbackup_response()  --    process the disaster recovery backup request
 
+    has_dr_copy()                 --    check if a specific DR backup copy is configured
+
+    get_dr_copies()               --    get a list of all DR backup copies configured on the CommServe server
+
+    add_dr_copy()                 --    add a DR backup copy to the CommServe server with the specified storage pool and retention settings.
+
+    delete_dr_copy()              --    delete a DR backup copy from the CommServe server.
+
     restore_out_of_place()        --    function to run DR restore operation
 
     _advanced_dr_backup()         --    includes advance dr backup options
@@ -99,39 +107,77 @@ DisasterRecoveryManagement Attributes:
 
 """
 from base64 import b64encode
-from cvpysdk.policies.storage_policies import StoragePolicy
+
+from cvpysdk.policies.storage_policies import StoragePolicy, StoragePolicyCopy
 from cvpysdk.storage import DiskLibrary
 from .job import Job
 from .exception import SDKException
 from .client import Client
 from .constants import AppIDAType
+from .storage_pool import StorageType, StoragePoolType
+
+from typing import Any, Dict, List, Optional, Union, TYPE_CHECKING
+if TYPE_CHECKING:
+    import requests
+    from cvpysdk.commcell import Commcell
 
 
 class DisasterRecovery(object):
-    """Class to perform all the disaster recovery operations on commcell"""
+    """
+    DisasterRecovery class for managing disaster recovery operations on a CommCell.
 
-    def __init__(self, commcell):
-        """Initializes DisasterRecovery object
+    This class provides a comprehensive interface for performing disaster recovery tasks,
+    including backup, restore, and configuration management. It supports both standard and
+    advanced disaster recovery backups, out-of-place restores, and resetting configurations
+    to default states. The class also offers various properties to manage and query backup
+    settings, client lists, and database options relevant to disaster recovery.
 
-            Args:
-                commcell            (object)    --  instance of commcell
+    Key Features:
+        - Perform disaster recovery backups (standard and advanced)
+        - Restore data out-of-place with flexible options
+        - Reset disaster recovery settings to defaults
+        - Process backup and task responses
+        - Generate disaster recovery backup JSON configurations
+        - Filter paths for backup and restore operations
+        - Manage client lists and backup types
+        - Enable or disable compression and various database options
+        - Access disaster recovery management properties
 
+    #ai-gen-doc
+    """
+
+    def __init__(self, commcell: 'Commcell') -> None:
+        """Initialize a DisasterRecovery object with the given Commcell instance.
+
+        Args:
+            commcell: An instance of the Commcell class representing the connection to the Commcell environment.
+
+        Example:
+            >>> from cvpysdk.commcell import Commcell
+            >>> commcell = Commcell('commcell_host', 'username', 'password')
+            >>> dr = DisasterRecovery(commcell)
+            >>> print("DisasterRecovery object initialized successfully")
+        #ai-gen-doc
         """
         self.commcell = commcell
         self.client = Client(self.commcell, self.commcell.commserv_name)
         self.path = self.client.install_directory
         self._RESTORE = self.commcell._services['RESTORE']
         self._CREATE_TASK = self.commcell._services['CREATE_TASK']
+        self._V4_DRBACKUP_BACKUP_DESTINATIONS = self.commcell._services['V4_DRBACKUP_BACKUP_DESTINATIONS']
+        self._V4_DRBACKUP_BACKUP_DESTINATION_DELETE = self.commcell._services['V4_DRBACKUP_BACKUP_DESTINATION_DELETE']
+        self._V4_DRBACKUP_STORAGE_POLICY = self.commcell._services['V4_DRBACKUP_STORAGE_POLICY']
         self.advbackup = False
         self._disaster_recovery_management = None
         self.reset_to_defaults()
 
-    def reset_to_defaults(self):
-        """
-        Resets the instance variables to default values
+    def reset_to_defaults(self) -> None:
+        """Reset all instance variables of the DisasterRecovery object to their default values.
 
-            Returns:
-                 None
+        This method restores the internal state of the DisasterRecovery instance, clearing any custom settings
+        or modifications and returning all variables to their initial default values.
+
+        #ai-gen-doc
         """
         self._backup_type = "full"
         self._is_compression_enabled = True
@@ -143,19 +189,24 @@ class DisasterRecovery(object):
         self._client_list = None
         self.advanced_job_options = None
 
-    def disaster_recovery_backup(self):
-        """Runs a DR job for Commserv
+    def disaster_recovery_backup(self) -> Job:
+        """Initiate a Disaster Recovery (DR) backup job for the CommServe server.
 
-            Returns:
-                object - instance of the Job class for this backup job
+        This method starts a DR backup job, which is essential for protecting the CommServe database and configuration.
+        The returned Job object can be used to monitor the status and progress of the backup operation.
 
-            Raises:
-                SDKException:
-                    if backup level specified is not correct
+        Returns:
+            Job: An instance of the Job class representing the initiated DR backup job.
 
-                    if response is empty
+        Raises:
+            SDKException: If the backup level specified is incorrect, if the response is empty, or if the response indicates failure.
 
-                    if response is not success
+        Example:
+            >>> dr = DisasterRecovery()
+            >>> dr_job = dr.disaster_recovery_backup()
+            >>> print(f"Started DR backup job with ID: {dr_job.job_id}")
+
+        #ai-gen-doc
         """
 
         if self._backup_type.lower() not in ['full', 'differential']:
@@ -172,22 +223,23 @@ class DisasterRecovery(object):
         )
         return self._process_drbackup_response(flag, response)
 
-    def _process_drbackup_response(self, flag, response):
-        """DR Backup response will be processed.
+    def _process_drbackup_response(self, flag: str, response: 'requests.Response') -> Job:
+        """Process the response from a Disaster Recovery (DR) backup operation.
 
-            Args:
-                flag, response  (str)  --  results of DR backup JSON request
+        This method handles the results of a DR backup JSON request, validates the response,
+        and returns a Job instance representing the initiated restore job.
 
-            Returns:
-                object - instance of the Job class for this restore job
+        Args:
+            flag: The result flag from the DR backup JSON request.
+            response: The response string from the DR backup JSON request.
 
-            Raises:
-                SDKException:
-                    if job initialization failed
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                    if response is empty
+        Raises:
+            SDKException: If job initialization fails, if the response is empty, or if the response indicates failure.
 
-                    if response is not success
+        #ai-gen-doc
         """
         if flag:
             if response.json():
@@ -204,75 +256,61 @@ class DisasterRecovery(object):
 
     def restore_out_of_place(
             self,
-            client,
-            destination_path,
-            overwrite=True,
-            restore_data_and_acl=True,
-            copy_precedence=None,
-            from_time=None,
-            to_time=None,
-            fs_options=None,
-            restore_jobs=[]):
-        """Restores the files/folders specified in the input paths list to the input client,
-            at the specified destionation location.
+            client: Union[str, Client],
+            destination_path: str,
+            overwrite: bool = True,
+            restore_data_and_acl: bool = True,
+            copy_precedence: Optional[int] = None,
+            from_time: Optional[str] = None,
+            to_time: Optional[str] = None,
+            fs_options: Optional[Dict[str, Any]] = None,
+            restore_jobs: Optional[List[int]] = None
+        ) -> Job:
+        """Restore files or folders out-of-place to a specified client and destination path.
 
-            Args:
-                client                (str/object) --  either the name of the client or
-                                                           the instance of the Client
+        This method initiates a restore operation for the given client, restoring the selected
+        files or folders to the specified destination path. Advanced options such as overwrite,
+        ACL restoration, copy precedence, time filters, and file system options can be configured.
 
-                destination_path      (str)        --  full path of the restore location on client
+        Args:
+            client: The target client for restore. Can be the client name (str) or a Client object.
+            destination_path: Full path on the client where data will be restored.
+            overwrite: If True, existing files at the destination will be overwritten. Default is True.
+            restore_data_and_acl: If True, both data and ACLs will be restored. Default is True.
+            copy_precedence: Optional copy precedence value for storage policy copy.
+            from_time: Optional start time for restore (format: 'YYYY-MM-DD HH:MM:SS').
+            to_time: Optional end time for restore (format: 'YYYY-MM-DD HH:MM:SS').
+            fs_options: Optional dictionary of advanced file system restore options, such as:
+                - preserve_level: Level of folder structure to preserve.
+                - proxy_client: Proxy client to use for restore.
+                - impersonate_user: User to impersonate during restore.
+                - impersonate_password: Base64-encoded password for impersonation.
+                - all_versions: If True, restores all versions of the specified file.
+                - versions: List of version numbers to restore.
+            restore_jobs: Optional list of job IDs to restore (for index-free restore).
 
-                paths                 (list)       --  list of full paths of
-                                                           files/folders to restore
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                overwrite             (bool)       --  unconditional overwrite files during restore
-                    default: True
+        Raises:
+            SDKException: If input parameters are invalid or if the restore job fails to initialize.
 
-                restore_data_and_acl  (bool)       --  restore data and ACL files
-                    default: True
+        Example:
+            >>> dr = DisasterRecovery()
+            >>> job = dr.restore_out_of_place(
+            ...     client='Client01',
+            ...     destination_path='/restore/location',
+            ...     overwrite=True,
+            ...     restore_data_and_acl=True,
+            ...     copy_precedence=2,
+            ...     from_time='2023-01-01 00:00:00',
+            ...     to_time='2023-01-31 23:59:59',
+            ...     fs_options={'preserve_level': 2, 'proxy_client': 'Proxy01'},
+            ...     restore_jobs=[12345, 12346]
+            ... )
+            >>> print(f"Restore job started with ID: {job.job_id}")
 
-                copy_precedence         (int)   --  copy precedence value of storage policy copy
-                    default: None
-
-                from_time           (str)       --  time to retore the contents after
-                        format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                to_time           (str)         --  time to retore the contents before
-                        format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                fs_options      (dict)          -- dictionary that includes all advanced options
-                    options:
-                        preserve_level      : preserve level option to set in restore
-                        proxy_client        : proxy that needed to be used for restore
-                        impersonate_user    : Impersonate user options for restore
-                        impersonate_password: Impersonate password option for restore
-                                                in base64 encoded form
-                        all_versions        : if set to True restores all the versions of the
-                                                specified file
-                        versions            : list of version numbers to be backed up
-
-                restore_jobs    (list)      --  list of jobs to be restored if the job is index free restore
-
-            Returns:
-                object - instance of the Job class for this restore job
-
-            Raises:
-                SDKException:
-                    if client is not a string or Client instance
-
-                    if destination_path is not a string
-
-                    if paths is not a list
-
-                    if failed to initialize job
-
-                    if response is empty
-
-                    if response is not success
+        #ai-gen-doc
         """
         if not ((isinstance(client, (str, Client))
                  and isinstance(destination_path, str)
@@ -319,26 +357,208 @@ class DisasterRecovery(object):
             fs_options=fs_options,
             restore_jobs=restore_jobs)
 
-    def _advanced_dr_backup(self):
-        """Runs a DR job with JSON input
+    def get_dr_copies(self):
+        """Get a mapping of the storage policies and DR backup copies configured on the CommServe server."""
+        flag, response = self.commcell._cvpysdk_object.make_request('GET', self._V4_DRBACKUP_BACKUP_DESTINATIONS)
+        if flag:
+            if response.json():
+                backup_destinations = response.json().get('backupdestinations', [])
+            else:
+                response_string = self.commcell._update_response_(response.text)
+                raise SDKException('Response', '101', response_string)
+        else:
+            raise SDKException('DisasterRecovery', '102', 'Failed to retrieve DR backup copies')
+        
+        flag, response = self.commcell._cvpysdk_object.make_request('GET', self._V4_DRBACKUP_STORAGE_POLICY)
+        if flag:
+            if response.json():
+                storage_policy_name = response.json().get('name', '')
+            else:
+                response_string = self.commcell._update_response_(response.text)
+                raise SDKException('Response', '101', response_string)
+        else:
+            raise SDKException('DisasterRecovery', '102', 'Failed to retrieve storage policies for DR backup copies')
+        
+        # Extract name and copy id from each backup destination
+        processed_destinations = []
+        for destination in backup_destinations:
+            if 'planBackupDestination' in destination:
+                copy_name = destination['planBackupDestination'].get('name')
+                copy_id = destination['planBackupDestination'].get('id')
+                if copy_name and copy_id:
+                    processed_destinations.append({copy_name: copy_id})
+        
+        dr_copies = {'StoragePolicy': storage_policy_name, 'BackupDestinations': processed_destinations}
+        return dr_copies
 
-            Returns:
-                object - instance of the Job class for this backup job
+    def has_dr_copy(self, copy_name) -> bool:
+        """Check if a specific DR backup copy is configured on the CommServe server.
+        
+        Args:
+        
+            copy_name: The name of the DR backup copy to check for existence."""
+        
+        copies = self.get_dr_copies()
+        return any(copy_name in destination for destination in copies['BackupDestinations'])
 
-            Raises:
-                SDKException:
-                    if backup level specified is not correct
+    def add_dr_copy(self, copy_name: str, storage_pool: str, retention: int=0, extended_retention: dict=None) -> 'StoragePolicyCopy':
+        """Add a DR backup copy to the CommServe server with the specified storage pool and retention settings.
 
-                    if response is empty
+        This method creates a new DR backup copy using the provided parameters, allowing for additional redundancy
+        and protection of the CommServe database. The copy will be associated with the specified storage pool and
+        configured with the given retention settings.
 
-                    if response is not success
+        Args:
+            copy_name: The name for the new DR backup copy.
+            storage_pool: The name of the storage pool where the DR backup copy will be stored.
+            retention: Retention period in days for the DR backup copy. Default is 0 (no retention).
+            extended_retention: Optional dictionary specifying extended retention rules for the DR backup copy. 
+
+        Raises:
+            SDKException: If input parameters are invalid or if adding the DR backup copy fails.
+
+        Example:
+            >>> dr = DisasterRecovery()
+            >>> dr.add_dr_copy(
+            ...     copy_name='DR_Copy_01',
+            ...     storage_pool='StoragePool01',
+            ...     retention=30,
+            ...     extended_retention={
+            ...     "firstExtendedRetentionRule": {
+                    "isInfiniteRetention": False,
+                    "type": "WEEKLY_FULLS",
+                    "retentionPeriodDays": 90
+                    },
+            ...     "secondExtendedRetentionRule": {
+                    "type": "MONTHLY_FULLS",
+                    "retentionPeriodDays": 365,
+                    "isInfiniteRetention": False
+                    },
+            ...     "thirdExtendedRetentionRule": {
+                    "type": "YEARLY_FULLS",
+                    "retentionPeriodDays": 1825,
+                    "isInfiniteRetention": False
+                }
+            }
+            >>> print("DR backup copy added successfully")
+
+        #ai-gen-doc
+        """
+        #Make changes for defaults if its Tape pool
+        copy_payload = {"backupDestinationName": copy_name, "overrideRetentionSettings": True, "backupStartTime": -1, "useExtendedRetentionRules": False}
+        storage_pool_obj = self.commcell.storage_pools.get(storage_pool)
+        copy_payload['storagePool'] = {"id": int(storage_pool_obj.storage_pool_id), "name": storage_pool_obj.storage_pool_name}
+        if storage_pool_obj.storage_type == StorageType.TAPE.value:
+            copy_payload['storagePool']['type'] = StoragePoolType.SECONDARY_COPY.value #To fetch maxstreamNums from the pool to inherit in copy
+            if retention: # If retention is provided, use it
+                copy_payload['retentionPeriodDays'] = retention
+            else:
+                copy_payload.update({'overrideRetentionSettings': False})
+                copy_payload['retentionPeriodDays'] = storage_pool_obj.get_copy().copy_retention['days']  # Default retention -> inherit from tape pools
+            copy_payload['backupsToCopy'] = "MONTHLY_FULLS" # Default backups to copy for tape pools
+            copy_payload['fullBackupTypesToCopy'] = "LAST"  # Default full backup types to copy for tape pools
+        else:
+            if retention:
+                copy_payload['retentionPeriodDays'] = retention
+            else:
+                copy_payload['retentionPeriodDays'] = 30  # Default retention for non-tape pools
+        if storage_pool_obj.is_worm_storage_lock_enabled: #copies inhering worm pools should not be overriding pool retention
+            if 'retentionPeriodDays' in copy_payload:
+                del copy_payload['retentionPeriodDays']
+            copy_payload.update({'overrideRetentionSettings': False})
+        if extended_retention:
+            if (storage_pool_obj.storage_type == StorageType.TAPE.value or storage_pool_obj.is_worm_storage_lock_enabled) and retention is None:
+                raise SDKException('Plan', '102', 'Retention period days must be specified when adding extended retention rules for Tape storage pool')
+            copy_payload.update({'useExtendedRetentionRules': True})
+            copy_payload.update({"extendedRetentionRules": extended_retention})
+
+        request_json = {
+            'destinations': [copy_payload]
+        }
+        flag, response = self.commcell._cvpysdk_object.make_request('POST', self._V4_DRBACKUP_BACKUP_DESTINATIONS, request_json)
+
+        dr_copies = self.get_dr_copies()
+        storage_policy = dr_copies['StoragePolicy']
+        if flag:
+            if response.json():
+                response_json = response.json()
+                if "planBackupDestination" in response_json and len(response_json['planBackupDestination']) > 0:
+                    return StoragePolicyCopy(self.commcell, storage_policy, response_json['planBackupDestination'][0]['name'])
+                if "errorCode" in response_json and response_json['errorCode'] != 0:
+                    error_message = response_json['errorMessage']
+                    o_str = 'Adding DR backup copy failed\nError: "{0}"'.format(error_message)
+                    raise SDKException('Response', '102', o_str)
+            else:
+                response_string = self.commcell._update_response_(response.text)
+                raise SDKException('Response', '101', response_string)
+            
+    def delete_dr_copy(self, copy: Union[str, StoragePolicyCopy, int]) -> None:
+        """Delete a DR backup copy from the CommServe server.
+
+        This method removes the specified DR backup copy, which can help manage storage resources and maintain
+        an organized set of backup copies. The copy to be deleted can be identified by its name or by providing
+        a StoragePolicyCopy object.
+
+        Args:
+            copy: The DR backup copy to delete. Can be the copy name (str) or a StoragePolicyCopy object.
+
+        Raises:
+            SDKException: If the specified copy does not exist or if the deletion operation fails.
+
+        Example:
+            >>> dr = DisasterRecovery()
+            >>> dr.delete_dr_copy('DR_Copy_01')
+            >>> print("DR backup copy deleted successfully")
+
+        #ai-gen-doc
+        """
+        dr_copies = self.get_dr_copies()
+        storage_policy = dr_copies['StoragePolicy']
+        if isinstance(copy, StoragePolicyCopy):
+            copy_id = copy.copy_id
+        elif isinstance(copy, str):
+            copy_id = StoragePolicyCopy(self.commcell, storage_policy, copy).copy_id
+        elif isinstance(copy, int):
+            copy_id = copy
+        else:
+            raise SDKException('DisasterRecovery', '101')
+
+        flag, response = self.commcell._cvpysdk_object.make_request('DELETE', self._V4_DRBACKUP_BACKUP_DESTINATION_DELETE % copy_id)
+
+        if flag:
+            if response.json():
+                response_json = response.json()
+                if "errorCode" in response_json and response_json['errorCode'] != 0:
+                    error_message = response_json['errorMessage']
+                    o_str = 'Deleting DR backup copy failed\nError: "{0}"'.format(error_message)
+                    raise SDKException('Response', '102', o_str)
+            else:
+                response_string = self.commcell._update_response_(response.text)
+                raise SDKException('Response', '101', response_string)
+
+    def _advanced_dr_backup(self) -> Job:
+        """Run an advanced Disaster Recovery (DR) backup job using JSON input.
+
+        This method initiates a DR backup job and returns an instance of the Job class representing the backup operation.
+
+        Returns:
+            Job: An instance of the Job class for the initiated backup job.
+
+        Raises:
+            SDKException: If the backup level specified is incorrect, if the response is empty, or if the response indicates failure.
+
+        #ai-gen-doc
         """
         request_json = self._generatedrbackupjson()
         return self._process_createtask_response(request_json)
 
-    def _generatedrbackupjson(self):
-        """
-        Generate JSON corresponds to DR backup job
+    def _generatedrbackupjson(self) -> dict:
+        """Generate a JSON dictionary corresponding to a Disaster Recovery (DR) backup job.
+
+        Returns:
+            dict: A dictionary representing the DR backup job in JSON format.
+
+        #ai-gen-doc
         """
         try:
             self._task = {
@@ -434,23 +654,22 @@ class DisasterRecovery(object):
         except Exception as err:
             raise SDKException('Response', '101', err)
 
-    def _process_createtask_response(self, request_json):
-        """Runs the CreateTask API with the request JSON provided for DR backup,
-            and returns the contents after parsing the response.
+    def _process_createtask_response(self, request_json: dict) -> Job:
+        """Execute the CreateTask API for DR backup and parse the response.
 
-            Args:
-                request_json    (dict)  --  JSON request to run for the API
+        This method sends the provided JSON request to the CreateTask API for disaster recovery backup,
+        processes the response, and returns a Job object representing the restore job.
 
-            Returns:
-                object - instance of the Job class for this restore job
+        Args:
+            request_json: Dictionary containing the JSON request payload for the CreateTask API.
 
-            Raises:
-                SDKException:
-                    if restore job failed
+        Returns:
+            Job: An instance of the Job class representing the initiated restore job.
 
-                    if response is empty
+        Raises:
+            SDKException: If the restore job fails, the response is empty, or the response indicates failure.
 
-                    if response is not success
+        #ai-gen-doc
         """
         flag, response = self.commcell._cvpysdk_object.make_request(
             'POST', self._CREATE_TASK, request_json
@@ -471,19 +690,28 @@ class DisasterRecovery(object):
         response_string = self.commcell._update_response_(response.text)
         raise SDKException('Response', '101', response_string)
 
-    def _filter_paths(self, paths, is_single_path=False, agent_id=None):
-        """Filters the paths based on the Operating System, and Agent.
+    def _filter_paths(self, paths: list, is_single_path: bool = False, agent_id: str = None) -> Union[list, str]:
+        """Filter the provided paths based on the operating system and agent.
 
-            Args:
-                paths           (list)  --  list containing paths to be filtered
+        Args:
+            paths: List of file or directory paths to be filtered.
+            is_single_path: If True, return only a single filtered path as a string. If False, return a list of filtered paths.
+            agent_id: Optional file system agent ID used for filtering.
 
-                is_single_path  (bool)  --  boolean specifying whether to return a single path
-                                                or the entire list
-                agent_id        (str)   --   File system agent id
-            Returns:
-                list    -   if the boolean is_single_path is set to False
+        Returns:
+            list: A list of filtered paths if is_single_path is False.
+            str: A single filtered path if is_single_path is True.
 
-                str     -   if the boolean is_single_path is set to True
+        Example:
+            >>> dr = DisasterRecovery()
+            >>> filtered_list = dr._filter_paths(['/data', '/backup'], is_single_path=False)
+            >>> print(filtered_list)
+            ['/data', '/backup']
+            >>> single_path = dr._filter_paths(['/data', '/backup'], is_single_path=True)
+            >>> print(single_path)
+            '/data'
+
+        #ai-gen-doc
         """
         for index, path in enumerate(paths):
             # "if" condition is default i.e. if client is not provided
@@ -507,137 +735,321 @@ class DisasterRecovery(object):
         return paths
 
     @property
-    def client_list(self):
-        """Treats the client_list as a read-only attribute."""
+    def client_list(self) -> list:
+        """Get the list of clients associated with the DisasterRecovery instance as a read-only property.
+
+        Returns:
+            list: A list containing the client names or client objects managed by this DisasterRecovery instance.
+
+        Example:
+            >>> dr = DisasterRecovery()
+            >>> clients = dr.client_list  # Access the client list property
+            >>> print(f"Number of clients: {len(clients)}")
+            >>> for client in clients:
+            ...     print(client)
+        #ai-gen-doc
+        """
         return self._client_list
 
     @client_list.setter
-    def client_list(self, value):
-        """Treats the client_list as a read-only attribute."""
+    def client_list(self, value: list) -> None:
+        """Attempting to set the client_list attribute is not allowed.
+
+        Args:
+            value: The value attempted to be assigned to client_list (ignored).
+
+        Example:
+            >>> dr = DisasterRecovery()
+            >>> dr.client_list = ['ClientA', 'ClientB']  # This will not change the client_list
+
+        #ai-gen-doc
+        """
         if isinstance(value, list):
             self._client_list = value
         else:
             raise SDKException('DisasterRecovery', '101')
 
     @property
-    def is_compression_enabled(self):
-        """Treats the iscompressionenabled as a read-only attribute."""
+    def is_compression_enabled(self) -> bool:
+        """Indicate whether compression is enabled for disaster recovery operations.
+
+        Returns:
+            bool: True if compression is enabled, False otherwise.
+
+        Example:
+            >>> dr = DisasterRecovery()
+            >>> if dr.is_compression_enabled:
+            ...     print("Compression is enabled for disaster recovery.")
+            ... else:
+            ...     print("Compression is not enabled for disaster recovery.")
+
+        #ai-gen-doc
+        """
         return self._is_compression_enabled
 
     @is_compression_enabled.setter
-    def is_compression_enabled(self, value):
-        """Treats the iscompressionenabled as a read-only attribute."""
+    def is_compression_enabled(self, value: bool) -> None:
+        """Attempt to set the is_compression_enabled property.
+
+        Note:
+            This property is read-only and cannot be set directly. 
+            Any attempt to assign a value to this property will have no effect.
+
+        Example:
+            >>> dr = DisasterRecovery()
+            >>> dr.is_compression_enabled = True  # This will not change the property value
+
+        #ai-gen-doc
+        """
         if isinstance(value, bool):
             self._is_compression_enabled = value
         else:
             raise SDKException('DisasterRecovery', '101')
 
     @property
-    def backup_type(self):
-        """Treats the backup_type as a read-only attribute."""
+    def backup_type(self) -> str:
+        """Get the backup type for the DisasterRecovery instance as a read-only property.
+
+        Returns:
+            The backup type as a string.
+
+        Example:
+            >>> dr = DisasterRecovery()
+            >>> current_type = dr.backup_type  # Access the backup type property
+            >>> print(f'Disaster Recovery backup type: {current_type}')
+        #ai-gen-doc
+        """
         return self._backup_type
 
     @backup_type.setter
-    def backup_type(self, value):
-        """Treats the backup_type as a read-only attribute."""
+    def backup_type(self, value: str) -> None:
+        """Attempting to set the backup_type attribute is not allowed.
+
+        This property is read-only and cannot be modified directly. Any attempt to set
+        the backup_type will be ignored or may raise an exception, depending on implementation.
+
+        Args:
+            value: The attempted value for backup_type (ignored).
+
+        Example:
+            >>> dr = DisasterRecovery()
+            >>> dr.backup_type = "Full"  # This will not change the backup_type attribute
+
+        #ai-gen-doc
+        """
         if isinstance(value, str):
             self._backup_type = value
         else:
             raise SDKException('DisasterRecovery', '101')
 
     @property
-    def is_history_db_enabled(self):
-        """Treats the historydb as a read-only attribute."""
+    def is_history_db_enabled(self) -> bool:
+        """Indicate whether the history database is enabled for disaster recovery.
+
+        Returns:
+            bool: True if the history database is enabled, False otherwise.
+
+        Example:
+            >>> dr = DisasterRecovery()
+            >>> if dr.is_history_db_enabled:
+            ...     print("History database is enabled for disaster recovery.")
+            ... else:
+            ...     print("History database is not enabled.")
+
+        #ai-gen-doc
+        """
         return self._is_history_db_enabled
 
     @is_history_db_enabled.setter
-    def is_history_db_enabled(self, value):
-        """sets the value of ishistorydb
+    def is_history_db_enabled(self, value: bool) -> None:
+        """Set the value indicating whether the history database is enabled.
 
-            Args:
-                value   (bool)      --  True/False
-         """
+        Args:
+            value: Set to True to enable the history database, or False to disable it.
+
+        Example:
+            >>> dr = DisasterRecovery()
+            >>> dr.is_history_db_enabled = True  # Enable the history database
+            >>> dr.is_history_db_enabled = False  # Disable the history database
+
+        #ai-gen-doc
+        """
         if isinstance(value, bool):
             self._is_history_db_enabled = value
         else:
             raise SDKException('DisasterRecovery', '101')
 
     @property
-    def is_workflow_db_enabled(self):
-        """Treats the workflowdb as a read-only attribute."""
+    def is_workflow_db_enabled(self) -> bool:
+        """Indicate whether the Workflow Database (workflowdb) is enabled for disaster recovery.
+
+        Returns:
+            bool: True if the workflowdb is enabled; False otherwise.
+
+        Example:
+            >>> dr = DisasterRecovery(commcell_object)
+            >>> if dr.is_workflow_db_enabled:
+            ...     print("Workflow DB is enabled for disaster recovery.")
+            ... else:
+            ...     print("Workflow DB is not enabled.")
+
+        #ai-gen-doc
+        """
         return self._is_workflow_db_enabled
 
     @is_workflow_db_enabled.setter
-    def is_workflow_db_enabled(self, value):
-        """
-        sets the value of isworkflowdb
+    def is_workflow_db_enabled(self, value: bool) -> None:
+        """Set the workflow database enabled status for disaster recovery.
 
-            Args:
-                value   (bool)      --  True/False
-         """
+        Args:
+            value: Set to True to enable the workflow database, or False to disable it.
+
+        Example:
+            >>> dr = DisasterRecovery()
+            >>> dr.is_workflow_db_enabled = True  # Enable the workflow database
+            >>> dr.is_workflow_db_enabled = False  # Disable the workflow database
+
+        #ai-gen-doc
+        """
         if isinstance(value, bool):
             self._is_workflow_db_enabled = value
         else:
             raise SDKException('DisasterRecovery', '101')
 
     @property
-    def is_appstudio_db_enabled(self):
-        """Treats the workflowdb as a read-only attribute."""
+    def is_appstudio_db_enabled(self) -> bool:
+        """Indicate whether the AppStudio workflow database is enabled.
+
+        This property provides a read-only boolean value that specifies if the AppStudio workflow database 
+        feature is currently enabled in the DisasterRecovery configuration.
+
+        Returns:
+            True if the AppStudio workflow database is enabled; False otherwise.
+
+        Example:
+            >>> dr = DisasterRecovery(commcell_object)
+            >>> if dr.is_appstudio_db_enabled:
+            ...     print("AppStudio workflow database is enabled.")
+            ... else:
+            ...     print("AppStudio workflow database is not enabled.")
+
+        #ai-gen-doc
+        """
         return self._is_appstudio_db_enabled
 
     @is_appstudio_db_enabled.setter
-    def is_appstudio_db_enabled(self, value):
-        """
-        sets the value of isappstudiodb
+    def is_appstudio_db_enabled(self, value: bool) -> None:
+        """Set the AppStudio database enabled status for disaster recovery.
 
-            Args:
-                value   (bool)      --  True/False
-         """
+        Args:
+            value: Boolean value indicating whether the AppStudio database is enabled (True) or disabled (False).
+
+        Example:
+            >>> dr = DisasterRecovery()
+            >>> dr.is_appstudio_db_enabled = True  # Enable AppStudio database
+            >>> dr.is_appstudio_db_enabled = False  # Disable AppStudio database
+
+        #ai-gen-doc
+        """
         if isinstance(value, bool):
             self._is_appstudio_db_enabled = value
         else:
             raise SDKException('DisasterRecovery', '101')
 
     @property
-    def is_cvcloud_db_enabled(self):
-        """Treats the cvclouddb as a read-only attribute."""
+    def is_cvcloud_db_enabled(self) -> bool:
+        """Indicate whether the cvclouddb feature is enabled.
+
+        This property provides a read-only boolean value that specifies if the cvclouddb 
+        (Commvault Cloud Database) is currently enabled for disaster recovery operations.
+
+        Returns:
+            True if cvclouddb is enabled; False otherwise.
+
+        Example:
+            >>> dr = DisasterRecovery()
+            >>> if dr.is_cvcloud_db_enabled:
+            ...     print("cvclouddb is enabled for disaster recovery.")
+            ... else:
+            ...     print("cvclouddb is not enabled.")
+
+        #ai-gen-doc
+        """
         return self._is_cvcloud_db_enabled
 
     @is_cvcloud_db_enabled.setter
-    def is_cvcloud_db_enabled(self, value):
-        """
-        sets the value of iscvclouddb
+    def is_cvcloud_db_enabled(self, value: bool) -> None:
+        """Set the value indicating whether the CVCloud database is enabled.
 
-            Args:
-                value   (bool)      --  True/False
-         """
+        Args:
+            value: True to enable the CVCloud database, or False to disable it.
+
+        Example:
+            >>> dr = DisasterRecovery()
+            >>> dr.is_cvcloud_db_enabled = True  # Enable the CVCloud database
+            >>> dr.is_cvcloud_db_enabled = False  # Disable the CVCloud database
+
+        #ai-gen-doc
+        """
         if isinstance(value, bool):
             self._is_cvcloud_db_enabled = value
         else:
             raise SDKException('DisasterRecovery', '101')
 
     @property
-    def is_dm2_db_enabled(self):
-        """Treats the dm2db as a read-only attribute."""
+    def is_dm2_db_enabled(self) -> bool:
+        """Indicate whether the DM2 database is enabled for disaster recovery.
+
+        This property provides a read-only boolean value that specifies if the DM2 database 
+        feature is currently enabled in the disaster recovery configuration.
+
+        Returns:
+            True if the DM2 database is enabled; False otherwise.
+
+        Example:
+            >>> dr = DisasterRecovery()
+            >>> if dr.is_dm2_db_enabled:
+            ...     print("DM2 database is enabled for disaster recovery.")
+            ... else:
+            ...     print("DM2 database is not enabled.")
+
+        #ai-gen-doc
+        """
         return self._is_dm2_db_enabled
 
     @is_dm2_db_enabled.setter
-    def is_dm2_db_enabled(self, value):
-        """
-        sets the value of isdm2db
+    def is_dm2_db_enabled(self, value: bool) -> None:
+        """Set the value indicating whether DM2 database is enabled for disaster recovery.
 
-            Args:
-                value   (bool)      --  True/False
-         """
+        Args:
+            value: True to enable DM2 database, False to disable it.
+
+        Example:
+            >>> dr = DisasterRecovery()
+            >>> dr.is_dm2_db_enabled = True  # Enable DM2 database
+            >>> dr.is_dm2_db_enabled = False  # Disable DM2 database
+
+        #ai-gen-doc
+        """
         if isinstance(value, bool):
             self._is_dm2_db_enabled = value
         else:
             raise SDKException('DisasterRecovery', '101')
 
     @property
-    def disaster_recovery_management(self):
-        """
-        Returns the instance of the DisasterRecoveryManagement class
+    def disaster_recovery_management(self) -> 'DisasterRecoveryManagement':
+        """Get the DisasterRecoveryManagement instance associated with this DisasterRecovery object.
+
+        Returns:
+            DisasterRecoveryManagement: An instance for managing disaster recovery operations.
+
+        Example:
+            >>> dr = DisasterRecovery(commcell_object)
+            >>> dr_management = dr.disaster_recovery_management  # Access the property
+            >>> print(f"Disaster Recovery Management object: {dr_management}")
+            >>> # The returned DisasterRecoveryManagement object can be used for further disaster recovery tasks
+
+        #ai-gen-doc
         """
         if self._disaster_recovery_management is None:
             self._disaster_recovery_management = DisasterRecoveryManagement(self.commcell)
@@ -645,14 +1057,41 @@ class DisasterRecovery(object):
 
 
 class DisasterRecoveryManagement(object):
-    """Class to perform all the disaster recovery management operations on commcell"""
+    """
+    DisasterRecoveryManagement provides a comprehensive interface for managing disaster recovery operations on a CommCell.
 
-    def __init__(self, commcell):
-        """Initializes DisasterRecoveryManagement object
+    This class enables configuration, monitoring, and execution of disaster recovery processes, including backup metadata management, cloud integration, storage policy assignment, and process automation. It supports both local and network disaster recovery paths, cloud region management, and user impersonation for secure operations.
 
-            Args:
-            commcell    (object)    --  instance of commcell
+    Key Features:
+        - Retrieve and set disaster recovery properties
+        - Manage disaster recovery backup options
+        - Configure and refresh disaster recovery settings
+        - Set local and network disaster recovery paths with credential support
+        - Upload metadata to Commvault Cloud and cloud libraries
+        - Manage cloud regions and enable/disable cloud uploads
+        - Impersonate users for secure operations
+        - Access and modify properties such as region, number of metadata, VSS usage, wild card settings, backup metadata folder, and storage policy
+        - Configure pre/post scan and backup processes, with options to run them automatically
 
+    Usage:
+        Instantiate with a CommCell object to perform disaster recovery management tasks, including property configuration, cloud integration, and process automation.
+
+    #ai-gen-doc
+    """
+
+    def __init__(self, commcell: 'Commcell') -> None:
+        """Initialize a DisasterRecoveryManagement object.
+
+        Args:
+            commcell: An instance of the Commcell class representing the Commcell connection.
+
+        Example:
+            >>> from cvpysdk.commcell import Commcell
+            >>> commcell = Commcell('commcell_host', 'username', 'password')
+            >>> drm = DisasterRecoveryManagement(commcell)
+            >>> print("DisasterRecoveryManagement object created successfully")
+
+        #ai-gen-doc
         """
         self._commcell = commcell
         self.services = self._commcell._services
@@ -660,18 +1099,17 @@ class DisasterRecoveryManagement(object):
         self._cvpysdk_object = self._commcell._cvpysdk_object
         self.refresh()
 
-    def _get_dr_properties(self):
-        """
-        Executes a request on the server to get the settings of disaster recovery Backup.
+    def _get_dr_properties(self) -> None:
+        """Retrieve the disaster recovery backup settings from the server.
 
-            Returns:
-                None
+        This method sends a request to the server to obtain the current configuration
+        and properties related to disaster recovery backup. It updates the internal
+        state of the DisasterRecoveryManagement object with the retrieved settings.
 
-            Raises:
-                SDKException
-                    if response is empty
+        Raises:
+            SDKException: If the server response is empty or indicates a failure.
 
-                    if response is not success
+        #ai-gen-doc
         """
         flag, response = self._cvpysdk_object.make_request(method='GET', url=self._service)
         if flag:
@@ -691,16 +1129,16 @@ class DisasterRecoveryManagement(object):
             response_string = self._commcell._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _set_dr_properties(self):
-        """
-        Executes a request on the server, to set the dr settings.
+    def _set_dr_properties(self) -> None:
+        """Send a request to the server to configure disaster recovery (DR) settings.
 
-         Returns:
-               None
-         Raises:
-              SDKException:
-                    if given inputs are invalid.
+        This method updates the DR properties on the server. It should be called after
+        setting the desired DR configuration parameters on the DisasterRecoveryManagement object.
 
+        Raises:
+            SDKException: If the provided inputs for DR settings are invalid.
+
+        #ai-gen-doc
         """
 
         flag, response = self._cvpysdk_object.make_request(method='POST', url=self._service,
@@ -717,9 +1155,18 @@ class DisasterRecoveryManagement(object):
         else:
             raise SDKException('Response', '101')
 
-    def _get_drbackup_options(self):
-        """
-        Returns : dict of dr backup options
+    def _get_drbackup_options(self) -> dict:
+        """Retrieve the disaster recovery (DR) backup options as a dictionary.
+
+        Returns:
+            dict: A dictionary containing the DR backup configuration options.
+
+        Example:
+            >>> dr_mgmt = DisasterRecoveryManagement()
+            >>> dr_options = dr_mgmt._get_drbackup_options()
+            >>> print(dr_options)
+            {'backup_frequency': 'daily', 'retention_days': 30, ...}
+        #ai-gen-doc
         """
         flag, response = self._cvpysdk_object.make_request(
             method='GET',
@@ -733,23 +1180,34 @@ class DisasterRecoveryManagement(object):
         else:
             raise SDKException('Response', '101')
 
-    def get_cloud_regions(self):
-        """
-        Returns : dict of available dr backup regions.
-                    Ex:
+    def get_cloud_regions(self) -> dict:
+        """Retrieve the available disaster recovery (DR) backup cloud regions.
+
+        Returns:
+            dict: A dictionary containing the default DR region and a list of available regions.
+                Example structure:
                     {
                         "defaultRegion": "southindia",
                         "regions": [
                             {
                                 "regionCode": "eastus2",
                                 "displayName": "East US 2"
-                            }
+                            },
                             {
                                 "regionCode": "southindia",
                                 "displayName": "(Asia Pacific) South India"
                             }
                         ]
                     }
+
+        Example:
+            >>> dr_mgmt = DisasterRecoveryManagement()
+            >>> regions_info = dr_mgmt.get_cloud_regions()
+            >>> print(f"Default region: {regions_info['defaultRegion']}")
+            >>> for region in regions_info['regions']:
+            ...     print(f"Region code: {region['regionCode']}, Name: {region['displayName']}")
+
+        #ai-gen-doc
         """
         flag, response = self._cvpysdk_object.make_request(
             method='GET',
@@ -763,19 +1221,29 @@ class DisasterRecoveryManagement(object):
         else:
             raise SDKException('Response', '101')
 
-    def _set_commvault_cloud_upload(self, flag, region=None):
-        """
-        Executes a request on the server, to set the dr settings for commvault cloud upload.
-         Args:
-             flag   (bool)   : True to enable commvault cloud upload, False to disable
-             region (str)    : To select the region for the DR backup to be uploaded to.
-                                None will leave the region to be in default region.
-         Returns:
-               None
-         Raises:
-              SDKException:
-                    if given inputs are invalid.
+    def _set_commvault_cloud_upload(self, flag: bool, region: Optional[str] = None) -> None:
+        """Set the disaster recovery (DR) settings for Commvault Cloud upload.
 
+        This method sends a request to the server to enable or disable Commvault Cloud upload for DR backups.
+        Optionally, a specific region can be selected for the DR backup upload. If no region is provided,
+        the default region will be used.
+
+        Args:
+            flag: Set to True to enable Commvault Cloud upload, or False to disable it.
+            region: Optional; the region to which the DR backup should be uploaded. If None, the default region is used.
+
+        Raises:
+            SDKException: If the provided inputs are invalid.
+
+        Example:
+            >>> drm = DisasterRecoveryManagement()
+            >>> drm._set_commvault_cloud_upload(True, region="us-east-1")
+            >>> # Enables Commvault Cloud upload for DR backups to the 'us-east-1' region
+            >>>
+            >>> drm._set_commvault_cloud_upload(False)
+            >>> # Disables Commvault Cloud upload for DR backups
+
+        #ai-gen-doc
         """
         current_options = self._get_drbackup_options()
         current_options['properties']['uploadBackupMetadataToCloud'] = flag
@@ -799,27 +1267,32 @@ class DisasterRecoveryManagement(object):
         else:
             raise SDKException('Response', '101')
 
+    def refresh(self) -> None:
+        """Refresh the disaster recovery (DR) settings associated with the Commcell.
 
-    def refresh(self):
-        """
-        refreshs the dr settings associated with commcell.
+        This method reloads the DR configuration, ensuring that the latest settings 
+        from the Commcell are applied.
 
-        Returns:
-            None
+        #ai-gen-doc
         """
         self._prepost_settings = None
         self._export_settings = None
         self._get_dr_properties()
 
-    def set_local_dr_path(self, path):
-        """
-        Sets local DR path
+    def set_local_dr_path(self, path: str) -> None:
+        """Set the local Disaster Recovery (DR) path.
 
-            Args:
-                 path       (str)       --         local path.
+        This method configures the local path where Disaster Recovery files will be stored.
 
-            Returns:
-                None
+        Args:
+            path: The local filesystem path to be used for Disaster Recovery storage.
+
+        Example:
+            >>> drm = DisasterRecoveryManagement()
+            >>> drm.set_local_dr_path('/var/commvault/dr')
+            >>> print("Local DR path set successfully")
+
+        #ai-gen-doc
         """
         if isinstance(path, str):
             self._export_settings['backupMetadataFolder'] = path
@@ -827,67 +1300,94 @@ class DisasterRecoveryManagement(object):
         else:
             raise SDKException('DisasterRecovery', '101')
 
-    def set_network_dr_path(self, path, username, password):
+    def set_network_dr_path(self, path: str, credential_name: str) -> None:
+        """Set the network Disaster Recovery (DR) path using a specified credential.
+
+        This method configures the UNC (Universal Naming Convention) path for network-based disaster recovery
+        and associates it with a credential for authentication.
+
+        Args:
+            path: The UNC path to be used for network DR (e.g., '\\\\server\\share\\dr').
+            credential_name: The name of the credential to use for accessing the specified UNC path.
+
+        Example:
+            >>> drm = DisasterRecoveryManagement()
+            >>> drm.set_network_dr_path('\\\\backupserver\\drshare', 'DR_Credential')
+            >>> print("Network DR path set successfully.")
+
+        #ai-gen-doc
         """
-        Sets network DR path
-
-            Args:
-                 path       (str)       --      UNC path.
-
-                 username   (str)       --      username with admin privileges of the remote machine.
-
-                 password   (str)       --      password.
-
-            Returns:
-                None
-        """
-        if isinstance(path, str) and isinstance(username, str) and isinstance(password, str):
+        if isinstance(path, str) and isinstance(credential_name, str):
             self._export_settings['backupMetadataFolder'] = path
-            self._export_settings['networkUserAccount']['userName'] = username
-            self._export_settings['networkUserAccount']['password'] = b64encode(password.encode()).decode()
+            dr_backup_credential = {
+                "credentialId": self._commcell.credentials.get(credential_name).credential_id,
+                "credentialName": credential_name
+            }
+            self._export_settings['drBackupCredential'] = dr_backup_credential
             self._set_dr_properties()
         else:
             raise SDKException('DisasterRecovery', '101')
 
-    def upload_metdata_to_commvault_cloud(self, flag, username=None, password=None, region=None):
-        """
-        Enable/Disable upload metadata to commvault cloud setting.
+    def upload_metdata_to_commvault_cloud(self, flag: bool, username: str = None, password: str = None, region: str = None) -> None:
+        """Enable or disable the upload of metadata to Commvault Cloud.
 
-            Args:
-                 flag       (bool)      --      True/False.
+        This method configures whether disaster recovery (DR) metadata should be uploaded to Commvault Cloud.
+        Optionally, you can specify the cloud account credentials and the region for the upload.
 
-                 username   (str)       --      username of the commvault cloud.
+        Args:
+            flag: Set to True to enable metadata upload, or False to disable it.
+            username: (Optional) Username for the Commvault Cloud account.
+            password: (Optional) Password for the Commvault Cloud account.
+            region: (Optional) Cloud region to upload the DR backup metadata. If None, the default region is used.
 
-                 password   (str)       --      password of the commvault cloud.
+        Example:
+            >>> drm = DisasterRecoveryManagement()
+            >>> drm.upload_metdata_to_commvault_cloud(
+            ...     flag=True,
+            ...     username="cloud_user",
+            ...     password="secure_password",
+            ...     region="us-east-1"
+            ... )
+            >>> # This enables metadata upload to Commvault Cloud in the specified region.
 
-                 region     (str)       --      region to upload the DRBackup, None will set to default region
+            >>> drm.upload_metdata_to_commvault_cloud(flag=False)
+            >>> # This disables metadata upload to Commvault Cloud.
 
-            Returns:
-                 None
+        #ai-gen-doc
         """
         if isinstance(flag, bool):
             self._export_settings['uploadBackupMetadataToCloud'] = flag
             if flag:
+                if region and isinstance(region, str):
+                    self._export_settings['region'] = region
+                else:
+                    raise SDKException('DisasterRecovery', '101')
                 if isinstance(username, str) and isinstance(password, str):
                     self._export_settings['cloudCredentials']['userName'] = username
                     self._export_settings['cloudCredentials']['password'] = b64encode(password.encode()).decode()
                 else:
                     raise SDKException('DisasterRecovery', '101')
-            self._set_commvault_cloud_upload(flag)
+            self._set_dr_properties()
         else:
             raise SDKException('DisasterRecovery', '101')
 
-    def upload_metdata_to_cloud_library(self, flag, libraryname=None):
-        """
-        Enable/Disable upload metadata to cloud library
+    def upload_metdata_to_cloud_library(self, flag: bool, libraryname: object = None) -> None:
+        """Enable or disable the upload of metadata to a cloud library.
 
-            Args:
-                 flag       (bool)      --      True/False.
+        This method allows you to control whether metadata is uploaded to a specified third-party cloud library.
+        You can enable or disable this feature by setting the `flag` parameter.
 
-                 libraryname   (str/object)    --      Third party cloud library name/disklibrary object.
+        Args:
+            flag: Set to True to enable metadata upload, or False to disable it.
+            libraryname: The name of the third-party cloud library as a string, or a disklibrary object. If not specified, the default library is used.
 
-            Returns:
-                None
+        Example:
+            >>> drm = DisasterRecoveryManagement()
+            >>> drm.upload_metdata_to_cloud_library(True, libraryname="MyCloudLibrary")
+            >>> # Disables metadata upload for the default library
+            >>> drm.upload_metdata_to_cloud_library(False)
+
+        #ai-gen-doc
         """
         if isinstance(flag, bool):
             self._export_settings['uploadBackupMetadataToCloudLib'] = flag
@@ -904,19 +1404,26 @@ class DisasterRecoveryManagement(object):
         else:
             raise SDKException('DisasterRecovery', '101')
 
-    def impersonate_user(self, flag, username, password):
-        """
-        Enable/Disable Impersonate user option for pre/post scripts.
+    def impersonate_user(self, flag: bool, username: str, password: str) -> None:
+        """Enable or disable the impersonate user option for pre/post scripts.
 
-            Args:
-                flag        (bool)      --  True/False.
+        This method allows you to enable or disable the impersonation of a user with administrative privileges
+        when running pre/post scripts in disaster recovery operations.
 
-                username    (str)       --  username with admin privileges.
+        Args:
+            flag: Set to True to enable impersonation, or False to disable it.
+            username: The username of the account with administrative privileges to impersonate.
+            password: The password for the specified administrative account.
 
-                password    (str)       --  password for the account.
+        Example:
+            >>> drm = DisasterRecoveryManagement()
+            >>> drm.impersonate_user(True, "admin_user", "secure_password")
+            >>> # Impersonation is now enabled for pre/post scripts
 
-            Returns:
-                None
+            >>> drm.impersonate_user(False, "admin_user", "secure_password")
+            >>> # Impersonation is now disabled for pre/post scripts
+
+        #ai-gen-doc
         """
         if isinstance(flag, bool):
             self._prepost_settings['useImpersonateUser'] = flag
@@ -931,45 +1438,67 @@ class DisasterRecoveryManagement(object):
             raise SDKException('DisasterRecovery', '101')
 
     @property
-    def use_impersonate_user(self):
-        """
-        gets the impersonate user(True/False)
+    def use_impersonate_user(self) -> bool:
+        """Indicate whether the impersonate user feature is enabled.
 
-            Returns:
-                  True/False
+        Returns:
+            True if impersonate user is enabled; False otherwise.
+
+        Example:
+            >>> drm = DisasterRecoveryManagement()
+            >>> if drm.use_impersonate_user:
+            ...     print("Impersonate user is enabled.")
+            ... else:
+            ...     print("Impersonate user is disabled.")
+
+        #ai-gen-doc
         """
         return self._prepost_settings.get('useImpersonateUser')
 
     @property
-    def region(self):
-        """
-        gets the current region set to upload DRBackups
+    def region(self) -> str:
+        """Get the current region configured for uploading Disaster Recovery (DR) backups.
 
-            Returns:
-                region (str)
+        Returns:
+            The name of the region as a string where DR backups are uploaded.
+
+        Example:
+            >>> drm = DisasterRecoveryManagement()
+            >>> current_region = drm.region
+            >>> print(f"DR backups are uploaded to region: {current_region}")
+
+        #ai-gen-doc
         """
         return self._get_drbackup_options()['properties']['region']
 
     @property
-    def number_of_metadata(self):
-        """
-         gets the value, Number of metadata folders to be retained.
+    def number_of_metadata(self) -> int:
+        """Get the number of metadata folders to be retained.
 
-            Returns:
-                number of metadata     (int)
+        Returns:
+            The number of metadata folders (as an integer) that are configured to be retained.
+
+        Example:
+            >>> drm = DisasterRecoveryManagement()
+            >>> num_metadata = drm.number_of_metadata
+            >>> print(f"Number of metadata folders to retain: {num_metadata}")
+
+        #ai-gen-doc
         """
         return self._export_settings.get('numberOfMetadata')
 
     @number_of_metadata.setter
-    def number_of_metadata(self, value):
-        """
-        Sets the value, Number of metadata folders to be retained.
+    def number_of_metadata(self, value: int) -> None:
+        """Set the number of metadata folders to be retained for disaster recovery.
 
-            Args:
-                value       (int)       --      number of metadata folders to be retained.
+        Args:
+            value: The number of metadata folders to retain.
 
-            Returns:
-                None
+        Example:
+            >>> drm = DisasterRecoveryManagement()
+            >>> drm.number_of_metadata = 5  # Retain 5 metadata folders
+
+        #ai-gen-doc
         """
         if isinstance(value, int):
             self._export_settings['numberOfMetadata'] = value
@@ -978,25 +1507,36 @@ class DisasterRecoveryManagement(object):
             raise SDKException('DisasterRecovery', '101')
 
     @property
-    def use_vss(self):
-        """
-        gets the value, use vss()
+    def use_vss(self) -> bool:
+        """Indicate whether VSS (Volume Shadow Copy Service) is enabled for disaster recovery operations.
 
-            Returns:
-                True/False
+        Returns:
+            bool: True if VSS is enabled, False otherwise.
+
+        Example:
+            >>> drm = DisasterRecoveryManagement()
+            >>> if drm.use_vss:
+            ...     print("VSS is enabled for disaster recovery.")
+            ... else:
+            ...     print("VSS is not enabled for disaster recovery.")
+
+        #ai-gen-doc
         """
         return self._export_settings.get('isUseVSS')
 
     @use_vss.setter
-    def use_vss(self, flag):
-        """
-        sets the value, use vss
+    def use_vss(self, flag: bool) -> None:
+        """Set the 'use_vss' flag for disaster recovery operations.
 
-            Args:
-                 flag   (bool)      --      True/Flase
+        Args:
+            flag: Boolean value indicating whether to enable (True) or disable (False) the use of VSS (Volume Shadow Copy Service).
 
-            Returns:
-                None
+        Example:
+            >>> drm = DisasterRecoveryManagement()
+            >>> drm.use_vss = True  # Enable VSS
+            >>> drm.use_vss = False  # Disable VSS
+
+        #ai-gen-doc
         """
         if isinstance(flag, bool):
             self._export_settings['isUseVSS'] = flag
@@ -1005,25 +1545,34 @@ class DisasterRecoveryManagement(object):
             raise SDKException('DisasterRecovery', '101')
 
     @property
-    def wild_card_settings(self):
-        """
-        gets the wild card settings
+    def wild_card_settings(self) -> str:
+        """Get the wild card settings for client logs to be backed up.
 
-            Returns:
-                (str)       --     client logs that are to be backed up
+        Returns:
+            A string representing the client log wild card settings that determine which logs are included in the backup.
+
+        Example:
+            >>> drm = DisasterRecoveryManagement()
+            >>> settings = drm.wild_card_settings
+            >>> print(f"Wild card settings: {settings}")
+
+        #ai-gen-doc
         """
         return self._export_settings.get('wildCardSetting')
 
     @wild_card_settings.setter
-    def wild_card_settings(self, logs):
-        """
-        sets the wild card setting
+    def wild_card_settings(self, logs: list) -> None:
+        """Set the wild card settings for log file names.
 
-            Args:
-                 logs    (list)      --      log file names
+        Args:
+            logs: A list of log file names to be used as wild card settings.
 
-            Returns:
-                  None
+        Example:
+            >>> drm = DisasterRecoveryManagement()
+            >>> drm.wild_card_settings = ['log1.txt', 'log2.txt']
+            >>> # The wild card settings are now updated with the specified log files
+
+        #ai-gen-doc
         """
         mandatory = "cvd;SIDBPrune;SIDBEngine;CVMA"
         if isinstance(logs, list):
@@ -1036,55 +1585,77 @@ class DisasterRecoveryManagement(object):
         self._set_dr_properties()
 
     @property
-    def backup_metadata_folder(self):
-        """
-        gets the backup metadata folder
+    def backup_metadata_folder(self) -> str:
+        """Get the path to the backup metadata folder.
 
-            Returns:
-                 (str)      --      Backup metadata folder
+        Returns:
+            The path to the backup metadata folder as a string.
+
+        Example:
+            >>> drm = DisasterRecoveryManagement()
+            >>> metadata_path = drm.backup_metadata_folder  # Use dot notation for property access
+            >>> print(f"Backup metadata folder: {metadata_path}")
+
+        #ai-gen-doc
         """
         return self._export_settings.get('backupMetadataFolder')
 
     @property
-    def upload_backup_metadata_to_cloud(self):
-        """
-        gets the upload backup metadata to cloud setting
+    def upload_backup_metadata_to_cloud(self) -> bool:
+        """Get the current setting for uploading backup metadata to the cloud.
 
-            Returns:
-                 True/False
+        Returns:
+            True if the upload backup metadata to cloud option is enabled, False otherwise.
+
+        Example:
+            >>> drm = DisasterRecoveryManagement()
+            >>> is_enabled = drm.upload_backup_metadata_to_cloud
+            >>> print(f"Upload backup metadata to cloud enabled: {is_enabled}")
+
+        #ai-gen-doc
         """
         return self._export_settings.get('uploadBackupMetadataToCloud')
 
     @property
-    def upload_backup_metadata_to_cloud_lib(self):
-        """
-        gets the upload metadata to cloud lib
+    def upload_backup_metadata_to_cloud_lib(self) -> bool:
+        """Check if backup metadata upload to the cloud library is enabled.
 
-            Returns:
-                True/False
+        Returns:
+            True if uploading backup metadata to the cloud library is enabled, False otherwise.
+
+        Example:
+            >>> drm = DisasterRecoveryManagement()
+            >>> is_enabled = drm.upload_backup_metadata_to_cloud_lib
+            >>> print(f"Upload to cloud library enabled: {is_enabled}")
+
+        #ai-gen-doc
         """
         return self._export_settings.get('uploadBackupMetadataToCloudLib')
 
     @property
-    def dr_storage_policy(self):
-        """
-        gets the storage policy name, that is being used for DR backups
+    def dr_storage_policy(self) -> str:
+        """Get the name of the storage policy used for Disaster Recovery (DR) backups.
 
-            Returns:
-                (str)       --      Name of the storage policy
+        Returns:
+            The name of the storage policy configured for DR backups.
+
+        Example:
+            >>> drm = DisasterRecoveryManagement()
+            >>> storage_policy_name = drm.dr_storage_policy
+            >>> print(f"DR Storage Policy: {storage_policy_name}")
+
+        #ai-gen-doc
         """
         return self._export_settings.get('storagePolicy').get('storagePolicyName')
 
     @dr_storage_policy.setter
-    def dr_storage_policy(self, storage_policy_object):
-        """
-        sets the storage policy for DR jobs
+    def dr_storage_policy(self, storage_policy_object: StoragePolicy) -> None:
+        """Set the storage policy to be used for Disaster Recovery (DR) jobs.
 
-            Args:
-                storage_policy_object       (object)        --      object of the storage policy
+        Args:
+            storage_policy_object: An object representing the storage policy to assign for DR jobs.
 
-            Returns:
-                None
+        #ai-gen-doc
         """
         if isinstance(storage_policy_object, StoragePolicy):        # add str
             self._export_settings['storagePolicy']['storagePolicyName'] = storage_policy_object.name
@@ -1094,25 +1665,34 @@ class DisasterRecoveryManagement(object):
             raise SDKException('DisasterRecovery', '101')
 
     @property
-    def pre_scan_process(self):
-        """
-        gets the script path of the pre scan process
+    def pre_scan_process(self) -> str:
+        """Get the script path for the pre-scan process.
 
-            Returns:
-                (str)       --      script path
+        Returns:
+            The file system path to the script used for the pre-scan process as a string.
+
+        Example:
+            >>> drm = DisasterRecoveryManagement()
+            >>> script_path = drm.pre_scan_process
+            >>> print(f"Pre-scan script path: {script_path}")
+
+        #ai-gen-doc
         """
         return self._prepost_settings.get('preScanProcess')
 
     @pre_scan_process.setter
-    def pre_scan_process(self, path):
-        """
-        sets the pre scan process.
+    def pre_scan_process(self, path: str) -> None:
+        """Set the path for the pre-scan process script.
 
-            Args:
-                 path   (str)      --   path of the pre scan script
+        Args:
+            path: The file system path to the pre-scan script to be used during disaster recovery operations.
 
-            Returns:
-                None
+        Example:
+            >>> drm = DisasterRecoveryManagement()
+            >>> drm.pre_scan_process = "/opt/scripts/pre_scan.sh"
+            >>> # The pre-scan process is now set to the specified script path
+
+        #ai-gen-doc
         """
         if isinstance(path, str):
             self._prepost_settings['preScanProcess'] = path
@@ -1121,25 +1701,34 @@ class DisasterRecoveryManagement(object):
             raise SDKException('DisasterRecovery', '101')
 
     @property
-    def post_scan_process(self):
-        """
-        gets the script path of the post scan process
+    def post_scan_process(self) -> str:
+        """Get the script path configured for the post scan process.
 
-            Returns:
-                (str)       --      script path
+        Returns:
+            The file system path to the script that is executed after the scan process completes.
+
+        Example:
+            >>> drm = DisasterRecoveryManagement()
+            >>> post_scan_script = drm.post_scan_process
+            >>> print(f"Post scan script path: {post_scan_script}")
+
+        #ai-gen-doc
         """
         return self._prepost_settings.get('postScanProcess')
 
     @post_scan_process.setter
-    def post_scan_process(self, path):
-        """
-         sets the post scan process.
+    def post_scan_process(self, path: str) -> None:
+        """Set the path for the post scan process script.
 
-            Args:
-                 path   (str)      --   path of the post scan script
+        Args:
+            path: The file system path to the post scan script to be executed after the scan process.
 
-            Returns:
-                None
+        Example:
+            >>> drm = DisasterRecoveryManagement()
+            >>> drm.post_scan_process = "/opt/scripts/post_scan.sh"
+            >>> # The post scan process script is now set to the specified path
+
+        #ai-gen-doc
         """
         if isinstance(path, str):
             self._prepost_settings['postScanProcess'] = path
@@ -1148,25 +1737,34 @@ class DisasterRecoveryManagement(object):
             raise SDKException('DisasterRecovery', '101')
 
     @property
-    def pre_backup_process(self):
-        """
-        gets the script path of the pre backup process
+    def pre_backup_process(self) -> str:
+        """Get the script path of the pre-backup process.
 
-            Returns:
-                (str)       --      script path
+        Returns:
+            The file system path to the script that is executed before the backup process begins.
+
+        Example:
+            >>> drm = DisasterRecoveryManagement()
+            >>> pre_script = drm.pre_backup_process
+            >>> print(f"Pre-backup script path: {pre_script}")
+
+        #ai-gen-doc
         """
         return self._prepost_settings.get('preBackupProcess')
 
     @pre_backup_process.setter
-    def pre_backup_process(self, path):
-        """
-         sets the pre backup process.
+    def pre_backup_process(self, path: str) -> None:
+        """Set the path for the pre-backup process script.
 
-            Args:
-                 path   (str)      --   path of the pre backup script
+        Args:
+            path: The file system path to the pre-backup script to be executed before backup operations.
 
-            Returns:
-                None
+        Example:
+            >>> drm = DisasterRecoveryManagement()
+            >>> drm.pre_backup_process = "/opt/scripts/pre_backup.sh"
+            >>> # The pre-backup process is now set to the specified script path
+
+        #ai-gen-doc
         """
         if isinstance(path, str):
             self._prepost_settings['preBackupProcess'] = path
@@ -1175,25 +1773,36 @@ class DisasterRecoveryManagement(object):
             raise SDKException('DisasterRecovery', '101')
 
     @property
-    def post_backup_process(self):
-        """
-        gets the script path of the post backup process
+    def post_backup_process(self) -> str:
+        """Get the script path configured for the post-backup process.
 
-            Returns:
-                (str)       --      script path
+        Returns:
+            The file system path to the script that is executed after a backup completes.
+
+        Example:
+            >>> drm = DisasterRecoveryManagement()
+            >>> script_path = drm.post_backup_process
+            >>> print(f"Post-backup script path: {script_path}")
+
+        #ai-gen-doc
         """
         return self._prepost_settings.get('postBackupProcess')
 
     @post_backup_process.setter
-    def post_backup_process(self, path):
-        """
-         sets the post backup process.
+    def post_backup_process(self, path: str) -> None:
+        """Set the path for the post-backup process script.
 
-            Args:
-                 path   (str)      --   path of the post backup script
+        This setter assigns the file system path to the script that should be executed after a backup operation completes.
 
-            Returns:
-                None
+        Args:
+            path: The file system path to the post-backup script.
+
+        Example:
+            >>> drm = DisasterRecoveryManagement()
+            >>> drm.post_backup_process = "/opt/scripts/post_backup.sh"
+            >>> # The post-backup process is now set to execute the specified script after backups
+
+        #ai-gen-doc
         """
         if isinstance(path, str):
             self._prepost_settings['postBackupProcess'] = path
@@ -1202,25 +1811,36 @@ class DisasterRecoveryManagement(object):
             raise SDKException('DisasterRecovery', '101')
 
     @property
-    def run_post_scan_process(self):
-        """
-        gets the value, run post scan process
+    def run_post_scan_process(self) -> bool:
+        """Get the current setting for running the post scan process.
 
-            Returns:
-                 True/False
+        Returns:
+            bool: True if the post scan process is enabled, False otherwise.
+
+        Example:
+            >>> drm = DisasterRecoveryManagement()
+            >>> if drm.run_post_scan_process:
+            ...     print("Post scan process is enabled.")
+            ... else:
+            ...     print("Post scan process is disabled.")
+
+        #ai-gen-doc
         """
         return self._prepost_settings.get('runPostScanProcess')
 
     @run_post_scan_process.setter
-    def run_post_scan_process(self, flag):
-        """
-        sets the value, run post scan process
+    def run_post_scan_process(self, flag: bool) -> None:
+        """Set the flag to enable or disable the post scan process.
 
-            Args:
-                 flag      (bool)   --      True/False
+        Args:
+            flag: A boolean value indicating whether to run the post scan process (True) or not (False).
 
-            Returns:
-                None
+        Example:
+            >>> drm = DisasterRecoveryManagement()
+            >>> drm.run_post_scan_process = True  # Enable post scan process
+            >>> drm.run_post_scan_process = False  # Disable post scan process
+
+        #ai-gen-doc
         """
         if isinstance(flag, bool):
             self._prepost_settings['runPostScanProcess'] = flag
@@ -1229,25 +1849,36 @@ class DisasterRecoveryManagement(object):
             raise SDKException('DisasterRecovery', '101')
 
     @property
-    def run_post_backup_process(self):
-        """
-         gets the value, run post backup process
+    def run_post_backup_process(self) -> bool:
+        """Get the current setting for running the post-backup process.
 
-            Returns:
-                 True/False
+        Returns:
+            bool: True if the post-backup process is enabled, False otherwise.
+
+        Example:
+            >>> drm = DisasterRecoveryManagement()
+            >>> if drm.run_post_backup_process:
+            ...     print("Post-backup process is enabled.")
+            ... else:
+            ...     print("Post-backup process is disabled.")
+
+        #ai-gen-doc
         """
         return self._prepost_settings.get('runPostBackupProcess')
 
     @run_post_backup_process.setter
-    def run_post_backup_process(self, flag):
-        """
-        sets the value, run post backup process
+    def run_post_backup_process(self, flag: bool) -> None:
+        """Set the flag to enable or disable the post-backup process.
 
-            Args:
-                 flag      (bool)   --      True/False
+        Args:
+            flag: A boolean value indicating whether to run the post-backup process (True) or not (False).
 
-            Returns:
-                None
+        Example:
+            >>> drm = DisasterRecoveryManagement()
+            >>> drm.run_post_backup_process = True  # Enable post-backup process
+            >>> drm.run_post_backup_process = False  # Disable post-backup process
+
+        #ai-gen-doc
         """
         if isinstance(flag, bool):
             self._prepost_settings['runPostBackupProcess'] = flag

@@ -43,20 +43,42 @@ OracleCloudInstance:
 
 from ..vsinstance import VirtualServerInstance
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ...agent import Agent
+
 
 class OracleCloudInstance(VirtualServerInstance):
-    """Class for representing an Hyper-V of the Virtual Server agent."""
+    """
+    Represents an Oracle Cloud instance managed by the Virtual Server agent.
 
-    def __init__(self, agent, instance_name, instance_id=None):
-        """Initialize the Instance object for the given Virtual Server instance.
+    This class provides an interface for handling Oracle Cloud virtual server instances,
+    allowing for retrieval and management of instance properties and metadata. It includes
+    methods for initializing the instance with specific agent and identification details,
+    as well as internal methods for accessing instance properties in both object and JSON formats.
+
+    Key Features:
+        - Initialization with agent, instance name, and instance ID
+        - Retrieval of instance properties and their JSON representation
+        - Access to server host name, server name, and instance username via properties
+
+    #ai-gen-doc
+    """
+
+    def __init__(self, agent: 'Agent', instance_name: str, instance_id: str = None) -> None:
+        """Initialize an OracleCloudInstance object for the specified Virtual Server instance.
 
         Args:
-            agent               (object)    --  the instance of the agent class
-            
-            instance_name       (str)       --  the name of the instance
-            
-            instance_id         (int)       --  the instance id
+            agent: The agent object associated with this Oracle Cloud instance.
+            instance_name: The name of the Oracle Cloud instance.
+            instance_id: The unique identifier for the instance. If not provided, it will be determined automatically.
 
+        Example:
+            >>> agent = Agent(client_object, 'Virtual Server')
+            >>> instance = OracleCloudInstance(agent, 'MyOracleInstance', '101')
+            >>> print(f"Instance created: {instance}")
+
+        #ai-gen-doc
         """
         self._vendor_id = 13
         self._server_name = []
@@ -64,14 +86,16 @@ class OracleCloudInstance(VirtualServerInstance):
         self._username = None
         super(OracleCloudInstance, self).__init__(agent, instance_name, instance_id)
 
-    def  _get_instance_properties(self):
-        """
-        Get the properties of this instance
+    def _get_instance_properties(self) -> None:
+        """Retrieve and update the properties of the current Oracle Cloud instance.
 
-        Raise:
-            SDK Exception:
-                if response is not empty
-                if response is not success
+        This method fetches the latest properties for the instance and updates the internal state.
+        It raises an SDK Exception if the response is not empty or if the response indicates failure.
+
+        Raises:
+            SDK Exception: If the response is not empty or not successful.
+
+        #ai-gen-doc
         """
 
         super(OracleCloudInstance, self)._get_instance_properties()
@@ -87,15 +111,16 @@ class OracleCloudInstance(VirtualServerInstance):
             if 'clientName' in client.keys():
                 self._server_name.append(str(client['clientName']))
 
-    def _get_instance_properties_json(self):
-        """get the all instance related properties of this subclient.
+    def _get_instance_properties_json(self) -> dict:
+        """Retrieve all instance-related properties for this Oracle Cloud instance.
 
-          Returns:
-               instance_json    (dict)  --  all instance properties put inside a dict
+        Returns:
+            dict: A dictionary containing all properties associated with this instance.
 
+        #ai-gen-doc
         """
         instance_json = {
-            "instanceProperties":{
+            "instanceProperties": {
                 "isDeleted": False,
                 "instance": self._instance,
                 "instanceActivityControl": self._instanceActivityControl,
@@ -110,29 +135,49 @@ class OracleCloudInstance(VirtualServerInstance):
         return instance_json
 
     @property
-    def server_host_name(self):
-        """return the Oracle Cloud endpoint
+    def server_host_name(self) -> list:
+        """Get the Oracle Cloud server endpoint hostname.
 
         Returns:
-            _server_host_name   (str)   --  the hostname of the oracle cloud server
+            The hostname of the Oracle Cloud server as a list.
+
+        Example:
+            >>> instance = OracleCloudInstance()
+            >>> endpoint = instance.server_host_name  # Use dot notation for property access
+            >>> print(f"Oracle Cloud endpoint: {endpoint}")
+
+        #ai-gen-doc
         """
         return self._server_host_name
 
     @property
-    def server_name(self):
-        """
-        returns the list of all associated clients with the instance
+    def server_name(self) -> list:
+        """Get the server name associated with this Oracle Cloud instance.
 
         Returns:
-            _server_name    (str)   --  the list of all proxies associated to the instance
+            The server name as a list.
+
+        Example:
+            >>> instance = OracleCloudInstance()
+            >>> name = instance.server_name  # Use dot notation for property access
+            >>> print(f"Server name: {name}")
+
+        #ai-gen-doc
         """
         return self._server_name
 
     @property
-    def instance_username(self):
-        """returns the username of the instance
+    def instance_username(self) -> str:
+        """Get the username associated with the Oracle Cloud instance endpoint.
 
         Returns:
-            _username   (str)   --  the user name of the oracle cloud endpoint
+            The username of the Oracle Cloud endpoint as a string.
+
+        Example:
+            >>> instance = OracleCloudInstance()
+            >>> username = instance.instance_username  # Use dot notation for property access
+            >>> print(f"Instance username: {username}")
+
+        #ai-gen-doc
         """
         return self._username

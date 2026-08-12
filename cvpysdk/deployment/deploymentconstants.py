@@ -76,6 +76,8 @@ class UnixDownloadFeatures(Enum):
     SAPHANA = 1210
     SQLSERVER = 1212
     VIRTUAL_SERVER = 1136
+    WEB_CONSOLE = 1167
+    COMMAND_CENTER = 1135
     TEST_AUTOMATION = 1153
     PYTHON_SDK = 1154
     CONTENT_ANALYZER = 1108
@@ -83,6 +85,7 @@ class UnixDownloadFeatures(Enum):
     INFORMIX = 1201
     SYBASE = 1202
     WEB_SERVER = 1174
+    MYSQL = 1208
 
 
 class WindowsDownloadFeatures(Enum):
@@ -104,7 +107,8 @@ class WindowsDownloadFeatures(Enum):
     VIRTUAL_SERVER = 713
     VSS_PROVIDER = 453
     VSS_HARDWARE_PROVIDER = 455
-    WEB_CONSOLE = 726
+    WEB_CONSOLE = 767
+    COMMAND_CENTER = 726
     TEST_AUTOMATION = 719
     PYTHON_SDK = 754
     COMMSERVE_LITE = 25
@@ -116,6 +120,7 @@ class WindowsDownloadFeatures(Enum):
     INFORMIX = 360
     SYBASE = 1202
     WEB_SERVER = 252
+    MYSQL = 358
 
 
 class OSNameIDMapping(Enum):

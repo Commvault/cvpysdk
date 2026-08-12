@@ -34,72 +34,80 @@ from __future__ import unicode_literals
 
 from ..backupset import Backupset
 from ..exception import SDKException
-
+from typing import Union, Optional
 
 class HANABackupset(Backupset):
-    """Derived class from Backupset Base class, representing a SAP HANA backupset,
-        and to perform operations on that backupset.
+    """
+    Represents a SAP HANA backupset, extending the Backupset base class.
+
+    This class provides specialized functionality for managing SAP HANA backupsets,
+    including performing restore operations with various configuration options.
+    It is designed to facilitate backupset management and restoration tasks
+    specific to SAP HANA environments.
+
+    Key Features:
+        - Restore SAP HANA backupsets to specified instances and directories
+        - Support for point-in-time restores
+        - Options to initialize log area and use hardware revert
+        - Ability to clone environments and check access during restore
+        - Configurable destination instance directory and delta backup handling
+
+    #ai-gen-doc
     """
 
     def restore(
             self,
-            pseudo_client,
-            instance,
-            backup_prefix=None,
-            point_in_time=None,
-            initialize_log_area=False,
-            use_hardware_revert=False,
-            clone_env=False,
-            check_access=True,
-            destination_instance_dir=None,
-            ignore_delta_backups=True):
-        """Restores the databases specified in the input paths list.
+            pseudo_client: str,
+            instance: Union[str, 'Instance'],
+            backup_prefix: Optional[str] = None,
+            point_in_time: Optional[str] = None,
+            initialize_log_area: bool = False,
+            use_hardware_revert: bool = False,
+            clone_env: bool = False,
+            check_access: bool = True,
+            destination_instance_dir: Optional[str] = None,
+            ignore_delta_backups: bool = True
+        ) -> 'Job':
+        """Restore HANA databases to a specified client and instance.
 
-            Args:
-                pseudo_client               (str)   --  HANA client to restore the database at
+        This method initiates a restore operation for HANA databases, allowing customization of restore options such as point-in-time recovery, hardware revert, cloning, and log area initialization.
 
-                instance                    (str)   --  destination instance to restore the db at
+        Args:
+            pseudo_client: Name of the HANA client where the database will be restored.
+            instance: Destination instance for the restore operation. Can be a string or an Instance object.
+            backup_prefix: Optional prefix of the backup job to restore from.
+            point_in_time: Optional timestamp to restore the database to a specific point in time.
+            initialize_log_area: Whether to initialize the new log area after restore. Default is False.
+            use_hardware_revert: Whether to perform a hardware revert during restore. Default is False.
+            clone_env: Whether to clone the database environment during restore. Default is False.
+            check_access: Whether to check access permissions during restore. Default is True.
+            destination_instance_dir: Optional HANA data directory for cross-instance or cross-machine restores.
+            ignore_delta_backups: Whether to ignore delta backups during restore. Default is True.
 
-                backup_prefix               (str)   --  prefix of the backup job
-                    default: None
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                point_in_time               (str)   --  time to which db should be restored to
-                    default: None
+        Raises:
+            SDKException: If the instance parameter is not a string or Instance object, or if the restore response is empty or unsuccessful.
 
-                initialize_log_area         (bool)  --  boolean to specify whether to initialize
-                                                            the new log area after restore
-                    default: False
+        Example:
+            >>> # Restore a HANA database to a specific client and instance
+            >>> backupset = HANABackupset(...)
+            >>> job = backupset.restore(
+            ...     pseudo_client="hana_client1",
+            ...     instance="hana_instance1",
+            ...     backup_prefix="daily_backup",
+            ...     point_in_time="2024-06-01 12:00:00",
+            ...     initialize_log_area=True,
+            ...     use_hardware_revert=False,
+            ...     clone_env=False,
+            ...     check_access=True,
+            ...     destination_instance_dir="/hana/data",
+            ...     ignore_delta_backups=True
+            ... )
+            >>> print(f"Restore job started: {job}")
 
-                use_hardware_revert         (bool)  --  boolean to specify whether to do a
-                                                            hardware revert in restore
-                    default: False
-
-                clone_env                   (bool)  --  boolean to specify whether the database
-                                                            should be cloned or not
-                    default: False
-
-                check_access                (bool)  --  check access during restore or not
-                    default: True
-
-                destination_instance_dir    (str)   --  HANA data directory for snap cross instance
-                                                            restore or cross machine restores
-                    default: None
-
-                ignore_delta_backups        (bool)  --  whether to ignore delta backups during
-                                                            restore or not
-                    default: True
-
-            Returns:
-                object  -   instance of the Job class for this restore job
-
-            Raises:
-                SDKException:
-                    if instance is not a string or object
-
-                    if response is empty
-
-                    if response is not success
-
+        #ai-gen-doc
         """
         from ..instance import Instance
 

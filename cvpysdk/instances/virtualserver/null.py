@@ -20,9 +20,36 @@ from cvpysdk.instances.vsinstance import VirtualServerInstance
 
 
 class NullSubclient(VirtualServerInstance):
+    """
+    A specialized subclient class representing a null or placeholder subclient for virtual server instances.
 
-    def __init__(self, agent_object, instance_name, instance_id=None):
+    This class is intended to serve as a base or default implementation for subclients that do not require
+    specific backup or restore operations. It is initialized with an agent object, instance name, and instance ID,
+    and inherits from the VirtualServerInstance class.
+
+    Key Features:
+        - Acts as a placeholder or default subclient for virtual server instances
+        - Initialization with agent object, instance name, and instance ID
+        - Inherits core functionality from VirtualServerInstance
+
+    #ai-gen-doc
+    """
+
+    def __init__(self, agent_object: object, instance_name: str, instance_id: int = None) -> None:
+        """Initialize a NullSubclient instance.
+
+        Args:
+            agent_object: The agent object associated with this subclient.
+            instance_name: The name of the instance for the subclient.
+            instance_id: Optional; the unique identifier for the instance. Defaults to None.
+
+        Example:
+            >>> agent = Agent()
+            >>> null_subclient = NullSubclient(agent, "TestInstance", 101)
+            >>> print(f"NullSubclient created for instance: {null_subclient}")
+
+        #ai-gen-doc
+        """
         raise SDKException('Instance', '102',
                            'Instance: "{0}" is not yet supported'.
                            format(instance_name))
-

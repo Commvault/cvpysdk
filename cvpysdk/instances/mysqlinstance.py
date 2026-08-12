@@ -90,31 +90,52 @@ MYSQLInstance instance Attributes:
 """
 
 from __future__ import unicode_literals
+
 from ..instance import Instance
 from ..exception import SDKException
-from ..credential_manager import Credential
+from ..job import Job
+
+from typing import Optional, TYPE_CHECKING
+if TYPE_CHECKING:
+    from ..agent import Agent
 
 
 class MYSQLInstance(Instance):
     """
-    Class to represent a standalone MYSQL Instance
+    Represents a standalone MySQL instance with comprehensive management and restore capabilities.
+
+    This class encapsulates the configuration, properties, and operational controls for a MySQL database instance.
+    It provides access to key instance attributes such as port, usernames, configuration files, binary directories,
+    version information, and backup/restore options. The class supports both in-place and out-of-place restore operations,
+    including advanced options for table-level restores, cloning environments, and redirecting restore paths.
+
+    Key Features:
+        - Initialization with agent object, instance name, and instance ID
+        - Access to instance properties: port, MySQL/NT usernames, config file, binary directory, version, log directories
+        - Backup and restore details: log backup SP, command line SP, xtrabackup, MySQL Enterprise Backup
+        - Autodiscovery enablement and management
+        - Proxy options and SSL enablement
+        - No-lock status management
+        - Methods for retrieving instance properties and restoring from JSON configurations
+        - In-place and out-of-place restore operations with extensive customization options
+        - Support for table-level restore, cloning, redirection, and recurring restores
+        - Internal methods for handling restore options and administrative settings
+
+    This class is intended for use in environments where robust management and restoration of MySQL instances is required,
+    providing a programmatic interface for both configuration and operational tasks.
+
+    #ai-gen-doc
     """
 
-    def __init__(self, agent_object, instance_name, instance_id=None):
-        """Initialise the Subclient object.
+    def __init__(self, agent_object: 'Agent', instance_name: str, instance_id: int = None) -> None:
+        """Initialize a MYSQLInstance object.
 
-            Args:
-                agent_object    (object)  --  instance of the Agent class
+        Args:
+            agent_object: Instance of the Agent class associated with this MySQL instance.
+            instance_name: The name of the MySQL instance.
+            instance_id: The unique identifier for the MySQL instance. Defaults to None.
 
-                instance_name   (str)     --  name of the instance
-
-                instance_id     (str)     --  id of the instance
-
-                    default: None
-
-            Returns:
-                object - instance of the MYSQLInstance class
-
+        #ai-gen-doc
         """
         self._browse_restore_json = None
         self._commonoption_restore_json = None
@@ -126,83 +147,94 @@ class MYSQLInstance(Instance):
         super(MYSQLInstance, self).__init__(agent_object, instance_name, instance_id)
 
     @property
-    def port(self):
-        """Returns the MySQL Server Port number.
+    def port(self) -> str:
+        """Get the MySQL Server port number for this instance.
 
         Returns:
-            (str)   --  MySql server port number
+            The port number used by the MySQL Server as a string.
 
+        #ai-gen-doc
         """
         return self._properties.get('mySqlInstance', {}).get('port', None)
 
     @property
-    def mysql_username(self):
-        """Returns the MySQL Server username.
+    def mysql_username(self) -> str:
+        """Get the MySQL Server username associated with this instance.
 
         Returns:
-            (str)   --  MySql server SA username
+            The MySQL server SA (System Administrator) username as a string.
 
+        #ai-gen-doc
         """
-        credential_name = self._properties.get('credentialEntity', {}).get('credentialName', None)
-        return Credential(self._commcell_object, credential_name).credential_user_name
+        if self.credentials:
+            credential_obj = self._commcell_object.credentials.get(self.credentials)
+            if credential_obj:
+                return credential_obj._credential_properties.get('userName')
+        return self._properties.get('mySqlInstance', {}).get('SAUser', {}).get('userName', None)
 
     @property
-    def nt_username(self):
-        """Returns the MySQL Server nt username.
+    def nt_username(self) -> str:
+        """Get the MySQL Server NT username associated with this instance.
 
         Returns:
-            (str)   --  MySql server NT username
+            The NT username used for MySQL Server authentication as a string.
 
+        #ai-gen-doc
         """
         return self._properties.get('mySqlInstance', {}).get('NTUser', {}).get('userName', None)
 
     @property
-    def config_file(self):
-        """Returns the MySQL Server Config File location.
+    def config_file(self) -> str:
+        """Get the location of the MySQL server configuration file.
 
         Returns:
-            (str)   --  MySql server config file location
+            The file path to the MySQL server's configuration file as a string.
 
+        #ai-gen-doc
         """
         return self._properties.get('mySqlInstance', {}).get('ConfigFile', None)
 
     @property
-    def binary_directory(self):
-        """Returns the MySQL Server Binary File location.
+    def binary_directory(self) -> str:
+        """Get the MySQL Server binary file directory location.
 
         Returns:
-            (str)   --  MySql server binary directory
+            The file system path to the MySQL server's binary directory as a string.
 
+        #ai-gen-doc
         """
         return self._properties.get('mySqlInstance', {}).get('BinaryDirectory', None)
 
     @property
-    def version(self):
-        """Returns the MySQL Server version number.
+    def version(self) -> str:
+        """Get the MySQL Server version number for this instance.
 
         Returns:
-            (str)   --  MySql server version
+            The version number of the MySQL server as a string.
 
+        #ai-gen-doc
         """
         return self._properties.get('mySqlInstance', {}).get('version', None)
 
     @property
-    def log_data_directory(self):
-        """Returns the MySQL Server log data directory.
+    def log_data_directory(self) -> str:
+        """Get the MySQL Server log data directory path.
 
         Returns:
-            (str)   --  MySql server log directory path
+            The file system path to the MySQL server's log data directory as a string.
 
+        #ai-gen-doc
         """
         return self._properties.get('mySqlInstance', {}).get('LogDataDirectory', None)
 
     @property
-    def log_backup_sp_details(self):
-        """Returns the MySQL Server Log backup SP details
+    def log_backup_sp_details(self) -> dict:
+        """Get the MySQL Server log backup storage policy details.
 
         Returns:
-            (dict)  --  MySql server log backup storage policy information
+            dict: A dictionary containing information about the storage policy used for MySQL Server log backups.
 
+        #ai-gen-doc
         """
         log_storage_policy_name = self._properties.get('mySqlInstance', {}).get(
             'logStoragePolicy', {}).get('storagePolicyName', None)
@@ -214,41 +246,44 @@ class MYSQLInstance(Instance):
         return log_sp
 
     @property
-    def command_line_sp_details(self):
-        """Returns the MySQL Server commandline SP details.
+    def command_line_sp_details(self) -> dict:
+        """Get the MySQL Server command-line storage policy details.
 
         Returns:
-            (dict)  --  MySql server commnadline storage policy information
+            dict: A dictionary containing information about the MySQL server's command-line storage policy.
 
+        #ai-gen-doc
         """
         cmd_storage_policy_name = self._properties.get('mySqlInstance', {}).get(
             'mysqlStorageDevice', {}).get('commandLineStoragePolicy', {}).get(
-                'storagePolicyName', None)
+            'storagePolicyName', None)
         cmd_storage_policy_id = self._properties.get('mySqlInstance', {}).get(
             'mysqlStorageDevice', {}).get('commandLineStoragePolicy', {}).get(
-                'storagePolicyId', None)
+            'storagePolicyId', None)
 
         command_sp = {"storagePolicyName": cmd_storage_policy_name,
                       "storagePolicyId": cmd_storage_policy_id}
         return command_sp
 
     @property
-    def autodiscovery_enabled(self):
-        """Returns the MySQL Server auto discovery enabled flag
+    def autodiscovery_enabled(self) -> bool:
+        """Indicate whether MySQL Server auto discovery is enabled for this instance.
 
         Returns:
-            (bool)  --  True if auto discovery enabled
-                        False if auto discovery not enabled
+            True if auto discovery is enabled; False otherwise.
 
+        #ai-gen-doc
         """
         return self._properties.get('mySqlInstance', {}).get('EnableAutoDiscovery', False)
 
     @autodiscovery_enabled.setter
-    def autodiscovery_enabled(self, value):
-        """
-        Sets the auto discovery attribute to True or False
-        value (bool)   --  True or False
+    def autodiscovery_enabled(self, value: bool) -> None:
+        """Set the auto discovery attribute for the MYSQL instance.
 
+        Args:
+            value: Boolean value to enable (True) or disable (False) auto discovery.
+
+        #ai-gen-doc
         """
         properties = self._properties
         update = {
@@ -258,37 +293,35 @@ class MYSQLInstance(Instance):
         self.update_properties(properties)
 
     @property
-    def xtrabackup_bin_path(self):
-        """Returns the MySQL Server xtrabackup bin path
+    def xtrabackup_bin_path(self) -> str:
+        """Get the path to the MySQL server xtrabackup binary.
 
         Returns:
-            (str)   --  MySql server xtrabackup binary path
+            The file system path to the xtrabackup binary used by the MySQL server.
 
+        #ai-gen-doc
         """
-        return self._properties.get(
-            'mySqlInstance', {}).get(
-                'xtraBackupSettings', {}).get('xtraBackupBinPath', "")
+        return self._properties.get('mySqlInstance', {}).get('xtraBackupSettings', {}).get('xtraBackupBinPath', "")
 
     @property
-    def is_xtrabackup_enabled(self):
-        """Returns the MySQL Server xtrabackup enabled flag
+    def is_xtrabackup_enabled(self) -> bool:
+        """Check if xtrabackup is enabled for the MySQL Server instance.
 
         Returns:
-            (bool)  --  True if xtrabackup is enabled
-                        False if xtrabackup is not enabled
+            True if xtrabackup is enabled; False otherwise.
 
+        #ai-gen-doc
         """
-        return self._properties.get(
-            'mySqlInstance', {}).get(
-                'xtraBackupSettings', {}).get('enableXtraBackup', False)
+        return self._properties.get('mySqlInstance', {}).get('xtraBackupSettings', {}).get('enableXtraBackup', False)
 
     @property
-    def proxy_options(self):
-        """Returns the MySQL Server proxy options
+    def proxy_options(self) -> dict:
+        """Get the MySQL Server proxy options for this instance.
 
         Returns:
-            (dict)  --  MySql server proxy information
+            dict: A dictionary containing MySQL server proxy information, such as proxy host, port, and authentication details.
 
+        #ai-gen-doc
         """
         proxy_settings = self._properties.get('mySqlInstance', {}).get('proxySettings', {})
         proxy_opt = {
@@ -302,24 +335,25 @@ class MYSQLInstance(Instance):
         return proxy_opt
 
     @property
-    def mysql_enterprise_backup_binary_path(self):
-        """ Returns the MySQL Enterprise backup binary path detail
+    def mysql_enterprise_backup_binary_path(self) -> dict:
+        """Get the MySQL Enterprise backup binary path details.
 
-            Return Type: dict
+        Returns:
+            dict: A dictionary containing details about the MySQL Enterprise backup binary path.
 
+        #ai-gen-doc
         """
         meb_settings = self._properties.get('mySqlInstance', {}).get('mebSettings', {})
         return meb_settings
 
     @mysql_enterprise_backup_binary_path.setter
-    def mysql_enterprise_backup_binary_path(self, value):
-        """ Setter for MySQL Enterprise backup binary path
+    def mysql_enterprise_backup_binary_path(self, value: str) -> None:
+        """Set the MySQL Enterprise backup binary path for the instance.
 
-            Args:
+        Args:
+            value: The file system path to the MySQL Enterprise backup binary to be set for this MySQL instance.
 
-                value (str)  -- Contains the MySQL Enterprise backup binary path to be updated
-                in MySQL Instance property
-
+        #ai-gen-doc
         """
         if not isinstance(value, str):
             raise SDKException('Instance', '101')
@@ -332,25 +366,24 @@ class MYSQLInstance(Instance):
         self.update_properties(properties)
 
     @property
-    def no_lock_status(self):
-        """ Returns the status of No Lock Checkbox in MySQL Instance
+    def no_lock_status(self) -> bool:
+        """Get the status of the 'No Lock' checkbox in the MySQL instance.
 
-            Returns:
-            (bool)  --  True if No Lock checkbox is enabled
-                        False if No Lock checkbox is disabled
+        Returns:
+            True if the 'No Lock' checkbox is enabled, False if it is disabled.
 
+        #ai-gen-doc
         """
         return self._properties.get('mySqlInstance', {}).get('EnableNoLocking', False)
 
     @no_lock_status.setter
-    def no_lock_status(self, value):
-        """ Setter for No Lock property in MySQL Instance
+    def no_lock_status(self, value: bool) -> None:
+        """Set the No Lock property for the MySQL Instance.
 
-            Args:
+        Args:
+            value: Set to True to enable the No Lock property, or False to disable it.
 
-                value (bool)  -- True or False to enable or disable the No Lock
-                property in MySQL Instance
-
+        #ai-gen-doc
         """
         if not isinstance(value, bool):
             raise SDKException('Instance', '101')
@@ -359,19 +392,27 @@ class MYSQLInstance(Instance):
         self.update_properties(properties)
 
     @property
-    def ssl_enabled(self):
-        """ Returns(boolean) True/False based on SSL status """
+    def ssl_enabled(self) -> bool:
+        """Check if SSL is enabled for the MySQL instance.
+
+        Returns:
+            True if SSL is enabled for the MySQL instance, False otherwise.
+
+        #ai-gen-doc
+        """
         return self._properties.get('mySqlInstance', {}).get('sslEnabled', False)
 
-    def _get_instance_properties(self):
-        """Gets the properties of this instance.
+    def _get_instance_properties(self) -> None:
+        """Retrieve and update the properties of this MySQL instance.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        This method fetches the current configuration and properties for the MySQL instance
+        associated with this object. It updates the instance's internal state with the latest
+        information from the Commcell.
 
-                    if response is not success
+        Raises:
+            SDKException: If the response from the Commcell is empty or indicates a failure.
 
+        #ai-gen-doc
         """
         super(MYSQLInstance, self)._get_instance_properties()
         self._instance = {
@@ -385,15 +426,20 @@ class MYSQLInstance(Instance):
             "consumeLicense": True
         }
 
-    def _restore_json(self, **kwargs):
-        """Returns the JSON request to pass to the API as per the options selected by the user.
+    def _restore_json(self, **kwargs) -> dict:
+        """Generate the JSON request payload for a restore operation based on user-selected options.
 
-            Args:
-                kwargs   (list)  --  list of options need to be set for restore
+        This method constructs and returns a dictionary representing the JSON request
+        to be sent to the API for a restore operation. The options for the restore
+        are provided as keyword arguments.
 
-            Returns:
-                dict - JSON request to pass to the API
+        Args:
+            **kwargs: Arbitrary keyword arguments representing restore options and their values.
 
+        Returns:
+            dict: The JSON request dictionary to be passed to the API.
+
+        #ai-gen-doc
         """
         rest_json = super(MYSQLInstance, self)._restore_json(**kwargs)
         restore_option = {}
@@ -419,133 +465,74 @@ class MYSQLInstance(Instance):
         return rest_json
 
     def restore_in_place(
-            self,
-            path=None,
-            staging=None,
-            dest_client_name=None,
-            dest_instance_name=None,
-            data_restore=True,
-            log_restore=False,
-            overwrite=True,
-            copy_precedence=None,
-            from_time=None,
-            to_time=None,
-            media_agent=None,
-            table_level_restore=False,
-            clone_env=False,
-            clone_options=None,
-            redirect_enabled=False,
-            redirect_path=None,
-            browse_jobid=None):
-        """Restores the mysql data/log files specified in the input paths list to the same location.
+        self,
+        path: Optional[list] = None,
+        staging: Optional[str] = None,
+        dest_client_name: Optional[str] = None,
+        dest_instance_name: Optional[str] = None,
+        data_restore: bool = True,
+        log_restore: bool = False,
+        overwrite: bool = True,
+        copy_precedence: Optional[int] = None,
+        from_time: Optional[str] = None,
+        to_time: Optional[str] = None,
+        media_agent: Optional[str] = None,
+        table_level_restore: bool = False,
+        clone_env: bool = False,
+        clone_options: Optional[dict] = None,
+        redirect_enabled: bool = False,
+        redirect_path: Optional[str] = None,
+        browse_jobid: Optional[int] = None
+    ) -> 'Job':
+        """Restore MySQL data and/or log files to their original location (in-place restore).
 
-            Args:
-                path                    (list)  --  list of database/databases to be restored
+        This method restores the specified MySQL databases or tables to the same location on the source or destination client.
+        It supports options for data-only, log-only, or combined restores, as well as advanced features like table-level restore,
+        cloning, and redirect restore.
 
-                    default: None
+        Args:
+            path: List of databases or tables to restore. If None, restores all available.
+            staging: Optional staging location for MySQL logs during restore.
+            dest_client_name: Name of the destination client for the restore. If None, uses the source client.
+            dest_instance_name: Name of the destination MySQL instance. If None, uses the source instance.
+            data_restore: If True, performs data or data+log restore. Default is True.
+            log_restore: If True, performs log or data+log restore. Default is False.
+            overwrite: If True, unconditionally overwrites files during restore. Default is True.
+            copy_precedence: Storage policy copy precedence value. If None, uses default.
+            from_time: Restore data after this time (format: 'YYYY-MM-DD HH:MM:SS'). If None, restores from earliest.
+            to_time: Restore data before this time (format: 'YYYY-MM-DD HH:MM:SS'). If None, restores up to latest.
+            media_agent: Name of the media agent to use for the restore. If None, uses default.
+            table_level_restore: If True, enables table-level restore. Default is False.
+            clone_env: If True, clones the database environment. Default is False.
+            clone_options: Dictionary of clone restore options. Example:
+                {
+                    "stagingLocaion": "/gk_snap",
+                    "forceCleanup": True,
+                    "port": "5595",
+                    "libDirectory": "",
+                    "isInstanceSelected": True,
+                    "reservationPeriodS": 3600,
+                    "user": "",
+                    "binaryDirectory": "/usr/bin"
+                }
+            redirect_enabled: If True, enables redirect restore. Default is False.
+            redirect_path: Path to use for redirect restore if enabled.
+            browse_jobid: Job ID to browse and restore from. If None, uses latest available.
 
-                staging                 (str)   --  staging location for mysql logs during restores
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                    default: None
+        Raises:
+            SDKException: If the path argument is not a list, if the job fails to initialize,
+                if the response is empty, or if the restore operation is unsuccessful.
 
-                dest_client_name        (str)   --  destination client name where files are to be
-                restored
-
-                    default: None
-
-                dest_instance_name      (str)   --  destination mysql instance name of destination
-                client
-
-                    default: None
-
-                data_restore            (bool)  --  for data only/data+log restore
-
-                    default: True
-
-                log_restore             (bool)  --  for log only/data+log restore
-
-                    default: False
-
-                overwrite               (bool)  --  unconditional overwrite files during restore
-
-                    default: True
-
-                copy_precedence         (int)   --  copy precedence value of storage policy copy
-
-                    default: None
-
-                from_time               (str)   --  time to retore the contents after
-                        format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                to_time                 (str)   --  time to retore the contents before
-                        format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                media_agent             (str)   --  media agent associated
-
-                    default: None
-
-                table_level_restore     (bool)  --  Table level restore flag
-
-                    default: False
-
-                clone_env               (bool)  --  boolean to specify whether the database
-                should be cloned or not
-
-                    default: False
-
-                clone_options           (dict)  --  clone restore options passed in a dict
-
-                    default: None
-
-                    Accepted format: {
-                                        "stagingLocaion": "/gk_snap",
-                                        "forceCleanup": True,
-                                        "port": "5595",
-                                        "libDirectory": "",
-                                        "isInstanceSelected": True,
-                                        "reservationPeriodS": 3600,
-                                        "user": "",
-                                        "binaryDirectory": "/usr/bin"
-
-                                     }
-
-                redirect_enabled         (bool)  --  boolean to specify if redirect restore is
-                enabled
-
-                    default: False
-
-                redirect_path           (str)   --  Path specified in advanced restore options
-                in order to perform redirect restore
-
-                    default: None
-
-                browse_jobid           (int)   --  Browse jobid to browse and restore from
-
-                    default: None
-
-            Returns:
-                object - instance of the Job class for this restore job
-
-            Raises:
-                SDKException:
-                    if paths is not a list
-
-                    if failed to initialize job
-
-                    if response is empty
-
-                    if response is not success
-
+        #ai-gen-doc
         """
         if not (isinstance(path, list) and
                 isinstance(overwrite, bool)):
             raise SDKException('Instance', '101')
 
-        if path == []:
+        if not path:
             raise SDKException('Instance', '104')
 
         if dest_client_name is None:
@@ -576,73 +563,63 @@ class MYSQLInstance(Instance):
         return self._process_restore_response(request_json)
 
     def restore_out_of_place(
-            self,
-            path=None,
-            staging=None,
-            dest_client_name=None,
-            dest_instance_name=None,
-            data_restore=True,
-            log_restore=False,
-            overwrite=True,
-            copy_precedence=None,
-            from_time=None,
-            to_time=None,
-            media_agent=None,
-            table_level_restore=False,
-            clone_env=False,
-            clone_options=None,
-            redirect_enabled=False,
-            redirect_path=None,
-            browse_jobid=None,
-            recurringRestore=False):
-        """
-        Method to perform out of place restore of MySQL data/log/recurring files to the destination client location.
+        self,
+        path: Optional[list] = None,
+        staging: Optional[str] = None,
+        dest_client_name: Optional[str] = None,
+        dest_instance_name: Optional[str] = None,
+        data_restore: bool = True,
+        log_restore: bool = False,
+        overwrite: bool = True,
+        copy_precedence: Optional[int] = None,
+        from_time: Optional[str] = None,
+        to_time: Optional[str] = None,
+        media_agent: Optional[str] = None,
+        table_level_restore: bool = False,
+        clone_env: bool = False,
+        clone_options: Optional[dict] = None,
+        redirect_enabled: bool = False,
+        redirect_path: Optional[str] = None,
+        browse_jobid: Optional[int] = None,
+        recurringRestore: bool = False
+    ) -> 'Job':
+        """Perform an out-of-place restore of MySQL data, logs, or recurring files to a specified destination client and instance.
 
-            Args:
-                path                    (list)  --  list of database/databases to be restored
-                staging                 (str)   --  staging location for mysql logs during restores
-                dest_client_name        (str)   --  destination client name where files are to be restored
-                dest_instance_name      (str)   --  destination mysql instance name of destination client
-                data_restore            (bool)  --  for data only/data+log restore
-                log_restore             (bool)  --  for log only/data+log restore
-                overwrite               (bool)  --  unconditional overwrite files during restore
-                copy_precedence         (int)   --  copy precedence value of storage policy copy
-                from_time               (str)   --  time to restore the contents after
-                        format: YYYY-MM-DD HH:MM:SS
-                to_time                 (str)   --  time to restore the contents before
-                        format: YYYY-MM-DD HH:MM:SS
-                media_agent             (str)   --  media agent associated
-                table_level_restore     (bool)  --  Table level restore flag
-                clone_env               (bool)  --  boolean to specify whether the database should be cloned or not
-                clone_options           (dict)  --  clone restore options passed in a dict
-                redirect_enabled         (bool)  --  boolean to specify if redirect restore is enabled
-                redirect_path           (str)   --  Path specified in advanced restore options
-                in order to perform redirect restore
-                browse_jobid           (int)   --  Browse jobid to browse and restore from
-                recurringRestore       (bool)  --  for Recurring restore
+        This method allows you to restore MySQL databases or tables to a different client or instance, with options for data/log restore, table-level restore, cloning, and advanced restore settings.
 
-            Returns:
-                object - instance of the Job class for this restore job
+        Args:
+            path: List of database or table names to be restored. If None, restores all available.
+            staging: Staging location for MySQL logs during restore operations.
+            dest_client_name: Name of the destination client where the data will be restored.
+            dest_instance_name: Name of the destination MySQL instance on the destination client.
+            data_restore: If True, performs data or data+log restore. Defaults to True.
+            log_restore: If True, performs log or data+log restore. Defaults to False.
+            overwrite: If True, existing files at the destination will be overwritten. Defaults to True.
+            copy_precedence: Storage policy copy precedence value to use for restore.
+            from_time: Restore data backed up after this time (format: 'YYYY-MM-DD HH:MM:SS').
+            to_time: Restore data backed up before this time (format: 'YYYY-MM-DD HH:MM:SS').
+            media_agent: Name of the MediaAgent to use for the restore.
+            table_level_restore: If True, enables table-level restore. Defaults to False.
+            clone_env: If True, clones the database environment. Defaults to False.
+            clone_options: Dictionary of additional clone restore options.
+            redirect_enabled: If True, enables redirect restore. Defaults to False.
+            redirect_path: Path to redirect the restore to, used with redirect_enabled.
+            browse_jobid: Job ID to browse and restore from a specific backup job.
+            recurringRestore: If True, enables recurring restore. Defaults to False.
 
-            Raises:
-                SDKException:
-                    if paths is not a list
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                    if failed to initialize job
+        Raises:
+            SDKException: If the path is not a list, if job initialization fails, if destination client or instance name is empty, or if the restore response is empty or unsuccessful.
 
-                    if destination client name is empty
-
-                    if destination Instance name empty
-
-                    if response is empty
-
-                    if response is not success
+        #ai-gen-doc
         """
         if not (isinstance(path, list) and
                 isinstance(overwrite, bool)):
             raise SDKException('Instance', '101')
 
-        if path == []:
+        if not path:
             raise SDKException('Instance', '104')
 
         if dest_client_name is None:
@@ -677,12 +654,20 @@ class MYSQLInstance(Instance):
 
         return self._process_restore_response(request_json)
 
-    def _restore_browse_option_json(self, value):
-        """setter for the Browse options for restore in Json"""
+    def _restore_browse_option_json(self, value: dict) -> None:
+        """Set the browse options for restore operations in JSON format.
+
+        Args:
+            value: A dictionary containing the browse options to be used during restore.
+
+        #ai-gen-doc
+        """
 
         if not isinstance(value, dict):
             raise SDKException('Instance', '101')
+
         super(MYSQLInstance, self)._restore_browse_option_json(value)
+
         self._browse_restore_json['backupset'] = {
             "clientName": self._agent_object._client_object.client_name,
             "backupsetName": "defaultDummyBackupSet"
@@ -692,11 +677,19 @@ class MYSQLInstance(Instance):
             self._browse_restore_json['browseJobId'] = value.get("browse_jobid")
 
         if value.get("from_time") and value.get("to_time"):
-            self._browse_restore_json["timeRange"] = {"fromTime" : value.get("from_time"),
-                                                      "toTime" : value.get("to_time")}
+            self._browse_restore_json["timeRange"] = {
+                "fromTime": value.get("from_time"),
+                "toTime": value.get("to_time")
+            }
 
-    def _restore_common_options_json(self, value):
-        """setter for the Common options in restore JSON"""
+    def _restore_common_options_json(self, value: dict) -> None:
+        """Set the common options section in the restore JSON configuration.
+
+        Args:
+            value: A dictionary containing the common options to be set in the restore JSON.
+
+        #ai-gen-doc
+        """
 
         if not isinstance(value, dict):
             raise SDKException('Instance', '101')
@@ -708,8 +701,14 @@ class MYSQLInstance(Instance):
             "syncRestore": False
         }
 
-    def _restore_destination_json(self, value):
-        """setter for the MySQL Destination options in restore JSON"""
+    def _restore_destination_json(self, value: dict) -> None:
+        """Set the MySQL destination options in the restore JSON configuration.
+
+        Args:
+            value: A dictionary containing the MySQL destination options to be set in the restore JSON.
+
+        #ai-gen-doc
+        """
 
         if not isinstance(value, dict):
             raise SDKException('Instance', '101')
@@ -725,8 +724,14 @@ class MYSQLInstance(Instance):
             }
         }
 
-    def _restore_fileoption_json(self, value):
-        """setter for the fileoption restore option in restore JSON"""
+    def _restore_fileoption_json(self, value: dict) -> None:
+        """Set the file option for the restore operation in the restore JSON.
+
+        Args:
+            value: A dictionary containing file option settings to be applied to the restore JSON.
+
+        #ai-gen-doc
+        """
 
         if not isinstance(value, dict):
             raise SDKException('Instance', '101')
@@ -735,8 +740,14 @@ class MYSQLInstance(Instance):
             "sourceItem": value.get("paths", [])
         }
 
-    def _restore_admin_option_json(self, value):
-        """setter for the admin restore option in restore JSON"""
+    def _restore_admin_option_json(self, value: dict) -> None:
+        """Set the admin restore option in the restore JSON configuration.
+
+        Args:
+            value: A dictionary containing the admin restore options to be set in the restore JSON.
+
+        #ai-gen-doc
+        """
 
         if not isinstance(value, dict):
             raise SDKException('Instance', '101')
@@ -747,8 +758,14 @@ class MYSQLInstance(Instance):
             }
         }
 
-    def _restore_mysql_option_json(self, value):
-        """setter for the mysql restore option in restore JSON"""
+    def _restore_mysql_option_json(self, value: dict) -> None:
+        """Set the MySQL restore options in the restore JSON configuration.
+
+        Args:
+            value: A dictionary containing MySQL restore options to be set in the restore JSON.
+
+        #ai-gen-doc
+        """
 
         if not isinstance(value, dict):
             raise SDKException('Instance', '101')
@@ -783,14 +800,13 @@ class MYSQLInstance(Instance):
             self.mysql_restore_json["redirectItems"] = [value.get("redirect_path")]
 
         if value.get("from_time"):
-            self.mysql_restore_json["fromTime"] = {"time" : value.get("to_time")}
+            self.mysql_restore_json["fromTime"] = {"time": value.get("to_time")}
 
         if value.get("to_time"):
-            self.mysql_restore_json["refTime"] = {"time" : value.get("to_time")}
+            self.mysql_restore_json["refTime"] = {"time": value.get("to_time")}
 
         if value.get("to_time"):
-            self.mysql_restore_json["pointInTime"] = {"time" : value.get("to_time")}
+            self.mysql_restore_json["pointInTime"] = {"time": value.get("to_time")}
 
         if value.get("dest_instance_name"):
-            self.mysql_restore_json["destinationServer"] = {"name": value.get(
-                "dest_instance_name")}
+            self.mysql_restore_json["destinationServer"] = {"name": value.get("dest_instance_name")}

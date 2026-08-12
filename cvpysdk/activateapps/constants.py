@@ -87,6 +87,32 @@ class RequestConstants:
                                                               "value": "{\"_ConsentFor_<rsidparam>_b_Reviewed\":{\"type\":\"query\",\"domain\":{\"excludeTags\":[\"tag_group_ConsentFor_<rsidparam>_b\",\"tag_ConsentFor_<rsidparam>_b\",\"tag_exclude_ConsentFor_<rsidparam>_b\"]},\"numBuckets\":true,\"mincount\":1,\"q\":\"ConsentFor_<rsidparam>_b:*\",\"facet\":{}},\"_ConsentFor_<rsidparam>_b_Not reviewed\":{\"type\":\"query\",\"domain\":{\"excludeTags\":[\"tag_group_ConsentFor_<rsidparam>_b\",\"tag_ConsentFor_<rsidparam>_b\",\"tag_exclude_ConsentFor_<rsidparam>_b\"]},\"numBuckets\":true,\"mincount\":1,\"q\":\"contentid:* AND -(ConsentFor_<rsidparam>_b:*)\",\"facet\":{}},\"_ConsentFor_<rsidparam>_b_Accepted\":{\"type\":\"query\",\"domain\":{\"excludeTags\":[\"tag_group_ConsentFor_<rsidparam>_b\",\"tag_ConsentFor_<rsidparam>_b\",\"tag_exclude_ConsentFor_<rsidparam>_b\"]},\"numBuckets\":true,\"mincount\":1,\"q\":\"ConsentFor_<rsidparam>_b:true\",\"facet\":{}},\"_ConsentFor_<rsidparam>_b_Declined\":{\"type\":\"query\",\"domain\":{\"excludeTags\":[\"tag_group_ConsentFor_<rsidparam>_b\",\"tag_ConsentFor_<rsidparam>_b\",\"tag_exclude_ConsentFor_<rsidparam>_b\"]},\"numBuckets\":true,\"mincount\":1,\"q\":\"ConsentFor_<rsidparam>_b:false\",\"facet\":{}},\"_RedactMode_<rsidparam>_b_Redacted\":{\"type\":\"query\",\"domain\":{\"excludeTags\":[\"tag_group_RedactMode_<rsidparam>_b\",\"tag_RedactMode_<rsidparam>_b\",\"tag_exclude_RedactMode_<rsidparam>_b\"]},\"numBuckets\":true,\"mincount\":1,\"q\":\"RedactMode_<rsidparam>_b:true\",\"facet\":{}},\"_RedactMode_<rsidparam>_b_Not redacted\":{\"type\":\"query\",\"domain\":{\"excludeTags\":[\"tag_group_RedactMode_<rsidparam>_b\",\"tag_RedactMode_<rsidparam>_b\",\"tag_exclude_RedactMode_<rsidparam>_b\"]},\"numBuckets\":true,\"mincount\":1,\"q\":\"RedactMode_<rsidparam>_b:false\",\"facet\":{}},\"FileExtension\":{\"type\":\"terms\",\"domain\":{\"excludeTags\":[\"tag_FileExtension\",\"tag_exclude_FileExtension\"]},\"numBuckets\":true,\"mincount\":1,\"field\":\"FileExtension\",\"limit\":-1,\"facet\":{},\"sort\":{\"count\":\"desc\"}},\"ReadAccessUserName\":{\"type\":\"terms\",\"domain\":{\"excludeTags\":[\"tag_ReadAccessUserName\",\"tag_exclude_ReadAccessUserName\"]},\"numBuckets\":true,\"mincount\":1,\"field\":\"ReadAccessUserName\",\"limit\":-1,\"facet\":{},\"sort\":{\"count\":\"desc\"}},\"data_source_name\":{\"type\":\"terms\",\"domain\":{\"excludeTags\":[\"tag_data_source_name\",\"tag_exclude_data_source_name\"]},\"numBuckets\":true,\"mincount\":1,\"field\":\"data_source_name\",\"limit\":-1,\"facet\":{},\"sort\":{\"count\":\"desc\"}}}"},
                                                              {"key": "useDCubeReq",
                                                               "value": "true"}]}
+    REQUEST_ZERO_ROWS = {"rows": 0}
+    REQUEST_TOP_ENTITIES_FACET = {"rows":0, "facet":"true",
+                                  "json.facet":
+                                      "{'entities_extracted':{"
+                                            "'type':'terms',"
+                                            "'mincount':1,"
+                                            "'field':'entities_extracted',"
+                                            "'limit':%d,"
+                                            "'sort':{"
+                                                "'count':'desc'"
+                                            "}"
+                                        "}"
+                                      "}"
+                                  }
+
+    REQUEST_ENTITY_DISTRIBUTION_FACET = {"rows":0, "facet":"true",
+                                         "json.facet":
+                                             "{'AppType_sums':{"
+                                                "'type':'terms',"
+                                                "'field': 'AppType', "
+                                                "'facet':{"
+                                                    "'total_entities':'sum(count_entity_total_entities_extracted)'"
+                                                    "}"
+                                                "}"
+                                             "}"
+                                         }
 
     FIELD_DOC_COUNT = "TotalDocuments"
     FIELD_REVIEWED = "ReviewedDocuments"
@@ -386,6 +412,7 @@ class EdiscoveryConstants:
                 "datasourceName": "",
                 "properties": [],
                 "datasourceType": 5,
+                "credentialId": 0,
                 "accessNodes": [
                     {
                         "clientId": 0,
@@ -516,8 +543,26 @@ class EdiscoveryConstants:
     FIELD_IS_FILE = 'IsFile:1'
     DYNAMIC_FEDERATED_SEARCH_PARAMS = {"searchParams": []}
 
-    CRITERIA_EXTRACTED_DOCS = "entities_extracted:*"
+    APP_TYPE_ONEDRIVE = 200118
+    APP_TYPE_EXCHANGE = 137
+    APP_TYPE_ALL = 0
+    DOCUMENT_TYPE_FILES = 1
+    DOCUMENT_TYPE_EMAIL = 2
 
+    CRITERIA_EXTRACTED_DOCS = "entities_extracted:*"
+    CRITERIA_ALL_DOCS = (f"DocumentType: ({DOCUMENT_TYPE_FILES} OR {DOCUMENT_TYPE_EMAIL}) "
+                         f"AND AppType:({APP_TYPE_ONEDRIVE} OR {APP_TYPE_EXCHANGE})")
+    CRITERIA_ONEDRIVE_DOCS = f"DocumentType: {DOCUMENT_TYPE_FILES} AND AppType:{APP_TYPE_ONEDRIVE}"
+    CRITERIA_EXCHANGE_DOCS = f"DocumentType: {DOCUMENT_TYPE_EMAIL} AND AppType:{APP_TYPE_EXCHANGE}"
+    CRITERIA_OD_SENSITIVE = f"{CRITERIA_EXTRACTED_DOCS} AND {CRITERIA_ONEDRIVE_DOCS}"
+    CRITERIA_EXCH_SENSITIVE = f"{CRITERIA_EXTRACTED_DOCS} AND {CRITERIA_EXCHANGE_DOCS}"
+    APP_TYPE_TOTAL_DICT = {APP_TYPE_ALL:CRITERIA_ALL_DOCS,
+                           APP_TYPE_ONEDRIVE:CRITERIA_ONEDRIVE_DOCS,
+                           APP_TYPE_EXCHANGE: CRITERIA_EXCHANGE_DOCS}
+
+    APP_TYPE_SENSITIVE_DICT = {APP_TYPE_ALL:CRITERIA_EXTRACTED_DOCS,
+                               APP_TYPE_ONEDRIVE:CRITERIA_OD_SENSITIVE,
+                               APP_TYPE_EXCHANGE: CRITERIA_EXCH_SENSITIVE}
     TAGGING_ITEMS_REQUEST = {
         "entityType": "SEA_DATASOURCE_ENTITY",
         "entityIds": [],
@@ -936,6 +981,11 @@ class TrainingStatus(Enum):
     CANCELLED = 5
     NOT_USABLE = 6
 
+class Providers(Enum):
+    """Class for classifier providers"""
+    CV_CLASSIFIER = 0,
+    AZURE_CLASSIFIER = 1,
+    ARLIE_CLASSIFIER = 2
 
 class ClassifierConstants:
     """Class to maintain all the Classsifier related constants"""
@@ -961,6 +1011,21 @@ class ClassifierConstants:
         }
     }
 
+    CREATE_ARLIE_REQUEST_JSON = {
+        "enabled": True,
+        "entityName": "",
+        "displayName": "",
+        "entityKey": "",
+        "entityType": "ML_MODEL",
+        "entityXML": {
+            "isSystemDefinedEntity": False,
+            "classifierDetails": {
+                "provider": Providers.ARLIE_CLASSIFIER.value,
+                "categories": [],
+                "classifierType": "MULTICLASS"
+            }
+        }
+    }
 
 class ActivateEntityConstants:
     """Class to maintain all the Activate entity related constants"""
@@ -972,7 +1037,42 @@ class ActivateEntityConstants:
         "entityName": "",
         "entityXML": {
             "keywords": "",
-            "isSystemDefinedEntity": False
+            "isSystemDefinedEntity": False,
+            "userDefinedKeywords" : ""
+        }     
+    }
+
+    YARA_RULE_REQUEST_JSON = {
+        "regularExpression": "",
+        "displayName": "",
+        "description": "",
+        "enabled": True,
+        "entityName": "",
+        "entityType": 5,
+        "entityXML": {
+            "userDefinedKeywords": "",
+            "isSystemDefinedEntity": False,
+            "inheritBaseWords": False
+        },
+        "yaraRulesDetails": {
+            "yaraRulesString": ""
+        }
+    }
+
+    HASH_FEED_REQUEST_JSON = {
+        "regularExpression": "",
+        "displayName": "",
+        "description": "",
+        "enabled": True,
+        "entityName": "",
+        "entityType": 6,
+        "entityXML": {
+            "userDefinedKeywords": "",
+            "isSystemDefinedEntity": False,
+            "inheritBaseWords": False,
+            "threatIOCDetails": {
+                "iOCFileHashDetails": []
+            }
         }
     }
 
@@ -1148,6 +1248,25 @@ class ComplianceConstants:
     FILE_TYPES = [AppTypes.FILE_SYSTEM, AppTypes.SHAREPOINT, AppTypes.ONEDRIVE, AppTypes.TEAMS]
     EMAIL_TYPES = [AppTypes.EXCHANGE, AppTypes.EXCHANGE_JOURNAL]
 
+    COMMON_FILTER = "commonFilter"
+    COMMON_FILTERS = [
+        {
+            "filter": {
+                "filters": [
+                    {
+                        "field": "CI_STATUS",
+                        "fieldValues": {
+                            "values": [
+                                "1"
+                            ]
+                        },
+                        "intraFieldOp": 0
+                    }
+                ]
+            }
+        }
+    ]
+
     FILE_FILTERS_KEY = "fileFilter"
     FILE_FILTERS = [
         {
@@ -1248,6 +1367,10 @@ class ComplianceConstants:
                            "TEAMS_TAB_TYPE,TEAMS_GROUP_VISIBILITY,TEAMS_GUID,TEAMS_CONV_ITEM_TYPE,"
                            "TEAMS_CONV_MESSAGE_TYPE,TEAMS_CONV_SUBJECT,TEAMS_CONV_IMPORTANCE,TEAMS_CONV_SENDER_TYPE,"
                            "TEAMS_CONV_SENDER_NAME,TEAMS_CONV_HAS_REPLIES,CI_URL,TEAMS_DRIVE_FOLDER_TYPE,APPTYPE,APPID")
+
+    RESPONSE_FIELD_LIST_SHAREPOINT = ("FAST_URL,BACKUPTIME,CLIENTNAME,IdxMetadata,ownerID,SIZEINKB,MODIFIEDTIME,"
+                                      "CONTENTID,CV_TURBO_GUID,AFILEID,AFILEOFFSET,COMMCELLNO,FILE_NAME,FILE_FOLDER,"
+                                      "Version,APPTYPE,METADATA,CLIENT_ID,APPID")
 
     COMPLIANCE_SEARCH_JSON = {
         "mode": 2,

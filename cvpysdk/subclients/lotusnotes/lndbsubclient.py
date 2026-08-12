@@ -41,16 +41,43 @@ LNDbSubclient:
 
 from __future__ import absolute_import
 from __future__ import unicode_literals
+from typing import TYPE_CHECKING
 from .lnsubclient import LNSubclient
 from ...exception import SDKException
 
+if TYPE_CHECKING:
+    from ...job import Job
 
 class LNDbSubclient(LNSubclient):
-    """Derived class from LNSubclient Base class, representing a LNDB subclient,
-        and to perform operations on that subclient."""
+    """
+    LNDbSubclient is a specialized subclient class derived from LNSubclient, designed to manage and perform operations on LNDB subclients.
 
-    def _get_subclient_properties(self):
-        """Gets the subclient  related properties of LN DB subclient."""
+    This class provides methods for retrieving subclient properties, managing subclient content, and performing both in-place and out-of-place restore operations. It is intended for use in environments where granular control and restoration of LNDB subclient data is required.
+
+    Key Features:
+        - Retrieve subclient properties and their JSON representations
+        - Access and modify subclient content via property methods
+        - Restore data in place with options for overwriting and ACL restoration
+        - Restore data out of place to different clients or destinations
+        - Support for specifying restore time ranges and copy precedence
+
+    #ai-gen-doc
+    """
+
+    def _get_subclient_properties(self) -> dict:
+        """Retrieve the subclient-related properties specific to the LN DB subclient.
+
+        Returns:
+            dict: A dictionary containing the properties and configuration details of the LN DB subclient.
+
+        Example:
+            >>> subclient = LNDbSubclient()
+            >>> properties = subclient._get_subclient_properties()
+            >>> print(properties)
+            {'property1': 'value1', 'property2': 'value2', ...}
+
+        #ai-gen-doc
+        """
         super(LNDbSubclient, self)._get_subclient_properties()
         if 'content' in self._subclient_properties:
             self._content = self._subclient_properties['content']
@@ -61,10 +88,19 @@ class LNDbSubclient(LNSubclient):
         if 'commonProperties' in self._subclient_properties:
             self._commonProperties = self._subclient_properties['commonProperties']
 
-    def _get_subclient_properties_json(self):
-        """Get the all subclient related properties of this subclient.
-           Returns:
-                dict - all subclient properties put inside a dict
+    def _get_subclient_properties_json(self) -> dict:
+        """Retrieve all properties related to this subclient as a dictionary.
+
+        Returns:
+            dict: A dictionary containing all subclient properties.
+
+        Example:
+            >>> subclient = LNDbSubclient()
+            >>> properties = subclient._get_subclient_properties_json()
+            >>> print(properties)
+            {'property1': 'value1', 'property2': 'value2', ...}
+
+        #ai-gen-doc
         """
 
         subclient_json = {
@@ -80,25 +116,41 @@ class LNDbSubclient(LNSubclient):
         return subclient_json
 
     @property
-    def content(self):
-        """Gets the appropriate content from the Subclient relevant to the user.
+    def content(self) -> list:
+        """Retrieve the content items associated with this LNDbSubclient.
 
-            Returns:
-                list - list of content associated with the subclient
+        Returns:
+            list: A list containing the content items relevant to the subclient.
+
+        Example:
+            >>> subclient = LNDbSubclient()
+            >>> content_items = subclient.content  # Access content as a property
+            >>> print(f"Subclient content: {content_items}")
+
+        #ai-gen-doc
         """
         return self._content
 
     @content.setter
-    def content(self, subclient_content):
-        """Creates the list of content JSON to pass to the API to add/update content of a
-        LNDB Subclient.
+    def content(self, subclient_content: list) -> None:
+        """Set the content for the LNDB Subclient by creating a list of content JSON objects.
 
-            Args:
-                subclient_content (list)  --  list of the content to add to the subclient
+        This method prepares the content in the appropriate JSON format required by the API
+        to add or update the content of an LNDB Subclient.
 
-            Returns:
-                list - list of the appropriate JSON for an agent to send to the POST Subclient API
+        Args:
+            subclient_content: A list containing the content items to be added to the subclient.
 
+        Example:
+            >>> lndb_subclient = LNDbSubclient()
+            >>> new_content = [
+            ...     {"database": "SalesDB", "schema": "public"},
+            ...     {"database": "HRDB", "schema": "employees"}
+            ... ]
+            >>> lndb_subclient.content = new_content  # Use assignment for property setter
+            >>> # The subclient content is now updated with the provided list
+
+        #ai-gen-doc
         """
         content = []
         try:
@@ -128,84 +180,53 @@ class LNDbSubclient(LNSubclient):
 
     def restore_in_place(
             self,
-            paths,
-            overwrite=True,
-            restore_data_and_acl=True,
-            copy_precedence=None,
-            from_time=None,
-            to_time=None,
-            **kwargs):
-        """Restores the files/folders specified in the input paths list to the same location.
+            paths: list,
+            overwrite: bool = True,
+            restore_data_and_acl: bool = True,
+            copy_precedence: int = None,
+            from_time: str = None,
+            to_time: str = None,
+            **kwargs
+        ) -> 'Job':
+        """Restore files or folders to their original location in-place.
 
-            Args:
-                paths                   (list)  --  list of full paths of files/folders to restore
+        This method restores the specified files or folders (provided as full paths in the `paths` list)
+        to their original location on the source client. You can control overwrite behavior, restore
+        data and ACLs, specify copy precedence, and set time filters for the restore. Additional
+        options can be provided via keyword arguments for advanced restore scenarios.
 
-                overwrite               (bool)  --  unconditional overwrite files during restore
-                    default: True
+        Args:
+            paths: List of full file or folder paths to restore.
+            overwrite: If True, existing files will be unconditionally overwritten during restore. Default is True.
+            restore_data_and_acl: If True, both data and ACLs will be restored. Default is True.
+            copy_precedence: Optional storage policy copy precedence value. Default is None.
+            from_time: Optional string specifying the start time for restore (format: 'YYYY-MM-DD HH:MM:SS'). Default is None.
+            to_time: Optional string specifying the end time for restore (format: 'YYYY-MM-DD HH:MM:SS'). Default is None.
+            **kwargs: Additional keyword arguments for advanced restore options, such as:
+                - common_options_dict (dict): Dictionary of common restore options (e.g., unconditionalOverwrite, recoverWait, disasterRecovery, etc.).
+                - lndb_restore_options (dict): Dictionary of LNDb-specific restore options (e.g., disableReplication, disableBackgroundAgents).
 
-                restore_data_and_acl    (bool)  --  restore data and ACL files
-                    default: True
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                copy_precedence         (int)   --  copy precedence value of storage policy copy
-                    default: None
+        Raises:
+            SDKException: If `paths` is not a list, if the job fails to initialize, if the response is empty, or if the response indicates failure.
 
-                from_time               (str)   --  time to retore the contents after
-                        format: YYYY-MM-DD HH:MM:SS
+        Example:
+            >>> # Restore two databases in-place, overwriting existing files
+            >>> job = lndb_subclient.restore_in_place(
+            ...     paths=['/data/notes/mail/user1.nsf', '/data/notes/mail/user2.nsf'],
+            ...     overwrite=True,
+            ...     restore_data_and_acl=True,
+            ...     copy_precedence=2,
+            ...     from_time='2023-01-01 00:00:00',
+            ...     to_time='2023-01-31 23:59:59',
+            ...     common_options_dict={'unconditionalOverwrite': True},
+            ...     lndb_restore_options={'disableReplication': True}
+            ... )
+            >>> print(f"Restore job ID: {job.job_id}")
 
-                    default: None
-
-                to_time                 (str)   --  time to retore the contents before
-                        format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                common_options_dict     (dict)  -- dictionary for all the common options
-                    options:
-                        unconditionalOverwrite              :   overwrite the files during restore
-                        even if they exist
-
-                        recoverWait                         :   Specifies whether this restore
-                        operation must wait until resources become available if a database recovery
-                        is already taking place
-
-                        recoverZap                          :   Specifies whether the IBM Domino
-                        must change the DBIID associated with the restored database
-
-                        recoverZapReplica                   :   Specifies whether the restore
-                        operation changes the replica id of the restored database
-
-                        recoverZapIfNecessary               :   Specifies whether the IBM Domino
-                        can change the DBIID associated with the restored database if necessary
-
-                        doNotReplayTransactLogs             :   option to skip restoring or
-                        replaying logs
-
-
-                    Disaster Recovery special options:
-                        skipErrorsAndContinue               :   enables a data recovery operation
-                        to continue despite media errors
-
-                        disasterRecovery                    :   run disaster recovery
-
-                lndb_restore_options    (dict)  -- dictionary for all options specific
-                to an lndb restore
-                    options:
-                        disableReplication      :   disable relpication on database
-
-                        disableBackgroundAgents :   disable background agents
-
-            Returns:
-                object - instance of the Job class for this restore job
-
-            Raises:
-                SDKException:
-                    if paths is not a list
-
-                    if failed to initialize job
-
-                    if response is empty
-
-                    if response is not success
+        #ai-gen-doc
         """
         return super(LNDbSubclient, self).restore_in_place(
             paths,
@@ -218,102 +239,65 @@ class LNDbSubclient(LNSubclient):
 
     def restore_out_of_place(
             self,
-            client,
-            destination_path,
-            paths,
-            overwrite=True,
-            restore_data_and_acl=True,
-            copy_precedence=None,
-            from_time=None,
-            to_time=None,
-            **kwargs):
-        """Restores the files/folders specified in the input paths list to the input client,
-            at the specified destionation location.
+            client: object,
+            destination_path: str,
+            paths: list,
+            overwrite: bool = True,
+            restore_data_and_acl: bool = True,
+            copy_precedence: int = None,
+            from_time: str = None,
+            to_time: str = None,
+            **kwargs
+        ) -> 'Job':
+        """Restore files or folders to a different client and destination path.
 
-            Args:
-                client                (str/object) --  either the name of the client or
-                the instance of the Client
+        This method restores the specified files or folders from the backup to a given client
+        at the provided destination path. It supports various options such as overwriting existing files,
+        restoring data and ACLs, specifying copy precedence, and filtering by time range. Additional
+        options can be provided via keyword arguments for advanced restore scenarios.
 
-                destination_path      (str)        --  full path of the restore location on client
+        Args:
+            client: The target client for the restore operation. This can be either the client name (str)
+                or an instance of the Client class.
+            destination_path: The full path on the destination client where the data should be restored.
+            paths: List of full file or folder paths to restore.
+            overwrite: If True, existing files at the destination will be overwritten. Default is True.
+            restore_data_and_acl: If True, both data and ACLs will be restored. Default is True.
+            copy_precedence: Optional; the copy precedence value of the storage policy copy to use.
+            from_time: Optional; restore only data modified after this time (format: 'YYYY-MM-DD HH:MM:SS').
+            to_time: Optional; restore only data modified before this time (format: 'YYYY-MM-DD HH:MM:SS').
+            **kwargs: Additional keyword arguments for advanced restore options, such as:
+                - common_options_dict (dict): Common restore options (e.g., unconditionalOverwrite, recoverWait, etc.).
+                - lndb_restore_options (dict): LNDb-specific restore options (e.g., disableReplication).
 
-                paths                 (list)       --  list of full paths of
-                files/folders to restore
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                overwrite             (bool)       --  unconditional overwrite files during restore
+        Raises:
+            SDKException: If any of the following conditions are met:
+                - The client is not a string or Client instance.
+                - The destination_path is not a string.
+                - The paths argument is not a list.
+                - Failed to initialize the restore job.
+                - The response is empty or indicates failure.
 
-                    default: True
+        Example:
+            >>> # Restore two databases to a different client and path, overwriting existing files
+            >>> job = lndb_subclient.restore_out_of_place(
+            ...     client='TargetClient',
+            ...     destination_path='/restore/location/',
+            ...     paths=['/data/db1.nsf', '/data/db2.nsf'],
+            ...     overwrite=True,
+            ...     restore_data_and_acl=True,
+            ...     copy_precedence=2,
+            ...     from_time='2023-01-01 00:00:00',
+            ...     to_time='2023-12-31 23:59:59',
+            ...     common_options_dict={'unconditionalOverwrite': True},
+            ...     lndb_restore_options={'disableReplication': True}
+            ... )
+            >>> print(f"Restore job ID: {job.job_id}")
 
-                restore_data_and_acl  (bool)       --  restore data and ACL files
-
-                    default: True
-
-                copy_precedence         (int)      --  copy precedence value of storage policy copy
-
-                    default: None
-
-                from_time               (str)       --  time to retore the contents after
-
-                        format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                to_time                 (str)       --  time to retore the contents before
-
-                        format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                 common_options_dict    (dict)      -- dictionary for all the common options
-                    options:
-                        unconditionalOverwrite              :   overwrite the files during restore
-                        even if they exist
-
-                        recoverWait                         :   Specifies whether this restore
-                        operation must wait until resources become available if a database recovery
-                        is already taking place
-
-                        recoverZap                          :   Specifies whether the IBM Domino
-                        must change the DBIID associated with the restored database
-
-                        recoverZapReplica                   :   Specifies whether the restore
-                        operation changes the replica id of the restored database
-
-                        recoverZapIfNecessary               :   Specifies whether the IBM Domino
-                        can change the DBIID associated with the restored database if necessary
-
-                        doNotReplayTransactLogs             :   option to skip restoring or
-                        replaying logs
-
-
-                    Disaster Recovery special options:
-                        skipErrorsAndContinue               :   enables a data recovery operation
-                        to continue despite media errors
-
-                        disasterRecovery                    :   run disaster recovery
-
-                lndb_restore_options    (dict)      -- dictionary for all options specific
-                to an lndb restore
-                    options:
-                        disableReplication      :   disable relpication on database
-
-                        disableBackgroundAgents :   disable background agents
-
-            Returns:
-                object - instance of the Job class for this restore job
-
-            Raises:
-                SDKException:
-                    if client is not a string or Client instance
-
-                    if destination_path is not a string
-
-                    if paths is not a list
-
-                    if failed to initialize job
-
-                    if response is empty
-
-                    if response is not success
+        #ai-gen-doc
         """
         return super(LNDbSubclient, self).restore_out_of_place(
             client,

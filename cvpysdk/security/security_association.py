@@ -42,21 +42,49 @@ SecurityAssociation:
 
 """
 
+from typing import Dict, List, Optional, Union
+
 from ..exception import SDKException
 
 
 class SecurityAssociation(object):
-    """Class for managing the security associations roles on the commcell"""
+    """Class for managing the security associations roles on the commcell
 
-    def __init__(self, commcell_object, class_object):
+    Description:
+        This class provides methods to manage security associations, including fetching,
+        adding, and checking roles on various Commcell entities like Clients, Storage Pools,
+        and Plans.
+
+    Attributes:
+        _commcell_object (Commcell): Instance of the Commcell class.
+        _entity_list (dict): Dictionary representing the entity for which security is managed.
+        _roles (dict): Dictionary of available security roles on the Commcell.
+
+    Usage:
+        >>> from commvault import Commcell
+        >>> commcell = Commcell('localhost', 'user', 'password')
+        >>> security_association = SecurityAssociation(commcell, commcell)
+    """
+
+    def __init__(self, commcell_object: 'Commcell', class_object: Optional[Union['Commcell', 'Client', 'StoragePool', 'Plan', 'WorkFlow']] = None) -> None:
         """Initializes the security associations object
 
-            Args:
-                commcell_object     (object)     --     instance of the Commcell class
+        Args:
+            commcell_object (Commcell): Instance of the Commcell class.
+            class_object    (object):   Instance of the class on which we want to
+                                        manage security operations.
+                                        Default: commcell object will be used.
 
-                class_object         (object)     --    instance of the class on which we want to
-                                                            manage security operations
-                                                        default: commcell object will be used
+        Raises:
+            SDKException: If failed to get security roles.
+
+        Usage:
+            >>> from commvault import Commcell
+            >>> commcell = Commcell('localhost', 'user', 'password')
+            >>> security_association = SecurityAssociation(commcell, commcell)
+            >>> from commvault import Client
+            >>> client = Client(commcell, 'client1')
+            >>> security_association = SecurityAssociation(commcell, client)
         """
         self._commcell_object = commcell_object
         if not class_object:
@@ -110,11 +138,14 @@ class SecurityAssociation(object):
 
         self._roles = self._get_security_roles()
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Representation string consisting of all available security roles on this commcell.
 
-            Returns:
-                str - string of all the available security roles on this commcell
+        Returns:
+            str: String of all the available security roles on this commcell.
+
+        Usage:
+            >>> str(security_association)
         """
         representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'Roles')
 
@@ -124,50 +155,40 @@ class SecurityAssociation(object):
 
         return representation_string.strip()
 
-    def __repr__(self):
-        """Representation string for the instance of the Security class."""
+    def __repr__(self) -> str:
+        """Representation string for the instance of the Security class.
+
+        Returns:
+            str: A string representation of the Security class instance.
+
+        Usage:
+            >>> repr(security_association)
+        """
         return "Security class instance for Commcell"
 
     @staticmethod
-    def _security_association_json(entity_dictionary):
-        """handles three way associations (role-user-entities)
+    def _security_association_json(entity_dictionary: dict) -> List[dict]:
+        """Handles three way associations (role-user-entities)
 
-            Args:
-                entity_dictionary   --      combination of entity_type, entity names
-                                            and role
-                e.g.: entity_dict={
-                                'assoc1':
-                                    {
-                                        'entity_type':['entity_name'],
-                                        'entity_type':['entity_name', 'entity_name'],
-                                        'role': ['role1']
-                                    },
-                                'assoc2':
-                                    {
-                                        'mediaAgentName': ['networktestcs', 'standbycs'],
-                                        'clientName': ['Linux1'],
-                                        'role': ['New1']
-                                        }
-                                    }
-                entity_type         --      key for the entity present in dictionary
-                                            on which user will have access
+        Args:
+            entity_dictionary (dict): Combination of entity_type, entity names and role.
 
-                entity_name         --      Value of the key
+        Returns:
+            List[dict]: A list of dictionaries representing the complete security associations.
 
-                role                --      role will remain role in dictionary
-                e.g.: {"clientName":"Linux1"}
-                entity_type:    clientName, mediaAgentName, libraryName, userName,
-                                userGroupName, storagePolicyName, clientGroupName,
-                                schedulePolicyName, locationName, providerDomainName,
-                                alertName, workflowName, policyName, roleName
-
-                entity_name:    client name for entity_type 'clientName'
-                                Media agent name for entitytype 'mediaAgentName'
-                                similar for other entity_typees
-
-                request_type        --      decides whether to ADD, DELETE or
-                                            OVERWRITE user security association.
-
+        Usage:
+            >>> entity_dict = {
+            ...     'assoc1': {
+            ...         'entity_type': ['entity_name'],
+            ...         'role': ['role1']
+            ...     },
+            ...     'assoc2': {
+            ...         'mediaAgentName': ['networktestcs', 'standbycs'],
+            ...         'clientName': ['Linux1'],
+            ...         'role': ['New1']
+            ...     }
+            ... }
+            >>> SecurityAssociation._security_association_json(entity_dict)
         """
         complete_association = []
         for entity_value in entity_dictionary.values():
@@ -207,13 +228,21 @@ class SecurityAssociation(object):
         return complete_association
 
     @staticmethod
-    def fetch_security_association(security_dict):
+    def fetch_security_association(security_dict: List[dict]) -> Dict[int, list]:
         """Fetches security associations from entity
+
         Args:
-            security_dict    (dict)   --  security association properties of entity
+            security_dict (list): Security association properties of entity.
 
         Returns:
-            formatted security association dictionary with custom permissions marked as invalid
+            Dict[int, list]: Formatted security association dictionary with custom permissions marked as invalid.
+
+        Usage:
+            >>> security_dict = [{
+            ...     'entities': {'entity': [{'clientName': 'client1'}]},
+            ...     'properties': {'role': {'roleName': 'Role1'}}
+            ... }]
+            >>> SecurityAssociation.fetch_security_association(security_dict)
         """
         security_list = []
         count = 0
@@ -270,8 +299,20 @@ class SecurityAssociation(object):
         return entity_permissions
 
 
-    def _get_security_roles(self):
-        """Returns the list of available roles on this commcell"""
+    def _get_security_roles(self) -> Dict[str, int]:
+        """Returns the list of available roles on this commcell
+
+        Returns:
+            Dict[str, int]: Dictionary of available roles on the Commcell, with role names as keys and role IDs as values.
+
+        Raises:
+            SDKException:
+                if response is empty
+                if request failed
+
+        Usage:
+            >>> security_association._get_security_roles()
+        """
         GET_SECURITY_ROLES = self._commcell_object._services['GET_SECURITY_ROLES']
 
         flag, response = self._commcell_object._cvpysdk_object.make_request(
@@ -297,35 +338,41 @@ class SecurityAssociation(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def _add_security_association(self, association_list, user= True, request_type = None, externalGroup = False):
-        """
-        Adds the security association on the specified class object
+    def _add_security_association(
+            self,
+            association_list: List[dict],
+            user: bool = True,
+            request_type: Optional[str] = None,
+            externalGroup: bool = False
+    ) -> None:
+        """Adds the security association on the specified class object
 
-        Supported Types : Client, Storage Pool class objects.
+        Description:
+            Adds security associations for users or user groups to a specific entity, such as a Client or Storage Pool.
+            The association defines the role that the user or group has on that entity.
 
         Args:
-            associations_list   (list)  --  list of users to be associated
-                Example:
-                    associations_list = [
-                        {
-                            'user_name': user1,
-                            'role_name': role1
-                        },
-                        {
-                            'user_name': user2,
-                            'role_name': role2
-                        }
-                    ]
- 
-            user (bool)             --    True or False. set user = False, If associations_list made up of user groups
-            request_type (str)      --    eg : 'OVERWRITE' or 'UPDATE' or 'DELETE', Default will be OVERWRITE operation
-            externalGroup (bool)    --    True or False, set externalGroup = True. If Security associations is to be done on External User Groups
+            association_list (List[dict]): List of users to be associated, with their role names.
+            user             (bool):      True if associations_list is made up of users, False for user groups.
+                                            Defaults to True.
+            request_type     (str):       'OVERWRITE', 'UPDATE', or 'DELETE'.  Defaults to 'OVERWRITE'.
+            externalGroup     (bool):      True if security associations is to be done on External User Groups, False otherwise. Defaults to False.
 
         Raises:
             SDKException:
                 if association is not of dict type
-                if role doesnot exists on Commcell
+                if role does not exist on Commcell
                 if request fails
+
+        Usage:
+            >>> association_list = [
+            ...     {'user_name': 'user1', 'role_name': 'Role1'},
+            ...     {'user_name': 'user2', 'role_name': 'Role2'}
+            ... ]
+            >>> security_association._add_security_association(association_list)
+            >>> security_association._add_security_association(association_list, request_type='UPDATE')
+            >>> security_association._add_security_association(association_list, user=False)
+            >>> security_association._add_security_association(association_list, externalGroup=True)
         """
 
         update_operator_request_type = {
@@ -405,17 +452,22 @@ class SecurityAssociation(object):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def has_role(self, role_name):
+    def has_role(self, role_name: str) -> bool:
         """Checks if role with specified name exists
 
-            Args:
-                role_name     (str)     --     name of the role to be verified
+        Args:
+            role_name (str): Name of the role to be verified.
 
-            Returns:
-                (bool)     -  True if role with specified name exists
+        Returns:
+            bool: True if role with specified name exists, False otherwise.
+
+        Raises:
+            SDKException: If role_name is not a string.
+
+        Usage:
+            >>> security_association.has_role('Role1')
         """
         if not isinstance(role_name, str):
             raise SDKException('Security', '101')
 
         return self._roles and role_name.lower() in self._roles
-

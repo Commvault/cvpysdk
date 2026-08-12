@@ -68,28 +68,59 @@ from ...exception import SDKException
 
 
 class SalesforceInstance(CloudAppsInstance):
-    """Class for representing an Instance of the Salesforce instance type."""
+    """
+    Represents an instance of the Salesforce cloud application.
+
+    This class provides a comprehensive interface for managing and restoring Salesforce instances.
+    It exposes properties for accessing instance-specific details such as organization ID, login URL,
+    consumer ID, proxy client, and access node. The class supports various restore operations,
+    including restoring data and metadata to the file system, database, or directly to Salesforce
+    from different sources.
+
+    Key Features:
+        - Access to Salesforce instance properties (type, organization ID, login URL, consumer ID, proxy client, access node)
+        - Restore instance data to file system
+        - Restore instance data to database with configurable parameters
+        - Restore Salesforce data from database or media sources
+        - Restore metadata to file system or directly to Salesforce
+        - Internal support for restoring from JSON representations
+
+    #ai-gen-doc
+    """
 
     @property
-    def ca_instance_type(self):
-        """
-        Returns the instance type of this cloud apps instance
+    def ca_instance_type(self) -> str:
+        """Get the instance type of this Salesforce cloud apps instance.
 
         Returns:
-            (str): Instance Type
+            The instance type as a string.
+
+        Example:
+            >>> sf_instance = SalesforceInstance()
+            >>> instance_type = sf_instance.ca_instance_type
+            >>> print(f"Instance type: {instance_type}")
+            >>> # The output will display the type of the Salesforce cloud apps instance
+
+        #ai-gen-doc
         """
         return 'SALESFORCE'
 
     @property
-    def organization_id(self):
-        """
-        Returns the Salesforce organization id
+    def organization_id(self) -> str:
+        """Get the Salesforce organization ID associated with this instance.
 
         Returns:
-            (str): Organization Id
+            The Salesforce organization ID as a string.
+
+        Example:
+            >>> sf_instance = SalesforceInstance()
+            >>> org_id = sf_instance.organization_id
+            >>> print(f"Organization ID: {org_id}")
 
         Raises:
-            SDKException: if attribute could not be fetched
+            SDKException: If the organization ID attribute could not be fetched.
+
+        #ai-gen-doc
         """
         try:
             return self._properties['cloudAppsInstance']['salesforceInstance']['sfOrgID']
@@ -97,15 +128,21 @@ class SalesforceInstance(CloudAppsInstance):
             raise SDKException('Instance', '105', 'Could not fetch organization ID')
 
     @property
-    def login_url(self):
-        """
-        Returns the login url of Salesforce organization
+    def login_url(self) -> str:
+        """Get the login URL of the Salesforce organization.
 
         Returns:
-            (str): Login URL
+            The login URL as a string.
 
         Raises:
-            SDKException: if attribute could not be fetched
+            SDKException: If the login URL attribute could not be fetched.
+
+        Example:
+            >>> sf_instance = SalesforceInstance()
+            >>> url = sf_instance.login_url
+            >>> print(f"Salesforce login URL: {url}")
+
+        #ai-gen-doc
         """
         try:
             return self._properties['cloudAppsInstance']['salesforceInstance']['endpoint']
@@ -113,15 +150,24 @@ class SalesforceInstance(CloudAppsInstance):
             raise SDKException('Instance', '105', 'Could not fetch login url')
 
     @property
-    def consumer_id(self):
-        """
-        Returns the Consumer Id of the Salesforce connected app used to authenticate with Salesforce by this instance
+    def consumer_id(self) -> str:
+        """Get the Consumer Id of the Salesforce connected app used for authentication.
+
+        This property retrieves the Consumer Id associated with the Salesforce connected app 
+        that is used by this instance to authenticate with Salesforce.
 
         Returns:
-            (str): Consumer Id
+            The Consumer Id as a string.
 
         Raises:
-            SDKException: if attribute could not be fetched
+            SDKException: If the Consumer Id attribute could not be fetched.
+
+        Example:
+            >>> sf_instance = SalesforceInstance()
+            >>> consumer_id = sf_instance.consumer_id  # Use dot notation for property access
+            >>> print(f"Salesforce Consumer Id: {consumer_id}")
+
+        #ai-gen-doc
         """
         try:
             return self._properties['cloudAppsInstance']['salesforceInstance']['consumerId']
@@ -129,18 +175,21 @@ class SalesforceInstance(CloudAppsInstance):
             raise SDKException('Instance', '105', 'Could not fetch login url')
 
     @property
-    def proxy_client(self):
-        """
-        Returns the name of the access node.
+    def proxy_client(self) -> str:
+        """Get the name of the access node (proxy client) for this Salesforce instance.
 
         Returns:
-            (str): Access Node
+            The name of the access node as a string.
 
         Raises:
-            SDKException:
-                if attribute could not be fetched
+            SDKException: If the attribute could not be fetched or if the access node is a client group.
 
-                if access node is a client group
+        Example:
+            >>> sf_instance = SalesforceInstance()
+            >>> access_node = sf_instance.proxy_client
+            >>> print(f"Access node: {access_node}")
+
+        #ai-gen-doc
         """
         try:
             general_cloud_properties = self._properties['cloudAppsInstance']['generalCloudProperties']
@@ -158,16 +207,26 @@ class SalesforceInstance(CloudAppsInstance):
             raise SDKException('Instance', '105', 'Could not fetch proxy client')
 
     @property
-    def access_node(self):
-        """
-        Returns a dictionary containing clientName and clientId or clientGroupName and clientGroupId depending on
-        whether a single client or a client group is configured as access node.
+    def access_node(self) -> dict:
+        """Get the access node configuration for the Salesforce instance.
 
         Returns:
-            (dict): Dictionary containing access node name and id
+            dict: A dictionary containing either:
+                - 'clientName' and 'clientId' if a single client is configured as the access node, or
+                - 'clientGroupName' and 'clientGroupId' if a client group is configured as the access node.
 
         Raises:
-            SDKException: if attribute could not be fetched
+            SDKException: If the access node attribute could not be fetched.
+
+        Example:
+            >>> sf_instance = SalesforceInstance()
+            >>> access_info = sf_instance.access_node
+            >>> print(access_info)
+            {'clientName': 'ClientA', 'clientId': 123}
+            # or
+            {'clientGroupName': 'GroupA', 'clientGroupId': 456}
+
+        #ai-gen-doc
         """
         try:
             access_node = self._properties['cloudAppsInstance']['generalCloudProperties']['accessNodes'] \
@@ -178,15 +237,32 @@ class SalesforceInstance(CloudAppsInstance):
         except KeyError:
             raise SDKException('Instance', '105', 'Could not fetch access node')
 
-    def _restore_json(self, **kwargs):
-        """
-        Returns the JSON request to pass to the API as per the options selected by the user
+    def _restore_json(self, **kwargs: dict) -> dict:
+        """Generate the JSON request payload for a restore operation based on user-selected options.
+
+        This method constructs and returns a dictionary representing the JSON request body
+        to be sent to the API for a Salesforce restore operation. The request is built
+        according to the keyword arguments provided by the user, allowing for flexible
+        configuration of restore parameters.
 
         Args:
-            **kwargs (dict): Dict of named parameters to set for restore
+            **kwargs: Arbitrary keyword arguments specifying restore options. Each key-value
+                pair represents a parameter to include in the restore request.
 
         Returns:
-            (dict): Request JSON
+            dict: The JSON request payload as a dictionary, ready to be sent to the API.
+
+        Example:
+            >>> instance = SalesforceInstance()
+            >>> restore_payload = instance._restore_json(
+            ...     source='backup_2023_10_01',
+            ...     target='production',
+            ...     overwrite=True
+            ... )
+            >>> print(restore_payload)
+            {'source': 'backup_2023_10_01', 'target': 'production', 'overwrite': True}
+
+        #ai-gen-doc
         """
         if len(self.backupsets.all_backupsets) > 1 or len(self.subclients.all_subclients) > 1:
             raise SDKException(
@@ -263,51 +339,54 @@ class SalesforceInstance(CloudAppsInstance):
 
         return request_json
 
-    def restore_to_file_system(self, **kwargs):
-        """
-        Runs object level restore to file system and returns object of Job or Schedule class. For out of place restore,
-        pass both client and path_to_store_csv parameters. By default, will restore to access node and download cache
-        path.
+    def restore_to_file_system(self, **kwargs: dict) -> object:
+        """Perform an object-level restore to the file system and return a Job or Schedule object.
 
-        Args:
-            **kwargs (dict): Restore options including
-                {
-                    paths (list[str]): List of files and objects to restore like
-                                ['/Files/filename', '/Objects/object_name']
-                                (Default is ['/Files/', '/Objects/'] which selects all files and objects for restore),
+        This method initiates a restore operation for Salesforce files and objects to a specified file system location.
+        For out-of-place restores, both the `client` and `path_to_store_csv` parameters must be provided. By default,
+        the restore will target the access node and use the download cache path.
 
-                    client (str): Name of destination client (Default is access node),
-
-                    path_to_store_csv (str): path on destination client to restore to (Default is download cache path),
-
-                    from_time (str): time to restore contents after like YYYY-MM-DD HH:MM:SS (Default is None),
-
-                    to_time (str): time to restore contents before like YYYY-MM-DD HH:MM:SS (Default is None),
-
-                    no_of_streams (int): Number of streams to use for restore (Default is 2),
-
-                    dependent_restore_level (int): restore children option (Default is 0)
-                                                    0  -- No Children
-                                                    1  -- Immediate Children
-                                                    -1 -- All Children,
-
-                    restore_parent_type (str): restore parents option (Default is 'NONE')
-                                                    'NONE' -- No Parents
-                                                    'ALL'  -- All Parents
-                }
+        Keyword Args:
+            paths (List[str], optional): List of file and object paths to restore, e.g.,
+                ['/Files/filename', '/Objects/object_name']. Defaults to ['/Files/', '/Objects/'] (all files and objects).
+            client (str, optional): Name of the destination client. Defaults to the access node.
+            path_to_store_csv (str, optional): Path on the destination client to restore to. Defaults to the download cache path.
+            from_time (str, optional): Restore contents modified after this time (format: 'YYYY-MM-DD HH:MM:SS').
+            to_time (str, optional): Restore contents modified before this time (format: 'YYYY-MM-DD HH:MM:SS').
+            no_of_streams (int, optional): Number of streams to use for restore. Defaults to 2.
+            dependent_restore_level (int, optional): Restore children option. Defaults to 0.
+                0  -- No Children
+                1  -- Immediate Children
+                -1 -- All Children
+            restore_parent_type (str, optional): Restore parents option. Defaults to 'NONE'.
+                'NONE' -- No Parents
+                'ALL'  -- All Parents
 
         Returns:
-            object: Object of Job or Schedule class
+            object: An instance of the Job or Schedule class representing the restore operation.
 
         Raises:
-            SDKException:
-                if paths is given but is not a list
-    
-                if client parameter is not given and the access node configured with this instance is a client group
-                
-                if either client or path_to_store_csv is given but not both are present
-                
-                if client or path_to_store_csv are not strings
+            SDKException: If any of the following conditions are met:
+                - The 'paths' parameter is provided but is not a list.
+                - The 'client' parameter is not provided and the access node is a client group.
+                - Only one of 'client' or 'path_to_store_csv' is provided (both must be present for out-of-place restore).
+                - The 'client' or 'path_to_store_csv' parameters are not strings.
+
+        Example:
+            >>> # Restore all files and objects to the default location
+            >>> job = salesforce_instance.restore_to_file_system()
+            >>> print(f"Restore job started: {job}")
+
+            >>> # Out-of-place restore to a specific client and path
+            >>> job = salesforce_instance.restore_to_file_system(
+            ...     client='DestinationClient',
+            ...     path_to_store_csv='/tmp/restore_folder',
+            ...     paths=['/Files/AccountData.csv'],
+            ...     no_of_streams=4
+            ... )
+            >>> print(f"Restore job started: {job}")
+
+        #ai-gen-doc
         """
         PARAMS = ('client', 'path_to_store_csv')
 
@@ -331,65 +410,58 @@ class SalesforceInstance(CloudAppsInstance):
 
     def restore_to_database(
             self,
-            db_type,
-            db_host_name,
-            db_name,
-            db_user_name,
-            db_password,
-            **kwargs
-        ):
-        """
-        Runs object level restore to database and returns object of Job or Schedule class
+            db_type: str,
+            db_host_name: str,
+            db_name: str,
+            db_user_name: str,
+            db_password: str,
+            **kwargs: dict
+        ) -> object:
+        """Perform an object-level restore to a specified database.
+
+        This method initiates a restore operation for Salesforce objects or files to a target database,
+        supporting both PostgreSQL and SQL Server. Additional restore options can be provided via keyword arguments.
 
         Args:
-            db_type (str): Type of database out of 'POSTGRESQL' or 'SQLSERVER'
-
-            db_host_name (str): Hostname of database server
-
-            db_name (str): Database name where objects will be restored
-
-            db_user_name (str): Username of database user
-
-            db_password (str): Password of database user
-
-            **kwargs (dict): Other restore options including
-                {
-                    paths (list[str]): List of files and objects to restore like
-                                ['/Files/filename', '/Objects/object_name']
-                                (Default is ['/Objects/'] which selects all objects for restore),
-
-                    db_instance (str): Database instance for SQL Server,
-
-                    db_port (int): Port of database server (Default is 5432 for POSTGRESQL and 1433 for SQLSERVER),
-
-                    from_time (str): time to restore contents after like YYYY-MM-DD HH:MM:SS (Default is None),
-
-                    to_time (str): time to restore contents before like YYYY-MM-DD HH:MM:SS (Default is None),
-
-                    no_of_streams (int): Number of streams to use for restore (Default is 2),
-
-                    path_to_store_csv (str): path to use as staging folder (Default is download cache path),
-
-                    dependent_restore_level (int): restore children option (Default is 0)
-                                                    0  -- No Children
-                                                    1  -- Immediate Children
-                                                    -1 -- All Children,
-
-                    restore_parent_type (str): restore parents option (Default is 'NONE')
-                                                    'NONE' -- No Parents
-                                                    'ALL'  -- All Parents
-                }
+            db_type: The type of database to restore to. Must be either 'POSTGRESQL' or 'SQLSERVER'.
+            db_host_name: Hostname or IP address of the target database server.
+            db_name: Name of the database where objects will be restored.
+            db_user_name: Username for authenticating with the target database.
+            db_password: Password for the specified database user.
+            **kwargs: Additional restore options. Supported keys include:
+                - paths (list of str): List of files/objects to restore (default: ['/Objects/'] for all objects).
+                - db_instance (str): Database instance name (required for SQL Server).
+                - db_port (int): Port number for the database server (default: 5432 for PostgreSQL, 1433 for SQL Server).
+                - from_time (str): Restore contents after this time (format: 'YYYY-MM-DD HH:MM:SS').
+                - to_time (str): Restore contents before this time (format: 'YYYY-MM-DD HH:MM:SS').
+                - no_of_streams (int): Number of streams to use for restore (default: 2).
+                - path_to_store_csv (str): Path for staging folder (default: download cache path).
+                - dependent_restore_level (int): Restore children option (0: No Children, 1: Immediate, -1: All).
+                - restore_parent_type (str): Restore parents option ('NONE' or 'ALL').
 
         Returns:
-            object: Object of Job or Schedule class
+            Object representing the restore operation, typically an instance of Job or Schedule class.
 
         Raises:
-            SDKException:
-                if required parameters are not of the correct type
+            SDKException: If required parameters are missing or of incorrect type,
+                if db_type is 'SQLSERVER' but db_instance is not provided or not a string,
+                or if 'paths' is provided but is not a list.
 
-                if db_type is 'SQLSERVER' but db_instance is not given/ is not a string
+        Example:
+            >>> # Restore all Salesforce objects to a PostgreSQL database
+            >>> job = salesforce_instance.restore_to_database(
+            ...     db_type='POSTGRESQL',
+            ...     db_host_name='db.example.com',
+            ...     db_name='salesforce_restore',
+            ...     db_user_name='dbuser',
+            ...     db_password='securepass',
+            ...     paths=['/Objects/Account', '/Objects/Contact'],
+            ...     db_port=5432,
+            ...     no_of_streams=4
+            ... )
+            >>> print(f"Restore job started: {job}")
 
-                if paths is given but is not a list
+        #ai-gen-doc
         """
         PARAMS = (db_type, db_host_name,  db_name, db_user_name, db_password)
 
@@ -415,72 +487,64 @@ class SalesforceInstance(CloudAppsInstance):
 
         return self._process_restore_response(request_json)
 
-    def restore_to_salesforce_from_database(self, **kwargs):
-        """
-        Runs restore to Salesforce from database and returns object of Job or Schedule class. For out of place restore,
-        pass the client, instance and backupset parameters. If database parameters are not passed, sync db will be used.
+    def restore_to_salesforce_from_database(self, **kwargs: dict) -> object:
+        """Run a restore operation to Salesforce from a database and return a Job or Schedule object.
 
-        Args:
-            **kwargs (dict): Other restore options including
-                {
-                    paths (list[str]): List of files and objects to restore like
-                                ['/Files/filename', '/Objects/object_name']
-                                (Default is ['/Files/', '/Objects/'] which selects all files and objects for restore),
+        This method initiates a restore process that transfers data from a specified database to Salesforce.
+        For out-of-place restores, provide the `client`, `instance`, and `backupset` parameters. If database
+        parameters are omitted, the default sync database will be used.
 
-                    client (str): Name of destination client (Default is source client),
-
-                    instance (str): Name of destination instance (Default is source instance),
-
-                    backupset (str): Name of destination backupset (Default is source backupset),
-
-                    db_type (str): Type of database out of 'POSTGRESQL' or 'SQLSERVER',
-
-                    db_host (str): Hostname of database server,
-
-                    db_name (str): Database name where objects will be restored,
-
-                    db_user_name (str): Username of database user,
-
-                    db_password (str): Password of database user,
-
-                    db_instance (str): Database instance for SQL Server,
-
-                    db_port (int): Port of database server (Default is 5432 for POSTGRESQL and 1433 for SQLSERVER),
-
-                    from_time (str): time to restore contents after like YYYY-MM-DD HH:MM:SS (Default is None),
-
-                    to_time (str): time to restore contents before like YYYY-MM-DD HH:MM:SS (Default is None),
-
-                    no_of_streams (int): Number of streams to use for restore (Default is 2),
-
-                    path_to_store_csv (str): path to use as staging folder (Default is download cache path),
-
-                    dependent_restore_level (int): restore children option (Default is 0)
-                                                    0  -- No Children
-                                                    1  -- Immediate Children
-                                                    -1 -- All Children,
-
-                    restore_parent_type (str): restore parents option (Default is 'NONE')
-                                                    'NONE' -- No Parents
-                                                    'ALL'  -- All Parents
-                }
+        Keyword Args:
+            paths (list of str, optional): List of files and objects to restore, e.g., ['/Files/filename', '/Objects/object_name'].
+                Defaults to ['/Files/', '/Objects/'] to select all files and objects.
+            client (str, optional): Name of the destination client. Defaults to the source client.
+            instance (str, optional): Name of the destination instance. Defaults to the source instance.
+            backupset (str, optional): Name of the destination backupset. Defaults to the source backupset.
+            db_type (str, optional): Type of database, either 'POSTGRESQL' or 'SQLSERVER'.
+            db_host (str, optional): Hostname of the database server.
+            db_name (str, optional): Name of the database where objects will be restored.
+            db_user_name (str, optional): Username for the database.
+            db_password (str, optional): Password for the database user.
+            db_instance (str, optional): Database instance for SQL Server.
+            db_port (int, optional): Port of the database server. Defaults to 5432 for POSTGRESQL and 1433 for SQLSERVER.
+            from_time (str, optional): Restore contents after this time (format: 'YYYY-MM-DD HH:MM:SS').
+            to_time (str, optional): Restore contents before this time (format: 'YYYY-MM-DD HH:MM:SS').
+            no_of_streams (int, optional): Number of streams to use for restore. Defaults to 2.
+            path_to_store_csv (str, optional): Path to use as a staging folder. Defaults to the download cache path.
+            dependent_restore_level (int, optional): Restore children option. 0 = No Children, 1 = Immediate Children, -1 = All Children.
+            restore_parent_type (str, optional): Restore parents option. 'NONE' = No Parents, 'ALL' = All Parents.
 
         Returns:
-            object: Object of Job or Schedule class
+            object: An instance of Job or Schedule class representing the restore operation.
 
         Raises:
-            SDKException:
-                if paths is given but is not a list
+            SDKException: If any of the following conditions are met:
+                - 'paths' is provided but is not a list.
+                - Any database parameters are provided but not all required parameters are present.
+                - Database parameters are not all strings.
+                - 'db_type' is 'SQLSERVER' but 'db_instance' is missing or not a string.
+                - Only some of 'client', 'instance', or 'backupset' are provided (all three must be present for out-of-place restore).
+                - 'client', 'instance', or 'backupset' are not strings.
 
-                if any database parameters are given but not all are present
+        Example:
+            >>> # Restore all files and objects to Salesforce using default sync database
+            >>> job = salesforce_instance.restore_to_salesforce_from_database()
+            >>> print(f"Restore job started: {job}")
 
-                if database parameters are not all strings
+            >>> # Out-of-place restore to a different client and database
+            >>> job = salesforce_instance.restore_to_salesforce_from_database(
+            ...     client='NewClient',
+            ...     instance='NewInstance',
+            ...     backupset='NewBackupset',
+            ...     db_type='POSTGRESQL',
+            ...     db_host='db.example.com',
+            ...     db_name='salesforce_db',
+            ...     db_user_name='dbuser',
+            ...     db_password='dbpass'
+            ... )
+            >>> print(f"Restore job started: {job}")
 
-                if db_type is 'SQLSERVER' but db_instance is not given/ is not a string
-
-                if either client, instance or backupset are given but not all three are present
-
-                if client, instance and backupset are not strings
+        #ai-gen-doc
         """
         DB_PARAMS = ('db_type', 'db_host', 'db_name', 'db_user_name', 'db_password')
         DEST_PARAMS = ('client', 'instance', 'backupset')
@@ -509,73 +573,67 @@ class SalesforceInstance(CloudAppsInstance):
 
         return self._process_restore_response(request_json)
 
-    def restore_to_salesforce_from_media(self, **kwargs):
-        """
-        Runs restore to Salesforce from database and returns object of Job or Schedule class. For out of place restore,
-        pass the client, instance and backupset parameters. If database parameters are not passed, sync db will be used
-        as staging db.
+    def restore_to_salesforce_from_media(self, **kwargs: dict) -> object:
+        """Restore data to Salesforce from media and return a Job or Schedule object.
 
-        Args:
-            **kwargs (dict): Other restore options including
-                {
-                    paths (list[str]): List of files and objects to restore like
-                                ['/Files/filename', '/Objects/object_name']
-                                (Default is ['/Files/', '/Objects/'] which selects all files and objects for restore),
+        This method initiates a restore operation to Salesforce from a database backup. 
+        For out-of-place restores, specify the `client`, `instance`, and `backupset` parameters. 
+        If database parameters are not provided, the sync database will be used as the staging database.
 
-                    client (str): Name of destination client (Default is source client),
-
-                    instance (str): Name of destination instance (Default is source instance),
-
-                    backupset (str): Name of destination backupset (Default is source backupset),
-
-                    db_type (str): Type of database out of 'POSTGRESQL' or 'SQLSERVER',
-
-                    db_host (str): Hostname of database server,
-
-                    db_name (str): Database name where objects will be restored,
-
-                    db_user_name (str): Username of database user,
-
-                    db_password (str): Password of database user,
-
-                    db_instance (str): Database instance for SQL Server,
-
-                    db_port (int): Port of database server (Default is 5432 for POSTGRESQL and 1433 for SQLSERVER),
-
-                    from_time (str): time to restore contents after like YYYY-MM-DD HH:MM:SS (Default is None),
-
-                    to_time (str): time to restore contents before like YYYY-MM-DD HH:MM:SS (Default is None),
-
-                    no_of_streams (int): Number of streams to use for restore (Default is 2),
-
-                    path_to_store_csv (str): path to use as staging folder (Default is download cache path),
-
-                    dependent_restore_level (int): restore children option (Default is 0)
-                                                    0  -- No Children
-                                                    1  -- Immediate Children
-                                                    -1 -- All Children,
-
-                    restore_parent_type (str): restore parents option (Default is 'NONE')
-                                                    'NONE' -- No Parents
-                                                    'ALL'  -- All Parents
-                }
+        Keyword Args:
+            paths (List[str], optional): List of files and objects to restore, e.g., ['/Files/filename', '/Objects/object_name'].
+                Defaults to ['/Files/', '/Objects/'] (restores all files and objects).
+            client (str, optional): Name of the destination client. Defaults to the source client.
+            instance (str, optional): Name of the destination instance. Defaults to the source instance.
+            backupset (str, optional): Name of the destination backupset. Defaults to the source backupset.
+            db_type (str, optional): Type of database ('POSTGRESQL' or 'SQLSERVER').
+            db_host (str, optional): Hostname of the database server.
+            db_name (str, optional): Name of the database where objects will be restored.
+            db_user_name (str, optional): Username for the database.
+            db_password (str, optional): Password for the database user.
+            db_instance (str, optional): Database instance for SQL Server.
+            db_port (int, optional): Port of the database server. Defaults to 5432 for POSTGRESQL and 1433 for SQLSERVER.
+            from_time (str, optional): Restore contents after this time (format: 'YYYY-MM-DD HH:MM:SS').
+            to_time (str, optional): Restore contents before this time (format: 'YYYY-MM-DD HH:MM:SS').
+            no_of_streams (int, optional): Number of streams to use for restore. Defaults to 2.
+            path_to_store_csv (str, optional): Path to use as the staging folder. Defaults to the download cache path.
+            dependent_restore_level (int, optional): Restore children option. 
+                0: No Children, 1: Immediate Children, -1: All Children. Defaults to 0.
+            restore_parent_type (str, optional): Restore parents option. 
+                'NONE': No Parents, 'ALL': All Parents. Defaults to 'NONE'.
 
         Returns:
-            object: Object of Job or Schedule class
+            object: An instance of Job or Schedule class representing the restore operation.
 
         Raises:
-            SDKException:
-                if paths is given but is not a list
+            SDKException: If any of the following conditions are met:
+                - 'paths' is provided but is not a list.
+                - Any database parameters are provided but not all required parameters are present.
+                - Database parameters are not all strings.
+                - 'db_type' is 'SQLSERVER' but 'db_instance' is missing or not a string.
+                - Only some of 'client', 'instance', or 'backupset' are provided (all three must be present for out-of-place restore).
+                - 'client', 'instance', or 'backupset' are not strings.
 
-                if any database parameters are given but not all are present
+        Example:
+            >>> # Restore all files and objects to the default Salesforce instance
+            >>> job = salesforce_instance.restore_to_salesforce_from_media()
+            >>> print(f"Restore job started: {job}")
 
-                if database parameters are not all strings
+            >>> # Out-of-place restore to a different client and instance with custom database parameters
+            >>> job = salesforce_instance.restore_to_salesforce_from_media(
+            ...     client='NewClient',
+            ...     instance='NewInstance',
+            ...     backupset='NewBackupset',
+            ...     db_type='POSTGRESQL',
+            ...     db_host='db.example.com',
+            ...     db_name='salesforce_restore',
+            ...     db_user_name='dbuser',
+            ...     db_password='dbpass',
+            ...     paths=['/Files/important_file', '/Objects/Account']
+            ... )
+            >>> print(f"Restore job started: {job}")
 
-                if db_type is 'SQLSERVER' but db_instance is not given/ is not a string
-
-                if either client, instance or backupset are given but not all three are present
-
-                if client, instance and backupset are not strings
+        #ai-gen-doc
         """
         DB_PARAMS = ('db_type', 'db_host', 'db_name', 'db_user_name', 'db_password')
         DEST_PARAMS = ('client', 'instance', 'backupset')
@@ -603,52 +661,56 @@ class SalesforceInstance(CloudAppsInstance):
 
         return self._process_restore_response(request_json)
 
-    def metadata_restore_to_file_system(self, **kwargs):
-        """
-        Runs metadata restore to file system and returns object of Job or Schedule class. For out of place restore,
-        pass both client and path_to_store_csv parameters. By default, will restore to access node and download cache
-        path.
+    def metadata_restore_to_file_system(self, **kwargs: dict) -> object:
+        """Run a metadata restore operation to the file system.
 
-        Args:
-            **kwargs (dict): Other restore options including
-                {                    
-                    paths (list[str]): List of metadata components to restore like
-                                ['/Metadata/unpackaged/objects/Account.object',
-                                 '/Metadata/unpackaged/profiles/Admin.profile']
-                                (Default is ['/Metadata/unpackaged/'] which selects all metdata components for restore),
-                                
-                    client (str): Name of destination client (Default is access node),
-                    
-                    path_to_store_csv (str): path on destination client to restore to (Default is download cache path),
-                    
-                    from_time (str): time to restore contents after like YYYY-MM-DD HH:MM:SS (Default is None),
-                    
-                    to_time (str): time to restore contents before like YYYY-MM-DD HH:MM:SS (Default is None),
-                    
-                    no_of_streams (int): Number of streams to use for restore (Default is 2),
-                    
-                    dependent_restore_level (int): restore children option (Default is 0)
-                                                    0  -- No Children
-                                                    1  -- Immediate Children
-                                                    -1 -- All Children,
-                                                    
-                    restore_parent_type (str): restore parents option (Default is 'NONE')
-                                                    'NONE' -- No Parents
-                                                    'ALL'  -- All Parents
-                }
+        This method initiates a metadata restore for Salesforce components to a specified file system location.
+        For an out-of-place restore, both the `client` and `path_to_store_csv` parameters must be provided.
+        By default, the restore will target the access node and its download cache path.
+
+        Keyword Args:
+            paths (List[str], optional): List of metadata component paths to restore, e.g.,
+                ['/Metadata/unpackaged/objects/Account.object', '/Metadata/unpackaged/profiles/Admin.profile'].
+                Defaults to ['/Metadata/unpackaged/'] (restores all metadata components).
+            client (str, optional): Name of the destination client. Defaults to the access node.
+            path_to_store_csv (str, optional): Path on the destination client to restore to.
+                Defaults to the download cache path.
+            from_time (str, optional): Restore contents modified after this time (format: 'YYYY-MM-DD HH:MM:SS').
+            to_time (str, optional): Restore contents modified before this time (format: 'YYYY-MM-DD HH:MM:SS').
+            no_of_streams (int, optional): Number of streams to use for restore. Defaults to 2.
+            dependent_restore_level (int, optional): Restore children option.
+                0  -- No Children (default)
+                1  -- Immediate Children
+                -1 -- All Children
+            restore_parent_type (str, optional): Restore parents option.
+                'NONE' -- No Parents (default)
+                'ALL'  -- All Parents
 
         Returns:
-            object: Object of Job or Schedule class
+            object: An instance of the Job or Schedule class representing the restore operation.
 
         Raises:
-            SDKException:
-                if paths is given but is not a list
-    
-                if client parameter is not given and the access node configured with this instance is a client group
-                
-                if either client or path_to_store_csv is given but not both are present
-                
-                if client or path_to_store_csv are not strings
+            SDKException: If any of the following conditions are met:
+                - The 'paths' parameter is provided but is not a list.
+                - The 'client' parameter is not provided and the access node is a client group.
+                - Only one of 'client' or 'path_to_store_csv' is provided (both must be present for out-of-place restore).
+                - The 'client' or 'path_to_store_csv' parameters are not strings.
+
+        Example:
+            >>> # Restore all metadata components to the default location
+            >>> job = salesforce_instance.metadata_restore_to_file_system()
+            >>> print(f"Restore job started: {job}")
+
+            >>> # Out-of-place restore to a specific client and path
+            >>> job = salesforce_instance.metadata_restore_to_file_system(
+            ...     client='DestinationClient',
+            ...     path_to_store_csv='/tmp/salesforce_restore',
+            ...     paths=['/Metadata/unpackaged/objects/Account.object'],
+            ...     no_of_streams=4
+            ... )
+            >>> print(f"Restore job started: {job}")
+
+        #ai-gen-doc
         """
         PARAMS = ('client', 'path_to_store_csv')
 
@@ -669,53 +731,53 @@ class SalesforceInstance(CloudAppsInstance):
         )
         return self._process_restore_response(request_json)
 
-    def metadata_restore_to_salesforce(self, **kwargs):
-        """
-        Runs metadata restore to Salesforce and returns object of Job or Schedule class. For out of place restore,
-        pass client, instance and backupset parameters.
+    def metadata_restore_to_salesforce(self, **kwargs: dict) -> object:
+        """Run a metadata restore operation to Salesforce.
 
-        Args:
-            **kwargs (dict): Other restore options including
-                {
-                    paths (list[str]): List of metadata components to restore like
-                                ['/Metadata/unpackaged/objects/Account.object',
-                                 '/Metadata/unpackaged/profiles/Admin.profile']
-                                (Default is ['/Metadata/unpackaged/'] which selects all metdata components for restore),
-                                
-                    client (str): Name of destination client (Default is source client),
-                    
-                    instance (str): Name of destination instance (Default is source instance),
-                    
-                    backupset (str): Name of destination backupset (Default is source backupset),
-                    
-                    from_time (str): time to restore contents after like YYYY-MM-DD HH:MM:SS (Default is None),
-                    
-                    to_time (str): time to restore contents before like YYYY-MM-DD HH:MM:SS (Default is None),
-                    
-                    no_of_streams (int): Number of streams to use for restore (Default is 2),
-                    
-                    path_to_store_csv (str): path to use as staging folder (Default is download cache path),
-                    
-                    dependent_restore_level (int): restore children option (Default is 0)
-                                                    0  -- No Children
-                                                    1  -- Immediate Children
-                                                    -1 -- All Children,
-                                                    
-                    restore_parent_type (str): restore parents option (Default is 'NONE')
-                                                    'NONE' -- No Parents
-                                                    'ALL'  -- All Parents
-                }
+        This method initiates a metadata restore to a Salesforce instance. It supports both in-place and out-of-place restores.
+        For out-of-place restores, you must provide the `client`, `instance`, and `backupset` parameters in `kwargs`.
+        Additional restore options can be specified via keyword arguments.
+
+        Keyword Args:
+            paths (List[str], optional): List of metadata component paths to restore. 
+                Example: ['/Metadata/unpackaged/objects/Account.object', '/Metadata/unpackaged/profiles/Admin.profile'].
+                Defaults to ['/Metadata/unpackaged/'] (restores all metadata components).
+            client (str, optional): Name of the destination client. Defaults to the source client.
+            instance (str, optional): Name of the destination instance. Defaults to the source instance.
+            backupset (str, optional): Name of the destination backupset. Defaults to the source backupset.
+            from_time (str, optional): Restore contents after this time (format: 'YYYY-MM-DD HH:MM:SS'). Defaults to None.
+            to_time (str, optional): Restore contents before this time (format: 'YYYY-MM-DD HH:MM:SS'). Defaults to None.
+            no_of_streams (int, optional): Number of streams to use for restore. Defaults to 2.
+            path_to_store_csv (str, optional): Path to use as a staging folder. Defaults to the download cache path.
+            dependent_restore_level (int, optional): Restore children option. 
+                0: No Children (default), 1: Immediate Children, -1: All Children.
+            restore_parent_type (str, optional): Restore parents option. 
+                'NONE': No Parents (default), 'ALL': All Parents.
 
         Returns:
-            object: Object of Job or Schedule class
+            object: An instance of the Job or Schedule class representing the restore operation.
 
         Raises:
-            SDKException:
-                if paths is given but is not a list
-                
-                if either client, instance or backupset are given but not all three are present
+            SDKException: 
+                - If `paths` is provided but is not a list.
+                - If any of `client`, `instance`, or `backupset` are provided but not all three are present.
+                - If `client`, `instance`, or `backupset` are not strings.
 
-                if client, instance and backupset are not strings
+        Example:
+            >>> # In-place restore of all metadata components
+            >>> job = salesforce_instance.metadata_restore_to_salesforce()
+            >>> print(f"Restore job started: {job}")
+
+            >>> # Out-of-place restore of specific components
+            >>> job = salesforce_instance.metadata_restore_to_salesforce(
+            ...     paths=['/Metadata/unpackaged/objects/Account.object'],
+            ...     client='DestinationClient',
+            ...     instance='DestinationInstance',
+            ...     backupset='DestinationBackupset'
+            ... )
+            >>> print(f"Out-of-place restore job: {job}")
+
+        #ai-gen-doc
         """
         DEST_PARAMS = ('client', 'instance', 'backupset')
 

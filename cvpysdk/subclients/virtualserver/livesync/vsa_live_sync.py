@@ -161,6 +161,18 @@ class VsaLiveSync:
             from .amazon_live_sync import AmazonLiveSync
             return object.__new__(AmazonLiveSync)
 
+        if instance_name == hv_type.VCLOUD.value.lower():
+            from .vcloud_live_sync import vCloudLiveSync
+            return object.__new__(vCloudLiveSync)
+        
+        if instance_name == hv_type.GOOGLE_CLOUD.value.lower():
+            from .google_cloud_live_sync import GCPLiveSync
+            return object.__new__(GCPLiveSync)
+
+        if instance_name == hv_type.ORACLE_CLOUD_INFRASTRUCTURE.value.lower():
+            from .oracle_live_sync import OCILiveSync
+            return  object.__new__(OCILiveSync)
+
         raise SDKException(
             'LiveSync',
             '102',
@@ -686,13 +698,13 @@ class LiveSyncVMPair:
                 self._destination_vm = self._properties['destinationName']
                 self._destination_client = self._properties['destinationInstance'].get(
                     'clientName') or self._commcell_object.clients.get(
-                        self._properties['destinationInstance'].get('clientId')).name
+                    self._properties['destinationInstance'].get('clientId')).name
                 self._destination_proxy = self._properties['destProxy'].get(
                     'clientName') or self._commcell_object.clients.get(
-                        self._properties['destProxy'].get('clientId')).name
+                    self._properties['destProxy'].get('clientId')).name
                 self._destination_instance = self._properties['destinationInstance'].get(
                     'instanceName') or self._agent_object.instances.get(
-                        self._properties['destinationInstance'].get('instanceId')).name
+                    self._properties['destinationInstance'].get('instanceId')).name
                 self._last_backup_job = self._properties['lastSyncedBkpJob']
                 self._is_warm_sync_pair = self._properties.get('isWarmSyncPair', False)
 

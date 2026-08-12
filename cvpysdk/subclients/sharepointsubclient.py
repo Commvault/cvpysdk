@@ -22,12 +22,12 @@ SharepointSuperSubclient: Derived class from Subclient Base class, containing co
 SharepointSuperSubclient:
 
     backup()                            --  Runs a backup job for the subclient of the level specified.
-    
+
     _get_subclient_properties()         --  gets the subclient related properties of the Sharepoint subclient.
-    
+
     _json_out_of_place_destination_option() -- setter for the SharePoint Online out of place restore
         option in restore json
-    
+
 
 SharepointSubclient: Derived class from SharepointSuperSubclient Base class, representing a sharepoint subclient,
 and to perform operations on that subclient
@@ -91,6 +91,7 @@ from ..subclient import Subclient
 from ..exception import SDKException
 from ..constants import SQLDefines
 from ..constants import SharepointDefines
+from ..job import Job
 
 
 class SharepointSuperSubclient(Subclient):
@@ -481,6 +482,33 @@ class SharepointSubclient(SharepointSuperSubclient):
             "restoreToDisk": True
         }
 
+    def _json_blob_restore_sharepoint_restore_option(self, value):
+        """Setter for the SharePoint Online Blob restore option
+        in restore json
+
+            Args:
+                value   (dict)  --  restore option need to be included
+                                    Example:
+                                        {
+                                            "blob_container_id": 1,
+                                        }
+
+            Returns:
+                (dict)          --  generated sharepoint restore options JSON
+
+        """
+
+        if not isinstance(value, dict):
+            raise SDKException('Subclient', '101')
+
+        if "blob_container_id" not in value:
+            raise SDKException('Subclient', '101', 'blob_container_id is required')
+
+        self._sharepoint_blob_option_restore_json = {
+            "blobContainerCredId": value.get("blob_container_id"),
+            "restoreToBlob": True
+        }
+
     def _prepare_disk_restore_json(self, _disk_restore_option):
         """
         Prepare disk restore Json with all getters
@@ -520,6 +548,41 @@ class SharepointSubclient(SharepointSuperSubclient):
 
         return request_json
 
+    def _prepare_blob_restore_json(self, _blob_restore_option: dict) -> dict:
+        """
+        Prepare blob restore Json with all getters
+
+        Args:
+            _blob_restore_option (dict) - All blob restore options
+
+            value:
+
+                destination_blob(str)           --  The Azure blob where data will get restored
+
+                destination_client (str)        --  client where the lists/libraries needs to be restored
+
+                unconditional_overwrite (bool)  --  unconditional overwrite files during restore
+                    default: True
+
+
+        returns:
+            request_json        -complete json for performing disk Restore options
+        """
+
+        if _blob_restore_option is None:
+            _blob_restore_option = {}
+
+        self._json_blob_restore_sharepoint_restore_option(_blob_restore_option)
+
+        self._instance_object._restore_association = self._subClientEntity
+        request_json = self._restore_json(restore_option=_blob_restore_option)
+
+        request_json['taskInfo']['subTasks'][0][
+            'options']['restoreOptions']["sharePointRstOption"][
+            "spRestoreToBlob"] = self._sharepoint_blob_option_restore_json
+
+        return request_json
+
     def _prepare_out_of_place_restore_json(self, _restore_option, common_options: dict):
         """
         Prepare out of place retsore Json with all getters
@@ -537,7 +600,7 @@ class SharepointSubclient(SharepointSuperSubclient):
                     default: True
 
             common_options      (dict)  -- common options for restore job payload
-            
+
         returns:
             request_json        -  complete json for performing disk Restore options
 
@@ -557,7 +620,7 @@ class SharepointSubclient(SharepointSuperSubclient):
         request_json['taskInfo']['subTasks'][0][
             'options']['restoreOptions'][
             'destination'] = self._out_of_place_destination_json
-        
+
         if common_options:
             request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']['commonOptions'].update(common_options)
         return request_json
@@ -636,7 +699,7 @@ class SharepointSubclient(SharepointSuperSubclient):
 
         azure_app_list.append(azure_app_dict)
 
-        properties_dict["sharepointBackupSet"]["spOffice365BackupSetProp"]["azureAppList"] =  {
+        properties_dict["sharepointBackupSet"]["spOffice365BackupSetProp"]["azureAppList"] = {
             "azureApps": azure_app_list
         }
 
@@ -1263,9 +1326,9 @@ class SharepointSubclient(SharepointSuperSubclient):
            value:
                 paths                   (list)  --  list of paths of lists/libraries to restore
 
-                destination_client              --  client where the lists/libraries needs to be restored
+                destination_client      (str)    --  client where the lists/libraries needs to be restored
 
-                destination_path                --  path where the lists/libraries needs to be restored
+                destination_path        (str)    --  path where the lists/libraries needs to be restored
 
                 disk_restore_type               --  type of disk restore
 
@@ -1303,6 +1366,60 @@ class SharepointSubclient(SharepointSuperSubclient):
             restore_option['disk_restore_type'] = disk_restore_type
             restore_option['in_place'] = in_place
             request_json = self._prepare_disk_restore_json(restore_option)
+            return self._process_restore_response(request_json)
+        else:
+            raise SDKException('Subclient', '102', 'Method not supported for SharePoint On-Premise Instance')
+
+    def blob_restore(
+            self,
+            paths: list[str],
+            destination_client: str,
+            destination_blob: str,
+            overwrite: bool = True,
+            in_place: bool = False) -> Job:
+        """Restores the sharepoint libraries/list specified in the input paths list to the given Azure Blob.
+
+           value:
+                paths                   (list)  --  list of paths of lists/libraries to restore
+
+                destination_client       (str)  --  client where the lists/libraries needs to be restored
+
+                destination_blob         (str)  --  blob where the lists/libraries needs to be restored
+
+                unconditional_overwrite (bool)  --  unconditional overwrite files during restore
+                    default: True
+
+                in_place               (bool)   --  in place restore set to false by default
+                    default: False
+
+            Returns:
+                object - instance of the Job class for this restore job
+
+            Raises:
+                SDKException:
+
+                    if paths is not a list
+
+                    if failed to initialize job
+
+                    if response is empty
+
+                    if response is not success
+
+                    if the method is called by SharePoint On-Premise Instance
+
+        """
+        if self._backupset_object.is_sharepoint_online_instance:
+            credential = self._commcell_object.credentials.get(destination_blob)
+            if credential is None:
+                raise SDKException('Subclient', '102', f'Credential "{destination_blob}" not found')
+            restore_option = {
+                'paths': paths,
+                'unconditional_overwrite': overwrite,
+                'client': destination_client,
+                'in_place': in_place,
+                'blob_container_id': credential.credential_id}
+            request_json = self._prepare_blob_restore_json(restore_option)
             return self._process_restore_response(request_json)
         else:
             raise SDKException('Subclient', '102', 'Method not supported for SharePoint On-Premise Instance')

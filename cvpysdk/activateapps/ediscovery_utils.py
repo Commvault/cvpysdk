@@ -120,6 +120,9 @@ EdiscoveryDataSources:
 
     add_fs_data_source()                    --  adds file system data source
 
+    add_bulk_fs_data_source()               --  This method allows creating multiple file system data sources in a single
+                                                API call
+
     add_o365_sdg_data_source()              --  Adds Office365 SDG data source to a project
 
     refresh()                               --  refresh the data sources details associated with client
@@ -214,6 +217,7 @@ import copy
 import time
 import json
 import os
+import re
 
 from ..activateapps.entity_manager import EntityManagerTypes
 
@@ -485,11 +489,15 @@ class EdiscoveryClients():
         flag, response = self._cvpysdk_object.make_request('GET', api)
         output = {}
         if flag:
-            if response.json() and 'eDiscoveryClientProp' in response.json():
-                projects = response.json()['eDiscoveryClientProp']
+            response_json = response.json()
+            if response_json and 'eDiscoveryClientProp' in response_json:
+                projects = response_json['eDiscoveryClientProp']
                 for project in projects:
                     project['clientId'] = project['eDiscoveryClient']['clientId']
                     output[project['eDiscoveryClient']['clientName'].lower()] = project
+                return output
+            # Don't raise exception when there are no projects created
+            if response_json == {}:
                 return output
             raise SDKException('EdiscoveryClients', '117')
         self._response_not_success(response)
@@ -548,8 +556,9 @@ class EdiscoveryClientOperations():
         self._API_DOC_TASK = self._services['EDISCOVERY_REQUEST_DOCUMENT_MARKER']
         self._API_CONFIGURE_TASK = self._services['EDISCOVERY_CONFIGURE_TASK']
         self._API_TASK_WORKFLOW = self._services['EDICOVERY_TASK_WORKFLOW']
+        self._API_TASK_AUDIT = self._services['EDISCOVERY_TASK_AUDIT']
         from .file_storage_optimization import FsoServer, FsoServerGroup
-        from .sensitive_data_governance import Project
+        from .sensitive_data_governance import Project, Projects
         from .request_manager import Request
 
         if isinstance(class_object, FsoServer):
@@ -589,6 +598,10 @@ class EdiscoveryClientOperations():
             self._app_type = 2  # for sharing, app type param
             self._search_entity_type = 188
             self._search_entity_id = class_object.project_id
+        elif isinstance(class_object, Projects):
+            self._client_id = 0
+            self._search_entity_type = 188
+            self._search_entity_id = "all"
         elif isinstance(class_object, Request):
             self._client_id = class_object.request_id
             self._request_type = class_object.request_type
@@ -1015,13 +1028,15 @@ class EdiscoveryClientOperations():
         # if called from EdiscoveryDatasource, then no association check needed as sharing is not possible at this level
         from ..activateapps.file_storage_optimization import FsoServerGroup
         from ..activateapps.request_manager import Request
+        from ..activateapps.sensitive_data_governance import Projects
         if isinstance(
                 self._class_obj,
                 Request) or isinstance(
                 self._class_obj,
                 EdiscoveryDatasource) or isinstance(
                 self._class_obj,
-                FsoServerGroup):
+                FsoServerGroup) or isinstance(
+                self._class_obj, Projects):
             return {}
         association_request_json = copy.deepcopy(EdiscoveryConstants.SHARE_REQUEST_JSON)
         del association_request_json['securityAssociations']
@@ -1544,6 +1559,21 @@ class EdiscoveryClientOperations():
                         f"Something wrong while invoking task workflow operation - {response.json()['errorMessage']}")
                 if 'jobId' in response.json():
                     return response.json()['jobId']
+                else:
+                    retry = 3
+                    while retry > 0 :
+                        flag, response = self._cvpysdk_object.make_request('GET', self._API_TASK_AUDIT % self._client_id)
+                        if flag:
+                            if response.json() and 'auditDetails' in response.json():
+                                audit_records = response.json()['auditDetails']
+                                for record in audit_records:
+                                    for message in record.get("messages", []):
+                                        match = re.search(r"ApprovalWorkflowJobId: Set to \[(\d+)\]", message)
+                                        if match:
+                                            return int(match.group(1))
+                        retry = retry - 1
+                        time.sleep(10)
+                    raise SDKException('EdiscoveryClients', '102', f"Workflow job fetch fails from Audit")
             raise SDKException('EdiscoveryClients', '102', f"Workflow task failed")
         self._response_not_success(response)
 
@@ -1822,9 +1852,7 @@ class EdiscoveryDataSources():
 
                     country_code        (str)       --  Country code (ISO 3166 2-letter code)
 
-                    user_name           (str)       --  User name who has access to UNC path
-
-                    password            (str)       --  base64 encoded password to access unc path
+                    credential_name     (str)       --  Credential name to use for UNC crawl path
 
                     enable_monitoring   (str)       --  specifies whether to enable file monitoring or not for this
 
@@ -1870,8 +1898,8 @@ class EdiscoveryDataSources():
         if not is_server_group:
             is_commvault_client = self._commcell_object.clients.has_client(server_name)
             if not is_commvault_client:
-                if ('access_node' not in kwargs or 'user_name' not in kwargs or 'password' not in kwargs):
-                    raise SDKException('EdiscoveryClients', '102', "Access node information is missing")
+                if ('access_node' not in kwargs or 'credential_name' not in kwargs):
+                    raise SDKException('EdiscoveryClients', '102', "Access node/Credential information is missing")
                 if not self._commcell_object.clients.has_client(kwargs.get("access_node")):
                     raise SDKException('EdiscoveryClients', '102', "Access node client is not present")
             inventory_resp = inv_obj.data_source.ds_handlers.get(
@@ -1965,14 +1993,11 @@ class EdiscoveryDataSources():
                 "propertyValue": str(EdiscoveryConstants.CrawlType.LIVE.value)
             })
             if not is_commvault_client or 'access_node' in kwargs:
-                request_json['datasources'][0]['properties'].append({
-                    "propertyName": "username",
-                    "propertyValue": kwargs.get('user_name', '')
-                })
-                request_json['datasources'][0]['properties'].append({
-                    "propertyName": "password",
-                    "propertyValue": kwargs.get('password', '')
-                })
+                credential_name = kwargs.get('credential_name', '')
+                if not self._commcell_object.credentials.has_credential(credential_name):
+                    raise SDKException('EdiscoveryClients', '102', 'Invalid credential name')
+                request_json['datasources'][0]['credentialId'] = self._commcell_object.credentials.get(
+                    credential_name).credential_id
                 request_json['datasources'][0]['properties'].append({
                     "propertyName": "domainName",
                     "propertyValue": inventory_resp['domainName']
@@ -2026,6 +2051,54 @@ class EdiscoveryDataSources():
                         f"Creation of data source failed with error - {error['errorCode']}")
             raise SDKException('EdiscoveryClients', '115')
         self._response_not_success(response)
+
+    def add_bulk_fs_data_source(self, fs_datasource_req_list: list[dict]) -> dict:
+        """Adds multiple file system data sources in bulk.
+
+        This method allows creating multiple file system data sources in a single
+        API call for improved performance when adding many data sources.
+
+        Args:
+            fs_datasource_req_list (list[dict]): List of file system data source
+                request dictionaries. Each dictionary should contain the complete
+                configuration for a single data source.
+
+        Returns:
+            dict: Response from server containing creation status and details.
+
+        Raises:
+            SDKException:
+                EdiscoveryClients, 102: If the bulk creation fails with an error.
+                EdiscoveryClients, 115: If response format is unexpected.
+                Response, 101: If the API request fails.
+
+        Example:
+            >>> datasources = [
+            ...     {"datasourceName": "ds1", "properties": [...]},
+            ...     {"datasourceName": "ds2", "properties": [...]}
+            ... ]
+            >>> result = data_sources.add_bulk_fs_data_source(datasources)
+        """
+        request_json = {"clientDataSources": fs_datasource_req_list}
+        add_bulk_fs_ds_url = self._services['EDISCOVERY_CREATE_DATA_SOURCE_BULK']
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', add_bulk_fs_ds_url, request_json)
+
+        if flag:
+            if response.json() and 'errorCode' in response.json():
+                if response.json()['errorCode'] != 0:
+                    error_msg = response.json().get('errorMessage', '')
+                    raise SDKException(
+                        'EdiscoveryClients', '102',
+                        f"Failed to create data sources in bulk with error [{error_msg}]")
+            else:
+                raise SDKException('EdiscoveryClients', '115')
+        else:
+            raise SDKException(
+                'Response', '101', self._commcell_object._update_response_(response.text))
+
+        return response.json()
 
     def add_o365_sdg_data_source(self, server_name, data_source_name, plan_name,
                                  datasource_type=EdiscoveryConstants.ClientType.ONEDRIVE, **kwargs):

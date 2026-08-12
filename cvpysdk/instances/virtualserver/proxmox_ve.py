@@ -42,49 +42,72 @@ ProxmoxVEInstance:
 
 from ..vsinstance import VirtualServerInstance
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ...agent import Agent
+
 
 class ProxmoxVEInstance(VirtualServerInstance):
     """
-    Class for representing an Proxmox VE instance of the Virtual Server agent.
+    Represents a Proxmox VE instance managed by the Virtual Server agent.
 
+    This class encapsulates the properties and behaviors specific to a Proxmox VE
+    virtual server instance. It provides mechanisms to initialize the instance with
+    relevant identifiers, retrieve instance properties in both standard and JSON formats,
+    and manage server host and server name attributes.
+
+    Key Features:
+        - Initialization with agent, instance name, and instance ID
+        - Retrieval of instance properties
+        - Retrieval of instance properties in JSON format
+        - Access and modification of server host name via property
+        - Access to server name via property
+
+    #ai-gen-doc
     """
 
-    def __init__(self, agent, instance_name, instance_id=None):
-        """
-        Initialize the Instance object for the given Virtual Server instance.
+    def __init__(self, agent: 'Agent', instance_name: str, instance_id: str = None) -> None:
+        """Initialize a ProxmoxVEInstance object for the specified Virtual Server instance.
 
-            Args:
-                class_object (agent_object,instance_name,instance_id)  --  instance of the
-                                                                            Agent class,
-                                                                            instance name,
-                                                                            instance id
+        Args:
+            agent: An instance of the Agent class representing the associated agent.
+            instance_name: The name of the Proxmox VE instance.
+            instance_id: Optional; the unique identifier for the instance. If not provided, a default or auto-generated ID may be used.
 
+        Example:
+            >>> agent = Agent(client_object, "Virtual Server")
+            >>> proxmox_instance = ProxmoxVEInstance(agent, "Proxmox_Instance_01", "12345")
+            >>> # The ProxmoxVEInstance object is now initialized and ready for use
+
+        #ai-gen-doc
         """
         super(ProxmoxVEInstance, self).__init__(agent, instance_name, instance_id)
         self._vendor_id = 23 
         self._server_name = [self._virtualserverinstance['associatedClients']['memberServers'][0]['client'].get('clientName')]
-        self._server_host_name = [self._virtualserverinstance['associatedClients']['memberServers'][0]['client'].get('hostName')]
+        self._server_host_name = [self._virtualserverinstance['vmwareVendor']['virtualCenter']['domainName']]
 
+    def _get_instance_properties(self) -> None:
+        """Retrieve and update the properties of this Proxmox VE instance.
 
-    def _get_instance_properties(self):
-        """
-        Get the properties of this instance
+        This method fetches the current properties of the Proxmox VE instance and updates
+        the internal state accordingly. It raises an exception if the response is empty
+        or if the response indicates a failure.
 
-        Raise:
-            SDK Exception:
-                if response is not empty
-                if response is not success
+        Raises:
+            SDKException: If the response is empty or the request is unsuccessful.
+
+        #ai-gen-doc
         """
 
         super(ProxmoxVEInstance, self)._get_instance_properties()
 
-    def _get_instance_properties_json(self):
-        """
-        Get the all instance related properties of this subclient.
+    def _get_instance_properties_json(self) -> dict:
+        """Retrieve all instance-related properties for this subclient.
 
-          Returns:
-               dict - all instance properties put inside a dict
+        Returns:
+            dict: A dictionary containing all properties associated with this instance.
 
+        #ai-gen-doc
         """
         instance_json = {
             "instanceProperties": {
@@ -100,22 +123,49 @@ class ProxmoxVEInstance(VirtualServerInstance):
         return instance_json
 
     @property
-    def server_host_name(self):
-        """
-        Getter for server_host_name property
+    def server_host_name(self) -> list:
+        """Get the host name of the Proxmox VE server associated with this instance.
+
+        Returns:
+            The server host name as a string.
+
+        Example:
+            >>> proxmox_instance = ProxmoxVEInstance()
+            >>> host_name = proxmox_instance.server_host_name
+            >>> print(f"Proxmox server host: {host_name}")
+
+        #ai-gen-doc
         """
         return self._server_host_name
 
     @server_host_name.setter
-    def server_host_name(self, value):
-        """
-        Setter for server_host_name property
+    def server_host_name(self, value: str) -> None:
+        """Set the server host name for the ProxmoxVEInstance.
+
+        Args:
+            value: The new host name to assign to the server.
+
+        Example:
+            >>> instance = ProxmoxVEInstance()
+            >>> instance.server_host_name = "proxmox01.example.com"  # Use assignment for property setter
+            >>> # The server host name is now set to "proxmox01.example.com"
+
+        #ai-gen-doc
         """
         self._server_host_name = value
 
     @property
-    def server_name(self):
-        """
-        Getter for the server_name property
+    def server_name(self) -> list:
+        """Get the name of the Proxmox VE server associated with this instance.
+
+        Returns:
+            The server name as a list.
+
+        Example:
+            >>> instance = ProxmoxVEInstance()
+            >>> name = instance.server_name  # Access the server name property
+            >>> print(f"Proxmox VE server name: {name}")
+
+        #ai-gen-doc
         """
         return self._server_name

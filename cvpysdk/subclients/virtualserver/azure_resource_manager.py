@@ -528,6 +528,7 @@ class AzureRMSubclient(VirtualServerSubclient):
             vcenter_client=hyperv_client,
             unconditional_overwrite=overwrite,
             client_name=proxy_client,
+            esx_host=proxy_client,
             DestinationPath=DestinationPath,
             power_on=power_on,
             vm_to_restore=vm_to_restore,

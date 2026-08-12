@@ -58,26 +58,45 @@ SalesforceBackupset:
 from __future__ import unicode_literals
 
 from ..cabackupset import CloudAppsBackupset
-
+from typing import Dict, Any, Optional
 
 class SalesforceBackupset(CloudAppsBackupset):
-    """Derived class from CloudAppsBackupset Base class, representing a
-        salesforce backupset, and to perform operations on that backupset.
+    """
+    Represents a Salesforce backupset, extending the CloudAppsBackupset base class.
+
+    This class provides specialized functionality for managing Salesforce backupsets,
+    including operations for retrieving backupset properties, preparing browse requests,
+    and handling Salesforce-specific configuration options. It exposes several properties
+    related to Salesforce user credentials, mutual authentication, and synchronization
+    database settings, enabling fine-grained control and monitoring of backupset operations.
+
+    Key Features:
+        - Initialization with instance object, backupset name, and backupset ID
+        - Retrieval of backupset properties
+        - Preparation of browse JSON requests with customizable options
+        - Access to download cache and mutual authentication paths
+        - Management of Salesforce user credentials
+        - Configuration and status of synchronization database (sync DB)
+        - Properties for sync DB type, host, instance, name, port, and user name
+        - Ability to set mutual authentication path
+
+    #ai-gen-doc
     """
 
-    def __init__(self, instance_object, backupset_name, backupset_id=None):
-        """Initlializes instance of the Backupset class for the Salesforce instance.
+    def __init__(self, instance_object: object, backupset_name: str, backupset_id: Optional[int] = None) -> None:
+        """Initialize a SalesforceBackupset instance for the specified Salesforce environment.
 
-            Args:
-                instance_object     (object)    --  instance of the Instance class
+        Args:
+            instance_object: Instance of the Instance class representing the Salesforce environment.
+            backupset_name: Name of the backupset as a string.
+            backupset_id: Optional integer ID of the backupset.
 
-                backupset_name      (str)       --  name of backupset
+        Example:
+            >>> instance = Instance(...)
+            >>> backupset = SalesforceBackupset(instance, "Salesforce_Backupset", backupset_id=123)
+            >>> print(f"Backupset created: {backupset}")
 
-                backupset_id        (int)       --  id of backupset
-
-            Returns:
-                object - instance of the SalesforceBackupset class
-
+        #ai-gen-doc
         """
         self._download_cache_path = None
         self._mutual_auth_path = None
@@ -100,15 +119,25 @@ class SalesforceBackupset(CloudAppsBackupset):
 
         self._default_browse_options.update(salesforce_browse_options)
 
-    def _get_backupset_properties(self):
-        """Gets the properties of this backupset.
+    def _get_backupset_properties(self) -> None:
+        """Retrieve and set the properties for this Salesforce backupset.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        This method fetches backupset properties from the internal data structure and updates
+        relevant attributes such as cache path, mutual authentication path, user credentials,
+        and sync database configuration.
 
-                    if response is not success
+        Raises:
+            SDKException: If the response containing backupset properties is empty or unsuccessful.
 
+        Example:
+            >>> backupset = SalesforceBackupset(...)
+            >>> backupset._get_backupset_properties()
+            >>> print(backupset._download_cache_path)
+            >>> print(backupset._user_name)
+            >>> print(backupset._sync_db_enabled)
+            >>> # Access other backupset properties as needed
+
+        #ai-gen-doc
         """
         super(SalesforceBackupset, self)._get_backupset_properties()
 
@@ -141,15 +170,31 @@ class SalesforceBackupset(CloudAppsBackupset):
                         self._sync_db_user_password = sfbackupset[
                             'syncDatabase']['dbUserPassword']['password']
 
-    def _prepare_browse_json(self, options):
-        """Prepares the JSON object for the browse request.
+    def _prepare_browse_json(self, options: Dict[str, Any]) -> Dict[str, Any]:
+        """Prepare the JSON object for a Salesforce browse request.
 
-             Args:
-                options     (dict)  --  the browse options dictionary
+        This method constructs and returns a JSON object containing the necessary
+        parameters for performing a browse operation on Salesforce backup data.
+        It augments the base browse JSON with Salesforce-specific view options.
 
-            Returns:
-                dict - A JSON object for the browse response
+        Args:
+            options: Dictionary containing browse options, including
+                '_browse_view_name_list' for specifying Salesforce browse views.
 
+        Returns:
+            Dictionary representing the JSON object for the browse request.
+
+        Example:
+            >>> options = {
+            ...     '_browse_view_name_list': ['Account', 'Contact'],
+            ...     'other_option': 'value'
+            ... }
+            >>> backupset = SalesforceBackupset(...)
+            >>> browse_json = backupset._prepare_browse_json(options)
+            >>> print(browse_json)
+            {'advOptions': {'browseViewNameList': ['Account', 'Contact']}, ...}
+
+        #ai-gen-doc
         """
         request_json = super(SalesforceBackupset, self)._prepare_browse_json(options)
         salesforce_browse_view = {
@@ -159,60 +204,179 @@ class SalesforceBackupset(CloudAppsBackupset):
         return request_json
 
     @property
-    def download_cache_path(self):
-        """getter for download cache path"""
+    def download_cache_path(self) -> str:
+        """Get the path to the download cache for Salesforce backups.
+
+        Returns:
+            The file system path to the download cache as a string.
+
+        Example:
+            >>> backupset = SalesforceBackupset(...)
+            >>> cache_path = backupset.download_cache_path  # Use dot notation for properties
+            >>> print(f"Download cache path: {cache_path}")
+
+        #ai-gen-doc
+        """
         return self._download_cache_path
 
     @property
-    def mutual_auth_path(self):
-        """getter for download cache path"""
+    def mutual_auth_path(self) -> str:
+        """Get the mutual authentication download cache path.
+
+        Returns:
+            The file system path as a string where mutual authentication cache is stored.
+
+        Example:
+            >>> backupset = SalesforceBackupset(...)
+            >>> cache_path = backupset.mutual_auth_path  # Use dot notation for property access
+            >>> print(f"Mutual authentication cache path: {cache_path}")
+
+        #ai-gen-doc
+        """
         return self._mutual_auth_path
 
     @property
-    def salesforce_user_name(self):
-        """getter for salesforce user name"""
+    def salesforce_user_name(self) -> str:
+        """Get the Salesforce user name associated with this backupset.
+
+        Returns:
+            The Salesforce user name as a string.
+
+        Example:
+            >>> backupset = SalesforceBackupset(...)
+            >>> user_name = backupset.salesforce_user_name  # Use dot notation for property access
+            >>> print(f"Salesforce user: {user_name}")
+        #ai-gen-doc
+        """
         return self._user_name
 
     @property
-    def is_sync_db_enabled(self):
-        """lets the user know whether sync db enabled or not"""
+    def is_sync_db_enabled(self) -> bool:
+        """Indicate whether the sync database feature is enabled for this Salesforce backupset.
+
+        Returns:
+            True if sync database is enabled, False otherwise.
+
+        Example:
+            >>> backupset = SalesforceBackupset(...)
+            >>> if backupset.is_sync_db_enabled:
+            ...     print("Sync DB is enabled for this backupset.")
+            ... else:
+            ...     print("Sync DB is not enabled.")
+        #ai-gen-doc
+        """
         return self._sync_db_enabled
 
     @property
-    def sync_db_type(self):
-        """getter for the sync database type"""
+    def sync_db_type(self) -> str:
+        """Get the type of the synchronization database used for Salesforce backups.
+
+        Returns:
+            The sync database type as a string.
+
+        Example:
+            >>> backupset = SalesforceBackupset(...)
+            >>> db_type = backupset.sync_db_type  # Use dot notation for property access
+            >>> print(f"Sync database type: {db_type}")
+
+        #ai-gen-doc
+        """
         return self._sync_db_type
 
     @property
-    def sync_db_host(self):
-        """getter for the sync database hostname"""
+    def sync_db_host(self) -> str:
+        """Get the hostname of the sync database used for Salesforce backup operations.
+
+        Returns:
+            The sync database hostname as a string.
+
+        Example:
+            >>> backupset = SalesforceBackupset(...)
+            >>> hostname = backupset.sync_db_host  # Use dot notation for property access
+            >>> print(f"Sync DB Host: {hostname}")
+        #ai-gen-doc
+        """
         return self._sync_db_host
 
     @property
-    def sync_db_instance(self):
-        """getter for the sync database instance name"""
+    def sync_db_instance(self) -> str:
+        """Get the name of the sync database instance for this Salesforce backupset.
+
+        Returns:
+            The sync database instance name as a string.
+
+        Example:
+            >>> backupset = SalesforceBackupset(...)
+            >>> db_instance_name = backupset.sync_db_instance  # Use dot notation for property access
+            >>> print(f"Sync DB instance: {db_instance_name}")
+        #ai-gen-doc
+        """
         return self._sync_db_instance
 
     @property
-    def sync_db_name(self):
-        """getter for the sync database name"""
+    def sync_db_name(self) -> str:
+        """Get the name of the synchronization database for the Salesforce backupset.
+
+        Returns:
+            The sync database name as a string.
+
+        Example:
+            >>> backupset = SalesforceBackupset(...)
+            >>> db_name = backupset.sync_db_name  # Use dot notation for property access
+            >>> print(f"Sync database name: {db_name}")
+        #ai-gen-doc
+        """
         return self._sync_db_name
 
     @property
-    def sync_db_port(self):
-        """getter for the sync database port number"""
+    def sync_db_port(self) -> int:
+        """Get the port number used for the sync database connection.
+
+        Returns:
+            The sync database port number as an integer.
+
+        Example:
+            >>> backupset = SalesforceBackupset(...)
+            >>> port = backupset.sync_db_port  # Use dot notation for property access
+            >>> print(f"Sync DB port: {port}")
+
+        #ai-gen-doc
+        """
         return self._sync_db_port
 
     @property
-    def sync_db_user_name(self):
-        """getter for the sync database user name"""
+    def sync_db_user_name(self) -> str:
+        """Get the username used for database synchronization in Salesforce backupset.
+
+        Returns:
+            The sync database username as a string.
+
+        Example:
+            >>> backupset = SalesforceBackupset(...)
+            >>> username = backupset.sync_db_user_name  # Use dot notation for property access
+            >>> print(f"Sync DB username: {username}")
+            >>> # The returned username can be used for authentication or auditing purposes
+
+        #ai-gen-doc
+        """
         return self._sync_db_user_name
 
     @mutual_auth_path.setter
-    def mutual_auth_path(self, value):
-        """Sets mutual auth path for the backupset.
+    def mutual_auth_path(self, value: str) -> None:
+        """Set the mutual authentication certificate path for the Salesforce backupset.
+
+        This property setter updates the path to the mutual authentication certificate 
+        used by the access node for secure communication.
+
         Args:
-            value       (str)      --   mutual auth certificate path on access node
+            value: The file system path to the mutual authentication certificate on the access node.
+
+        Example:
+            >>> backupset = SalesforceBackupset(...)
+            >>> backupset.mutual_auth_path = "/etc/certs/salesforce_mutual_auth.pem"
+            >>> # The mutual authentication path is now updated for the backupset
+
+        #ai-gen-doc
         """
         if self.mutual_auth_path != value:
             if self.is_sync_db_enabled:

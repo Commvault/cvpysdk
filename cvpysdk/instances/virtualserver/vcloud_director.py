@@ -43,22 +43,45 @@ vcloudInstance:
 """
 
 from ..vsinstance import VirtualServerInstance
-from ...instance import Instance
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ...agent import Agent
 
 
 class vcloudInstance(VirtualServerInstance):
-    """Class for representing VCloud instance of the Virtual Server agent."""
+    """
+    Represents a VCloud instance within the Virtual Server agent framework.
 
-    def __init__(self, agent_object, instance_name, instance_id=None):
-        """Initialize the Instance object for the given Virtual Server instance.
+    This class encapsulates the properties and behaviors specific to a VCloud
+    instance, providing mechanisms to initialize the instance, retrieve its
+    properties, and access key attributes such as server host name, username,
+    and server name. It is designed to interact with the underlying Virtual
+    Server agent infrastructure, enabling management and inspection of VCloud
+    instance configurations.
 
-            Args:
-                agent_object    (object)    --  instance of the Agent class
+    Key Features:
+        - Initialization of VCloud instance with agent object, name, and ID
+        - Retrieval of instance properties and their JSON representation
+        - Access to server host name, username, and server name via properties
 
-                instance_name   (str)       --  instance name
+    #ai-gen-doc
+    """
 
-                instance_id     (int)       --  instance id
+    def __init__(self, agent_object: 'Agent', instance_name: str, instance_id: str = None) -> None:
+        """Initialize a vCloud Instance object for the specified Virtual Server instance.
 
+        Args:
+            agent_object: An instance of the Agent class representing the associated agent.
+            instance_name: The name of the vCloud instance.
+            instance_id: Optional; the unique identifier for the vCloud instance. If not provided, it may be set later.
+
+        Example:
+            >>> agent = Agent(client_object, 'Virtual Server')
+            >>> vcloud_instance = vcloudInstance(agent, 'vCloud_Instance1', '101')
+            >>> # The vcloud_instance object is now initialized and ready for further operations
+
+        #ai-gen-doc
         """
         self._vendor_id = 103
         self._vmwarvendor = None
@@ -67,15 +90,16 @@ class vcloudInstance(VirtualServerInstance):
         self._vcloudvendor = {}
         super(vcloudInstance, self).__init__(agent_object, instance_name, instance_id)
 
-    def _get_instance_properties(self):
-        """Gets the properties of this instance.
+    def _get_instance_properties(self) -> None:
+        """Retrieve and update the properties of this vCloud instance.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        This method fetches the latest properties for the vCloud instance and updates the instance's internal state.
+        It should be called to ensure the instance has the most current configuration and status information.
 
-                    if response is not success
+        Raises:
+            SDKException: If the response from the server is empty or indicates a failure.
 
+        #ai-gen-doc
         """
         super(vcloudInstance, self)._get_instance_properties()
 
@@ -86,12 +110,13 @@ class vcloudInstance(VirtualServerInstance):
 
             self._server_host_name.append(self._vcloudvendor["domainName"])
 
-    def _get_instance_properties_json(self):
-        """get the all instance related properties of this subclient.
+    def _get_instance_properties_json(self) -> dict:
+        """Retrieve all instance-related properties for this subclient as a dictionary.
 
-           Returns:
-                dict - all instance properties put inside a dict
+        Returns:
+            dict: A dictionary containing all properties associated with this vCloud instance subclient.
 
+        #ai-gen-doc
         """
         instance_json = {
             "instanceProperties": {
@@ -109,16 +134,46 @@ class vcloudInstance(VirtualServerInstance):
         return instance_json
 
     @property
-    def server_host_name(self):
-        """getter for the domain name in the Vcloud vendor json"""
+    def server_host_name(self) -> list:
+        """Get the domain name (server host name) from the Vcloud vendor JSON configuration.
+
+        Returns:
+            The domain name or server host name as a list.
+
+        Example:
+            >>> vcloud = vcloudInstance()
+            >>> host_name = vcloud.server_host_name  # Access the property
+            >>> print(f"Vcloud server host name: {host_name}")
+
+        #ai-gen-doc
+        """
         return self._server_host_name
 
     @property
-    def _user_name(self):
-        """getter for the username from the Vcloud vendor json"""
+    def _user_name(self) -> str:
+        """Get the username from the Vcloud vendor JSON configuration.
+
+        Returns:
+            The username as a string extracted from the Vcloud vendor JSON.
+
+        #ai-gen-doc
+        """
         return self._vcloudvendor["userName"]
 
     @property
-    def server_name(self):
-        """getter for the domain name in the Vcloud vendor json"""
+    def server_name(self) -> list:
+        """Get the domain name (server name) from the Vcloud vendor JSON configuration.
+
+        Returns:
+            The domain name (server name) as a list.
+
+        Example:
+            >>> agent = Agent(client_object, 'Virtual Server')
+            >>> vcloud = vcloudInstance(agent, 'instance_name', 'instance_id')
+            >>> vcloud._get_instance_properties()
+            >>> domain = vcloud.server_name  # Access the server name property
+            >>> print(f"Vcloud server domain: {domain}")
+
+        #ai-gen-doc
+        """
         return self._server_name

@@ -37,92 +37,86 @@ from __future__ import unicode_literals
 from ..instance import Instance
 from ..exception import SDKException
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ..job import Job
+
 
 class LNDBInstance(Instance):
-    """Derived class from Instance Base class, representing an LNDB instance,
-        and to perform operations on that instance."""
+    """
+    Represents an LNDB (Logical Network Database) instance, derived from the Instance base class.
+
+    This class provides specialized operations for managing LNDB instances, including
+    restoration functionalities both in-place and out-of-place. It also includes internal
+    methods for handling restoration options and generating restoration configuration in JSON format.
+
+    Key Features:
+        - In-place restoration of LNDB instance data with customizable options
+        - Out-of-place restoration to a different client and destination path
+        - Support for data and ACL restoration, overwrite control, copy precedence, and time range selection
+        - Handling of common restoration options and LNDB-specific restore options
+        - Internal utilities for generating restoration configuration in JSON format
+
+    #ai-gen-doc
+    """
 
     def restore_in_place(
-            self,
-            paths,
-            overwrite=True,
-            restore_data_and_acl=True,
-            copy_precedence=None,
-            from_time=None,
-            to_time=None,
-            common_options_dict=None,
-            lndb_restore_options=None):
-        """Restores the files/folders specified in the input paths list to the same location.
+        self,
+        paths: list,
+        overwrite: bool = True,
+        restore_data_and_acl: bool = True,
+        copy_precedence: int = None,
+        from_time: str = None,
+        to_time: str = None,
+        common_options_dict: dict = None,
+        lndb_restore_options: dict = None
+    ) -> 'Job':
+        """Restore files or folders to their original location in the LNDB instance.
 
-            Args:
-                paths                   (list)  --  list of full paths of files/folders to restore
+        This method initiates an in-place restore operation for the specified files or folders.
+        You can control overwrite behavior, restore data and ACLs, specify copy precedence,
+        set time filters, and provide additional options for both common and LNDB-specific restore scenarios.
 
-                overwrite               (bool)  --  unconditional overwrite files during restore
-                    default: True
+        Args:
+            paths: List of full file or folder paths to restore.
+            overwrite: If True, existing files will be overwritten during restore. Default is True.
+            restore_data_and_acl: If True, both data and ACL files are restored. Default is True.
+            copy_precedence: Optional storage policy copy precedence value. Default is None.
+            from_time: Optional lower time boundary for restore (format: 'YYYY-MM-DD HH:MM:SS'). Default is None.
+            to_time: Optional upper time boundary for restore (format: 'YYYY-MM-DD HH:MM:SS'). Default is None.
+            common_options_dict: Optional dictionary of common restore options. May include:
+                - unconditionalOverwrite: Overwrite files even if they exist.
+                - recoverWait: Wait for resources if a database recovery is in progress.
+                - recoverZap: Change the DBIID of the restored database.
+                - recoverZapReplica: Change the replica ID of the restored database.
+                - recoverZapIfNecessary: Change DBIID if necessary.
+                - doNotReplayTransactLogs: Skip restoring or replaying logs.
+                - skipErrorsAndContinue: Continue recovery despite media errors (disaster recovery).
+                - disasterRecovery: Run disaster recovery.
+            lndb_restore_options: Optional dictionary of LNDB-specific restore options. May include:
+                - disableReplication: Disable replication on the database.
+                - disableBackgroundAgents: Disable background agents.
 
-                restore_data_and_acl    (bool)  --  restore data and ACL files
-                    default: True
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                copy_precedence         (int)   --  copy precedence value of storage policy copy
-                    default: None
+        Raises:
+            SDKException: If 'paths' is not a list, if the job fails to initialize, if the response is empty, or if the response indicates failure.
 
-                from_time           (str)       --  time to retore the contents after
-                        format: YYYY-MM-DD HH:MM:SS
+        Example:
+            >>> lndb_instance = LNDBInstance()
+            >>> restore_job = lndb_instance.restore_in_place(
+            ...     paths=['/data/notes/db1.nsf', '/data/notes/db2.nsf'],
+            ...     overwrite=True,
+            ...     restore_data_and_acl=True,
+            ...     from_time='2023-01-01 00:00:00',
+            ...     to_time='2023-12-31 23:59:59',
+            ...     common_options_dict={'unconditionalOverwrite': True},
+            ...     lndb_restore_options={'disableReplication': True}
+            ... )
+            >>> print(f"Restore job started with ID: {restore_job.job_id}")
 
-                    default: None
-
-                to_time           (str)         --  time to retore the contents before
-                        format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                common_options_dict (dict)          -- dictionary for all the common options
-                    options:
-                        unconditionalOverwrite              :   overwrite the files during restore
-                        even if they exist
-
-                        recoverWait                         :   Specifies whether this restore
-                        operation must wait until resources become available if a database recovery
-                        is already taking place
-
-                        recoverZap                          :   Specifies whether the IBM Domino
-                        must change the DBIID associated with the restored database
-
-                        recoverZapReplica                   :   Specifies whether the restore
-                        operation changes the replica id of the restored database
-
-                        recoverZapIfNecessary               :   Specifies whether the IBM Domino
-                        can change the DBIID associated with the restored database if necessary
-
-                        doNotReplayTransactLogs             :   option to skip restoring or
-                        replaying logs
-
-
-                    Disaster Recovery special options:
-                        skipErrorsAndContinue               :   enables a data recovery operation
-                        to continue despite media errors
-
-                        disasterRecovery                    :   run disaster recovery
-
-                lndb_restore_options    (dict)          -- dictionary for all options specific
-                to an lndb restore
-                    options:
-                        disableReplication      :   disable relpication on database
-
-                        disableBackgroundAgents :   disable background agents
-
-            Returns:
-                object - instance of the Job class for this restore job
-
-            Raises:
-                SDKException:
-                    if paths is not a list
-
-                    if failed to initialize job
-
-                    if response is empty
-
-                    if response is not success
+        #ai-gen-doc
         """
         self._restore_association = self.backupsets.get(
             list(self.backupsets.all_backupsets)[0]
@@ -142,104 +136,76 @@ class LNDBInstance(Instance):
         return self._process_restore_response(request_json)
 
     def restore_out_of_place(
-            self,
-            client,
-            destination_path,
-            paths,
-            overwrite=True,
-            restore_data_and_acl=True,
-            copy_precedence=None,
-            from_time=None,
-            to_time=None,
-            common_options_dict=None,
-            lndb_restore_options=None):
-        """Restores the files/folders specified in the input paths list to the input client,
-            at the specified destionation location.
+        self,
+        client: object,
+        destination_path: str,
+        paths: list,
+        overwrite: bool = True,
+        restore_data_and_acl: bool = True,
+        copy_precedence: int = None,
+        from_time: str = None,
+        to_time: str = None,
+        common_options_dict: dict = None,
+        lndb_restore_options: dict = None
+    ) -> 'Job':
+        """Restore files or folders to a different client and/or location.
 
-            Args:
-                client                (str/object) --  either the name of the client or
-                the instance of the Client
+        This method restores the specified files or folders (provided in the `paths` list) to the given
+        `destination_path` on the target `client`. The restore can be customized with options such as
+        overwriting existing files, restoring data and ACLs, specifying copy precedence, time filters,
+        and additional restore options.
 
-                destination_path      (str)        --  full path of the restore location on client
+        Args:
+            client: The target client for the restore operation. This can be either the client name (str)
+                or an instance of the Client class.
+            destination_path: The full path on the destination client where the data will be restored.
+            paths: List of full file or folder paths to restore.
+            overwrite: If True, existing files at the destination will be overwritten. Default is True.
+            restore_data_and_acl: If True, both data and ACLs will be restored. Default is True.
+            copy_precedence: Optional; the copy precedence value of the storage policy copy to use.
+            from_time: Optional; restore only data modified after this time (format: 'YYYY-MM-DD HH:MM:SS').
+            to_time: Optional; restore only data modified before this time (format: 'YYYY-MM-DD HH:MM:SS').
+            common_options_dict: Optional; dictionary of common restore options, such as:
+                - unconditionalOverwrite: Overwrite files during restore even if they exist.
+                - recoverWait: Wait for resources if a database recovery is already in progress.
+                - recoverZap: Change the DBIID associated with the restored database.
+                - recoverZapReplica: Change the replica ID of the restored database.
+                - recoverZapIfNecessary: Change the DBIID if necessary.
+                - doNotReplayTransactLogs: Skip restoring or replaying logs.
+                - skipErrorsAndContinue: Continue restore despite media errors (disaster recovery).
+                - disasterRecovery: Run disaster recovery.
+            lndb_restore_options: Optional; dictionary of LNDB-specific restore options, such as:
+                - disableReplication: Disable replication on the database.
+                - disableBackgroundAgents: Disable background agents.
 
-                paths                 (list)       --  list of full paths of
-                files/folders to restore
+        Returns:
+            Job: An instance of the Job class representing the restore job.
 
-                overwrite             (bool)       --  unconditional overwrite files during restore
+        Raises:
+            SDKException: If any of the following conditions are met:
+                - `client` is not a string or Client instance.
+                - `destination_path` is not a string.
+                - `paths` is not a list.
+                - Failed to initialize the restore job.
+                - The response is empty or not successful.
 
-                    default: True
+        Example:
+            >>> # Restore files to a different client and location
+            >>> job = lndb_instance.restore_out_of_place(
+            ...     client='TargetClient',
+            ...     destination_path='/restore/location',
+            ...     paths=['/data/file1.nsf', '/data/file2.nsf'],
+            ...     overwrite=True,
+            ...     restore_data_and_acl=True,
+            ...     copy_precedence=2,
+            ...     from_time='2023-01-01 00:00:00',
+            ...     to_time='2023-12-31 23:59:59',
+            ...     common_options_dict={'unconditionalOverwrite': True},
+            ...     lndb_restore_options={'disableReplication': True}
+            ... )
+            >>> print(f"Restore job started with ID: {job.job_id}")
 
-                restore_data_and_acl  (bool)       --  restore data and ACL files
-
-                    default: True
-
-                copy_precedence         (int)      --  copy precedence value of storage policy copy
-
-                    default: None
-
-                from_time           (str)          --  time to retore the contents after
-
-                        format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                to_time           (str)            --  time to retore the contents before
-
-                        format: YYYY-MM-DD HH:MM:SS
-
-                    default: None
-
-                 common_options_dict (dict)          -- dictionary for all the common options
-                    options:
-                        unconditionalOverwrite              :   overwrite the files during restore
-                        even if they exist
-
-                        recoverWait                         :   Specifies whether this restore
-                        operation must wait until resources become available if a database recovery
-                        is already taking place
-
-                        recoverZap                          :   Specifies whether the IBM Domino
-                        must change the DBIID associated with the restored database
-
-                        recoverZapReplica                   :   Specifies whether the restore
-                        operation changes the replica id of the restored database
-
-                        recoverZapIfNecessary               :   Specifies whether the IBM Domino
-                        can change the DBIID associated with the restored database if necessary
-
-                        doNotReplayTransactLogs             :   option to skip restoring or
-                        replaying logs
-
-
-                    Disaster Recovery special options:
-                        skipErrorsAndContinue               :   enables a data recovery operation
-                        to continue despite media errors
-
-                        disasterRecovery                    :   run disaster recovery
-
-                lndb_restore_options    (dict)          -- dictionary for all options specific
-                to an lndb restore
-                    options:
-                        disableReplication      :   disable relpication on database
-
-                        disableBackgroundAgents :   disable background agents
-
-            Returns:
-                object - instance of the Job class for this restore job
-
-            Raises:
-                SDKException:
-                    if client is not a string or Client instance
-
-                    if destination_path is not a string
-
-                    if paths is not a list
-
-                    if failed to initialize job
-
-                    if response is empty
-
-                    if response is not success
+        #ai-gen-doc
         """
         self._restore_association = self.backupsets.get(
             list(self.backupsets.all_backupsets)[0]
@@ -260,8 +226,14 @@ class LNDBInstance(Instance):
 
         return self._process_restore_response(request_json)
 
-    def _restore_common_options_json(self, value):
-        """setter for  the Common options of in restore JSON"""
+    def _restore_common_options_json(self, value: dict) -> None:
+        """Set the common options section in the restore JSON configuration.
+
+        Args:
+            value: A dictionary containing the common options to be set in the restore JSON.
+
+        #ai-gen-doc
+        """
 
         if not isinstance(value, dict):
             raise SDKException('Subclient', '101')
@@ -348,15 +320,21 @@ class LNDBInstance(Instance):
                 ),
             })
 
-    def _restore_json(self, **kwargs):
-        """Returns the JSON request to pass to the API as per the options selected by the user.
+    def _restore_json(self, **kwargs) -> dict:
+        """Generate the JSON request payload for a restore operation based on user-selected options.
 
-                   Args:
-                       kwargs   (list)  --  list of options need to be set for restore
+        This method constructs and returns a dictionary representing the JSON request body
+        required by the API for performing a restore, using the options provided as keyword arguments.
 
-                   Returns:
-                       dict - JSON request to pass to the API
-               """
+        Args:
+            **kwargs: Arbitrary keyword arguments representing restore options and their values.
+
+        Returns:
+            dict: The JSON request dictionary to be sent to the API for the restore operation.
+
+        #ai-gen-doc
+        """
+
         restore_json = super(LNDBInstance, self)._restore_json(**kwargs)
 
         restore_json['taskInfo']['subTasks'][0]['options']['restoreOptions'][
@@ -387,4 +365,5 @@ class LNDBInstance(Instance):
                     'synchronousCopyPrecedence': 1,
                     'copyPrecedenceApplicable': False
                 }
+
         return restore_json

@@ -24,7 +24,21 @@ TeamsConstants  -   Maintains constants for MS Teams subclient.
 
 
 class TeamsConstants:
-    """Class to maintain all the Teams subclient related constants."""
+    """
+    Container class for Teams subclient-related constants.
+
+    This class is designed to centralize and manage all constant values
+    used throughout the Teams subclient implementation. By storing constants
+    in a dedicated class, it promotes maintainability, consistency, and
+    ease of access across the codebase.
+
+    Key Features:
+        - Centralized storage for Teams subclient constants
+        - Improves code readability and maintainability
+        - Prevents duplication of constant values
+
+    #ai-gen-doc
+    """
 
     ADD_DISCOVER_TYPE = 12
     INDEX_APP_TYPE = 200128
@@ -82,8 +96,8 @@ class TeamsConstants:
         "ParentWebGuid": "",
         "commonFlags": 0,
         "msTeamsInfo": {
-            "visibility": 1,
-            "teamsCreatedTime": None
+            "visibility": 1
+
         },
         "lastBackupJobRanTime": {},
         "IdxCollectionTime": {},
@@ -270,22 +284,15 @@ class TeamsConstants:
                             "filter": {
                               "interFilterOP": 2,
                               "filters": [
-                                {
-                                  "field": "TEAMS_ITEM_TYPE",
-                                  "intraFieldOp": 0,
-                                  "fieldValues": {
-                                    "values": [
-                                      "55"
-                                    ]
+                                  {
+                                      "field": "CV_OBJECT_GUID",
+                                      "intraFieldOp": 0,
+                                      "fieldValues": {
+                                          "values": [
+                                              ""
+                                          ]
+                                      }
                                   }
-                                },
-                                {
-                                  "field": "TEAMS_USER_ID",
-                                  "intraFieldOp": 0,
-                                  "fieldValues": {
-                                    "values": []
-                                  }
-                                }
                               ]
                             }
                           }

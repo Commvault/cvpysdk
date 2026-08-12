@@ -33,31 +33,47 @@ TeamsInstance:
 """
 
 from __future__ import unicode_literals
+import time
 
 from ...exception import SDKException
 from ..cainstance import CloudAppsInstance
-from cvpysdk.job import Job
-
-import time
-
+from ...job import Job
 
 class TeamsInstance(CloudAppsInstance):
-    """Class for representing an Instance of Office 365 Teams."""
+    """
+    Represents an instance of Office 365 Teams within a cloud application environment.
 
-    def _get_instance_properties(self):
-        """Gets the properties of this instance.
-            Args:
-                None
+    This class provides comprehensive management and operational capabilities for Office 365 Teams instances,
+    including property retrieval, discovery, restoration, and instance updates. It is designed to facilitate
+    backup, recovery, and configuration tasks for Teams environments in cloud-based infrastructures.
 
-            Returns:
-                None
+    Key Features:
+        - Retrieve instance properties and their JSON representations
+        - Discover Teams instances with support for cache refresh
+        - Generate restore JSON data for Teams instances
+        - Perform out-of-place restoration from a source team to a destination team
+        - Update Teams instance configuration using JSON requests
 
-            Raises:
-                SDKException:
-                    if response is empty.
-                    if response is not success.
-                    if access node is not configured.
+    #ai-gen-doc
+    """
 
+    def _get_instance_properties(self) -> None:
+        """Retrieve and update the properties of this TeamsInstance.
+
+        This method fetches the current configuration and properties for the TeamsInstance
+        from the Commcell server. It updates the instance's internal state with the latest
+        information. If the response from the server is empty, unsuccessful, or if the access
+        node is not configured, an SDKException is raised.
+
+        Raises:
+            SDKException: If the response is empty, not successful, or if the access node is not configured.
+
+        Example:
+            >>> teams_instance = TeamsInstance(commcell_object, instance_name)
+            >>> teams_instance._get_instance_properties()
+            >>> # The instance properties are now refreshed and available for use
+
+        #ai-gen-doc
         """
         super(TeamsInstance, self)._get_instance_properties()
 
@@ -81,31 +97,43 @@ class TeamsInstance(CloudAppsInstance):
                 if self._proxy_client is None:
                     raise SDKException('Instance', '102', 'Access Node has not been configured')
 
-    def _get_instance_properties_json(self):
-        """Returns the instance properties json.
-            Returns:
-                dict    --  Dictionary of the instance properties.
+    def _get_instance_properties_json(self) -> dict:
+        """Retrieve the instance properties as a JSON dictionary.
 
+        Returns:
+            dict: A dictionary containing the properties of the Teams instance.
+
+        Example:
+            >>> teams_instance = TeamsInstance()
+            >>> properties = teams_instance._get_instance_properties_json()
+            >>> print(properties)
+            >>> # Output will be a dictionary with instance property details
+
+        #ai-gen-doc
         """
 
         return {'instanceProperties': self._properties}
 
-    def discover(self, discovery_type, refresh_cache=True):
-        """Launches Discovery and returns the discovered teams.
-            Args:
-                discovery_type (int) -- TYpe of the discovery Example: Teams 12, users
-                refresh_cache   --  Refreshes Discover cache information.
-                    default:    True
+    def discover(self, discovery_type: int, refresh_cache: bool = True) -> dict:
+        """Launch a discovery operation and return the discovered Microsoft Teams.
 
-            Returns:
-                dict    --  Returns dictionary with team email ID as key and team properties as value.
+        Args:
+            discovery_type: The type of discovery to perform. For example, use 12 for Teams, or specify other values for users.
+            refresh_cache: Whether to refresh the discovery cache before running the operation. Defaults to True.
 
-            Raises:
-                SDKException:
-                    If discovery failed to launch.
-                    If response is empty.
-                    If response is not success.
+        Returns:
+            dict: A dictionary where each key is a team email ID and each value is a dictionary of team properties.
 
+        Example:
+            >>> teams_instance = TeamsInstance()
+            >>> discovered_teams = teams_instance.discover(discovery_type=12)
+            >>> for team_email, team_props in discovered_teams.items():
+            ...     print(f"Team: {team_email}, Properties: {team_props}")
+
+        Raises:
+            SDKException: If the discovery fails to launch, the response is empty, or the response is not successful.
+
+        #ai-gen-doc
         """
 
         DISCOVERY_TYPE = discovery_type
@@ -120,26 +148,19 @@ class TeamsInstance(CloudAppsInstance):
             refresh_cache = False
 
             if flag:
+                resp = response.json() if response.text else {}
+                if 'userAccounts' in resp:
+                    self.discovered_users = {team['smtpAddress']: team for team in resp['userAccounts']}
+                    return self.discovered_users
+                elif 'groups' in resp:
+                    self.discovered_users = {team['name']: team for team in resp['groups']}
+                    return self.discovered_users
+                # Empty or unexpected response - retry (team may still be provisioning)
+                if retry == max_retries - 1:
+                    raise SDKException('Response', '102', 'Please check Azure app details associated with client. Discovery has returned invalid response')
 
-                if response.json():
-                    resp = response.json()
-                    if 'userAccounts' in resp:
-                        self.discovered_users = {team['smtpAddress']: team for team in resp['userAccounts']}
-                        return self.discovered_users
-                    elif 'groups' in resp:
-                        self.discovered_users = {team['name']: team for team in resp['groups']}
-                        return self.discovered_users
-                    elif not resp:
-                        return {}
-
-                    # IF OUR RESPONSE IS EMPTY OR WE HAVE REACHED MAXIMUM NUMBER OF ATTEMPTS WITHOUT DESIRED RESPONSE
-                    elif not resp or retry == max_retries-1:
-                        raise SDKException('Response', '102')
-
-                    time.sleep(30)
-                    continue  # TO AVOID RAISING EXCEPTION
-
-                raise SDKException('Response', '102')
+                time.sleep(30 * (retry + 1))
+                continue
 
             if response.json():
                 response_string = self._commcell_object._update_response_(response.text)
@@ -147,26 +168,47 @@ class TeamsInstance(CloudAppsInstance):
 
             raise SDKException('Response', '102')
 
-    def _restore_json(self):
-        """Returns JSON request to pass to API as per the options selected by the user.
+    def _restore_json(self) -> dict:
+        """Generate the JSON request payload for the Teams restore API based on user-selected options.
 
-            Returns:
-                dict - JSON request to pass to the API.
+        Returns:
+            dict: The JSON request dictionary to be sent to the API for restoring Teams data.
+
+        Example:
+            >>> teams_instance = TeamsInstance()
+            >>> restore_payload = teams_instance._restore_json()
+            >>> print(restore_payload)
+            >>> # Use the returned dictionary as the payload for the restore API call
+
+        #ai-gen-doc
         """
 
         request_json = super(TeamsInstance, self)._restore_json(restore_option=self._restore_association)
         request_json['taskInfo']['associations'][0]["clientGUID"] = self._agent_object._client_object.client_guid
         return request_json
 
-    def _cloud_apps_restore_json(self, source_team, destination_team):
-        """Returns JSON for Cloud Apps related properties.
+    def _cloud_apps_restore_json(self, source_team: dict, destination_team: dict) -> dict:
+        """Generate the JSON payload for restoring Microsoft Teams data using Cloud Apps.
 
-            Args:
-                source_team         (dict)   --  Dictionary of properties from discover() for team that is to be restored.
-                destination_team    (dict)   --  Dictionary of properties from discover() of team to be restored to.
+        This method constructs a JSON request containing the necessary properties for restoring
+        a Teams instance from a source team to a destination team. The input dictionaries should
+        be obtained from the `discover()` method and contain all required team metadata.
 
-            Returns:
-                dict - JSON request to pass to the API
+        Args:
+            source_team: Dictionary of properties for the team to be restored, as returned by `discover()`.
+            destination_team: Dictionary of properties for the destination team, as returned by `discover()`.
+
+        Returns:
+            dict: JSON request payload to be sent to the API for initiating the restore operation.
+
+        Example:
+            >>> source = teams_instance.discover('TeamA')
+            >>> destination = teams_instance.discover('TeamB')
+            >>> restore_json = teams_instance._cloud_apps_restore_json(source, destination)
+            >>> print(restore_json)
+            >>> # Use the generated JSON to initiate a restore via the API
+
+        #ai-gen-doc
         """
 
         ca_json = {
@@ -268,22 +310,28 @@ class TeamsInstance(CloudAppsInstance):
 
         return ca_json
 
-    def restore_out_of_place(self, source_team, destination_team):
-        """Restore a team to another location.
+    def restore_out_of_place(self, source_team: str, destination_team: str) -> 'Job':
+        """Restore a Microsoft Teams team to a different team (out-of-place restore).
 
-            Args:
-                source_team         (str)   --  The email ID of the team that needs to be restored.
-                destination_team    (str)   --  The email ID of the team to be restored to.
+        Args:
+            source_team: The email ID of the source team to be restored.
+            destination_team: The email ID of the destination team where the source team will be restored.
 
-            Returns:
-                obj   --  Instance of Restore job.
+        Returns:
+            Job: An instance representing the restore job that was initiated.
 
-            Raises:
-                SDKException:
-                    If restore failed to run.
-                    If response is empty.
-                    If response is not success.
+        Raises:
+            SDKException: If the restore operation fails to run, if the response is empty, or if the response indicates failure.
 
+        Example:
+            >>> teams_instance = TeamsInstance()
+            >>> restore_job = teams_instance.restore_out_of_place(
+            ...     source_team="source_team@domain.com",
+            ...     destination_team="destination_team@domain.com"
+            ... )
+            >>> print(f"Restore job started: {restore_job}")
+
+        #ai-gen-doc
         """
 
         discovered_teams = self.discover()
@@ -314,21 +362,31 @@ class TeamsInstance(CloudAppsInstance):
             response_string = self._commcell_object._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
-    def update_instance(self, request_json):
-        """Update Instance properties.
+    def update_instance(self, request_json: dict) -> dict:
+        """Update the properties of the Teams instance.
 
-                    Args:
-                        request_json        (dict)   --  Dict of instance properties.
-                    Returns:
-                        response of the request
+        Args:
+            request_json: A dictionary containing the instance properties to update.
 
-                    Raises:
-                        SDKException:
-                            If update failed.
-                            If response is empty.
-                            If response is not success.
+        Returns:
+            dict: The response from the update request, typically containing status and details of the operation.
 
-                """
+        Raises:
+            SDKException: If the update fails, the response is empty, or the response indicates failure.
+
+        Example:
+            >>> update_data = {
+            ...     "instanceProperties": {
+            ...         "description": "Updated Teams instance",
+            ...         "isActive": True
+            ...     }
+            ... }
+            >>> response = teams_instance.update_instance(update_data)
+            >>> print(response)
+            {'status': 'success', 'details': {...}}
+
+        #ai-gen-doc
+        """
 
         url = self._services['INSTANCE_PROPERTIES'] % (self.instance_id)
         flag, response = self._cvpysdk_object.make_request('POST', url, request_json)

@@ -43,35 +43,59 @@ OpenStackInstance:
 
 from ..vsinstance import VirtualServerInstance
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ...agent import Agent
+
 
 class OpenStackInstance(VirtualServerInstance):
-    """Class for representing VMWare instance of the Virtual Server agent."""
+    """
+    Represents an OpenStack instance managed by the Virtual Server agent.
 
-    def __init__(self, agent_object, instance_name, instance_id=None):
-        """Initialize the Instance object for the given Virtual Server instance.
+    This class provides an interface for handling OpenStack virtual server instances,
+    allowing retrieval and management of instance properties and metadata. It includes
+    methods for initializing the instance with specific parameters, accessing instance
+    properties in both object and JSON formats, and retrieving key attributes such as
+    server host name, username, and server name.
 
-            Args:
-                agent_object    (object)    --  instance of the Agent class
+    Key Features:
+        - Initialization with agent object, instance name, and instance ID
+        - Retrieval of instance properties as objects and JSON
+        - Access to server host name, username, and server name via properties
 
-                instance_name   (str)       --  instance name
+    #ai-gen-doc
+    """
 
-                instance_id     (int)       --  instance id
+    def __init__(self, agent_object: 'Agent', instance_name: str, instance_id: str = None) -> None:
+        """Initialize an OpenStackInstance object for the specified Virtual Server instance.
 
+        Args:
+            agent_object: Instance of the Agent class associated with this OpenStack instance.
+            instance_name: The name of the OpenStack instance.
+            instance_id: Optional; the unique identifier for the instance. If not provided, it can be set later.
+
+        Example:
+            >>> agent = Agent(client_object, 'Virtual Server')
+            >>> openstack_instance = OpenStackInstance(agent, 'MyOpenStackInstance', '101')
+            >>> # The OpenStackInstance object is now initialized and ready for use
+
+        #ai-gen-doc
         """
         self._vendor_id = 12
         self._server_name = []
         self._server_host_name = []
         super(OpenStackInstance, self).__init__(agent_object, instance_name, instance_id)
 
-    def _get_instance_properties(self):
-        """Gets the properties of this instance.
+    def _get_instance_properties(self) -> None:
+        """Retrieve and update the properties of this OpenStack instance.
 
-            Raises:
-                SDKException:
-                    if response is empty
+        This method fetches the latest properties for the current OpenStack instance
+        and updates the instance's internal state accordingly.
 
-                    if response is not success
+        Raises:
+            SDKException: If the response from the server is empty or indicates a failure.
 
+        #ai-gen-doc
         """
         super(OpenStackInstance, self)._get_instance_properties()
 
@@ -83,12 +107,13 @@ class OpenStackInstance(VirtualServerInstance):
             _member_servers = self._properties["virtualServerInstance"] \
                                                 ["associatedClients"]["memberServers"]
 
-    def _get_instance_properties_json(self):
-        """get the all instance related properties of this subclient.
+    def _get_instance_properties_json(self) -> dict:
+        """Retrieve all properties related to this OpenStack instance subclient.
 
-           Returns:
-                dict - all instance properties put inside a dict
+        Returns:
+            dict: A dictionary containing all instance properties for the subclient.
 
+        #ai-gen-doc
         """
         instance_json = {
             "instanceProperties": {
@@ -106,16 +131,34 @@ class OpenStackInstance(VirtualServerInstance):
         return instance_json
 
     @property
-    def server_host_name(self):
-        """getter for the domain name in the vmware vendor json"""
+    def server_host_name(self) -> list:
+        """Get the server host name (domain name) from the OpenStack vendor JSON.
+
+        Returns:
+            The domain name as a string extracted from the OpenStack vendor JSON.
+
+        Example:
+            >>> instance = OpenStackInstance()
+            >>> host_name = instance.server_host_name  # Use dot notation for property access
+
+        #ai-gen-doc
+        """
         return self._server_host_name
 
     @property
-    def _user_name(self):
-        """getter for the username from the vmware vendor json"""
-        return self._vmwarvendor["userName"]
+    def server_name(self) -> list:
+        """Get the server name associated with the OpenStack instance.
 
-    @property
-    def server_name(self):
-        """getter for the domain name in the vmware vendor json"""
+        This property retrieves the domain name as specified in the VMware vendor JSON configuration.
+
+        Returns:
+            The server (domain) name as a list.
+
+        Example:
+            >>> instance = OpenStackInstance()
+            >>> name = instance.server_name
+            >>> print(f"OpenStack server name: {name}")
+
+        #ai-gen-doc
+        """
         return self._server_name
