@@ -78,7 +78,9 @@ class BigDataAppsInstance(Instance):
         from cvpysdk.instances.bigdataapps.mongodbinstance import MongoDBInstance
         from cvpysdk.instances.bigdataapps.yugabyteinstance import YugabyteInstance
         from cvpysdk.instances.bigdataapps.couchbaseinstance import CouchbaseInstance
+        from .bigdataapps.hadoopinstance import HadoopInstance
         instance_types = {
+            2: HadoopInstance,
             16: SplunkInstance,
             17: CouchbaseInstance,
             19: YugabyteInstance,

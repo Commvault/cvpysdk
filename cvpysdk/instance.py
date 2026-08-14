@@ -3351,6 +3351,102 @@ class Instances(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
+    def add_klaviyo_instance(self, instance_name, plan_name, credential_name, content, **kwargs):
+        """Add a new Klaviyo Cloud Apps instance to the Commcell.
+
+        Creates a Klaviyo instance using the V4 SAAS API.
+        The caller provides plain content name strings which are internally
+        wrapped into the CloudDBEntity XML format.
+
+        Args:
+            instance_name (str):    Name for the new Klaviyo instance.
+            plan_name (str):        Name of the plan to associate with the instance.
+            credential_name (str):  Name of the credential entity.
+                                    Its name identifies the Klaviyo account and its
+                                    CommCell credential ID is used for authentication.
+            content (list):         List of Klaviyo content name strings to back up,
+                                    e.g. ["campaigns", "lists"].
+            **kwargs:               Additional workload-specific parameters.
+
+        Returns:
+            Instance: The newly created Klaviyo instance object.
+
+        Raises:
+            SDKException: If the plan or credential does not exist, if instance
+                          creation fails, or the server returns an error.
+
+        Example:
+            >>> instance = commcell.instances.add_klaviyo_instance(
+            ...     instance_name="klaviyo_29june_3",
+            ...     plan_name="DataVaultPlan",
+            ...     credential_name="klaviyo_29june_3",
+            ...     content=["campaigns", "lists"]
+            ... )
+
+        #ai-gen-doc
+        """
+        from .subclients.cloudapps.klaviyo_subclient import KlaviyoSubclient
+
+        if not self._commcell_object.plans.has_plan(plan_name):
+            raise SDKException(
+                'Instance', '102',
+                'Plan "{0}" does not exist in the Commcell'.format(plan_name)
+            )
+
+        if not self._commcell_object.credentials.has_credential(credential_name):
+            raise SDKException(
+                'Instance', '102',
+                'Credential "{0}" does not exist in the Commcell'.format(credential_name)
+            )
+
+        plan = self._commcell_object.plans.get(plan_name)
+        credential = self._commcell_object.credentials.get(credential_name)
+
+        content_xml = KlaviyoSubclient._build_content_xml(content)
+
+        request_json = {
+            "instanceName": instance_name,
+            "instanceType": "KLAVIYO",
+            "plan": {
+                "id": int(plan.plan_id),
+                "name": plan_name
+            },
+            "account": {
+                "name": credential_name
+            },
+            "content": [content_xml],
+            "useResourcePoolInfo": True
+        }
+
+        request_json['credential'] = {
+            "id": int(credential.credential_id),
+            "name": credential_name
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['ADD_KLAVIYO_INSTANCE'], request_json
+        )
+
+        if flag:
+            if response.json():
+                response_data = response.json()
+                if 'id' in response_data and 'name' in response_data:
+                    self.refresh()
+                    return self.get(response_data['name'])
+                elif 'errorMessage' in response_data:
+                    raise SDKException(
+                        'Instance', '102',
+                        'Failed to create Klaviyo instance\nError: "{0}"'.format(
+                            response_data['errorMessage']
+                        )
+                    )
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
     def add_aws_s3_vectors_instance(self, instance_name, plan_name, credential_name, region_names):
         """Add a new AWS S3 Vectors Cloud Apps instance to the Commcell.
 

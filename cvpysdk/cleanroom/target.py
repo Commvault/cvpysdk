@@ -875,6 +875,10 @@ class CleanroomTarget:
         if infra_vm_size is not None:
             target_payload['infrastructure']['advancedSettings']['vmSize'] = infra_vm_size
 
+        # For AWS Infrastructure, set instanceType instead of vmSize
+        if infra_vm_size is not None and self._policy_type == 1:
+            target_payload['infrastructure']['advancedSettings']['instanceType'] = infra_vm_size
+
         # Make PUT request to update target
         flag, response = self._cvpysdk_object.make_request(
             'PUT',
@@ -1028,7 +1032,7 @@ class CleanroomTarget:
                     self._infra_iam_role = (self._cleanroom_target_properties.get('infrastructure', {})
                                             .get('advancedSettings', {}).get('iamRole', {}).get('guid', ''))
                     self._infra_vm_size = (self._cleanroom_target_properties.get('infrastructure', {})
-                                           .get('advancedSettings', {}).get('vmSize', {}).get('guid', ''))
+                                           .get('advancedSettings', {}).get('instanceType', {}).get('guid', ''))
                     self._custom_images = (self._cleanroom_target_properties.get('infrastructure', {})
                                            .get('advancedSettings', {}).get('customImages', []))
 

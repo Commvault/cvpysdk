@@ -212,6 +212,7 @@ class CloudAppsInstance(Instance):
         from .cloudapps.pinecone_instance import PineConeInstance
         from .cloudapps.snowflake_instance import SnowflakeInstance
         from .cloudapps.gcp_memorystore_instance import GcpMemorystoreInstance
+        from .cloudapps.klaviyo_instance import KlaviyoInstance
         from .cloudapps.hubspot_instance import HubSpotInstance
         from .cloudapps.aws_s3_vectors_instance import AwsS3VectorsInstance
         from .cloudapps.trello_instance import TrelloInstance
@@ -254,6 +255,7 @@ class CloudAppsInstance(Instance):
             84: ClickHouseInstance,  # ClickHouse Instance
             61: SnowflakeInstance,  # Snowflake Instance
             82: GcpMemorystoreInstance,  # GCP Memorystore Instance
+            90: KlaviyoInstance,  # Klaviyo Instance
             94: AwsS3VectorsInstance,  # AWS S3 Vectors Instance
             98: HubSpotInstance,   # HubSpot Instance
             104: MiroInstance,  # Miro Instance

@@ -56,7 +56,9 @@ class BigDataAppsSubclient(FileSystemSubclient):
         """
         from ..subclients.splunksubclient import SplunkSubclient
         from ..subclients.index_server_subclient import IndexServerSubclient
+        from .hadoopsubclient import HadoopSubclient
         cluster_types = {
+            2: HadoopSubclient,
             16: SplunkSubclient,
             6: IndexServerSubclient
         }

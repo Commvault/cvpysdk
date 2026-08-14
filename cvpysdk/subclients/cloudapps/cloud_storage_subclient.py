@@ -120,7 +120,8 @@ class CloudStorageSubclient(CloudAppsSubclient):
         }
         return subclient_json
 
-    def _set_content(self, content: Optional[list] = None) -> None:
+    def _set_content(self, content: Optional[list] = None,
+                     exclude_paths: Optional[list] = None) -> None:
         """Set the content for the cloud storage subclient.
 
         This method assigns the specified content list to the subclient, defining which data or objects
@@ -141,10 +142,9 @@ class CloudStorageSubclient(CloudAppsSubclient):
 
         update_content = []
         for path in content:
-            cloud_dict = {
-                "path": path
-            }
-            update_content.append(cloud_dict)
+            update_content.append({"path": path})
+        for path in exclude_paths or []:
+            update_content.append({"excludepath": path})
 
         self._set_subclient_properties("_content", update_content)
 
@@ -198,6 +198,15 @@ class CloudStorageSubclient(CloudAppsSubclient):
             raise SDKException(
                 'Subclient', '102', 'Subclient content should be a list value and not empty'
             )
+
+    def set_content_with_exclusions(self, subclient_content: list,
+                                    exclude_paths: Optional[list] = None) -> None:
+        """Set cloud storage content and optional excluded paths."""
+        if not isinstance(subclient_content, list) or not subclient_content:
+            raise SDKException('Subclient', '102', 'Subclient content should not be empty')
+        if exclude_paths is not None and not isinstance(exclude_paths, list):
+            raise SDKException('Subclient', '102', 'exclude_paths should be a list')
+        self._set_content(content=subclient_content, exclude_paths=exclude_paths)
 
     def restore_in_place(
             self,

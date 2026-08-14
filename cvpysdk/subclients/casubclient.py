@@ -60,6 +60,7 @@ class CloudAppsSubclient(Subclient):
         from .cloudapps.pinecone_subclient import PineConeSubclient
         from .cloudapps.snowflake_subclient import SnowflakeSubclient
         from .cloudapps.gcp_memorystore_subclient import GcpMemorystoreSubclient
+        from .cloudapps.klaviyo_subclient import KlaviyoSubclient
         from .cloudapps.hubspot_subclient import HubSpotSubclient
         from .cloudapps.aws_s3_vectors_subclient import AwsS3VectorsSubclient
         from .cloudapps.servicenow_subclient import ServiceNowSubclient
@@ -98,6 +99,7 @@ class CloudAppsSubclient(Subclient):
             84: ClickHouseSubclient,  # ClickHouse Subclient
             61: SnowflakeSubclient,  # Snowflake Subclient
             82: GcpMemorystoreSubclient,  # GCP Memorystore Subclient
+            90: KlaviyoSubclient,  # Klaviyo Subclient
             94: AwsS3VectorsSubclient,   # AWS S3 Vectors Subclient
             103: TrelloSubclient,  # Trello Subclient
             134: TrelloSubclient,  # Trello Subclient (legacy/inferred id)

@@ -108,6 +108,8 @@ Clients
 
     add_couchbase_client()                --  adds a new Couchbase Client to the commcell
 
+    add_hadoop_client()                --  adds a new Hadoop Client to the commcell
+
     add_case_client()                     --  adds a new Case Manger Client to the Commcell
 
     add_salesforce_client()               --  adds a new salesforce client
@@ -550,6 +552,7 @@ class Clients(object):
         self._ADD_CASSANDRA_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
         self._ADD_YUGABYTE_CLIENT = self._services['CREATE_YUGABYTE_CLIENT']
         self._ADD_COUCHBASE_CLIENT = self._services['CREATE_COUCHBASE_CLIENT']
+        self._ADD_HADOOP_CLIENT = self._services['CREATE_HADOOP_CLIENT']
         self._ADD_NUTANIX_CLIENT = self._services['CREATE_NUTANIX_CLIENT']
         self._ADD_NAS_CLIENT = self._services['CREATE_NAS_CLIENT']
         self._ADD_ONEDRIVE_CLIENT = self._services['CREATE_PSEUDO_CLIENT']
@@ -3378,6 +3381,143 @@ class Clients(object):
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
+    
+    def add_hadoop_client(self,
+                          instance_name: str,
+                          hdfs_user: str,
+                          content: List[str],
+                          plan_name: str,
+                          master_node: str,
+                          data_access_nodes: List[str],
+                          hdfs_uri: str = 'default'):
+        """Add a new Hadoop client to the Commcell environment after validating the client name and plan.
+
+        Args:
+            instance_name: Name of the new Hadoop client to be added.
+            hdfs_user: HDFS user for the Hadoop client.
+            content: List of content paths for the default subclient.
+            plan_name: Name of the plan to associate with the new client.
+            master_node: Name of the master node client.
+            data_access_nodes: List of data access node client names.
+            hdfs_uri: HDFS URI for the Hadoop client.
+
+        Returns:
+            The client object associated with the newly created Hadoop client.
+
+        Raises:
+            SDKException: If the plan or master client is invalid, or if the client creation fails.
+
+        Example:
+            >>> clients = Clients(commcell_object)
+            >>> hadoop_client = clients.add_hadoop_client(
+            ...     instance_name="HadoopNode01",
+            ...     hdfs_user="hdfs_user",
+            ...     content=["/data/path1", "/data/path2"],
+            ...     plan_name="HadoopPlan",
+            ...     master_node="MasterNode",
+            ...     data_access_nodes=["DataNode1", "DataNode2"],
+            ...     hdfs_uri="default"
+            ... )
+            >>> print(f"Created Hadoop client: {hadoop_client}")
+
+        #ai-gen-doc
+        """
+        
+        content_temp = []
+        for path in content:
+            content_temp.append({"path": path})
+        
+        access_nodes = []
+        for node in data_access_nodes:
+            access_nodes.append({"clientName": node})
+        
+        if self._commcell_object.clients.has_client(master_node):
+            client_id = int(self._commcell_object.clients.all_clients[master_node.lower()]['id'])
+
+        request_json = {
+                        "createPseudoClientRequest":{
+                        "clientInfo":{
+                            "clientType": 29,
+                                "plan":{
+                                    "planName": plan_name,
+                                },
+                                "subclientInfo":{
+                                "useLocalContent": True,
+                                "contentOperationType":1,
+                                "fsSubClientProp":{
+                                    "useGlobalFilters":"USE_CELL_LEVEL_POLICY"
+                                },
+                                "content": content_temp
+                                },
+                                "distributedClusterInstanceProperties":{
+                                    "clusterType":2,
+                                    "opType":2,
+                                    "instance":{
+                                        "instanceId":0,
+                                        "instanceName":instance_name,
+                                        "clientName":instance_name,
+                                        "applicationId":64
+                                    },
+                                    "clusterConfig":{
+                                        "hadoopConfig":{
+                                            "coordinatorNode":{
+                                                "clientName":master_node,
+                                                "displayName":master_node,
+                                                "clientId":client_id,
+                                                "selected":True,
+                                                "hidden":False
+                                            },
+                                            "hadoopSites":[
+                                                {
+                                                    "hdfsHost":hdfs_uri,
+                                                    "hdfsUser":hdfs_user
+                                                }
+                                            ]
+                                        },
+                                        "dataAccessNodes":{
+                                            "dataAccessNodes": access_nodes
+                                        }
+                                    }
+                                }
+                            },
+                        "entity":{
+                            "clientName":instance_name
+                        }
+                    }
+        }
+                        
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._ADD_HADOOP_CLIENT, request_json
+        )
+
+        if flag:
+            if response.json():
+                if 'response' in response.json():
+                    error_code = response.json()['response']['errorCode']
+
+                    if error_code != 0:
+                        error_string = response.json()['response']['errorString']
+                        o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+
+                        raise SDKException('Client', '102', o_str)
+                    else:
+                        # initialize the clients again
+                        # so the client object has all the clients
+                        self.refresh()
+                        return self.get(instance_name)
+
+                elif 'errorMessage' in response.json():
+                    error_string = response.json()['errorMessage']
+                    o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+
+                    raise SDKException('Client', '102', o_str)
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
 
     def add_yugabyte_client(self,
                             instance_name: str,
@@ -3726,7 +3866,6 @@ class Clients(object):
                         # so the client object has all the clients
                         self.refresh()
                         return self.get(instance_name)
-
                 elif 'errorMessage' in response.json():
                     error_string = response.json()['errorMessage']
                     o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
@@ -3738,6 +3877,145 @@ class Clients(object):
                 raise SDKException('Response', '102')
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def add_hadoop_client(self,
+                          client_name,
+                          hdfs_user,
+                          content,
+                          plan_name,
+                          master_node,
+                          data_access_nodes,
+                          hdfs_uri='default',
+                          ):
+            """Add a new Hadoop client to the Commcell environment.
+    
+            This method creates a Hadoop pseudo-client with the specified configuration,
+            including data access nodes, credentials, staging type, and associated plan.
+            Supports both FileSystem and S3 staging types.
+    
+            Args:
+                client_name: Name for the new Hadoop instance.
+                data_access_nodes: List of client names to be used as data access nodes.
+                hdfs_user: HDFS user for the Hadoop client.
+                content: List of content paths for the default subclient.
+                plan_name: Name of the plan to associate with the client.
+                master_node: Coordinator data access node client name to be shown in UI.
+                hdfs_uri: Optional HDFS endpoint host/IP. Defaults to master_node when not provided.
+    
+            Returns:
+                Object representing the newly created Hadoop client.
+    
+            Raises:
+                SDKException: If the client creation fails, the response is empty, or the response indicates an error.
+    
+    
+            Example:
+                >>> clients = Clients(commcell_object)
+                >>> hadoop_client = clients.add_hadoop_client(
+                ...     client_name="Hadoop_Instance01",
+                ...     data_access_nodes=["node1", "node2"],
+                ...     hdfs_user="hdfs",
+                ...     content=["/data/path1", "/data/path2"],
+                ...     plan_name="HadoopPlan"
+                ... )
+                >>> print(f"Created Hadoop client: {hadoop_client}")
+    
+            #ai-gen-doc
+            """
+    
+            access_nodes = []
+            for node in data_access_nodes:
+                access_nodes.append({"clientName": node})
+
+            content_list = []
+            for path in content:
+                content_list.append({"path": path})
+    
+            hdfs_host = hdfs_uri if hdfs_uri != 'default' else master_node
+
+            request_json = {
+                "createPseudoClientRequest": {
+                    "clientInfo": {
+                        "clientType": 29,
+                        "plan": {
+                            "planName": plan_name
+                        },
+                        "distributedClusterInstanceProperties": {
+                            "clusterType": 2,
+                            "opType": 2,
+                            "instance": {
+                                "instanceId": 0,
+                                "instanceName": client_name,
+                                "clientName": client_name,
+                                "applicationId": 64
+                            },
+                            "clusterConfig": {
+                                "hadoopConfig": {
+                                    "coordinatorNode": {
+                                        "clientId": 0,
+                                        "clientName": master_node,
+                                        "displayName": master_node,
+                                        "selected": True
+                                    },
+                                    "hadoopSites": [
+                                        {
+                                            "hdfsHost": hdfs_host,
+                                            "hdfsUser": hdfs_user
+                                        }
+                                    ]
+                                }
+                            },
+                            "dataAccessNodes": {
+                                "dataAccessNodes": access_nodes
+                            }
+                        }
+                    },
+                    "subclientInfo": {
+                        "useLocalContent": True,
+                        "contentOperationType": 0,
+                        "fsSubClientProp": {
+                            "useGlobalFilters": "string"
+                        },
+                        "content": content_list,
+                    },
+                    "entity": {
+                        "clientName": client_name
+                        }
+                    }
+                }
+    
+            flag, response = self._cvpysdk_object.make_request(
+                'POST', self._ADD_HADOOP_CLIENT, request_json
+            )
+    
+            if flag:
+                if response.json():
+                    if 'response' in response.json():
+                        error_code = response.json()['response']['errorCode']
+    
+                        if error_code != 0:
+                            error_string = response.json()['response']['errorString']
+                            o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+    
+                            raise SDKException('Client', '102', o_str)
+                        else:
+                            # initialize the clients again
+                            # so the client object has all the clients
+                            self.refresh()
+    
+                            return self.get(client_name)
+                        
+                    elif 'errorMessage' in response.json():
+                        error_string = response.json()['errorMessage']
+                        o_str = 'Failed to create client\nError: "{0}"'.format(error_string)
+    
+                        raise SDKException('Client', '102', o_str)
+                    else:
+                        raise SDKException('Response', '102')
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '101', self._update_response_(response.text))
 
     def add_exchange_client(
             self,
