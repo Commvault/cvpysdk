@@ -3447,6 +3447,127 @@ class Instances(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
+    def add_azure_redis_instance(self, instance_name, plan_name, credential_name, content_paths):
+        """Add a new Azure Redis Cloud Apps instance to the Commcell.
+
+        Creates an Azure Redis instance using the V4 AI API.  The caller provides
+        plain Azure resource group name strings (e.g. "ymidha-redis") which are internally
+        wrapped into the CloudDBEntity XML format.
+
+        Args:
+            instance_name (str):        Name for the new Azure Redis instance.
+                                        Also used as the Commvault connection entity name.
+            plan_name (str):            Name of the plan to associate with the instance.
+            credential_name (str):      Name of the Azure credential stored in Commvault
+                                        Credentials. Used for Azure API authentication.
+            content_paths (list):       List of Azure resource group name strings to back up,
+                                        e.g. ["ymidha-redis"].
+
+        Returns:
+            Instance: The newly created Azure Redis instance object.
+
+        Raises:
+            SDKException: If the plan or credential does not exist, if instance
+                          creation fails, or the server returns an error.
+        """
+        from .subclients.cloudapps.azure_redis_subclient import AzureRedisSubclient
+
+        if not self._commcell_object.plans.has_plan(plan_name):
+            raise SDKException(
+                'Instance', '102',
+                'Plan "{0}" does not exist in the Commcell'.format(plan_name)
+            )
+
+        if not self._commcell_object.credentials.has_credential(credential_name):
+            raise SDKException(
+                'Instance', '102',
+                'Credential "{0}" does not exist in the Commcell'.format(credential_name)
+            )
+
+        plan = self._commcell_object.plans.get(plan_name)
+        cred_obj = self._commcell_object.credentials.get(credential_name)
+
+        content = [
+            AzureRedisSubclient._build_content_item(resource_group)['path']
+            for resource_group in (content_paths or [])
+        ]
+
+        request_json = {
+            "instanceName": instance_name,
+            "instanceType": "AZUREREDIS",
+            "plan": {
+                "id": int(plan.plan_id),
+                "name": plan_name
+            },
+            "account": {
+                "name": instance_name
+            },
+            "credential": {
+                "id": int(cred_obj.credential_id),
+                "name": credential_name
+            },
+            "useResourcePoolInfo": True
+        }
+
+        if content:
+            request_json["content"] = content
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['ADD_AZURE_REDIS_INSTANCE'], request_json
+        )
+
+        if flag:
+            if response.json():
+                response_data = response.json()
+                if 'id' in response_data and 'name' in response_data:
+                    # Azure Redis instances are created as NEW pseudoclients in Commvault,
+                    # not as sub-instances under the access-node agent used for the API call.
+                    # self.refresh() only refreshes the access-node agent's instance list and
+                    # will never see the newly created pseudoclient. Instead, poll the commcell
+                    # clients list until the new pseudoclient appears, then return its instance.
+                    
+                    created_client_name = instance_name
+                    commcell = self._commcell_object
+                    
+                    for attempt in range(12):  # up to 60 seconds
+                        try:
+                            commcell.clients.refresh()
+                            if commcell.clients.has_client(created_client_name):
+                                new_client = commcell.clients.get(created_client_name)
+                                new_agent = new_client.agents.get('cloud apps')
+                                new_agent.instances.refresh()
+                                instance_keys = list(new_agent.instances.all_instances.keys())
+                                if instance_keys:
+                                    return new_agent.instances.get(instance_keys[0])
+                        except SDKException:
+                            pass
+                        except Exception:
+                            pass
+                        
+                        if attempt < 11:
+                            time.sleep(5)
+                    
+                    raise SDKException(
+                        'Instance', '102',
+                        'Azure Redis instance "{0}" was created (API returned id={1}) but '
+                        'the pseudoclient did not appear in commcell clients after 60s.'.format(
+                            created_client_name, response_data.get('id')
+                        )
+                    )
+                elif 'errorMessage' in response_data:
+                    raise SDKException(
+                        'Instance', '102',
+                        'Failed to create Azure Redis instance\nError: "{0}"'.format(
+                            response_data['errorMessage']
+                        )
+                    )
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
     def add_aws_s3_vectors_instance(self, instance_name, plan_name, credential_name, region_names):
         """Add a new AWS S3 Vectors Cloud Apps instance to the Commcell.
 

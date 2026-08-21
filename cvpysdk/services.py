@@ -273,6 +273,7 @@ SERVICES_DICT_TEMPLATE = {
     'ADD_SNOWFLAKE_INSTANCE': '{0}V4/AI/Snowflake/Instance',
     'ADD_PINECONE_INSTANCE': '{0}V4/AI/Pinecone/Instance',
     'ADD_GCP_MEMORYSTORE_INSTANCE': '{0}V4/AI/GCPMemorystore/Instance',
+    'ADD_AZURE_REDIS_INSTANCE': '{0}V4/AI/AzureRedis/Instance',
     'ADD_KLAVIYO_INSTANCE': '{0}V4/SAAS/Klaviyo/Instance',
     'ADD_HUBSPOT_INSTANCE': '{0}V4/SAAS/HubSpot/Instance',
     'ADD_SERVICENOW_INSTANCE': '{0}V4/SAAS/ServiceNow/Instance',

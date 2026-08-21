@@ -1190,6 +1190,9 @@ class VirtualServerSubclient(Subclient):
         if "instanceAdminPassword" in value and value["instanceAdminPassword"] is not None:
             self._advanced_option_restore_json["instanceAdminPassword"] = value["instanceAdminPassword"]
 
+        if value.get("templateId"):
+            self._advanced_option_restore_json["templateId"] = value["templateId"]
+
         if self.disk_pattern.datastore.value == "DestinationPath":
             self._advanced_option_restore_json["DestinationPath"] = value.get("datastore", "")
 

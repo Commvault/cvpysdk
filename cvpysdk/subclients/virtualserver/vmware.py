@@ -334,7 +334,8 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
         extra_options = ['source_ip', 'destination_ip', 'network', 'destComputerName',
                          'source_subnet', 'source_gateway', 'destination_subnet',
                          'destination_gateway', 'folder_path', 'media_agent', 'v2_details', 'revert',
-                         'volume_level_restore', 'redirectWritesToDatastore', 'delayMigrationMinutes', 'vmTags']
+                         'volume_level_restore', 'redirectWritesToDatastore', 'delayMigrationMinutes', 'vmTags',
+                         'templateId']
 
         for key in extra_options:
             if key in kwargs:
@@ -347,6 +348,9 @@ class VMWareVirtualServerSubclient(VirtualServerSubclient):
 
         if copy_precedence:
             restore_option['copy_precedence_applicable'] = True
+
+        if kwargs.get("is_synthetic_recovery", False):
+            restore_option['is_synthetic_recovery'] = True
 
         # populating proxy client. It assumes the proxy controller added in instance
         # properties if not specified
