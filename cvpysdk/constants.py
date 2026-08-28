@@ -866,6 +866,15 @@ class ResourcePoolAppType(Enum):
     ONEDRIVE = 5
     TEAMS = 6
 
+class Office365ClientConnectionsAppType(Enum):
+    """Class to maintain Office 365 Client Connections AppType"""
+    EXCHANGE_ONLINE = 0
+    ONEDRIVE_FOR_BUSINESS = 1
+    ACTIVEDIRECTORY_AZUREAD = 2
+    SHAREPOINT_ONLINE = 3
+    MICROSOFT_TEAMS = 5
+    DYNAMICS_365 = 6
+    POWER_PLATFORM = 25
 
 class OSType(Enum):
     """Class to maintain OS Types"""

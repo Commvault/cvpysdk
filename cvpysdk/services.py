@@ -584,6 +584,11 @@ SERVICES_DICT_TEMPLATE = {
     'OFFICE365_PROCESS_INDEX_RETENTION_RULES': '{0}Office365/ProcessIdxRetentionRules',
     'OFFICE365_POPULATE_INDEX_STATS': '{0}Office365/PopulateIdxStats',
     'OFFICE365_OVERVIEW_STATS': '{0}Office365/overview/%s?mode=0',
+    
+    'OFFICE365_CLIENT_CONNECTIONS': '{0}Office365/Client/%s?opType=%s&appType=%s',
+    'OFFICE365_CLIENT_GENERATE_CERTIFICATE': '{0}ActiveDirectory/Azure/AADApp/%s',
+    'AZURE_APP_AUTHORIZATION_URL': '{0}processAzureAuthToken.do', # need to remove api/ before using this endpoint
+    
     'ADD_EXCHANGE': '{0}pseudoClient',
     'CREATE_CONFIGURATION_POLICIES': '{0}ConfigurationPolicies',
     'GET_CONFIGURATION_POLICIES': '{0}ConfigurationPolicies?policyType=email',

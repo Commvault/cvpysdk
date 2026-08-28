@@ -187,6 +187,7 @@ class AzureRMSubclient(VirtualServerSubclient):
                                  public_ip=False,
                                  restore_as_managed=False,
                                  copy_precedence=0,
+                                 proxy_client=None,
                                  **kwargs):
         """Restores the FULL Virtual machine specified  in the input  list to the client,
             to the location same as source .
@@ -205,6 +206,8 @@ class AzureRMSubclient(VirtualServerSubclient):
 
                 poweron
                         default:true   (bool)      --  power on the  restored VM
+
+                proxy_client          (str)        -- provide the proxy client to restore
 
                 **kwargs                         : Arbitrary keyword arguments Properties as of
                                                      full_vm_restore_in_place
@@ -240,6 +243,7 @@ class AzureRMSubclient(VirtualServerSubclient):
             volume_level_restore=1,
             createPublicIP=public_ip,
             restoreAsManagedVM=restore_as_managed,
+            client_name=proxy_client,
             in_place=True
         )
         request_json = self._prepare_fullvm_restore_json(restore_option)

@@ -108,7 +108,8 @@ class ApacheCloudStackSubclient(VirtualServerSubclient):
         return self._process_restore_response(request_json)
 
     def full_vm_restore_out_of_place(self, vm_to_restore, destination_client, proxy_client, overwrite, power_on,
-                                      copy_precedence, zone, storage, host, network=None):
+                                      copy_precedence, zone, storage, host, network=None,
+                                      advanced_restore_options=None):
         """
         Restores the full Virtual Machine specified in the input list to the specified client, at the specified
         destination location.
@@ -122,8 +123,13 @@ class ApacheCloudStackSubclient(VirtualServerSubclient):
             host             (str)   --  host where the VM should be restored
             overwrite        (bool)  --  overwrite the existing VM (default: True)
             power_on         (bool)  --  power on the restored VM (default: True)
-            copy_precedence  (int)   --  copy precedence value (optional),
+            copy_precedence  (int)   --  copy precedence value (optional)
             network          (str)   --  network where the VM should be restored (optional)
+            advanced_restore_options (list) -- per-VM advancedRestoreOptions built by
+                                     CloudStackHelper.build_vm_restore_advanced_options().
+                                     When provided, replaces the generic SDK-generated
+                                     advancedRestoreOptions so that correct per-NIC network
+                                     UUIDs and per-disk disk offerings are sent to the server.
 
         Returns:
             object - instance of the Job class for this restore job
@@ -160,4 +166,14 @@ class ApacheCloudStackSubclient(VirtualServerSubclient):
         )
 
         request_json = self._prepare_fullvm_restore_json(restore_option)
+
+        # Inject CloudStack-specific per-VM advanced options when provided.
+        # This replaces the generic advancedRestoreOptions built by the SDK with
+        # entries that carry the correct per-NIC network UUIDs and per-disk
+        # disk offerings sourced directly from the CloudStack API.
+        if advanced_restore_options:
+            (request_json['taskInfo']['subTasks'][0]['options']['restoreOptions']
+             ['virtualServerRstOption']['diskLevelVMRestoreOption']
+             ['advancedRestoreOptions']) = advanced_restore_options
+
         return self._process_restore_response(request_json)

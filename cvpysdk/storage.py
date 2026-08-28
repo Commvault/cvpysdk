@@ -2145,7 +2145,8 @@ class DiskLibrary(object):
                                                                  self._library_name,
                                                                  _stderr))
 
-    def add_storage_accelerator_credential(self, mount_path: str, saved_credential: str = "", reset: bool = False) -> None:
+    def add_storage_accelerator_credential(self, mount_path: str, saved_credential: str = "", reset: bool = False,
+                                           mountpath_id: int = 0) -> None:
         """Add a storage accelerator credential to the specified cloud mount path.
 
         This method associates a saved credential with a given mount path for storage acceleration.
@@ -2155,6 +2156,7 @@ class DiskLibrary(object):
             mount_path: The mount path to which the secondary credential should be added.
             saved_credential: The name of the saved credential to associate with the mount path. Defaults to an empty string.
             reset: If True, resets the storage accelerator credential for the mount path. Defaults to False.
+            mountpath_id: The ID of the mount path. Defaults to 0.
 
         Raises:
             Exception: If the mount_path datatype is invalid.
@@ -2179,6 +2181,7 @@ class DiskLibrary(object):
                             "mediaAgentName": self.media_agent,
                             "libraryName": self._library_name,
                             "mountPath": mount_path,
+                            "mountPathId": mountpath_id,
                             "opType": 8
                         },
                         "libNewProp": {

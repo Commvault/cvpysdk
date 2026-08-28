@@ -453,7 +453,7 @@ import re
 import time
 from base64 import b64encode
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
-from urllib.parse import quote
+from urllib.parse import quote, urlsplit, urlunsplit, parse_qsl, urlencode
 
 import requests
 
@@ -475,7 +475,7 @@ from .security.user import Users
 
 from .name_change import NameChange
 from .organization import Organizations
-from .constants import AppIDAType, AppIDAName, OSType
+from .constants import AppIDAType, AppIDAName, OSType, Office365ClientConnectionsAppType
 from .constants import ResourcePoolAppType
 
 from .security.security_association import SecurityAssociation
@@ -5955,11 +5955,13 @@ class Clients(object):
                         },
                         "cloudAppsInstance": {
                             "instanceType": 7,
-                            "serviceAccounts": {},
                             "oneDriveInstance": {
                                 "manageContentAutomatically": False,
                                 "isAutoDiscoveryEnabled": False,
                                 "cloudRegion": cloud_region,
+                                "serviceAccounts": {
+                                    "accounts": []
+                                },
                                 "azureAppList": {
                                     "azureApps": [
                                         {
@@ -7847,6 +7849,29 @@ class Client(object):
 
                 self._vm_guid = self._properties.get('vmStatusInfo', {}).get('strGUID')
 
+                # Process properties that don't depend on clientProps (Available for all client types)
+                if 'companyName' in self._properties['client'].get('clientEntity', {}).get('entityInfo', {}):
+                    self._company_name = self._properties['client']['clientEntity']['entityInfo']['companyName']
+
+                self._client_hostname = self._properties['client']['clientEntity']['hostName']
+
+                self._timezone = self._properties['client']['TimeZone']['TimeZoneName']
+
+                if 'installDirectory' in self._properties['client']:
+                    self._install_directory = self._properties['client']['installDirectory']
+
+                if 'jobResulsDir' in self._properties['client']:
+                    self._job_results_directory = self._properties['client'][
+                        'jobResulsDir']['path']
+
+                if 'GalaxyRelease' in self._properties['client']['versionInfo']:
+                    self._version = self._properties['client'][
+                        'versionInfo']['GalaxyRelease']['ReleaseString']
+
+                # Some client types (e.g. cluster nodes) omit clientProps in their API response
+                if 'clientProps' not in self._properties:
+                    return
+
                 client_props = self._properties['clientProps']
 
                 self._is_data_recovery_enabled = client_props[
@@ -7866,9 +7891,6 @@ class Client(object):
                                                           client_props.get("infrastructureMachineDetails",
                                                                            []))) else False
 
-                if 'companyName' in self._properties['client'].get('clientEntity', {}).get('entityInfo', {}):
-                    self._company_name = self._properties['client']['clientEntity']['entityInfo']['companyName']
-
                 activities = client_props["clientActivityControl"]["activityControlOptions"]
 
                 for activity in activities:
@@ -7879,22 +7901,7 @@ class Client(object):
                     elif activity["activityType"] == 16:
                         self._is_data_aging_enabled = activity["enableActivityType"]
 
-                self._client_hostname = self._properties['client']['clientEntity']['hostName']
-
-                self._timezone = self._properties['client']['TimeZone']['TimeZoneName']
-
                 self._is_intelli_snap_enabled = bool(client_props['EnableSnapBackups'])
-
-                if 'installDirectory' in self._properties['client']:
-                    self._install_directory = self._properties['client']['installDirectory']
-
-                if 'jobResulsDir' in self._properties['client']:
-                    self._job_results_directory = self._properties['client'][
-                        'jobResulsDir']['path']
-
-                if 'GalaxyRelease' in self._properties['client']['versionInfo']:
-                    self._version = self._properties['client'][
-                        'versionInfo']['GalaxyRelease']['ReleaseString']
 
                 if 'version' in self._properties['client']['versionInfo']:
                     service_pack = re.findall(
@@ -10612,6 +10619,68 @@ class Client(object):
         #ai-gen-doc
         """
         self.change_exchange_job_results_directory(new_directory_path, username, password)
+        
+    def get_o365_client_connections(
+        self, app_type: Office365ClientConnectionsAppType = Office365ClientConnectionsAppType.EXCHANGE_ONLINE
+        ) -> Dict[str, Any]:
+        """
+        Get the Office365 Client Connections for the current client.
+
+        Args:
+            app_type (Office365ClientConnectionsAppType): The type of Office 365 client connections to retrieve. Defaults to EXCHANGE_ONLINE.
+
+        Returns:
+            dict: The JSON response containing the Office365 Client Connections.
+
+        Raises:
+            SDKException: If there is an error fetching the Office365 Client Connections.
+            
+        Example:
+            >>> client = Client(...)
+            >>> connections = client.get_o365_client_connections(app_type=Office365ClientConnectionsAppType.ONEDRIVE_FOR_BUSINESS)
+            >>> print(connections)
+            # Contains AzureAppConnections, Service Account details, ...
+            
+        """
+        
+        url = self._services['OFFICE365_CLIENT_CONNECTIONS']
+        # additional requirements ( clientId, opType, appType )
+        url = url % (
+            self.client_id,
+            1, # opType for fetching connections
+            app_type.value
+        )
+        
+        if app_type == Office365ClientConnectionsAppType.EXCHANGE_ONLINE:
+            # remove app type
+            split_url = urlsplit(url)
+            params = dict(parse_qsl(split_url.query))
+            params.pop('appType', None) # Exchange does not have query param opType
+            url = urlunsplit((split_url.scheme, split_url.netloc, urlencode(params), split_url.fragment))
+        
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', url
+        )
+        
+        if flag:
+            if response.json():
+                error_code = response.json().get('errorCode', 0)
+
+                if error_code == 0:
+                    return response.json()
+                elif 'errorMessage' in response.json():
+                    error_message = response.json()['errorMessage']
+                    raise SDKException(
+                        'Response', '101',
+                        'Failed to fetch Office365 Client Connections with error ' + error_message)
+            else:
+                raise SDKException('Response', '102')
+        
+        else:
+            raise SDKException(
+                'Response',
+                '101',
+                'Failed to fetch Office365 Client Connections')
 
     def push_network_config(self) -> None:
         """Push the network configuration to the client.

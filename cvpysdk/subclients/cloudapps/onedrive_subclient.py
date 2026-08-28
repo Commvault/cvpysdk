@@ -111,7 +111,7 @@ import datetime
 from ...exception import SDKException
 import time
 from ..casubclient import CloudAppsSubclient
-from ...constants import AppIDAType
+from ...constants import AppIDAType, Office365ClientConnectionsAppType
 from .onedrive_constants import OneDriveConstants
 import re
 
@@ -2200,3 +2200,125 @@ class OneDriveSubclient(CloudAppsSubclient):
             if subclient_users_dict != users_dict: return False
             
         return True
+    
+    def generate_certificate(self, credential_name: str = None, azure_app_dict: dict = None) -> None:
+        """ 
+        Generates a certificate for the OneDrive subclient using the provided credential name or Azure app dictionary.
+        
+        Args:
+            credential_name (str): The name of the credential to use for generating the certificate.
+            azure_app_dict (dict): Optional Azure app dictionary containing app details.
+            {
+                'azureAppId': 'your_azure_app_id',
+                'azureDirectoryId': 'your_azure_directory_id'
+            }
+
+        Raises:
+            Exception: If neither credential_name nor azure_app_dict is provided, or if the request fails.
+            
+        Example:
+            subclient.generate_certificate(credential_name='my_credential')
+            subclient.generate_certificate(azure_app_dict={'azureAppId': 'your_azure_app_id', 'azureDirectoryId': 'your_azure_directory_id'})
+
+        """
+        if credential_name is None and azure_app_dict is None:
+            raise SDKException('Subclient', '102', "Either 'credential_name' or 'azure_app_dict' must be provided.")
+        
+        # Any 1 of the 2 must be provided, and present in client connections
+        # ( performs generate_certificate for only 1 azure_app linked to client )
+        # Priority: credential_name > azure_app_dict
+        
+        client_connections: dict = self._client_object.get_o365_client_connections(
+            Office365ClientConnectionsAppType.ONEDRIVE_FOR_BUSINESS
+        )
+        
+        azure_apps_list_dict: dict = client_connections.get('azureAppList', {})
+        azure_apps_list: list = azure_apps_list_dict.get('azureApps', [])
+        
+        azure_app_id: str = None
+        azure_app_tenant: str = None
+        credential_found: bool = False
+        
+        if credential_name:
+            # check for presence of credential_name in connections retrieved
+            
+            for entry in azure_apps_list:
+                if entry.get('credentialEntity', {}).get('credentialName') == credential_name:
+                    azure_app_id = entry.get('azureAppId')
+                    azure_app_tenant = entry.get('azureDirectoryId')
+                    credential_found = True
+                    break
+            if not credential_found:
+                raise SDKException('Subclient', '102', f"Provided credential '{credential_name}' not found in Azure apps list.")
+        
+        elif azure_app_dict:
+            # check for presence of app_id and tenant_id in connections retrieved
+            
+            input_azure_app_id = azure_app_dict.get('azureAppId')
+            input_azure_app_tenant = azure_app_dict.get('azureDirectoryId')
+            if not input_azure_app_id or not input_azure_app_tenant:
+                raise SDKException('Subclient', '102', "Both 'azureAppId' and 'azureDirectoryId' must be provided in azure_app_dict.")
+            
+            for entry in azure_apps_list:
+                if entry.get('azureAppId') == input_azure_app_id and entry.get('azureDirectoryId') == input_azure_app_tenant:
+                    azure_app_id = entry.get('azureAppId')
+                    azure_app_tenant = entry.get('azureDirectoryId')
+                    credential_found = True
+                    break
+            if not credential_found:
+                raise SDKException('Subclient', '102', f"Provided azure app '{input_azure_app_id}' with tenant '{input_azure_app_tenant}' not found in Azure apps list.")
+        
+        url = self._services['OFFICE365_CLIENT_GENERATE_CERTIFICATE']
+        
+        url = url % azure_app_id
+        app_auth_url = self._services['AZURE_APP_AUTHORIZATION_URL'].replace('api/', '')
+        
+        method = 'PUT'
+        
+        backupset_id = self._backupset_object._backupset_id
+        instance_id = self._instance_object._instance_id
+        
+        request_payload = {
+            
+            'azureApp': {
+                'azureAppId': azure_app_id,
+                'azureDirectoryId': azure_app_tenant
+            },
+            'cloudRegion': 'DEFAULT',
+            
+            'isPermissionUpdateRequired': False,
+            'isCertDetailsUpdateRequired': True,
+            
+            'appAuthorizationUrl': app_auth_url,
+            
+            'instanceId': int(instance_id),
+            'backupsetId': int(backupset_id),
+            
+            'isOneDriveV2': True,
+            'appType': 134
+            
+        }
+        
+        flag, response = self._cvpysdk_object.make_request(
+            method=method, url=url, payload=request_payload
+        )
+        
+        if flag:
+            if response.json():
+                
+                response = response.json()
+                expected_error_message = "The Azure app has been updated"
+                if (
+                    expected_error_message in response.get('errorMessage', "") and 
+                    response.get('errorCode', 0) == 0 and 
+                    'certThumbprint' in response.get('azureApp', {}).get('certificate', {}).keys()
+                ):
+                    # all expected values exist. Response success
+                    self.refresh()
+                
+                else:
+                    raise SDKException('Response', '101', self._update_response_(response))
+            else:
+                raise SDKException('Response', '101', self._update_response_(response.text))
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))

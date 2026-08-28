@@ -1584,16 +1584,22 @@ class Instances(object):
                     "101",
                     "each node should include server/name, bin_dir and lib_dir"
                 )
-            normalized_nodes.append({
+            normalized_node = {
                 "server": server_name,
                 "bin_dir": bin_dir,
                 "lib_dir": lib_dir
-            })
+            }
+            if cluster_type_value == "patroni":
+                normalized_node["cluster_bin"] = node.get("cluster_bin")
+                normalized_node["cluster_conf"] = node.get("cluster_conf")
+            normalized_nodes.append(normalized_node)
         cluster_client_name = kwargs.get("cluster_client_name", instance_name)
         self._commcell_object.clients.get(cluster_client_name)
         self._commcell_object.plans.get(plan_name)
         db_path = kwargs.get("db_path")
-        archive_dir = "{0}-wal".format(db_path) if db_path else None
+        archive_dir = kwargs.get("archive_log_directory")
+        if not archive_dir and db_path:
+            archive_dir = "{0}-wal".format(db_path)
         credential_entity = {
             "credentialName": credential_name
         }
@@ -1611,6 +1617,17 @@ class Instances(object):
             }
             if archive_dir:
                 postgres_props["ArchiveLogDirectory"] = archive_dir
+            if cluster_type_value == "patroni":
+                cluster_manager_binary_path = (
+                        node.get("cluster_bin") or kwargs.get("cluster_manager_binary_path")
+                )
+                cluster_manager_config_path = (
+                        node.get("cluster_conf") or kwargs.get("cluster_manager_config_path")
+                )
+                if cluster_manager_binary_path:
+                    postgres_props["managerBinDir"] = cluster_manager_binary_path
+                if cluster_manager_config_path:
+                    postgres_props["managerConfig"] = cluster_manager_config_path
             node_entries.append({
                 "clusterPriority": priority,
                 "priority": priority,
