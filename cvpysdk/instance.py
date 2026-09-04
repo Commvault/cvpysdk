@@ -3464,7 +3464,14 @@ class Instances(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def add_azure_redis_instance(self, instance_name, plan_name, credential_name, content_paths):
+    def add_azure_redis_instance(
+            self,
+            instance_name,
+            plan_name,
+            credential_name,
+            content_paths,
+            subscription_id=None,
+            region=None):
         """Add a new Azure Redis Cloud Apps instance to the Commcell.
 
         Creates an Azure Redis instance using the V4 AI API.  The caller provides
@@ -3479,6 +3486,8 @@ class Instances(object):
                                         Credentials. Used for Azure API authentication.
             content_paths (list):       List of Azure resource group name strings to back up,
                                         e.g. ["ymidha-redis"].
+            subscription_id (str):      Azure subscription ID used to discover Redis resources.
+            region (str):               Canonical Azure region name, e.g. "centralindia".
 
         Returns:
             Instance: The newly created Azure Redis instance object.
@@ -3488,6 +3497,15 @@ class Instances(object):
                           creation fails, or the server returns an error.
         """
         from .subclients.cloudapps.azure_redis_subclient import AzureRedisSubclient
+
+        subscription_id = str(subscription_id).strip() if subscription_id is not None else ''
+        region = str(region).strip() if region is not None else ''
+
+        if not subscription_id:
+            raise SDKException('Instance', '102', 'Azure Redis subscription_id is required')
+
+        if not region:
+            raise SDKException('Instance', '102', 'Azure Redis region is required')
 
         if not self._commcell_object.plans.has_plan(plan_name):
             raise SDKException(
@@ -3528,6 +3546,24 @@ class Instances(object):
 
         if content:
             request_json["content"] = content
+
+        request_json["customProperties"] = {
+            "nameValues": [
+                {
+                    "name": "WorkloadInstanceCustomProperties",
+                    "value": json.dumps({"subscriptionId": subscription_id})
+                }
+            ]
+        }
+
+        region_obj = {"name": region}
+        try:
+            if self._commcell_object.regions.has_region(region):
+                region_obj["id"] = int(self._commcell_object.regions.get(region).region_id)
+        except Exception:
+            pass
+
+        request_json["region"] = region_obj
 
         flag, response = self._cvpysdk_object.make_request(
             'POST', self._services['ADD_AZURE_REDIS_INSTANCE'], request_json
