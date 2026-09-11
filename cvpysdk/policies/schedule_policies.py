@@ -227,7 +227,7 @@ class SchedulePolicies:
                     policies_dict = {}
 
                     for policy in policies:
-                        temp_name = policy['task']['taskName'].lower()
+                        temp_name = policy['task']['taskName']
                         temp_id = str(policy['task']['taskId']).lower()
                         policies_dict[temp_name] = temp_id
 
@@ -254,6 +254,16 @@ class SchedulePolicies:
         """
         return self._policies
 
+    def _get_policy(self, policy_name: str) -> tuple:
+        """Returns the stored name and ID for a case-insensitive policy name match."""
+        if self._policies:
+            policy_name = policy_name.lower()
+            for stored_name, policy_id in self._policies.items():
+                if stored_name.lower() == policy_name:
+                    return stored_name, policy_id
+
+        return None, None
+
     def has_policy(self, policy_name: str) -> bool:
         """Checks if a schedule policy exists in the commcell with the input schedule policy name.
 
@@ -270,7 +280,7 @@ class SchedulePolicies:
         if not isinstance(policy_name, str):
             raise SDKException('Storage', '101')
 
-        return self._policies and policy_name.lower() in self._policies
+        return self._get_policy(policy_name)[0] is not None
 
     @staticmethod
     def subtasks_json(policy_type: str) -> dict:
@@ -469,10 +479,9 @@ class SchedulePolicies:
         if schedule_policy_id and not isinstance(schedule_policy_id, int):
             raise SDKException('Schedules', '102')
 
-        schedule_policy_name = schedule_policy_name.lower()
-        schedule_policy_id = self.all_schedule_policies.get(
-            schedule_policy_name)
-        if self.has_policy(schedule_policy_name):
+        requested_policy_name = schedule_policy_name
+        schedule_policy_name, schedule_policy_id = self._get_policy(schedule_policy_name)
+        if schedule_policy_id:
             return SchedulePolicy(
                 self._commcell_object, schedule_policy_name, schedule_policy_id
             )
@@ -480,7 +489,7 @@ class SchedulePolicies:
         raise SDKException(
             'Schedules',
             '102',
-            'No Schedule Policy exists with name: {0}'.format(schedule_policy_name))
+            'No Schedule Policy exists with name: {0}'.format(requested_policy_name))
 
     def delete(self, schedule_policy_name: str) -> None:
         """Deletes the specified schedule policy name.
@@ -500,9 +509,7 @@ class SchedulePolicies:
         if schedule_policy_name and not isinstance(schedule_policy_name, str):
             raise SDKException('Schedules', '102')
 
-        schedule_policy_name = schedule_policy_name.lower()
-        schedule_policy_id = self.all_schedule_policies.get(
-            schedule_policy_name)
+        schedule_policy_name, schedule_policy_id = self._get_policy(schedule_policy_name)
 
         if schedule_policy_id:
             request_json = {

@@ -5093,6 +5093,91 @@ class Clients(object):
 
         self._process_add_response(request_json)
 
+    def add_amazon_s3_client(
+            self,
+            client_name: str,
+            plan_name: str,
+            credential_name: str,
+            host_url: str = 's3.amazonaws.com',
+            access_nodes: Optional[List[str]] = None,
+            use_iam_role: bool = True,
+            is_cloud_encryption_key_set: bool = False
+    ) -> 'Client':
+        """Add an Amazon S3 Object Storage pseudo client using POST /Client."""
+        if self.has_client(client_name):
+            raise SDKException('Client', '102', f'Client "{client_name}" already exists.')
+
+        if access_nodes is None:
+            access_nodes = []
+        if not isinstance(access_nodes, list):
+            raise SDKException('Client', '101')
+
+        if not self._commcell_object.credentials.has_credential(credential_name):
+            raise SDKException('Client', '102', f'Credential "{credential_name}" does not exist.')
+        credential = self._commcell_object.credentials.get(credential_name)
+
+        if not self._commcell_object.plans.has_plan(plan_name):
+            raise SDKException('Client', '102', f'Plan "{plan_name}" does not exist.')
+        plan = self._commcell_object.plans.get(plan_name)
+
+        member_servers = []
+        for node in access_nodes:
+            if not isinstance(node, str) or not node.strip():
+                raise SDKException('Client', '101')
+            node_client = self.get(node.strip())
+            member_servers.append({
+                'client': {
+                    'clientId': int(node_client.client_id),
+                    'clientName': node_client.client_name,
+                    '_type_': 3
+                }
+            })
+
+        request_json = {
+            'clientInfo': {
+                'clientType': 15,
+                'cloudClonnectorProperties': {
+                    'instanceType': 'AMAZON_S3',
+                    'instance': {
+                        'instance': {
+                            'instanceName': client_name,
+                            'applicationId': 134
+                        },
+                        'cloudAppsInstance': {
+                            'instanceTypeDisplayName': 'Amazon S3',
+                            'instanceType': 'AMAZON_S3',
+                            'generalCloudProperties': {
+                                'numberOfBackupStreams': 0,
+                                'memberServers': member_servers,
+                                'credentials': {
+                                    'credentialId': int(credential.credential_id),
+                                    'credentialName': credential_name
+                                }
+                            },
+                            'objectStorageInstance': {
+                                'isCloudEncryptionKeySet': bool(is_cloud_encryption_key_set)
+                            },
+                            's3Instance': {
+                                'hostURL': host_url.strip(),
+                                'useIamRole': bool(use_iam_role)
+                            },
+                            'credentialType': 'AMAZON_S3'
+                        },
+                        'useResourcePoolInfo': False
+                    }
+                },
+                'plan': {
+                    'planId': int(plan.plan_id),
+                    'planName': plan_name
+                }
+            },
+            'entity': {
+                'clientName': client_name
+            }
+        }
+
+        return self._process_add_response(request_json)
+
     def add_s3_compatible_client(
             self,
             client_name: str,

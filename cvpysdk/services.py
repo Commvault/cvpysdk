@@ -107,6 +107,7 @@ SERVICES_DICT_TEMPLATE = {
     'GET_HYPERVISOR': '{0}v4/Hypervisor/%s',
     'GET_ALL_SUBCLIENTS': '{0}Subclient?clientId=%s&applicationId=%s&propertyLevel=20',
     'ADD_SUBCLIENT': '{0}Subclient',
+    'LAPTOP_PROPERTIES': '{0}/Client/%s/Properties',
     'SUBCLIENT': '{0}Subclient/%s',
     'SUBCLIENT_BACKUP': '{0}Subclient/%s/action/backup?backupLevel=%s',
     'VM_BACKUP': '{0}v2/vsa/vm/%s/backup?backupLevel=%s',
@@ -830,6 +831,7 @@ SERVICES_DICT_TEMPLATE = {
 
     'GET_RESOURCES': '{0}Asset/Search',
 
+    'GET_RESOURCE_TCO': '{0}Asset/TCO',
     'VALIDATE_AWS_CONNECTION': '{0}/V4/Cloud/CloudConnection/credentials/validate',
 
     'VALIDATE_CLOUD_CONNECTION_CREDENTIAL': '{0}/V4/Cloud/CloudConnection/credentials/validate',

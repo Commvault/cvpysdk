@@ -106,6 +106,8 @@ ScaleTarget Attributes
 
     **region_specific_info_list** --  returns the list of region-specific information (applicable for both Azure and AWS targets)
 
+    **auto_detect_resources_tags** --  returns the auto-detected resource tags
+
 """
 from enum import Enum
 import copy
@@ -770,6 +772,7 @@ class ScaleTarget(object):
         self._use_public_ips = None
         self._auth_type = None
         self._compute_tags = None
+        self._auto_detect_resources_tags = None
         self._azure_target_details = None
         self._amazon_target_details = None
         self._access_nodes = None
@@ -814,6 +817,7 @@ class ScaleTarget(object):
                 self._use_public_ips = response_data.get('use_public_ips', False)
                 self._auth_type = response_data.get('authType', 0)
                 self._compute_tags = response_data.get('computeTags', [])
+                self._auto_detect_resources_tags = response_data.get('autoDetectResourcesTags', [])
                 self._azure_target_details = response_data.get('azureTargetDetails', {})
                 self._amazon_target_details = response_data.get('amazonTargetDetails', {})
                 self._access_nodes = response_data.get('accessNodes', [])
@@ -963,6 +967,22 @@ class ScaleTarget(object):
         #ai-gen-doc
         """
         return self._compute_tags
+
+    @property
+    def auto_detect_resources_tags(self) -> list:
+        """Get the auto-detect resources tags for tag-based discovery.
+
+        Returns:
+            A list of tag dictionaries with 'key' and 'value' pairs used for auto-discovery.
+
+        Example:
+            >>> target = ScaleTarget()
+            >>> auto_tags = target.auto_detect_resources_tags
+            >>> print(f"Auto-detect Tags: {auto_tags}")
+
+        #ai-gen-doc
+        """
+        return self._auto_detect_resources_tags
 
     @property
     def azure_target_details(self) -> dict:

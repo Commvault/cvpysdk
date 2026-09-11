@@ -370,6 +370,8 @@ Commcell instance Attributes
 
     **gcp_discovery**            -- Returns the instance of the GCPDiscovery class
 
+    **discovery_overview**                -- Returns the instance of overview class of cloud discovery
+
 """
 
 from __future__ import absolute_import
@@ -394,6 +396,7 @@ from requests.exceptions import ConnectionError as RequestsConnectionError
 from .activate import Activate
 from .activateapps.compliance_utils import ExportSets
 from .clouddiscovery.cloud_discovery import AzureDiscovery, AWSDiscovery, GCPDiscovery
+from .clouddiscovery.overview import CloudDiscoveryOverview
 from .constants import UserRole
 from .activateapps.tco import CostAssessment
 from .services import get_services
@@ -773,6 +776,7 @@ class Commcell(object):
         self._azure_discovery = None
         self._aws_discovery = None
         self._gcp_discovery = None
+        self._discovery_overview = None
         self._commserv_details_loaded = False
         self._commserv_details_set = False
         self._job_logs_emails = []
@@ -3535,6 +3539,7 @@ class Commcell(object):
         self._azure_discovery = None
         self._aws_discovery = None
         self._gcp_discovery = None
+        self._discovery_overview = None
 
     def get_remote_cache(self, client_name: str) -> 'RemoteCache':
         """Retrieve the RemoteCache instance for a specified client.
@@ -6701,6 +6706,26 @@ class Commcell(object):
                 self._gcp_discovery = GCPDiscovery(self)
 
             return self._gcp_discovery
+        except AttributeError:
+            return USER_LOGGED_OUT_MESSAGE
+
+    @property
+    def discovery_overview(self) -> 'CloudDiscoveryOverview':
+        """Get the CloudDiscoveryOverview instance associated with this Commcell.
+
+        Returns:
+            CloudDiscoveryOverview: An object for discovery overview.
+
+        Example:
+            >>> commcell = Commcell()
+            >>> discovery_overview = commcell.discovery_overview
+            >>> print(f"Cloud discovery overview object: {discovery_overview}")
+        """
+        try:
+            if self._discovery_overview is None:
+                self._discovery_overview = CloudDiscoveryOverview(self)
+
+            return self._discovery_overview
         except AttributeError:
             return USER_LOGGED_OUT_MESSAGE
 

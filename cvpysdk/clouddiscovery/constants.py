@@ -139,6 +139,15 @@ class AssetCVProtectedBY(IntEnum):
     COMMVAULT_PROTECTED = 6
 
 
+# Maps AssetProvider int value to the corresponding ProtectedBy int value
+# used to identify natively-managed assets for that provider.
+PROVIDER_PROTECTED_BY_MAP: dict = {
+    1: AssetCVProtectedBY.AZURE_MANAGED,   # AZURE
+    2: AssetCVProtectedBY.AWS_MANAGED,     # AWS
+    3: AssetCVProtectedBY.GCP_MANAGED,     # GCP
+}
+
+
 class AzureConfigType(IntEnum):
     """Enumeration for different Azure configuration types."""
 
@@ -152,20 +161,38 @@ RESPONSE_FORMAT = "json"
 START = 0
 ROWS = 100
 ITEM_STATE = "ItemState:1"
+PROVIDER = "Provider:1"
 ASSET_SUB_TYPE = ("AssetSubType:0 OR AssetSubType:38 OR AssetSubType:39 OR AssetSubType:40 OR AssetSubType:41 OR"
                   " AssetSubType:42 OR AssetSubType:43 OR AssetSubType:48 OR AssetSubType:49 OR AssetSubType:50")
-FILTER_QUERY = "Provider:1"
 FACET_JSON = {
-    "CredentialName": {
-        "field": "CredentialName",
+    "CloudConnectionName": {
+        "field": "CloudConnectionName",
+        "domain": {"excludeTags": ["tag_CloudConnectionName"]},
         "mincount": 1,
         "sort": {"count": "desc"},
         "type": "terms",
         "facet": {
             "Provider": {
                 "field": "Provider",
+                "domain": {"excludeTags": ["tag_Provider"]},
                 "mincount": 1,
-                "limit": 50,
+                "sort": {"count": "desc"},
+                "type": "terms"
+            }
+        }
+    },
+    "CredentialName": {
+        "field": "CredentialName",
+        "domain": {"excludeTags": ["tag_CredentialName"]},
+        "mincount": 1,
+        "sort": {"count": "desc"},
+        "type": "terms",
+        "facet": {
+            "Provider": {
+                "field": "Provider",
+                "domain": {"excludeTags": ["tag_Provider"]},
+                "mincount": 1,
+                
                 "sort": {"count": "desc"},
                 "type": "terms"
             }
@@ -173,14 +200,15 @@ FACET_JSON = {
     },
     "WorkloadType": {
         "field": "WorkloadType",
+        "domain": {"excludeTags": ["tag_WorkloadType"]},
         "mincount": 1,
-        "limit": 50,
+        
         "sort": {"count": "desc"},
         "type": "terms",
         "facet": {
             "Total_Size": {
                 "type": "query",
-                "domain": {"excludeTags": ["tag_group_Total"]},
+                "domain": {"excludeTags": ["tag_group_Total", "tag_Total"]},
                 "minCount": 1,
                 "q": "AssetSize:[* TO *]",
                 "facet": {"Sum_Size": "sum(AssetSize)"}
@@ -189,22 +217,23 @@ FACET_JSON = {
     },
     "AssetType": {
         "field": "AssetType",
+        "domain": {"excludeTags": ["tag_AssetType"]},
         "mincount": 1,
-        "limit": 50,
         "sort": {"count": "desc"},
         "type": "terms"
     },
     "ProtectionStatus": {
         "field": "ProtectionStatus",
+        "domain": {"excludeTags": ["tag_ProtectionStatus"]},
         "mincount": 1,
-        "limit": 50,
+        
         "sort": {"count": "desc"},
         "type": "terms",
         "facet": {
             "ProtectedBy": {
                 "field": "ProtectedBy",
+                "domain": {"excludeTags": ["tag_ProtectedBy"]},
                 "mincount": 1,
-                "limit": 50,
                 "sort": {"count": "desc"},
                 "type": "terms"
             }
@@ -212,59 +241,136 @@ FACET_JSON = {
     },
     "AssetRegion": {
         "field": "AssetRegion",
+        "domain": {"excludeTags": ["tag_AssetRegion"]},
         "mincount": 1,
         "sort": {"count": "desc"},
         "type": "terms"
     },
     "SubscriptionName": {
         "field": "SubscriptionName",
+        "domain": {"excludeTags": ["tag_SubscriptionName"]},
         "mincount": 1,
         "sort": {"count": "desc"},
         "type": "terms"
     },
     "AssetGroup": {
         "field": "AssetGroup",
+        "domain": {"excludeTags": ["tag_AssetGroup"]},
         "mincount": 1,
         "sort": {"count": "desc"},
         "type": "terms"
     },
     "EntityTags": {
         "field": "EntityTags",
+        "domain": {"excludeTags": ["tag_EntityTags"]},
         "mincount": 1,
         "sort": {"count": "desc"},
         "type": "terms"
     },
     "Total_Size": {
         "type": "query",
-        "domain": {"excludeTags": ["tag_group_Total"]},
+        "domain": {"excludeTags": ["tag_group_Total", "tag_Total"]},
         "minCount": 1,
         "q": "AssetSize:[* TO *]",
         "facet": {"Sum_Size": "sum(AssetSize)"}
     },
     "ProtectionStatusSize_Protected": {
         "type": "query",
-        "domain": {"excludeTags": ["tag_group_ProtectionStatusSize"]},
+        "domain": {"excludeTags": ["tag_group_ProtectionStatusSize", "tag_ProtectionStatusSize"]},
         "minCount": 1,
         "q": "ProtectionStatus:4 AND ProtectedBy:6",
         "facet": {"Sum_Size": "sum(AssetSize)"}
     },
+    "ProtectionStatusSize_Configured": {
+        "type": "query",
+        "domain": {"excludeTags": ["tag_group_ProtectionStatusSize", "tag_ProtectionStatusSize"]},
+        "minCount": 1,
+        "q": "ProtectionStatus:6 AND ProtectedBy:6",
+        "facet": {"Sum_Size": "sum(AssetSize)"}
+    },
     "ProtectionStatusSize_Managed": {
         "type": "query",
-        "domain": {"excludeTags": ["tag_group_ProtectionStatusSize"]},
+        "domain": {"excludeTags": ["tag_group_ProtectionStatusSize", "tag_ProtectionStatusSize"]},
         "minCount": 1,
-        "q": "ProtectionStatus:4 AND !ProtectedBy:6",
+        "q": "(ProtectionStatus:6 OR ProtectionStatus:4) AND ProtectedBy:1",
         "facet": {"Sum_Size": "sum(AssetSize)"}
     },
     "ProtectionStatusSize_NotProtected": {
         "type": "query",
-        "domain": {"excludeTags": ["tag_group_ProtectionStatusSize"]},
+        "domain": {"excludeTags": ["tag_group_ProtectionStatusSize", "tag_ProtectionStatusSize"]},
         "minCount": 1,
         "q": "(ProtectionStatus:2 OR ProtectionStatus:5 OR ProtectionStatus:1)",
         "facet": {"Sum_Size": "sum(AssetSize)"}
-    }
+    },
+    "KubernetesWorkload": {
+        "type": "query",
+        "q": "(AssetType:3 OR AssetType:29)",
+        "facet": {"Total_Size": "sum(AssetSize)"}
+    },
+    "VMWorkloadWithoutKubernetes": {
+        "type": "query",
+        "q": "(WorkloadType:1 AND -(AssetType:3 OR AssetType:29))",
+        "facet": {"Total_Size": "sum(AssetSize)"}
+    },
 }
 
 # Payloads
+
+# ASSET_SEARCH_PAYLOAD — template payload for POST Asset/Search that returns
+# the overview facets (counts and byte sums) without fetching individual docs.
+ASSET_SEARCH_PAYLOAD: dict = {
+    "searchParams": [
+        {"key": "q",     "value": QUERY},
+        {"key": "wt",    "value": RESPONSE_FORMAT},
+        {"key": "start", "value": str(START)},
+        {"key": "rows",  "value": "0"},
+        {"key": "fq",    "value": ITEM_STATE},
+        {"key": "fq",    "value": ASSET_SUB_TYPE},
+    ]
+}
+
+# ---------------------------------------------------------------------------
+# API response key constants (wire format)
+# ---------------------------------------------------------------------------
+NATIVE_TOTAL: str = "native_total"
+"""Key for the estimated native-cloud (Azure/AWS) monthly backup cost."""
+CV_TOTAL: str = "cv_total"
+"""Key for the estimated Commvault monthly backup cost."""
+SAVINGS_AMOUNT: str = "savings_amount"
+"""Key for the absolute monthly saving (native_total - cv_total)."""
+SAVINGS_PERCENT: str = "savings_percent"
+"""Key for the relative monthly saving as a percentage."""
+
+# ---------------------------------------------------------------------------
+# Facet key constants (matching FACET_JSON keys)
+# ---------------------------------------------------------------------------
+TOTAL_SIZE: str = "Total_Size"
+PROTECTION_STATUS_SIZE_PROTECTED: str = "ProtectionStatusSize_Protected"
+PROTECTION_STATUS_SIZE_MANAGED: str = "ProtectionStatusSize_Managed"
+PROTECTION_STATUS_SIZE_NOT_PROTECTED: str = "ProtectionStatusSize_NotProtected"
+PROTECTION_STATUS_SIZE_CONFIGURED: str = "ProtectionStatusSize_Configured"
+PROTECTION_STATUS_COUNT_MAP: str = "_protection_status_count"
+WORKLOAD_TYPE_MAP: str = "WorkloadType"
+KUBERNETES_WORKLOAD: str = "KubernetesWorkload"
+VM_WORKLOAD_WITHOUT_KUBERNETES: str = "VMWorkloadWithoutKubernetes"
+
+# ---------------------------------------------------------------------------
+# TCO API request payload template
+# ---------------------------------------------------------------------------
+ASSET_TCO_PAYLOAD: dict = {
+    "provider": "AZURE",
+    "discoveredSizes": [],
+    "retentions": [
+        {"scope": "PRIMARY", "days": 30},
+    ],
+    "annualGrowthRate": 10,
+    "dailyChangeRates": [
+        {"workloadType": "COMPUTE",    "rate": "MEDIUM"},
+        {"workloadType": "DATABASE",   "rate": "MEDIUM"},
+        {"workloadType": "STORAGE",    "rate": "MEDIUM"},
+        {"workloadType": "KUBERNETES", "rate": "MEDIUM"},
+    ],
+}
 
 AWS_EXPRESS_CONNECTION_PAYLOAD = {
     "cloudType": "aws",

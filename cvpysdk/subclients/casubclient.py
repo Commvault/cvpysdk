@@ -155,7 +155,7 @@ class CloudAppsSubclient(Subclient):
         Raises:
             SDKException: If the restore operation fails or parameters are invalid.
         """
-        return self._backupset_object._instance_object.restore_in_place(
+        return self._backupset_object._instance_object._restore_in_place(
             paths=paths,
             overwrite=overwrite,
             copy_precedence=copy_precedence,
