@@ -33,6 +33,9 @@ Classes:
             asset_type              - Get the specific asset type (EC2, S3, EKS, DocumentDB, etc.).
             region                  - Get the cloud region.
             resource_group          - Get the resource group.
+            subscription_name       - Get the subscription name (Azure).
+            account_name            - Get the account name (AWS).
+            account_id              - Get the account ID (AWS).
             size                    - Get the resource size specification.
             protection_status       - Get the Commvault protection status.
             protection_plan         - Get the protection plan name.
@@ -94,6 +97,9 @@ class DiscoveredResource:
         last_backup: Optional[datetime] = None,
         recovery_points: Optional[int] = None,
         protected_by: Optional[AssetCVProtectedBY] = None,
+        subscription_name: Optional[str] = None,
+        account_name: Optional[str] = None,
+        account_id: Optional[str] = None,
     ) -> None:
         """Initialize a DiscoveredResource instance.
         
@@ -113,6 +119,10 @@ class DiscoveredResource:
             tags: Resource tags as key-value pairs
             last_backup: Timestamp of last backup
             recovery_points: Number of available recovery points
+            protected_by: Entity that protects the resource
+            subscription_name: Subscription name the resource belongs to (Azure)
+            account_name: Account name the resource belongs to (AWS)
+            account_id: Account ID the resource belongs to (AWS)
 
         Returns:
             None
@@ -144,6 +154,9 @@ class DiscoveredResource:
         self._last_backup = last_backup
         self._recovery_points = recovery_points
         self._protected_by = protected_by
+        self._subscription_name = subscription_name
+        self._account_name = account_name
+        self._account_id = account_id
 
 
     @property
@@ -199,6 +212,33 @@ class DiscoveredResource:
             The resource group name or None
         """
         return self._resource_group
+
+    @property
+    def subscription_name(self) -> Optional[str]:
+        """Get the subscription name (Azure).
+
+        Returns:
+            The subscription name or None
+        """
+        return self._subscription_name
+
+    @property
+    def account_name(self) -> Optional[str]:
+        """Get the account name (AWS).
+
+        Returns:
+            The account name or None
+        """
+        return self._account_name
+
+    @property
+    def account_id(self) -> Optional[str]:
+        """Get the account ID (AWS).
+
+        Returns:
+            The account ID or None
+        """
+        return self._account_id
 
     @property
     def size(self) -> Optional[str]:
@@ -373,7 +413,8 @@ class DiscoveredResources:
         asset_provider: Optional[AssetProvider] = None,
         workload_type: Optional[WorkloadType] = None,
         asset_type: Optional[AssetType] = None,
-        protection_status: Optional[AssetCVProtectionStatus] = None
+        protection_status: Optional[AssetCVProtectionStatus] = None,
+        tags: Optional[Dict[str, str]] = None
     ) -> List[DiscoveredResource]:
         """Get discovered resources with optional filtering.
 
@@ -382,18 +423,16 @@ class DiscoveredResources:
             workload_type: Filter by workload type (optional)
             asset_type: Filter by asset type (optional)
             protection_status: Filter by protection status (optional)
+            tags: Filter by tag key/value pairs (optional), e.g. {"Project": "discoverautomationresource"}
 
         Returns:
             List of DiscoveredResource objects matching the filters
 
-        Raises:
-            NotImplementedError: This method is not yet implemented
-
         Example:
             >>> obj = DiscoveredResources()
             >>> resources = obj.filter_resources(asset_provider=AssetProvider.AWS)
+            >>> project_resources = obj.filter_resources(tags={"Project": "discoverautomationresource"})
             >>> protected_resources = obj.filter_resources(protection_status=AssetCVProtectionStatus.PROTECTED)
-            >>> specific_resources = obj.filter_resources(workload_type=WorkloadType.DATABASE, asset_type=AssetType.RDS)
         """
         if not self._is_loaded:
             self.refresh()
@@ -408,6 +447,17 @@ class DiscoveredResources:
                 continue
             if protection_status is not None and resource.protection_status != protection_status:
                 continue
+            if tags:
+                resource_tags = {str(key).lower(): str(value).lower() for key, value in resource.tags.items()}
+                tag_match = True
+                for tag_key, tag_value in tags.items():
+                    key_lookup = str(tag_key).lower()
+                    value_lookup = str(tag_value).lower()
+                    if resource_tags.get(key_lookup) != value_lookup:
+                        tag_match = False
+                        break
+                if not tag_match:
+                    continue
             filtered_resources.append(resource)
 
         return filtered_resources
@@ -448,6 +498,31 @@ class DiscoveredResources:
             NotImplementedError: This method is not yet implemented
         """
         raise NotImplementedError("assign_plan method is not yet implemented")
+
+    @staticmethod
+    def _extract_tags(resource: dict) -> Dict[str, str]:
+        """Extract Tag_ prefixed fields from a resource doc into a key-value dict.
+
+        Args:
+            resource: Raw resource document from Solr response.
+
+        Returns:
+            Dict of tag key-value pairs, e.g. {"QuickSetupDefinitionID": "ojda1"}.
+
+        Example:
+            >>> resource = {"AssetName": "vm-001", "Tag_Environment": ["Production"], "Tag_Owner": "team-a"}
+            >>> DiscoveredResources._extract_tags(resource)
+            {'Environment': 'Production', 'Owner': 'team-a'}
+        """
+        tags = {}
+        for key, value in resource.items():
+            if key.startswith('Tag_'):
+                tag_name = key[4:]  # strip 'Tag_' prefix
+                if isinstance(value, list):
+                    value = value[0] if value else None
+                if value is not None:
+                    tags[tag_name] = value
+        return tags
 
     def _get_resources(self) -> List[DiscoveredResource]:
         """Internal method to load resources from the backend.
@@ -505,12 +580,15 @@ class DiscoveredResources:
                                 connection_type=resource.get('ConnectionType'),
                                 last_discovered_time=datetime.fromisoformat(
                                     resource.get('LastSyncedAt')) if resource.get('LastSyncedAt') else None,
-                                tags=resource.get('EntityTags', {}),
+                                tags=self._extract_tags(resource),
                                 last_backup=datetime.fromisoformat(resource.get('LastBackup')) if resource.get(
                                     'LastBackup') else None,
                                 recovery_points=resource.get('RecoveryPoints'),
                                 protected_by=AssetCVProtectedBY(resource.get('ProtectedBy')[0]) if resource.get(
-                                    'ProtectionStatus') == 4 and resource.get('ProtectedBy') else None
+                                    'ProtectionStatus') == 4 and resource.get('ProtectedBy') else None,
+                                subscription_name=resource.get('SubscriptionName'),
+                                account_name=resource.get('AccountName'),
+                                account_id=resource.get('AccountID')
                             )
                             for resource in resources_data
                         ])

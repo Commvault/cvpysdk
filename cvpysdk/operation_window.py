@@ -297,6 +297,7 @@ class OperationWindow:
             start_time: Optional[Union[int, List[int]]] = None,
             end_time: Optional[Union[int, List[int]]] = None,
             week_of_the_month: Optional[List[str]] = None,
+            rule_enabled: bool = True,
             do_not_submit_job: bool = False
         ):
         """Create an operation window rule for the initialized Commcell entity.
@@ -323,6 +324,7 @@ class OperationWindow:
                 Defaults to 64800 (6 PM).
             week_of_the_month: List of weeks of the month to apply the rule. Acceptable values: 'all', 'first', 'second', 'third', 'fourth', 'last'.
                 Defaults to None (applies to all weeks).
+            rule_enabled: If True (default), the operation window rule is enabled. Set to False to create a disabled rule.
             do_not_submit_job: If True, jobs will not be submitted during the operation window.
 
         Returns:
@@ -421,7 +423,7 @@ class OperationWindow:
 
         payload = {
             "operationWindow": {
-                "ruleEnabled": True,
+                "ruleEnabled": rule_enabled,
                 "doNotSubmitJob": do_not_submit_job,
                 "startDate": start_date,
                 "endDate": end_date,
@@ -690,6 +692,7 @@ class OperationWindowDetails:
         self._subclient_id = entity_details["subclientId"]
         self._entity_level = entity_details["entity_level"]
 
+        self._rule_enabled = True
         self._refresh()
 
     def modify_operation_window(self, **modify_options: Any) -> None:
@@ -752,6 +755,7 @@ class OperationWindowDetails:
         operations = modify_options.get("operations", self.operations)
         week_of_the_month = modify_options.get("week_of_the_month", self.week_of_the_month)
         day_of_week = modify_options.get("day_of_week", self.day_of_week)
+        rule_enabled = modify_options.get("rule_enabled", self.rule_enabled)
         do_not_submit_job = modify_options.get("do_not_submit_job", self.do_not_submit_job)
 
         if not operations:
@@ -794,7 +798,7 @@ class OperationWindowDetails:
             raise SDKException('OperationWindow', '102', response_string)
         payload = {
             "operationWindow": {
-                "ruleEnabled": True,
+                "ruleEnabled": rule_enabled,
                 "doNotSubmitJob": do_not_submit_job,
                 "startDate": start_date,
                 "endDate": end_date,
@@ -869,6 +873,7 @@ class OperationWindowDetails:
             error_code = response_json.get("error", {}).get('errorCode')
             if int(error_code) == 0:
                 response_json = response_json.get('operationWindow', {})[0]
+                self._rule_enabled = response_json.get('ruleEnabled', False)
                 self._do_not_submit_job = response_json.get('doNotSubmitJob')
                 self._name = response_json.get('name')
                 self._start_date = response_json.get('startDate')
@@ -902,6 +907,37 @@ class OperationWindowDetails:
                                    response_json.get("error", {}).get('errorMessage'))
         else:
             raise SDKException('Response', '102')
+
+    @property
+    def rule_enabled(self) -> bool:
+        """Indicate whether the operation window rule is enabled.
+
+        Returns:
+            True if the rule is enabled, False otherwise.
+
+        Example:
+            >>> op_window = OperationWindowDetails(...)
+            >>> if op_window.rule_enabled:
+            ...     print("Rule is active")
+
+        #ai-gen-doc
+        """
+        return self._rule_enabled
+
+    @rule_enabled.setter
+    def rule_enabled(self, rule_enabled: bool) -> None:
+        """Enable or disable the operation window rule.
+
+        Args:
+            rule_enabled: Boolean value to enable (True) or disable (False) the rule.
+
+        Example:
+            >>> op_window = OperationWindowDetails(...)
+            >>> op_window.rule_enabled = False  # Disable the rule
+
+        #ai-gen-doc
+        """
+        self.modify_operation_window(rule_enabled=rule_enabled)
 
     @property
     def do_not_submit_job(self) -> bool:

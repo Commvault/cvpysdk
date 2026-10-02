@@ -2180,7 +2180,8 @@ class StoragePool(object):
 
         self.refresh()
     
-    def add_media_agent(self, media_agent, storage = True, ddb = False) -> None:
+    def add_media_agent(self, media_agent, storage = True, ddb = False, shared_backup_locations=None,
+                        access_type = 'READ_WRITE') -> None:
         """Add a media agent to the storage pool.
 
         This method associates a media agent with the storage pool, allowing it to be used for storage operations.
@@ -2190,7 +2191,12 @@ class StoragePool(object):
             media_agent: The name or MediaAgent object of the media agent to be added.
             storage: Set to True to add as a storage media agent. Default is True.
             ddb: Set to True to add as a DDB media agent. Default is False.
-        
+            shared_backup_locations: List of shared backup location dicts to associate with the media agent
+                (i.e. the "sharedBackupLocations" array itself, not the full request body). Each entry needs
+                mountPathId, sharedPath ({sharedMountPath, osType}) and savedCredentials ({id, name}). Default is None.
+            access_type: Access type to request for the new storage media agent controller(s), e.g. 'READ_WRITE'.
+                Only used when storage is True. Default is 'READ_WRITE'.
+
         Raises:
             SDKException: If the media agent is already associated with the storage pool in the specified role(s).
         
@@ -2217,6 +2223,7 @@ class StoragePool(object):
         action = ManageMediaAgentActionType.ADD_STORAGE.value if storage and not ddb else \
                  ManageMediaAgentActionType.ADD_DDB.value if ddb and not storage else \
                  ManageMediaAgentActionType.ADD_DDB_STORAGE.value
+                
         self._manage_media_agents_for_pool_api = self._commcell_object._services['MANAGE_MEDIA_AGENTS_FOR_POOL'] % (self.storage_pool_id)
 
         request_json = {
@@ -2225,6 +2232,11 @@ class StoragePool(object):
             },
             "action": action
         }
+
+        if storage:
+            request_json["accessType"] = access_type
+            if shared_backup_locations:
+                request_json["sharedBackupLocations"] = shared_backup_locations
         flag, response = self._commcell_object._cvpysdk_object.make_request(
             'PUT', self._manage_media_agents_for_pool_api, request_json)
         if flag:

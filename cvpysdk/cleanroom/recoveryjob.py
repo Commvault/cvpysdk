@@ -199,7 +199,9 @@ class RecoveryJob(Job):
                                      .get('errorMessage', ''),
                     'job_id': str(phase.get('phaseInfo', {}).get('job', [{}])[0].get('jobid', '')),
                 })
-            job_stats[str(pair_stats.get('client', {}).get('clientName', ''))] = phases
+            # Multiple pair-stats can share the same clientName; merge instead of overwrite
+            client_name = str(pair_stats.get('client', {}).get('clientName', ''))
+            job_stats.setdefault(client_name, []).extend(phases)
         return job_stats
 
     def get_restore_vm_from_recovery_job(self, entity: str, max_retries: int = 30, check_frequency: int = 10) -> int:
@@ -323,3 +325,57 @@ class RecoveryJob(Job):
         raise Exception(
             f"Failed to locate CREATE_ACCESS_NODE phase in job {self.job_id} after {max_retries} retries"
         )
+    def get_phase_jobid(self, phase_name: str, max_retries: int = 30, check_frequency: int = 10) -> int:
+        """Wait until the specified phase has started and return its job ID.
+
+        Args:
+            phase_name: The name of the phase to wait for.
+            max_retries: The maximum number of polling attempts. Default is 30.
+            check_frequency: The interval in seconds between each polling attempt. Default is 10.
+
+        Returns:
+            The job ID (int) of the specified phase.
+
+        Raises:
+            Exception: If the specified phase is not found after the specified number of retries.
+        """
+        for _ in range(max_retries):
+            self._initialize_job_properties()
+            all_phases = self.get_phases()
+            for entity, phases in all_phases.items():
+                if not entity:
+                    continue
+                for phase in phases:
+                    if phase.get('phase_name') and phase.get('phase_name').name == phase_name:
+                        job_id = phase.get('job_id')
+                        if job_id:
+                            return int(job_id)
+            time.sleep(check_frequency)
+
+        raise Exception(
+            f"Failed to locate {phase_name} phase in job {self.job_id} after {max_retries} retries"
+        )
+
+
+    def get_apprecovery_gateway_job(self, max_retries: int = 30, check_frequency: int = 10) -> int:
+        """Wait until the Deploy AppRecovery Gateway phase has started and return its job ID.
+
+        Args:
+            max_retries: The maximum number of polling attempts. Default is 30.
+            check_frequency: The interval in seconds between each polling attempt. Default is 10.
+
+        Returns:
+            The job ID (int) of the Deploy AppRecovery Gateway job.
+
+        Raises:
+            Exception: If the DEPLOY_APPRECOVERY_GATEWAY phase is not found after the specified number of retries.
+
+        Example:
+            >>> recovery_job = RecoveryJob(commcell, 2829114)
+            >>> apprecovery_gateway_job_id = recovery_job.get_apprecovery_gateway_job()
+            >>> print(f"Deploy AppRecovery Gateway job ID: {apprecovery_gateway_job_id}")
+
+        #ai-gen-doc
+        """
+        valid_phase_name = "DEPLOY_APPRECOVERY_GATEWAY"
+        return self.get_phase_jobid(valid_phase_name, max_retries=max_retries, check_frequency=check_frequency)

@@ -76,6 +76,9 @@ Schedules:
 
     refresh()                       --  refresh the schedules associated with the commcell entity
 
+    get_schedules_by_operation_type(operation_type)
+                                    --  gets schedules filtered by operation type
+
 
 Schedule: Class for performing operations for a specific Schedule.
 
@@ -1295,6 +1298,7 @@ class Schedules:
                     if 'subTasks' in schedule:
                         for subtask in schedule['subTasks']:
                             schedule_id = subtask['subTask']['subTaskId']
+                            operation_type = subtask['subTask'].get('operationType', '')
                             if 'description' in subtask['subTask']:
                                 description = subtask['pattern']['description'].lower(
                                 )
@@ -1310,6 +1314,7 @@ class Schedules:
                                 'task_id': task_id,
                                 'schedule_name': subtask_name,
                                 'description': description,
+                                'operation_type': operation_type,
                                 'task_flags': task_flags
                             }
 
@@ -1529,6 +1534,69 @@ class Schedules:
             schedules.refresh()
         """
         self.schedules = self._get_schedules()
+
+    def get_schedules_by_operation_type(self, operation_type) -> dict:
+        """Get schedules filtered by operation type.
+
+        Args:
+            operation_type: Operation type value accepted by the CommandCenter
+                ``operationType`` query parameter.
+
+        Returns:
+            dict: Schedules returned by the operation-type-filtered endpoint,
+                keyed by subtask ID.
+
+        Raises:
+            SDKException: If operation_type is not provided or the request fails.
+
+        Usage:
+            filtered_schedules = schedules.get_schedules_by_operation_type(2)
+        """
+        if operation_type is None or operation_type == '':
+            raise SDKException('Schedules', '102', 'Operation type is required')
+
+        endpoint = self._commcell_object._services['OPTYPE_SCHEDULES'] % operation_type
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'GET', endpoint)
+
+        if flag:
+            if response.json() and 'taskDetail' in response.json():
+                subtask_dict = {}
+                for schedule in response.json()['taskDetail']:
+                    task_id = schedule['task']['taskId']
+                    description = ''
+                    task_flags = schedule['task'].get('taskFlags', 0)
+                    if 'subTasks' in schedule:
+                        for subtask in schedule['subTasks']:
+                            schedule_id = subtask['subTask']['subTaskId']
+                            operation_type = subtask['subTask'].get('operationType', '')
+                            if isinstance(operation_type, str):
+                                operation_type = operation_type.lower()
+                            if 'description' in subtask['subTask']:
+                                description = subtask['pattern']['description'].lower(
+                                )
+                            if 'subTaskName' in subtask['subTask']:
+                                subtask_name = subtask['subTask']['subTaskName'].lower(
+                                )
+                            elif description:
+                                subtask_name = description
+                            else:
+                                subtask_name = str(schedule_id)
+                            subtask_dict[schedule_id] = {
+                                'task_id': task_id,
+                                'schedule_name': subtask_name,
+                                'description': description,
+                                'operation_type': operation_type,
+                                'task_flags': task_flags
+                            }
+
+                return subtask_dict
+            else:
+                return {}
+        else:
+            response_string = self._commcell_object._update_response_(
+                response.text)
+            raise SDKException('Response', '101', response_string)
 
 class Schedule:
     """Class for performing operations for a specific Schedule.

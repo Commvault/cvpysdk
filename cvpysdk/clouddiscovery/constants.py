@@ -163,7 +163,9 @@ ROWS = 100
 ITEM_STATE = "ItemState:1"
 PROVIDER = "Provider:1"
 ASSET_SUB_TYPE = ("AssetSubType:0 OR AssetSubType:38 OR AssetSubType:39 OR AssetSubType:40 OR AssetSubType:41 OR"
-                  " AssetSubType:42 OR AssetSubType:43 OR AssetSubType:48 OR AssetSubType:49 OR AssetSubType:50")
+                  " AssetSubType:42 OR AssetSubType:43 OR AssetSubType:48 OR AssetSubType:50 OR AssetSubType:60 OR "
+                  "AssetSubType:61 OR AssetSubType:62 OR AssetSubType:63 OR AssetSubType:64 OR AssetSubType:65 OR "
+                  "AssetSubType:66 OR AssetSubType:67 OR AssetSubType:68 OR AssetSubType:69 OR AssetSubType:70")
 FACET_JSON = {
     "CloudConnectionName": {
         "field": "CloudConnectionName",

@@ -49,6 +49,8 @@ MediaAgents:
     delete(media_agent)     --  Deletes the media agent from the commcell.
 
     refresh()                   --  refresh the media agents associated with the commcell
+    
+    add_media_agent_auto_provision()    --  Add a new MediaAgent to the Commcell using auto-provisioning
 
 
 MediaAgent:
@@ -321,6 +323,86 @@ class MediaAgents(object):
         #ai-gen-doc
         """
         return "MediaAgents class instance for Commcell"
+
+    def add_media_agent_auto_provision(
+        self,
+        scale_profile_name: str,
+        region_name: str,
+        media_agent_group_name: str,
+        auth_code: str,
+        os_type: int ,
+        infrastructure_size: int = 0
+    ) -> 'MediaAgent':
+        """Add a new MediaAgent to the Commcell using auto-provisioning.
+
+        Args:
+            scale_profile_name: The name of the scale profile.
+            region_name: The name of the region.
+            media_agent_group_name: The name of the media agent group.
+            auth_code: The authorization code required for provisioning.
+            os_type: The operating system type (Windows: 0, Linux: 1).
+            infrastructure_size: Optional; The size of the infrastructure (0: Small, 1: Medium, 2: Large). Defaults to 0.
+            
+        Returns:
+            MediaAgent: The newly added MediaAgent object.
+
+        Raises:
+            Exception: If API call fails or MediaAgent addition is unsuccessful.
+
+        Example:
+            result = self.add_media_agent_auto_provision(
+                scale_profile_name="ScaleAzure",
+                region_name="eastus2",
+                media_agent_group_name="ScaleProfileClient",
+                auth_code="AAAAA12345",
+                os_type=0
+            )
+        """
+        payload = {
+            "scaleProfile": {"name": scale_profile_name},
+            "region": {"name": region_name},
+            "mediaAgentGroup": {"name": media_agent_group_name},
+            "authCode": auth_code,
+            "osType": os_type,
+            "infrastructureSize": infrastructure_size
+        }
+
+        api_service = self._commcell_object._services['InfrastructureProvisioning']
+
+        # Make the API request
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', api_service, payload
+        )
+
+        if flag:
+            if isinstance(response.json(), dict):
+                response_dict = response.json()
+                
+                # Check for error in response
+                if response_dict.get('error', {}).get('errorCode') != 0:
+                    error_msg = response_dict.get('error', {}).get('errorMessage', 'Unknown error')
+                    raise SDKException(
+                        'Storage', '102',
+                        'Failed to add MediaAgent: {0}'.format(error_msg)
+                    )
+
+                self.refresh()
+                
+                # Extract media agent name from response
+                ma_name = response_dict.get('provisionedClient', {}).get('name')
+                if not ma_name:
+                    raise SDKException(
+                        'Storage', '102',
+                        'Failed to extract MediaAgent name from response'
+                    )
+
+                return self.get(ma_name)
+            
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
 
     def _get_media_agents(self) -> dict:
         """Retrieve all media agents associated with the Commcell.

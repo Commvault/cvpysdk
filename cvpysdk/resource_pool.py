@@ -37,7 +37,10 @@ ResourcePools:
 
         get_resource_pools_by_region()      --  returns resource pools filtered by region name
 
-        get_cleanroom_resource_pools()      --  returns all Cleanroom resource pools
+        get_cleanroom_resource_pools()      --  returns all resource pools whose resourcePoolSubType bitmask includes Cleanroom
+
+        get_resource_pools_by_operation_type() --  returns resource pools filtered by the
+                                                     resourcePoolSubType bitmask (operation type)
 
         refresh()                           --  Refreshes resource pools associated with cs
 
@@ -54,13 +57,21 @@ ResourcePool:
 ResourcePool Attributes:
 ----------------------------------
 
-    **resource_pool_id**        --  returns Resource pool id
+    **resource_pool_id**            --  returns Resource pool id
 
-    **resource_pool_type**      --  returns ResourcePoolTypes enum
+    **resource_pool_type**          --  returns ResourcePoolTypes enum
 
-    **resource_pool_solution**  --  returns list of solutions associated with the resource pool
+    **resource_pool_solution_type** --  returns the solution type configured for the resource pool
 
-    **resource_pool_region**    --  returns region name for the resource pool
+    **resource_pool_regions**       --  returns list of region names associated with the resource pool
+
+    **resource_pool_access_nodes**  --  returns all access nodes (clients and client groups) for the resource pool
+
+    **resource_pool_client_groups** --  returns client-group access nodes for the resource pool
+
+    **resource_pool_clients**       --  returns client access nodes for the resource pool
+
+
 
 """
 
@@ -118,21 +129,23 @@ class ResourcePoolTypes(enum.Enum):
     GOOGLE_CLOUD_PLATFORM = 50001
 
 
-class ResourcePoolSolutions(enum.Enum):
+class ResourcePoolSubType(enum.IntFlag):
     """
-    Enumeration class representing different solutions associated with resource pools.
+    Enumeration class representing the resource pool "operation type" bitmask.
 
-    This enum is used to define and categorize various solutions that resource pools may be associated with,
-    providing a clear and type-safe way to reference specific solution categories throughout the codebase.
-
-    Key Features:
-        - Defines distinct solution categories as enumeration members
-        - Ensures type safety and clarity when working with resource pool solutions
-        - Facilitates consistent usage of solution identifiers in relation to resource pools
+    The ``resourcePoolSubType`` field returned by the ``/V4/ResourcePool`` API is a
+    bitmask, so a resource pool can be associated with more than one operation type
+    at once (e.g. ``9`` == ``BACKUP | CLEANROOM``). Use bitwise ``&`` to test for a
+    specific operation type rather than strict equality.
 
     #ai-gen-doc
     """
-    CLEANROOM = 25
+    ALL = 0
+    BACKUP = 1
+    RESTORE = 2
+    THREATSCAN = 4
+    CLEANROOM = 8
+    AUTORECOVERY = 16
 
 
 class ResourcePools:
@@ -431,25 +444,42 @@ class ResourcePools:
                 resource_pools[pool_name] = pool_details
         return resource_pools
 
-    def get_cleanroom_resource_pools(self) -> dict:
-        """Return all resource pools configured for the Cleanroom solution.
+    def get_resource_pools_by_operation_type(self, operation_type: 'ResourcePoolSubType | int') -> dict:
+        """Return resource pools whose ``resourcePoolSubType`` bitmask has the given operation type bit set.
 
-        This is a convenience wrapper over :meth:`get_resource_pools_by_solution`
-        that filters pools where the ``solutions`` list contains the Cleanroom
-        solution ID (``ResourcePoolSolutions.CLEANROOM.value``).
+        Args:
+            operation_type (ResourcePoolSubType or int): Operation type/bit to filter by,
+                e.g. ``ResourcePoolSubType.CLEANROOM`` or ``8``. Pass ``ResourcePoolSubType.ALL``
+                or ``0`` to return only pools with no operation subtype set.
 
         Returns:
-            dict: Mapping of resource pool name to its details dictionary for all Cleanroom pools.
-                  Returns an empty dict if no Cleanroom resource pools are found.
-
-        Example:
-            >>> cleanroom_pools = resource_pools.get_cleanroom_resource_pools()
-            >>> for name, details in cleanroom_pools.items():
-            ...     print(name)
+            dict: Mapping of resource pool name to its details dictionary for all matching pools.
+                  Empty dict if no pools match.
 
         #ai-gen-doc
         """
-        return self.get_resource_pools_by_solution(ResourcePoolSolutions.CLEANROOM.value)
+        operation_value = int(operation_type.value) if isinstance(operation_type, ResourcePoolSubType) else int(
+            operation_type)
+        resource_pools = {}
+        for pool_name, pool_details in self._pools.items():
+            pool_subtype = int(pool_details.get('resourcePoolSubType', 0) or 0)
+            if operation_value == ResourcePoolSubType.ALL.value:
+                if pool_subtype == ResourcePoolSubType.ALL.value:
+                    resource_pools[pool_name] = pool_details
+            elif pool_subtype & operation_value:
+                resource_pools[pool_name] = pool_details
+        return resource_pools
+
+    def get_cleanroom_resource_pools(self) -> dict:
+        """Return all resource pools whose ``resourcePoolSubType`` bitmask includes Cleanroom.
+
+        Returns:
+            dict: Mapping of resource pool name to its details dictionary for all Cleanroom
+                  resource pools. Empty dict if none are found.
+
+        #ai-gen-doc
+        """
+        return self.get_resource_pools_by_operation_type(ResourcePoolSubType.CLEANROOM)
 
     def refresh(self) -> None:
         """Reload the resource pools associated with the CommServe (CS).
@@ -572,58 +602,67 @@ class ResourcePool:
         return ResourcePoolTypes(int(self._resource_details['appType']))
 
     @property
-    def resource_pool_solution(self) -> list:
-        """Return the solutions configured for this resource pool.
-
-        The API returns solutions as a list of dictionaries under the ``solutions`` key,
-        with keys like ``solutionId`` and ``solutionName``.
+    def resource_pool_solution_type(self) -> str:
+        """Return the solution type configured for this resource pool.
 
         Returns:
-            list: List of solution dictionaries (e.g., ``{'solutionId': int, 'solutionName': str}``).
-                  Returns an empty list if the resource pool has no solutions configured.
-
-        Example:
-            >>> pool = commcell.resource_pools.get('Cleanroom Access Nodes - eastus2')
-            >>> for sol in pool.resource_pool_solution:
-            ...     print(f"{sol.get('solutionName')} ({sol.get('solutionId')})")
+            str: Solution type (e.g., ``'VSA'``, ``'GENERIC'``, ``'O365'``). Empty string if not present.
 
         #ai-gen-doc
         """
-        return self._resource_details.get('solutions', [])
+        return self._resource_details.get('solutionType', '')
 
     @property
-    def resource_pool_region(self) -> str:
-        """Return the region name for this resource pool.
-
-        The API provides region information under ``regionInfo.regionEntity.regionName``.
+    def resource_pool_regions(self) -> list:
+        """Return all region names associated with this resource pool.
 
         Returns:
-            str: Region name (for example, ``'eastus2'``). Returns an empty string if not present.
+            list[str]: Region names (for example, ``['eastus2', 'eastus']``). Empty list if not present.
 
         Example:
             >>> pool = commcell.resource_pools.get('Cleanroom Access Nodes - eastus2')
-            >>> print(pool.resource_pool_region)
+            >>> print(pool.resource_pool_regions)
 
         #ai-gen-doc
         """
-        return self._resource_details.get('regionInfo', {}).get('regionEntity', {}).get('regionName', '')
+        region_infos = self._resource_details.get('regionInfos', [])
+        return [r.get('regionEntity', {}).get('regionName', '') for r in region_infos]
+
+    @property
+    def resource_pool_access_nodes(self) -> list:
+        """Return all access nodes (clients and client groups) for this resource pool.
+
+        Returns:
+            list: Dicts with 'id', 'name', 'type' keys ('type' is 'CLIENT' or 'CLIENT_GROUP').
+
+        #ai-gen-doc
+        """
+        return self._resource_details.get('accessNodes', [])
 
     @property
     def resource_pool_client_groups(self) -> list:
-        """Return the access-node client groups associated with this resource pool.
-
-        The API returns client groups under ``accessNodes.clientGroups`` as a list of dictionaries,
-        typically containing ``clientGroupId`` and ``clientGroupName``.
+        """Return client-group access nodes for this resource pool.
 
         Returns:
-            list: List of client-group dictionaries (e.g., ``{'clientGroupId': int, 'clientGroupName': str}``).
-                  Returns an empty list if none are configured.
-
-        Example:
-            >>> pool = commcell.resource_pools.get('Cleanroom Access Nodes - eastus2')
-            >>> for cg in pool.resource_pool_client_groups:
-            ...     print(f"{cg.get('clientGroupName')} ({cg.get('clientGroupId')})")
+            list: Dicts with 'id', 'name' keys for access nodes of type CLIENT_GROUP.
 
         #ai-gen-doc
         """
-        return self._resource_details.get('accessNodes', {}).get('clientGroups', [])
+        return [
+            {'id': n.get('id'), 'name': n.get('name')}
+            for n in self.resource_pool_access_nodes if n.get('type') == 'CLIENT_GROUP'
+        ]
+
+    @property
+    def resource_pool_clients(self) -> list:
+        """Return client access nodes for this resource pool.
+
+        Returns:
+            list: Dicts with 'id', 'name' keys for access nodes of type CLIENT.
+
+        #ai-gen-doc
+        """
+        return [
+            {'id': n.get('id'), 'name': n.get('name')}
+            for n in self.resource_pool_access_nodes if n.get('type') == 'CLIENT'
+        ]

@@ -63,7 +63,8 @@ class Uninstall(object):
         self._services = commcell_object._services
         self._cvpysdk_object = commcell_object._cvpysdk_object
 
-    def uninstall_software(self, client_name: str, force_uninstall: bool=True, client_composition: List[Dict]=None) -> Job:
+    def uninstall_software(self, client_name: str, force_uninstall: bool = True, client_composition: List[Dict] = None,
+                           username: str = "admin") -> Job:
         """
         Performs readiness check on the client
 
@@ -71,6 +72,8 @@ class Uninstall(object):
             client_name     (str): The client_name whose packages are to be uninstalled.
             force_uninstall (bool): Uninstalls packages forcibly. Defaults to True.
             client_composition (list): The client_coposition will contain the list of components need to be uninstalled.
+            username (str): Commcell username used to submit the uninstall operation.
+                Default value is "admin".
 
         Returns:
             Job: An instance of the Job class representing the uninstall job.
@@ -147,7 +150,7 @@ class Uninstall(object):
                                         "CommServeHostName": self._commcell_object.commserv_name,
                                         "RemoteClient": False,
                                         "User": {
-                                            "userName": "admin"
+                                            "userName": username
                                         },
                                         "clientComposition":client_composition
                                     },

@@ -530,10 +530,10 @@ class OracleSubclient(DatabaseSubclient):
         self._set_subclient_properties(
             "_oracle_subclient_properties['enableTableBrowse']", False
         )
-    
+
     def enable_intelli_snap(self, snap_engine_name: str, proxy_options: Optional[dict] = None, use_rman_for_log_backup: bool = True):
         """Enables intellisnap for the subclient.
-        
+
         Args:
             snap_engine_name (str): Name of the snap engine to be associated with the subclient
             proxy_options (dict, optional): Dictionary containing proxy options. Defaults to None.
@@ -548,9 +548,36 @@ class OracleSubclient(DatabaseSubclient):
         self.use_rman_for_log_backup = False
         super(OracleSubclient, self).disable_intelli_snap()
 
+    @property
+    def is_snap_image_copy_enabled(self):
+        """Getter to check whether snap image copy is enabled for the subclient."""
+        return self._subclient_properties['oracleSubclientProp'].get('snapImageCopy')
+
+    def get_image_copy_dir(self):
+        """Getter for the image copy directory for the subclient."""
+        return self._subclient_properties['oracleSubclientProp'].get('imageCopyDir')
+
+    def set_image_copy_dir(self, image_copy_dir):
+        """Setter for the image copy directory for the subclient."""
+        if not image_copy_dir:
+            raise SDKException("Subclient", "101", "Image copy directory cannot be empty")
+        self._set_subclient_properties("_oracle_subclient_properties['imageCopyDir']", image_copy_dir)
+
+    def enable_snap_image_copy(self, image_copy_dir):
+        """Enables snap image copy for the subclient."""
+        if not image_copy_dir:
+            raise SDKException("Subclient", "101", "Image copy directory cannot be empty")
+        self._set_subclient_properties("_oracle_subclient_properties['snapImageCopy']", True)
+        self.set_image_copy_dir(image_copy_dir)
+        self.set_backupcopy_interface("VOLUME")
+
+    def disable_snap_image_copy(self):
+        """Disables snap image copy for the subclient."""
+        self._set_subclient_properties("_oracle_subclient_properties['snapImageCopy']", False)
+
     def get_backupcopy_interface(self):
         """Getter for backup copy interface for the subclient"""
-        return self._commonProperties['snapCopyInfo']['backupCopyInterface']
+        return self._commonProperties['snapCopyInfo'].get('backupCopyInterface')
 
     def set_backupcopy_interface(self, interface):
         """Sets the backup copy interface for the subclient.
@@ -565,7 +592,7 @@ class OracleSubclient(DatabaseSubclient):
 
         if interface in self._backupcopy_interfaces:
             interface = self._backupcopy_interfaces[interface]
-            self._commonProperties['snapCopyInfo']['backupCopyInterface'] = interface
+            self._set_subclient_properties("_commonProperties['snapCopyInfo']['backupCopyInterface']", interface)
         else:
             raise SDKException("Subclient", "101")
 
@@ -699,7 +726,11 @@ class OracleSubclient(DatabaseSubclient):
             destination_client=None,
             common_options=None,
             browse_option=None,
-            oracle_options=None, tag=None):
+            oracle_options=None,
+            tag=None,
+            destination_instance=None,
+            streams=2,
+            **kwargs):
         """Performs restore the entire/partial database using latest backup/backupcopy
 
         Args:
@@ -736,9 +767,17 @@ class OracleSubclient(DatabaseSubclient):
         Returns:
             object -- Job containing restore details
         """
-        return self._backupset_object._instance_object.restore(files, destination_client,
-                                                               common_options, browse_option,
-                                                               oracle_options, tag)
+        return self._backupset_object._instance_object.restore(
+            files=files,
+            destination_client=destination_client,
+            common_options=common_options,
+            browse_option=browse_option,
+            oracle_options=oracle_options,
+            tag=tag,
+            destination_instance=destination_instance,
+            streams=streams,
+            **kwargs
+        )
 
     def restore_in_place(
             self,
@@ -746,7 +785,8 @@ class OracleSubclient(DatabaseSubclient):
             dest_client_name=None,
             dest_instance_name=None,
             destination_path=None,
-            credential_name=""):
+            credential_name="",
+            **kwargs):
         """
         Method to restore the logical dump
 
@@ -785,4 +825,5 @@ class OracleSubclient(DatabaseSubclient):
             dest_client_name=dest_client_name,
             dest_instance_name=dest_instance_name,
             dest_path=destination_path,
-            credential_name=credential_name)
+            credential_name=credential_name,
+            **kwargs)

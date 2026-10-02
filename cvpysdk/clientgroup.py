@@ -729,7 +729,8 @@ class ClientGroups(object):
                           filter_rule: str = 'OS Type',
                           filter_condition: str = 'equal to',
                           filter_value: str = 'Windows',
-                          value: str = '1') -> dict:
+                          value: str = '1',
+                          filter_id: Optional[int] = None) -> dict:
         """Create a smart rule dictionary for client group creation based on specified filter parameters.
 
         This method prepares a rule definition used for smart client group creation, allowing you to specify
@@ -741,6 +742,7 @@ class ClientGroups(object):
             filter_condition: The filter condition to apply (e.g., 'equal to').
             filter_value: The value to match for the rule criterion (e.g., 'Windows').
             value: The value required to create the rule (typically a string representation of a number).
+            filter_id: Optional captured filter ID that overrides the condition mapping.
 
         Returns:
             dict: A dictionary representing the smart rule, structured as:
@@ -775,8 +777,10 @@ class ClientGroups(object):
             'less than': 103,
             'greater than or equal to': 104,
             'less than or equal to': 105,
+            'between': 106,
             'any in selection': 108,
             'not in selection': 109,
+            'not between': 111,
             'is true': 1,
             'is false': 2,
             'contains': 10,
@@ -841,6 +845,7 @@ class ClientGroups(object):
             'Content Analyzer Cloud': 54,
             'Company Installed Client Associations': 55,
             'Client Online in Last 30 Days': 56,
+            'Client Online in Last N Days': 125,
             'Clients With Subclients Having Associated Storage Policy': 60,
             'Clients With Improperly Deconfigured Subclients': 61,
             'Strikes count': 62,
@@ -860,6 +865,7 @@ class ClientGroups(object):
             'Client version v11 and feature release': 117,
             'Clients associated to any company': 158,
             'VMs not in any Subclient Content': 166,
+            'Client Name List': 172,
             'Pseudo Clients': 115,
             'Backup Set Name': 176,
             }
@@ -918,6 +924,7 @@ class ClientGroups(object):
             'Content Analyzer Cloud': 1,
             'Company Installed Client Associations': 4,
             'Client Online in Last 30 Days': 1,
+            'Client Online in Last N Days': 8,
             'Clients With Subclients Having Associated Storage Policy': 1,
             'Clients With Improperly Deconfigured Subclients': 1,
             'Strikes count': 3,
@@ -937,13 +944,14 @@ class ClientGroups(object):
             'Client version v11 and feature release': 9,
             'Clients associated to any company': 1,
             'VMs not in any Subclient Content': 1,
+            'Client Name List': 7,
             'Pseudo Clients': 1,
             'Backup Set Name': 2,
             }
 
         rule_mk = {
             "rule": {
-                "filterID": filter_dict[filter_condition],
+                "filterID": filter_id if filter_id is not None else filter_dict[filter_condition],
                 "secValue": filter_value,
                 "propID": prop_id_dict[filter_rule],
                 "propType": ptype_dict[filter_rule],

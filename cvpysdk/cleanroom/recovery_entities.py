@@ -37,7 +37,11 @@ WORKLOADS = {
     6: "TEAMS",
     7: "DYNAMICS_365",
     8: "VIRTUAL SERVER",
-    9: "FILE SYSTEM"
+    9: "FILE SYSTEM",
+    16: "SQL_SERVER",
+    19: "ACTIVE_DIRECTORY",
+    22: "THREATSCAN",
+    23: "ACTIVE_DIRECTORY_FOREST"
 }
 
 INSTANCES = {
@@ -297,6 +301,8 @@ class RecoveryEntity:
         self._destination_client_object = None
         self._destination_agent_object = None
         self._destination_instance_object = None
+        self._installedWorkloads = None
+        self._sub_entities = None
 
         self._recovery_config_dict = None
         self._recovery_image = None
@@ -358,6 +364,8 @@ class RecoveryEntity:
                         if phase.get('phase_name').name == 'RESTORE_VM' and phase.get('job_id'):
                             self._last_restore_job = phase.get('job_id')
                 self._recovery_status = RecoveryStatus(self._properties['recoveryStatus']).name
+                if 'installedWorkloads' in self._properties:
+                    self._installedWorkloads = self._properties.get('installedWorkloads', [])
                 self._validation_status = ValidationStatus(self._properties['validationStatus']).name
                 # validation results are available for only threat scan/windows defender enabled recovery jobs
                 if 'validationResults' in self._properties.keys():
@@ -377,6 +385,7 @@ class RecoveryEntity:
                         'entityRecoveryPoint': recovery_point_details.get('entityRecoveryPoint'),
                         'inheritedFrom': recovery_point_details.get('inheritedFrom')
                     }
+
                 self._workload = WORKLOADS[self._properties['workload']]
                 self._source_client = self._properties['client']['name']
                 self._source_agent = WORKLOADS[self._properties['workload']]
@@ -390,6 +399,8 @@ class RecoveryEntity:
                      self._properties['name']: self._properties['recoveryConfiguration']['configuration'][RecoveryDestinationVendor[self._recovery_target.policy_type]]
                 }
                 self._recovery_image = self._properties.get('recoveryConfiguration', {}).get('imageDetails', {}).get('vmTemplate', {}).get('name')
+                if 'subEntities' in self._properties:
+                    self._sub_entities = self._properties.get('subEntities', {})
 
             except JSONDecodeError:
                 raise SDKException('Response', '101', 'Failed to decode JSON from the response.')
@@ -848,3 +859,60 @@ class RecoveryEntity:
         #ai-gen-doc
         """
         self._get_entity_recovery_options()
+
+    @property
+    def installWorkloads(self) -> list:
+        """Get the list of installed workloads for this recovery entity.
+
+        Returns:
+            list: A list of installed workloads associated with the recovery entity.
+
+        Example:
+            >>> entity = RecoveryEntity()
+            >>> workloads = entity.installWorkloads
+            >>> print(f"Installed workloads: {workloads}")
+
+        #ai-gen-doc
+        """
+        workloads = []
+        for workload in self._installedWorkloads:
+            if workload in WORKLOADS:
+                workloads.append(WORKLOADS[workload])
+        return workloads
+
+    @property
+    def sub_entities(self) -> list:
+        """Get the list of sub-entities associated with this recovery entity.
+
+        Returns:
+            list: A list of sub-entities related to the recovery entity.
+
+        Example:
+            >>> entity = RecoveryEntity()
+            >>> sub_entities = entity.get_sub_entities()
+            >>> print("sub entities:", sub_entities)
+
+        #ai-gen-doc
+        """
+        return self._sub_entities
+
+    @property
+    def sub_entities_workloads(self) -> list:
+        """Get the list of sub-entities associated with this recovery entity.
+
+        Returns:
+            list: A list of sub-entities related to the recovery entity.
+
+        Example:
+            >>> entity = RecoveryEntity()
+            >>> sub_entities_workloads = entity.sub_entities_workloads
+            >>> print("Sub-entities workloads:", sub_entities_workloads)
+
+        #ai-gen-doc
+        """
+        sub_entities_workloads = []
+        if self._sub_entities:
+            for sub_entity in self._sub_entities:
+                if 'workload' in sub_entity:
+                    sub_entities_workloads.append(WORKLOADS[sub_entity['workload']])
+        return sub_entities_workloads

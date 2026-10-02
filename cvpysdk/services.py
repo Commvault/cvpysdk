@@ -145,6 +145,8 @@ SERVICES_DICT_TEMPLATE = {
 
     'LOCK_MM_CONFIGURATION': '{0}LockMMConfiguration',
 
+    'InfrastructureProvisioning': '{0}V4/InfrastructureProvisioning',
+    
     'STORAGE_POLICY': '{0}StoragePolicy',
     'GET_STORAGE_POLICY': '{0}StoragePolicy/%s',
     'DELETE_STORAGE_POLICY': '{0}V2/StoragePolicy',
@@ -752,13 +754,13 @@ SERVICES_DICT_TEMPLATE = {
     'VSA_HIDDEN_SUBCLIENT': '{0}GetId?clientname=%s&agent=Virtual Server&backupset=%s&subclient=Do Not Backup',
 
     'ALL_RECOVERY_GROUPS': '{0}RecoveryGroups',
-    'RECOVERY_GROUP': '{0}RecoveryGroup/%s?getEntityDetails=true',
+    'RECOVERY_GROUP': '{0}RecoveryGroup/%s?getEntityDetails=true&getGroupDetails=true&getSubResources=true',
     'RECOVERY_GROUP_RECOVER': '{0}RecoveryGroup/%s/Recover',
     'CLEANUP_RECOVERY_GROUP': '{0}RecoveryGroup/CleanupRecovery',
     'CREATE_CLEANROOM_RUNBOOK': '{0}Cleanroom/Runbook',
     'CREATE_RUNBOOK_TARGET': '{0}Cleanroom/Target',
     'CLEANROOM_SITE': '{0}Cleanroom/Site',
-    'RECOVERY_ENTITY': '{0}RecoveryEntity/%s',
+    'RECOVERY_ENTITY': '{0}RecoveryEntity/%s?getSubResources=true',
     'RECOVERY_GROUP_RECOVERY_ENTITY': '{0}RecoveryGroup/%s/entity/%s',
     'RECOVERY_GROUP_THREATS_COUNT': '{0}RecoveryGroup/%s/KPI',
 
@@ -882,7 +884,17 @@ SERVICES_DICT_TEMPLATE = {
 
     'VIEW_LOGS_BY_TRACE_ID': '{0}TraceId/%s/Logs',
 
-    "MONGODB_CLIENT_CONFIG": "{0}v4/clients/mongodb/%s/config"
+    "MONGODB_CLIENT_CONFIG": "{0}v4/clients/mongodb/%s/config",
+
+    # Cloud Config (Azure / multi-vendor)
+    'CREATE_CLOUD_CONFIG_HYPERVISOR': '{0}v4/Hypervisor',
+    'GET_CLOUD_CONFIG_CLIENT_DETAILS': '{0}v4/Cloud/CloudConfig/Client/%s',
+    'UPDATE_CLOUD_CONFIG_SUBCLIENT': '{0}v4/Cloud/CloudConfig/Subclient/%s',
+    'GET_CLOUD_CONFIG_SUBCLIENT_DETAILS': '{0}v4/Cloud/CloudConfig/Subclient/%s',
+    'CREATE_CLOUD_CONFIG_SUBCLIENT': '{0}v4/Cloud/CloudConfig/Subclient',
+    'RESTORE_CLOUD_CONFIG_SUBCLIENT': '{0}v4/Cloud/CloudConfig/Subclient/%s/Restore',
+    'GET_CLOUD_CONFIG_RESTORE_METADATA': '{0}v4/Cloud/CloudConfig/Job/%s/RestoreMetadata?clientId=%s',
+    'RESET_CLOUD_CONFIG_SUBCLIENT_RESTORE': '{0}v4/Cloud/CloudConfig/Subclient/%s/Restore/%s/reset',
 
 }
 

@@ -370,6 +370,39 @@ class ScaleTargets(object):
             "networkSecurityGroupDetails": region_config.get('network_security_group_details', {})
         }
 
+    @staticmethod
+    def _build_gcp_region_detail(region_config: dict) -> dict:
+        """Build GCP region detail dictionary from region config.
+
+        Args:
+            region_config: GCP region configuration dictionary containing:
+                - region: GCP region name
+                - vpc_network: VPC network
+                - subnete: Subnet name
+                - availability_zones: List of availability zones
+                - network_security_group_details: Network security group details
+
+        Returns:
+            Dictionary with AWS region detail structure.
+
+        #ai-gen-doc
+        """
+        return {
+            "regionDetails": {
+                "name": region_config.get('region', ""),
+                "availabilityZones": region_config.get('availability_zones', [])
+            },
+            "vpcDetails": {
+                "id": region_config.get('vpc_id', ""),
+                "name": region_config.get('vpc_name', "")
+            },
+            "subnetDetails": {
+                "id": region_config.get('subnet_id', "")
+            },
+            "networkSecurityGroupDetails": region_config.get('network_security_group_details', {})
+        }
+        
+
     def get(self, scale_target_name: str) -> 'ScaleTarget':
         """Retrieve a ScaleTarget object for the specified scale target name.
 
@@ -775,6 +808,7 @@ class ScaleTarget(object):
         self._auto_detect_resources_tags = None
         self._azure_target_details = None
         self._amazon_target_details = None
+        self._gcp_target_details = None
         self._access_nodes = None
         self._credential_entity = None
         self._fallback_scale_manager_id = None
@@ -820,6 +854,7 @@ class ScaleTarget(object):
                 self._auto_detect_resources_tags = response_data.get('autoDetectResourcesTags', [])
                 self._azure_target_details = response_data.get('azureTargetDetails', {})
                 self._amazon_target_details = response_data.get('amazonTargetDetails', {})
+                self._gcp_target_details = response_data.get('gcpTargetDetails', {})
                 self._access_nodes = response_data.get('accessNodes', [])
                 self._credential_entity = response_data.get('credEntity', {})
                 self._fallback_scale_manager_id = response_data.get('fallbackScalemanagerId', {
@@ -1017,6 +1052,23 @@ class ScaleTarget(object):
         #ai-gen-doc
         """
         return self._amazon_target_details
+
+    @property
+    def gcp_target_details(self) -> dict:
+        """Get the GCP-specific target details.
+
+        Returns:
+            A dictionary containing GCP configuration details including region-specific details,
+            VPC information, subnet details, and service account details.
+
+        Example:
+            >>> target = ScaleTarget()
+            >>> gcp_details = target.gcp_target_details
+            >>> print(f"GCP Details: {gcp_details}")
+
+        #ai-gen-doc
+        """
+        return self._gcp_target_details
 
     @property
     def access_nodes(self) -> list:

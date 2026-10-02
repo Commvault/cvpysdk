@@ -4069,6 +4069,7 @@ class Clients(object):
             **kwargs: Additional optional arguments.
                 - is_modern_auth_enabled (bool): Whether to enable modern authentication for Exchange Online. Default is True.
                 - credential_name (str): Credential name for Azure authentication.
+                - ews_service_url (str): EWS servie URL for given client
 
         Returns:
             Instance of the Client class representing the newly created Exchange Mailbox Client.
@@ -4155,10 +4156,36 @@ class Clients(object):
             if account['ServiceType'] == 2:
                 account_dict['exchangeAdminSmtpAddress'] = account['Username']
                 user_account_dict['userName'] = ""
+                user_account_dict['password'] = b64encode(account['Password'].encode()).decode()
+                user_account_dict['confirmPassword'] = b64encode(account['Password'].encode()).decode()
+            elif account['ServiceType'] == 19:
+                # ServiceType 19: Use credential entity only (no username/password)
+                account_dict['credentialEntity'] = {
+                    'credentialId': account['CredentialId'],
+                    'credentialName': account['CredentialName']
+                }
+                # userAccount remains empty when using credential entity
+                user_account_dict = {}
             else:
-                user_account_dict['userName'] = account['Username']
-            user_account_dict['password'] = b64encode(account['Password'].encode()).decode()
-            user_account_dict['confirmPassword'] = b64encode(account['Password'].encode()).decode()
+                # SYSTEM_ACCOUNT or other types: Can use either Credential Manager OR Username/Password
+                if 'CredentialId' in account and 'CredentialName' in account:
+                    # Using Credential Manager for SystemAccount
+                    account_dict['credentialEntity'] = {
+                        'credentialId': account['CredentialId'],
+                        'credentialName': account['CredentialName']
+                    }
+                    # userAccount remains empty when using credential entity
+                    user_account_dict = {}
+                elif 'Username' in account and 'Password' in account:
+                    # Using direct username/password
+                    user_account_dict['userName'] = account['Username']
+                    user_account_dict['password'] = b64encode(account['Password'].encode()).decode()
+                    user_account_dict['confirmPassword'] = b64encode(account['Password'].encode()).decode()
+                else:
+                    # Invalid account configuration
+                    raise SDKException(f"Account with ServiceType {account['ServiceType']} must have either "
+                                     f"(CredentialId and CredentialName) or (Username and Password)")
+
             account_dict['userAccount'] = user_account_dict
 
             account_list.append(account_dict)
@@ -4174,6 +4201,7 @@ class Clients(object):
                 if resourse.get('appType', 0) in (ResourcePoolAppType.O365.value, ResourcePoolAppType.EXCHANGE.value):
                     is_resource_pool_enabled = True
 
+        ews_service_url = kwargs.get('ews_service_url', "")
         request_json = {
             "clientInfo": {
                 "clientType": 25,
@@ -4184,6 +4212,10 @@ class Clients(object):
                     "onePassProp": {
                         "environmentType": environment_type,
                         "servers": exchange_servers,
+                        "ewsDetails": {
+                            "bUseEWS": True,
+                            "ewsServiceURL": ews_service_url
+                        },
                         "accounts": {
                             "adminAccounts": account_list
                         }
@@ -11804,7 +11836,8 @@ class Client(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
-    def uninstall_software(self, force_uninstall: bool = True, software_list: Optional[List[str]] = None):
+    def uninstall_software(self, force_uninstall: bool = True, software_list: Optional[List[str]] = None,
+                           username: str = "admin"):
         """Uninstall specified software components from the client.
 
         This method initiates an uninstall job for the given client, optionally forcing the uninstall
@@ -11814,6 +11847,8 @@ class Client(object):
             force_uninstall: If True, forcibly uninstalls the specified packages. Defaults to True.
             software_list: Optional list of component names to uninstall from the client. If not provided,
                 no components will be specified for removal.
+            username: Commcell username used to submit the uninstall operation.
+                Default value is "admin"
 
         Returns:
             The job object representing the uninstall software job.
@@ -11838,7 +11873,7 @@ class Client(object):
                                    }]
 
         return uninstall.uninstall_software(self.client_name, force_uninstall=force_uninstall,
-                                            client_composition=client_composition)
+                                            client_composition=client_composition, username=username)
 
     def __get_componentInfo(self, software_list: List[str]) -> List[Dict[str, str]]:
         """Retrieve component information for the specified installed software.

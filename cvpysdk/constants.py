@@ -887,6 +887,7 @@ class VsInstanceType:
     VSINSTANCE_TYPE = {
         101: "vmware",
         103: "vcloud_director",
+        104: "azure_local",
         105: "vmware_cloud_foundation_automation",
         201: "xen",
         102: "hyperv",

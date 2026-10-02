@@ -70,6 +70,16 @@ class DRJobPhases(Enum):
     CLEANUP_DEPLOYED_RESOURCES = 90
     CREATE_ACCESS_NODE = 83
     WAIT_BACKUPCOPY_JOB = 85
+    RESTORE_DB = 75
+    WAITING_ON_ACCESS_NODE = 84
+    RESTORE_AD_FOREST = 91
+    DOCK_VM = 92
+    UNINSTALL_PACKAGES = 94
+    CONFIGURE_COMMVAULT_PACKAGES = 95
+    DEPLOY_APPRECOVERY_GATEWAY = 96
+    CHECK_CV_PACKAGE_STATUS = 103
+    PREPARE_VM_FOR_INSTALL_SW = 104
+    INSTALL_PACKAGES = 93
 
 class DRJobPhaseToText(Enum):
     SCRIPT_EXECUTION = "Script Execution"
@@ -130,3 +140,15 @@ class DRJobPhaseToText(Enum):
     SECURITY_SCAN = "Security Scan"
     CREATE_ACCESS_NODE = "Create Access Node"
     WAIT_BACKUPCOPY_JOB = "Waiting on Backup copy job"
+    RESTORE_DB = "Restore Database"
+    WAITING_ON_ACCESS_NODE = "Waiting on Access Node"
+    RESTORE_AD_FOREST = "Restore AD Forest"
+    DOCK_VM = "Dock VM"
+    UNINSTALL_PACKAGES = "Uninstall Packages"
+    CONFIGURE_COMMVAULT_PACKAGES = "Configure Commvault Packages"
+    DEPLOY_APPRECOVERY_GATEWAY = "Deploy Application Recovery Gateway"
+    CHECK_CV_PACKAGE_STATUS = "Check Commvault Package Status"
+    PREPARE_VM_FOR_INSTALL_SW = "Prepare VM for Install Software"
+    INSTALL_PACKAGES = "Install Packages"
+
+    

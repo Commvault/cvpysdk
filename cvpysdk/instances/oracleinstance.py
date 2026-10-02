@@ -130,6 +130,7 @@ from ..constants import InstanceBackupType
 from ..exception import SDKException
 from ..job import Job
 from .dbinstance import DatabaseInstance
+from ..plan import Plan
 
 from typing import Any, TYPE_CHECKING, Optional
 if TYPE_CHECKING:
@@ -263,8 +264,26 @@ class OracleInstance(DatabaseInstance):
             destination_client,
             destination_path,
             backup_job_ids,
-            credentialName
+            user_name,
+            password
         )
+        request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["oracleOpt"] = {
+            "resetLogs": 1,
+            "switchDatabaseMode": True,
+            "recover": True,
+            "recoverFrom": OracleRecoverOptions.MOST_RECENT_BACKUP.value,
+            "restoreData": True,
+            "archiveLog": False,
+            "restoreControlFile": True,
+            "restoreSPFile": False,
+            "restoreStream": 2,
+            "restoreFrom": OracleRestoreOptions.MOST_RECENT_BACKUP.value,
+            "noCatalog": True,
+            "setDBId": True,
+            "crossmachineRestoreOptions": {
+                "doNidForCrossMachineRestore": True
+            }
+        }
 
         return self._process_restore_response(request_json)
 
@@ -356,12 +375,22 @@ class OracleInstance(DatabaseInstance):
 
         if not isinstance(value, dict):
             raise SDKException('Instance', '101')
-        
         destination_client = value.get("destination_client")
         destination_instance = value.get("destination_instance") or value.get("instance_name")
-        
+
         destination_client_obj = self._commcell_object.clients.get(destination_client)
-        destination_agent_object = destination_client_obj.agents.get('oracle')
+        if value.get("restore_to_disk"):
+            self._destination_restore_json = {
+                "destClient": {
+                    "clientName": destination_client_obj.name,
+                    "displayName": destination_client_obj.display_name,
+                    "clientId": int(destination_client_obj.client_id)
+                },
+                "destPath": [value.get("destination_path", "")]
+            }
+            return
+        destination_agent_object = destination_client_obj.agents.get(
+            value.get("app_name", "oracle"))
         destination_instance_object = destination_agent_object.instances.get(destination_instance)
 
         common_destination_payload = {
@@ -864,7 +893,12 @@ class OracleInstance(DatabaseInstance):
         if not isinstance(default_content, list):
             raise SDKException(
                 'Instance',
-                '101', 'Expecting a list for default_content (PDB names or tablespaces)')
+                '101', 'Expecting a list for tablespaces')
+        if files is not None:
+            if not isinstance(files, dict):
+                raise SDKException(
+                    'Instance',
+                    '101', 'Expecting a dict for files')
 
         tslist = [f"SID: {instance_name} Tablespace: {item}" for item in default_content]
 
@@ -872,16 +906,25 @@ class OracleInstance(DatabaseInstance):
         # destination fields are present so in-place restore paths do not pass None.
         destination_instance = instance_name
         if isinstance(destination, dict):
-            destination_instance = destination.get("destination_instance") or instance_name
+            destination_instance = (
+                destination.get("destination_instance")
+                or destination.get("destinationInstance", {}).get("instanceName")
+                or instance_name
+            )
 
+        restore_kwargs = {
+            "paths": r'/',
+            "destination_client": destination_client,
+            "destination_instance": destination_instance
+        }
+        if destination:
+            restore_kwargs["app_name"] = destination["destinationInstance"].get(
+                "appName", "oracle")
         restore_json = self._restore_json(
-            paths=r'/',
-            destination_client=destination_client,
-            destination_instance=destination_instance
+            **restore_kwargs
         )
-        if common_options is not None:
-            restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
-                "commonOptions"] = common_options
+        restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+            "commonOptions"] = common_options or {}
         restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
             "oracleOpt"] = oracle_options
 
@@ -899,9 +942,11 @@ class OracleInstance(DatabaseInstance):
             restore_json["taskInfo"]["subTasks"][0]["options"][
                 "restoreOptions"]["fileOption"] = files
 
-        browse_option = browse_option if isinstance(browse_option, dict) else {}
+        browse_option = browse_option.copy() if isinstance(browse_option, dict) else {}
 
         if (copy_precedence := kwargs.get('copy_precedence')) is not None:
+            if isinstance(copy_precedence, str):
+                copy_precedence = self.plan.storage_policy.get_copy_precedence(copy_precedence.lower())
             browse_option["mediaOption"] = {
                 "copyPrecedence": {
                     "copyPrecedenceApplicable": True,
@@ -915,11 +960,9 @@ class OracleInstance(DatabaseInstance):
                 "toTime": to_time
             }
 
-        if browse_option != {}:
-            browse_option["commcellId"] = self._commcell_object.commcell_id
-            restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
-                "browseOption"] = browse_option
-
+        browse_option["commcellId"] = self._commcell_object.commcell_id
+        restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"][
+            "browseOption"] = browse_option
         return restore_json
 
     def _get_browse_options(self) -> dict:
@@ -1056,6 +1099,27 @@ class OracleInstance(DatabaseInstance):
             raise SDKException('Instance', r'102', 'Catalog database not set - {}'.format(error_str))
 
     @property
+    def catalog_credential_info(self) -> dict:
+        """Get the catalog credential information associated with this Oracle instance.
+
+        Returns:
+            A dictionary containing the catalog credential information.
+
+        Raises:
+            SDKException: If the catalog credential information is not set or if catalog is not enabled.
+
+        #ai-gen-doc
+        """
+        if self._commcell_object.commserv_version < 42:
+            raise SDKException('Instance', r'102', 'Catalog credential information is not available for CommServe versions below 11.42')
+        if not self.is_catalog_enabled:
+            raise SDKException('Instance', r'102', 'Catalog is not enabled.')
+        try:
+            return self._properties['oracleInstance']['catalogConnectCredInfo']
+        except KeyError as error_str:
+            raise SDKException('Instance', r'102', 'Catalog credential information not set - {}'.format(error_str))
+
+    @property
     def os_user(self) -> str:
         """Get the Oracle software owner username for this instance.
 
@@ -1111,6 +1175,17 @@ class OracleInstance(DatabaseInstance):
         """
         return self._properties['oracleInstance']['oracleStorageDevice'][
             'logBackupStoragePolicy']['storagePolicyName']
+
+    @property
+    def plan(self) -> Plan:
+        """Get the Plan object associated with the Oracle instance.
+
+        Returns:
+            Plan: The Plan object for this Oracle instance.
+
+        #ai-gen-doc
+        """
+        return Plan(self._commcell_object, plan_name=self._properties['planEntity']['planName'], plan_id=self._properties['planEntity']['planId'])
 
     @property
     def is_autobackup_on(self) -> bool:
@@ -1233,6 +1308,11 @@ class OracleInstance(DatabaseInstance):
         tag: str = None,
         destination_instance: str = None,
         streams: int = 2,
+        restore_from: int = OracleRestoreOptions.MOST_RECENT_BACKUP.value,
+        recover_from: int = OracleRecoverOptions.MOST_RECENT_BACKUP.value,
+        restore_controlfile: bool = False,
+        restore_spfile: bool = False,
+        recover: bool = True,
         **kwargs: Any
     ) -> 'Job':
         """Perform a full or partial Oracle database restore using the latest backup or a backup copy.
@@ -1248,6 +1328,7 @@ class OracleInstance(DatabaseInstance):
             tag: Type of the restore to be performed. Defaults to None.
             destination_instance: Name of the destination Oracle instance. If None, an in-place restore is performed.
             streams: Number of streams to use for the restore operation. Defaults to 2.
+            restore_from: Integer specifying which backup to restore from. Defaults to the most recent backup.
             oracle_options: Dictionary containing Oracle-specific restore options. If not provided, the controlfile and
                 datafiles are restored from the latest backup by default.
                 Example:
@@ -1284,28 +1365,42 @@ class OracleInstance(DatabaseInstance):
 
         #ai-gen-doc
         """
+        source_client = self._properties['instance']['clientName']
+        source_instance = self._properties['instance']['instanceName']
+        is_out_of_place = (
+            destination_client is not None
+            and destination_client.casefold() != source_client.casefold()
+        ) or (
+            destination_instance is not None
+            and destination_instance.casefold() != source_instance.casefold()
+        )
+        supplied_oracle_options = oracle_options or {}
         options = {
-            "resetLogs": 1,
+            "resetLogs": 0,
             "switchDatabaseMode": True,
-            "noCatalog": True,
-            "recover": True,
-            "recoverFrom": OracleRecoverOptions.DEFAULT.value,
+            "recover": recover,
+            "recoverFrom": recover_from,
             "restoreData": True,
-            "restoreFrom": OracleRestoreOptions.DEFAULT.value
+            "archiveLog": False,
+            "restoreControlFile": restore_controlfile,
+            "restoreSPFile": restore_spfile,
+            "restoreStream": streams,
+            "restoreFrom": restore_from,
+            "noCatalog": True
         }
-        if oracle_options is None:
-            oracle_options = {}
-        options.update(oracle_options)
+        options.update(supplied_oracle_options)
         oracle_options = options.copy()
 
-        if tag and tag.lower() == 'snap':
-            opt = {
-                "useSnapRestore": True,
-                "cleanupAuxiliary": True,
-                "restoreControlFile": True,
-            }
-            for key, val in opt.items():
-                oracle_options.setdefault(key, val)
+        if "resetLogs" not in supplied_oracle_options:
+            oracle_options["resetLogs"] = int(
+                oracle_options.get("restoreControlFile", False)
+                or oracle_options.get("recoverFrom") == OracleRecoverOptions.MOST_RECENT_BACKUP.value)
+
+        if is_out_of_place:
+            oracle_options.setdefault("setDBId", True)
+            oracle_options.setdefault("crossmachineRestoreOptions", {
+                "doNidForCrossMachineRestore": True
+            })
 
         try:
             if destination_client is None:
@@ -1314,7 +1409,8 @@ class OracleInstance(DatabaseInstance):
                 destination_instance = self._properties['instance']['instanceName']
             destination = {
                 "destination_client": destination_client,
-                "destination_instance": destination_instance
+                "destination_instance": destination_instance,
+                "number_of_streams": streams
             }
             if tag and tag.lower() == "rac":
                 stream_allocation = self._get_rac_stream_allocation(
@@ -1322,6 +1418,10 @@ class OracleInstance(DatabaseInstance):
                 oracle_options.update(stream_allocation)
                 destination["app_name"] = "Oracle RAC"
             self._restore_destination_json(destination)
+            if is_out_of_place and (
+                    int(self._properties['instance']['clientId'])
+                    != int(self._destination_restore_json['destClient']['clientId'])):
+                oracle_options.setdefault("duplicateNoFileNamecheck", True)
         except SDKException as exp:
             raise SDKException("Instance", "105") from exp
         else:
@@ -1335,6 +1435,23 @@ class OracleInstance(DatabaseInstance):
                 default_content = [item["database"] for item in browse_response]
             else:
                 raise SDKException("Instance", "101", "Browse response does not contain the tablespaces or databases")
+            full_source_items = [
+                f"SID: {self.instance_name} Tablespace: {item}"
+                for item in default_content
+            ]
+            selected_source_items = kwargs.get("source_items", full_source_items)
+            self._apply_frontend_restore_options(
+                oracle_options,
+                is_out_of_place,
+                selected_source_items=selected_source_items,
+                full_source_items=full_source_items,
+                **kwargs
+            )
+
+            if "resetLogs" not in supplied_oracle_options:
+                oracle_options["resetLogs"] = int(
+                    oracle_options.get("restoreControlFile", False)
+                    or oracle_options.get("recoverFrom") == OracleRecoverOptions.MOST_RECENT_BACKUP.value)
             options = self._get_oracle_restore_json(
                 destination_client=destination_client,
                 destination=self._destination_restore_json if (destination_client and destination_instance) else None,
@@ -1347,6 +1464,18 @@ class OracleInstance(DatabaseInstance):
                 **kwargs
             )
 
+            if kwargs.get("source_items") is not None:
+                options["taskInfo"]["subTasks"][0]["options"][
+                    "restoreOptions"]["fileOption"] = {
+                        "sourceItem": kwargs["source_items"]
+                    }
+            if tag and tag.lower() == "snap":
+                restore_options = options["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]
+                restore_options["commonOptions"]["useRmanRestore"] = kwargs.get(
+                    "use_rman_restore", True
+                )
+                if not is_out_of_place and "hardware_revert" in kwargs:
+                    restore_options["commonOptions"]["revert"] = kwargs["hardware_revert"]
             return self._process_restore_response(options)
 
     def _get_rac_stream_allocation(self, destination_client: str, destination_instance: str, streams: int) -> dict:
@@ -1378,6 +1507,224 @@ class OracleInstance(DatabaseInstance):
             rac_stream_allocation["racDataStreamAllcation"].append(f"{node['racDbInstanceId']} {streams}")
         return rac_stream_allocation
 
+    @staticmethod
+    def _oracle_restore_time(value: Any) -> int:
+        """Convert an Oracle restore time to epoch seconds."""
+        if value is None:
+            return 0
+        if isinstance(value, (int, float)):
+            return int(value)
+        if hasattr(value, "timestamp"):
+            return int(value.timestamp())
+        raise SDKException("Instance", "101", "Oracle restore time must be epoch seconds or datetime")
+
+    def _apply_frontend_restore_options(
+            self,
+            oracle_options: dict,
+            is_out_of_place: bool,
+            selected_source_items: list,
+            full_source_items: list,
+            **kwargs: Any
+    ) -> None:
+        """Apply Command Center Oracle restore option conventions.
+
+        A partial restore is inferred from the browse selection.  Command
+        Center treats a restore as full when every root browse item is
+        selected; otherwise it enables partial restore options.
+        """
+        pit_time = kwargs.get("pit_time")
+        pit_scn = kwargs.get("pit_scn")
+        controlfile_time = kwargs.get("controlfile_time")
+        if pit_scn is not None:
+            oracle_options["recoverFrom"] = OracleRecoverOptions.SCN.value
+            oracle_options["restoreFrom"] = OracleRestoreOptions.POINT_IN_TIME.value
+            oracle_options["recoverSCN"] = str(pit_scn)
+
+        elif pit_time is not None:
+            oracle_options["recoverFrom"] = OracleRecoverOptions.POINT_IN_TIME.value
+            oracle_options["restoreFrom"] = OracleRestoreOptions.POINT_IN_TIME.value
+
+        if pit_scn is not None or pit_time is not None:
+            restore_time = self._oracle_restore_time(pit_time)
+            oracle_options["recoverTime"] = {"time": restore_time}
+            oracle_options["restoreTime"] = {"time": restore_time}
+
+        if controlfile_time is not None:
+            oracle_options["specifyControlFileTime"] = True
+            oracle_options["controlFileTime"] = {"time": self._oracle_restore_time(controlfile_time)}
+
+        if kwargs.get("use_source_catalog", self.is_catalog_enabled):
+            oracle_options["noCatalog"] = False
+            oracle_options["skipTargetConnection"] = True
+            oracle_options["catalogConnectCredential"] = self.catalog_credential_info
+
+        is_full_data_restore = (
+            len(selected_source_items) == len(full_source_items)
+            and set(selected_source_items) == set(full_source_items)
+        )
+        partial_restore = kwargs.get("partial_restore", not is_full_data_restore)
+        if partial_restore:
+            oracle_options["partialRestore"] = True
+            oracle_options["stagingPath"] = kwargs.get("staging_path", "")
+            oracle_options["cleanupAuxiliary"] = kwargs.get("cleanup_auxiliary", True)
+            if not is_out_of_place:
+                oracle_options["restoreControlFile"] = False
+                oracle_options["restoreData"] = True
+
+        if kwargs.get("restore_archive_log"):
+            oracle_options["recover"] = False
+            oracle_options["archiveLog"] = True
+            oracle_options["restoreData"] = False
+            oracle_options["archiveLogBy"] = kwargs.get("archive_log_by", 3)
+            oracle_options["logTarget"] = kwargs.get("log_target", "")
+            if oracle_options["archiveLogBy"] == 1:
+                oracle_options["useStartLSN"] = kwargs.get("use_start_lsn", True)
+                oracle_options["startLSNNum"] = str(kwargs.get("start_lsn", 1))
+                oracle_options["useEndLSN"] = kwargs.get("use_end_lsn", False)
+                oracle_options["endLSNNum"] = str(kwargs.get("end_lsn", 1))
+            elif oracle_options["archiveLogBy"] == 2:
+                log_time = {}
+                oracle_options["useStartLog"] = kwargs.get("use_start_log", True)
+                oracle_options["useEndLog"] = kwargs.get("use_end_log", False)
+                if oracle_options["useStartLog"]:
+                    log_time["fromTime"] = self._oracle_restore_time(
+                        kwargs.get("start_log_time"))
+                if oracle_options["useEndLog"]:
+                    log_time["toTime"] = self._oracle_restore_time(
+                        kwargs.get("end_log_time"))
+                oracle_options["logTime"] = log_time
+
+        redirect_options = kwargs.get("redirect_options") or {}
+        redirect_option = redirect_options.get(
+            "redirect_option", redirect_options.get("redirectOption"))
+        if redirect_option and redirect_option != "NONE":
+            oracle_options["redirectItemsPresent"] = True
+            oracle_options["redirectAllItemsSelected"] = redirect_option == "ALL"
+            if oracle_options["redirectAllItemsSelected"]:
+                oracle_options["renamePathForAllTablespaces"] = redirect_options.get(
+                    "rename_path_for_all_tablespaces",
+                    redirect_options.get("renamePathForAllTablespaces", ""))
+            else:
+                self._set_redirect_items(oracle_options, redirect_options.get(
+                    "data_files", redirect_options.get("dataFilesList", [])))
+        online_log_dest = redirect_options.get(
+            "online_log_dest", redirect_options.get("onlineLogDest"))
+        if redirect_options.get("redo_logs", redirect_options.get("redoLogs")) and online_log_dest:
+            oracle_options["redirectTempFilesSelected"] = True
+            oracle_options["redirectTempFilesValue"] = online_log_dest
+        if redirect_options.get("online_redo_logs", redirect_options.get("onlineRedoLogs")):
+            self._set_online_redo_logs(oracle_options, redirect_options)
+
+        if kwargs.get("rman_duplicate") and is_out_of_place:
+            oracle_options["duplicate"] = True
+            oracle_options["restoreControlFile"] = False
+            oracle_options["duplicateToName"] = kwargs.get(
+                "duplicate_name", kwargs.get("destination_db_name", self.instance_name))
+            oracle_options["duplicateStandby"] = kwargs.get("duplicate_standby", False)
+            if oracle_options["duplicateStandby"]:
+                oracle_options["duplicateStandbySID"] = "dup"
+                oracle_options["duplicateStandbyDoRecover"] = False
+            else:
+                oracle_options["duplicateTo"] = True
+            skipped_tablespaces = kwargs.get("skip_tablespaces") or []
+            if skipped_tablespaces:
+                oracle_options["duplicateToSkipTablespace"] = True
+                oracle_options["duplicateToSkipTablespacesList"] = skipped_tablespaces
+                oracle_options["duplicateToSkipTablespaces"] = ",".join(skipped_tablespaces)
+
+        pdb_clone_options = kwargs.get("pdb_clone_options") or {}
+        if pdb_clone_options and is_out_of_place:
+            oracle_options.update({
+                "oraExtendedRstOptions": 1,
+                "openDatabase": True,
+                "autoDetectDevice": True,
+                "resetLogs": 0,
+                "archiveLog": False,
+                "restoreData": False,
+                "restoreControlFile": False,
+                "restoreSPFile": False,
+                "duplicate": False,
+                "cleanupAuxiliary": pdb_clone_options.get("cleanup_auxiliary", True),
+                "stagingPath": pdb_clone_options.get(
+                    "staging_path", pdb_clone_options.get("stagingPath", "")),
+                "redirectItemsPresent": True,
+                "redirectAllItemsSelected": pdb_clone_options.get(
+                    "redirect_all", pdb_clone_options.get("redirectOption", "ALL") == "ALL")
+            })
+            if oracle_options["redirectAllItemsSelected"]:
+                oracle_options["renamePathForAllTablespaces"] = pdb_clone_options.get(
+                    "redirect_path", "")
+            else:
+                self._set_redirect_items(oracle_options, pdb_clone_options.get(
+                    "data_files", pdb_clone_options.get("dataFilesList", [])))
+            source_paths = []
+            rename_info = []
+            for pdb in pdb_clone_options.get("pdbs", pdb_clone_options.get("selectedPDBs", [])):
+                source_name = pdb.get("source_name", pdb.get("database", ""))
+                source_paths.append(source_name)
+                rename_info.append({
+                    "type": 1,
+                    "origName": source_name,
+                    "newName": pdb.get("destination_name", pdb.get("cloneName", "")),
+                    "destPath": pdb.get("datafile_path", pdb.get("dataFile", ""))
+                })
+            oracle_options["sourcePaths"] = source_paths
+            oracle_options["oracleObjectRenameInfoList"] = rename_info
+
+        if "validate" in kwargs:
+            oracle_options["validate"] = kwargs["validate"]
+        if "skip_target_connection" in kwargs:
+            oracle_options["skipTargetConnection"] = kwargs["skip_target_connection"]
+
+    @staticmethod
+    def _set_redirect_items(oracle_options: dict, data_files: list) -> None:
+        """Set frontend-compatible Oracle datafile redirection values."""
+        redirect_items = []
+        redirect_items_value = []
+        for data_file in data_files:
+            source_path = data_file.get("old_data_file", data_file.get("oldDataFile", ""))
+            destination_path = data_file.get("data_file", data_file.get("dataFile", ""))
+            if not source_path or source_path == destination_path:
+                continue
+            tablespace = data_file.get("tablespace", data_file.get("tableSpace", ""))
+            if data_file.get("database"):
+                tablespace = f"{data_file['database']}:{tablespace}"
+            separator = "/" if destination_path.startswith("/") else "\\"
+            redirect_items.append(
+                f"{tablespace}{separator}{source_path}\x15{destination_path}")
+            redirect_items_value.append(
+                f"{tablespace}\t{source_path}\t{destination_path}")
+        oracle_options["redirectItems"] = redirect_items
+        oracle_options["redirectItemsValue"] = redirect_items_value
+
+    @staticmethod
+    def _set_online_redo_logs(oracle_options: dict, redirect_options: dict) -> None:
+        """Set frontend-compatible generated online redo log values."""
+        redo_paths = redirect_options.get("redo_log_files", redirect_options.get("redoLogFiles", []))
+        files_per_group = redirect_options.get("redo_in_groups", redirect_options.get("redoInGroups", 2))
+        group_count = redirect_options.get("number_of_groups", redirect_options.get("numberOfGroups", 2))
+        redo_size = redirect_options.get("redo_size", redirect_options.get("redoSize", 50))
+        size_mode = redirect_options.get("redo_size_mode", redirect_options.get("redoSizeMode", "M"))
+        separator = "\\" if redo_paths and "\\" in redo_paths[0] else "/"
+        redo_values = []
+        redo_script = "LOGFILE\n"
+        for group_index in range(1, group_count + 1):
+            group_paths = []
+            script_paths = []
+            for file_index in range(1, files_per_group + 1):
+                path = f"{redo_paths[file_index - 1]}{separator}Group{group_index}_File{file_index}_Redo.log"
+                group_paths.append(path)
+                script_paths.append(f"'{path}'")
+            redo_values.append(
+                f"{group_index}\t{redo_size}\t{size_mode[0]}\tyes\n" + "\t".join(group_paths))
+            redo_script += f"GROUP {group_index}\n(\n" + ",\n".join(script_paths) + f"\n) SIZE {redo_size}{size_mode[0]}\n"
+            if group_index < group_count:
+                redo_script += ","
+        oracle_options["duplicateToLogFile"] = True
+        oracle_options["logFileGroup"] = True
+        oracle_options["duplicateToLogFilesListValue"] = redo_values
+        oracle_options["duplicateToLogFilesList"] = redo_script
+
     def _restore_db_dump_option_json(self, value: dict) -> None:
         """Set the Oracle database dump restore options in the restore JSON.
 
@@ -1395,11 +1742,19 @@ class OracleInstance(DatabaseInstance):
             "restorePath": value.get("destination_path", ""),
             "overwriteTable": value.get("overwrite_table", False),
             "enabled": True,
-            "dbConnectCredential": {
+            "remapTablespaces": value.get("remap_tablespaces")
+        }
+        if value.get("sql_connect"):
+            connect_details = value["sql_connect"].copy()
+            if value.get("password") is not None:
+                connect_details["password"] = b64encode(
+                    value["password"].encode()).decode()
+            self._db_dump_restore_json["connectDetails"] = connect_details
+        else:
+            self._db_dump_restore_json["dbConnectCredential"] = {
                 "credentialId": value.get("credential_id", 0),
                 "credentialName": value.get("credential_name", "")
             }
-        }
 
     def _restore_oracle_option_json(self, value: dict) -> None:
         """Set Oracle restore options in the restore JSON configuration.
@@ -1413,30 +1768,9 @@ class OracleInstance(DatabaseInstance):
             raise SDKException('Instance', '101')
 
         self._oracle_restore_json = {
-            "validate": False,
-            "noCatalog": False,
-            "duplicateToName": "",
-            "cloneEnv": False,
-            "restoreControlFile": False,
-            "duplicate": False,
-            "tableViewRestore": False,
-            "osID": 2,
-            "partialRestore": False,
-            "restoreStream": 2,
-            "restoreSPFile": False,
-            "recover": True,
-            "recoverFrom": 4,
-            "archiveLog": False,
             "restoreData": True,
-            "restoreFrom": 0,
-            "timeZone": {
-                "TimeZoneName": "(UTC) Coordinated Universal Time"
-            },
-            "recoverTime": {},
-            "sourcePaths": [
-                "//**"
-            ],
-            "restoreTime": {}
+            "noCatalog": True,
+            "recover": True
         }
 
         if value.get("restore_oracle_options_type") == "restore_archivelogs_norecover":
@@ -1490,9 +1824,6 @@ class OracleInstance(DatabaseInstance):
                 self._oracle_restore_json["endLSNNum"] = value.get("end_lsn")
             if value.get("log_dest", None):
                 self._oracle_restore_json["logTarget"] = value.get("log_dest")
-        if value.get("restore_to_disk", False):
-            self._oracle_restore_json.pop("sourcePaths", None)
-
     def _restore_json(self, **kwargs) -> dict:
         """Generate the JSON request payload for the restore API based on user-selected options.
 
@@ -1519,12 +1850,13 @@ class OracleInstance(DatabaseInstance):
         else:
             restore_option.update(kwargs)
 
-        self._restore_db_dump_option_json(restore_option)
-        self._restore_oracle_option_json(restore_option)
-        rest_json["taskInfo"]["subTasks"][0]["options"][
-            "restoreOptions"]["dbDumpOptions"] = self._db_dump_restore_json
-        rest_json["taskInfo"]["subTasks"][0]["options"][
-            "restoreOptions"]["oracleOpt"] = self._oracle_restore_json
+        if restore_option.get("logical_dump_restore"):
+            self._restore_db_dump_option_json(restore_option)
+            self._restore_oracle_option_json(restore_option)
+            rest_json["taskInfo"]["subTasks"][0]["options"][
+                "restoreOptions"]["dbDumpOptions"] = self._db_dump_restore_json
+            rest_json["taskInfo"]["subTasks"][0]["options"][
+                "restoreOptions"]["oracleOpt"] = self._oracle_restore_json
 
         return rest_json
 
@@ -1539,7 +1871,11 @@ class OracleInstance(DatabaseInstance):
         restore_oracle_options_type: str = None,
         start_lsn: str = None,
         end_lsn: str = None,
-        log_dest: str = None
+        log_dest: str = None,
+        overwrite_table: bool = False,
+        remap_tablespaces: Optional[dict] = None,
+        sql_connect: Optional[dict] = None,
+        password: str = None
     ) -> 'Job':
         """Restore Oracle logical dump data or log files to their original location.
 
@@ -1585,8 +1921,9 @@ class OracleInstance(DatabaseInstance):
         if not path:
             raise SDKException('Instance', '103')
 
-        credential_id = self._commcell_object.credentials.get(credential_name).credential_id
-
+        credential_id = 0
+        if credential_name:
+            credential_id = self._commcell_object.credentials.get(credential_name).credential_id
         request_json = self._restore_json(
             credential_name=credential_name,
             credential_id=credential_id,
@@ -1595,8 +1932,13 @@ class OracleInstance(DatabaseInstance):
             destination_client=dest_client_name,
             destination_instance=dest_instance_name,
             destination_path=dest_path,
+            logical_dump_restore=True,
             restore_oracle_options_type=restore_oracle_options_type,
             start_lsn=start_lsn, end_lsn=end_lsn,
-            log_dest=log_dest)
+            log_dest=log_dest,
+            overwrite_table=overwrite_table,
+            remap_tablespaces=remap_tablespaces,
+            sql_connect=sql_connect,
+            password=password)
 
         return self._process_restore_response(request_json)

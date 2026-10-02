@@ -220,8 +220,6 @@ class Install(object):
                 Supported -
                 schedule_pattern        (dict)      -- Request JSON for scheduling the operation
                 install_update_options  (int)       -- Refer InstallUpdateOptions from deploymentconstants module
-                cs_version              (int)       -- cs sp version should be passed if push install is triggered
-                                                        by tenant admin
 
         Returns:
             Job, Schedules, or JobID: instance of the Job/Schedules class for this download,
@@ -243,11 +241,10 @@ class Install(object):
         **NOTE:** push_serivcepack_and_hotfixes cannot be used for revision upgrades
 
         """
-        version = int(kwargs.get("cs_version", self.commcell_object.commserv_version))
         selected_clients = []
         selected_client_groups = []
         schedule_pattern = kwargs.get('schedule_pattern', None)
-        direct_upgrade = version >= 36 and not schedule_pattern
+        direct_upgrade = not schedule_pattern
         if schedule_pattern:
             if not isinstance(schedule_pattern, dict):
                 raise SDKException("Install", "101")
@@ -290,11 +287,21 @@ class Install(object):
 
         install_diagnostic_updates = kwargs.get('install_diagnostic_updates', False)
 
-        if all_client_computers and version < 36:
-            selected_clients = [{"_type_": 2}]
+        if all_client_computers:
+            if direct_upgrade:
+                for client in commcell_client_computers:
+                    selected_clients.append({"id": int(commcell_client_computers[client]['id']),
+                                            "type": "CLIENT_ENTITY"})
+            else:
+                selected_clients = [{"_type_": 2}]
 
-        if all_client_computer_groups and version < 36:
-            selected_client_groups = [{"_type_": 27}]
+        if all_client_computer_groups:
+            if direct_upgrade:
+                for client_group in commcell_client_computer_groups:
+                    selected_client_groups.append({"id": int(commcell_client_computer_groups[client_group]),
+                                                    "type": "CLIENT_GROUP_ENTITY"})
+            else:
+                selected_client_groups = [{"_type_": 27}]
 
         all_clients = selected_clients + selected_client_groups
         if direct_upgrade:
@@ -353,19 +360,15 @@ class Install(object):
             request_json = SchedulePattern().create_schedule(request_json, schedule_pattern)
 
         if install_update_options:
-            if version >= 36:
-                update_os = bool(install_update_options & InstallUpdateOptions.UPDATE_INSTALL_HYPERSCALE_OS_UPDATES.value)
-                update_cvfs = bool(install_update_options & InstallUpdateOptions.UPDATE_INSTALL_HSX_STORAGE_UPDATES.value)
-                mode = "NON_DISRUPTIVE"
-                if install_update_options & InstallUpdateOptions.UPDATE_INSTALL_HSX_STORAGE_UPDATES_DISRUPTIVE_MODE.value:
-                    mode = "DISRUPTIVE"
-                
-                request_json['installOSUpdates'] = update_os
-                request_json['installStorageUpdates'] = update_cvfs
-                request_json['hyperscalePlatformUpgradeMode'] = mode
-            else:
-                adminOpts = request_json['taskInfo']['subTasks'][0]['options']['adminOpts']
-                adminOpts['updateOption']['installUpdateOptions'] = install_update_options
+            update_os = bool(install_update_options & InstallUpdateOptions.UPDATE_INSTALL_HYPERSCALE_OS_UPDATES.value)
+            update_cvfs = bool(install_update_options & InstallUpdateOptions.UPDATE_INSTALL_HSX_STORAGE_UPDATES.value)
+            mode = "NON_DISRUPTIVE"
+            if install_update_options & InstallUpdateOptions.UPDATE_INSTALL_HSX_STORAGE_UPDATES_DISRUPTIVE_MODE.value:
+                mode = "DISRUPTIVE"
+
+            request_json['installOSUpdates'] = update_os
+            request_json['installStorageUpdates'] = update_cvfs
+            request_json['hyperscalePlatformUpgradeMode'] = mode
 
         method = 'PUT' if direct_upgrade else 'POST'
         url = self._services['UPGRADE_SOFTWARE'] if direct_upgrade else self._services['CREATE_TASK']
@@ -376,8 +379,8 @@ class Install(object):
 
         if flag:
             if response.json():
-                if "jobIds" in response.json() or "jobId" in response.json():
-                    job_id = response.json()['jobId'] if version >= 36 else response.json()['jobIds'][0]
+                if "jobId" in response.json():
+                    job_id = response.json()['jobId']
                     try:
                         return Job(self.commcell_object, job_id)
                     except (requests.exceptions.JSONDecodeError, requests.exceptions.ConnectionError):
