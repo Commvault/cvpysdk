@@ -215,11 +215,13 @@ class CloudAppsInstance(Instance):
         from .cloudapps.azure_redis_instance import AzureRedisInstance
         from .cloudapps.klaviyo_instance import KlaviyoInstance
         from .cloudapps.hubspot_instance import HubSpotInstance
+        from .cloudapps.mailchimp_instance import MailchimpInstance
         from .cloudapps.aws_s3_vectors_instance import AwsS3VectorsInstance
         from .cloudapps.trello_instance import TrelloInstance
         from .cloudapps.miro_instance import MiroInstance
         from .cloudapps.servicenow_instance import ServiceNowInstance
         from .cloudapps.gcp_firestore_instance import GCPFirestoreInstance
+        from .cloudapps.sap_iq_instance import SapIqInstance
 
         
         instance_type = {
@@ -259,11 +261,13 @@ class CloudAppsInstance(Instance):
             86: AzureRedisInstance,  # Azure Redis Instance
             90: KlaviyoInstance,  # Klaviyo Instance
             94: AwsS3VectorsInstance,  # AWS S3 Vectors Instance
+            105: MailchimpInstance,  # Mailchimp Instance
             98: HubSpotInstance,   # HubSpot Instance
             104: MiroInstance,  # Miro Instance
             49: ServiceNowInstance,  # ServiceNow Instance (numeric cloud app type)
             134: TrelloInstance,  # Trello Instance 
-            89: GCPFirestoreInstance  # GCPFirestore Instance
+            89: GCPFirestoreInstance,  # GCPFirestore Instance
+            107: SapIqInstance  # SAP IQ Instance
         }
 
         commcell_object = agent_object._commcell_object

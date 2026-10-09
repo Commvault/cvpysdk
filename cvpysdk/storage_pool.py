@@ -96,6 +96,8 @@ StoragePool
 
     add_media_agent()           --  Adds a media agent to the storage pool
 
+    associate_server_group()    --  Associates a server group with the storage pool
+
     remove_media_agent()        --  Removes a media agent from the storage pool
 
 StoragePool instance attributes
@@ -2180,8 +2182,87 @@ class StoragePool(object):
 
         self.refresh()
     
-    def add_media_agent(self, media_agent, storage = True, ddb = False, shared_backup_locations=None,
-                        access_type = 'READ_WRITE') -> None:
+    def associate_server_group(self, media_agent_group) -> None:
+        """Associate a server group with the storage pool for DDB storage.
+
+        Args:
+            media_agent_group (str): Name of the media agent group to associate.
+
+        Returns:
+            None
+
+        Example:
+            >>> storage_pool.associate_server_group("MediaAgentGroupName")
+        """
+        server_group_id = self.commcell.client_groups.get(
+                media_agent_group
+                ).clientgroup_id
+        request_json = {
+            "serverGroups": [
+                {
+                    "id": int(server_group_id)
+                }
+            ],
+            "action": ManageMediaAgentActionType.ADD_DDB_STORAGE.value,
+            "accessType": "READ_WRITE"
+        }
+        manage_server_groups_api = self._commcell_object._services['MANAGE_SERVER_GROUPS_FOR_POOL'] % (
+            self.storage_pool_id
+        )
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'GET', manage_server_groups_api
+        )
+        if flag and response.json():
+            server_group_id = int(server_group_id)
+            server_group_id_keys = {
+                'id', 'servergroupid', 'server_group_id', 'clientgroupid', 'client_group_id'
+            }
+
+            def is_associated(data):
+                if isinstance(data, dict):
+                    for key, value in data.items():
+                        if key.lower() in server_group_id_keys:
+                            try:
+                                if int(value) == server_group_id:
+                                    return True
+                            except (TypeError, ValueError):
+                                pass
+                        if is_associated(value):
+                            return True
+                elif isinstance(data, list):
+                    return any(is_associated(item) for item in data)
+                return False
+
+            if is_associated(response.json()):
+                self.refresh()
+                return
+
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'PUT', manage_server_groups_api, request_json
+        )
+        if flag:
+            if response.json():
+                error_code = response.json().get('errorCode', 0)
+                if int(error_code) != 0:
+                    error_message = response.json().get('errorMessage', 'Unknown error occurred')
+                    if 'associated with server group' in error_message.lower():
+                        self.refresh()
+                        return
+                    raise SDKException(
+                        'StoragePool', '102',
+                        f'Failed to associate server group with storage pool\nError: "{error_message}"'
+                    )
+            else:
+                raise SDKException('Response', '102')
+        else:
+            response_string = self._commcell_object._update_response_(response.text)
+            if 'associated with server group' in response_string.lower():
+                self.refresh()
+                return
+            raise SDKException('Response', '101', response_string)
+        self.refresh()
+
+    def add_media_agent(self, media_agent, storage = True, ddb = False) -> None:
         """Add a media agent to the storage pool.
 
         This method associates a media agent with the storage pool, allowing it to be used for storage operations.

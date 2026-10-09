@@ -101,6 +101,10 @@ Instances:
 
     add_trello_instance()           --  Adds a new Trello instance to the given client
 
+    add_mailchimp_instance()         --  Adds a new Mailchimp instance to the given client
+
+    add_sap_iq_instance()           --  Adds a new SAP IQ instance (Cloud Apps type 107)
+
 
 Instance:
     __init__()                      --  initialise object of Instance with the specified instance
@@ -3464,6 +3468,114 @@ class Instances(object):
         else:
             raise SDKException('Response', '101', self._update_response_(response.text))
 
+    def add_mailchimp_instance(
+            self,
+            instance_name: str,
+            plan_name: str,
+            credential_name: str,
+            content=None,
+            **kwargs
+    ):
+        """Add a new Mailchimp Cloud Apps instance to the Commcell.
+
+        Args:
+            instance_name: Name for the new Mailchimp instance.
+            plan_name: Name of the plan to associate with the instance.
+            credential_name: Name of the Mailchimp SaaS credential.
+            content: Mailchimp content category names to back up. When omitted,
+                all supported categories are selected.
+            **kwargs: Additional workload-specific parameters.
+
+        Returns:
+            Instance: The newly created Mailchimp instance object.
+
+        Raises:
+            SDKException: If the plan or credential does not exist, if instance
+                creation fails, or the server returns an error.
+
+        Example:
+            >>> instance = commcell.instances.add_mailchimp_instance(
+            ...     instance_name="mailchimp_account",
+            ...     plan_name="DataVaultPlan",
+            ...     credential_name="mailchimp_account",
+            ...     content=["Templates", "Audiences", "Campaigns"]
+            ... )
+
+        #ai-gen-doc
+        """
+        from .subclients.cloudapps.mailchimp_subclient import MailchimpSubclient
+
+        if self.has_instance(instance_name):
+            raise SDKException(
+                'Instance', '102', 'Instance "{0}" already exists.'.format(instance_name)
+            )
+
+        if not self._commcell_object.plans.has_plan(plan_name):
+            raise SDKException(
+                'Instance', '102',
+                'Plan "{0}" does not exist in the Commcell'.format(plan_name)
+            )
+
+        if not self._commcell_object.credentials.has_credential(credential_name):
+            raise SDKException(
+                'Instance', '102',
+                'Credential "{0}" does not exist in the Commcell'.format(credential_name)
+            )
+
+        plan = self._commcell_object.plans.get(plan_name)
+        credential = self._commcell_object.credentials.get(credential_name)
+        content_xml = MailchimpSubclient._build_content_xml(content)
+
+        request_json = {
+            "instanceName": instance_name,
+            "instanceType": "MAILCHIMP",
+            "plan": {
+                "id": int(plan.plan_id),
+                "name": plan_name
+            },
+            "account": {
+                "name": credential_name
+            },
+            "content": [content_xml],
+            "credential": {
+                "id": int(credential.credential_id),
+                "name": credential_name
+            },
+            "useResourcePoolInfo": True
+        }
+
+        if kwargs:
+            overridden_fields = sorted(set(kwargs).intersection(request_json))
+            if overridden_fields:
+                raise SDKException(
+                    'Instance', '101',
+                    'Mailchimp instance fields cannot be overridden: {0}'.format(
+                        ', '.join(overridden_fields)
+                    )
+                )
+            request_json.update(kwargs)
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['ADD_MAILCHIMP_INSTANCE'], request_json
+        )
+        if flag:
+            if response.json():
+                response_data = response.json()
+                if 'id' in response_data and 'name' in response_data:
+                    self.refresh()
+                    return self.get(response_data['name'])
+                if 'errorMessage' in response_data:
+                    raise SDKException(
+                        'Instance', '102',
+                        'Failed to create Mailchimp instance\nError: "{0}"'.format(
+                            response_data['errorMessage']
+                        )
+                    )
+                raise SDKException('Response', '102')
+            raise SDKException('Response', '102')
+
+        raise SDKException('Response', '101', self._update_response_(response.text))
+
     def add_azure_redis_instance(
             self,
             instance_name,
@@ -4065,6 +4177,153 @@ class Instances(object):
                     raise SDKException(
                         'Instance', '102',
                         'Failed to create Trello instance\nError: "{0}"'.format(
+                            response_data['errorMessage']
+                        )
+                    )
+                else:
+                    raise SDKException('Response', '102')
+            else:
+                raise SDKException('Response', '102')
+        else:
+            raise SDKException('Response', '101', self._update_response_(response.text))
+
+    def add_sap_iq_instance(
+            self,
+            database_name: str,
+            plan_name: str,
+            credential_name: str,
+            access_node: str,
+            engine_name: str,
+            iq_dir: str,
+            port: int = 2638,
+            util_port: int = 19638):
+        """Add a new SAP IQ Cloud Apps instance to the Commcell.
+
+        Creates a SAP IQ instance using the V4 AI API. SAP IQ protects one whole database:
+        the database name is used as the instance name, the pseudoclient (account) name,
+        the backup content, and the ``databaseName`` custom property.
+
+        Args:
+            database_name (str):    Existing SAP IQ database to protect. Also becomes the
+                                    instance and pseudoclient name.
+            plan_name (str):        Name of the plan to associate with the instance.
+            credential_name (str):  Name of the saved SAP IQ database credential.
+            access_node (str):      Name of the access node client hosting SAP IQ.
+            engine_name (str):      SAP IQ server engine name.
+            iq_dir (str):           SAP IQ installation directory on the access node.
+            port (int):             SAP IQ server port. Defaults to 2638.
+            util_port (int):        SAP IQ utility database port. Defaults to 19638.
+
+        Returns:
+            Instance: The newly created SAP IQ instance object.
+
+        Raises:
+            SDKException: If the plan, credential, or access node does not exist, if
+                          instance creation fails, or the server returns an error.
+
+        Example:
+            >>> instance = agent.instances.add_sap_iq_instance(
+            ...     database_name='my_iq_db', plan_name='iq_plan',
+            ...     credential_name='iq creds', access_node='sykbiq2',
+            ...     engine_name='sykbiq2_test', iq_dir='/opt/sap')
+
+        #ai-gen-doc
+        """
+        if not self._commcell_object.plans.has_plan(plan_name):
+            raise SDKException(
+                'Instance', '102',
+                'Plan "{0}" does not exist in the Commcell'.format(plan_name)
+            )
+
+        if not self._commcell_object.credentials.has_credential(credential_name):
+            raise SDKException(
+                'Instance', '102',
+                'Credential "{0}" does not exist in the Commcell'.format(credential_name)
+            )
+
+        if not self._commcell_object.clients.has_client(access_node):
+            raise SDKException(
+                'Instance', '102',
+                'Access node "{0}" does not exist in the Commcell'.format(access_node)
+            )
+
+        plan = self._commcell_object.plans.get(plan_name)
+        credential = self._commcell_object.credentials.get(credential_name)
+        access_node_client = self._commcell_object.clients.get(access_node)
+
+        custom_properties = {
+            "name": database_name,
+            "engineName": engine_name,
+            "port": int(port),
+            "databaseName": database_name,
+            "iqDir": iq_dir,
+            "utilPort": int(util_port)
+        }
+
+        request_json = {
+            "instanceName": database_name,
+            "instanceType": "SYBASE_IQ",
+            "plan": {
+                "id": int(plan.plan_id),
+                "name": plan_name
+            },
+            "account": {
+                "name": database_name
+            },
+            "content": [database_name],
+            "excludeContent": [],
+            "credential": {
+                "id": int(credential.credential_id),
+                "name": credential_name
+            },
+            "useResourcePoolInfo": False,
+            "accessNodes": [
+                {
+                    "id": int(access_node_client.client_id),
+                    "name": access_node_client.client_name
+                }
+            ],
+            "customProperties": {
+                "nameValues": [
+                    {
+                        "name": "WorkloadInstanceCustomProperties",
+                        "value": json.dumps(custom_properties, separators=(',', ':'))
+                    }
+                ]
+            }
+        }
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._services['ADD_SAP_IQ_INSTANCE'], request_json
+        )
+
+        if flag:
+            if response.json():
+                response_data = response.json()
+                if 'id' in response_data and 'name' in response_data:
+                    # The instance lives on a new pseudoclient, not on this agent's client.
+                    commcell = self._commcell_object
+                    for attempt in range(12):
+                        commcell.clients.refresh()
+                        if commcell.clients.has_client(database_name):
+                            new_agent = commcell.clients.get(database_name).agents.get('cloud apps')
+                            new_agent.instances.refresh()
+                            if new_agent.instances.has_instance(response_data['name']):
+                                return new_agent.instances.get(response_data['name'])
+                        if attempt < 11:
+                            time.sleep(5)
+
+                    raise SDKException(
+                        'Instance', '102',
+                        'SAP IQ instance "{0}" was created (API returned id={1}) but the '
+                        'pseudoclient did not appear in commcell clients after 60s.'.format(
+                            database_name, response_data.get('id')
+                        )
+                    )
+                elif 'errorMessage' in response_data:
+                    raise SDKException(
+                        'Instance', '102',
+                        'Failed to create SAP IQ instance\nError: "{0}"'.format(
                             response_data['errorMessage']
                         )
                     )

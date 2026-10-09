@@ -279,10 +279,12 @@ SERVICES_DICT_TEMPLATE = {
     'ADD_AZURE_REDIS_INSTANCE': '{0}V4/AI/AzureRedis/Instance',
     'ADD_KLAVIYO_INSTANCE': '{0}V4/SAAS/Klaviyo/Instance',
     'ADD_HUBSPOT_INSTANCE': '{0}V4/SAAS/HubSpot/Instance',
+    'ADD_MAILCHIMP_INSTANCE': '{0}V4/SAAS/Mailchimp/Instance',
     'ADD_SERVICENOW_INSTANCE': '{0}V4/SAAS/ServiceNow/Instance',
     'ADD_AWS_S3_VECTORS_INSTANCE': '{0}V4/AI/AwsS3Vectors/Instance',
     'ADD_TRELLO_INSTANCE': '{0}V4/SAAS/AtlassianTrello/Instance',
     'ADD_GCP_FIRESTORE_INSTANCE': '{0}V4/AI/GCPFirestore/Instance',
+    'ADD_SAP_IQ_INSTANCE': '{0}V4/AI/SybaseIq/Instance',
     'MASKING_POLICY': '{0}MaskingPolicy',
 
     'DO_COMPLIANCE_SEARCH': '{0}Search',
@@ -524,6 +526,7 @@ SERVICES_DICT_TEMPLATE = {
     'DELETE_STORAGE_POOL': '{0}StoragePool/%s',
     'EDIT_STORAGE_POOL': '{0}StoragePool?Action=edit',
     'MANAGE_MEDIA_AGENTS_FOR_POOL': '{0}V4/StoragePool/%s/MediaAgent',
+    'MANAGE_SERVER_GROUPS_FOR_POOL': '{0}V4/StoragePool/%s/ServerGroup',
     'REPLACE_DISK_STORAGE_POOL': '{0}StoragePool?action=diskOperation',
     'GET_METALLIC_STORAGE_DETAILS': '{0}metallic/storage',
 

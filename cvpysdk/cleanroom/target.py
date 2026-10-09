@@ -692,6 +692,7 @@ class CleanroomTarget:
         self._cleanroom_target_properties = None
 
         self._policy_type = None
+        self._vendor = None
         self._application_type = None
         self._destination_hypervisor = None
         self._access_node = None
@@ -919,6 +920,8 @@ class CleanroomTarget:
                 self._cleanroom_target_properties = response.json()
                 self._application_type = (
                     self._cleanroom_target_properties.get("general", {}).get("target", {}).get("applicationType", ""))
+                self._vendor = (
+                    self._cleanroom_target_properties.get("general", {}).get("target", {}).get("vendor", ""))
                 self._destination_hypervisor = (
                     self._cleanroom_target_properties.get("general", {}).get("hypervisor", {}).get("name", ""))
                 self._vm_suffix = (
@@ -1186,6 +1189,22 @@ class CleanroomTarget:
         #ai-gen-doc
         """
         return self._policy_type
+
+    @property
+    def vendor(self) -> str:
+        """Get the vendor name for this CleanroomTarget.
+
+        Returns:
+            The vendor name as a string.
+
+        Example:
+            >>> target = CleanroomTarget()
+            >>> vendor_name = target.vendor
+            >>> print(f"Vendor: {vendor_name}")
+
+        #ai-gen-doc
+        """
+        return self._vendor
 
     @property
     def target_instance(self) -> str:

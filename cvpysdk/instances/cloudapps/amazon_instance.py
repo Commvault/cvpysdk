@@ -411,6 +411,26 @@ class AmazonRedshiftInstance(CloudDatabaseInstance):
         redshift_restore_json['redshiftRestoreOption']['numberOfNodes'] = \
             restore_options.get('options', {}).get('numberOfNodes', 1)
 
+        serverless_options = restore_options.get('options', {})
+        for option_name in (
+                'isServerlessCluster',
+                'targetNamespaceName',
+                'targetWorkgroupName',
+                'targetDbName',
+                'restoreToNewNamespace',
+                'baseCapacity',
+                'maxCapacity',
+                'targetSubnetIds',
+                'pricePerformanceTargetLevel',
+                'targetSecurityGroupIds',
+                'enhancedVpcRouting',
+                'defaultIamRoleArn',
+                'iamRoles',
+                'trackName'):
+            if option_name in serverless_options:
+                redshift_restore_json['redshiftRestoreOption'][option_name] = \
+                    serverless_options[option_name]
+
         restore_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["cloudAppsRestoreOptions"] = \
             redshift_restore_json
 

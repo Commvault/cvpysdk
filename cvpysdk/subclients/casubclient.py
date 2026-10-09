@@ -63,10 +63,12 @@ class CloudAppsSubclient(Subclient):
         from .cloudapps.azure_redis_subclient import AzureRedisSubclient
         from .cloudapps.klaviyo_subclient import KlaviyoSubclient
         from .cloudapps.hubspot_subclient import HubSpotSubclient
+        from .cloudapps.mailchimp_subclient import MailchimpSubclient
         from .cloudapps.aws_s3_vectors_subclient import AwsS3VectorsSubclient
         from .cloudapps.servicenow_subclient import ServiceNowSubclient
         from .cloudapps.trello_subclient import TrelloSubclient
         from .cloudapps.gcp_firestore_subclient import GCPFirestoreSubclient
+        from .cloudapps.sap_iq_subclient import SapIqSubclient
 
         instance_types = {
             1: GoogleSubclient,
@@ -103,11 +105,13 @@ class CloudAppsSubclient(Subclient):
             86: AzureRedisSubclient,  # Azure Redis Subclient
             90: KlaviyoSubclient,  # Klaviyo Subclient
             94: AwsS3VectorsSubclient,   # AWS S3 Vectors Subclient
+            105: MailchimpSubclient,  # Mailchimp Subclient
             103: TrelloSubclient,  # Trello Subclient
             134: TrelloSubclient,  # Trello Subclient (legacy/inferred id)
             98: HubSpotSubclient,   # HubSpot Subclient
             49: ServiceNowSubclient,  # ServiceNow Subclient (numeric cloud app type)
-            89: GCPFirestoreSubclient  # GCPFirestore Subclient
+            89: GCPFirestoreSubclient,  # GCPFirestore Subclient
+            107: SapIqSubclient  # SAP IQ Subclient
         }
 
         cloud_apps_instance_type = backupset_object._instance_object._properties[
