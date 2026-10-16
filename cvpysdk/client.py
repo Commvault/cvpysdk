@@ -5313,6 +5313,125 @@ class Clients(object):
 
         return self._process_add_response(request_json)
 
+    def add_netapp_storagegrid_object_storage_client(
+            self,
+            client_name: str,
+            plan_name: str,
+            credential_name: str,
+            host_url: str,
+            management_endpoint_url: str,
+            management_credential_name: str,
+            access_nodes: List[str],
+            use_iam_role: bool = False,
+            is_cloud_encryption_key_set: bool = False
+    ) -> 'Client':
+        """Add a NetApp StorageGRID (S3-Compatible) Object Storage pseudo client using POST /Client.
+
+        Args:
+            client_name: Name for the new StorageGRID client (also becomes the instanceName).
+            plan_name: Plan name to associate.
+            credential_name: Existing S3 credential name configured on Commcell.
+            host_url: StorageGRID S3 endpoint URL.
+            management_endpoint_url: StorageGRID management endpoint URL.
+            management_credential_name: Existing management credential name configured on Commcell.
+            access_nodes: Required list of access node client names (member servers).
+            use_iam_role: Whether to use IAM Role auth. Defaults to False.
+            is_cloud_encryption_key_set: Whether cloud encryption key is set. Defaults to False.
+
+        Returns:
+            Client object for the created StorageGRID client.
+
+        Raises:
+            SDKException: If client already exists, plan/credential/access node not found,
+                          or API returns an error.
+        """
+        if self.has_client(client_name):
+            raise SDKException('Client', '102', f'Client "{client_name}" already exists.')
+
+        if not access_nodes or not isinstance(access_nodes, list):
+            raise SDKException('Client', '101')
+
+        if not self._commcell_object.credentials.has_credential(credential_name):
+            raise SDKException('Client', '102', f'Credential "{credential_name}" does not exist.')
+        credential = self._commcell_object.credentials.get(credential_name)
+
+        if not self._commcell_object.credentials.has_credential(management_credential_name):
+            raise SDKException(
+                'Client', '102', f'Credential "{management_credential_name}" does not exist.')
+        mgmt_credential = self._commcell_object.credentials.get(management_credential_name)
+
+        if not self._commcell_object.plans.has_plan(plan_name):
+            raise SDKException('Client', '102', f'Plan "{plan_name}" does not exist.')
+        plan = self._commcell_object.plans.get(plan_name)
+
+        member_servers = []
+        for node in access_nodes:
+            if not isinstance(node, str) or not node.strip():
+                raise SDKException('Client', '101')
+            node = node.strip()
+            if not self.has_client(node):
+                raise SDKException('Client', '102', f'Access node "{node}" does not exist.')
+            node_client = self.get(node)
+            member_servers.append({
+                'client': {
+                    'clientId': int(node_client.client_id),
+                    'clientName': node_client.client_name,
+                    '_type_': 3
+                }
+            })
+
+        request_json = {
+            'clientInfo': {
+                'clientType': 15,
+                'cloudClonnectorProperties': {
+                    'instanceType': 'S3_COMPATIBLE',
+                    'instance': {
+                        'instance': {
+                            'instanceName': client_name,
+                            'applicationId': 134
+                        },
+                        'cloudAppsInstance': {
+                            'instanceTypeDisplayName': 'S3 Compatible',
+                            'instanceType': 'S3_COMPATIBLE',
+                            'generalCloudProperties': {
+                                'numberOfBackupStreams': 0,
+                                'memberServers': member_servers,
+                                'credentials': {
+                                    'credentialId': int(credential.credential_id),
+                                    'credentialName': credential_name
+                                }
+                            },
+                            'objectStorageInstance': {
+                                'isCloudEncryptionKeySet': bool(is_cloud_encryption_key_set)
+                            },
+                            's3CompatibleInstance': {
+                                'hostURL': host_url.strip(),
+                                'useIamRole': bool(use_iam_role),
+                                's3CompatibleVendorType': 'NETAPP_STORAGEGRID',
+                                'enableManagementIntegration': True,
+                                'managementURL': management_endpoint_url.strip(),
+                                'mgmtCredential': {
+                                    'credentialId': int(mgmt_credential.credential_id),
+                                    'credentialName': management_credential_name
+                                }
+                            },
+                            'credentialType': 'AMAZON_S3'
+                        },
+                        'useResourcePoolInfo': False
+                    }
+                },
+                'plan': {
+                    'planId': int(plan.plan_id),
+                    'planName': plan_name
+                }
+            },
+            'entity': {
+                'clientName': client_name
+            }
+        }
+
+        return self._process_add_response(request_json)
+
     def add_google_cloud_object_storage_client(
             self,
             client_name: str,

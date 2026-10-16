@@ -303,6 +303,7 @@ class RecoveryEntity:
         self._destination_instance_object = None
         self._installedWorkloads = None
         self._sub_entities = None
+        self._file_share_URL = None
 
         self._recovery_config_dict = None
         self._recovery_image = None
@@ -385,7 +386,8 @@ class RecoveryEntity:
                         'entityRecoveryPoint': recovery_point_details.get('entityRecoveryPoint'),
                         'inheritedFrom': recovery_point_details.get('inheritedFrom')
                     }
-
+                if 'fileShare' in self._properties:
+                    self._file_share_URL = self._properties['fileShare'].get('shareURL')
                 self._workload = WORKLOADS[self._properties['workload']]
                 self._source_client = self._properties['client']['name']
                 self._source_agent = WORKLOADS[self._properties['workload']]
@@ -395,9 +397,10 @@ class RecoveryEntity:
                 self._destination_agent = WORKLOADS[self._properties['workload']]
                 self._destination_instance = INSTANCES[self._recovery_target.target_instance]
                 """Returns a dict of all entities restore options"""
-                self._recovery_config_dict = {
-                     self._properties['name']: self._properties['recoveryConfiguration']['configuration'][RecoveryDestinationVendor[self._recovery_target.policy_type]]
-                }
+                if self._properties.get('recoveryConfiguration'):
+                    self._recovery_config_dict = {
+                        self._properties['name']: self._properties['recoveryConfiguration']['configuration'][RecoveryDestinationVendor[self._recovery_target.policy_type]]
+                    }
                 self._recovery_image = self._properties.get('recoveryConfiguration', {}).get('imageDetails', {}).get('vmTemplate', {}).get('name')
                 if 'subEntities' in self._properties:
                     self._sub_entities = self._properties.get('subEntities', {})
@@ -898,10 +901,9 @@ class RecoveryEntity:
 
     @property
     def sub_entities_workloads(self) -> list:
-        """Get the list of sub-entities associated with this recovery entity.
-
+        """Get the list of workloads for the sub-entities associated with this recovery entity.
         Returns:
-            list: A list of sub-entities related to the recovery entity.
+            list: A list of workloads corresponding to the sub-entities.
 
         Example:
             >>> entity = RecoveryEntity()
@@ -916,3 +918,19 @@ class RecoveryEntity:
                 if 'workload' in sub_entity:
                     sub_entities_workloads.append(WORKLOADS[sub_entity['workload']])
         return sub_entities_workloads
+
+    @property
+    def file_share_URL(self) -> str:
+        """Get the file share URL associated with this recovery entity.
+
+        Returns:
+            str: The URL of the file share used for this recovery entity.
+
+        Example:
+            >>> entity = RecoveryEntity()
+            >>> url = entity.file_share_URL
+            >>> print("File share url:", url)
+
+        #ai-gen-doc
+        """
+        return self._file_share_URL

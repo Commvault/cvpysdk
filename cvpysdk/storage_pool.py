@@ -65,8 +65,6 @@ StoragePools
 
     add_data_domain_boost_storage() -- Adds a new Data Domain Boost storage pool to commcell
 
-    add_hpe_catalyst_storage()  --  Adds a new HPE Catalyst StoreOnce storage pool to commcell
-
 Attributes
 ----------
 
@@ -777,32 +775,7 @@ class StoragePools:
         else:
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
-    
-    def add_hpe_catalyst_storage(self, storage_pool_name, storeonce_host, media_agent, username, password, store):
-        """Adds a new HPE Catalyst storage pool to commcell
 
-        Args:
-            storage_pool_name (str) -- name of the new storage pool to add
-
-            storeonce_host (str) -- hostname or IP address of the StoreOnce server
-
-            media_agent (str/object) -- name or instance of media agent
-
-            username (str) -- username to access the StoreOnce server
-
-            password (str) -- password to access the StoreOnce server
-
-            store (str) -- name of the store on the StoreOnce server
-
-        Returns:
-            StoragePool object if creation is successful
-        
-        Raises:
-            SDKException if creation is unsuccessful
-        """
-        username = storeonce_host+"//"+username
-        return self.add(storage_pool_name=storage_pool_name, mountpath=store, media_agent=media_agent, cloud_server_type=59, username=username, password=password, library_name=store)
-        
     def add_data_domain_boost_storage(
         self,
         type: str,
@@ -1172,9 +1145,6 @@ class StoragePools:
                 "vendorId": vendor_id
             }
             request_json["storage"][0]["metallicStorageInfo"] = metallic_Storage
-        
-        if cloud_server_type == 59: # HPE Catalyst
-            request_json["storage"][0]["savedCredential"] = {"credentialId": 0}
         
         # data domain boost storage (300, 58) and HPE Catalyst (59)
         if cloud_server_type in (300, 58, 59):

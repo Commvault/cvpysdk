@@ -80,6 +80,10 @@ class DRJobPhases(Enum):
     CHECK_CV_PACKAGE_STATUS = 103
     PREPARE_VM_FOR_INSTALL_SW = 104
     INSTALL_PACKAGES = 93
+    UPDATE_FILE_SHARE = 82
+    GET_FILE_SHARE = 79
+    CREATE_FILE_SHARE = 77
+    RESTORE_FILES = 78
 
 class DRJobPhaseToText(Enum):
     SCRIPT_EXECUTION = "Script Execution"
@@ -150,5 +154,8 @@ class DRJobPhaseToText(Enum):
     CHECK_CV_PACKAGE_STATUS = "Check Commvault Package Status"
     PREPARE_VM_FOR_INSTALL_SW = "Prepare VM for Install Software"
     INSTALL_PACKAGES = "Install Packages"
-
+    UPDATE_FILE_SHARE = "Update File Share"
+    GET_FILE_SHARE = "Get File Share"
+    CREATE_FILE_SHARE = "Create File Share"
+    RESTORE_FILES = "Restore Files"
     

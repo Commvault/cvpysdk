@@ -42,6 +42,8 @@ ServiceCommcell: Class for performing operations on a single service commcell
         reregister()                --  reregisters this commcell with the provided username and password
         refresh_sync()              --  refreshes the service commcell's properties synced with the router commcell
         refresh()                   --  refreshes the cached properties of the service commcell obj
+        enable_active_management()  --  enables active management for the service commcell
+        disable_active_management() --  disables active management for the service commcell
 
     Properties:
         props                       --  returns the properties of the service commcell
@@ -57,7 +59,7 @@ ServiceCommcell: Class for performing operations on a single service commcell
         role_string                 --  returns the role string of the service commcell
         details                     --  returns detailed properties of the service commcell
         associations                --  Associations object for managing associations of this service commcell
-        active_management           --  returns/sets whether active management is enabled for the service commcell
+        active_management           --  returns whether active management is enabled for the service commcell
         aggregation                 --  returns/sets whether aggregation is enabled for the service commcell
 
 
@@ -373,7 +375,7 @@ class ServiceCommcells:
                     return ServiceCommcell(self._commcell, found_name)
             raise SDKException(
                 'ServiceCommcells',
-                '102',
+                '112',
                 f'No service commcell found with name: {commcell_name}. '
                 f'Choose from {list(self.all_service_commcells.keys())}'
             )
@@ -835,7 +837,6 @@ class ServiceCommcell:
     def active_management(self) -> bool:
         """
         Returns whether active management (AM) is enabled for the service commcell.
-        Set to True to enable AM, False to disable it.
 
         Returns:
             bool: True if active management is enabled, False otherwise.
@@ -843,42 +844,49 @@ class ServiceCommcell:
         Usage:
             >>> if service_commcell.active_management:
             ...     print("AM is enabled")
-            >>> service_commcell.active_management = True   # enable
-            >>> service_commcell.active_management = False  # disable
         """
         return bool(self.props.get('activeManagementStatus'))
 
-    @active_management.setter
-    def active_management(self, value: bool) -> None:
+    def enable_active_management(self) -> None:
         """
-        Enables or disables active management for the service commcell.
-
-        Args:
-            value (bool): True to enable active management, False to disable it.
+        Enables active management for the service commcell.
 
         Usage:
-            >>> service_commcell.active_management = True
-            >>> service_commcell.active_management = False
+            >>> service_commcell.enable_active_management()
         """
-        if value:
-            self._commcell.wrap_request(
-                'PUT', 'ACTIVE_MANAGEMENT_ENABLE', (self.commcell_id,),
-                req_kwargs={'payload': {'userPassword': {}}},
-                sdk_exception=('ServiceCommcells', '109'),
-                error_read=lambda r: (
-                    r.get('errorResponse', {}).get('errorCode', r.get('errorCode', 0)),
-                    r.get('errorResponse', {}).get('errorMessage', r.get('errorMessage', ''))
-                ),
-            )
-        else:
-            self._commcell.wrap_request(
-                'PUT', 'ACTIVE_MANAGEMENT_DISABLE', (self.commcell_id, 'false'),
-                sdk_exception=('ServiceCommcells', '110'),
-                error_read=lambda r: (
-                    r.get('errorResponse', {}).get('errorCode', r.get('errorCode', 0)),
-                    r.get('errorResponse', {}).get('errorMessage', r.get('errorMessage', ''))
-                ),
-            )
+        self._commcell.wrap_request(
+            'PUT', 'ACTIVE_MANAGEMENT_ENABLE', (self.commcell_id,),
+            req_kwargs={'payload': {'userPassword': {}}},
+            sdk_exception=('ServiceCommcells', '109'),
+            error_read=lambda r: (
+                r.get('errorResponse', {}).get('errorCode', r.get('errorCode', 0)),
+                r.get('errorResponse', {}).get('errorMessage', r.get('errorMessage', ''))
+            ),
+        )
+        self.refresh()
+
+    def disable_active_management(self, force: bool = False) -> None:
+        """
+        Disables active management for the service commcell.
+
+        Args:
+            force (bool): If True, disable AM even when the service commcell is
+                not connected (``forceDisableActiveManagement=true``).
+
+        Usage:
+            >>> service_commcell.disable_active_management()
+            >>> service_commcell.disable_active_management(force=True)
+        """
+        self._commcell.wrap_request(
+            'PUT',
+            'ACTIVE_MANAGEMENT_DISABLE',
+            (self.commcell_id, str(force).lower()),
+            sdk_exception=('ServiceCommcells', '110'),
+            error_read=lambda r: (
+                r.get('errorResponse', {}).get('errorCode', r.get('errorCode', 0)),
+                r.get('errorResponse', {}).get('errorMessage', r.get('errorMessage', ''))
+            ),
+        )
         self.refresh()
 
     @property
