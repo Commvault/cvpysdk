@@ -195,6 +195,7 @@ from .schedules import SchedulePattern
 from .schedules import Schedules
 from .additional_settings import AdditionalSettings
 
+
 class Subclients(object):
     """
     Manages and interacts with all subclients associated with a client.
@@ -303,7 +304,7 @@ class Subclients(object):
     def __str__(self) -> str:
         """Return a string representation of all subclients in the backupset.
 
-        This method provides a human-readable summary listing all subclients 
+        This method provides a human-readable summary listing all subclients
         associated with the backupset for an agent of a client.
 
         Returns:
@@ -561,7 +562,7 @@ class Subclients(object):
         """Get a dictionary of all subclients configured on this backupset.
 
         Returns:
-            dict: A dictionary where each key is a subclient name and the value is a dictionary 
+            dict: A dictionary where each key is a subclient name and the value is a dictionary
             containing the subclient's ID and associated backupset. The structure is as follows:
 
                 {
@@ -670,7 +671,8 @@ class Subclients(object):
     def add(self, subclient_name: str, storage_policy: Optional[str] = None,
             subclient_type: Optional[str] = None, description: str = '',
             advanced_options: Optional[Dict[str, Any]] = None,
-            pre_scan_cmd: Optional[str] = None) -> 'Subclient':
+            pre_scan_cmd: Optional[str] = None,
+            plan_name: Optional[str] = None) -> 'Subclient':
         """Add a new subclient to the backupset.
 
         This method creates a new subclient with the specified name and optional properties,
@@ -683,6 +685,7 @@ class Subclients(object):
             description: Optional description for the subclient. Defaults to an empty string.
             advanced_options: Dictionary of additional options for subclient creation. Example: {"ondemand_subclient": True}. Defaults to None.
             pre_scan_cmd: Path to a batch file or shell script to run before each backup of the subclient. Defaults to None.
+            plan_name: Name of the plan to associate with the subclient when storage_policy is None. Defaults to None.
 
         Returns:
             Subclient: An instance of the Subclient class representing the newly created subclient.
@@ -736,6 +739,12 @@ class Subclients(object):
                 'Storage Policy: "{0}" does not exist in the Commcell'.format(
                     storage_policy)
             )
+        elif plan_name and not self._commcell_object.plans.has_plan(plan_name):
+            raise SDKException(
+                'Subclient',
+                '102',
+                'Plan: "{0}" does not exist in the Commcell'.format(plan_name)
+            )
 
         if advanced_options:
             if advanced_options.get("ondemand_subclient", False):
@@ -770,6 +779,10 @@ class Subclients(object):
 
         if storage_policy is None:
             del request_json["subClientProperties"]["commonProperties"]["storageDevice"]
+            if plan_name is not None:
+                request_json['subClientProperties']['planEntity'] = {
+                    "planName": plan_name
+                }
 
         if pre_scan_cmd is not None:
             request_json["subClientProperties"]["commonProperties"]["prepostProcess"] = {
@@ -792,7 +805,7 @@ class Subclients(object):
             full_mode: bool,
             credential_name: str = "",
             schema_value: Optional[list] = None
-        ) -> 'Subclient':
+    ) -> 'Subclient':
         """Add a subclient for Oracle logical dump backup.
 
         This method creates a subclient for Oracle logical dump in either full mode or schema mode:
@@ -945,7 +958,7 @@ class Subclients(object):
             contents: list,
             no_of_streams: int = 1,
             collect_object_list: bool = False
-        ) -> 'Subclient':
+    ) -> 'Subclient':
         """Add a new PostgreSQL subclient to the backup set.
 
         This method creates a new PostgreSQL subclient with the specified name, associates it with a storage policy,
@@ -1517,8 +1530,8 @@ class Subclients(object):
     def refresh(self) -> None:
         """Reload the subclients associated with the Backupset or Instance.
 
-        This method refreshes the internal cache of subclients, ensuring that any changes 
-        made on the Commcell are reflected in the current object. Use this method to 
+        This method refreshes the internal cache of subclients, ensuring that any changes
+        made on the Commcell are reflected in the current object. Use this method to
         update the subclient list after adding, removing, or modifying subclients.
 
         Example:
@@ -1627,8 +1640,9 @@ class Subclient(object):
         # add the agent name to this dict, and its class as the value
         # the appropriate class object will be initialized based on the agent
         _subclients_dict = {
-            'big data apps': BigDataAppsSubclient, # SP42.100 or lower CS honors big data apps as the Agent Name
-            'distributed data platforms': BigDataAppsSubclient, # SP42.110 and above CS honors distributed data platforms as the Agent Name
+            'big data apps': BigDataAppsSubclient,  # SP42.100 or lower CS honors big data apps as the Agent Name
+            'distributed data platforms': BigDataAppsSubclient,
+            # SP42.110 and above CS honors distributed data platforms as the Agent Name
             'file system': FileSystemSubclient,
             'virtual server': [VirtualServerSubclient, VMInstanceSubclient],
             'cloud apps': CloudAppsSubclient,
@@ -2252,9 +2266,9 @@ class Subclient(object):
         if flag:
             return response.json()
         else:
-            raise SDKException('Subclient','102','Browse Failed')
+            raise SDKException('Subclient', '102', 'Browse Failed')
 
-    def _restore_atlas_option_json(self, restore_dict: dict) :
+    def _restore_atlas_option_json(self, restore_dict: dict):
         """Setter for Atlas restore option in restore JSON. and launching restore job"""
 
         # Before running restore we need to browse for backed up Data to get cluster path
@@ -2377,7 +2391,7 @@ class Subclient(object):
                 "clientName": update_dict["clientName"],
             },
             "appId": {
-                "clientName":update_dict["clientName"],
+                "clientName": update_dict["clientName"],
                 "clientId": update_dict["clientId"],
                 "instanceId": update_dict["instanceId"],
                 "applicationId": 134
@@ -2387,16 +2401,16 @@ class Subclient(object):
 
         flag, response = self._cvpysdk_object.make_request('POST', self._CLOUD_CONTENT_BROWSE, browse_json)
         if not flag:
-            raise SDKException ('Response','101',self._update_response_(response.text))
-        response= response.json()
-        org_name = response ["cloudDBEntity"]["children"][0]["name"]
+            raise SDKException('Response', '101', self._update_response_(response.text))
+        response = response.json()
+        org_name = response["cloudDBEntity"]["children"][0]["name"]
         project_name = update_dict["AtlasProjectName"]
         browse_json["browsePath"] = f"{org_name}/{project_name}"
 
         flag, response = self._cvpysdk_object.make_request('POST', self._CLOUD_CONTENT_BROWSE, browse_json)
         if not flag:
-            raise SDKException ('Response','101',self._update_response_(response.text))
-        response= response.json()
+            raise SDKException('Response', '101', self._update_response_(response.text))
+        response = response.json()
         path = response["cloudDBEntity"]["children"][0]["path"]
 
         properties_dict = {
@@ -2598,7 +2612,7 @@ class Subclient(object):
     def _json_backup_subtasks(self) -> dict:
         """Get the backup subtask information for use in restore JSON.
 
-        This property provides a read-only dictionary containing the subtask details 
+        This property provides a read-only dictionary containing the subtask details
         required for backup operations in the restore JSON format.
 
         Returns:
@@ -2803,7 +2817,7 @@ class Subclient(object):
     def is_on_demand_subclient(self) -> bool:
         """Indicate whether this subclient is an on-demand subclient.
 
-        This property provides a read-only boolean value that specifies if the subclient 
+        This property provides a read-only boolean value that specifies if the subclient
         is configured as an on-demand subclient.
 
         Returns:
@@ -2883,7 +2897,7 @@ class Subclient(object):
     def storage_ma_id(self) -> int:
         """Get the storage media agent ID associated with this subclient.
 
-        This property provides read-only access to the storage media agent (MA) ID 
+        This property provides read-only access to the storage media agent (MA) ID
         for the subclient, which uniquely identifies the media agent used for storage operations.
 
         Returns:
@@ -2953,7 +2967,7 @@ class Subclient(object):
     def allow_multiple_readers(self) -> bool:
         """Indicate whether multiple readers are allowed for this Subclient.
 
-        This property provides read-only access to the setting that determines if multiple readers 
+        This property provides read-only access to the setting that determines if multiple readers
         can access the Subclient simultaneously, which may improve backup performance in certain scenarios.
 
         Returns:
@@ -3181,11 +3195,11 @@ class Subclient(object):
     def enable_trueup_days(self, days: int = 30) -> None:
         """Enable the TrueUp option and set the number of days for reconciliation.
 
-        This method configures the TrueUp feature for the subclient, specifying 
+        This method configures the TrueUp feature for the subclient, specifying
         the number of days after which reconciliation should occur.
 
         Args:
-            days: The number of days after which the TrueUp reconciliation is performed. 
+            days: The number of days after which the TrueUp reconciliation is performed.
                 Defaults to 30.
 
         Example:
@@ -3201,8 +3215,8 @@ class Subclient(object):
     def enable_backup_at_time(self, enable_time: str) -> None:
         """Schedule the subclient to enable backup at a specified UTC time.
 
-        This method disables backup if it is not already disabled, and then schedules 
-        the backup to be enabled at the provided UTC time. The time must be specified 
+        This method disables backup if it is not already disabled, and then schedules
+        the backup to be enabled at the provided UTC time. The time must be specified
         in 24-hour format as 'YYYY-MM-DD HH:mm:ss'.
 
         Note:
@@ -3428,7 +3442,7 @@ class Subclient(object):
                collect_metadata: bool = False) -> 'Job':
         """Run a backup job for the subclient at the specified backup level.
 
-        This method initiates a backup operation for the subclient, allowing you to specify the backup level 
+        This method initiates a backup operation for the subclient, allowing you to specify the backup level
         and additional options for synthetic full backups.
 
         Args:
@@ -3542,7 +3556,7 @@ class Subclient(object):
             >>> print(metadata)
 
         Returns:
-            tuple[list, dict]: 
+            tuple[list, dict]:
                 - list: List of file and folder paths from the browse response.
                 - dict: Dictionary containing all paths with additional metadata from the browse operation.
 
@@ -3560,8 +3574,8 @@ class Subclient(object):
     def find(self, *args: Any, **kwargs: Any) -> tuple[list, dict]:
         """Search for files or folders in the backed up content of the subclient.
 
-        This method allows you to search for files and folders that match specified filters 
-        within the subclient's backup content. You can provide search criteria either as a 
+        This method allows you to search for files and folders that match specified filters
+        within the subclient's backup content. You can provide search criteria either as a
         dictionary of browse options or as keyword arguments.
 
         Supported options include:
@@ -3573,7 +3587,7 @@ class Subclient(object):
             - file_size_lt (int): Find files with size less than the specified value (in bytes).
             - file_size_et (int): Find files with size equal to the specified value (in bytes).
 
-        For a complete list of supported options, refer to the 
+        For a complete list of supported options, refer to the
         `default_browse_options`_ documentation.
 
         Args:
@@ -3581,7 +3595,7 @@ class Subclient(object):
             **kwargs: Optional keyword arguments specifying browse options.
 
         Returns:
-            tuple[list, dict]: 
+            tuple[list, dict]:
                 - A list of file and folder paths matching the search criteria.
                 - A dictionary containing all matched paths with additional metadata from the browse operation.
 
@@ -3620,17 +3634,17 @@ class Subclient(object):
     def list_media(self, *args: Any, **kwargs: Any) -> Union[List[Any], Dict[str, Any]]:
         """List the media required to browse and restore backed up data from the subclient.
 
-        This method retrieves a list of all media needed for browsing and restoring data, 
-        based on the provided options. Options can be supplied either as a single dictionary 
+        This method retrieves a list of all media needed for browsing and restoring data,
+        based on the provided options. Options can be supplied either as a single dictionary
         argument or as keyword arguments.
 
         Args:
-            *args: Optional positional arguments. Typically, a single dictionary containing 
+            *args: Optional positional arguments. Typically, a single dictionary containing
                 browse options such as 'path', 'show_deleted', 'from_time', and 'to_time'.
             **kwargs: Optional keyword arguments specifying browse options directly.
 
         Returns:
-            Union[List[Any], Dict[str, Any]]: 
+            Union[List[Any], Dict[str, Any]]:
                 - A list of all media required for the specified options.
                 - A dictionary containing the total size of the media.
 
@@ -3685,7 +3699,7 @@ class Subclient(object):
             schedule_pattern: dict = None,
             proxy_client: str = None,
             advanced_options: dict = None
-        ) -> object:
+    ) -> object:
         """Restore files or folders to their original location on the client.
 
         This method restores the specified files or folders (provided in the `paths` list) to their original location
@@ -3766,7 +3780,7 @@ class Subclient(object):
             schedule_pattern: dict = None,
             proxy_client: str = None,
             advanced_options: dict = None
-        ) -> object:
+    ) -> object:
         """Restore specified files or folders to a different client and destination path.
 
         This method restores the files or folders listed in `paths` to the specified `destination_path`
@@ -3884,11 +3898,11 @@ class Subclient(object):
             include_finished: bool = True,
             lookup_time: int = 1,
             job_filter: str = 'Backup,SYNTHFULL'
-        ) -> 'Job':
+    ) -> 'Job':
         """Find the latest job for the subclient, including currently running jobs.
 
-        This method retrieves the most recent job associated with the subclient, 
-        optionally including active (running) and/or finished jobs, filtered by job type 
+        This method retrieves the most recent job associated with the subclient,
+        optionally including active (running) and/or finished jobs, filtered by job type
         and limited to jobs executed within a specified time window.
 
         Args:
@@ -3965,10 +3979,10 @@ class Subclient(object):
         return Job(self._commcell_object, latest_jobid)
 
     def run_content_indexing(self,
-                            pick_failed_items: bool = False,
-                            pick_only_failed_items: bool = False,
-                            streams: int = 4,
-                            proxies: Optional[list] = None) -> 'Job':
+                             pick_failed_items: bool = False,
+                             pick_only_failed_items: bool = False,
+                             streams: int = 4,
+                             proxies: Optional[list] = None) -> 'Job':
         """Run a content indexing job on the subclient.
 
         This method initiates a content indexing operation for the subclient, allowing you to specify
@@ -4012,7 +4026,7 @@ class Subclient(object):
             }
         }
 
-        self._content_indexing_option_json= {
+        self._content_indexing_option_json = {
             "reanalyze": False,
             "fileAnalytics": False,
             "subClientBasedAnalytics": False
@@ -4370,7 +4384,7 @@ class Subclient(object):
                 })
             else:
                 raise SDKException('Subclient', '102', 'Plan does not exist')
-                
+
         elif value is None:
             self.update_properties({
                 'removePlanAssociation': True
@@ -4402,8 +4416,8 @@ class Subclient(object):
         try:
             self._additional_settings = AdditionalSettings(self)
         except Exception as e:
-            raise SDKException('Subclient', '102', 
-                'Failed to initialize AdditionalSettings: "{0}"'.format(str(e)))
+            raise SDKException('Subclient', '102',
+                               'Failed to initialize AdditionalSettings: "{0}"'.format(str(e)))
         return self._additional_settings
 
     def _get_preview_metadata(self, file_path: str) -> Optional[dict]:

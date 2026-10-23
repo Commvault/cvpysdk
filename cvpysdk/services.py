@@ -749,6 +749,8 @@ SERVICES_DICT_TEMPLATE = {
 
     'GET_USER_SUGGESTIONS': '{0}getADUserSuggestions',
     'DOMAIN_SSO': '{0}V4/LDAP/%s',
+    'GET_INDEX_SERVERS': '{0}V4/IndexServers',
+    'GET_INDEX_SERVER_OVERVIEW': '{0}indexserver/%s/properties/overview',
 
     'LAUNCH_O365_LICENSING': '{0}Office365/License',
 

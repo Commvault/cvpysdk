@@ -83,6 +83,8 @@ IndexServer
 
     _get_properties()                   --  gets all the properties of the index server
 
+    get_properties()                    --  retrieves index server details from the overview API
+
     refresh()                           --  refresh all the properties of client
 
     update_roles_data()                 --  fetches the cloud roles data from commcell
@@ -211,6 +213,7 @@ import json
 import enum
 import http.client as httplib
 from copy import deepcopy
+from urllib.parse import urlparse
 
 from .exception import SDKException
 from .datacube.constants import IndexServerConstants
@@ -279,7 +282,7 @@ class IndexServers(object):
         """
         representation_string = '{:^5}\t{:^20}\n\n'.format('S. No.', 'IS Name')
         index = 1
-        for index_server in self._all_index_servers:
+        for index_server in self._all_index_servers.values():
             representation_string += '{:^5}\t{:^20}\n'.format(
                 index, index_server['engineName'])
             index += 1
@@ -329,7 +332,7 @@ class IndexServers(object):
         )
 
     def _get_index_servers(self) -> None:
-        """Retrieve all index servers available on the Commcell.
+        """Retrieve index server summaries from the V4 collection endpoint.
 
         Returns:
             None
@@ -340,34 +343,22 @@ class IndexServers(object):
         #ai-gen-doc
         """
         flag, response = self._cvpysdk_object.make_request(
-            'GET', self._services['GET_ALL_INDEX_SERVERS'])
+            'GET', self._services['GET_INDEX_SERVERS'])
         if flag:
-            if response.json() and 'listOfCIServer' in response.json():
-                for item in response.json()['listOfCIServer']:
-                    if item['cloudID'] in self._all_index_servers:
-                        # Add only unique roles to list
-                        if 'version' in item and item['version'] not in self._all_index_servers[item['cloudID']]['version']:
-                            self._all_index_servers[item['cloudID']]['version'].append(item['version'])
-                        # check whether we have populated node details earlier. if not, add it to
-                        # exisitng respective fields
-                        if item['clientName'] not in self._all_index_servers[item['cloudID']]['clientName']:
-
-                            self._all_index_servers[item['cloudID']]['clientId'].append(item['clientId'])
-                            self._all_index_servers[item['cloudID']]['clientName'].append(item['clientName'])
-                            self._all_index_servers[item['cloudID']]['hostName'].append(item['hostName'])
-                            self._all_index_servers[item['cloudID']]['cIServerURL'].append(item['cIServerURL'])
-                            self._all_index_servers[item['cloudID']]['basePort'].append(item['basePort'])
-
-                    else:
-                        item['version'] = [item.get('version', '')]
-                        item['clientId'] = [item['clientId']]
-                        item['clientName'] = [item['clientName']]
-                        item['hostName'] = [item['hostName']]
-                        item['cIServerURL'] = [item['cIServerURL']]
-                        item['basePort'] = [item['basePort']]
-                        self._all_index_servers[item['cloudID']] = item
-            else:
-                self._all_index_servers = {}
+            response_json = response.json()
+            if not response_json or 'indexServers' not in response_json:
+                raise SDKException('Response', '102')
+            self._all_index_servers = {
+                item['cloudId']: {
+                    **item,
+                    'cloudID': item['cloudId'],
+                    'engineName': item['name'],
+                    'indexServerClientId': item['id'],
+                    'clientId': [node['id'] for node in item['nodes']],
+                    'clientName': [node['name'] for node in item['nodes']]
+                }
+                for item in response_json['indexServers']
+            }
         else:
             self._response_not_success(response)
 
@@ -385,7 +376,9 @@ class IndexServers(object):
 
     @property
     def all_index_servers(self) -> dict:
-        """Get details of all index servers associated with the Commcell.
+        """Get summaries of all index servers associated with the Commcell.
+
+        Detailed properties are available through get_properties(cloud_name).
 
         Returns:
             dict: A dictionary containing details of all index servers, where each key is a cloud ID
@@ -395,7 +388,7 @@ class IndexServers(object):
                 {
                     "cloud_id_1": {
                         "engineName": "IndexServer1",
-                        "internalCloudName": "InternalName1",
+                        "indexServerClientId": 1,
                         ...
                     },
                     "cloud_id_2": {
@@ -423,7 +416,7 @@ class IndexServers(object):
     def refresh(self) -> None:
         """Reload the properties and state of the IndexServers class.
 
-        This method refreshes the internal data of the IndexServers instance, ensuring that 
+        This method refreshes the internal data of the IndexServers instance, ensuring that
         any changes made externally are reflected in the current object.
 
         #ai-gen-doc
@@ -436,8 +429,8 @@ class IndexServers(object):
     def update_roles_data(self) -> None:
         """Synchronize all cloud role details with the Commcell.
 
-        This method updates the internal data to reflect the latest cloud roles 
-        information from the Commcell, ensuring that any changes or new roles 
+        This method updates the internal data to reflect the latest cloud roles
+        information from the Commcell, ensuring that any changes or new roles
         are accurately represented.
 
         #ai-gen-doc
@@ -455,10 +448,7 @@ class IndexServers(object):
 
         #ai-gen-doc
         """
-        for index_server in self._all_index_servers:
-            if self._all_index_servers[index_server]['engineName'] == cloud_name:
-                return self._all_index_servers[index_server]
-        raise SDKException('IndexServers', '102')
+        return self.get(cloud_name).properties
 
     def has(self, cloud_name: str) -> bool:
         """Check if an index server with the specified name exists in the Commcell.
@@ -532,7 +522,7 @@ class IndexServers(object):
         Args:
             index_server_name: Name to assign to the new index server.
             index_server_node_names: List of client names to be used as index server nodes.
-            index_directory: List of index directory paths for the index server nodes. 
+            index_directory: List of index directory paths for the index server nodes.
                 - If a single path is provided, it is used for all nodes.
                 - If multiple paths are provided, each path is assigned to the corresponding node.
             index_server_roles: List of role names to assign to the index server.
@@ -821,14 +811,84 @@ class IndexServer(object):
 
         #ai-gen-doc
         """
-        self._properties = self._commcell_obj.index_servers.get_properties(
-            self._engine_name)
+        self._properties = self.get_properties()
+        self.plan_info = self._properties['planInfo']
+
+    def get_properties(self) -> dict:
+        """Retrieve overview details using the index server client ID, not its cloud ID.
+
+        Returns:
+            Properties normalized to the existing SDK keys, including ordered node
+            lists, active role versions, and plan information. The legacy type is 3.
+
+        Raises:
+            SDKException: If the request fails or required overview data is missing.
+
+        Example:
+            >>> properties = commcell.index_servers.get('MyIndexServer').get_properties()
+        """
+        summary = self._commcell_obj.index_servers.all_index_servers[self._cloud_id]
+        flag, response = self._cvpysdk_object.make_request(
+            'GET', self._services['GET_INDEX_SERVER_OVERVIEW'] % summary['indexServerClientId'])
+        if not flag:
+            raise SDKException('Response', '101', self._commcell_obj._update_response_(response.text))
+        response_json = response.json()
+        if not response_json or not response_json.get('clientProperties'):
+            raise SDKException('Response', '102')
+        try:
+            client_properties = response_json['clientProperties'][0]
+            cloud_info = client_properties['pseudoClientInfo'][
+                'distributedClusterInstanceProperties']['clusterConfig']['cloudInfo']
+            cloud_entity = cloud_info['cloudInfoEntity']
+            properties = dict(summary)
+            properties.update({
+                'internalCloudName': cloud_entity['cloudName'],
+                'serverType': cloud_info['type'],
+                'type': 3,
+                'planInfo': cloud_info.get('planInfo', {}),
+                'clientId': [],
+                'clientName': [],
+                'hostName': [],
+                'cIServerURL': [],
+                'basePort': [],
+                'version': []
+            })
+            overview_nodes = {
+                node['nodeClientEntity']['clientId']: node
+                for node in cloud_info['cloudNodes']
+            }
+            # V4 defines membership; the overview only supplies details for attached nodes.
+            for attached_node in summary['nodes']:
+                node = overview_nodes[attached_node['id']]
+                entity = node['nodeClientEntity']
+                metadata = {item['name']: item.get('value') for item in node['nodeMetaInfos']}
+                server_url = metadata['URL']
+                host_name = entity.get('hostName') or urlparse(server_url).hostname
+                if not server_url or not host_name:
+                    raise SDKException('Response', '102', 'Index server node URL or hostname is missing')
+                properties['clientId'].append(entity['clientId'])
+                properties['clientName'].append(attached_node['name'])
+                properties['hostName'].append(host_name)
+                properties['cIServerURL'].append(server_url)
+                properties['basePort'].append(int(metadata['PORTNO']))
+            role_versions = {
+                role['roleId']: role['roleVersion']
+                for role in self._commcell_obj.index_servers.roles_data
+            }
+            for role in cloud_info['solrCloudInfo']['roles']:
+                if role['status'] == 1:
+                    version = role_versions[role['roleId']]
+                    if version not in properties['version']:
+                        properties['version'].append(version)
+            return properties
+        except (KeyError, IndexError, TypeError, ValueError) as error:
+            raise SDKException('Response', '102', 'Invalid index server overview: {0}'.format(error)) from error
 
     def refresh(self) -> None:
         """Reload the properties of the index server to ensure the latest configuration is available.
 
-        This method refreshes the internal state of the IndexServer object, updating its properties 
-        from the underlying data source. Use this method if you suspect the index server's properties 
+        This method refreshes the internal state of the IndexServer object, updating its properties
+        from the underlying data source. Use this method if you suspect the index server's properties
         have changed, and you want to ensure you are working with the most current information.
 
         #ai-gen-doc
@@ -1048,14 +1108,14 @@ class IndexServer(object):
     def hard_commit(self, core_name: str) -> None:
         """Perform a hard commit operation for the specified Solr core on the index server.
 
-        This method triggers a hard commit, ensuring that all recent changes to the given Solr core 
+        This method triggers a hard commit, ensuring that all recent changes to the given Solr core
         are flushed and made durable on the index server.
 
         Args:
             core_name: The name of the Solr core to commit.
 
         Raises:
-            SDKException: If the input data is invalid, if the index server is a cloud instance 
+            SDKException: If the input data is invalid, if the index server is a cloud instance
                 (not implemented), if the response is empty, or if the response indicates failure.
 
         #ai-gen-doc
@@ -1161,7 +1221,7 @@ class IndexServer(object):
     ) -> str:
         """Create a Solr query URL based on the provided parameters.
 
-        This method constructs a Solr query URL using the specified search criteria, 
+        This method constructs a Solr query URL using the specified search criteria,
         result columns, and additional operational parameters.
 
         Args:
@@ -1910,8 +1970,8 @@ class _Roles(object):
     def update_roles_data(self) -> None:
         """Update and synchronize the cloud role data with the Commcell database.
 
-        This method refreshes the internal role data to ensure it matches the current state 
-        of the Commcell database. Use this method to reload role information after changes 
+        This method refreshes the internal role data to ensure it matches the current state
+        of the Commcell database. Use this method to reload role information after changes
         have been made in the Commcell environment.
 
         #ai-gen-doc

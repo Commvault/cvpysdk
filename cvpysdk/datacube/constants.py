@@ -43,7 +43,7 @@ class IndexServerConstants:
     #ai-gen-doc
     """
 
-    INDEX_SERVER_IDA_NAME = "Big Data Apps"
+    INDEX_SERVER_IDA_NAME = "Distributed Data Platforms"
     INDEX_SERVER_INSTANCE_NAME = "dynamicIndexInstance"
 
     ROLE_DATA_ANALYTICS = "Data Analytics"

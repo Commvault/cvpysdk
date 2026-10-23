@@ -1975,10 +1975,9 @@ class Plans(object):
             request_json['plan']['database']['storageLog']['copy'][0].pop(
                 'DDBPartitionInfo', None
             )
-            request_json['plan']['database']['storageLog']['copy'][0]['dedupeFlags'][
-                'useGlobalPolicy'] = {
-                    "storagePolicyId": int(storage_pool_obj.storage_pool_id)
-                }
+            request_json['plan']['database']['storageLog']['copy'][0]['useGlobalPolicy'] = {
+                "storagePolicyId": int(storage_pool_obj.storage_pool_id)
+            }
 
             # From SP36, snap copy wont be created by default during plan creation or present in the template
             if len(request_json['plan']['storage']['copy']) > 1:
