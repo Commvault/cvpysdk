@@ -54,6 +54,7 @@ class CloudAppsSubclient(Subclient):
         from .cloudapps.azure_cosmosdb_subclient import AzureCosmosDBSubclient
         from .cloudapps.okta_subclient import OktaSubclient
         from .cloudapps.powerbi_subclient import PowerBISubclient
+        from .cloudapps.powerapps_subclient import PowerAppsSubclient
         from .cloudapps.clickhouse_subclient import ClickHouseSubclient
         from .cloudapps.aws_bedrock_subclient import AwsBedrockSubclient
         from .cloudapps.azure_foundry_subclient import AzureFoundrySubclient
@@ -97,6 +98,7 @@ class CloudAppsSubclient(Subclient):
             58: PineConeSubclient,  # PineCone Subclient,
             59: OktaSubclient,  # Okta
             60: PowerBISubclient,    # Power Platform PowerBi Subclient
+            57: PowerAppsSubclient,  # Power Platform PowerApps Subclient
             77: AwsBedrockSubclient,  # AWS Bedrock Subclient
             88: AzureFoundrySubclient,  # Azure Foundry Subclient
             84: ClickHouseSubclient,  # ClickHouse Subclient

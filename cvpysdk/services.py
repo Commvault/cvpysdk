@@ -139,6 +139,7 @@ SERVICES_DICT_TEMPLATE = {
     'EDIT_CLOUD_CONTROLLER': '{0}V4/Storage/Cloud/0/Bucket/%s/AccessPath/%s',
     'GET_AGP_STORAGE': '{0}V4/Storage/Cloud?additionalProperties=true&storageSubType=4',
     'DELETE_DEVICE_CONTROLLER': '{0}DriveController?action=deleteController',
+    'EDIT_DEVICE_CONTROLLER': '{0}DriveController?action=editController',
 
     'GET_MOVE_MOUNTPATH_DETAILS': '{0}MountPath/%s/Move',
     'MOVE_MOUNTPATH': '{0}MountPath/Move',
@@ -146,7 +147,7 @@ SERVICES_DICT_TEMPLATE = {
     'LOCK_MM_CONFIGURATION': '{0}LockMMConfiguration',
 
     'InfrastructureProvisioning': '{0}V4/InfrastructureProvisioning',
-    
+
     'STORAGE_POLICY': '{0}StoragePolicy',
     'GET_STORAGE_POLICY': '{0}StoragePolicy/%s',
     'DELETE_STORAGE_POLICY': '{0}V2/StoragePolicy',
@@ -401,6 +402,7 @@ SERVICES_DICT_TEMPLATE = {
     'V4_SERVER_PLANS': '{0}V4/ServerPlan',
     'V4_GLOBAL_SERVER_PLANS': '{0}/V4/Global/ServerPlan',
     'V4_ARCHIVER_PLAN': '{0}V4/ArchivePlan',
+    'V4_LAPTOP_PLANS': '{0}V4/LaptopPlan',
     'V4_SERVER_PLAN_BACKUP_DESTINATION': '{0}V4/ServerPlan/%s/BackupDestination',
     'V4_DRBACKUP_BACKUP_DESTINATIONS': '{0}V4/DRBackup/BackupDestinations',
     'V4_DRBACKUP_BACKUP_DESTINATION_DELETE': '{0}V4/DRBackup/BackupDestination/%s',
@@ -590,11 +592,11 @@ SERVICES_DICT_TEMPLATE = {
     'OFFICE365_PROCESS_INDEX_RETENTION_RULES': '{0}Office365/ProcessIdxRetentionRules',
     'OFFICE365_POPULATE_INDEX_STATS': '{0}Office365/PopulateIdxStats',
     'OFFICE365_OVERVIEW_STATS': '{0}Office365/overview/%s?mode=0',
-    
+
     'OFFICE365_CLIENT_CONNECTIONS': '{0}Office365/Client/%s?opType=%s&appType=%s',
     'OFFICE365_CLIENT_GENERATE_CERTIFICATE': '{0}ActiveDirectory/Azure/AADApp/%s',
     'AZURE_APP_AUTHORIZATION_URL': '{0}processAzureAuthToken.do', # need to remove api/ before using this endpoint
-    
+
     'ADD_EXCHANGE': '{0}pseudoClient',
     'CREATE_CONFIGURATION_POLICIES': '{0}ConfigurationPolicies',
     'GET_CONFIGURATION_POLICIES': '{0}ConfigurationPolicies?policyType=email',
@@ -609,7 +611,7 @@ SERVICES_DICT_TEMPLATE = {
 
     'CREATE_NUTANIX_CLIENT': '{0}Client/Nutanix',
     'CREATE_LUSTRE_CLIENT': '{0}Client/Lustre',
-    
+
     'GET_EVENTS': '{0}Events',
     'GET_EVENT': '{0}Events/%s',
 
@@ -876,7 +878,7 @@ SERVICES_DICT_TEMPLATE = {
     'SET_ADDITIONAL_SETTINGS': '{0}v4/workload/AdditionalSettings',
 
     'GLOBAL_MONGODB_STATUS': '{0}/v4/globalmongodb/status',
-    
+
     'MEDIA_IN_TAPE': '{0}/V4/Library/%s/Media?filterMediaType=%s&isExported=%s',
 
     'MEDIA_OPERATION': '{0}/V4/Storage/Tape/%s/Media',
@@ -884,7 +886,7 @@ SERVICES_DICT_TEMPLATE = {
     'VAULT_TRACKER_POLICY': '{0}VaultTrackerPolicy/%s',
 
     'GET_VAULT_TRACKER_ACTIONS': '{0}V4/VaultTrackerAction?libraryId=%s',
-    
+
     'DRIVE_OPERATION': '{0}/DriveOperations',
 
     'VIEW_LOGS_BY_TRACE_ID': '{0}TraceId/%s/Logs',

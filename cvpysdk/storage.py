@@ -2782,41 +2782,54 @@ class DiskLibrary(object):
                     isinstance(media_agent_id, int), isinstance(device_access_type, int)]):
             raise SDKException('Storage', '101')
 
-        username = kwargs.get("username", "")
-        password = kwargs.get("password", "")
-        credential_name = kwargs.get("credential_name", "")
         path = kwargs.get("path", self.mount_path)
         enabled = 1
         if not kwargs.get('enabled', True):
             enabled = 0
+        device_controller_info = {
+            "accessType": device_access_type,
+            "deviceId": device_id,
+            "deviceControllerId": device_controller_id,
+            "path": path,
+            "enabled": enabled,
+            "numWriters": -1,
+            "opType": 2,
+            "mediaAgent": {
+                "id": media_agent_id
+            }
+        }
+        if "password" in kwargs:
+            device_controller_info["password"] = kwargs["password"]
+        if "username" in kwargs:
+            device_controller_info["userName"] = kwargs["username"]
+        if "credential_name" in kwargs:
+            device_controller_info["savedCredential"] = {
+                "credentialName": kwargs["credential_name"]
+            }
+
         request_json = {
-            "EVGui_MMDevicePathInfoReq":
-                {
-                    "mountpathId": mountpath_id,
-                    "infoList": {
-                        "password": password,
-                        "accessType": device_access_type,
-                        "deviceId": device_id,
-                        "deviceControllerId": device_controller_id,
-                        "path": path,
-                        "enabled": enabled,
-                        "numWriters": -1,
-                        "opType": 2,
-                        "autoPickTransportType": 0,
-                        "protocolType": 679,
-                        "mediaAgent": {
-                            "id": media_agent_id
-                        },
-                        "savedCredential": {
-                            "credentialName": credential_name
-                        },
-                        "userName": username
-                    }
-                }
+            "mountpathId": mountpath_id,
+            "infoList": [device_controller_info]
         }
 
-        self._commcell_object.qoperation_execute(request_json)
+        edit_device_controller = self._commcell_object._services['EDIT_DEVICE_CONTROLLER']
+        flag, response = self._commcell_object._cvpysdk_object.make_request(
+            'POST', edit_device_controller, request_json
+        )
 
+        if flag:
+            if response.json():
+                if 'errorCode' in response.json():
+                    error_code = int(response.json().get('errorCode'))
+                    if error_code != 0:
+                        error_message = response.json().get('errorString')
+                        raise SDKException('Storage', '102', error_message)
+            else:
+                raise SDKException('Response', '102')
+        else:
+            _stdout = 'Failed to update device controller with error: \n [{0}]'
+            _stderr = self._commcell_object._update_response_(response.text)
+            raise SDKException('Response', '101', _stdout.format(_stderr))
 
     def verify_media(self, media_name: str, location_id: int) -> None:
         """Perform a verify media operation on a specified media in the disk library.

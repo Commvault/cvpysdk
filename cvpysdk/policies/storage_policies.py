@@ -3518,7 +3518,8 @@ class StoragePolicy(object):
                                              'CV_DEFAULT': 'Not Assigned' to any Policy.
 
         Raises:
-            SDKException: If failed to reassociate
+            SDKException: If failed to reassociate, including the server response
+                for application errors.
 
         Usage:
             storage_policy.reassociate_all_subclients()
@@ -3545,7 +3546,10 @@ class StoragePolicy(object):
                 if 'errorCode' in response.json():
                     error_code = int(response.json()['errorCode'])
                     if error_code != 0:
-                        error_message = "Failed to Reassociate the Subclients"
+                        response_string = self._commcell_object._update_response_(response.text)
+                        error_message = "Failed to Reassociate the Subclients\nResponse: {0}".format(
+                            response_string
+                        )
                         raise SDKException('Storage', '102', error_message)
                 else:
                     raise SDKException('Response', '102')

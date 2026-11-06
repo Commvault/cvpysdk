@@ -680,6 +680,7 @@ class Plans(object):
         self._V4_PLANS = self._services['V4_SERVER_PLANS']
         self._V4_GLOBAL_PLANS = self._services['V4_GLOBAL_SERVER_PLANS']
         self._V4_ARCHIVER_PLAN = self._services['V4_ARCHIVER_PLAN']
+        self._V4_LAPTOP_PLANS = self._services['V4_LAPTOP_PLANS']
         self._plans = None
         self._plans_cache = None
         self.filter_query_count = 0
@@ -1873,6 +1874,94 @@ class Plans(object):
             response_string = self._update_response_(response.text)
             raise SDKException('Response', '101', response_string)
 
+    def create_laptop_plan(
+        self,
+        plan_name: str,
+        storage_pool_name: str,
+        backup_frequency: int = 480,
+        allowed_features: Optional[Dict[str, Any]] = None,
+        backup_content: Optional[Dict[str, Any]] = None,
+        retention: Optional[Dict[str, Any]] = None,
+        network_resources: Optional[Dict[str, Any]] = None,
+        alerts: Optional[List[Dict[str, Any]]] = None,
+        allow_plan_override: bool = False,
+        override_restrictions: Optional[Dict[str, Any]] = None,
+    ) -> 'Plan':
+        """Create a Laptop plan using the V4 LaptopPlan API.
+
+        Args:
+            plan_name: Name of the Laptop plan.
+            storage_pool_name: Existing storage pool for the primary destination.
+            backup_frequency: Backup frequency in minutes; defaults to 480.
+            allowed_features: Optional V4 ``allowedFeatures`` properties.
+            backup_content: Optional V4 ``backupContent`` properties.
+            retention: Optional V4 ``retention`` properties.
+            network_resources: Optional V4 ``networkResources`` properties.
+            alerts: Optional list of V4 alert identifiers and names.
+            allow_plan_override: Whether derived plans may override this plan.
+            override_restrictions: Optional V4 ``overrideRestrictions`` properties.
+
+        Returns:
+            The created Laptop plan.
+
+        Raises:
+            SDKException: If input is invalid or the V4 API rejects the request.
+        """
+        if not isinstance(plan_name, str) or not plan_name:
+            raise SDKException('Plan', '101', 'plan_name must be a non-empty string.')
+        if not isinstance(storage_pool_name, str) or not storage_pool_name:
+            raise SDKException('Plan', '101', 'storage_pool_name must be a non-empty string.')
+        if not isinstance(backup_frequency, int) or backup_frequency < 0:
+            raise SDKException('Plan', '101', 'backup_frequency must be a non-negative integer.')
+
+        storage_pool = self._commcell_object.storage_pools.get(storage_pool_name)
+        request_json = {
+            'planName': plan_name,
+            'storageAndSchedule': {
+                'primaryStorage': {
+                    'id': int(storage_pool.storage_pool_id),
+                    'name': storage_pool.storage_pool_name,
+                },
+                'backupFrequency': backup_frequency,
+            },
+            'allowPlanOverride': allow_plan_override,
+        }
+        optional_fields = {
+            'allowedFeatures': allowed_features,
+            'backupContent': backup_content,
+            'retention': retention,
+            'networkResources': network_resources,
+            'alerts': alerts,
+            'overrideRestrictions': override_restrictions,
+        }
+        request_json.update({key: value for key, value in optional_fields.items() if value is not None})
+
+        flag, response = self._cvpysdk_object.make_request(
+            'POST', self._V4_LAPTOP_PLANS, request_json
+        )
+        if not flag:
+            response_string = self._update_response_(response.text)
+            raise SDKException('Response', '101', response_string)
+        if not response.json():
+            raise SDKException('Response', '102')
+
+        response_value = response.json()
+        errors = response_value.get('errors') or []
+        if errors:
+            error = errors[0]
+            error_code = error.get('errorCode', error.get('status', {}).get('errorCode', 0))
+            error_message = error.get('errorMessage', error.get('status', {}).get('errorMessage', ''))
+            if error_code:
+                raise SDKException(
+                    'Plan', '102', f'Failed to create V4 Laptop Plan: {error_message}'
+                )
+
+        created_plan = response_value.get('plan') or response_value.get('data') or {}
+        created_plan_name = created_plan.get('name') or created_plan.get('planName') or plan_name
+        self.refresh()
+        self._commcell_object.policies.refresh()
+        return self.get(created_plan_name)
+
     def add(self,
             plan_name: str,
             plan_sub_type: str,
@@ -1975,9 +2064,10 @@ class Plans(object):
             request_json['plan']['database']['storageLog']['copy'][0].pop(
                 'DDBPartitionInfo', None
             )
-            request_json['plan']['database']['storageLog']['copy'][0]['useGlobalPolicy'] = {
-                "storagePolicyId": int(storage_pool_obj.storage_pool_id)
-            }
+            request_json['plan']['database']['storageLog']['copy'][0]['dedupeFlags'][
+                'useGlobalPolicy'] = {
+                    "storagePolicyId": int(storage_pool_obj.storage_pool_id)
+                }
 
             # From SP36, snap copy wont be created by default during plan creation or present in the template
             if len(request_json['plan']['storage']['copy']) > 1:
@@ -2755,8 +2845,8 @@ class Plan(object):
         self._PLAN = self._services['PLAN'] % (self.plan_id)
         self._V4_PLAN = self._services['V4_SERVER_PLAN'] % (self.plan_id)
         self._V4_DC_PLAN = self._services['V4_DC_PLAN'] % (self.plan_id)
-        self._V5_SERVER_PLAN_COPY_CLONE = self._services['V5_SERVER_PLAN_COPY_CLONE'] 
-        self._V5_LAPTOP_PLAN_COPY_CLONE = self._services['V5_LAPTOP_PLAN_COPY_CLONE'] 
+        self._V5_SERVER_PLAN_COPY_CLONE = self._services['V5_SERVER_PLAN_COPY_CLONE']
+        self._V5_LAPTOP_PLAN_COPY_CLONE = self._services['V5_LAPTOP_PLAN_COPY_CLONE']
         self._V5_ARCHIVER_PLAN_COPY_CLONE = self._services['V5_ARCHIVER_PLAN_COPY_CLONE']
         self._COMPANY_ASSOCIATION = self._services['COMPANY_ENTITY_ASSOCIATION'] % (PLAN_ENTITY_TYPE, self.plan_id)
         self._PLAN_RPO = self._services['SERVER_PLAN_RPO'] % (self.plan_id)
@@ -3748,8 +3838,8 @@ class Plan(object):
         flag, response = self._cvpysdk_object.make_request('DELETE', self._services['SERVER_PLAN_REGIONS'] % (self.plan_id, region_id))
 
         self.__handle_response(flag, response, custom_error_message=f'Failed to remove region from the plan: [{self.plan_name}]')
-    
-    def associate_company(self, company_name: str | list[str]) -> None: 
+
+    def associate_company(self, company_name: str | list[str]) -> None:
         """Method to associate a company to the plan
 
         Args:
@@ -3860,9 +3950,9 @@ class Plan(object):
             plan.add_schedule({"backupType": "TRANSACTIONLOG", "scheduleOption": {"useDiskCacheForLogBackups": True}})
         """
         # Capture existing schedule IDs before adding
-        existing_ids = {(s.get('scheduleId'), s.get('policyId')) 
+        existing_ids = {(s.get('scheduleId'), s.get('policyId'))
                         for s in self._v4_plan_properties['rpo']['backupFrequency']['schedules']}
-        
+
         schedule_payload = self.plan_v4_helper.get_schedule_payload(schedule_options)
 
         payload = {
@@ -3873,17 +3963,17 @@ class Plan(object):
         flag, response = self._cvpysdk_object.make_request('PUT', self._PLAN_RPO, payload)
 
         self.__handle_response(flag, response, custom_error_message=f'Failed to add new schedule to the plan: [{self.plan_name}]')
-        
+
         # Refresh and find the newly added schedule using set difference
         self.refresh()
-        
-        current_ids = {(s.get('scheduleId'), s.get('policyId')) 
+
+        current_ids = {(s.get('scheduleId'), s.get('policyId'))
                        for s in self._v4_plan_properties['rpo']['backupFrequency']['schedules']}
         new_ids = current_ids - existing_ids
-        
+
         if not new_ids:
             raise SDKException('Plan', '102', 'Failed to retrieve the newly added schedule IDs')
-        
+
         schedule_id, policy_id = new_ids.pop()
         return {'scheduleId': schedule_id, 'policyId': policy_id}
 
@@ -5659,13 +5749,13 @@ class Plan(object):
             raise SDKException(
                 'Plan', 102, f"Failed to disable log backup to disk for plan '{self.plan_name}'")
 
-    def update_threat_detection_plan(self, malware_detection: bool = None, encryption_detection: bool = None, 
-                                     anomaly_detection: bool = None, yara_rules: list = None, 
-                                     ioc_rules: list = None, enable_yara: bool = None, 
-                                     use_custom_hash_feed: bool = None, 
+    def update_threat_detection_plan(self, malware_detection: bool = None, encryption_detection: bool = None,
+                                     anomaly_detection: bool = None, yara_rules: list = None,
+                                     ioc_rules: list = None, enable_yara: bool = None,
+                                     use_custom_hash_feed: bool = None,
                                      use_commvault_hash_feed: bool = False) -> None:
         """Update threat detection plan with detection types and/or IOC rules.
-        
+
         Args:
             malware_detection (bool, optional): Enable or disable malware detection (Default: True)
             encryption_detection (bool, optional): Enable or disable encryption detection (Default: True)
@@ -5674,9 +5764,9 @@ class Plan(object):
                                         Example: ['rule1', 'rule2']
             ioc_rules (list, optional): List of IOC rule names (strings) to add to the plan
                                        Example: ['ioc_rule1', 'ioc_rule2']
-            enable_yara (bool, optional): Flag to enable YARA rule scanning. 
+            enable_yara (bool, optional): Flag to enable YARA rule scanning.
                                          Automatically set to True if yara_rules provided
-            use_custom_hash_feed (bool, optional): Enable custom hash feed. 
+            use_custom_hash_feed (bool, optional): Enable custom hash feed.
                                                   Automatically set to True if ioc_rules provided
             use_commvault_hash_feed (bool): Enable Commvault hash feed (default: False)
 
@@ -5696,7 +5786,7 @@ class Plan(object):
 
             # Update with both detection types and IOC rules
             plan.update_threat_detection_plan(
-                malware_detection=True, 
+                malware_detection=True,
                 encryption_detection=True,
                 yara_rules=['custoyara', 'rule2'],
                 ioc_rules=['ioc1', 'ioc2']
@@ -5706,15 +5796,15 @@ class Plan(object):
 
         # Handle threat detection settings (malware, encryption, anomaly)
         has_detection_settings = malware_detection is not None or encryption_detection is not None or anomaly_detection is not None
-        
+
         if has_detection_settings:
             # Only set what the user explicitly provided
             if not malware_detection and not encryption_detection and not anomaly_detection:
                 raise SDKException('Plan', '102', 'At least one detection type must be enabled')
-            
+
             request_json["threatIndicator"]["threatScan"] = {}
             request_json["threatIndicator"]["threatDetection"] = {}
-            
+
             # Only include explicitly provided parameters
             if malware_detection is not None:
                 request_json["threatIndicator"]["threatScan"]["threatAnalysis"] = malware_detection
@@ -5729,9 +5819,9 @@ class Plan(object):
 
         # Handle IOC/YARA rules
         # Check if user explicitly provided any IOC parameters BEFORE auto-setting
-        has_ioc_settings = (yara_rules is not None or ioc_rules is not None or 
+        has_ioc_settings = (yara_rules is not None or ioc_rules is not None or
                             enable_yara is not None or use_custom_hash_feed is not None)
-        
+
         # Auto-set flags based on provided rules
         if yara_rules and isinstance(yara_rules, list) and len(yara_rules) > 0:
             enable_yara = True
@@ -5748,22 +5838,22 @@ class Plan(object):
         if yara_rules:
             if not isinstance(yara_rules, list):
                 raise SDKException('Plan', '102', 'yara_rules must be a list of strings')
-            
+
             # Get YaraRules manager from activate
             yara_rules_manager = self._commcell_object.activate.entity_manager(entity_type=EntityManagerTypes.YARA_RULES)
-            
+
             for rule_name in yara_rules:
                 if not isinstance(rule_name, str):
                     raise SDKException('Plan', '102', f'Each yara_rule name must be a string, got {type(rule_name)}')
-                
+
                 # Check if rule exists
                 if not yara_rules_manager.has_yara_rule(rule_name):
                     raise SDKException('Plan', '102', f'YARA rule "{rule_name}" does not exist in commcell')
-                
+
                 # Get rule properties and extract ID
                 rule_props = yara_rules_manager.get_properties(rule_name)
                 rule_id = rule_props.get('entityId')
-                
+
                 processed_yara_rules.append({
                     'id': rule_id,
                     'name': rule_name
@@ -5774,22 +5864,22 @@ class Plan(object):
         if ioc_rules:
             if not isinstance(ioc_rules, list):
                 raise SDKException('Plan', '102', 'ioc_rules must be a list of strings')
-            
+
             # Get HashFeeds manager from activate
             hash_feeds_manager = self._commcell_object.activate.entity_manager(entity_type=EntityManagerTypes.HASH_FEEDS)
-            
+
             for rule_name in ioc_rules:
                 if not isinstance(rule_name, str):
                     raise SDKException('Plan', '102', f'Each ioc_rule name must be a string, got {type(rule_name)}')
-                
+
                 # Check if hash feed exists
                 if not hash_feeds_manager.has_hash_feed(rule_name):
                     raise SDKException('Plan', '102', f'Hash feed (IOC rule) "{rule_name}" does not exist in commcell')
-                
+
                 # Get hash feed properties and extract ID
                 feed_props = hash_feeds_manager.get_properties(rule_name)
                 feed_id = feed_props.get('entityId')
-                
+
                 processed_ioc_rules.append({
                     'id': feed_id,
                     'name': rule_name
@@ -5800,14 +5890,14 @@ class Plan(object):
         if has_ioc_settings:
             if "threatScan" not in request_json["threatIndicator"]:
                 request_json["threatIndicator"]["threatScan"] = {}
-            
+
             request_json["threatIndicator"]["threatScan"]["yaraRule"] = enable_yara
             request_json["threatIndicator"]["threatScan"]["useCustomHashFeed"] = use_custom_hash_feed
             request_json["threatIndicator"]["threatScan"]["useCommvaultHashFeed"] = use_commvault_hash_feed
-            
+
             if processed_yara_rules:
                 request_json["threatIndicator"]["threatScan"]["yaraRules"] = processed_yara_rules
-            
+
             if processed_ioc_rules:
                 request_json["threatIndicator"]["threatScan"]["iocRules"] = processed_ioc_rules
 

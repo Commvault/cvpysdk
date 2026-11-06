@@ -600,6 +600,7 @@ class VSAObjects(Enum):
     ConsistencyGroup = 39
     InstanceSize = 40
     Organization = 41
+    Instance = 46
     Selector = 47
 
 

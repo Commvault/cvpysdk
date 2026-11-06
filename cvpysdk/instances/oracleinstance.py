@@ -264,8 +264,7 @@ class OracleInstance(DatabaseInstance):
             destination_client,
             destination_path,
             backup_job_ids,
-            user_name,
-            password
+            credentialName
         )
         request_json["taskInfo"]["subTasks"][0]["options"]["restoreOptions"]["oracleOpt"] = {
             "resetLogs": 1,

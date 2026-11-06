@@ -129,6 +129,7 @@ class Xen(VirtualServerSubclient):
             overwrite=True,
             power_on=True,
             copy_precedence=0,
+            esx_server=None,
             **kwargs):
         """Restores the FULL Virtual machine specified in the input list
             to the provided vcenter client along with the ESX and the datastores.
@@ -169,6 +170,8 @@ class Xen(VirtualServerSubclient):
                 proxy_client     (str)  --  proxy client to be used for restore
                                                         default: proxy added in subclient
 
+                esx_server       (str)  --  Virtual Server Host of the destination Xen instance
+                                                        default: instance server host name
 
             Returns:
                 object - instance of the Job class for this restore job
@@ -210,6 +213,7 @@ class Xen(VirtualServerSubclient):
             client_name=proxy_client,
             vcenter_client=destination_client,
             esx_host=xen_server,
+            esx_server=esx_server,
             datastore=storage,
             in_place=False,
             restore_new_name=new_name

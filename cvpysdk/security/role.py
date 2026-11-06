@@ -379,6 +379,7 @@ class Roles(object):
                 search (str): Contains the string to search in the commcell entity cache.
                 fq (list): Contains the columnName, condition and value.
                            e.g. fq = [['roleName', 'contains', 'test'], ['disabled', 'eq', True]]
+                refresh_commcell_guids (list): List of commcell GUIDs to trigger hard refresh (default: None).
 
         Returns:
             dict: Dictionary of all the properties present in response.
@@ -402,6 +403,10 @@ class Roles(object):
         searchable_columns= ["roleName","description","company"]
         search_parameter = (f'&search={",".join(self.valid_columns[col] for col in searchable_columns)}:contains:'
                             f'{kwargs.get("search", None)}') if kwargs.get('search', None) else ''
+        if self._commcell_object.is_global_scope():
+            refresh_commcell_guids = kwargs.get('refresh_commcell_guids', None)
+            if refresh_commcell_guids:
+                hard_refresh += f'&refreshCommcellGuids={",".join(refresh_commcell_guids)}'
 
         params = [
             limit_parameters,

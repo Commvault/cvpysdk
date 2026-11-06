@@ -205,6 +205,7 @@ class CloudAppsInstance(Instance):
         from .cloudapps.onedrive_instance import OneDriveInstance
         from .cloudapps.azure_cosmosdb_instance import AzureCosmosDBInstance
         from .cloudapps.powerbi_instance import PowerBIInstance
+        from .cloudapps.powerapps_instance import PowerAppsInstance
         from .cloudapps.cloud_database_instance import CloudDatabaseInstance
         from .cloudapps.clickhouse_instance import ClickHouseInstance
         from .cloudapps.aws_bedrock_instance import AwsBedrockInstance
@@ -253,6 +254,7 @@ class CloudAppsInstance(Instance):
             45: AzureBlobDiscoveryInstance,  # Azure Blob Discovery GRP Instance
             58: PineConeInstance,  # PineCone Instance
             60: PowerBIInstance,     # Power Platform PowerBi Instance
+            57: PowerAppsInstance,  # Power Platform PowerApps Instance
             77: AwsBedrockInstance,  # AWS Bedrock Instance
             88: AzureFoundryInstance,  # Azure Foundry Instance
             84: ClickHouseInstance,  # ClickHouse Instance

@@ -58,6 +58,7 @@ from ..client import Client
 from ..subclient import Subclient
 from ..exception import SDKException
 from .exchange.constants import JobOptionKeys, JobOptionValues, JobOptionIntegers, ExchangeConstants
+from typing import Any, Optional, Dict, List, Set, Tuple, Union
 
 
 
@@ -991,33 +992,42 @@ class ExchangeSubclient(Subclient):
         request_json = self._prepare_msg_restore_json(restore_option)
         return self._process_restore_response(request_json)
 
-    def pst_ingestion(self):
+    def pst_ingestion(self,
+                      pstTaskName: [str],
+                      folders: [Union[str, int]],
+                      defaultOwner: [str],
+                      pstDestFolder: [str]):
         """Runs a backup job for the subclient of the level specified.
+            Args:
+                pstTaskName: PST ingestion task name.
+                folders: Folder value for ``exchOnePassOptions.pstIngestions.folders.val``.
+                defaultOwner: Value for ``exchOnePassOptions.pstOwnerManagement.orphanFolder``.
+                pstDestFolder: Value for ``exchOnePassOptions.pstOwnerManagement.pstDestFolder``.
             Returns:
                 object - instance of the Job class for this backup job
 
         """
 
         payload_dict = {
-            "taskInfo":{
-                "associations":[self._subClientEntity],
+            "taskInfo": {
+                "associations": [self._subClientEntity],
                 "task": self.get_pst_task_json(),
-                "subTasks":[{
-                    "subTaskOperation":1,
-                    "subTask":{
-                        "subTaskType":2,
-                        "operationType":5024
+                "subTasks": [{
+                    "subTaskOperation": 1,
+                    "subTask": {
+                        "subTaskType": 2,
+                        "operationType": 5024
                     },
-                    "options":{
-                        "backupOpts":self.get_pst_backup_opt_json(),
-                        "adminOpts":{
-                            "contentIndexingOption":{
-                                "subClientBasedAnalytics":False
+                    "options": {
+                        "backupOpts": self.get_pst_backup_opt_json(pstTaskName, folders, defaultOwner, pstDestFolder),
+                        "adminOpts": {
+                            "contentIndexingOption": {
+                                "subClientBasedAnalytics": False
                             }
                         },
-                        "restoreOptions":{
-                            "virtualServerRstOption":{
-                                "isBlockLevelReplication":False
+                        "restoreOptions": {
+                            "virtualServerRstOption": {
+                                "isBlockLevelReplication": False
                             }
                         }
                     }
@@ -1025,7 +1035,7 @@ class ExchangeSubclient(Subclient):
             }
         }
         flag, response = self._cvpysdk_object.make_request(
-            'POST', self._commcell_object._services["RESTORE"], payload_dict)
+            'POST', self._services['CREATE_TASK'], payload_dict)
 
         return self._process_backup_response(flag, response)
 
@@ -1127,8 +1137,17 @@ class ExchangeSubclient(Subclient):
         }
         return task_json
 
-    def get_pst_backup_opt_json(self):
+    def get_pst_backup_opt_json(self,
+                                pstTaskName: [str],
+                                folders: [Union[str, int]],
+                                defaultOwner: [str],
+                                pstDestFolder: [str]):
         """Get backup options json for pst ingestion job
+            Args:
+                pstTaskName: PST ingestion task name.
+                folders: Folder value for ``exchOnePassOptions.pstIngestions.folders.val``.
+                defaultOwner: Value for ``exchOnePassOptions.pstOwnerManagement.orphanFolder``.
+                pstDestFolder: Value for ``exchOnePassOptions.pstOwnerManagement.pstDestFolder``.
 
             Returns:
                  Pst backup options json
@@ -1143,12 +1162,33 @@ class ExchangeSubclient(Subclient):
             "runIncrementalBackup": False,
             "isSpHasInLineCopy": False,
             "runSILOBackup": False,
-            "doNotTruncateLog": False,
             "exchOnePassOptions": {
-                "proxies": {}
-            },
-            "dataOpt": self.get_pst_data_opt_json(),
-            "mediaOpt": {}
+                "forceFullBackupForMbs": False,
+                "pstIngestions": [
+                    {
+                        "pstTaskName": pstTaskName,
+                        "taskType": 1,
+                        "folders": [
+                            folders
+                        ],
+                        "pstOwnerManagement": {
+                            "pstStubsAction": 1,
+                            "mergeintoMailBox": False,
+                            "usePSTNameToCreateChildForNoOwner": True,
+                            "managePSTStubs": False,
+                            "createPstDestFolder": False,
+                            "adProperty": "",
+                            "pstOwnerBasedOnLaptop": False,
+                            "startingFolderPath": "",
+                            "pstOwnerBasedOnACL": True,
+                            "orphanFolder": defaultOwner,
+                            "usePSTNameToCreateChild": True,
+                            "pstDestFolder": pstDestFolder
+                        }}],
+                "doNotTruncateLog": False,
+                "dataOpt": self.get_pst_data_opt_json(),
+                "mediaOpt": {}
+            }
         }
         return backup_opt_json
 

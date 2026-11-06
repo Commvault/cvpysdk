@@ -1126,7 +1126,7 @@ class UsermailboxSubclient(ExchangeSubclient):
         _association_json_["emailAssociation"]["emailDiscoverinfo"] = discover_info
         self._set_association_request(_association_json_)
 
-    def set_pst_association(self, subclient_content: dict) -> None:
+    def set_pst_association(self, pstTaskName: str, folders: list, defaultOwner: str, pstDestFolder: str) -> None:
         """Create a PST association for the UserMailboxSubclient.
 
         This method associates PST (Personal Storage Table) files with the UserMailboxSubclient
@@ -1134,69 +1134,123 @@ class UsermailboxSubclient(ExchangeSubclient):
         owner management options.
 
         Args:
-            subclient_content: A dictionary containing the PST association details. The expected structure is:
-                {
-                    'pstTaskName': str,  # Name for the PST ingestion task
-                    'folders': List[str],  # List of folder paths for PST ingestion (optional)
-                    'fsContent': dict,  # Mapping of client, backupset, and subclient associations
-                    'pstOwnerManagement': {
-                        'defaultOwner': str,  # Default owner if no owner is determined
-                        'pstDestFolder': str,  # Destination folder for ingested PSTs
-                        'usePSTNameToCreateChild': bool  # Whether to use PST name to create child folders
-                    }
-                }
+            pstTaskName: str,  # Name for the PST ingestion task
+            folders: List[str],  # List of folder paths for PST ingestion (optional)
+            defaultOwner: str,  # Default owner if no owner is determined
+            pstDestFolder: str,  # Destination folder for ingested PSTs
+
 
         Example:
-            >>> subclient_content = {
-            ...     'pstTaskName': 'PST Ingestion Task',
-            ...     'folders': ['/pst_files/folder1', '/pst_files/folder2'],
-            ...     'fsContent': {
-            ...         'client1': {'backupset1': ['subclient1'], 'backupset2': None},
-            ...         'client2': None
-            ...     },
-            ...     'pstOwnerManagement': {
-            ...         'defaultOwner': 'user@example.com',
-            ...         'pstDestFolder': '/ingested_psts',
-            ...         'usePSTNameToCreateChild': True
-            ...     }
-            ... }
-            >>> subclient.set_pst_association(subclient_content)
-            >>> print("PST association created successfully.")
+            >>>
+            ...pstTaskName= 'PST Ingestion Task',
+            ...folders= ['/pst_files/folder1', '/pst_files/folder2'],
+            ...defaultOwner= 'user@example.com',
+            ...pstDestFolder= '/ingested_psts',
+            >>>subclient.set_pst_association(pstTaskName,folders,defaultOwner,pstDestFolder)
+            >>>print("PST association created successfully.")
 
         #ai-gen-doc
         """
-        if not isinstance(subclient_content, dict):
-            raise SDKException('Subclient', '101')
+        subclient_content = {
+            'pstTaskName': pstTaskName,
+            'folders': folders,
+            'pstOwnerManagement': {
+                'defaultOwner': defaultOwner,
+                'pstDestFolder': pstDestFolder,
+                'usePSTNameToCreateChild': False
+            }
+        }
 
         try:
-            if 'ownerSelectionOrder' not in subclient_content['pstOwnerManagement']:
-                subclient_content['pstOwnerManagement']['ownerSelectionOrder'] = [4, 1, 3]
-            if 'createPstDestFolder' not in subclient_content['pstOwnerManagement']:
-                subclient_content['pstOwnerManagement']['createPstDestFolder'] = True
-            if 'pstDestFolder' not in subclient_content['pstOwnerManagement']:
-                subclient_content['pstOwnerManagement']['pstDestFolder'] = (f'Archived From '
-                                                                            f'Automation')
+            pst_owner_management = subclient_content['pstOwnerManagement']
+
+            owner_selection_map = {
+                1: 'FileOwner',
+                3: 'FolderHierarchySAM',
+                4: 'FolderHierarchySMTP'
+            }
+            stubs_action_map = {
+                1: 'COPY',
+                '1': 'COPY',
+                'copy': 'COPY',
+                'COPY': 'COPY'
+            }
+            task_type_map = {
+                0: 'byAssociation',
+                1: 'byFolderLocation',
+                '0': 'byAssociation',
+                '1': 'byFolderLocation',
+                'byAssociation': 'byAssociation',
+                'byassociation': 'byAssociation',
+                'byFSContent': 'byAssociation',
+                'byFsContent': 'byAssociation',
+                'byFolderLocation': 'byFolderLocation',
+                'byfolderlocation': 'byFolderLocation'
+            }
+
+            if 'ownerSelectionOrder' not in pst_owner_management:
+                pst_owner_management['ownerSelectionOrder'] = [
+                    'FolderHierarchySMTP', 'FileOwner', 'FolderHierarchySAM'
+                ]
+            if 'createPstDestFolder' not in pst_owner_management:
+                pst_owner_management['createPstDestFolder'] = True
+            if 'pstDestFolder' not in pst_owner_management:
+                pst_owner_management['pstDestFolder'] = 'Archived From Automation'
+            if 'pstStubsAction' not in pst_owner_management:
+                pst_owner_management['pstStubsAction'] = 'COPY'
+
+            owner_selection_order = []
+            for selection in pst_owner_management['ownerSelectionOrder']:
+                if isinstance(selection, int):
+                    if selection not in owner_selection_map:
+                        raise SDKException('Subclient', '102',
+                                           'Invalid ownerSelectionOrder value: {}'.format(selection))
+                    owner_selection_order.append(owner_selection_map[selection])
+                else:
+                    owner_selection_order.append(str(selection))
+
+            task_type_input = subclient_content.get('taskType')
+            if task_type_input is None:
+                task_type_input = 'byFolderLocation' if 'folders' in subclient_content else 'byAssociation'
+            task_type = task_type_map.get(task_type_input)
+            if task_type is None:
+                task_type = task_type_map.get(str(task_type_input))
+            if task_type is None:
+                raise SDKException('Subclient', '102',
+                                   'Invalid taskType value: {}'.format(task_type_input))
+
+            pst_stubs_action = pst_owner_management['pstStubsAction']
+            pst_stubs_action = stubs_action_map.get(pst_stubs_action, stubs_action_map.get(str(pst_stubs_action)))
+            if pst_stubs_action is None:
+                raise SDKException('Subclient', '102',
+                                   'Invalid pstStubsAction value: {}'.format(
+                                       pst_owner_management['pstStubsAction']))
+
+            discover_by_type = subclient_content.get('discoverByType', 'PST_INGESTION')
+            if isinstance(discover_by_type, int):
+                discover_by_type = 'PST_INGESTION' if discover_by_type == 9 else str(discover_by_type)
+            elif str(discover_by_type) == '9':
+                discover_by_type = 'PST_INGESTION'
 
             pst_dict = {
                 'pstTaskName': subclient_content['pstTaskName'],
-                'taskType': 1,
+                'taskType': task_type,
                 'pstOwnerManagement': {
                     'adProperty': "",
                     'startingFolderPath': "",
-                    'pstStubsAction': 1,
+                    'pstStubsAction': pst_stubs_action,
                     'managePSTStubs': False,
                     'mergeintoMailBox': True,
                     'pstOwnerBasedOnACL': True,
                     'pstOwnerBasedOnLaptop': False,
                     'usePSTNameToCreateChildForNoOwner': True,
                     'createPstDestFolder':
-                        subclient_content["pstOwnerManagement"]["createPstDestFolder"],
-                    'orphanFolder': subclient_content['pstOwnerManagement']['defaultOwner'],
-                    'pstDestFolder': subclient_content['pstOwnerManagement']['pstDestFolder'],
+                        pst_owner_management["createPstDestFolder"],
+                    'orphanFolder': pst_owner_management['defaultOwner'],
+                    'pstDestFolder': pst_owner_management['pstDestFolder'],
                     'usePSTNameToCreateChild':
-                        subclient_content['pstOwnerManagement']['usePSTNameToCreateChild'],
-                    'ownerSelectionOrder':
-                        subclient_content["pstOwnerManagement"]["ownerSelectionOrder"]
+                        pst_owner_management['usePSTNameToCreateChild'],
+                    'ownerSelectionOrder': owner_selection_order
                 }
             }
             if 'folders' in subclient_content:
@@ -1204,10 +1258,22 @@ class UsermailboxSubclient(ExchangeSubclient):
             elif 'fsContent' in subclient_content:
                 pst_dict['associations'] = self.set_fs_association_for_pst(
                     subclient_content['fsContent'])
-                pst_dict['taskType'] = 0
-            subclient_entity = {"_type_": 7, "subclientId": int(self._subclient_id)}
+                pst_dict['taskType'] = 'byAssociation'
+            subclient_entity = {
+                "_type_": 7,
+                "subclientId": int(self._subclient_id),
+                "clientId": int(self._client_object.client_id),
+                "clientName": self._client_object.client_name,
+                "appName": self._backupset_object._instance_object._agent_object.agent_name,
+                "applicationId": int(self._backupset_object._instance_object._agent_object.agent_id),
+                "instanceId": int(self._backupset_object._instance_object.instance_id),
+                "instanceName": self._backupset_object._instance_object.instance_name,
+                "backupsetId": int(self._backupset_object.backupset_id),
+                "backupsetName": self._backupset_object.backupset_name,
+                "subclientName": self._subclient_name
+            }
             discover_info = {
-                'discoverByType': 9,
+                'discoverByType': discover_by_type,
                 'pstIngestion': pst_dict
             }
             _assocaition_json_ = {
